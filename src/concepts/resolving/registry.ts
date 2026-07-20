@@ -8,6 +8,11 @@ import { ResolutionNotFound } from "./errors.ts";
 export const resolving = registerConcept({
   class: ResolvingConcept,
   spec,
+  queries: {
+    _isResolved: "one",
+    _getResolution: "optional",
+    _getQuestionsAnswered: "many",
+  },
   refusals: {
     RESOLUTION_NOT_FOUND: {
       error: ResolutionNotFound,

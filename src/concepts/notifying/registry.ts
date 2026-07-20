@@ -8,6 +8,11 @@ import { NotificationNotFound } from "./errors.ts";
 export const notifying = registerConcept({
   class: NotifyingConcept,
   spec,
+  queries: {
+    _getInbox: "many",
+    _hasFor: "one",
+    _getUnreadCount: "one",
+  },
   refusals: {
     NOTIFICATION_NOT_FOUND: {
       error: NotificationNotFound,

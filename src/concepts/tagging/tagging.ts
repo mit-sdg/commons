@@ -1,16 +1,8 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { TagAlreadyApplied, TagAlreadyExists, TagNotApplied, TagNotFound } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
 
 export class TaggingConcept {
-  static readonly queries = {
-    _getTags: "many",
-    _getTargets: "many",
-    _getByName: "optional",
-    _getAllTags: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly tags = new Map<string, string>();
   private readonly targets = new Map<string, string[]>();
 

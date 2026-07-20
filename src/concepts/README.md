@@ -1,6 +1,7 @@
 # Concepts
 
-Each directory here specifies and implements one independent behavior. Start
+Each directory here specifies and implements one independent behavior. Its
+implementation and helpers import no sync-engine API. Start
 with its `spec.md`: the purpose and principle explain the behavior, while the
 state, actions, and questions state what it can know, what can happen, and what
 callers may ask. Concept code does not name another concept. Relationships
@@ -17,7 +18,8 @@ A usual concept directory contains:
 - `<name>.test.ts` — one suite run against both implementations;
 - `errors.ts` — refusal classes, when an action can refuse;
 - `registry.ts` — the one application-integration seat for the class,
-  specification, refusals, public categories, and named floor implementations.
+  specification, query promises, refusals, public categories, and named floor
+  implementations.
 
 [`template.md`](template.md) is the specification template. Copy it into a new
 directory as `spec.md`, replace every marked part, then add the implementation

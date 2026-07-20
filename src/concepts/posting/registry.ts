@@ -8,6 +8,12 @@ import { PostNotFound } from "./errors.ts";
 export const posting = registerConcept({
   class: PostingConcept,
   spec,
+  queries: {
+    _getPost: "optional",
+    _getByAuthor: "many",
+    _getMentions: "many",
+    _isMentioned: "one",
+  },
   refusals: {
     POST_NOT_FOUND: {
       error: PostNotFound,

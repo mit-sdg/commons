@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import {
   AssignmentAudienceInvalid,
   AssignmentEveryoneNoTargets,
@@ -40,16 +39,6 @@ interface ReleaseDoc {
 }
 
 export class AssigningConcept {
-  static readonly queries = {
-    _getDetail: "optional",
-    _getAssignments: "many",
-    _getAssigned: "many",
-    _getAssignees: "many",
-    _isAssigned: "one",
-    _getPublishedForAudience: "many",
-    _getPublishedInWindow: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly assignments = new Map<string, AssignmentDoc>();
   private readonly releases = new Map<string, ReleaseDoc>();
 

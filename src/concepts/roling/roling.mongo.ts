@@ -1,4 +1,3 @@
-import { RolingConcept } from "./roling.ts";
 import type { Collection, Db } from "mongodb";
 import {
   CapabilityRequired,
@@ -24,8 +23,6 @@ interface GrantDoc {
 }
 
 export class MongoRolingConcept {
-  static readonly queries = RolingConcept.queries;
-
   private readonly roles: Collection<RoleDoc>;
   private readonly grants: Collection<GrantDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;

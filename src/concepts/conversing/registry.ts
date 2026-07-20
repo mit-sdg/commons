@@ -13,6 +13,16 @@ import {
 export const conversing = registerConcept({
   class: ConversingConcept,
   spec,
+  queries: {
+    _getThread: "many",
+    _getConversation: "optional",
+    _getNodeByItem: "optional",
+    _parentOf: "optional",
+    _getItem: "optional",
+    _hasChildren: "one",
+    _getConversations: "many",
+    _getConversationsByLastActivity: "many",
+  },
   refusals: {
     ITEM_ALREADY_IN_CONVERSATION: {
       error: ItemAlreadyInConversation,

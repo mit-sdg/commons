@@ -1,12 +1,6 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { ItemAlreadyTrashed, ItemNotTrashed } from "./errors.ts";
 
 export class TrashingConcept {
-  static readonly queries = {
-    _isTrashed: "one",
-    _getTrashed: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly trashed = new Map<string, { by: string; at: Date }>();
 
   trash({ item, by, at }: { item: string; by: string; at: Date }) {

@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { ReactionAlreadyExists, ReactionNotFound } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
@@ -11,13 +10,6 @@ interface ReactionDoc {
 }
 
 export class ReactingConcept {
-  static readonly queries = {
-    _getReactionsForTarget: "many",
-    _getReactionsByUser: "many",
-    _countByKind: "many",
-    _hasReacted: "one",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly reactions = new Map<string, ReactionDoc>();
 
   #findKey(reactor: string, target: string, kind: string): string | undefined {

@@ -1,4 +1,3 @@
-import { ConversingConcept } from "./conversing.ts";
 import type { Collection, Db } from "mongodb";
 import {
   ItemAlreadyInConversation,
@@ -41,8 +40,6 @@ const toRow = (row: ConversationRow & { seqOf: number; lastSeq: number }): Conve
 });
 
 export class MongoConversingConcept {
-  static readonly queries = ConversingConcept.queries;
-
   private readonly conversations: Collection<ConversationDoc>;
   private readonly nodes: Collection<NodeDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;

@@ -15,6 +15,14 @@ import {
 export const banking = registerConcept({
   class: BankingConcept,
   spec,
+  queries: {
+    _getTerms: "one",
+    _getBalance: "one",
+    _getApplied: "optional",
+    _getUses: "many",
+    _getUsesForItem: "many",
+    _getGrants: "many",
+  },
   refusals: {
     LATE_DAYS_MUST_BE_POSITIVE: {
       error: LateDaysMustBePositive,

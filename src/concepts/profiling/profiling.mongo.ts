@@ -1,4 +1,3 @@
-import { ProfilingConcept } from "./profiling.ts";
 import type { Collection, Db } from "mongodb";
 import { ProfileAlreadyExists, ProfileNotFound } from "./errors.ts";
 
@@ -11,8 +10,6 @@ interface ProfileDoc {
 }
 
 export class MongoProfilingConcept {
-  static readonly queries = ProfilingConcept.queries;
-
   private readonly profiles: Collection<ProfileDoc>;
 
   constructor(db: Db) {

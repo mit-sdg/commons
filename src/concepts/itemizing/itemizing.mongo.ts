@@ -1,4 +1,3 @@
-import { ItemizingConcept } from "./itemizing.ts";
 import type { Collection, Db } from "mongodb";
 import { CriterionNotFound, GradeItemNotFound, ScoreOutOfRange } from "./errors.ts";
 
@@ -21,8 +20,6 @@ interface CriterionDoc {
 }
 
 export class MongoItemizingConcept {
-  static readonly queries = ItemizingConcept.queries;
-
   private readonly items: Collection<ItemDoc>;
   private readonly criteria: Collection<CriterionDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;

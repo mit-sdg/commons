@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import {
   InsufficientBalance,
   LateDaysExceedMax,
@@ -34,15 +33,6 @@ interface Terms {
 const DEFAULT_TERMS: Terms = { allowance: 0, perItemLimit: 5, unitHours: 24 };
 
 export class BankingConcept {
-  static readonly queries = {
-    _getTerms: "one",
-    _getBalance: "one",
-    _getApplied: "optional",
-    _getUses: "many",
-    _getUsesForItem: "many",
-    _getGrants: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private terms: Terms | null = null;
   private readonly grants = new Map<string, GrantDoc>();
   private readonly uses = new Map<string, UseDoc>();

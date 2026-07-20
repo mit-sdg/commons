@@ -1,4 +1,3 @@
-import { AuthenticatingConcept } from "./authenticating.ts";
 import type { Collection, Db } from "mongodb";
 import {
   EmailInvalid,
@@ -20,8 +19,6 @@ interface UserDoc {
 }
 
 export class MongoAuthenticatingConcept {
-  static readonly queries = AuthenticatingConcept.queries;
-
   private readonly users: Collection<UserDoc>;
 
   constructor(db: Db) {

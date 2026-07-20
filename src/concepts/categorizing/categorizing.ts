@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { CategoryAlreadyExists, CategoryNotFound, ItemNotCategorized } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
@@ -9,13 +8,6 @@ interface CategoryDoc {
 }
 
 export class CategorizingConcept {
-  static readonly queries = {
-    _getCategory: "optional",
-    _getHome: "optional",
-    _getItems: "many",
-    _getAllCategories: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly categories = new Map<string, CategoryDoc>();
   private readonly memberships = new Map<string, string>();
 

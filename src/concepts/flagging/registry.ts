@@ -8,6 +8,10 @@ import { FlagAlreadyExists, FlagNotFound, OutcomeInvalid } from "./errors.ts";
 export const flagging = registerConcept({
   class: FlaggingConcept,
   spec,
+  queries: {
+    _getOpenTargets: "many",
+    _getFlags: "many",
+  },
   refusals: {
     FLAG_ALREADY_EXISTS: {
       error: FlagAlreadyExists,

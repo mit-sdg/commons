@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import {
   ItemAlreadyInConversation,
   NodeHasChildren,
@@ -32,17 +31,6 @@ interface ConversationRow {
 }
 
 export class ConversingConcept {
-  static readonly queries = {
-    _getThread: "many",
-    _getConversation: "optional",
-    _getNodeByItem: "optional",
-    _parentOf: "optional",
-    _getItem: "optional",
-    _hasChildren: "one",
-    _getConversations: "many",
-    _getConversationsByLastActivity: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly conversations = new Map<string, ConversationDoc>();
   private readonly nodes = new Map<string, NodeDoc>();
   private seq = 0;

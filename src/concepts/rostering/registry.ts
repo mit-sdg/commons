@@ -16,6 +16,16 @@ import {
 export const rostering = registerConcept({
   class: RosteringConcept,
   spec,
+  queries: {
+    _getSections: "many",
+    _getSeatByExternalKey: "optional",
+    _getSeatByUser: "optional",
+    _getSeatDetail: "optional",
+    _getActiveMembers: "many",
+    _isActiveStudent: "one",
+    _getActiveStudents: "many",
+    _getUnclaimedSeats: "many",
+  },
   refusals: {
     CLASS_ALREADY_CONFIGURED: {
       error: ClassAlreadyConfigured,

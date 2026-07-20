@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { ProfileAlreadyExists, ProfileNotFound } from "./errors.ts";
 
 interface ProfileDoc {
@@ -9,11 +8,6 @@ interface ProfileDoc {
 }
 
 export class ProfilingConcept {
-  static readonly queries = {
-    _getProfile: "optional",
-    _getProfileFields: "optional",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly profiles = new Map<string, ProfileDoc>();
 
   createProfile({

@@ -8,6 +8,12 @@ import { TagAlreadyApplied, TagAlreadyExists, TagNotApplied, TagNotFound } from 
 export const tagging = registerConcept({
   class: TaggingConcept,
   spec,
+  queries: {
+    _getTags: "many",
+    _getTargets: "many",
+    _getByName: "optional",
+    _getAllTags: "many",
+  },
   refusals: {
     TAG_ALREADY_EXISTS: {
       error: TagAlreadyExists,

@@ -7,6 +7,11 @@ import { MongoRevisingConcept } from "./revising.mongo.ts";
 export const revising = registerConcept({
   class: RevisingConcept,
   spec,
+  queries: {
+    _getRevisions: "many",
+    _getRevision: "optional",
+    _getLatest: "optional",
+  },
   floors: {
     mongo: ({ database }: { database: Db }) => new MongoRevisingConcept(database),
   },

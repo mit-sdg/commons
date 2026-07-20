@@ -1,4 +1,3 @@
-import { PostingConcept } from "./posting.ts";
 import type { Collection, Db } from "mongodb";
 import { PostNotFound } from "./errors.ts";
 
@@ -12,8 +11,6 @@ interface PostDoc {
 }
 
 export class MongoPostingConcept {
-  static readonly queries = PostingConcept.queries;
-
   private readonly posts: Collection<PostDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

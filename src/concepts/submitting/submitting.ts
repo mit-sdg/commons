@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { SubmissionNotFound, SubmissionNotSubmitted, SubmissionNotWithdrawn } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
@@ -13,13 +12,6 @@ interface SubmissionDoc {
 }
 
 export class SubmittingConcept {
-  static readonly queries = {
-    _getLatest: "optional",
-    _getAttempts: "many",
-    _getSubmissionsForAssignment: "many",
-    _getSubmissionsForSubmitter: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly submissions = new Map<string, SubmissionDoc>();
 
   submit({

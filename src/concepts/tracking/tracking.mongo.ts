@@ -1,4 +1,3 @@
-import { TrackingConcept } from "./tracking.ts";
 import type { Collection, Db } from "mongodb";
 import { ItemAlreadyRegistered, ItemAlreadySeen, ItemNotRegistered } from "./errors.ts";
 
@@ -14,8 +13,6 @@ interface SeenDoc {
 }
 
 export class MongoTrackingConcept {
-  static readonly queries = TrackingConcept.queries;
-
   private readonly registered: Collection<RegisteredDoc>;
   private readonly seen: Collection<SeenDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;

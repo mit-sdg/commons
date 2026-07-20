@@ -8,6 +8,12 @@ import { CriterionNotFound, GradeItemNotFound, ScoreOutOfRange } from "./errors.
 export const itemizing = registerConcept({
   class: ItemizingConcept,
   spec,
+  queries: {
+    _getItem: "optional",
+    _getItems: "many",
+    _getCriteria: "many",
+    _getCriterion: "optional",
+  },
   refusals: {
     SCORE_OUT_OF_RANGE: {
       error: ScoreOutOfRange,

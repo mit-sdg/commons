@@ -72,19 +72,18 @@ describe("application integration seats", () => {
     );
   });
 
-  test("concept implementations and exception classes import no assembly or boundary API", () => {
+  test("concept implementations, helpers, and exceptions import no engine API", () => {
     const files = filesBelow(conceptsRoot).filter(
       (file) =>
         relative(conceptsRoot, file).includes("/") &&
-        /(?:errors|\.mongo|\/[a-z-]+)\.ts$/.test(file) &&
+        file.endsWith(".ts") &&
         !file.endsWith("registry.ts") &&
         !file.endsWith(".test.ts"),
     );
     for (const file of files) {
       const source = readFileSync(file, "utf8");
-      expect(source, relative(root, file)).not.toMatch(
-        /@mit-sdg\/sync-engine\/(?:assembly|boundary)/,
-      );
+      expect(source, relative(root, file)).not.toMatch(/@mit-sdg\/sync-engine/);
+      expect(source, relative(root, file)).not.toMatch(/\bstatic\s+(?:readonly\s+)?queries\b/);
     }
   });
 

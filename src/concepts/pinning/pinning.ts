@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { ItemAlreadyPinned, ItemNotPinned } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
@@ -12,11 +11,6 @@ interface PinDoc {
 }
 
 export class PinningConcept {
-  static readonly queries = {
-    _getPinned: "many",
-    _isPinned: "one",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly pins = new Map<string, PinDoc>();
   private seq = 0;
 

@@ -1,4 +1,3 @@
-import { SubscribingConcept } from "./subscribing.ts";
 import type { Collection, Db } from "mongodb";
 import { AlreadySubscribed, NotSubscribed } from "./errors.ts";
 
@@ -11,8 +10,6 @@ interface SubscriptionDoc {
 }
 
 export class MongoSubscribingConcept {
-  static readonly queries = SubscribingConcept.queries;
-
   private readonly subscriptions: Collection<SubscriptionDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

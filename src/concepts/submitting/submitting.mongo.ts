@@ -1,4 +1,3 @@
-import { SubmittingConcept } from "./submitting.ts";
 import type { Collection, Db } from "mongodb";
 import { SubmissionNotFound, SubmissionNotSubmitted, SubmissionNotWithdrawn } from "./errors.ts";
 
@@ -14,8 +13,6 @@ interface SubmissionDoc {
 }
 
 export class MongoSubmittingConcept {
-  static readonly queries = SubmittingConcept.queries;
-
   private readonly submissions: Collection<SubmissionDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

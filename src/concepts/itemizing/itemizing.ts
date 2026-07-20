@@ -1,16 +1,8 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { CriterionNotFound, GradeItemNotFound, ScoreOutOfRange } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
 
 export class ItemizingConcept {
-  static readonly queries = {
-    _getItem: "optional",
-    _getItems: "many",
-    _getCriteria: "many",
-    _getCriterion: "optional",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly items = new Map<
     string,
     { item: string; label: string; maxPoints: number; status: "ACTIVE" | "ARCHIVED" }

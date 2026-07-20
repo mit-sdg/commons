@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { BookmarkAlreadyExists, BookmarkNotFound } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
@@ -10,11 +9,6 @@ interface BookmarkDoc {
 }
 
 export class BookmarkingConcept {
-  static readonly queries = {
-    _getSaved: "many",
-    _isSaved: "one",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly bookmarks = new Map<string, BookmarkDoc>();
 
   #findKey(user: string, item: string): string | undefined {

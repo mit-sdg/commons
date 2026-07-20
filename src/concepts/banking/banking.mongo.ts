@@ -1,4 +1,3 @@
-import { BankingConcept } from "./banking.ts";
 import type { Collection, Db } from "mongodb";
 import {
   InsufficientBalance,
@@ -38,8 +37,6 @@ const DEFAULT_TERMS: Terms = { allowance: 0, perItemLimit: 5, unitHours: 24 };
 const TERMS_ID = "terms";
 
 export class MongoBankingConcept {
-  static readonly queries = BankingConcept.queries;
-
   private readonly terms: Collection<{ _id: string } & Terms>;
   private readonly grants: Collection<GrantDoc>;
   private readonly uses: Collection<UseDoc>;

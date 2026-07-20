@@ -8,6 +8,10 @@ import { BookmarkAlreadyExists, BookmarkNotFound } from "./errors.ts";
 export const bookmarking = registerConcept({
   class: BookmarkingConcept,
   spec,
+  queries: {
+    _getSaved: "many",
+    _isSaved: "one",
+  },
   refusals: {
     BOOKMARK_ALREADY_EXISTS: {
       error: BookmarkAlreadyExists,

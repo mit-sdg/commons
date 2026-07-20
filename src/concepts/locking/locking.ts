@@ -1,12 +1,6 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { TargetAlreadyLocked, TargetNotLocked } from "./errors.ts";
 
 export class LockingConcept {
-  static readonly queries = {
-    _isLocked: "one",
-    _getLocked: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly locked = new Map<string, { lockedAt: Date }>();
 
   lock({ target, at }: { target: string; at: Date }) {

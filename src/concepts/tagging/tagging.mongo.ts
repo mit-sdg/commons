@@ -1,4 +1,3 @@
-import { TaggingConcept } from "./tagging.ts";
 import type { Collection, Db } from "mongodb";
 import { TagAlreadyApplied, TagAlreadyExists, TagNotApplied, TagNotFound } from "./errors.ts";
 
@@ -13,8 +12,6 @@ interface TargetDoc {
 }
 
 export class MongoTaggingConcept {
-  static readonly queries = TaggingConcept.queries;
-
   private readonly tags: Collection<TagDoc>;
   private readonly targets: Collection<TargetDoc>;
 

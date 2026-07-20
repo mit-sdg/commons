@@ -1,4 +1,3 @@
-import { AssigningConcept } from "./assigning.ts";
 import type { Collection, Db } from "mongodb";
 import {
   AssignmentAudienceInvalid,
@@ -43,8 +42,6 @@ interface ReleaseDoc {
 }
 
 export class MongoAssigningConcept {
-  static readonly queries = AssigningConcept.queries;
-
   private readonly assignments: Collection<AssignmentDoc>;
   private readonly releases: Collection<ReleaseDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;

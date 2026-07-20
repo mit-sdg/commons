@@ -1,4 +1,3 @@
-import { FlaggingConcept } from "./flagging.ts";
 import type { Collection, Db } from "mongodb";
 import { FlagAlreadyExists, FlagNotFound, OutcomeInvalid } from "./errors.ts";
 
@@ -13,8 +12,6 @@ interface FlagDoc {
 }
 
 export class MongoFlaggingConcept {
-  static readonly queries = FlaggingConcept.queries;
-
   private readonly flags: Collection<FlagDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

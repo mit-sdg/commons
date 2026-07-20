@@ -8,6 +8,10 @@ import { ProfileAlreadyExists, ProfileNotFound } from "./errors.ts";
 export const profiling = registerConcept({
   class: ProfilingConcept,
   spec,
+  queries: {
+    _getProfile: "optional",
+    _getProfileFields: "optional",
+  },
   refusals: {
     PROFILE_ALREADY_EXISTS: {
       error: ProfileAlreadyExists,

@@ -8,6 +8,10 @@ import { TargetAlreadyLocked, TargetNotLocked } from "./errors.ts";
 export const locking = registerConcept({
   class: LockingConcept,
   spec,
+  queries: {
+    _isLocked: "one",
+    _getLocked: "many",
+  },
   refusals: {
     TARGET_ALREADY_LOCKED: {
       error: TargetAlreadyLocked,

@@ -1,4 +1,3 @@
-import { RevisingConcept } from "./revising.ts";
 import type { Collection, Db } from "mongodb";
 
 interface RevisionDoc {
@@ -12,8 +11,6 @@ interface RevisionDoc {
 type Row = { revision: string; number: number; content: string; savedAt: Date };
 
 export class MongoRevisingConcept {
-  static readonly queries = RevisingConcept.queries;
-
   private readonly revisions: Collection<RevisionDoc>;
 
   constructor(db: Db) {

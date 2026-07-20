@@ -1,14 +1,8 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { SessionNotFound } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
 
 export class SessioningConcept {
-  static readonly queries = {
-    _getUser: "optional",
-    _isExpired: "one",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly sessions = new Map<string, { user: string; expiresAt: Date }>();
 
   start({ user, at }: { user: string; at?: Date }) {

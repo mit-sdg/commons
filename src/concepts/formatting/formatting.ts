@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
 
@@ -18,10 +17,6 @@ function render(source: string): string {
 }
 
 export class FormattingConcept {
-  static readonly queries = {
-    _getRendered: "optional",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly documents = new Map<string, { source: string; rendered: string }>();
 
   setSource({ target, source }: { target: string; source: string }) {

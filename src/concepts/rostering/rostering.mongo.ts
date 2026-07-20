@@ -1,4 +1,3 @@
-import { RosteringConcept } from "./rostering.ts";
 import type { Collection, Db } from "mongodb";
 import {
   ClassAlreadyConfigured,
@@ -52,8 +51,6 @@ interface SeatRow {
 }
 
 export class MongoRosteringConcept {
-  static readonly queries = RosteringConcept.queries;
-
   private readonly classes: Collection<ClassDoc>;
   private readonly sections: Collection<SectionDoc>;
   private readonly seats: Collection<SeatDoc>;

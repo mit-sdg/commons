@@ -8,6 +8,10 @@ import { SessionNotFound } from "./errors.ts";
 export const sessioning = registerConcept({
   class: SessioningConcept,
   spec,
+  queries: {
+    _getUser: "optional",
+    _isExpired: "one",
+  },
   refusals: {
     SESSION_NOT_FOUND: {
       error: SessionNotFound,

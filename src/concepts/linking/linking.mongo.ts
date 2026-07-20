@@ -1,4 +1,3 @@
-import { LinkingConcept } from "./linking.ts";
 import type { Collection, Db } from "mongodb";
 
 interface LinkDoc {
@@ -8,8 +7,6 @@ interface LinkDoc {
 }
 
 export class MongoLinkingConcept {
-  static readonly queries = LinkingConcept.queries;
-
   private readonly links: Collection<LinkDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

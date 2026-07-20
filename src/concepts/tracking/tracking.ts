@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { ItemAlreadyRegistered, ItemAlreadySeen, ItemNotRegistered } from "./errors.ts";
 
 interface SeenMark {
@@ -7,12 +6,6 @@ interface SeenMark {
 }
 
 export class TrackingConcept {
-  static readonly queries = {
-    _inScope: "many",
-    _getUnread: "many",
-    _getUnreadCount: "one",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly registered = new Map<string, { scope: string }>();
   private readonly seen: SeenMark[] = [];
 

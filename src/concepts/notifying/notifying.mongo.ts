@@ -1,4 +1,3 @@
-import { NotifyingConcept } from "./notifying.ts";
 import type { Collection, Db } from "mongodb";
 import { NotificationNotFound } from "./errors.ts";
 
@@ -14,8 +13,6 @@ interface NotificationDoc {
 }
 
 export class MongoNotifyingConcept {
-  static readonly queries = NotifyingConcept.queries;
-
   private readonly notifications: Collection<NotificationDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

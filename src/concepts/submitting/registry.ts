@@ -8,6 +8,12 @@ import { SubmissionNotFound, SubmissionNotSubmitted, SubmissionNotWithdrawn } fr
 export const submitting = registerConcept({
   class: SubmittingConcept,
   spec,
+  queries: {
+    _getLatest: "optional",
+    _getAttempts: "many",
+    _getSubmissionsForAssignment: "many",
+    _getSubmissionsForSubmitter: "many",
+  },
   refusals: {
     SUBMISSION_NOT_FOUND: {
       error: SubmissionNotFound,

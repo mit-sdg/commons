@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import {
   ClassAlreadyConfigured,
   SeatAlreadyActive,
@@ -33,17 +32,6 @@ interface SeatRow {
 }
 
 export class RosteringConcept {
-  static readonly queries = {
-    _getSections: "many",
-    _getSeatByExternalKey: "optional",
-    _getSeatByUser: "optional",
-    _getSeatDetail: "optional",
-    _getActiveMembers: "many",
-    _isActiveStudent: "one",
-    _getActiveStudents: "many",
-    _getUnclaimedSeats: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private theClass: {
     _id: string;
     code: string;

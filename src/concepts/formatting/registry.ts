@@ -7,6 +7,9 @@ import { MongoFormattingConcept } from "./formatting.mongo.ts";
 export const formatting = registerConcept({
   class: FormattingConcept,
   spec,
+  queries: {
+    _getRendered: "optional",
+  },
   floors: {
     mongo: ({ database }: { database: Db }) => new MongoFormattingConcept(database),
   },

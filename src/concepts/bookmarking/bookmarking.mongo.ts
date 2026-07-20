@@ -1,4 +1,3 @@
-import { BookmarkingConcept } from "./bookmarking.ts";
 import type { Collection, Db } from "mongodb";
 import { BookmarkAlreadyExists, BookmarkNotFound } from "./errors.ts";
 
@@ -11,8 +10,6 @@ interface BookmarkDoc {
 }
 
 export class MongoBookmarkingConcept {
-  static readonly queries = BookmarkingConcept.queries;
-
   private readonly bookmarks: Collection<BookmarkDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

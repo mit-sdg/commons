@@ -15,6 +15,12 @@ import {
 export const grading = registerConcept({
   class: GradingConcept,
   spec,
+  queries: {
+    _getGrade: "optional",
+    _getGradesForLearner: "many",
+    _getGradesForItem: "many",
+    _getCriterionScores: "many",
+  },
   refusals: {
     SCORE_OUT_OF_RANGE: {
       error: ScoreOutOfRange,

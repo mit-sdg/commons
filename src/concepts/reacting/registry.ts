@@ -8,6 +8,12 @@ import { ReactionAlreadyExists, ReactionNotFound } from "./errors.ts";
 export const reacting = registerConcept({
   class: ReactingConcept,
   spec,
+  queries: {
+    _getReactionsForTarget: "many",
+    _getReactionsByUser: "many",
+    _countByKind: "many",
+    _hasReacted: "one",
+  },
   refusals: {
     REACTION_ALREADY_EXISTS: {
       error: ReactionAlreadyExists,

@@ -1,4 +1,3 @@
-import { ReactingConcept } from "./reacting.ts";
 import type { Collection, Db } from "mongodb";
 import { ReactionAlreadyExists, ReactionNotFound } from "./errors.ts";
 
@@ -12,8 +11,6 @@ interface ReactionDoc {
 }
 
 export class MongoReactingConcept {
-  static readonly queries = ReactingConcept.queries;
-
   private readonly reactions: Collection<ReactionDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

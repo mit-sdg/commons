@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { AlreadySubscribed, NotSubscribed } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
@@ -10,12 +9,6 @@ interface SubscriptionDoc {
 }
 
 export class SubscribingConcept {
-  static readonly queries = {
-    _getSubscribers: "many",
-    _getSubscriptions: "many",
-    _isSubscribed: "one",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly subscriptions = new Map<string, SubscriptionDoc>();
 
   #findKey(user: string, target: string): string | undefined {

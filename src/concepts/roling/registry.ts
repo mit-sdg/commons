@@ -14,6 +14,16 @@ import {
 export const roling = registerConcept({
   class: RolingConcept,
   spec,
+  queries: {
+    _hasCapability: "one",
+    _hasCapabilityHolder: "one",
+    _holdsRoleNamed: "one",
+    _getRoles: "many",
+    _getRoleByName: "optional",
+    _getRoleDetail: "optional",
+    _listRoles: "many",
+    _denotedRole: "optional",
+  },
   refusals: {
     FORBIDDEN: {
       error: CapabilityRequired,

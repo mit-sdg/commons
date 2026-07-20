@@ -15,6 +15,14 @@ import {
 export const authenticating = registerConcept({
   class: AuthenticatingConcept,
   spec,
+  queries: {
+    _getById: "optional",
+    _getByUsername: "optional",
+    _getUserCount: "one",
+    _search: "many",
+    _resolveIdentity: "one",
+    _denotedUser: "optional",
+  },
   refusals: {
     INVALID_BODY: {
       error: EmailInvalid,

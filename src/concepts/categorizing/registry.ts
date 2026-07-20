@@ -8,6 +8,12 @@ import { CategoryAlreadyExists, CategoryNotFound, ItemNotCategorized } from "./e
 export const categorizing = registerConcept({
   class: CategorizingConcept,
   spec,
+  queries: {
+    _getCategory: "optional",
+    _getHome: "optional",
+    _getItems: "many",
+    _getAllCategories: "many",
+  },
   refusals: {
     CATEGORY_ALREADY_EXISTS: {
       error: CategoryAlreadyExists,

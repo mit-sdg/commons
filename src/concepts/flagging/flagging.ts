@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { FlagAlreadyExists, FlagNotFound, OutcomeInvalid } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
@@ -12,11 +11,6 @@ interface FlagDoc {
 }
 
 export class FlaggingConcept {
-  static readonly queries = {
-    _getOpenTargets: "many",
-    _getFlags: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly flags = new Map<string, FlagDoc>();
 
   flag({

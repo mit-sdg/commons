@@ -1,4 +1,3 @@
-import { CategorizingConcept } from "./categorizing.ts";
 import type { Collection, Db } from "mongodb";
 import { CategoryAlreadyExists, CategoryNotFound, ItemNotCategorized } from "./errors.ts";
 
@@ -14,8 +13,6 @@ interface MembershipDoc {
 }
 
 export class MongoCategorizingConcept {
-  static readonly queries = CategorizingConcept.queries;
-
   private readonly categories: Collection<CategoryDoc>;
   private readonly memberships: Collection<MembershipDoc>;
 

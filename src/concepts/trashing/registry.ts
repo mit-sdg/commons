@@ -8,6 +8,10 @@ import { ItemAlreadyTrashed, ItemNotTrashed } from "./errors.ts";
 export const trashing = registerConcept({
   class: TrashingConcept,
   spec,
+  queries: {
+    _isTrashed: "one",
+    _getTrashed: "many",
+  },
   refusals: {
     ITEM_ALREADY_TRASHED: {
       error: ItemAlreadyTrashed,

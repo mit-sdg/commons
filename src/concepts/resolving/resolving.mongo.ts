@@ -1,4 +1,3 @@
-import { ResolvingConcept } from "./resolving.ts";
 import type { Collection, Db } from "mongodb";
 import { ResolutionNotFound } from "./errors.ts";
 
@@ -10,8 +9,6 @@ interface ResolutionDoc {
 }
 
 export class MongoResolvingConcept {
-  static readonly queries = ResolvingConcept.queries;
-
   private readonly resolutions: Collection<ResolutionDoc>;
 
   constructor(db: Db) {

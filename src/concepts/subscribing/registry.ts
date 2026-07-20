@@ -8,6 +8,11 @@ import { AlreadySubscribed, NotSubscribed } from "./errors.ts";
 export const subscribing = registerConcept({
   class: SubscribingConcept,
   spec,
+  queries: {
+    _getSubscribers: "many",
+    _getSubscriptions: "many",
+    _isSubscribed: "one",
+  },
   refusals: {
     ALREADY_SUBSCRIBED: {
       error: AlreadySubscribed,

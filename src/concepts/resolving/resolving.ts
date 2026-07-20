@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { ResolutionNotFound } from "./errors.ts";
 
 interface ResolutionDoc {
@@ -8,12 +7,6 @@ interface ResolutionDoc {
 }
 
 export class ResolvingConcept {
-  static readonly queries = {
-    _isResolved: "one",
-    _getResolution: "optional",
-    _getQuestionsAnswered: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly resolutions = new Map<string, ResolutionDoc>();
 
   accept({ question, answer, by, at }: { question: string; answer: string; by: string; at: Date }) {

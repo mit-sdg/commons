@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 const freshID = () => crypto.randomUUID();
 
 interface RevisionDoc {
@@ -11,12 +10,6 @@ interface RevisionDoc {
 type Row = { revision: string; number: number; content: string; savedAt: Date };
 
 export class RevisingConcept {
-  static readonly queries = {
-    _getRevisions: "many",
-    _getRevision: "optional",
-    _getLatest: "optional",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly revisions = new Map<string, RevisionDoc>();
 
   #highestNumber(item: string): number {

@@ -1,4 +1,3 @@
-import { FormattingConcept } from "./formatting.ts";
 import { marked } from "marked";
 import type { Collection, Db } from "mongodb";
 import sanitizeHtml from "sanitize-html";
@@ -25,8 +24,6 @@ interface DocumentDoc {
 }
 
 export class MongoFormattingConcept {
-  static readonly queries = FormattingConcept.queries;
-
   private readonly documents: Collection<DocumentDoc>;
 
   constructor(db: Db) {

@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { NotificationNotFound } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
@@ -13,12 +12,6 @@ interface NotificationDoc {
 }
 
 export class NotifyingConcept {
-  static readonly queries = {
-    _getInbox: "many",
-    _hasFor: "one",
-    _getUnreadCount: "one",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly notifications = new Map<string, NotificationDoc>();
 
   notify({

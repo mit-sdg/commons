@@ -1,10 +1,4 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 export class LinkingConcept {
-  static readonly queries = {
-    _getLinks: "many",
-    _getBacklinks: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly links = new Map<string, string[]>();
 
   setLinks({ source, targets }: { source: string; targets: string[] }) {

@@ -8,6 +8,11 @@ import { ItemAlreadyRegistered, ItemAlreadySeen, ItemNotRegistered } from "./err
 export const tracking = registerConcept({
   class: TrackingConcept,
   spec,
+  queries: {
+    _inScope: "many",
+    _getUnread: "many",
+    _getUnreadCount: "one",
+  },
   refusals: {
     ITEM_ALREADY_REGISTERED: {
       error: ItemAlreadyRegistered,

@@ -1,4 +1,3 @@
-import { GradingConcept } from "./grading.ts";
 import type { Collection, Db } from "mongodb";
 import {
   GradeAlreadyReleased,
@@ -35,8 +34,6 @@ interface CriterionScoreDoc {
 }
 
 export class MongoGradingConcept {
-  static readonly queries = GradingConcept.queries;
-
   private readonly records: Collection<RecordDoc>;
   private readonly criterionScores: Collection<CriterionScoreDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;

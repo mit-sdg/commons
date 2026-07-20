@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import { PostNotFound } from "./errors.ts";
 
 const freshID = () => crypto.randomUUID();
@@ -11,13 +10,6 @@ interface PostDoc {
 }
 
 export class PostingConcept {
-  static readonly queries = {
-    _getPost: "optional",
-    _getByAuthor: "many",
-    _getMentions: "many",
-    _isMentioned: "one",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly posts = new Map<string, PostDoc>();
 
   create({ author, content, at }: { author: string; content: string; at: Date }) {

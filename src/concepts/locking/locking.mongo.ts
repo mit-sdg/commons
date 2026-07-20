@@ -1,4 +1,3 @@
-import { LockingConcept } from "./locking.ts";
 import type { Collection, Db } from "mongodb";
 import { TargetAlreadyLocked, TargetNotLocked } from "./errors.ts";
 
@@ -8,8 +7,6 @@ interface LockDoc {
 }
 
 export class MongoLockingConcept {
-  static readonly queries = LockingConcept.queries;
-
   private readonly locked: Collection<LockDoc>;
 
   constructor(db: Db) {

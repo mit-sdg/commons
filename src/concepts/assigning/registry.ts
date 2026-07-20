@@ -18,6 +18,15 @@ import {
 export const assigning = registerConcept({
   class: AssigningConcept,
   spec,
+  queries: {
+    _getDetail: "optional",
+    _getAssignments: "many",
+    _getAssigned: "many",
+    _getAssignees: "many",
+    _isAssigned: "one",
+    _getPublishedForAudience: "many",
+    _getPublishedInWindow: "many",
+  },
   refusals: {
     ASSIGNMENT_AUDIENCE_INVALID: {
       error: AssignmentAudienceInvalid,

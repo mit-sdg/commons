@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import {
   EmailInvalid,
   InvalidCredentials,
@@ -20,15 +19,6 @@ interface UserDoc {
 }
 
 export class AuthenticatingConcept {
-  static readonly queries = {
-    _getById: "optional",
-    _getByUsername: "optional",
-    _getUserCount: "one",
-    _search: "many",
-    _resolveIdentity: "one",
-    _denotedUser: "optional",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly users = new Map<string, UserDoc>();
 
   async register({

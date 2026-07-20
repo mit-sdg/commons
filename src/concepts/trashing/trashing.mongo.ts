@@ -1,4 +1,3 @@
-import { TrashingConcept } from "./trashing.ts";
 import type { Collection, Db } from "mongodb";
 import { ItemAlreadyTrashed, ItemNotTrashed } from "./errors.ts";
 
@@ -9,8 +8,6 @@ interface TrashDoc {
 }
 
 export class MongoTrashingConcept {
-  static readonly queries = TrashingConcept.queries;
-
   private readonly trashed: Collection<TrashDoc>;
 
   constructor(db: Db) {

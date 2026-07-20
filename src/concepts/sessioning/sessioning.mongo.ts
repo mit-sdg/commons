@@ -1,4 +1,3 @@
-import { SessioningConcept } from "./sessioning.ts";
 import type { Collection, Db } from "mongodb";
 import { SessionNotFound } from "./errors.ts";
 
@@ -9,8 +8,6 @@ interface SessionDoc {
 }
 
 export class MongoSessioningConcept {
-  static readonly queries = SessioningConcept.queries;
-
   private readonly sessions: Collection<SessionDoc>;
 
   constructor(db: Db) {

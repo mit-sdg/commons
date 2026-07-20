@@ -8,6 +8,10 @@ import { ItemAlreadyPinned, ItemNotPinned } from "./errors.ts";
 export const pinning = registerConcept({
   class: PinningConcept,
   spec,
+  queries: {
+    _getPinned: "many",
+    _isPinned: "one",
+  },
   refusals: {
     ITEM_ALREADY_PINNED: {
       error: ItemAlreadyPinned,

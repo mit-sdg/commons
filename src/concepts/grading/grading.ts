@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import {
   GradeAlreadyReleased,
   GradeDraftNotFound,
@@ -11,13 +10,6 @@ import {
 const freshID = () => crypto.randomUUID();
 
 export class GradingConcept {
-  static readonly queries = {
-    _getGrade: "optional",
-    _getGradesForLearner: "many",
-    _getGradesForItem: "many",
-    _getCriterionScores: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly records = new Map<
     string,
     {

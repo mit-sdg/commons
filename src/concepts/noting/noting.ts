@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import {
   InvalidVisibility,
   NoteNotFound,
@@ -32,14 +31,6 @@ const namesAVisibility = (visibility: string): boolean =>
 const visibilityOf = (doc: NoteDoc): string => (doc.disclosed ? "LEARNER_VISIBLE" : "STAFF_ONLY");
 
 export class NotingConcept {
-  static readonly queries = {
-    _getNote: "optional",
-    _getActiveNotesFor: "many",
-    _getShownTo: "many",
-    _getByAuthor: "many",
-    _getOpenFollowUpsBefore: "many",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly notes = new Map<string, NoteDoc>();
 
   write({

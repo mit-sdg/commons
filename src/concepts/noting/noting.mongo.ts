@@ -1,4 +1,3 @@
-import { NotingConcept } from "./noting.ts";
 import type { Collection, Db } from "mongodb";
 import {
   InvalidVisibility,
@@ -33,8 +32,6 @@ const namesAVisibility = (visibility: string): boolean =>
 const visibilityOf = (doc: NoteDoc): string => (doc.disclosed ? "LEARNER_VISIBLE" : "STAFF_ONLY");
 
 export class MongoNotingConcept {
-  static readonly queries = NotingConcept.queries;
-
   private readonly notes: Collection<NoteDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

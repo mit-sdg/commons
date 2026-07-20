@@ -1,4 +1,3 @@
-import { PinningConcept } from "./pinning.ts";
 import type { Collection, Db } from "mongodb";
 import { ItemAlreadyPinned, ItemNotPinned } from "./errors.ts";
 
@@ -12,8 +11,6 @@ interface PinDoc {
 }
 
 export class MongoPinningConcept {
-  static readonly queries = PinningConcept.queries;
-
   private readonly pins: Collection<PinDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 

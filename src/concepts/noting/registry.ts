@@ -16,6 +16,13 @@ import {
 export const noting = registerConcept({
   class: NotingConcept,
   spec,
+  queries: {
+    _getNote: "optional",
+    _getActiveNotesFor: "many",
+    _getShownTo: "many",
+    _getByAuthor: "many",
+    _getOpenFollowUpsBefore: "many",
+  },
   refusals: {
     INVALID_VISIBILITY: {
       error: InvalidVisibility,

@@ -1,4 +1,3 @@
-import type { QueryPromise } from "@mit-sdg/sync-engine/language";
 import {
   CapabilityRequired,
   GrantAlreadyExists,
@@ -10,17 +9,6 @@ import {
 const freshID = () => crypto.randomUUID();
 
 export class RolingConcept {
-  static readonly queries = {
-    _hasCapability: "one",
-    _hasCapabilityHolder: "one",
-    _holdsRoleNamed: "one",
-    _getRoles: "many",
-    _getRoleByName: "optional",
-    _getRoleDetail: "optional",
-    _listRoles: "many",
-    _denotedRole: "optional",
-  } as const satisfies Record<string, QueryPromise>;
-
   private readonly roles = new Map<string, { name: string; capabilities: string[] }>();
   private readonly grants = new Map<string, { user: string; context: string; role: string }>();
 
