@@ -1,0 +1,130 @@
+import { describe, expect, test } from "vite-plus/test";
+import { createEngine, type LogEvent } from "@mit-sdg/sync-engine/advanced";
+import { MemoryStore } from "@mit-sdg/sync-engine/assembly";
+import { createEdge } from "../../src/edge.ts";
+import { AuthenticatingConcept } from "../../src/concepts/authenticating/authenticating.ts";
+import { learningConcepts } from "../../src/concepts/index.ts";
+
+describe("public failure vocabulary", () => {
+  test("representative refusals declare their public categories", () => {
+    expect(learningConcepts.publicErrors.INVALID_CREDENTIALS).toBe("UNAUTHORIZED");
+    expect(learningConcepts.publicErrors.NOTE_NOT_FOUND).toBe("NOT_FOUND");
+    expect(learningConcepts.publicErrors.FORBIDDEN).toBe("FORBIDDEN");
+    expect(learningConcepts.publicErrors.USERNAME_TAKEN).toBe("CONFLICT");
+  });
+
+  test("the HTTP edge omits private details and rejects absent and invalid sessions alike", async () => {
+    const edge = createEdge();
+    const malformed = await edge.fetch(
+      new Request("http://commons.test/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{",
+      }),
+    );
+    expect(malformed.status).toBe(400);
+    expect(await malformed.json()).toEqual({ error: "INVALID_REQUEST" });
+
+    for (const cookie of [undefined, "session=not-a-session"]) {
+      const response = await edge.fetch(
+        new Request("http://commons.test/auth/me", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(cookie === undefined ? {} : { Cookie: cookie }),
+          },
+          body: "{}",
+        }),
+      );
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual({ error: "UNAUTHORIZED" });
+    }
+  });
+
+  test("a concept or database fault becomes an opaque internal error", async () => {
+    const logs: string[] = [];
+    const ordinaryError = console.error;
+    console.error = (...values: unknown[]) => logs.push(values.map(String).join(" "));
+    class FaultingAuthentication extends AuthenticatingConcept {
+      override async authenticate(_: {
+        username: string;
+        password: string;
+      }): Promise<{ user: string }> {
+        throw new Error("mongodb://operator:setup-secret@private-host/commons");
+      }
+    }
+    try {
+      const edge = createEdge({ Authenticating: new FaultingAuthentication() });
+      const response = await edge.fetch(
+        new Request("http://commons.test/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: "someone", password: "raw-password" }),
+        }),
+      );
+      expect(response.status).toBe(500);
+      const text = await response.text();
+      expect(text).toBe('{"error":"INTERNAL_ERROR"}');
+      expect(text).not.toMatch(/raw-password|setup-secret|private-host|mongodb/i);
+    } finally {
+      console.error = ordinaryError;
+    }
+    const captured = logs.join("\n");
+    expect(captured).toContain('"name":"Error"');
+    expect(captured).toContain('"actionId"');
+    expect(captured).not.toMatch(/raw-password|setup-secret|private-host|mongodb|operator/i);
+  });
+
+  test("retained auth records and observer events contain [redacted] for credential fields", async () => {
+    const store = new MemoryStore();
+    const engine = createEngine(store);
+    const authentication = engine.instrumentConcept(new AuthenticatingConcept(), "Authenticating");
+    const events: LogEvent[] = [];
+    engine.addObserver({ onAction: (event) => events.push(event) });
+
+    const registerPassword = "register-password-sentinel";
+    const loginPassword = "login-password-sentinel";
+    const { user } = await authentication.register({
+      username: "observer_user",
+      password: registerPassword,
+      email: "observer@example.edu",
+    });
+    await authentication.changePassword({
+      user,
+      oldPassword: registerPassword,
+      newPassword: loginPassword,
+    });
+    await authentication.authenticate({ username: "observer_user", password: loginPassword });
+
+    const retained = JSON.stringify([...store.actions.values()]);
+    const observed = JSON.stringify(events);
+    for (const captured of [retained, observed]) {
+      expect(captured).toContain("[redacted]");
+      expect(captured).not.toContain(registerPassword);
+      expect(captured).not.toContain(loginPassword);
+    }
+
+    class FaultingAuthentication extends AuthenticatingConcept {
+      override async authenticate({
+        password,
+      }: {
+        username: string;
+        password: string;
+      }): Promise<{ user: string }> {
+        throw new Error(`driver-fault-${password}`);
+      }
+    }
+    const faultStore = new MemoryStore();
+    const faultEngine = createEngine(faultStore);
+    const faulting = faultEngine.instrumentConcept(new FaultingAuthentication(), "Authenticating");
+    const faultPassword = "fault-password-sentinel";
+    await expect(
+      faulting.authenticate({ username: "observer_user", password: faultPassword }),
+    ).rejects.toThrow();
+    const faulted = JSON.stringify([...faultStore.actions.values()]);
+    expect(faulted).toContain("UNKNOWN_ERROR");
+    expect(faulted).toContain("[redacted]");
+    expect(faulted).not.toContain(faultPassword);
+    expect(faulted).not.toContain("driver-fault");
+  });
+});

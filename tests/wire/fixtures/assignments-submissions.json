@@ -1,0 +1,1350 @@
+{
+  "name": "assignments and submissions boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "as_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "as_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "as_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "defineCourseStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "course-staff",
+        "capabilities": [
+          "roster:manage",
+          "assignments:manage",
+          "submissions:view-all",
+          "grades:manage",
+          "grades:view-all",
+          "late-days:manage",
+          "student-notes:manage"
+        ]
+      },
+      "response": {
+        "role": "uuid#3"
+      }
+    },
+    {
+      "id": "grantAdminStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/grant",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$regAdmin.user",
+        "context": "forum",
+        "role": "$defineCourseStaff.role"
+      },
+      "response": {
+        "grant": "uuid#4"
+      }
+    },
+    {
+      "id": "configureClass",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/configure-class",
+      "body": {
+        "session": "$loginAdmin.session",
+        "code": "CS101",
+        "title": "Intro to CS",
+        "term": "Fall 2026",
+        "timezone": "America/New_York"
+      },
+      "response": {
+        "class": {
+          "_id": "uuid#5",
+          "code": "CS101",
+          "title": "Intro to CS",
+          "term": "Fall 2026",
+          "timezone": "America/New_York",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "secA",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/sections/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "Section A",
+        "location": "Room 101",
+        "meetingPattern": "MW 10am"
+      },
+      "response": {
+        "section": {
+          "_id": "uuid#6",
+          "name": "Section A",
+          "location": "Room 101",
+          "meetingPattern": "MW 10am",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "secB",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/sections/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "Section B",
+        "location": "Room 202",
+        "meetingPattern": "TR 2pm"
+      },
+      "response": {
+        "section": {
+          "_id": "uuid#7",
+          "name": "Section B",
+          "location": "Room 202",
+          "meetingPattern": "TR 2pm",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "importSeats",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/import",
+      "body": {
+        "session": "$loginAdmin.session",
+        "rows": [
+          {
+            "externalKey": "as-stu-1",
+            "email": "alice@example.com",
+            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "$secA.section._id"
+          },
+          {
+            "externalKey": "as-stu-2",
+            "email": "bob@example.com",
+            "rosterName": "Bob",
+            "kind": "STUDENT",
+            "section": "$secB.section._id"
+          },
+          {
+            "externalKey": "as-stu-4",
+            "email": "dana@example.com",
+            "rosterName": "Dana",
+            "kind": "STUDENT",
+            "section": "$secB.section._id"
+          },
+          {
+            "externalKey": "as-stu-5",
+            "email": "eve@example.com",
+            "rosterName": "Eve",
+            "kind": "STUDENT",
+            "section": "$secA.section._id"
+          }
+        ]
+      },
+      "response": {
+        "created": [
+          {
+            "_id": "uuid#8",
+            "externalKey": "as-stu-1",
+            "email": "alice@example.com",
+            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "uuid#6",
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#9",
+            "externalKey": "as-stu-2",
+            "email": "bob@example.com",
+            "rosterName": "Bob",
+            "kind": "STUDENT",
+            "section": "uuid#7",
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#10",
+            "externalKey": "as-stu-4",
+            "email": "dana@example.com",
+            "rosterName": "Dana",
+            "kind": "STUDENT",
+            "section": "uuid#7",
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#11",
+            "externalKey": "as-stu-5",
+            "email": "eve@example.com",
+            "rosterName": "Eve",
+            "kind": "STUDENT",
+            "section": "uuid#6",
+            "status": "PENDING"
+          }
+        ],
+        "skipped": []
+      }
+    },
+    {
+      "id": "regAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "as_alice",
+        "password": "password123",
+        "displayName": "Alice",
+        "email": "alice@example.com"
+      },
+      "response": {
+        "user": "uuid#12"
+      }
+    },
+    {
+      "id": "loginAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "as_alice",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#13",
+        "user": "uuid#12"
+      }
+    },
+    {
+      "id": "claimAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginAlice.session",
+        "externalKey": "as-stu-1"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#8",
+          "externalKey": "as-stu-1",
+          "email": "alice@example.com",
+          "rosterName": "Alice",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "ACTIVE",
+          "user": "uuid#12"
+        }
+      }
+    },
+    {
+      "id": "regBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "as_bob",
+        "password": "password123",
+        "displayName": "Bob",
+        "email": "bob@example.com"
+      },
+      "response": {
+        "user": "uuid#14"
+      }
+    },
+    {
+      "id": "loginBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "as_bob",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#15",
+        "user": "uuid#14"
+      }
+    },
+    {
+      "id": "claimBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginBob.session",
+        "externalKey": "as-stu-2"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#9",
+          "externalKey": "as-stu-2",
+          "email": "bob@example.com",
+          "rosterName": "Bob",
+          "kind": "STUDENT",
+          "section": "uuid#7",
+          "status": "ACTIVE",
+          "user": "uuid#14"
+        }
+      }
+    },
+    {
+      "id": "regEve",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "as_eve",
+        "password": "password123",
+        "displayName": "Eve",
+        "email": "eve@example.com"
+      },
+      "response": {
+        "user": "uuid#16"
+      }
+    },
+    {
+      "id": "loginEve",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "as_eve",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#17",
+        "user": "uuid#16"
+      }
+    },
+    {
+      "id": "claimEve",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginEve.session",
+        "externalKey": "as-stu-5"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#11",
+          "externalKey": "as-stu-5",
+          "email": "eve@example.com",
+          "rosterName": "Eve",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "ACTIVE",
+          "user": "uuid#16"
+        }
+      }
+    },
+    {
+      "id": "dropEve",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/drop",
+      "body": {
+        "session": "$loginAdmin.session",
+        "seat": "$claimEve.seat._id"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#11",
+          "externalKey": "as-stu-5",
+          "email": "eve@example.com",
+          "rosterName": "Eve",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "DROPPED",
+          "user": "uuid#16"
+        }
+      }
+    },
+    {
+      "id": "forMeAliceEmpty",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "assignments": []
+      }
+    },
+    {
+      "id": "createHw1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 1",
+        "instructions": "Problems 1-5.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T01:05:13.783Z",
+        "dueAt": "2026-07-20T01:05:13.783Z",
+        "closeAt": "2026-07-27T01:05:13.783Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#18"
+      }
+    },
+    {
+      "id": "createByStudent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAlice.session",
+        "title": "Sneaky",
+        "instructions": "x",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T01:05:13.783Z",
+        "dueAt": "2026-07-20T01:05:13.783Z",
+        "closeAt": "2026-07-27T01:05:13.783Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "createNoCloseAt",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "No close",
+        "instructions": "x",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T01:05:13.783Z",
+        "dueAt": "2026-07-20T01:05:13.783Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#19"
+      }
+    },
+    {
+      "id": "createTargetsEmpty",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Empty targets",
+        "instructions": "x",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T01:05:13.783Z",
+        "dueAt": "2026-07-20T01:05:13.783Z",
+        "closeAt": "2026-07-27T01:05:13.783Z",
+        "acceptsSubmissions": true,
+        "audience": "TARGETS",
+        "targets": []
+      },
+      "response": {
+        "error": "ASSIGNMENT_TARGETS_REQUIRED"
+      }
+    },
+    {
+      "id": "getDraftAnonymous",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/get",
+      "body": {
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "assignment": {
+          "assignment": "uuid#18",
+          "author": "uuid#1",
+          "title": "Homework 1",
+          "instructions": "Problems 1-5.",
+          "kind": "HOMEWORK",
+          "availableAt": "<date>",
+          "dueAt": "<date>",
+          "closeAt": "<date>",
+          "acceptsSubmissions": true,
+          "audience": "EVERYONE",
+          "targets": [],
+          "status": "DRAFT",
+          "createdAt": "<date>",
+          "updatedAt": null
+        }
+      }
+    },
+    {
+      "id": "getMissingAnonymous",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/get",
+      "body": {
+        "assignment": "no-such-assignment"
+      },
+      "response": {
+        "assignment": null
+      }
+    },
+    {
+      "id": "reviseHw1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/revise",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment",
+        "title": "Homework 1 (rev)",
+        "instructions": "Problems 1-6.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T01:05:13.783Z",
+        "dueAt": "2026-07-20T01:05:13.783Z",
+        "closeAt": "2026-07-27T01:05:13.783Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#18"
+      }
+    },
+    {
+      "id": "reviseMissing",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/revise",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "no-such-assignment",
+        "title": "X",
+        "instructions": "x",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T01:05:13.783Z",
+        "dueAt": "2026-07-20T01:05:13.783Z",
+        "closeAt": "2026-07-27T01:05:13.783Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "error": "ASSIGNMENT_NOT_FOUND"
+      }
+    },
+    {
+      "id": "publishHw1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "assignment": "uuid#18"
+      }
+    },
+    {
+      "id": "publishHw1Again",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "error": "ASSIGNMENT_NOT_DRAFT"
+      }
+    },
+    {
+      "id": "gradeItemHw1",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Itemizing._getItem",
+      "body": {
+        "item": "$createHw1.assignment"
+      },
+      "response": [
+        {
+          "item": "uuid#18",
+          "label": "Homework 1 (rev)",
+          "maxPoints": 100,
+          "status": "ACTIVE"
+        }
+      ]
+    },
+    {
+      "id": "forMeAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "assignments": [
+          {
+            "assignment": "uuid#18",
+            "release": "uuid#20",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "forMeAdmin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "staffSummaryHw1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/staff-summary",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "summary": {
+          "assignment": "uuid#18",
+          "author": "uuid#1",
+          "title": "Homework 1 (rev)",
+          "instructions": "Problems 1-6.",
+          "kind": "HOMEWORK",
+          "availableAt": "<date>",
+          "dueAt": "<date>",
+          "closeAt": "<date>",
+          "acceptsSubmissions": true,
+          "audience": "EVERYONE",
+          "targets": [],
+          "status": "PUBLISHED",
+          "createdAt": "<date>",
+          "updatedAt": "<date>"
+        }
+      }
+    },
+    {
+      "id": "getHw1Published",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/get",
+      "body": {
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "assignment": {
+          "assignment": "uuid#18",
+          "author": "uuid#1",
+          "title": "Homework 1 (rev)",
+          "instructions": "Problems 1-6.",
+          "kind": "HOMEWORK",
+          "availableAt": "<date>",
+          "dueAt": "<date>",
+          "closeAt": "<date>",
+          "acceptsSubmissions": true,
+          "audience": "EVERYONE",
+          "targets": [],
+          "status": "PUBLISHED",
+          "createdAt": "<date>",
+          "updatedAt": "<date>"
+        }
+      }
+    },
+    {
+      "id": "createHw2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 2",
+        "instructions": "Section A only.",
+        "kind": "PROJECT",
+        "availableAt": "2026-07-14T01:05:13.783Z",
+        "dueAt": "2026-07-23T01:05:13.783Z",
+        "closeAt": "2026-08-02T01:05:13.783Z",
+        "acceptsSubmissions": false,
+        "audience": "TARGETS",
+        "targets": ["$secA.section._id"]
+      },
+      "response": {
+        "assignment": "uuid#21"
+      }
+    },
+    {
+      "id": "publishHw2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw2.assignment"
+      },
+      "response": {
+        "assignment": "uuid#21"
+      }
+    },
+    {
+      "id": "gradeItemHw2",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Itemizing._getItem",
+      "body": {
+        "item": "$createHw2.assignment"
+      },
+      "response": []
+    },
+    {
+      "id": "forMeBobAfterHw2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginBob.session"
+      },
+      "response": {
+        "assignments": [
+          {
+            "assignment": "uuid#18",
+            "release": "uuid#22",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reviseHw2Targets",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/revise",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw2.assignment",
+        "title": "Homework 2",
+        "instructions": "Sections A and B.",
+        "kind": "PROJECT",
+        "availableAt": "2026-07-14T01:05:13.783Z",
+        "dueAt": "2026-07-23T01:05:13.783Z",
+        "closeAt": "2026-08-02T01:05:13.783Z",
+        "acceptsSubmissions": false,
+        "audience": "TARGETS",
+        "targets": ["$secA.section._id", "$secB.section._id"]
+      },
+      "response": {
+        "assignment": "uuid#21"
+      }
+    },
+    {
+      "id": "forMeBobAfterRevise",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginBob.session"
+      },
+      "response": {
+        "assignments": [
+          {
+            "assignment": "uuid#18",
+            "release": "uuid#22",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          },
+          {
+            "assignment": "uuid#21",
+            "release": "uuid#23",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "regDana",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "as_dana",
+        "password": "password123",
+        "displayName": "Dana",
+        "email": "dana@example.com"
+      },
+      "response": {
+        "user": "uuid#24"
+      }
+    },
+    {
+      "id": "loginDana",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "as_dana",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#25",
+        "user": "uuid#24"
+      }
+    },
+    {
+      "id": "claimDana",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginDana.session",
+        "externalKey": "as-stu-4"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#10",
+          "externalKey": "as-stu-4",
+          "email": "dana@example.com",
+          "rosterName": "Dana",
+          "kind": "STUDENT",
+          "section": "uuid#7",
+          "status": "ACTIVE",
+          "user": "uuid#24"
+        }
+      }
+    },
+    {
+      "id": "forMeDana",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginDana.session"
+      },
+      "response": {
+        "assignments": [
+          {
+            "assignment": "uuid#18",
+            "release": "uuid#26",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          },
+          {
+            "assignment": "uuid#21",
+            "release": "uuid#27",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reinstateEve",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/reinstate",
+      "body": {
+        "session": "$loginAdmin.session",
+        "seat": "$claimEve.seat._id"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#11",
+          "externalKey": "as-stu-5",
+          "email": "eve@example.com",
+          "rosterName": "Eve",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "ACTIVE",
+          "user": "uuid#16"
+        }
+      }
+    },
+    {
+      "id": "forMeEve",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginEve.session"
+      },
+      "response": {
+        "assignments": [
+          {
+            "assignment": "uuid#18",
+            "release": "uuid#28",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          },
+          {
+            "assignment": "uuid#21",
+            "release": "uuid#29",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "setOverrideAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/set-due-override",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment",
+        "assignee": "$regAlice.user",
+        "dueAt": "2026-08-03T01:05:13.783Z"
+      },
+      "response": {
+        "release": "uuid#20"
+      }
+    },
+    {
+      "id": "forMeAliceOverride",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "assignments": [
+          {
+            "assignment": "uuid#18",
+            "release": "uuid#20",
+            "dueOverride": "<date>",
+            "status": "ASSIGNED"
+          },
+          {
+            "assignment": "uuid#21",
+            "release": "uuid#30",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "setOverrideUnassigned",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/set-due-override",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment",
+        "assignee": "$regAdmin.user",
+        "dueAt": "2026-08-03T01:05:13.783Z"
+      },
+      "response": {
+        "error": "RELEASE_NOT_FOUND"
+      }
+    },
+    {
+      "id": "clearOverrideAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/clear-due-override",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment",
+        "assignee": "$regAlice.user"
+      },
+      "response": {
+        "release": "uuid#20"
+      }
+    },
+    {
+      "id": "forMeAliceCleared",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "assignments": [
+          {
+            "assignment": "uuid#18",
+            "release": "uuid#20",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          },
+          {
+            "assignment": "uuid#21",
+            "release": "uuid#30",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "submitAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/submit",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "content": "My solution, attempt one."
+      },
+      "response": {
+        "submission": "uuid#31"
+      }
+    },
+    {
+      "id": "latestAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/submissions/latest",
+      "body": {
+        "assignment": "$createHw1.assignment",
+        "submitter": "$regAlice.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "submitAlice2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/submit",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "content": "My solution, attempt two."
+      },
+      "response": {
+        "submission": "uuid#32"
+      }
+    },
+    {
+      "id": "attemptsAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/submissions/attempts",
+      "body": {
+        "assignment": "$createHw1.assignment",
+        "submitter": "$regAlice.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "forAssignmentSubs",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/submissions/for-assignment",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "assigned": [
+          {
+            "assignee": "uuid#12",
+            "rosterName": "Alice"
+          },
+          {
+            "assignee": "uuid#14",
+            "rosterName": "Bob"
+          },
+          {
+            "assignee": "uuid#24",
+            "rosterName": "Dana"
+          },
+          {
+            "assignee": "uuid#16",
+            "rosterName": "Eve"
+          }
+        ],
+        "submissions": [
+          {
+            "submitter": "uuid#12",
+            "submitterName": "Alice",
+            "submission": "uuid#31",
+            "submittedAt": "<date>",
+            "number": 1,
+            "status": "SUBMITTED"
+          },
+          {
+            "submitter": "uuid#12",
+            "submitterName": "Alice",
+            "submission": "uuid#32",
+            "submittedAt": "<date>",
+            "number": 2,
+            "status": "SUBMITTED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "forAssignmentByAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/submissions/for-assignment",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "forStudentAnonymous",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/submissions/for-student",
+      "body": {
+        "submitter": "$regAlice.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "latestBobNone",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/submissions/latest",
+      "body": {
+        "assignment": "$createHw1.assignment",
+        "submitter": "$regBob.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "createHw3Closed",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 0 (closed)",
+        "instructions": "Long past.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-06T01:05:13.783Z",
+        "dueAt": "2026-07-10T01:05:13.783Z",
+        "closeAt": "2026-07-12T01:05:13.783Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#33"
+      }
+    },
+    {
+      "id": "publishHw3",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw3Closed.assignment"
+      },
+      "response": {
+        "assignment": "uuid#33"
+      }
+    },
+    {
+      "id": "submitAfterClose",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/submit",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw3Closed.assignment",
+        "content": "Better late."
+      },
+      "response": {
+        "submission": "uuid#34"
+      }
+    },
+    {
+      "id": "createHw4Draft",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 4 (draft)",
+        "instructions": "Unpublished.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T01:05:13.783Z",
+        "dueAt": "2026-07-20T01:05:13.783Z",
+        "closeAt": "2026-07-27T01:05:13.783Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#35"
+      }
+    },
+    {
+      "id": "submitToDraft",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/submit",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw4Draft.assignment",
+        "content": "Submitting to a draft."
+      },
+      "response": {
+        "submission": "uuid#36"
+      }
+    },
+    {
+      "id": "submitToNonexistent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/submit",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "no-such-assignment",
+        "content": "Into the void."
+      },
+      "response": {
+        "submission": "uuid#37"
+      }
+    },
+    {
+      "id": "submitByAdmin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/submit",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment",
+        "content": "Staff work."
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "withdrawAlice2",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Submitting.withdraw",
+      "body": {
+        "submission": "$submitAlice2.submission"
+      },
+      "response": {
+        "submission": "uuid#32"
+      }
+    },
+    {
+      "id": "latestAliceAfterWithdraw",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/submissions/latest",
+      "body": {
+        "assignment": "$createHw1.assignment",
+        "submitter": "$regAlice.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "archiveHw3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/archive",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw3Closed.assignment"
+      },
+      "response": {
+        "assignment": "uuid#33"
+      }
+    },
+    {
+      "id": "forMeAliceFinal",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/for-me",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "assignments": [
+          {
+            "assignment": "uuid#18",
+            "release": "uuid#20",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          },
+          {
+            "assignment": "uuid#21",
+            "release": "uuid#30",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          },
+          {
+            "assignment": "uuid#33",
+            "release": "uuid#38",
+            "dueOverride": null,
+            "status": "ASSIGNED"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+import { activeUser } from "../access/session.ts";
+import { each, former, reaction, request, when } from "@mit-sdg/sync-engine/language";
+import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
+import { mayNotPinInScope, mayPinInScope } from "../access/policy.ts";
+import { concepts } from "../../concepts/index.ts";
+import { notReadable, readable } from "./posts.ts";
+
+const { Pinning, Trashing, Timing } = concepts;
+
+/** Which items are pinned in this scope? */
+export const thePinsOf = former("the pins of (scope)", ({ scope, item, priority }) =>
+  each(Pinning._getPinned({ scope }).is({ item, priority }))
+    .where(readable({ post: item }))
+    .form({ item, priority }),
+);
+
+export const PurgeClearsPins = reaction(({ item }) =>
+  when(Trashing.purge, {}, { item }).then(request(Pinning.clearItem, { item })),
+);
+
+export const PinItem = endpoint(
+  "/pins/pin",
+  ({ session, item, scope, priority, user, at, pin }) =>
+    receive({ session, item, scope, priority })
+      .where(
+        Timing._now({}).is({ at }),
+        activeUser({ session }).is({ user }),
+        mayPinInScope({ user, scope }),
+        readable({ post: item }),
+      )
+      .then(request(Pinning.pin, { item, scope, priority, at }, { pin }), respond({ pin })),
+  { input: { required: ["session", "item", "scope", "priority"] } },
+);
+
+export const PinItemForbidden = endpoint("/pins/pin", ({ session, item, scope, priority, user }) =>
+  receive({ session, item, scope, priority })
+    .where(activeUser({ session }).is({ user }), mayNotPinInScope({ user, scope }))
+    .then(respond({ error: "FORBIDDEN" })),
+);
+export const PinItemHidden = endpoint("/pins/pin", ({ session, item, scope, priority, user }) =>
+  receive({ session, item, scope, priority })
+    .where(
+      activeUser({ session }).is({ user }),
+      mayPinInScope({ user, scope }),
+      notReadable({ post: item }),
+    )
+    .then(respond({ error: "NOT_FOUND" })),
+);
+
+export const UnpinItem = endpoint(
+  "/pins/unpin",
+  ({ session, item, scope, user, pin }) =>
+    receive({ session, item, scope })
+      .where(
+        activeUser({ session }).is({ user }),
+        mayPinInScope({ user, scope }),
+        readable({ post: item }),
+      )
+      .then(request(Pinning.unpin, { item, scope }, { pin }), respond({ pin })),
+  { input: { required: ["session", "item", "scope"] } },
+);
+
+export const UnpinItemForbidden = endpoint("/pins/unpin", ({ session, item, scope, user }) =>
+  receive({ session, item, scope })
+    .where(activeUser({ session }).is({ user }), mayNotPinInScope({ user, scope }))
+    .then(respond({ error: "FORBIDDEN" })),
+);
+export const UnpinItemHidden = endpoint("/pins/unpin", ({ session, item, scope, user }) =>
+  receive({ session, item, scope })
+    .where(
+      activeUser({ session }).is({ user }),
+      mayPinInScope({ user, scope }),
+      notReadable({ post: item }),
+    )
+    .then(respond({ error: "NOT_FOUND" })),
+);
+
+export const SetPinPriority = endpoint(
+  "/pins/setPriority",
+  ({ session, item, scope, priority, user, pin }) =>
+    receive({ session, item, scope, priority })
+      .where(
+        activeUser({ session }).is({ user }),
+        mayPinInScope({ user, scope }),
+        readable({ post: item }),
+      )
+      .then(request(Pinning.setPriority, { item, scope, priority }, { pin }), respond({ pin })),
+  { input: { required: ["session", "item", "scope", "priority"] } },
+);
+
+export const SetPinPriorityForbidden = endpoint(
+  "/pins/setPriority",
+  ({ session, item, scope, priority, user }) =>
+    receive({ session, item, scope, priority })
+      .where(activeUser({ session }).is({ user }), mayNotPinInScope({ user, scope }))
+      .then(respond({ error: "FORBIDDEN" })),
+);
+export const SetPinPriorityHidden = endpoint(
+  "/pins/setPriority",
+  ({ session, item, scope, priority, user }) =>
+    receive({ session, item, scope, priority })
+      .where(
+        activeUser({ session }).is({ user }),
+        mayPinInScope({ user, scope }),
+        notReadable({ post: item }),
+      )
+      .then(respond({ error: "NOT_FOUND" })),
+);
+export const PinsForScope = endpoint(
+  "/pins/forScope",
+  ({ scope }) => receive({ scope }).then(respond({ pinned: thePinsOf(scope) })),
+  { input: { required: ["scope"] } },
+);
+export const IsPinned = endpoint(
+  "/pins/isPinned",
+  ({ item, scope, pinned }) =>
+    receive({ item, scope })
+      .where(readable({ post: item }), Pinning._isPinned({ item, scope }).is({ pinned }))
+      .then(respond({ pinned })),
+  { input: { required: ["item", "scope"] } },
+);
+export const IsPinnedHidden = endpoint("/pins/isPinned", ({ item, scope }) =>
+  receive({ item, scope })
+    .where(notReadable({ post: item }))
+    .then(respond({ error: "NOT_FOUND" })),
+);

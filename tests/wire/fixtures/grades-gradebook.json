@@ -1,0 +1,1137 @@
+{
+  "name": "grades and gradebook boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "gb_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "gb_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "gb_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "defineCourseStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "course-staff",
+        "capabilities": [
+          "roster:manage",
+          "assignments:manage",
+          "submissions:view-all",
+          "grades:manage",
+          "grades:view-all",
+          "late-days:manage",
+          "student-notes:manage"
+        ]
+      },
+      "response": {
+        "role": "uuid#3"
+      }
+    },
+    {
+      "id": "grantAdminStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/grant",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$regAdmin.user",
+        "context": "forum",
+        "role": "$defineCourseStaff.role"
+      },
+      "response": {
+        "grant": "uuid#4"
+      }
+    },
+    {
+      "id": "configureClass",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/configure-class",
+      "body": {
+        "session": "$loginAdmin.session",
+        "code": "CS101",
+        "title": "Intro to CS",
+        "term": "Fall 2026",
+        "timezone": "America/New_York"
+      },
+      "response": {
+        "class": {
+          "_id": "uuid#5",
+          "code": "CS101",
+          "title": "Intro to CS",
+          "term": "Fall 2026",
+          "timezone": "America/New_York",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "secA",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/sections/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "Section A",
+        "location": "Room 101",
+        "meetingPattern": "MW 10am"
+      },
+      "response": {
+        "section": {
+          "_id": "uuid#6",
+          "name": "Section A",
+          "location": "Room 101",
+          "meetingPattern": "MW 10am",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "importSeats",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/import",
+      "body": {
+        "session": "$loginAdmin.session",
+        "rows": [
+          {
+            "externalKey": "gb-stu-1",
+            "email": "gb_alice@example.com",
+            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "$secA.section._id"
+          },
+          {
+            "externalKey": "gb-stu-2",
+            "email": "gb_bob@example.com",
+            "rosterName": "Bob",
+            "kind": "STUDENT",
+            "section": "$secA.section._id"
+          }
+        ]
+      },
+      "response": {
+        "created": [
+          {
+            "_id": "uuid#7",
+            "externalKey": "gb-stu-1",
+            "email": "gb_alice@example.com",
+            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "uuid#6",
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#8",
+            "externalKey": "gb-stu-2",
+            "email": "gb_bob@example.com",
+            "rosterName": "Bob",
+            "kind": "STUDENT",
+            "section": "uuid#6",
+            "status": "PENDING"
+          }
+        ],
+        "skipped": []
+      }
+    },
+    {
+      "id": "regAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "gb_alice",
+        "password": "password123",
+        "displayName": "Alice",
+        "email": "gb_alice@example.com"
+      },
+      "response": {
+        "user": "uuid#9"
+      }
+    },
+    {
+      "id": "loginAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "gb_alice",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#10",
+        "user": "uuid#9"
+      }
+    },
+    {
+      "id": "claimAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginAlice.session",
+        "externalKey": "gb-stu-1"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#7",
+          "externalKey": "gb-stu-1",
+          "email": "gb_alice@example.com",
+          "rosterName": "Alice",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "ACTIVE",
+          "user": "uuid#9"
+        }
+      }
+    },
+    {
+      "id": "regBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "gb_bob",
+        "password": "password123",
+        "displayName": "Bob",
+        "email": "gb_bob@example.com"
+      },
+      "response": {
+        "user": "uuid#11"
+      }
+    },
+    {
+      "id": "loginBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "gb_bob",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#12",
+        "user": "uuid#11"
+      }
+    },
+    {
+      "id": "claimBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginBob.session",
+        "externalKey": "gb-stu-2"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#8",
+          "externalKey": "gb-stu-2",
+          "email": "gb_bob@example.com",
+          "rosterName": "Bob",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "ACTIVE",
+          "user": "uuid#11"
+        }
+      }
+    },
+    {
+      "id": "createHw1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 1",
+        "instructions": "Do the problems.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T02:24:49.850Z",
+        "dueAt": "2026-07-20T02:24:49.851Z",
+        "closeAt": "2026-07-27T02:24:49.851Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#13"
+      }
+    },
+    {
+      "id": "publishHw1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "assignment": "uuid#13"
+      }
+    },
+    {
+      "id": "createHw2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 2",
+        "instructions": "Do the problems.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T02:24:49.851Z",
+        "dueAt": "2026-07-20T02:24:49.851Z",
+        "closeAt": "2026-07-27T02:24:49.851Z",
+        "acceptsSubmissions": false,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#14"
+      }
+    },
+    {
+      "id": "publishHw2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw2.assignment"
+      },
+      "response": {
+        "assignment": "uuid#14"
+      }
+    },
+    {
+      "id": "giHw1AfterPublish",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Itemizing._getItem",
+      "body": {
+        "item": "$createHw1.assignment"
+      },
+      "response": [
+        {
+          "item": "uuid#13",
+          "label": "Homework 1",
+          "maxPoints": 100,
+          "status": "ACTIVE"
+        }
+      ]
+    },
+    {
+      "id": "reviseFlipHw2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/assignments/revise",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw2.assignment",
+        "title": "Homework 2",
+        "instructions": "Do the problems.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T02:24:49.851Z",
+        "dueAt": "2026-07-20T02:24:49.851Z",
+        "closeAt": "2026-07-27T02:24:49.851Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#14"
+      }
+    },
+    {
+      "id": "giHw2AfterFlip",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Itemizing._getItem",
+      "body": {
+        "item": "$createHw2.assignment"
+      },
+      "response": [
+        {
+          "item": "uuid#14",
+          "label": "Homework 2",
+          "maxPoints": 100,
+          "status": "ACTIVE"
+        }
+      ]
+    },
+    {
+      "id": "recordHw2Alice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/record",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw2.assignment",
+        "evidence": "",
+        "score": 10,
+        "feedback": "x"
+      },
+      "response": {
+        "grade": "uuid#15"
+      }
+    },
+    {
+      "id": "configureHw1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/configure-item",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$createHw1.assignment",
+        "label": "Homework 1",
+        "maxPoints": 50
+      },
+      "response": {
+        "gradeItem": "uuid#16"
+      }
+    },
+    {
+      "id": "configureByStudent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/configure-item",
+      "body": {
+        "session": "$loginAlice.session",
+        "item": "$createHw1.assignment",
+        "label": "Hacked",
+        "maxPoints": 1
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "configureNegative",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/configure-item",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$createHw1.assignment",
+        "label": "Homework 1",
+        "maxPoints": -5
+      },
+      "response": {
+        "error": "SCORE_OUT_OF_RANGE"
+      }
+    },
+    {
+      "id": "addCritCorrectness",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/add-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$createHw1.assignment",
+        "name": "Correctness",
+        "maxPoints": 30,
+        "position": 0
+      },
+      "response": {
+        "criterion": "uuid#17"
+      }
+    },
+    {
+      "id": "addCritStyle",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/add-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$createHw1.assignment",
+        "name": "Style",
+        "maxPoints": 20,
+        "position": 1
+      },
+      "response": {
+        "criterion": "uuid#18"
+      }
+    },
+    {
+      "id": "addCritMissingItem",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/add-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "no-such-item",
+        "name": "Ghost",
+        "maxPoints": 10,
+        "position": 0
+      },
+      "response": {
+        "error": "GRADE_ITEM_NOT_FOUND"
+      }
+    },
+    {
+      "id": "critListConceptSide",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Itemizing._getCriteria",
+      "body": {
+        "item": "$createHw1.assignment"
+      },
+      "response": [
+        {
+          "criterion": "uuid#17",
+          "name": "Correctness",
+          "maxPoints": 30,
+          "position": 0
+        },
+        {
+          "criterion": "uuid#18",
+          "name": "Style",
+          "maxPoints": 20,
+          "position": 1
+        }
+      ]
+    },
+    {
+      "id": "recordAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/record",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment",
+        "evidence": "",
+        "score": 42,
+        "feedback": "Solid work"
+      },
+      "response": {
+        "grade": "uuid#19"
+      }
+    },
+    {
+      "id": "recordNoEvidence",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/record",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regBob.user",
+        "item": "$createHw1.assignment",
+        "score": 30,
+        "feedback": "No evidence attached"
+      },
+      "response": {
+        "grade": "uuid#20"
+      }
+    },
+    {
+      "id": "recordOutOfRange",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/record",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regBob.user",
+        "item": "$createHw1.assignment",
+        "evidence": "",
+        "score": 999,
+        "feedback": "x"
+      },
+      "response": {
+        "error": "SCORE_OUT_OF_RANGE"
+      }
+    },
+    {
+      "id": "recordBob",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/record",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regBob.user",
+        "item": "$createHw1.assignment",
+        "evidence": "",
+        "score": 30,
+        "feedback": "Good effort"
+      },
+      "response": {
+        "grade": "uuid#20"
+      }
+    },
+    {
+      "id": "scoreCritStyle",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/score-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment",
+        "criterion": "$addCritStyle.criterion",
+        "points": 15,
+        "feedback": "Clean"
+      },
+      "response": {
+        "criterionScore": "uuid#21"
+      }
+    },
+    {
+      "id": "scoreCritOverMax",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/score-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment",
+        "criterion": "$addCritStyle.criterion",
+        "points": 25,
+        "feedback": "x"
+      },
+      "response": {
+        "error": "SCORE_OUT_OF_RANGE"
+      }
+    },
+    {
+      "id": "configureMidterm",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/configure-item",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "midterm-x",
+        "label": "Midterm",
+        "maxPoints": 100
+      },
+      "response": {
+        "gradeItem": "uuid#22"
+      }
+    },
+    {
+      "id": "addCritMidterm",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/add-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "midterm-x",
+        "name": "Part A",
+        "maxPoints": 50,
+        "position": 0
+      },
+      "response": {
+        "criterion": "uuid#23"
+      }
+    },
+    {
+      "id": "scoreCritCrossItem",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/score-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment",
+        "criterion": "$addCritMidterm.criterion",
+        "points": 5,
+        "feedback": "wrong rubric"
+      },
+      "response": {
+        "error": "CRITERION_NOT_FOUND"
+      }
+    },
+    {
+      "id": "reviseCritBelowScored",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/revise-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "criterion": "$addCritStyle.criterion",
+        "name": "Style",
+        "maxPoints": 10,
+        "position": 1
+      },
+      "response": {
+        "criterion": "uuid#18"
+      }
+    },
+    {
+      "id": "removeCritStyle",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/remove-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "criterion": "$addCritStyle.criterion"
+      },
+      "response": {
+        "criterion": "uuid#18"
+      }
+    },
+    {
+      "id": "critScoresDangling",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Grading._getCriterionScores",
+      "body": {
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment"
+      },
+      "response": []
+    },
+    {
+      "id": "releaseAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/release",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment"
+      },
+      "response": {
+        "grade": "uuid#19"
+      }
+    },
+    {
+      "id": "recordAliceAfterRelease",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/record",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment",
+        "evidence": "",
+        "score": 45,
+        "feedback": "bump"
+      },
+      "response": {
+        "error": "GRADE_ALREADY_RELEASED"
+      }
+    },
+    {
+      "id": "addCritEffort",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/add-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$createHw1.assignment",
+        "name": "Effort",
+        "maxPoints": 10,
+        "position": 2
+      },
+      "response": {
+        "criterion": "uuid#24"
+      }
+    },
+    {
+      "id": "scoreCritAfterRelease",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/score-criterion",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment",
+        "criterion": "$addCritEffort.criterion",
+        "points": 8,
+        "feedback": "late add"
+      },
+      "response": {
+        "error": "GRADE_ALREADY_RELEASED"
+      }
+    },
+    {
+      "id": "retractAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/retract",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment"
+      },
+      "response": {
+        "grade": "uuid#19"
+      }
+    },
+    {
+      "id": "retractAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/retract",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment"
+      },
+      "response": {
+        "error": "GRADE_RELEASED_NOT_FOUND"
+      }
+    },
+    {
+      "id": "releaseAliceAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/release",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment"
+      },
+      "response": {
+        "grade": "uuid#19"
+      }
+    },
+    {
+      "id": "excuseBob",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/excuse",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regBob.user",
+        "item": "$createHw1.assignment",
+        "feedback": "Medical"
+      },
+      "response": {
+        "grade": "uuid#20"
+      }
+    },
+    {
+      "id": "recordBobAfterExcuse",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/record",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regBob.user",
+        "item": "$createHw1.assignment",
+        "evidence": "",
+        "score": 35,
+        "feedback": "recovered"
+      },
+      "response": {
+        "error": "LEARNER_EXCUSED"
+      }
+    },
+    {
+      "id": "retractBobExcused",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/retract",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regBob.user",
+        "item": "$createHw1.assignment"
+      },
+      "response": {
+        "error": "GRADE_RELEASED_NOT_FOUND"
+      }
+    },
+    {
+      "id": "configureQuiz",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/configure-item",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "quiz-x",
+        "label": "Quiz",
+        "maxPoints": 10
+      },
+      "response": {
+        "gradeItem": "uuid#25"
+      }
+    },
+    {
+      "id": "recordQuizAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/record",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user",
+        "item": "quiz-x",
+        "evidence": "",
+        "score": 9,
+        "feedback": ""
+      },
+      "response": {
+        "grade": "uuid#26"
+      }
+    },
+    {
+      "id": "recordQuizBob",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/record",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regBob.user",
+        "item": "quiz-x",
+        "evidence": "",
+        "score": 7,
+        "feedback": ""
+      },
+      "response": {
+        "grade": "uuid#27"
+      }
+    },
+    {
+      "id": "draftLeakConceptSide",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Grading._getGradesForLearner",
+      "body": {
+        "learner": "$regBob.user"
+      },
+      "response": [
+        {
+          "item": "uuid#13",
+          "grade": "uuid#20",
+          "score": 0,
+          "outOf": 50,
+          "status": "EXCUSED",
+          "feedback": "Medical"
+        },
+        {
+          "item": "quiz-x",
+          "grade": "uuid#27",
+          "score": 7,
+          "outOf": 10,
+          "status": "DRAFT",
+          "feedback": ""
+        }
+      ]
+    },
+    {
+      "id": "releaseItemQuiz",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/release-item",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "quiz-x"
+      },
+      "response": {
+        "released": [
+          {
+            "learner": "uuid#9",
+            "grade": "uuid#26"
+          },
+          {
+            "learner": "uuid#11",
+            "grade": "uuid#27"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gradesForItemQuizConceptSide",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Grading._getGradesForItem",
+      "body": {
+        "item": "quiz-x"
+      },
+      "response": [
+        {
+          "learner": "uuid#9",
+          "grade": "uuid#26",
+          "score": 9,
+          "status": "RELEASED"
+        },
+        {
+          "learner": "uuid#11",
+          "grade": "uuid#27",
+          "score": 7,
+          "status": "RELEASED"
+        }
+      ]
+    },
+    {
+      "id": "releaseItemEmpty",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/release-item",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "empty-x"
+      },
+      "response": {
+        "released": []
+      }
+    },
+    {
+      "id": "forMeAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/for-me",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "grades": [
+          {
+            "item": "uuid#13",
+            "grade": "uuid#19",
+            "score": 42,
+            "maxPoints": 50,
+            "status": "RELEASED",
+            "feedback": "Solid work",
+            "label": "Homework 1"
+          },
+          {
+            "item": "quiz-x",
+            "grade": "uuid#26",
+            "score": 9,
+            "maxPoints": 10,
+            "status": "RELEASED",
+            "feedback": "",
+            "label": "Quiz"
+          }
+        ]
+      }
+    },
+    {
+      "id": "forStudentAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/for-student",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$regAlice.user"
+      },
+      "response": {
+        "grades": [
+          {
+            "item": "uuid#14",
+            "grade": "uuid#15",
+            "score": 10,
+            "maxPoints": 100,
+            "status": "DRAFT",
+            "feedback": "x",
+            "label": "Homework 2"
+          },
+          {
+            "item": "uuid#13",
+            "grade": "uuid#19",
+            "score": 42,
+            "maxPoints": 50,
+            "status": "RELEASED",
+            "feedback": "Solid work",
+            "label": "Homework 1"
+          },
+          {
+            "item": "quiz-x",
+            "grade": "uuid#26",
+            "score": 9,
+            "maxPoints": 10,
+            "status": "RELEASED",
+            "feedback": "",
+            "label": "Quiz"
+          }
+        ]
+      }
+    },
+    {
+      "id": "forItemHw1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/for-item",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$createHw1.assignment"
+      },
+      "response": {
+        "grades": [
+          {
+            "learner": "uuid#9",
+            "grade": "uuid#19",
+            "score": 42,
+            "status": "RELEASED"
+          },
+          {
+            "learner": "uuid#11",
+            "grade": "uuid#20",
+            "score": 0,
+            "status": "EXCUSED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gradebookAdmin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/gradebook",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "learners": [
+          {
+            "user": "uuid#9",
+            "seat": "uuid#7",
+            "section": "uuid#6",
+            "rosterName": "Alice",
+            "email": "gb_alice@example.com"
+          },
+          {
+            "user": "uuid#11",
+            "seat": "uuid#8",
+            "section": "uuid#6",
+            "rosterName": "Bob",
+            "email": "gb_bob@example.com"
+          }
+        ]
+      }
+    },
+    {
+      "id": "exportAdmin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/grades/export",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "csv": ""
+      }
+    }
+  ]
+}

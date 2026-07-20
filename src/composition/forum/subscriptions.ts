@@ -1,0 +1,127 @@
+import { activeUser } from "../access/session.ts";
+import { each, former, no, reaction, request, when, whether } from "@mit-sdg/sync-engine/language";
+import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
+import { concepts } from "../../concepts/index.ts";
+import { thePostSummaryOf, theThreadStatsOf } from "./fragments.ts";
+import { readableConversation } from "./threads.ts";
+
+const { Conversing, Subscribing, Trashing, Timing } = concepts;
+
+/** Which targets does this user follow? */
+export const theSubscriptionsOf = former(
+  "the subscriptions of (user)",
+  ({ user, target, subscribedAt }) =>
+    each(Subscribing._getSubscriptions({ user }).is({ target, subscribedAt }))
+      .where(readableConversation({ conversation: target }))
+      .form({
+        target,
+        subscribedAt,
+      }),
+);
+
+/** Which users follow this target? */
+export const theSubscribersOf = former("the subscribers of (target)", ({ target, user }) =>
+  each(Subscribing._getSubscribers({ target }).is({ user }))
+    .where(readableConversation({ conversation: target }))
+    .form({ user }),
+);
+
+/** Which followed conversations should this user see? */
+export const theWatchedThreadsOf = former(
+  "the watched threads of (user)",
+  ({ user, target, subscribedAt, rootItem, rootNode }) =>
+    each(Subscribing._getSubscriptions({ user }).is({ target, subscribedAt }))
+      .where(
+        readableConversation({ conversation: target }),
+        Conversing._getThread({ conversation: target }).is({
+          node: rootNode,
+          item: rootItem,
+        }),
+        no(Conversing._parentOf({ node: rootNode })),
+      )
+      .form({
+        conversation: target,
+        subscribedAt,
+        post: whether(thePostSummaryOf(rootItem)),
+      })
+      .splicing(whether(theThreadStatsOf(target))),
+);
+
+export const PurgeClearsConversationSubscriptions = reaction(({ item, node, conversation }) =>
+  when(Trashing.purge, {}, { item })
+    .where(
+      Conversing._getNodeByItem({ item }).is({ node }),
+      Conversing._getConversation({ node }).is({ conversation }),
+    )
+    .then(request(Subscribing.clearTarget, { target: conversation })),
+);
+
+export const Subscribe = endpoint(
+  "/subscriptions/subscribe",
+  ({ session, target, user, at, subscription }) =>
+    receive({ session, target })
+      .where(
+        Timing._now({}).is({ at }),
+        activeUser({ session }).is({ user }),
+        readableConversation({ conversation: target }),
+      )
+      .then(
+        request(Subscribing.subscribe, { user, target, at }, { subscription }),
+        respond({ subscription }),
+      ),
+);
+
+export const Unsubscribe = endpoint(
+  "/subscriptions/unsubscribe",
+  ({ session, target, user, subscription }) =>
+    receive({ session, target })
+      .where(activeUser({ session }).is({ user }), readableConversation({ conversation: target }))
+      .then(
+        request(Subscribing.unsubscribe, { user, target }, { subscription }),
+        respond({ subscription }),
+      ),
+);
+
+export const MySubscriptions = endpoint("/subscriptions/mine", ({ session, user }) =>
+  receive({ session })
+    .where(activeUser({ session }).is({ user }))
+    .then(respond({ subscriptions: theSubscriptionsOf(user) })),
+);
+
+export const IsSubscribed = endpoint(
+  "/subscriptions/isSubscribed",
+  ({ session, target, user, subscribed }) =>
+    receive({ session, target })
+      .where(
+        activeUser({ session }).is({ user }),
+        readableConversation({ conversation: target }),
+        Subscribing._isSubscribed({ user, target }).is({ subscribed }),
+      )
+      .then(respond({ subscribed })),
+);
+
+export const Subscribers = endpoint("/subscriptions/subscribers", ({ target }) =>
+  receive({ target })
+    .where(readableConversation({ conversation: target }))
+    .then(respond({ subscribers: theSubscribersOf(target) })),
+);
+export const SubscribeHidden = endpoint("/subscriptions/subscribe", ({ session, target }) =>
+  receive({ session, target })
+    .where(activeUser({ session }), no(readableConversation({ conversation: target })))
+    .then(respond({ error: "NOT_FOUND" })),
+);
+export const UnsubscribeHidden = endpoint("/subscriptions/unsubscribe", ({ session, target }) =>
+  receive({ session, target })
+    .where(activeUser({ session }), no(readableConversation({ conversation: target })))
+    .then(respond({ error: "NOT_FOUND" })),
+);
+export const IsSubscribedHidden = endpoint("/subscriptions/isSubscribed", ({ session, target }) =>
+  receive({ session, target })
+    .where(activeUser({ session }), no(readableConversation({ conversation: target })))
+    .then(respond({ error: "NOT_FOUND" })),
+);
+export const SubscribersHidden = endpoint("/subscriptions/subscribers", ({ target }) =>
+  receive({ target })
+    .where(no(readableConversation({ conversation: target })))
+    .then(respond({ error: "NOT_FOUND" })),
+);

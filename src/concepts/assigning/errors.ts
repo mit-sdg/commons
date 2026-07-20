@@ -1,0 +1,9 @@
+export class AssignmentAudienceInvalid extends Error {}
+export class AssignmentEveryoneNoTargets extends Error {}
+export class AssignmentNotDraft extends Error {}
+export class AssignmentNotFound extends Error {}
+export class AssignmentNotPublished extends Error {}
+export class AssignmentNotRevisable extends Error {}
+export class AssignmentTargetsRequired extends Error {}
+export class ReleaseAlreadyExists extends Error {}
+export class ReleaseNotFound extends Error {}

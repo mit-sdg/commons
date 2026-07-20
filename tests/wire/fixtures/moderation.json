@@ -1,0 +1,986 @@
+{
+  "name": "forum moderation boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "mod_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "mod_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "mod_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "meAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/me",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "user": "uuid#1",
+        "username": "mod_admin",
+        "email": "mod_admin@example.com",
+        "profile": {
+          "displayName": "Admin",
+          "bio": "",
+          "avatar": "",
+          "email": "mod_admin@example.com"
+        }
+      }
+    },
+    {
+      "id": "regMember",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "mod_member",
+        "password": "password123",
+        "displayName": "Member",
+        "email": "mod_member@example.com"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginMember",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "mod_member",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#4",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "meMember",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/me",
+      "body": {
+        "session": "$loginMember.session"
+      },
+      "response": {
+        "user": "uuid#3",
+        "username": "mod_member",
+        "email": "mod_member@example.com",
+        "profile": {
+          "displayName": "Member",
+          "bio": "",
+          "avatar": "",
+          "email": "mod_member@example.com"
+        }
+      }
+    },
+    {
+      "id": "createT1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginMember.session",
+        "content": "First topic"
+      },
+      "response": {
+        "post": "uuid#5",
+        "conversation": "uuid#6",
+        "node": "uuid#7"
+      }
+    },
+    {
+      "id": "replyT1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginMember.session",
+        "parent": "$createT1.node",
+        "content": "A reply"
+      },
+      "response": {
+        "post": "uuid#8",
+        "node": "uuid#9"
+      }
+    },
+    {
+      "id": "createT2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "content": "Second topic"
+      },
+      "response": {
+        "post": "uuid#10",
+        "conversation": "uuid#11",
+        "node": "uuid#12"
+      }
+    },
+    {
+      "id": "trashForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginMember.session",
+        "item": "x1"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "trashInvalidSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "nope",
+        "item": "x1"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "trashReply",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyT1.post"
+      },
+      "response": {
+        "item": "uuid#8"
+      }
+    },
+    {
+      "id": "isTrashedTrue",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/isTrashed",
+      "body": {
+        "item": "$replyT1.post"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "trashList1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/list",
+      "body": {},
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "threadAfterTrash",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/get",
+      "body": {
+        "conversation": "$createT1.conversation"
+      },
+      "response": {
+        "thread": [
+          {
+            "node": "uuid#7",
+            "item": "uuid#5",
+            "parent": null,
+            "depth": 0,
+            "post": {
+              "author": "uuid#3",
+              "content": "First topic",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>First topic</p>\n"
+          }
+        ],
+        "context": [
+          {
+            "item": "uuid#5",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "acceptedAnswer": null,
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "trashDup",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyT1.post"
+      },
+      "response": {
+        "error": "ITEM_ALREADY_TRASHED"
+      }
+    },
+    {
+      "id": "restoreReply",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/restore",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyT1.post"
+      },
+      "response": {
+        "item": "uuid#8"
+      }
+    },
+    {
+      "id": "isTrashedFalse",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/isTrashed",
+      "body": {
+        "item": "$replyT1.post"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "threadAfterRestore",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/get",
+      "body": {
+        "conversation": "$createT1.conversation"
+      },
+      "response": {
+        "thread": [
+          {
+            "node": "uuid#7",
+            "item": "uuid#5",
+            "parent": null,
+            "depth": 0,
+            "post": {
+              "author": "uuid#3",
+              "content": "First topic",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>First topic</p>\n"
+          },
+          {
+            "node": "uuid#9",
+            "item": "uuid#8",
+            "parent": "uuid#7",
+            "depth": 1,
+            "post": {
+              "author": "uuid#3",
+              "content": "A reply",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>A reply</p>\n"
+          }
+        ],
+        "context": [
+          {
+            "item": "uuid#5",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "acceptedAnswer": null,
+            "replyCount": 1,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "restoreNotTrashed",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/restore",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "x-none"
+      },
+      "response": {
+        "error": "ITEM_NOT_TRASHED"
+      }
+    },
+    {
+      "id": "purgeNotTrashed",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "x-none"
+      },
+      "response": {
+        "error": "ITEM_NOT_TRASHED"
+      }
+    },
+    {
+      "id": "lockForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/lock",
+      "body": {
+        "session": "$loginMember.session",
+        "target": "$createT1.conversation"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "lockConv1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/lock",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$createT1.conversation"
+      },
+      "response": {
+        "target": "uuid#6"
+      }
+    },
+    {
+      "id": "lockDup",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/lock",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$createT1.conversation"
+      },
+      "response": {
+        "error": "TARGET_ALREADY_LOCKED"
+      }
+    },
+    {
+      "id": "locksList",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/list",
+      "body": {},
+      "response": {
+        "locked": [
+          {
+            "target": "uuid#6",
+            "lockedAt": "<date>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "isLockedTrue",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/isLocked",
+      "body": {
+        "target": "$createT1.conversation"
+      },
+      "response": {
+        "locked": true
+      }
+    },
+    {
+      "id": "replyWhileLocked",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginMember.session",
+        "parent": "$createT1.node",
+        "content": "While locked"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "unlockConv1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/unlock",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$createT1.conversation"
+      },
+      "response": {
+        "target": "uuid#6"
+      }
+    },
+    {
+      "id": "replyAfterUnlock",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginMember.session",
+        "parent": "$createT1.node",
+        "content": "After unlock"
+      },
+      "response": {
+        "post": "uuid#13",
+        "node": "uuid#14"
+      }
+    },
+    {
+      "id": "unlockNotLocked",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/unlock",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$createT1.conversation"
+      },
+      "response": {
+        "error": "TARGET_NOT_LOCKED"
+      }
+    },
+    {
+      "id": "flagByMember",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/raise",
+      "body": {
+        "session": "$loginMember.session",
+        "target": "$createT1.post",
+        "reason": "spam"
+      },
+      "response": {
+        "flag": "uuid#15"
+      }
+    },
+    {
+      "id": "flagDup",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/raise",
+      "body": {
+        "session": "$loginMember.session",
+        "target": "$createT1.post",
+        "reason": "spam again"
+      },
+      "response": {
+        "error": "FLAG_ALREADY_EXISTS"
+      }
+    },
+    {
+      "id": "flagByAdmin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/raise",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$createT1.post",
+        "reason": "agreed"
+      },
+      "response": {
+        "flag": "uuid#16"
+      }
+    },
+    {
+      "id": "flagSecondTarget",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/raise",
+      "body": {
+        "session": "$loginMember.session",
+        "target": "$createT2.post",
+        "reason": "off-topic"
+      },
+      "response": {
+        "flag": "uuid#17"
+      }
+    },
+    {
+      "id": "flagsOpen",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/open",
+      "body": {
+        "session": "$loginMember.session"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "flagsOpenInvalidSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/open",
+      "body": {
+        "session": "nope"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "flagsForTarget",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/forTarget",
+      "body": {
+        "target": "$createT1.post"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "resolveForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/resolve",
+      "body": {
+        "session": "$loginMember.session",
+        "target": "$createT1.post",
+        "outcome": "upheld"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "resolveFrontendWord",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/resolve",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$createT1.post",
+        "outcome": "accepted"
+      },
+      "response": {
+        "error": "VALIDATION_FAILED"
+      }
+    },
+    {
+      "id": "resolveNoOutcome",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/resolve",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$createT1.post"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "resolveUpheld",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/resolve",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$createT1.post",
+        "outcome": "upheld"
+      },
+      "response": {
+        "target": "uuid#5"
+      }
+    },
+    {
+      "id": "flagsOpenAfter",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/open",
+      "body": {
+        "session": "$loginMember.session"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "flagsForTargetAfter",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/forTarget",
+      "body": {
+        "target": "$createT1.post"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "resolveGone",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/resolve",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$createT1.post",
+        "outcome": "dismissed"
+      },
+      "response": {
+        "error": "FLAG_NOT_FOUND"
+      }
+    },
+    {
+      "id": "trashP4",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyAfterUnlock.post"
+      },
+      "response": {
+        "item": "uuid#13"
+      }
+    },
+    {
+      "id": "purgeLeaf",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyAfterUnlock.post"
+      },
+      "response": {
+        "item": "uuid#13"
+      }
+    },
+    {
+      "id": "threadAfterLeafPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/get",
+      "body": {
+        "conversation": "$createT1.conversation"
+      },
+      "response": {
+        "thread": [
+          {
+            "node": "uuid#7",
+            "item": "uuid#5",
+            "parent": null,
+            "depth": 0,
+            "post": {
+              "author": "uuid#3",
+              "content": "First topic",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>First topic</p>\n"
+          },
+          {
+            "node": "uuid#9",
+            "item": "uuid#8",
+            "parent": "uuid#7",
+            "depth": 1,
+            "post": {
+              "author": "uuid#3",
+              "content": "A reply",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>A reply</p>\n"
+          }
+        ],
+        "context": [
+          {
+            "item": "uuid#5",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "acceptedAnswer": null,
+            "replyCount": 1,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "isTrashedPurged",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/isTrashed",
+      "body": {
+        "item": "$replyAfterUnlock.post"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "trashRoot",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$createT1.post"
+      },
+      "response": {
+        "item": "uuid#5"
+      }
+    },
+    {
+      "id": "listAfterRootTrash",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/latest",
+      "body": {},
+      "response": {
+        "conversations": [
+          {
+            "conversation": "uuid#11",
+            "root": "uuid#12",
+            "item": "uuid#10",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": "uuid#1",
+              "content": "Second topic",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#1"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "purgeRoot",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$createT1.post"
+      },
+      "response": {
+        "item": "uuid#5"
+      }
+    },
+    {
+      "id": "threadAfterRootPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/get",
+      "body": {
+        "conversation": "$createT1.conversation"
+      },
+      "response": {
+        "thread": [
+          {
+            "node": "uuid#9",
+            "item": "uuid#8",
+            "parent": "uuid#7",
+            "depth": 1,
+            "post": {
+              "author": "uuid#3",
+              "content": "A reply",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>A reply</p>\n"
+          }
+        ],
+        "context": [
+          {
+            "item": "uuid#5",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "acceptedAnswer": null,
+            "replyCount": 1,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "listAfterRootPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/latest",
+      "body": {},
+      "response": {
+        "conversations": [
+          {
+            "conversation": "uuid#11",
+            "root": "uuid#12",
+            "item": "uuid#10",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": "uuid#1",
+              "content": "Second topic",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#1"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "forItemAfterRootPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$replyT1.post"
+      },
+      "response": {
+        "conversation": "uuid#6"
+      }
+    },
+    {
+      "id": "trashBare",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "x-bare"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "purgeBare",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "x-bare"
+      },
+      "response": {
+        "error": "ITEM_NOT_TRASHED"
+      }
+    },
+    {
+      "id": "trashListFinal",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/list",
+      "body": {},
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "revokeByName",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/revoke",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$meAdmin.user",
+        "context": "forum",
+        "role": "administrator"
+      },
+      "response": {
+        "grant": "uuid#18"
+      }
+    },
+    {
+      "id": "trashRecovery",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginMember.session",
+        "item": "x-recovery"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "lockRecovery",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/lock",
+      "body": {
+        "session": "$loginMember.session",
+        "target": "$createT2.conversation"
+      },
+      "response": {
+        "target": "uuid#11"
+      }
+    },
+    {
+      "id": "resolveRecovery",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/flags/resolve",
+      "body": {
+        "session": "$loginMember.session",
+        "target": "$createT2.post",
+        "outcome": "upheld"
+      },
+      "response": {
+        "target": "uuid#10"
+      }
+    }
+  ]
+}

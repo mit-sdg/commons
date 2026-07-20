@@ -1,0 +1,202 @@
+"use client";
+
+import { Settings, Shield } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { use, useEffect } from "react";
+import { PostPreview } from "@/components/forum/post-preview";
+import { Link } from "@/components/link";
+import { PageContainer } from "@/components/page";
+import { EmptyState, ErrorState, LoadingState } from "@/components/states";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/user-avatar";
+import { useQuery } from "@/hooks/use-query";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { count } from "@/lib/format";
+import {
+  loadPostConversationIndex,
+  loadUserOverview,
+  loadUserRoles,
+} from "@/lib/loaders";
+
+function useResolvedUser(raw: string): {
+  userId: string | null;
+  canonicalUsername: string | null;
+  loading: boolean;
+  error: string | null;
+} {
+  const resolve = useQuery<{ user: string | null; username: string | null }>(
+    () => api.users.resolve({ ref: raw }),
+    [raw],
+  );
+
+  if (resolve.loading)
+    return {
+      userId: null,
+      canonicalUsername: null,
+      loading: true,
+      error: null,
+    };
+
+  if (
+    typeof resolve.data?.user === "string" &&
+    typeof resolve.data.username === "string"
+  ) {
+    return {
+      userId: resolve.data.user,
+      canonicalUsername: resolve.data.username,
+      loading: false,
+      error: null,
+    };
+  }
+
+  return {
+    userId: null,
+    canonicalUsername: null,
+    loading: false,
+    error: resolve.error ?? `User "${raw}" not found or ambiguous.`,
+  };
+}
+
+export default function UserPage({
+  params,
+}: {
+  params: Promise<{ user: string }>;
+}) {
+  const { user } = use(params);
+  const {
+    userId,
+    canonicalUsername,
+    loading: resolving,
+    error: resolveError,
+  } = useResolvedUser(user);
+  const { me } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (canonicalUsername && canonicalUsername !== user) {
+      router.replace(`/u/${encodeURIComponent(canonicalUsername)}`);
+    }
+  }, [canonicalUsername, router, user]);
+
+  const overview = useQuery(userId ? () => loadUserOverview(userId) : null, [
+    userId,
+  ]);
+  const roles = useQuery(userId ? () => loadUserRoles(userId) : null, [userId]);
+  const postIds = overview.data?.postIds ?? [];
+  const postIndexKey = postIds.join("\u0000");
+  const index = useQuery<Record<string, string>>(
+    postIds.length > 0 ? () => loadPostConversationIndex(postIds) : null,
+    [postIndexKey],
+  );
+
+  if (resolving)
+    return (
+      <PageContainer>
+        <LoadingState label="Looking up user…" />
+      </PageContainer>
+    );
+  if (resolveError)
+    return (
+      <PageContainer>
+        <ErrorState message={resolveError} />
+      </PageContainer>
+    );
+  if (!userId) return null;
+
+  const isSelf = me ? String(me.user) === userId : false;
+
+  if (overview.loading && !overview.data)
+    return (
+      <PageContainer>
+        <LoadingState label="Loading profile…" />
+      </PageContainer>
+    );
+  if (overview.error)
+    return (
+      <PageContainer>
+        <ErrorState message={overview.error} onRetry={overview.refetch} />
+      </PageContainer>
+    );
+  if (!overview.data) return null;
+  if (!overview.data.profile)
+    return (
+      <PageContainer>
+        <ErrorState message="This user does not have a profile." />
+      </PageContainer>
+    );
+
+  const { profile } = overview.data;
+
+  return (
+    <PageContainer>
+      <header className="mb-8 flex flex-col items-start gap-5 border-b border-border pb-8 sm:flex-row sm:items-center">
+        <UserAvatar
+          user={userId}
+          name={profile.displayName}
+          avatar={profile.avatar}
+          className="size-20 text-2xl"
+        />
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-3xl font-semibold tracking-tight">
+            {profile.displayName}
+          </h1>
+          {profile.bio ? (
+            <p className="mt-2 max-w-prose text-muted-foreground">
+              {profile.bio}
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground italic">
+              No bio yet.
+            </p>
+          )}
+          {roles.data && roles.data.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {roles.data.map((role) => (
+                <Badge
+                  key={role.name}
+                  variant="secondary"
+                  className="gap-1 capitalize"
+                >
+                  <Shield className="size-3" />
+                  {role.name}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+          <p className="mt-2 text-sm text-muted-foreground">
+            {count(postIds.length, "post")}
+          </p>
+        </div>
+        {isSelf ? (
+          <Button asChild variant="outline" className="gap-2">
+            <Link href="/settings">
+              <Settings className="size-4" />
+              Edit profile
+            </Link>
+          </Button>
+        ) : null}
+      </header>
+
+      <h2 className="eyebrow mb-4">Recent posts</h2>
+      {postIds.length === 0 ? (
+        <EmptyState
+          title="No posts yet"
+          description="When this person posts, their contributions will appear here."
+        />
+      ) : (
+        <div className="space-y-4">
+          {postIds.map((item) => (
+            <PostPreview
+              key={item}
+              item={item}
+              conversation={index.data?.[item] ?? null}
+              showTitle={false}
+            />
+          ))}
+        </div>
+      )}
+    </PageContainer>
+  );
+}

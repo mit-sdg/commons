@@ -1,0 +1,1422 @@
+{
+  "name": "notes and calendar boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u6_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "u6_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u6_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "defineOps",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "u6-ops",
+        "capabilities": ["roster:manage", "assignments:manage"]
+      },
+      "response": {
+        "role": "uuid#3"
+      }
+    },
+    {
+      "id": "grantOps",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/grant",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$loginAdmin.user",
+        "context": "forum",
+        "role": "$defineOps.role"
+      },
+      "response": {
+        "grant": "uuid#4"
+      }
+    },
+    {
+      "id": "configureClass",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/configure-class",
+      "body": {
+        "session": "$loginAdmin.session",
+        "code": "CS101",
+        "title": "Intro to CS",
+        "term": "Fall 2026",
+        "timezone": "America/New_York"
+      },
+      "response": {
+        "class": {
+          "_id": "uuid#5",
+          "code": "CS101",
+          "title": "Intro to CS",
+          "term": "Fall 2026",
+          "timezone": "America/New_York",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "secA",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/sections/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "Section A",
+        "location": "Room 101",
+        "meetingPattern": "MW 10am"
+      },
+      "response": {
+        "section": {
+          "_id": "uuid#6",
+          "name": "Section A",
+          "location": "Room 101",
+          "meetingPattern": "MW 10am",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "importSeats",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/import",
+      "body": {
+        "session": "$loginAdmin.session",
+        "rows": [
+          {
+            "externalKey": "u6-staff-1",
+            "email": "u6_staff@example.com",
+            "rosterName": "Staff One",
+            "kind": "STAFF"
+          },
+          {
+            "externalKey": "u6-stu-1",
+            "email": "u6_alice@example.com",
+            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "$secA.section._id"
+          },
+          {
+            "externalKey": "u6-stu-2",
+            "email": "u6_bob@example.com",
+            "rosterName": "Bob",
+            "kind": "STUDENT",
+            "section": "$secA.section._id"
+          }
+        ]
+      },
+      "response": {
+        "created": [
+          {
+            "_id": "uuid#7",
+            "externalKey": "u6-staff-1",
+            "email": "u6_staff@example.com",
+            "rosterName": "Staff One",
+            "kind": "STAFF",
+            "section": null,
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#8",
+            "externalKey": "u6-stu-1",
+            "email": "u6_alice@example.com",
+            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "uuid#6",
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#9",
+            "externalKey": "u6-stu-2",
+            "email": "u6_bob@example.com",
+            "rosterName": "Bob",
+            "kind": "STUDENT",
+            "section": "uuid#6",
+            "status": "PENDING"
+          }
+        ],
+        "skipped": []
+      }
+    },
+    {
+      "id": "regStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u6_staff",
+        "password": "password123",
+        "displayName": "Staff",
+        "email": "u6_staff@example.com"
+      },
+      "response": {
+        "user": "uuid#10"
+      }
+    },
+    {
+      "id": "loginStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u6_staff",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#11",
+        "user": "uuid#10"
+      }
+    },
+    {
+      "id": "claimStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginStaff.session",
+        "externalKey": "u6-staff-1"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#7",
+          "externalKey": "u6-staff-1",
+          "email": "u6_staff@example.com",
+          "rosterName": "Staff One",
+          "kind": "STAFF",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#10"
+        }
+      }
+    },
+    {
+      "id": "regAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u6_alice",
+        "password": "password123",
+        "displayName": "Alice",
+        "email": "u6_alice@example.com"
+      },
+      "response": {
+        "user": "uuid#12"
+      }
+    },
+    {
+      "id": "loginAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u6_alice",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#13",
+        "user": "uuid#12"
+      }
+    },
+    {
+      "id": "claimAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginAlice.session",
+        "externalKey": "u6-stu-1"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#8",
+          "externalKey": "u6-stu-1",
+          "email": "u6_alice@example.com",
+          "rosterName": "Alice",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "ACTIVE",
+          "user": "uuid#12"
+        }
+      }
+    },
+    {
+      "id": "regBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u6_bob",
+        "password": "password123",
+        "displayName": "Bob",
+        "email": "u6_bob@example.com"
+      },
+      "response": {
+        "user": "uuid#14"
+      }
+    },
+    {
+      "id": "loginBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u6_bob",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#15",
+        "user": "uuid#14"
+      }
+    },
+    {
+      "id": "claimBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginBob.session",
+        "externalKey": "u6-stu-2"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#9",
+          "externalKey": "u6-stu-2",
+          "email": "u6_bob@example.com",
+          "rosterName": "Bob",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "ACTIVE",
+          "user": "uuid#14"
+        }
+      }
+    },
+    {
+      "id": "createHw1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 1",
+        "instructions": "Due in W.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-01T00:00:00.000Z",
+        "dueAt": "2026-07-10T00:00:00.000Z",
+        "closeAt": "2026-07-12T00:00:00.000Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#16"
+      }
+    },
+    {
+      "id": "publishHw1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "assignment": "uuid#16"
+      }
+    },
+    {
+      "id": "createHw2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 2",
+        "instructions": "Outside W.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-08-01T00:00:00.000Z",
+        "dueAt": "2026-08-20T00:00:00.000Z",
+        "closeAt": "2026-08-25T00:00:00.000Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#17"
+      }
+    },
+    {
+      "id": "publishHw2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw2.assignment"
+      },
+      "response": {
+        "assignment": "uuid#17"
+      }
+    },
+    {
+      "id": "createHw3",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 3",
+        "instructions": "Due in W but LEFT DRAFT.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-02T00:00:00.000Z",
+        "dueAt": "2026-07-08T00:00:00.000Z",
+        "closeAt": "2026-07-10T00:00:00.000Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#18"
+      }
+    },
+    {
+      "id": "createHw4",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginAdmin.session",
+        "title": "Homework 4",
+        "instructions": "availableAt in W, dueAt outside.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-07T00:00:00.000Z",
+        "dueAt": "2026-08-01T00:00:00.000Z",
+        "closeAt": "2026-08-05T00:00:00.000Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#19"
+      }
+    },
+    {
+      "id": "publishHw4",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginAdmin.session",
+        "assignment": "$createHw4.assignment"
+      },
+      "response": {
+        "assignment": "uuid#19"
+      }
+    },
+    {
+      "id": "writeVisible",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/write",
+      "body": {
+        "session": "$loginStaff.session",
+        "learner": "$loginAlice.user",
+        "body": "Great progress on unit tests.",
+        "visibility": "LEARNER_VISIBLE",
+        "tags": ["advising", "priority"],
+        "followUpAt": "2026-07-20T00:00:00.000Z"
+      },
+      "response": {
+        "note": "uuid#20"
+      }
+    },
+    {
+      "id": "writeStaffOnly",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/write",
+      "body": {
+        "session": "$loginStaff.session",
+        "learner": "$loginAlice.user",
+        "body": "Struggling; discuss at staff meeting.",
+        "visibility": "STAFF_ONLY",
+        "tags": [],
+        "followUpAt": "2026-07-15T00:00:00.000Z"
+      },
+      "response": {
+        "note": "uuid#21"
+      }
+    },
+    {
+      "id": "writeUiShape",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/write",
+      "body": {
+        "session": "$loginStaff.session",
+        "learner": "$loginBob.user",
+        "body": "Missed two sections.",
+        "visibility": "STAFF_ONLY",
+        "tags": ["attendance"],
+        "followUpAt": ""
+      },
+      "response": {
+        "note": "uuid#22"
+      }
+    },
+    {
+      "id": "conceptGetN3",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Noting._getNote",
+      "body": {
+        "note": "$writeUiShape.note"
+      },
+      "response": [
+        {
+          "note": "uuid#22",
+          "author": "uuid#10",
+          "learner": "uuid#14",
+          "body": "Missed two sections.",
+          "visibility": "STAFF_ONLY",
+          "status": "OPEN",
+          "createdAt": "<date>",
+          "updatedAt": null,
+          "followUpAt": "",
+          "acknowledgedAt": null,
+          "tags": ["attendance"]
+        }
+      ]
+    },
+    {
+      "id": "writeNoFollowUp",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/write",
+      "body": {
+        "session": "$loginStaff.session",
+        "learner": "$loginAlice.user",
+        "body": "No follow-up key.",
+        "visibility": "LEARNER_VISIBLE",
+        "tags": []
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "writeBadVisibility",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/write",
+      "body": {
+        "session": "$loginStaff.session",
+        "learner": "$loginAlice.user",
+        "body": "Bad visibility.",
+        "visibility": "PUBLIC",
+        "tags": [],
+        "followUpAt": ""
+      },
+      "response": {
+        "error": "INVALID_VISIBILITY"
+      }
+    },
+    {
+      "id": "writeByStudent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/write",
+      "body": {
+        "session": "$loginAlice.session",
+        "learner": "$loginBob.user",
+        "body": "Alice tries to write.",
+        "visibility": "STAFF_ONLY",
+        "tags": [],
+        "followUpAt": ""
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "writeByAdmin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/write",
+      "body": {
+        "session": "$loginAdmin.session",
+        "learner": "$loginAlice.user",
+        "body": "Admin tries to write.",
+        "visibility": "STAFF_ONLY",
+        "tags": [],
+        "followUpAt": ""
+      },
+      "response": {
+        "note": "uuid#23"
+      }
+    },
+    {
+      "id": "notesListAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/list",
+      "body": {
+        "session": "$loginStaff.session",
+        "learner": "$loginAlice.user"
+      },
+      "response": {
+        "notes": [
+          {
+            "note": "uuid#20",
+            "author": "uuid#10",
+            "learner": "uuid#12",
+            "body": "Great progress on unit tests.",
+            "visibility": "LEARNER_VISIBLE",
+            "status": "OPEN",
+            "createdAt": "<date>",
+            "updatedAt": null,
+            "followUpAt": "<date>",
+            "acknowledgedAt": null,
+            "tags": ["advising", "priority"]
+          },
+          {
+            "note": "uuid#21",
+            "author": "uuid#10",
+            "learner": "uuid#12",
+            "body": "Struggling; discuss at staff meeting.",
+            "visibility": "STAFF_ONLY",
+            "status": "OPEN",
+            "createdAt": "<date>",
+            "updatedAt": null,
+            "followUpAt": "<date>",
+            "acknowledgedAt": null,
+            "tags": []
+          },
+          {
+            "note": "uuid#23",
+            "author": "uuid#1",
+            "learner": "uuid#12",
+            "body": "Admin tries to write.",
+            "visibility": "STAFF_ONLY",
+            "status": "OPEN",
+            "createdAt": "<date>",
+            "updatedAt": null,
+            "followUpAt": "",
+            "acknowledgedAt": null,
+            "tags": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "notesVisibleAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/visible",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "notes": [
+          {
+            "note": "uuid#20",
+            "author": "uuid#10",
+            "learner": "uuid#12",
+            "body": "Great progress on unit tests.",
+            "status": "OPEN",
+            "createdAt": "<date>",
+            "updatedAt": null,
+            "followUpAt": "<date>",
+            "acknowledgedAt": null,
+            "tags": ["advising", "priority"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ackAliceN1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/acknowledge",
+      "body": {
+        "session": "$loginAlice.session",
+        "note": "$writeVisible.note"
+      },
+      "response": {
+        "note": "uuid#20"
+      }
+    },
+    {
+      "id": "conceptGetN1a",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Noting._getNote",
+      "body": {
+        "note": "$writeVisible.note"
+      },
+      "response": [
+        {
+          "note": "uuid#20",
+          "author": "uuid#10",
+          "learner": "uuid#12",
+          "body": "Great progress on unit tests.",
+          "visibility": "LEARNER_VISIBLE",
+          "status": "OPEN",
+          "createdAt": "<date>",
+          "updatedAt": null,
+          "followUpAt": "<date>",
+          "acknowledgedAt": "<date>",
+          "tags": ["advising", "priority"]
+        }
+      ]
+    },
+    {
+      "id": "ackBobN1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/acknowledge",
+      "body": {
+        "session": "$loginBob.session",
+        "note": "$writeVisible.note"
+      },
+      "response": {
+        "error": "NOTE_NOT_OWNER"
+      }
+    },
+    {
+      "id": "ackAliceN2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/acknowledge",
+      "body": {
+        "session": "$loginAlice.session",
+        "note": "$writeStaffOnly.note"
+      },
+      "response": {
+        "error": "NOTE_NOT_LEARNER_VISIBLE"
+      }
+    },
+    {
+      "id": "ackByStaff",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/acknowledge",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeVisible.note"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "reviseHideN1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/revise",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeVisible.note",
+        "body": "Great progress on unit tests.",
+        "visibility": "STAFF_ONLY",
+        "tags": ["advising", "priority"],
+        "followUpAt": "2026-07-20T00:00:00.000Z"
+      },
+      "response": {
+        "note": "uuid#20"
+      }
+    },
+    {
+      "id": "conceptGetN1b",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Noting._getNote",
+      "body": {
+        "note": "$writeVisible.note"
+      },
+      "response": [
+        {
+          "note": "uuid#20",
+          "author": "uuid#10",
+          "learner": "uuid#12",
+          "body": "Great progress on unit tests.",
+          "visibility": "STAFF_ONLY",
+          "status": "OPEN",
+          "createdAt": "<date>",
+          "updatedAt": "<date>",
+          "followUpAt": "<date>",
+          "acknowledgedAt": "<date>",
+          "tags": ["advising", "priority"]
+        }
+      ]
+    },
+    {
+      "id": "reviseOmitKeys",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/revise",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeVisible.note",
+        "body": "body only"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "resolveN1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/resolve",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeVisible.note"
+      },
+      "response": {
+        "note": "uuid#20"
+      }
+    },
+    {
+      "id": "reviseResolved",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/revise",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeVisible.note",
+        "body": "x",
+        "visibility": "STAFF_ONLY",
+        "tags": [],
+        "followUpAt": "2026-07-20T00:00:00.000Z"
+      },
+      "response": {
+        "error": "NOTE_NOT_OPEN"
+      }
+    },
+    {
+      "id": "archiveN1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/archive",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeVisible.note"
+      },
+      "response": {
+        "note": "uuid#20"
+      }
+    },
+    {
+      "id": "archiveOpenN2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/archive",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeStaffOnly.note"
+      },
+      "response": {
+        "error": "NOTE_NOT_RESOLVED"
+      }
+    },
+    {
+      "id": "conceptActiveStaffNotes",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Noting._getActiveNotesFor",
+      "body": {
+        "learner": "$loginAlice.user"
+      },
+      "response": [
+        {
+          "note": "uuid#21",
+          "author": "uuid#10",
+          "learner": "uuid#12",
+          "body": "Struggling; discuss at staff meeting.",
+          "visibility": "STAFF_ONLY",
+          "status": "OPEN",
+          "createdAt": "<date>",
+          "updatedAt": null,
+          "followUpAt": "<date>",
+          "acknowledgedAt": null,
+          "tags": []
+        },
+        {
+          "note": "uuid#23",
+          "author": "uuid#1",
+          "learner": "uuid#12",
+          "body": "Admin tries to write.",
+          "visibility": "STAFF_ONLY",
+          "status": "OPEN",
+          "createdAt": "<date>",
+          "updatedAt": null,
+          "followUpAt": "",
+          "acknowledgedAt": null,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "writeN4",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/students/notes/write",
+      "body": {
+        "session": "$loginStaff.session",
+        "learner": "$loginAlice.user",
+        "body": "Visible then archived.",
+        "visibility": "LEARNER_VISIBLE",
+        "tags": [],
+        "followUpAt": "2026-07-22T00:00:00.000Z"
+      },
+      "response": {
+        "note": "uuid#24"
+      }
+    },
+    {
+      "id": "resolveN4",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/students/notes/resolve",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeN4.note"
+      },
+      "response": {
+        "note": "uuid#24"
+      }
+    },
+    {
+      "id": "archiveN4",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/students/notes/archive",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeN4.note"
+      },
+      "response": {
+        "note": "uuid#24"
+      }
+    },
+    {
+      "id": "ackArchived",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/acknowledge",
+      "body": {
+        "session": "$loginAlice.session",
+        "note": "$writeN4.note"
+      },
+      "response": {
+        "note": "uuid#24"
+      }
+    },
+    {
+      "id": "restoreN1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/restore",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "$writeVisible.note"
+      },
+      "response": {
+        "note": "uuid#20"
+      }
+    },
+    {
+      "id": "resolveGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/notes/resolve",
+      "body": {
+        "session": "$loginStaff.session",
+        "note": "00000000-0000-4000-8000-00000000dead"
+      },
+      "response": {
+        "error": "NOTE_NOT_FOUND"
+      }
+    },
+    {
+      "id": "studentsDetailAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/students/detail",
+      "body": {
+        "session": "$loginStaff.session",
+        "user": "$loginAlice.user"
+      },
+      "response": {
+        "detail": {
+          "seat": "uuid#8",
+          "user": "uuid#12",
+          "externalKey": "u6-stu-1",
+          "email": "u6_alice@example.com",
+          "rosterName": "Alice",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "calMeAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/calendar/me",
+      "body": {
+        "session": "$loginAlice.session",
+        "start": "2026-07-06T00:00:00.000Z",
+        "end": "2026-07-13T23:59:59.999Z"
+      },
+      "response": {
+        "events": [
+          {
+            "assignment": "uuid#16",
+            "title": "Homework 1",
+            "kind": "HOMEWORK",
+            "availableAt": "<date>",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "status": "PUBLISHED"
+          },
+          {
+            "assignment": "uuid#19",
+            "title": "Homework 4",
+            "kind": "HOMEWORK",
+            "availableAt": "<date>",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "status": "PUBLISHED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "calMeEmpty",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/calendar/me",
+      "body": {
+        "session": "$loginAlice.session",
+        "start": "2027-01-01T00:00:00.000Z",
+        "end": "2027-01-02T00:00:00.000Z"
+      },
+      "response": {
+        "events": []
+      }
+    },
+    {
+      "id": "calMeStaff",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/calendar/me",
+      "body": {
+        "session": "$loginStaff.session",
+        "start": "2026-07-06T00:00:00.000Z",
+        "end": "2026-07-13T23:59:59.999Z"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "calMeNoStart",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/calendar/me",
+      "body": {
+        "session": "$loginAlice.session",
+        "end": "2026-07-13T23:59:59.999Z"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "calStaffUngranted",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/calendar/staff",
+      "body": {
+        "session": "$loginStaff.session",
+        "start": "2026-07-06T00:00:00.000Z",
+        "end": "2026-07-13T23:59:59.999Z",
+        "section": "A"
+      },
+      "response": {
+        "events": [
+          {
+            "assignment": "uuid#16",
+            "title": "Homework 1",
+            "kind": "HOMEWORK",
+            "availableAt": "<date>",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "status": "PUBLISHED"
+          },
+          {
+            "assignment": "uuid#19",
+            "title": "Homework 4",
+            "kind": "HOMEWORK",
+            "availableAt": "<date>",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "status": "PUBLISHED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "defineCalRole",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "u6-calendar",
+        "capabilities": ["calendar:view-staff"]
+      },
+      "response": {
+        "role": "uuid#25"
+      }
+    },
+    {
+      "id": "grantCalRole",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/grant",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$loginStaff.user",
+        "context": "forum",
+        "role": "$defineCalRole.role"
+      },
+      "response": {
+        "grant": "uuid#26"
+      }
+    },
+    {
+      "id": "calStaffGranted",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/calendar/staff",
+      "body": {
+        "session": "$loginStaff.session",
+        "start": "2026-07-06T00:00:00.000Z",
+        "end": "2026-07-13T23:59:59.999Z",
+        "section": "A"
+      },
+      "response": {
+        "events": [
+          {
+            "assignment": "uuid#16",
+            "title": "Homework 1",
+            "kind": "HOMEWORK",
+            "availableAt": "<date>",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "status": "PUBLISHED"
+          },
+          {
+            "assignment": "uuid#19",
+            "title": "Homework 4",
+            "kind": "HOMEWORK",
+            "availableAt": "<date>",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "status": "PUBLISHED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "calStaffNoSection",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/calendar/staff",
+      "body": {
+        "session": "$loginStaff.session",
+        "start": "2026-07-06T00:00:00.000Z",
+        "end": "2026-07-13T23:59:59.999Z"
+      },
+      "response": {
+        "events": [
+          {
+            "assignment": "uuid#16",
+            "title": "Homework 1",
+            "kind": "HOMEWORK",
+            "availableAt": "<date>",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "status": "PUBLISHED"
+          },
+          {
+            "assignment": "uuid#19",
+            "title": "Homework 4",
+            "kind": "HOMEWORK",
+            "availableAt": "<date>",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "status": "PUBLISHED"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lmsMeAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/lms/me",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "dashboard": [
+          {
+            "seat": "uuid#8",
+            "user": "uuid#12",
+            "externalKey": "u6-stu-1",
+            "email": "u6_alice@example.com",
+            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "uuid#6",
+            "status": "ACTIVE"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lmsMeStaff",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/lms/me",
+      "body": {
+        "session": "$loginStaff.session"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "lmsStaffDash",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/lms/staff-dashboard",
+      "body": {
+        "session": "$loginStaff.session"
+      },
+      "response": {
+        "dashboard": [
+          {
+            "user": "uuid#10",
+            "seat": "uuid#7",
+            "kind": "STAFF",
+            "section": null,
+            "rosterName": "Staff One",
+            "email": "u6_staff@example.com"
+          },
+          {
+            "user": "uuid#12",
+            "seat": "uuid#8",
+            "kind": "STUDENT",
+            "section": "uuid#6",
+            "rosterName": "Alice",
+            "email": "u6_alice@example.com"
+          },
+          {
+            "user": "uuid#14",
+            "seat": "uuid#9",
+            "kind": "STUDENT",
+            "section": "uuid#6",
+            "rosterName": "Bob",
+            "email": "u6_bob@example.com"
+          }
+        ],
+        "counts": {
+          "assignments": 4,
+          "gradeItems": 3,
+          "lateDayUses": 0
+        }
+      }
+    },
+    {
+      "id": "lmsStaffDashByStudent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/lms/staff-dashboard",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "conceptLearnerVisible",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Noting._getShownTo",
+      "body": {
+        "learner": "$loginAlice.user"
+      },
+      "response": []
+    },
+    {
+      "id": "conceptNotesByAuthor",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Noting._getByAuthor",
+      "body": {
+        "author": "$loginStaff.user"
+      },
+      "response": [
+        {
+          "note": "uuid#20",
+          "learner": "uuid#12",
+          "status": "OPEN",
+          "visibility": "STAFF_ONLY",
+          "createdAt": "<date>"
+        },
+        {
+          "note": "uuid#21",
+          "learner": "uuid#12",
+          "status": "OPEN",
+          "visibility": "STAFF_ONLY",
+          "createdAt": "<date>"
+        },
+        {
+          "note": "uuid#22",
+          "learner": "uuid#14",
+          "status": "OPEN",
+          "visibility": "STAFF_ONLY",
+          "createdAt": "<date>"
+        },
+        {
+          "note": "uuid#24",
+          "learner": "uuid#12",
+          "status": "ARCHIVED",
+          "visibility": "LEARNER_VISIBLE",
+          "createdAt": "<date>"
+        }
+      ]
+    },
+    {
+      "id": "conceptOpenFollowUps",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Noting._getOpenFollowUpsBefore",
+      "body": {
+        "before": "2026-07-21T00:00:00.000Z"
+      },
+      "response": [
+        {
+          "note": "uuid#20",
+          "author": "uuid#10",
+          "learner": "uuid#12",
+          "body": "Great progress on unit tests.",
+          "followUpAt": "<date>",
+          "createdAt": "<date>"
+        },
+        {
+          "note": "uuid#21",
+          "author": "uuid#10",
+          "learner": "uuid#12",
+          "body": "Struggling; discuss at staff meeting.",
+          "followUpAt": "<date>",
+          "createdAt": "<date>"
+        },
+        {
+          "note": "uuid#22",
+          "author": "uuid#10",
+          "learner": "uuid#14",
+          "body": "Missed two sections.",
+          "followUpAt": "",
+          "createdAt": "<date>"
+        },
+        {
+          "note": "uuid#23",
+          "author": "uuid#1",
+          "learner": "uuid#12",
+          "body": "Admin tries to write.",
+          "followUpAt": "",
+          "createdAt": "<date>"
+        }
+      ]
+    },
+    {
+      "id": "conceptPublishedInWindow",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Assigning._getPublishedInWindow",
+      "body": {
+        "start": "2026-07-06T00:00:00.000Z",
+        "end": "2026-07-13T23:59:59.999Z"
+      },
+      "response": [
+        {
+          "assignment": "uuid#16"
+        },
+        {
+          "assignment": "uuid#19"
+        }
+      ]
+    },
+    {
+      "id": "conceptSeatByUser",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Rostering._getSeatByUser",
+      "body": {
+        "user": "$loginAlice.user"
+      },
+      "response": [
+        {
+          "seat": "uuid#8",
+          "user": "uuid#12",
+          "externalKey": "u6-stu-1",
+          "email": "u6_alice@example.com",
+          "rosterName": "Alice",
+          "kind": "STUDENT",
+          "section": "uuid#6",
+          "status": "ACTIVE"
+        }
+      ]
+    }
+  ]
+}

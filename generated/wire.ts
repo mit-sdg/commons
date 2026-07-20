@@ -1,0 +1,3952 @@
+// Generated wire contracts — do not edit.
+// Regenerated from registered formers, action outcomes, and input contracts.
+
+import type { vocabulary as ApplicationVocabulary } from "../src/concepts/index.ts";
+
+type AtPath<T, P extends readonly string[]> = P extends readonly [infer H extends string, ...infer R extends string[]] ? H extends keyof T ? AtPath<T[H], R> : never : T;
+type QueryRow<T> = T extends readonly (infer Row)[] ? Row : T;
+type AllOf<T extends readonly unknown[]> = T extends readonly [infer Head, ...infer Rest] ? Head & AllOf<Rest> : unknown;
+type OneOf<T extends readonly unknown[]> = T[number];
+type Jsonify<T> = T extends Date ? string : T extends null | boolean | number | string ? T : T extends (...args: never[]) => unknown ? never : T extends readonly (infer Item)[] ? Jsonify<Item>[] : T extends object ? { [K in keyof T]: Jsonify<T[K]> } : never;
+
+export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
+
+export type AppWideError = "SESSION_NOT_FOUND" | "UNAUTHORIZED";
+
+export type CommonsWire = {
+  "/assignments/archive": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["archive"]>[0], ["assignment"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["archive"]>>, ["assignment"]>>;
+    };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/assignments/clear-due-override": {
+    input: {
+      "assignee": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["clearDueOverride"]>[0], ["assignee"]>>;
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["clearDueOverride"]>[0], ["assignment"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "release": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["clearDueOverride"]>>, ["release"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_NOT_FOUND" };
+  };
+  "/assignments/create-draft": {
+    input: {
+      "acceptsSubmissions": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["acceptsSubmissions"]>>;
+      "audience": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["audience"]>>;
+      "availableAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["availableAt"]>>;
+      "closeAt"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["closeAt"]>>;
+      "dueAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["dueAt"]>>;
+      "instructions": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["instructions"]>>;
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["kind"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "targets"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["targets"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["title"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>>, ["assignment"]>>;
+    };
+    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/assignments/for-me": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "assignments": {
+        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>>;
+        "dueOverride": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["dueOverride"]>>;
+        "release": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["release"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["status"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/assignments/get": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>[0], ["assignment"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>>>, ["detail"]>> | null;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/assignments/publish": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["publish"]>[0], ["assignment"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["publish"]>>, ["assignment"]>>;
+    };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_DRAFT" | "ASSIGNMENT_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/assignments/revise": {
+    input: {
+      "acceptsSubmissions": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["acceptsSubmissions"]>>;
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["assignment"]>>;
+      "audience": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["audience"]>>;
+      "availableAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["availableAt"]>>;
+      "closeAt"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["closeAt"]>>;
+      "dueAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["dueAt"]>>;
+      "instructions": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["instructions"]>>;
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["kind"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "targets"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["targets"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["title"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>>, ["assignment"]>>;
+    };
+    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_REVISABLE" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/assignments/set-due-override": {
+    input: {
+      "assignee": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["setDueOverride"]>[0], ["assignee"]>>;
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["setDueOverride"]>[0], ["assignment"]>>;
+      "dueAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["setDueOverride"]>[0], ["dueAt"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "release": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["setDueOverride"]>>, ["release"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_NOT_FOUND" };
+  };
+  "/assignments/staff-list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "assignments": {
+        "acceptsSubmissions": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["acceptsSubmissions"]>>;
+        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>>;
+        "audience": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["audience"]>>;
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["author"]>>;
+        "availableAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["availableAt"]>>;
+        "closeAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["closeAt"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["createdAt"]>>;
+        "dueAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["dueAt"]>>;
+        "instructions": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["instructions"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["kind"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["status"]>>;
+        "targets": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["targets"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["updatedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/assignments/staff-summary": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>[0], ["assignment"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "summary": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>>>, ["detail"]>> | null;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/assignments/submit": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["submit"]>[0], ["assignment"]>>;
+      "content": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["create"]>[0], ["content"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "submission": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["submit"]>>, ["submission"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/auth/changePassword": {
+    input: {
+      "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["changePassword"]>[0], ["newPassword"]>>;
+      "oldPassword": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["changePassword"]>[0], ["oldPassword"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["endAllForUser"]>[0], ["user"]>>;
+    };
+    error: { error: AppWideError | "INVALID_CREDENTIALS" | "INVALID_INPUT" | "PASSWORD_INVALID_LENGTH" };
+  };
+  "/auth/login": {
+    input: {
+      "password": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["authenticate"]>[0], ["password"]>>;
+      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["authenticate"]>[0], ["username"]>>;
+    };
+    output: {
+      "expiresAt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Sessioning"]["start"]>>, ["expiresAt"]>>;
+      "session": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Sessioning"]["start"]>>, ["session"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["start"]>[0], ["user"]>>;
+    };
+    error: { error: AppWideError | "INVALID_CREDENTIALS" | "INVALID_INPUT" };
+  };
+  "/auth/logout": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["end"]>[0], ["session"]>>;
+    };
+    output: {
+      "ok": true;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "SESSION_NOT_FOUND" };
+  };
+  "/auth/me": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
+      "profile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfile"]>>>, ["profile"]>>;
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfile"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>>;
+      "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/auth/register": {
+    input: {
+      "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
+      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["email"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["email"]>]>>;
+      "password": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["password"]>>;
+      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["username"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["user"]>>;
+    };
+    error: { error: AppWideError | "INVALID_BODY" | "INVALID_INPUT" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
+  };
+  "/auth/resolve": {
+    input: {
+      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getByUsername"]>[0], ["username"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getByUsername"]>>>, ["user"]>> | null;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/bookmarks/isSaved": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "saved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["_isSaved"]>>>, ["saved"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/bookmarks/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "bookmarks": {
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["_getSaved"]>>>, ["item"]>]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["_getSaved"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/bookmarks/save": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["save"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "bookmark": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["save"]>>, ["bookmark"]>>;
+    };
+    error: { error: AppWideError | "BOOKMARK_ALREADY_EXISTS" | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/bookmarks/unsave": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["unsave"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "bookmark": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["unsave"]>>, ["bookmark"]>>;
+    };
+    error: { error: AppWideError | "BOOKMARK_NOT_FOUND" | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/calendar/me": {
+    input: {
+      "end": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>[0], ["end"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "start": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>[0], ["start"]>>;
+    };
+    output: {
+      "events": {
+        "assignment": Jsonify<AllOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>>>, ["assignment"]>]>>;
+        "availableAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["availableAt"]>>;
+        "closeAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["closeAt"]>>;
+        "dueAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["dueAt"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["kind"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["status"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/calendar/staff": {
+    input: {
+      "end": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>[0], ["end"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "start": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>[0], ["start"]>>;
+    };
+    output: {
+      "events": {
+        "assignment": Jsonify<AllOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>>>, ["assignment"]>]>>;
+        "availableAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["availableAt"]>>;
+        "closeAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["closeAt"]>>;
+        "dueAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["dueAt"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["kind"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["status"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/categories/assign": {
+    input: {
+      "category": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["assign"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["assign"]>>, ["item"]>>;
+    };
+    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/categories/create": {
+    input: {
+      "description": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["createCategory"]>[0], ["description"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["createCategory"]>[0], ["name"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "category": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["createCategory"]>>, ["category"]>>;
+    };
+    error: { error: AppWideError | "CATEGORY_ALREADY_EXISTS" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/categories/delete": {
+    input: {
+      "category": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["deleteCategory"]>[0], ["category"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "category": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["deleteCategory"]>>, ["category"]>>;
+    };
+    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/categories/forItem": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "category": {
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>>;
+        "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getCategory"]>>>, ["description"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getCategory"]>>>, ["name"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/categories/items": {
+    input: {
+      "category": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getItems"]>>>, ["item"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/categories/list": {
+    input: Record<string, never>;
+    output: {
+      "categories": {
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getAllCategories"]>>>, ["category"]>>;
+        "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getAllCategories"]>>>, ["description"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getAllCategories"]>>>, ["name"]>>;
+      }[];
+    };
+    error: { error: AppWideError };
+  };
+  "/categories/unassign": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["unassign"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["unassign"]>>, ["item"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_CATEGORIZED" | "NOT_FOUND" };
+  };
+  "/flags/forTarget": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "flags": {
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["createdAt"]>>;
+        "flag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["flag"]>>;
+        "reason": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["reason"]>>;
+        "reporter": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["reporter"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["status"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/flags/open": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "targets": {
+        "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getOpenTargets"]>>>, ["count"]>>;
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getOpenTargets"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/flags/raise": {
+    input: {
+      "reason": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["flag"]>[0], ["reason"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["flag"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "flag": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["flag"]>>, ["flag"]>>;
+    };
+    error: { error: AppWideError | "FLAG_ALREADY_EXISTS" | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/flags/resolve": {
+    input: {
+      "outcome": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["resolve"]>[0], ["outcome"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["resolve"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["resolve"]>[0], ["target"]>>;
+    };
+    error: { error: AppWideError | "FLAG_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" | "VALIDATION_FAILED" };
+  };
+  "/grades/add-criterion": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>[0], ["item"]>>;
+      "maxPoints": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>[0], ["maxPoints"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>[0], ["name"]>>;
+      "position": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>[0], ["position"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "criterion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>>, ["criterion"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_ITEM_NOT_FOUND" | "INVALID_INPUT" };
+  };
+  "/grades/configure-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["configureItem"]>[0], ["item"]>>;
+      "label": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["configureItem"]>[0], ["label"]>>;
+      "maxPoints": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["configureItem"]>[0], ["maxPoints"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "gradeItem": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["configureItem"]>>, ["gradeItem"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SCORE_OUT_OF_RANGE" };
+  };
+  "/grades/excuse": {
+    input: {
+      "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>[0], ["feedback"]>>;
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>[0], ["learner"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>>, ["grade"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_NOT_FOUND" | "INVALID_INPUT" };
+  };
+  "/grades/export": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "csv": "";
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/grades/for-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "grades": {
+        "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>>>, ["grade"]>>;
+        "learner": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>>>, ["learner"]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>>>, ["score"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>>>, ["status"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/grades/for-me": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "grades": ({
+        "feedback": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["feedback"]>>;
+        "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["grade"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["item"]>]>>;
+        "label": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["label"]>> | null;
+        "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["outOf"]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["score"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["status"]>>;
+      })[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/grades/for-student": {
+    input: {
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>[0], ["learner"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "grades": ({
+        "feedback": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["feedback"]>>;
+        "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["grade"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["item"]>]>>;
+        "label": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["label"]>> | null;
+        "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["outOf"]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["score"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["status"]>>;
+      })[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/grades/gradebook": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "learners": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["email"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["section"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/grades/record": {
+    input: {
+      "evidence"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["evidence"]>>;
+      "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["feedback"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["learner"]>>;
+      "score": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["score"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>>, ["grade"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_ALREADY_RELEASED" | "GRADE_ITEM_NOT_FOUND" | "INVALID_INPUT" | "LEARNER_EXCUSED" | "SCORE_OUT_OF_RANGE" };
+  };
+  "/grades/release": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["release"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["release"]>[0], ["learner"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["release"]>>, ["grade"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_DRAFT_NOT_FOUND" | "INVALID_INPUT" };
+  };
+  "/grades/release-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["releaseItem"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "released": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["releaseItem"]>>, ["released"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/grades/remove-criterion": {
+    input: {
+      "criterion": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["removeCriterion"]>[0], ["criterion"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "criterion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["removeCriterion"]>>, ["criterion"]>>;
+    };
+    error: { error: AppWideError | "CRITERION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/grades/retract": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["retract"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["retract"]>[0], ["learner"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["retract"]>>, ["grade"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_RELEASED_NOT_FOUND" | "INVALID_INPUT" };
+  };
+  "/grades/revise-criterion": {
+    input: {
+      "criterion": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>[0], ["criterion"]>>;
+      "maxPoints": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>[0], ["maxPoints"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>[0], ["name"]>>;
+      "position": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>[0], ["position"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "criterion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>>, ["criterion"]>>;
+    };
+    error: { error: AppWideError | "CRITERION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/grades/score-criterion": {
+    input: {
+      "criterion": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["criterion"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriterion"]>[0], ["criterion"]>]>>;
+      "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["feedback"]>>;
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["learner"]>>;
+      "points": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["points"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "criterionScore": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>>, ["criterionScore"]>>;
+    };
+    error: { error: AppWideError | "CRITERION_NOT_FOUND" | "FORBIDDEN" | "GRADE_ALREADY_RELEASED" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "LEARNER_EXCUSED" | "SCORE_OUT_OF_RANGE" };
+  };
+  "/late-days/apply": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["apply"]>[0], ["item"]>>;
+      "days": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["apply"]>[0], ["days"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["apply"]>>, ["use"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INSUFFICIENT_BALANCE" | "INVALID_INPUT" | "LATE_DAYS_EXCEED_MAX" | "LATE_DAYS_MUST_BE_POSITIVE" | "LATE_USE_ALREADY_EXISTS" };
+  };
+  "/late-days/balance": {
+    input: {
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "balance": {
+        "granted": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getBalance"]>>>, ["granted"]>>;
+        "remaining": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getBalance"]>>>, ["remaining"]>>;
+        "used": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getBalance"]>>>, ["used"]>>;
+      };
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/late-days/cancel": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>>, ["use"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "LATE_USE_NOT_FOUND" };
+  };
+  "/late-days/change": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["item"]>>;
+      "days": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["days"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>>, ["use"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INSUFFICIENT_BALANCE" | "INVALID_INPUT" | "LATE_DAYS_EXCEED_MAX" | "LATE_DAYS_NEGATIVE" | "LATE_USE_NOT_FOUND" };
+  };
+  "/late-days/configure-policy": {
+    input: {
+      "defaultDays": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["setTerms"]>[0], ["allowance"]>>;
+      "maxDaysPerItem": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["setTerms"]>[0], ["perItemLimit"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "unitHours": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["setTerms"]>[0], ["unitHours"]>>;
+    };
+    output: {
+      "policy": true;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/late-days/for-assignment": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUsesForItem"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "users": {
+        "days": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUsesForItem"]>>>, ["days"]>>;
+        "learner": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUsesForItem"]>>>, ["learner"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/late-days/grant": {
+    input: {
+      "days": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["grant"]>[0], ["days"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["grant"]>[0], ["learner"]>>;
+      "reason": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["grant"]>[0], ["reason"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "grant": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["grant"]>>, ["grant"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "LATE_DAYS_MUST_BE_POSITIVE" };
+  };
+  "/late-days/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "uses": {
+        "appliedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["appliedAt"]>>;
+        "days": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["days"]>>;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["item"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["status"]>>;
+        "use": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["use"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/late-days/staff-cancel": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>[0], ["item"]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>>, ["use"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "LATE_USE_NOT_FOUND" | "NOT_FOUND" };
+  };
+  "/late-days/staff-change": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["item"]>>;
+      "days": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["days"]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>>, ["use"]>>;
+    };
+    error: { error: AppWideError | "INSUFFICIENT_BALANCE" | "INVALID_INPUT" | "LATE_DAYS_EXCEED_MAX" | "LATE_DAYS_NEGATIVE" | "LATE_USE_NOT_FOUND" | "NOT_FOUND" };
+  };
+  "/links/backlinks": {
+    input: {
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "sources": {
+        "source": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/links/forward": {
+    input: {
+      "source": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "targets": {
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Linking"]["_getLinks"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/lms/me": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "dashboard": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["email"]>>;
+        "externalKey": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["externalKey"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["section"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["status"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/lms/staff-dashboard": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "counts": {
+        "assignments": number;
+        "gradeItems": number;
+        "lateDayUses": number;
+      };
+      "dashboard": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["email"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["section"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/locks/isLocked": {
+    input: {
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>]>>;
+    };
+    output: {
+      "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/locks/list": {
+    input: Record<string, never>;
+    output: {
+      "locked": {
+        "lockedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_getLocked"]>>>, ["lockedAt"]>>;
+        "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>]>>;
+      }[];
+    };
+    error: { error: AppWideError };
+  };
+  "/locks/lock": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["lock"]>[0], ["target"]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["lock"]>[0], ["target"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" | "TARGET_ALREADY_LOCKED" };
+  };
+  "/locks/unlock": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" | "TARGET_NOT_LOCKED" };
+  };
+  "/moderation/posts/get": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "post": {
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+        "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        "rendered": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Formatting"]["_getRendered"]>>>, ["rendered"]>>;
+      };
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/moderation/revisions/get": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>>;
+      "number": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>[0], ["number"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "revision": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>>>, ["content"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/moderation/revisions/latest": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "revision": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["content"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["number"]>>;
+        "revision": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["revision"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/moderation/revisions/list": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "revisions": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["content"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["number"]>>;
+        "revision": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["revision"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/notifications/dismiss": {
+    input: {
+      "notification": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Notifying"]["dismiss"]>[0], ["notification"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "notification": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["dismiss"]>>, ["notification"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOTIFICATION_NOT_FOUND" };
+  };
+  "/notifications/inbox": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "notifications": ({
+        "actor": {
+          "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>> | null;
+          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
+          "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>]>>;
+          "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
+        } | null;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
+        "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
+        "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["notification"]>>;
+        "post": {
+          "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>]>>;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        } | null;
+        "read": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["read"]>>;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/notifications/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "notifications": {
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
+        "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
+        "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["notification"]>>;
+        "read": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["read"]>>;
+        "subject": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["subject"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/notifications/markAllRead": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "recipient": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["markAllRead"]>>, ["recipient"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/notifications/markRead": {
+    input: {
+      "notification": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Notifying"]["markRead"]>[0], ["notification"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "notification": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["markRead"]>>, ["notification"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOTIFICATION_NOT_FOUND" };
+  };
+  "/notifications/unreadCount": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getUnreadCount"]>>>, ["count"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/pins/forScope": {
+    input: {
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["_getPinned"]>[0], ["scope"]>>;
+    };
+    output: {
+      "pinned": {
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["_getPinned"]>>>, ["item"]>]>>;
+        "priority": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["_getPinned"]>>>, ["priority"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/pins/isPinned": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>>;
+    };
+    output: {
+      "pinned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/pins/pin": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["pin"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "priority": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["pin"]>[0], ["priority"]>>;
+      "scope": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["pin"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["context"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "pin": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["pin"]>>, ["pin"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_PINNED" | "NOT_FOUND" };
+  };
+  "/pins/setPriority": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["setPriority"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "priority": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["setPriority"]>[0], ["priority"]>>;
+      "scope": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["setPriority"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["context"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "pin": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["setPriority"]>>, ["pin"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_PINNED" | "NOT_FOUND" };
+  };
+  "/pins/unpin": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["unpin"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "scope": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["unpin"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["context"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "pin": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["unpin"]>>, ["pin"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_PINNED" | "NOT_FOUND" };
+  };
+  "/posts/byAuthor": {
+    input: {
+      "author": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getByAuthor"]>[0], ["author"]>>;
+    };
+    output: {
+      "posts": {
+        "post": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getByAuthor"]>>>, ["post"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/posts/delete": {
+    input: {
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["delete"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["delete"]>[0], ["post"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" | "POST_HAS_REPLIES" | "POST_NOT_FOUND" };
+  };
+  "/posts/edit": {
+    input: {
+      "content": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["edit"]>[0], ["content"]>>;
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["edit"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["edit"]>[0], ["post"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" | "POST_NOT_FOUND" };
+  };
+  "/posts/get": {
+    input: {
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "post": {
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+        "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        "rendered": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Formatting"]["_getRendered"]>>>, ["rendered"]>>;
+      };
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/profiles/get": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfile"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>]>>;
+    };
+    output: {
+      "profile": {
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>>;
+        "bio": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["bio"]>>;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["email"]>>;
+      };
+    } | {
+      "profile": {
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>>;
+        "bio": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["bio"]>>;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+      };
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/profiles/setAvatar": {
+    input: {
+      "avatar": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setAvatar"]>[0], ["avatar"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setAvatar"]>[0], ["user"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "PROFILE_NOT_FOUND" };
+  };
+  "/profiles/setBio": {
+    input: {
+      "bio": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setBio"]>[0], ["bio"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setBio"]>[0], ["user"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "PROFILE_NOT_FOUND" };
+  };
+  "/profiles/setDisplayName": {
+    input: {
+      "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setDisplayName"]>[0], ["displayName"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setDisplayName"]>[0], ["user"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "PROFILE_NOT_FOUND" };
+  };
+  "/reactions/add": {
+    input: {
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Reacting"]["react"]>[0], ["kind"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Reacting"]["react"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "reaction": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Reacting"]["react"]>>, ["reaction"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "REACTION_ALREADY_EXISTS" };
+  };
+  "/reactions/forTarget": {
+    input: {
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "reactions": {
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Reacting"]["_getReactionsForTarget"]>>>, ["kind"]>>;
+        "reaction": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Reacting"]["_getReactionsForTarget"]>>>, ["reaction"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Reacting"]["_getReactionsForTarget"]>>>, ["reactor"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/reactions/remove": {
+    input: {
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Reacting"]["unreact"]>[0], ["kind"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Reacting"]["unreact"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "ok": true;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "REACTION_NOT_FOUND" };
+  };
+  "/resolutions/accept": {
+    input: {
+      "answer": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["accept"]>[0], ["answer"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["accept"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "resolution": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["accept"]>>, ["resolution"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/resolutions/clear": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["clear"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["clear"]>>, ["question"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" | "RESOLUTION_NOT_FOUND" };
+  };
+  "/resolutions/get": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "resolution": {
+        "answer": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>>>, ["answer"]>]>>;
+        "resolvedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>>>, ["resolvedAt"]>>;
+        "resolvedBy": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>>>, ["resolvedBy"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/resolutions/isResolved": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/revisions/get": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "number": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>[0], ["number"]>>;
+    };
+    output: {
+      "revision": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>>>, ["content"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/revisions/latest": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "revision": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["content"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["number"]>>;
+        "revision": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["revision"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/revisions/list": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "revisions": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["content"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["number"]>>;
+        "revision": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["revision"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/roles/can": {
+    input: {
+      "capability": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["capability"]>>;
+      "context": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["context"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["user"]>>;
+    };
+    output: {
+      "allowed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>>>, ["allowed"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/roles/define": {
+    input: {
+      "capabilities": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["defineRole"]>[0], ["capabilities"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["defineRole"]>[0], ["name"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "role": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["defineRole"]>>, ["role"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ROLE_ALREADY_EXISTS" };
+  };
+  "/roles/forUser": {
+    input: {
+      "context": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoles"]>[0], ["context"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+    };
+    output: {
+      "roles": {
+        "role": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoles"]>>>, ["role"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/roles/get": {
+    input: {
+      "role": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoleDetail"]>[0], ["role"]>>;
+    };
+    output: {
+      "capabilities": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoleDetail"]>>>, ["capabilities"]>>;
+      "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoleDetail"]>>>, ["name"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/roles/grant": {
+    input: {
+      "context": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["grant"]>[0], ["context"]>>;
+      "role": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_denotedRole"]>[0], ["ref"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+    };
+    output: {
+      "grant": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["grant"]>>, ["grant"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRANT_ALREADY_EXISTS" | "INVALID_INPUT" | "ROLE_NOT_FOUND" };
+  };
+  "/roles/list": {
+    input: Record<string, never>;
+    output: {
+      "roles": {
+        "capabilities": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_listRoles"]>>>, ["capabilities"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_listRoles"]>>>, ["name"]>>;
+        "role": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_listRoles"]>>>, ["role"]>>;
+      }[];
+    };
+    error: { error: AppWideError };
+  };
+  "/roles/revoke": {
+    input: {
+      "context": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["revoke"]>[0], ["context"]>>;
+      "role": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_denotedRole"]>[0], ["ref"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+    };
+    output: {
+      "grant": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["revoke"]>>, ["grant"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRANT_NOT_FOUND" | "INVALID_INPUT" };
+  };
+  "/roster/claim-seat": {
+    input: {
+      "externalKey": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByExternalKey"]>[0], ["externalKey"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["claimSeat"]>>, ["seat"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" };
+  };
+  "/roster/configure-class": {
+    input: {
+      "code": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["code"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "term": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["term"]>>;
+      "timezone": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["timezone"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["title"]>>;
+    };
+    output: {
+      "class": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>>, ["class"]>>;
+    };
+    error: { error: AppWideError | "CLASS_ALREADY_CONFIGURED" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/roster/drop": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["dropSeat"]>[0], ["seat"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["dropSeat"]>>, ["seat"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SEAT_NOT_ACTIVE" | "SEAT_NOT_FOUND" };
+  };
+  "/roster/import": {
+    input: {
+      "rows": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["importSeats"]>[0], ["rows"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "created": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["importSeats"]>>, ["created"]>>;
+      "skipped": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["importSeats"]>>, ["skipped"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/roster/import-preview": {
+    input: {
+      "csv": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["previewImport"]>[0], ["csv"]>>;
+    };
+    output: {
+      "rows": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["previewImport"]>>, ["rows"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/roster/link-user": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["claimSeat"]>[0], ["seat"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["claimSeat"]>[0], ["user"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["claimSeat"]>>, ["seat"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" };
+  };
+  "/roster/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "members": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["email"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["section"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/roster/me": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["seat"]>> | null;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/roster/move-section": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["moveSection"]>[0], ["seat"]>>;
+      "section": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["moveSection"]>[0], ["section"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["moveSection"]>>, ["seat"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SEAT_NOT_FOUND" };
+  };
+  "/roster/reinstate": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["reinstateSeat"]>[0], ["seat"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["reinstateSeat"]>>, ["seat"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_DROPPED" | "SEAT_NOT_FOUND" };
+  };
+  "/roster/sections/create": {
+    input: {
+      "location"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["createSection"]>[0], ["location"]>>;
+      "meetingPattern"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["createSection"]>[0], ["meetingPattern"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["createSection"]>[0], ["name"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "section": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["createSection"]>>, ["section"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/roster/sections/list": {
+    input: Record<string, never>;
+    output: {
+      "sections": {
+        "location": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["location"]>>;
+        "meetingPattern": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["meetingPattern"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["name"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["section"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["status"]>>;
+      }[];
+    };
+    error: { error: AppWideError };
+  };
+  "/roster/sections/update": {
+    input: {
+      "location": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>[0], ["location"]>>;
+      "meetingPattern": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>[0], ["meetingPattern"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>[0], ["name"]>>;
+      "section": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>[0], ["section"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "section": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>>, ["section"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SECTION_NOT_FOUND" };
+  };
+  "/students/detail": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatDetail"]>[0], ["user"]>>;
+    };
+    output: {
+      "detail": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatDetail"]>>>, ["detail"]>> | null;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/students/notes/acknowledge": {
+    input: {
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["acknowledge"]>[0], ["note"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["acknowledge"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["acknowledge"]>>, ["note"]>]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOTE_NOT_FOUND" | "NOTE_NOT_LEARNER_VISIBLE" | "NOTE_NOT_OWNER" };
+  };
+  "/students/notes/archive": {
+    input: {
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["archive"]>[0], ["note"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["archive"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["archive"]>>, ["note"]>]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOTE_NOT_FOUND" | "NOTE_NOT_RESOLVED" };
+  };
+  "/students/notes/list": {
+    input: {
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>[0], ["learner"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "notes": {
+        "acknowledgedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["acknowledgedAt"]>>;
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["author"]>>;
+        "body": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["body"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["createdAt"]>>;
+        "followUpAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["followUpAt"]>>;
+        "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>[0], ["learner"]>>;
+        "note": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["note"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["status"]>>;
+        "tags": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["tags"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["updatedAt"]>>;
+        "visibility": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["visibility"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/students/notes/resolve": {
+    input: {
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["resolve"]>[0], ["note"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["resolve"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["resolve"]>>, ["note"]>]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOTE_NOT_FOUND" | "NOTE_NOT_OPEN" };
+  };
+  "/students/notes/restore": {
+    input: {
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["restore"]>[0], ["note"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["restore"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["restore"]>>, ["note"]>]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOTE_NOT_FOUND" | "NOTE_NOT_RESTORABLE" };
+  };
+  "/students/notes/revise": {
+    input: {
+      "body": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["body"]>>;
+      "followUpAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["followUpAt"]>>;
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["note"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "tags": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["tags"]>>;
+      "visibility": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["visibility"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>>, ["note"]>]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_VISIBILITY" | "NOTE_NOT_FOUND" | "NOTE_NOT_OPEN" };
+  };
+  "/students/notes/visible": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "notes": {
+        "acknowledgedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["acknowledgedAt"]>>;
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["author"]>>;
+        "body": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["body"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["createdAt"]>>;
+        "followUpAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["followUpAt"]>>;
+        "learner": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>>;
+        "note": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["note"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["status"]>>;
+        "tags": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["tags"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["updatedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/students/notes/write": {
+    input: {
+      "body": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["body"]>>;
+      "followUpAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["followUpAt"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["learner"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "tags": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["tags"]>>;
+      "visibility": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["visibility"]>>;
+    };
+    output: {
+      "note": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>>, ["note"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_VISIBILITY" };
+  };
+  "/submissions/attempts": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>[0], ["assignment"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+    };
+    output: {
+      "attempts": {
+        "artifacts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["artifacts"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["number"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["status"]>>;
+        "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["submission"]>>;
+        "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["submittedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/submissions/for-assignment": {
+    input: {
+      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "assigned": {
+        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["rosterName"]>>;
+      }[];
+      "submissions": {
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["number"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["status"]>>;
+        "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submission"]>>;
+        "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submittedAt"]>>;
+        "submitter": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submitter"]>]>>;
+        "submitterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["rosterName"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/submissions/for-student": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+    };
+    output: {
+      "submissions": {
+        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["assignment"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["number"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["status"]>>;
+        "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submission"]>>;
+        "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submittedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/submissions/latest": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getLatest"]>[0], ["assignment"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+    };
+    output: {
+      "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getLatest"]>>>, ["latest"]>> | null;
+    } | {
+      "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getLatest"]>>>, ["latest"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/subscriptions/isSubscribed": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_isSubscribed"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "subscribed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/subscriptions/mine": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "subscriptions": {
+        "subscribedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["subscribedAt"]>>;
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/subscriptions/subscribe": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Subscribing"]["subscribe"]>[0], ["target"]>>;
+    };
+    output: {
+      "subscription": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["subscribe"]>>, ["subscription"]>>;
+    };
+    error: { error: AppWideError | "ALREADY_SUBSCRIBED" | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/subscriptions/subscribers": {
+    input: {
+      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_getSubscribers"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "subscribers": {
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_getSubscribers"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/subscriptions/unsubscribe": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Subscribing"]["unsubscribe"]>[0], ["target"]>>;
+    };
+    output: {
+      "subscription": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["unsubscribe"]>>, ["subscription"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SUBSCRIBED" };
+  };
+  "/tags/add": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["addTag"]>[0], ["tag"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["addTag"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["addTag"]>>, ["target"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "TAG_ALREADY_APPLIED" | "TAG_NOT_FOUND" };
+  };
+  "/tags/create": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["createTag"]>[0], ["name"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "tag": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["createTag"]>>, ["tag"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "TAG_ALREADY_EXISTS" };
+  };
+  "/tags/forTarget": {
+    input: {
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "tags": {
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/tags/list": {
+    input: Record<string, never>;
+    output: {
+      "tags": {
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getAllTags"]>>>, ["name"]>>;
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getAllTags"]>>>, ["tag"]>>;
+      }[];
+    };
+    error: { error: AppWideError };
+  };
+  "/tags/remove": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["removeTag"]>[0], ["tag"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["removeTag"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["removeTag"]>>, ["target"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "TAG_NOT_APPLIED" };
+  };
+  "/tags/targets": {
+    input: {
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTargets"]>[0], ["tag"]>>;
+    };
+    output: {
+      "targets": {
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTargets"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/tags/targetsByName": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getByName"]>[0], ["name"]>>;
+    };
+    output: {
+      "targets": {
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTargets"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/threads/activity": {
+    input: Record<string, never>;
+    output: {
+      "conversations": ({
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["conversation"]>]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["createdAt"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "post": {
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        };
+        "replyCount": number;
+        "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+        "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["root"]>>;
+        "tags": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+          "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+        }[];
+      })[];
+    };
+    error: { error: AppWideError };
+  };
+  "/threads/create": {
+    input: {
+      "content": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["create"]>[0], ["content"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "conversation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["start"]>>, ["conversation"]>>;
+      "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["start"]>>, ["node"]>>;
+      "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["start"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/threads/forItem": {
+    input: {
+      "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+    };
+    output: {
+      "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>> | null;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/threads/get": {
+    input: {
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "context": ({
+        "acceptedAnswer": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>>>, ["answer"]>> | null;
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "replyCount": number;
+        "tags": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+          "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+        }[];
+      })[];
+      "thread": {
+        "depth": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["depth"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Formatting"]["_getRendered"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["item"]>]>>;
+        "node": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["node"]>>;
+        "parent": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["parent"]>>;
+        "post": {
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        };
+        "rendered": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Formatting"]["_getRendered"]>>>, ["rendered"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/threads/latest": {
+    input: Record<string, never>;
+    output: {
+      "conversations": ({
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversations"]>>>, ["createdAt"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversations"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "post": {
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        };
+        "replyCount": number;
+        "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+        "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversations"]>>>, ["root"]>>;
+        "tags": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+          "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+        }[];
+      })[];
+    };
+    error: { error: AppWideError };
+  };
+  "/threads/reply": {
+    input: {
+      "content": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["create"]>[0], ["content"]>>;
+      "parent": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversation"]>[0], ["node"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["reply"]>[0], ["parent"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["reply"]>>, ["node"]>>;
+      "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["reply"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "PARENT_NODE_NOT_FOUND" };
+  };
+  "/trash/isTrashed": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "trashed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>>>, ["trashed"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/trash/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "trashed": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Trashing"]["_getTrashed"]>>>, ["item"]>>;
+        "trashedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Trashing"]["_getTrashed"]>>>, ["trashedAt"]>>;
+        "trashedBy": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Trashing"]["_getTrashed"]>>>, ["trashedBy"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/trash/purge": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_TRASHED" };
+  };
+  "/trash/restore": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_TRASHED" };
+  };
+  "/trash/trash": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["trash"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "NOT_FOUND" };
+  };
+  "/unread/count": {
+    input: {
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["_getUnreadCount"]>[0], ["scope"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tracking"]["_getUnreadCount"]>>>, ["count"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/unread/list": {
+    input: {
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["_getUnread"]>[0], ["scope"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tracking"]["_getUnread"]>>>, ["item"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/unread/markAllSeen": {
+    input: {
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["markAllSeen"]>[0], ["scope"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["markAllSeen"]>[0], ["user"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/unread/markSeen": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["markSeen"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["markSeen"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_SEEN" | "ITEM_NOT_REGISTERED" };
+  };
+  "/users/resolve": {
+    input: {
+      "ref": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_resolveIdentity"]>[0], ["ref"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_resolveIdentity"]>>>, ["user"]>>;
+      "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_resolveIdentity"]>>>, ["username"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/users/search": {
+    input: {
+      "query": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_search"]>[0], ["query"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "users": {
+        "profile": {
+          "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>>;
+          "bio": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["bio"]>>;
+          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+        };
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_search"]>>>, ["user"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_search"]>>>, ["username"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+};
+
+export type HttpAppWideError = "NOT_FOUND" | "UNAUTHORIZED";
+
+export type CommonsWireHttp = {
+  "/assignments/archive": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["archive"]>[0], ["assignment"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["archive"]>>, ["assignment"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/assignments/clear-due-override": {
+    input: {
+      "assignee": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["clearDueOverride"]>[0], ["assignee"]>>;
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["clearDueOverride"]>[0], ["assignment"]>>;
+    };
+    output: {
+      "release": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["clearDueOverride"]>>, ["release"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/assignments/create-draft": {
+    input: {
+      "acceptsSubmissions": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["acceptsSubmissions"]>>;
+      "audience": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["audience"]>>;
+      "availableAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["availableAt"]>>;
+      "closeAt"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["closeAt"]>>;
+      "dueAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["dueAt"]>>;
+      "instructions": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["instructions"]>>;
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["kind"]>>;
+      "targets"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["targets"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>[0], ["title"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["createDraft"]>>, ["assignment"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/assignments/for-me": {
+    input: Record<string, never>;
+    output: {
+      "assignments": {
+        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>>;
+        "dueOverride": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["dueOverride"]>>;
+        "release": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["release"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["status"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/assignments/get": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>[0], ["assignment"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>>>, ["detail"]>> | null;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/assignments/publish": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["publish"]>[0], ["assignment"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["publish"]>>, ["assignment"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/assignments/revise": {
+    input: {
+      "acceptsSubmissions": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["acceptsSubmissions"]>>;
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["assignment"]>>;
+      "audience": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["audience"]>>;
+      "availableAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["availableAt"]>>;
+      "closeAt"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["closeAt"]>>;
+      "dueAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["dueAt"]>>;
+      "instructions": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["instructions"]>>;
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["kind"]>>;
+      "targets"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["targets"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>[0], ["title"]>>;
+    };
+    output: {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["revise"]>>, ["assignment"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/assignments/set-due-override": {
+    input: {
+      "assignee": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["setDueOverride"]>[0], ["assignee"]>>;
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["setDueOverride"]>[0], ["assignment"]>>;
+      "dueAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["setDueOverride"]>[0], ["dueAt"]>>;
+    };
+    output: {
+      "release": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["setDueOverride"]>>, ["release"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/assignments/staff-list": {
+    input: Record<string, never>;
+    output: {
+      "assignments": {
+        "acceptsSubmissions": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["acceptsSubmissions"]>>;
+        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>>;
+        "audience": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["audience"]>>;
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["author"]>>;
+        "availableAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["availableAt"]>>;
+        "closeAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["closeAt"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["createdAt"]>>;
+        "dueAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["dueAt"]>>;
+        "instructions": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["instructions"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["kind"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["status"]>>;
+        "targets": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["targets"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["updatedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/assignments/staff-summary": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>[0], ["assignment"]>>;
+    };
+    output: {
+      "summary": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>>>, ["detail"]>> | null;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/assignments/submit": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["submit"]>[0], ["assignment"]>>;
+      "content": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["create"]>[0], ["content"]>>;
+    };
+    output: {
+      "submission": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["submit"]>>, ["submission"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/auth/changePassword": {
+    input: {
+      "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["changePassword"]>[0], ["newPassword"]>>;
+      "oldPassword": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["changePassword"]>[0], ["oldPassword"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["endAllForUser"]>[0], ["user"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/auth/login": {
+    input: {
+      "password": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["authenticate"]>[0], ["password"]>>;
+      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["authenticate"]>[0], ["username"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["start"]>[0], ["user"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/auth/logout": {
+    input: Record<string, never>;
+    output: {
+      "ok": true;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/auth/me": {
+    input: Record<string, never>;
+    output: {
+      "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
+      "profile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfile"]>>>, ["profile"]>>;
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfile"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>>;
+      "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/auth/register": {
+    input: {
+      "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
+      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["email"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["email"]>]>>;
+      "password": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["password"]>>;
+      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["username"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["user"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
+  "/auth/resolve": {
+    input: {
+      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getByUsername"]>[0], ["username"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getByUsername"]>>>, ["user"]>> | null;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/bookmarks/isSaved": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "saved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["_isSaved"]>>>, ["saved"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/bookmarks/list": {
+    input: Record<string, never>;
+    output: {
+      "bookmarks": {
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["_getSaved"]>>>, ["item"]>]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["_getSaved"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/bookmarks/save": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["save"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "bookmark": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["save"]>>, ["bookmark"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/bookmarks/unsave": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["unsave"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "bookmark": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Bookmarking"]["unsave"]>>, ["bookmark"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/calendar/me": {
+    input: {
+      "end": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>[0], ["end"]>>;
+      "start": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>[0], ["start"]>>;
+    };
+    output: {
+      "events": {
+        "assignment": Jsonify<AllOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>>>, ["assignment"]>]>>;
+        "availableAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["availableAt"]>>;
+        "closeAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["closeAt"]>>;
+        "dueAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["dueAt"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["kind"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["status"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/calendar/staff": {
+    input: {
+      "end": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>[0], ["end"]>>;
+      "start": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>[0], ["start"]>>;
+    };
+    output: {
+      "events": {
+        "assignment": Jsonify<AllOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getPublishedInWindow"]>>>, ["assignment"]>]>>;
+        "availableAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["availableAt"]>>;
+        "closeAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["closeAt"]>>;
+        "dueAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["dueAt"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["kind"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["status"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/categories/assign": {
+    input: {
+      "category": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["assign"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["assign"]>>, ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/categories/create": {
+    input: {
+      "description": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["createCategory"]>[0], ["description"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["createCategory"]>[0], ["name"]>>;
+    };
+    output: {
+      "category": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["createCategory"]>>, ["category"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/categories/delete": {
+    input: {
+      "category": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["deleteCategory"]>[0], ["category"]>>;
+    };
+    output: {
+      "category": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["deleteCategory"]>>, ["category"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/categories/forItem": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "category": {
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>>;
+        "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getCategory"]>>>, ["description"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getCategory"]>>>, ["name"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/categories/items": {
+    input: {
+      "category": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getItems"]>>>, ["item"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/categories/list": {
+    input: Record<string, never>;
+    output: {
+      "categories": {
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getAllCategories"]>>>, ["category"]>>;
+        "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getAllCategories"]>>>, ["description"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getAllCategories"]>>>, ["name"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError };
+  };
+  "/categories/unassign": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["unassign"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["unassign"]>>, ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/flags/forTarget": {
+    input: {
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "flags": {
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["createdAt"]>>;
+        "flag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["flag"]>>;
+        "reason": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["reason"]>>;
+        "reporter": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["reporter"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getFlags"]>>>, ["status"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/flags/open": {
+    input: Record<string, never>;
+    output: {
+      "targets": {
+        "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getOpenTargets"]>>>, ["count"]>>;
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["_getOpenTargets"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/flags/raise": {
+    input: {
+      "reason": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["flag"]>[0], ["reason"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["flag"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "flag": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Flagging"]["flag"]>>, ["flag"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/flags/resolve": {
+    input: {
+      "outcome": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["resolve"]>[0], ["outcome"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["resolve"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Flagging"]["resolve"]>[0], ["target"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/add-criterion": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>[0], ["item"]>>;
+      "maxPoints": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>[0], ["maxPoints"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>[0], ["name"]>>;
+      "position": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>[0], ["position"]>>;
+    };
+    output: {
+      "criterion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["addCriterion"]>>, ["criterion"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/configure-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["configureItem"]>[0], ["item"]>>;
+      "label": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["configureItem"]>[0], ["label"]>>;
+      "maxPoints": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["configureItem"]>[0], ["maxPoints"]>>;
+    };
+    output: {
+      "gradeItem": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["configureItem"]>>, ["gradeItem"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/grades/excuse": {
+    input: {
+      "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>[0], ["feedback"]>>;
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>[0], ["learner"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>>, ["grade"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/export": {
+    input: Record<string, never>;
+    output: {
+      "csv": "";
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/grades/for-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>[0], ["item"]>>;
+    };
+    output: {
+      "grades": {
+        "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>>>, ["grade"]>>;
+        "learner": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>>>, ["learner"]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>>>, ["score"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForItem"]>>>, ["status"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/grades/for-me": {
+    input: Record<string, never>;
+    output: {
+      "grades": ({
+        "feedback": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["feedback"]>>;
+        "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["grade"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["item"]>]>>;
+        "label": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["label"]>> | null;
+        "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["outOf"]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["score"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["status"]>>;
+      })[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/grades/for-student": {
+    input: {
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>[0], ["learner"]>>;
+    };
+    output: {
+      "grades": ({
+        "feedback": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["feedback"]>>;
+        "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["grade"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["item"]>]>>;
+        "label": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["label"]>> | null;
+        "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["outOf"]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["score"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGradesForLearner"]>>>, ["status"]>>;
+      })[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/grades/gradebook": {
+    input: Record<string, never>;
+    output: {
+      "learners": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["email"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["section"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/grades/record": {
+    input: {
+      "evidence"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["evidence"]>>;
+      "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["feedback"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["learner"]>>;
+      "score": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>[0], ["score"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["record"]>>, ["grade"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/release": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["release"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["release"]>[0], ["learner"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["release"]>>, ["grade"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/release-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["releaseItem"]>[0], ["item"]>>;
+    };
+    output: {
+      "released": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["releaseItem"]>>, ["released"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/grades/remove-criterion": {
+    input: {
+      "criterion": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["removeCriterion"]>[0], ["criterion"]>>;
+    };
+    output: {
+      "criterion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["removeCriterion"]>>, ["criterion"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/retract": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["retract"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["retract"]>[0], ["learner"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["retract"]>>, ["grade"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/revise-criterion": {
+    input: {
+      "criterion": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>[0], ["criterion"]>>;
+      "maxPoints": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>[0], ["maxPoints"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>[0], ["name"]>>;
+      "position": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>[0], ["position"]>>;
+    };
+    output: {
+      "criterion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["reviseCriterion"]>>, ["criterion"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/score-criterion": {
+    input: {
+      "criterion": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["criterion"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriterion"]>[0], ["criterion"]>]>>;
+      "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["feedback"]>>;
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["learner"]>>;
+      "points": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>[0], ["points"]>>;
+    };
+    output: {
+      "criterionScore": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>>, ["criterionScore"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/late-days/apply": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["apply"]>[0], ["item"]>>;
+      "days": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["apply"]>[0], ["days"]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["apply"]>>, ["use"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/late-days/balance": {
+    input: {
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+    };
+    output: {
+      "balance": {
+        "granted": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getBalance"]>>>, ["granted"]>>;
+        "remaining": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getBalance"]>>>, ["remaining"]>>;
+        "used": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getBalance"]>>>, ["used"]>>;
+      };
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/late-days/cancel": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>[0], ["item"]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>>, ["use"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/late-days/change": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["item"]>>;
+      "days": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["days"]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>>, ["use"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/late-days/configure-policy": {
+    input: {
+      "defaultDays": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["setTerms"]>[0], ["allowance"]>>;
+      "maxDaysPerItem": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["setTerms"]>[0], ["perItemLimit"]>>;
+      "unitHours": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["setTerms"]>[0], ["unitHours"]>>;
+    };
+    output: {
+      "policy": true;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/late-days/for-assignment": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUsesForItem"]>[0], ["item"]>>;
+    };
+    output: {
+      "users": {
+        "days": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUsesForItem"]>>>, ["days"]>>;
+        "learner": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUsesForItem"]>>>, ["learner"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/late-days/grant": {
+    input: {
+      "days": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["grant"]>[0], ["days"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["grant"]>[0], ["learner"]>>;
+      "reason": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["grant"]>[0], ["reason"]>>;
+    };
+    output: {
+      "grant": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["grant"]>>, ["grant"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/late-days/list": {
+    input: Record<string, never>;
+    output: {
+      "uses": {
+        "appliedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["appliedAt"]>>;
+        "days": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["days"]>>;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["item"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["status"]>>;
+        "use": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["use"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/late-days/staff-cancel": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>[0], ["item"]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["cancel"]>>, ["use"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/late-days/staff-change": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["item"]>>;
+      "days": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["days"]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
+    };
+    output: {
+      "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["change"]>>, ["use"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/links/backlinks": {
+    input: {
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "sources": {
+        "source": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/links/forward": {
+    input: {
+      "source": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "targets": {
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Linking"]["_getLinks"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/lms/me": {
+    input: Record<string, never>;
+    output: {
+      "dashboard": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["email"]>>;
+        "externalKey": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["externalKey"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["section"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["status"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/lms/staff-dashboard": {
+    input: Record<string, never>;
+    output: {
+      "counts": {
+        "assignments": number;
+        "gradeItems": number;
+        "lateDayUses": number;
+      };
+      "dashboard": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["email"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["section"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/locks/isLocked": {
+    input: {
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>]>>;
+    };
+    output: {
+      "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/locks/list": {
+    input: Record<string, never>;
+    output: {
+      "locked": {
+        "lockedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_getLocked"]>>>, ["lockedAt"]>>;
+        "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError };
+  };
+  "/locks/lock": {
+    input: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["lock"]>[0], ["target"]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["lock"]>[0], ["target"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/locks/unlock": {
+    input: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/moderation/posts/get": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>>;
+    };
+    output: {
+      "post": {
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+        "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        "rendered": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Formatting"]["_getRendered"]>>>, ["rendered"]>>;
+      };
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/moderation/revisions/get": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>>;
+      "number": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>[0], ["number"]>>;
+    };
+    output: {
+      "revision": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>>>, ["content"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/moderation/revisions/latest": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>>;
+    };
+    output: {
+      "revision": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["content"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["number"]>>;
+        "revision": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["revision"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/moderation/revisions/list": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>>;
+    };
+    output: {
+      "revisions": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["content"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["number"]>>;
+        "revision": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["revision"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/notifications/dismiss": {
+    input: {
+      "notification": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Notifying"]["dismiss"]>[0], ["notification"]>>;
+    };
+    output: {
+      "notification": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["dismiss"]>>, ["notification"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/notifications/inbox": {
+    input: Record<string, never>;
+    output: {
+      "notifications": ({
+        "actor": {
+          "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>> | null;
+          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
+          "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>]>>;
+          "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
+        } | null;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
+        "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
+        "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["notification"]>>;
+        "post": {
+          "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>]>>;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        } | null;
+        "read": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["read"]>>;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/notifications/list": {
+    input: Record<string, never>;
+    output: {
+      "notifications": {
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
+        "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
+        "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["notification"]>>;
+        "read": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["read"]>>;
+        "subject": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getInbox"]>>>, ["subject"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/notifications/markAllRead": {
+    input: Record<string, never>;
+    output: {
+      "recipient": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["markAllRead"]>>, ["recipient"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/notifications/markRead": {
+    input: {
+      "notification": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Notifying"]["markRead"]>[0], ["notification"]>>;
+    };
+    output: {
+      "notification": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["markRead"]>>, ["notification"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/notifications/unreadCount": {
+    input: Record<string, never>;
+    output: {
+      "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Notifying"]["_getUnreadCount"]>>>, ["count"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/pins/forScope": {
+    input: {
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["_getPinned"]>[0], ["scope"]>>;
+    };
+    output: {
+      "pinned": {
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["_getPinned"]>>>, ["item"]>]>>;
+        "priority": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["_getPinned"]>>>, ["priority"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/pins/isPinned": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>>;
+    };
+    output: {
+      "pinned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/pins/pin": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["pin"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "priority": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["pin"]>[0], ["priority"]>>;
+      "scope": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["pin"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["context"]>]>>;
+    };
+    output: {
+      "pin": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["pin"]>>, ["pin"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/pins/setPriority": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["setPriority"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "priority": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["setPriority"]>[0], ["priority"]>>;
+      "scope": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["setPriority"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["context"]>]>>;
+    };
+    output: {
+      "pin": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["setPriority"]>>, ["pin"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/pins/unpin": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["unpin"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "scope": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Pinning"]["unpin"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["context"]>]>>;
+    };
+    output: {
+      "pin": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Pinning"]["unpin"]>>, ["pin"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/posts/byAuthor": {
+    input: {
+      "author": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getByAuthor"]>[0], ["author"]>>;
+    };
+    output: {
+      "posts": {
+        "post": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getByAuthor"]>>>, ["post"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/posts/delete": {
+    input: {
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["delete"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["delete"]>[0], ["post"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/posts/edit": {
+    input: {
+      "content": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["edit"]>[0], ["content"]>>;
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["edit"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+    };
+    output: {
+      "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["edit"]>[0], ["post"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/posts/get": {
+    input: {
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "post": {
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+        "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        "rendered": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Formatting"]["_getRendered"]>>>, ["rendered"]>>;
+      };
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/profiles/get": {
+    input: {
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfile"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>]>>;
+    };
+    output: {
+      "profile": {
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>>;
+        "bio": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["bio"]>>;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["email"]>>;
+      };
+    } | {
+      "profile": {
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>>;
+        "bio": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["bio"]>>;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+      };
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/profiles/setAvatar": {
+    input: {
+      "avatar": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setAvatar"]>[0], ["avatar"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setAvatar"]>[0], ["user"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/profiles/setBio": {
+    input: {
+      "bio": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setBio"]>[0], ["bio"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setBio"]>[0], ["user"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/profiles/setDisplayName": {
+    input: {
+      "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setDisplayName"]>[0], ["displayName"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["setDisplayName"]>[0], ["user"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/reactions/add": {
+    input: {
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Reacting"]["react"]>[0], ["kind"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Reacting"]["react"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "reaction": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Reacting"]["react"]>>, ["reaction"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/reactions/forTarget": {
+    input: {
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "reactions": {
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Reacting"]["_getReactionsForTarget"]>>>, ["kind"]>>;
+        "reaction": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Reacting"]["_getReactionsForTarget"]>>>, ["reaction"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Reacting"]["_getReactionsForTarget"]>>>, ["reactor"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/reactions/remove": {
+    input: {
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Reacting"]["unreact"]>[0], ["kind"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Reacting"]["unreact"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "ok": true;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/resolutions/accept": {
+    input: {
+      "answer": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["accept"]>[0], ["answer"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["accept"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "resolution": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["accept"]>>, ["resolution"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/resolutions/clear": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["clear"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["clear"]>>, ["question"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/resolutions/get": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "resolution": {
+        "answer": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>>>, ["answer"]>]>>;
+        "resolvedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>>>, ["resolvedAt"]>>;
+        "resolvedBy": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>>>, ["resolvedBy"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/resolutions/isResolved": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/revisions/get": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "number": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>[0], ["number"]>>;
+    };
+    output: {
+      "revision": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>>>, ["content"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevision"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/revisions/latest": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "revision": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["content"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["number"]>>;
+        "revision": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["revision"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getLatest"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/revisions/list": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "revisions": {
+        "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["content"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["number"]>>;
+        "revision": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["revision"]>>;
+        "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Revising"]["_getRevisions"]>>>, ["savedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roles/can": {
+    input: {
+      "capability": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["capability"]>>;
+      "context": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["context"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>[0], ["user"]>>;
+    };
+    output: {
+      "allowed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_hasCapability"]>>>, ["allowed"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/roles/define": {
+    input: {
+      "capabilities": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["defineRole"]>[0], ["capabilities"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["defineRole"]>[0], ["name"]>>;
+    };
+    output: {
+      "role": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["defineRole"]>>, ["role"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/roles/forUser": {
+    input: {
+      "context": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoles"]>[0], ["context"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+    };
+    output: {
+      "roles": {
+        "role": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoles"]>>>, ["role"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/roles/get": {
+    input: {
+      "role": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoleDetail"]>[0], ["role"]>>;
+    };
+    output: {
+      "capabilities": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoleDetail"]>>>, ["capabilities"]>>;
+      "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_getRoleDetail"]>>>, ["name"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/roles/grant": {
+    input: {
+      "context": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["grant"]>[0], ["context"]>>;
+      "role": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_denotedRole"]>[0], ["ref"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+    };
+    output: {
+      "grant": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["grant"]>>, ["grant"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roles/list": {
+    input: Record<string, never>;
+    output: {
+      "roles": {
+        "capabilities": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_listRoles"]>>>, ["capabilities"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_listRoles"]>>>, ["name"]>>;
+        "role": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["_listRoles"]>>>, ["role"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError };
+  };
+  "/roles/revoke": {
+    input: {
+      "context": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["revoke"]>[0], ["context"]>>;
+      "role": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Roling"]["_denotedRole"]>[0], ["ref"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+    };
+    output: {
+      "grant": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Roling"]["revoke"]>>, ["grant"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roster/claim-seat": {
+    input: {
+      "externalKey": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByExternalKey"]>[0], ["externalKey"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["claimSeat"]>>, ["seat"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roster/configure-class": {
+    input: {
+      "code": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["code"]>>;
+      "term": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["term"]>>;
+      "timezone": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["timezone"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["title"]>>;
+    };
+    output: {
+      "class": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>>, ["class"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/roster/drop": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["dropSeat"]>[0], ["seat"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["dropSeat"]>>, ["seat"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roster/import": {
+    input: {
+      "rows": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["importSeats"]>[0], ["rows"]>>;
+    };
+    output: {
+      "created": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["importSeats"]>>, ["created"]>>;
+      "skipped": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["importSeats"]>>, ["skipped"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/roster/import-preview": {
+    input: {
+      "csv": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["previewImport"]>[0], ["csv"]>>;
+    };
+    output: {
+      "rows": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["previewImport"]>>, ["rows"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/roster/link-user": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["claimSeat"]>[0], ["seat"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["claimSeat"]>[0], ["user"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["claimSeat"]>>, ["seat"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roster/list": {
+    input: Record<string, never>;
+    output: {
+      "members": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["email"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["section"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveMembers"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/roster/me": {
+    input: Record<string, never>;
+    output: {
+      "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["seat"]>> | null;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/roster/move-section": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["moveSection"]>[0], ["seat"]>>;
+      "section": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["moveSection"]>[0], ["section"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["moveSection"]>>, ["seat"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roster/reinstate": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["reinstateSeat"]>[0], ["seat"]>>;
+    };
+    output: {
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["reinstateSeat"]>>, ["seat"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roster/sections/create": {
+    input: {
+      "location"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["createSection"]>[0], ["location"]>>;
+      "meetingPattern"?: Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["createSection"]>[0], ["meetingPattern"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["createSection"]>[0], ["name"]>>;
+    };
+    output: {
+      "section": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["createSection"]>>, ["section"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/roster/sections/list": {
+    input: Record<string, never>;
+    output: {
+      "sections": {
+        "location": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["location"]>>;
+        "meetingPattern": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["meetingPattern"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["name"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["section"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSections"]>>>, ["status"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError };
+  };
+  "/roster/sections/update": {
+    input: {
+      "location": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>[0], ["location"]>>;
+      "meetingPattern": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>[0], ["meetingPattern"]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>[0], ["name"]>>;
+      "section": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>[0], ["section"]>>;
+    };
+    output: {
+      "section": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["updateSection"]>>, ["section"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/students/detail": {
+    input: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatDetail"]>[0], ["user"]>>;
+    };
+    output: {
+      "detail": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatDetail"]>>>, ["detail"]>> | null;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/students/notes/acknowledge": {
+    input: {
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["acknowledge"]>[0], ["note"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["acknowledge"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["acknowledge"]>>, ["note"]>]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/students/notes/archive": {
+    input: {
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["archive"]>[0], ["note"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["archive"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["archive"]>>, ["note"]>]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/students/notes/list": {
+    input: {
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>[0], ["learner"]>>;
+    };
+    output: {
+      "notes": {
+        "acknowledgedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["acknowledgedAt"]>>;
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["author"]>>;
+        "body": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["body"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["createdAt"]>>;
+        "followUpAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["followUpAt"]>>;
+        "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>[0], ["learner"]>>;
+        "note": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["note"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["status"]>>;
+        "tags": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["tags"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["updatedAt"]>>;
+        "visibility": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getActiveNotesFor"]>>>, ["visibility"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/students/notes/resolve": {
+    input: {
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["resolve"]>[0], ["note"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["resolve"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["resolve"]>>, ["note"]>]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/students/notes/restore": {
+    input: {
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["restore"]>[0], ["note"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["restore"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["restore"]>>, ["note"]>]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/students/notes/revise": {
+    input: {
+      "body": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["body"]>>;
+      "followUpAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["followUpAt"]>>;
+      "note": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["note"]>>;
+      "tags": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["tags"]>>;
+      "visibility": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["visibility"]>>;
+    };
+    output: {
+      "note": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>[0], ["note"]>, AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["revise"]>>, ["note"]>]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/students/notes/visible": {
+    input: Record<string, never>;
+    output: {
+      "notes": {
+        "acknowledgedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["acknowledgedAt"]>>;
+        "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["author"]>>;
+        "body": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["body"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["createdAt"]>>;
+        "followUpAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["followUpAt"]>>;
+        "learner": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>>;
+        "note": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["note"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["status"]>>;
+        "tags": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["tags"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["_getShownTo"]>>>, ["updatedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/students/notes/write": {
+    input: {
+      "body": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["body"]>>;
+      "followUpAt": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["followUpAt"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["learner"]>>;
+      "tags": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["tags"]>>;
+      "visibility": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>[0], ["visibility"]>>;
+    };
+    output: {
+      "note": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Noting"]["write"]>>, ["note"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/submissions/attempts": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>[0], ["assignment"]>>;
+      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+    };
+    output: {
+      "attempts": {
+        "artifacts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["artifacts"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["number"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["status"]>>;
+        "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["submission"]>>;
+        "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getAttempts"]>>>, ["submittedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/submissions/for-assignment": {
+    input: {
+      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>]>>;
+    };
+    output: {
+      "assigned": {
+        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["rosterName"]>>;
+      }[];
+      "submissions": {
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["number"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["status"]>>;
+        "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submission"]>>;
+        "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submittedAt"]>>;
+        "submitter": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submitter"]>]>>;
+        "submitterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["rosterName"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/submissions/for-student": {
+    input: {
+      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+    };
+    output: {
+      "submissions": {
+        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["assignment"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["number"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["status"]>>;
+        "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submission"]>>;
+        "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submittedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/submissions/latest": {
+    input: {
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getLatest"]>[0], ["assignment"]>>;
+      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+    };
+    output: {
+      "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getLatest"]>>>, ["latest"]>> | null;
+    } | {
+      "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getLatest"]>>>, ["latest"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/subscriptions/isSubscribed": {
+    input: {
+      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_isSubscribed"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "subscribed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/subscriptions/mine": {
+    input: Record<string, never>;
+    output: {
+      "subscriptions": {
+        "subscribedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["subscribedAt"]>>;
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/subscriptions/subscribe": {
+    input: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Subscribing"]["subscribe"]>[0], ["target"]>>;
+    };
+    output: {
+      "subscription": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["subscribe"]>>, ["subscription"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/subscriptions/subscribers": {
+    input: {
+      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_getSubscribers"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "subscribers": {
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["_getSubscribers"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/subscriptions/unsubscribe": {
+    input: {
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Subscribing"]["unsubscribe"]>[0], ["target"]>>;
+    };
+    output: {
+      "subscription": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Subscribing"]["unsubscribe"]>>, ["subscription"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/tags/add": {
+    input: {
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["addTag"]>[0], ["tag"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["addTag"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["addTag"]>>, ["target"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/tags/create": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["createTag"]>[0], ["name"]>>;
+    };
+    output: {
+      "tag": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["createTag"]>>, ["tag"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
+  "/tags/forTarget": {
+    input: {
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "tags": {
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/tags/list": {
+    input: Record<string, never>;
+    output: {
+      "tags": {
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getAllTags"]>>>, ["name"]>>;
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getAllTags"]>>>, ["tag"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError };
+  };
+  "/tags/remove": {
+    input: {
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["removeTag"]>[0], ["tag"]>>;
+      "target": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["removeTag"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "target": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["removeTag"]>>, ["target"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/tags/targets": {
+    input: {
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTargets"]>[0], ["tag"]>>;
+    };
+    output: {
+      "targets": {
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTargets"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/tags/targetsByName": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getByName"]>[0], ["name"]>>;
+    };
+    output: {
+      "targets": {
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTargets"]>>>, ["target"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/threads/activity": {
+    input: Record<string, never>;
+    output: {
+      "conversations": ({
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["conversation"]>]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["createdAt"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "post": {
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        };
+        "replyCount": number;
+        "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+        "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["root"]>>;
+        "tags": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+          "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+        }[];
+      })[];
+    };
+    error: { error: HttpAppWideError };
+  };
+  "/threads/create": {
+    input: {
+      "content": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["create"]>[0], ["content"]>>;
+    };
+    output: {
+      "conversation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["start"]>>, ["conversation"]>>;
+      "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["start"]>>, ["node"]>>;
+      "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["start"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/threads/forItem": {
+    input: {
+      "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+    };
+    output: {
+      "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>> | null;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/threads/get": {
+    input: {
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "context": ({
+        "acceptedAnswer": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>>>, ["answer"]>> | null;
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "replyCount": number;
+        "tags": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+          "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+        }[];
+      })[];
+      "thread": {
+        "depth": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["depth"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Formatting"]["_getRendered"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["item"]>]>>;
+        "node": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["node"]>>;
+        "parent": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getThread"]>>>, ["parent"]>>;
+        "post": {
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        };
+        "rendered": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Formatting"]["_getRendered"]>>>, ["rendered"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/threads/latest": {
+    input: Record<string, never>;
+    output: {
+      "conversations": ({
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversations"]>>>, ["createdAt"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversations"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "post": {
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+        };
+        "replyCount": number;
+        "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+        "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversations"]>>>, ["root"]>>;
+        "tags": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+          "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+        }[];
+      })[];
+    };
+    error: { error: HttpAppWideError };
+  };
+  "/threads/reply": {
+    input: {
+      "content": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["create"]>[0], ["content"]>>;
+      "parent": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["_getConversation"]>[0], ["node"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["reply"]>[0], ["parent"]>]>>;
+    };
+    output: {
+      "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["reply"]>>, ["node"]>>;
+      "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["reply"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/trash/isTrashed": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>>;
+    };
+    output: {
+      "trashed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Trashing"]["_isTrashed"]>>>, ["trashed"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/trash/list": {
+    input: Record<string, never>;
+    output: {
+      "trashed": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Trashing"]["_getTrashed"]>>>, ["item"]>>;
+        "trashedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Trashing"]["_getTrashed"]>>>, ["trashedAt"]>>;
+        "trashedBy": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Trashing"]["_getTrashed"]>>>, ["trashedBy"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/trash/purge": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/trash/restore": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/trash/trash": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["trash"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/unread/count": {
+    input: {
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["_getUnreadCount"]>[0], ["scope"]>>;
+    };
+    output: {
+      "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tracking"]["_getUnreadCount"]>>>, ["count"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/unread/list": {
+    input: {
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["_getUnread"]>[0], ["scope"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Tracking"]["_getUnread"]>>>, ["item"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/unread/markAllSeen": {
+    input: {
+      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["markAllSeen"]>[0], ["scope"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["markAllSeen"]>[0], ["user"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/unread/markSeen": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["markSeen"]>[0], ["item"]>>;
+    };
+    output: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Tracking"]["markSeen"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
+  "/users/resolve": {
+    input: {
+      "ref": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_resolveIdentity"]>[0], ["ref"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_resolveIdentity"]>>>, ["user"]>>;
+      "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_resolveIdentity"]>>>, ["username"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/users/search": {
+    input: {
+      "query": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_search"]>[0], ["query"]>>;
+    };
+    output: {
+      "users": {
+        "profile": {
+          "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>>;
+          "bio": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["bio"]>>;
+          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+        };
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_search"]>>>, ["user"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_search"]>>>, ["username"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+};

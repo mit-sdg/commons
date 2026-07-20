@@ -1,0 +1,687 @@
+{
+  "name": "forum bookmarks and reactions boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u1_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "u1_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u1_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "regMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u1_mara",
+        "password": "password123",
+        "displayName": "Mara",
+        "email": "u1_mara@example.com"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u1_mara",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#4",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "regNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u1_noah",
+        "password": "password123",
+        "displayName": "Noah",
+        "email": "u1_noah@example.com"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "loginNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u1_noah",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#6",
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "t1Create",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginMara.session",
+        "content": "Reactions test thread"
+      },
+      "response": {
+        "post": "uuid#7",
+        "conversation": "uuid#8",
+        "node": "uuid#9"
+      }
+    },
+    {
+      "id": "t1Reply",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginNoah.session",
+        "parent": "$t1Create.node",
+        "content": "First reply"
+      },
+      "response": {
+        "post": "uuid#10",
+        "node": "uuid#11"
+      }
+    },
+    {
+      "id": "t2Create",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginNoah.session",
+        "content": "Second thread"
+      },
+      "response": {
+        "post": "uuid#12",
+        "conversation": "uuid#13",
+        "node": "uuid#14"
+      }
+    },
+    {
+      "id": "reactNoahUp",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/add",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$t1Create.post",
+        "kind": "up"
+      },
+      "response": {
+        "reaction": "uuid#15"
+      }
+    },
+    {
+      "id": "reactMaraUp",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/add",
+      "body": {
+        "session": "$loginMara.session",
+        "target": "$t1Create.post",
+        "kind": "up"
+      },
+      "response": {
+        "reaction": "uuid#16"
+      }
+    },
+    {
+      "id": "reactMaraHeart",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/add",
+      "body": {
+        "session": "$loginMara.session",
+        "target": "$t1Create.post",
+        "kind": "heart"
+      },
+      "response": {
+        "reaction": "uuid#17"
+      }
+    },
+    {
+      "id": "reactDupe",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/add",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$t1Create.post",
+        "kind": "up"
+      },
+      "response": {
+        "error": "REACTION_ALREADY_EXISTS"
+      }
+    },
+    {
+      "id": "forTargetP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/forTarget",
+      "body": {
+        "target": "$t1Create.post"
+      },
+      "response": {
+        "reactions": [
+          {
+            "reaction": "uuid#15",
+            "user": "uuid#5",
+            "kind": "up"
+          },
+          {
+            "reaction": "uuid#16",
+            "user": "uuid#3",
+            "kind": "up"
+          },
+          {
+            "reaction": "uuid#17",
+            "user": "uuid#3",
+            "kind": "heart"
+          }
+        ]
+      }
+    },
+    {
+      "id": "forTargetP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/forTarget",
+      "body": {
+        "target": "$t1Reply.post"
+      },
+      "response": {
+        "reactions": []
+      }
+    },
+    {
+      "id": "barP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/forTarget",
+      "body": {
+        "target": "$t1Create.post"
+      },
+      "response": {
+        "reactions": [
+          {
+            "reaction": "uuid#15",
+            "user": "uuid#5",
+            "kind": "up"
+          },
+          {
+            "reaction": "uuid#16",
+            "user": "uuid#3",
+            "kind": "up"
+          },
+          {
+            "reaction": "uuid#17",
+            "user": "uuid#3",
+            "kind": "heart"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reactP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/add",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$t1Reply.post",
+        "kind": "up"
+      },
+      "response": {
+        "reaction": "uuid#18"
+      }
+    },
+    {
+      "id": "unreactNoah",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/remove",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$t1Create.post",
+        "kind": "up"
+      },
+      "response": {
+        "ok": true
+      }
+    },
+    {
+      "id": "unreactGone",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/remove",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$t1Create.post",
+        "kind": "up"
+      },
+      "response": {
+        "error": "REACTION_NOT_FOUND"
+      }
+    },
+    {
+      "id": "reactBadSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/add",
+      "body": {
+        "session": "no-such-session",
+        "target": "$t1Create.post",
+        "kind": "up"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "reactNoSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/add",
+      "body": {
+        "target": "$t1Create.post",
+        "kind": "up"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "reactGhostTarget",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/add",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "00000000-0000-4000-8000-00000000dead",
+        "kind": "up"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "forTargetGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/forTarget",
+      "body": {
+        "target": "00000000-0000-4000-8000-00000000dead"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "saveP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/save",
+      "body": {
+        "session": "$loginMara.session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "bookmark": "uuid#19"
+      }
+    },
+    {
+      "id": "saveP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/save",
+      "body": {
+        "session": "$loginMara.session",
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "bookmark": "uuid#20"
+      }
+    },
+    {
+      "id": "saveDupe",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/save",
+      "body": {
+        "session": "$loginMara.session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "error": "BOOKMARK_ALREADY_EXISTS"
+      }
+    },
+    {
+      "id": "listMara",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/list",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "bookmarks": [
+          {
+            "item": "uuid#7",
+            "savedAt": "<date>"
+          },
+          {
+            "item": "uuid#10",
+            "savedAt": "<date>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "idxP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "conversation": "uuid#8"
+      }
+    },
+    {
+      "id": "idxP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "conversation": "uuid#8"
+      }
+    },
+    {
+      "id": "isSavedYes",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/isSaved",
+      "body": {
+        "session": "$loginMara.session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "saved": true
+      }
+    },
+    {
+      "id": "isSavedNo",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/isSaved",
+      "body": {
+        "session": "$loginNoah.session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "saved": false
+      }
+    },
+    {
+      "id": "listNoahEmpty",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/list",
+      "body": {
+        "session": "$loginNoah.session"
+      },
+      "response": {
+        "bookmarks": []
+      }
+    },
+    {
+      "id": "listBadSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/list",
+      "body": {
+        "session": "no-such-session"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "isSavedBadSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/isSaved",
+      "body": {
+        "session": "no-such-session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "saveGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/save",
+      "body": {
+        "session": "$loginNoah.session",
+        "item": "00000000-0000-4000-8000-00000000dead"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "unsaveP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/unsave",
+      "body": {
+        "session": "$loginMara.session",
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "bookmark": "uuid#20"
+      }
+    },
+    {
+      "id": "unsaveGone",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/unsave",
+      "body": {
+        "session": "$loginMara.session",
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "error": "BOOKMARK_NOT_FOUND"
+      }
+    },
+    {
+      "id": "trashP2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "item": "uuid#10"
+      }
+    },
+    {
+      "id": "purgeP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "item": "uuid#10"
+      }
+    },
+    {
+      "id": "forTargetPurged",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/forTarget",
+      "body": {
+        "target": "$t1Reply.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "listMaraAfterPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/list",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "bookmarks": []
+      }
+    },
+    {
+      "id": "isSavedPurged",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/bookmarks/isSaved",
+      "body": {
+        "session": "$loginMara.session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "idxPurged",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "conversation": null
+      }
+    },
+    {
+      "id": "reactAfterPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/reactions/add",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$t1Reply.post",
+        "kind": "up"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "countByKindP1",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Reacting._countByKind",
+      "body": {
+        "target": "$t1Create.post"
+      },
+      "response": [
+        {
+          "kind": "up",
+          "count": 1
+        },
+        {
+          "kind": "heart",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "hasReactedNoahP1",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Reacting._hasReacted",
+      "body": {
+        "user": "$loginNoah.user",
+        "target": "$t1Create.post",
+        "kind": "up"
+      },
+      "response": {
+        "hasReacted": false
+      }
+    },
+    {
+      "id": "reactionsByUserMara",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Reacting._getReactionsByUser",
+      "body": {
+        "user": "$loginMara.user"
+      },
+      "response": []
+    },
+    {
+      "id": "savedMaraConcept",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Bookmarking._getSaved",
+      "body": {
+        "user": "$loginMara.user"
+      },
+      "response": []
+    }
+  ]
+}

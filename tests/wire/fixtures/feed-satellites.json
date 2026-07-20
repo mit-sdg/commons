@@ -1,0 +1,1343 @@
+{
+  "name": "forum feed boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "hf_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "hf_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "hf_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "regMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "hf_mara",
+        "password": "password123",
+        "displayName": "Mara",
+        "email": "mara@example.com"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "hf_mara",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#4",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "regNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "hf_noah",
+        "password": "password123",
+        "displayName": "Noah",
+        "email": "noah@example.com"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "loginNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "hf_noah",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#6",
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "catCreateLogistics",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "Logistics",
+        "description": "Course logistics and scheduling"
+      },
+      "response": {
+        "category": "uuid#7"
+      }
+    },
+    {
+      "id": "catCreateDup",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "Logistics",
+        "description": "Again"
+      },
+      "response": {
+        "error": "CATEGORY_ALREADY_EXISTS"
+      }
+    },
+    {
+      "id": "catCreateByMember",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/create",
+      "body": {
+        "session": "$loginMara.session",
+        "name": "Sneaky",
+        "description": "x"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "catCreateExams",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "Exams",
+        "description": "Exam threads"
+      },
+      "response": {
+        "category": "uuid#8"
+      }
+    },
+    {
+      "id": "catCreateMeta",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/categories/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "Meta",
+        "description": "About the forum"
+      },
+      "response": {
+        "category": "uuid#9"
+      }
+    },
+    {
+      "id": "catList",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/list",
+      "body": {},
+      "response": {
+        "categories": [
+          {
+            "category": "uuid#7",
+            "name": "Logistics",
+            "description": "Course logistics and scheduling"
+          },
+          {
+            "category": "uuid#8",
+            "name": "Exams",
+            "description": "Exam threads"
+          },
+          {
+            "category": "uuid#9",
+            "name": "Meta",
+            "description": "About the forum"
+          }
+        ]
+      }
+    },
+    {
+      "id": "catDeleteExams",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/delete",
+      "body": {
+        "session": "$loginAdmin.session",
+        "category": "$catCreateExams.category"
+      },
+      "response": {
+        "category": "uuid#8"
+      }
+    },
+    {
+      "id": "catDeleteMissing",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/delete",
+      "body": {
+        "session": "$loginAdmin.session",
+        "category": "no-such-category"
+      },
+      "response": {
+        "error": "CATEGORY_NOT_FOUND"
+      }
+    },
+    {
+      "id": "catDeleteByMember",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/delete",
+      "body": {
+        "session": "$loginNoah.session",
+        "category": "$catCreateMeta.category"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "threadT1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginMara.session",
+        "content": "How do I submit HW1? I cannot find the button."
+      },
+      "response": {
+        "post": "uuid#10",
+        "conversation": "uuid#11",
+        "node": "uuid#12"
+      }
+    },
+    {
+      "id": "replyNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginNoah.session",
+        "parent": "$threadT1.node",
+        "content": "Use the assignments page."
+      },
+      "response": {
+        "post": "uuid#13",
+        "node": "uuid#14"
+      }
+    },
+    {
+      "id": "replyMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginMara.session",
+        "parent": "$threadT1.node",
+        "content": "Found it, thanks!"
+      },
+      "response": {
+        "post": "uuid#15",
+        "node": "uuid#16"
+      }
+    },
+    {
+      "id": "threadT2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginNoah.session",
+        "content": "Office hours this week?"
+      },
+      "response": {
+        "post": "uuid#17",
+        "conversation": "uuid#18",
+        "node": "uuid#19"
+      }
+    },
+    {
+      "id": "threadT3",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginMara.session",
+        "content": "Lost umbrella in the lab"
+      },
+      "response": {
+        "post": "uuid#20",
+        "conversation": "uuid#21",
+        "node": "uuid#22"
+      }
+    },
+    {
+      "id": "lockT3",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/locks/lock",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$threadT3.conversation"
+      },
+      "response": {
+        "target": "uuid#21"
+      }
+    },
+    {
+      "id": "catAssignT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$threadT1.post",
+        "category": "$catCreateLogistics.category"
+      },
+      "response": {
+        "item": "uuid#10"
+      }
+    },
+    {
+      "id": "catAssignByMember",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/assign",
+      "body": {
+        "session": "$loginMara.session",
+        "item": "$threadT2.post",
+        "category": "$catCreateLogistics.category"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "catAssignMissingCategory",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$threadT2.post",
+        "category": "no-such-category"
+      },
+      "response": {
+        "error": "CATEGORY_NOT_FOUND"
+      }
+    },
+    {
+      "id": "catAssignT2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/categories/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$threadT2.post",
+        "category": "$catCreateLogistics.category"
+      },
+      "response": {
+        "item": "uuid#17"
+      }
+    },
+    {
+      "id": "catReassignT2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$threadT2.post",
+        "category": "$catCreateMeta.category"
+      },
+      "response": {
+        "item": "uuid#17"
+      }
+    },
+    {
+      "id": "catForItemT2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/forItem",
+      "body": {
+        "item": "$threadT2.post"
+      },
+      "response": {
+        "category": [
+          {
+            "category": "uuid#9",
+            "name": "Meta",
+            "description": "About the forum"
+          }
+        ]
+      }
+    },
+    {
+      "id": "catItemsLogistics",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/items",
+      "body": {
+        "category": "$catCreateLogistics.category"
+      },
+      "response": {
+        "items": [
+          {
+            "item": "uuid#10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "catForItemUncategorized",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/forItem",
+      "body": {
+        "item": "$threadT3.post"
+      },
+      "response": {
+        "category": []
+      }
+    },
+    {
+      "id": "catUnassignByMember",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/unassign",
+      "body": {
+        "session": "$loginNoah.session",
+        "item": "$threadT2.post"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "catUnassignNever",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/unassign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$threadT3.post"
+      },
+      "response": {
+        "error": "ITEM_NOT_CATEGORIZED"
+      }
+    },
+    {
+      "id": "tagCreateHomework",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/create",
+      "body": {
+        "session": "$loginMara.session",
+        "name": "homework"
+      },
+      "response": {
+        "tag": "uuid#23"
+      }
+    },
+    {
+      "id": "tagCreateDup",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/create",
+      "body": {
+        "session": "$loginNoah.session",
+        "name": "homework"
+      },
+      "response": {
+        "error": "TAG_ALREADY_EXISTS"
+      }
+    },
+    {
+      "id": "tagCreateNoSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/create",
+      "body": {
+        "name": "orphan"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "tagCreateUrgent",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/tags/create",
+      "body": {
+        "session": "$loginMara.session",
+        "name": "urgent"
+      },
+      "response": {
+        "tag": "uuid#24"
+      }
+    },
+    {
+      "id": "tagAddHomeworkT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/add",
+      "body": {
+        "session": "$loginMara.session",
+        "target": "$threadT1.post",
+        "tag": "$tagCreateHomework.tag"
+      },
+      "response": {
+        "target": "uuid#10"
+      }
+    },
+    {
+      "id": "tagAddDup",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/add",
+      "body": {
+        "session": "$loginMara.session",
+        "target": "$threadT1.post",
+        "tag": "$tagCreateHomework.tag"
+      },
+      "response": {
+        "error": "TAG_ALREADY_APPLIED"
+      }
+    },
+    {
+      "id": "tagAddMissingTag",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/add",
+      "body": {
+        "session": "$loginMara.session",
+        "target": "$threadT1.post",
+        "tag": "no-such-tag"
+      },
+      "response": {
+        "error": "TAG_NOT_FOUND"
+      }
+    },
+    {
+      "id": "tagAddUrgentT1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/tags/add",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$threadT1.post",
+        "tag": "$tagCreateUrgent.tag"
+      },
+      "response": {
+        "target": "uuid#10"
+      }
+    },
+    {
+      "id": "tagAddUrgentT2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/tags/add",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$threadT2.post",
+        "tag": "$tagCreateUrgent.tag"
+      },
+      "response": {
+        "target": "uuid#17"
+      }
+    },
+    {
+      "id": "tagForTargetT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/forTarget",
+      "body": {
+        "target": "$threadT1.post"
+      },
+      "response": {
+        "tags": [
+          {
+            "tag": "uuid#23",
+            "name": "homework"
+          },
+          {
+            "tag": "uuid#24",
+            "name": "urgent"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tagTargetsUrgent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/targets",
+      "body": {
+        "tag": "$tagCreateUrgent.tag"
+      },
+      "response": {
+        "targets": [
+          {
+            "target": "uuid#10"
+          },
+          {
+            "target": "uuid#17"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tagRemoveUrgentT2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/remove",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$threadT2.post",
+        "tag": "$tagCreateUrgent.tag"
+      },
+      "response": {
+        "target": "uuid#17"
+      }
+    },
+    {
+      "id": "tagRemoveNotApplied",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/remove",
+      "body": {
+        "session": "$loginNoah.session",
+        "target": "$threadT2.post",
+        "tag": "$tagCreateUrgent.tag"
+      },
+      "response": {
+        "error": "TAG_NOT_APPLIED"
+      }
+    },
+    {
+      "id": "tagListAll",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/list",
+      "body": {},
+      "response": {
+        "tags": [
+          {
+            "tag": "uuid#23",
+            "name": "homework"
+          },
+          {
+            "tag": "uuid#24",
+            "name": "urgent"
+          }
+        ]
+      }
+    },
+    {
+      "id": "resolveAcceptByOther",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/accept",
+      "body": {
+        "session": "$loginNoah.session",
+        "question": "$threadT1.post",
+        "answer": "$replyNoah.post"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "resolveAcceptByAuthor",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/accept",
+      "body": {
+        "session": "$loginMara.session",
+        "question": "$threadT1.post",
+        "answer": "$replyNoah.post"
+      },
+      "response": {
+        "resolution": "uuid#10"
+      }
+    },
+    {
+      "id": "resolveIsResolvedT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/isResolved",
+      "body": {
+        "question": "$threadT1.post"
+      },
+      "response": {
+        "resolved": true
+      }
+    },
+    {
+      "id": "resolveGetT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/get",
+      "body": {
+        "question": "$threadT1.post"
+      },
+      "response": {
+        "resolution": [
+          {
+            "answer": "uuid#13",
+            "resolvedBy": "uuid#3",
+            "resolvedAt": "<date>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "resolveAcceptCrossThread",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/accept",
+      "body": {
+        "session": "$loginMara.session",
+        "question": "$threadT1.post",
+        "answer": "$threadT2.post"
+      },
+      "response": {
+        "resolution": "uuid#10"
+      }
+    },
+    {
+      "id": "resolveAcceptGhostAnswer",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/accept",
+      "body": {
+        "session": "$loginMara.session",
+        "question": "$threadT1.post",
+        "answer": "no-such-post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "resolveAcceptMissingQuestion",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/accept",
+      "body": {
+        "session": "$loginMara.session",
+        "question": "no-such-post",
+        "answer": "$replyNoah.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "resolveClearByOther",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/clear",
+      "body": {
+        "session": "$loginNoah.session",
+        "question": "$threadT1.post"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "resolveClearT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/clear",
+      "body": {
+        "session": "$loginMara.session",
+        "question": "$threadT1.post"
+      },
+      "response": {
+        "question": "uuid#10"
+      }
+    },
+    {
+      "id": "resolveClearAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/clear",
+      "body": {
+        "session": "$loginMara.session",
+        "question": "$threadT1.post"
+      },
+      "response": {
+        "error": "RESOLUTION_NOT_FOUND"
+      }
+    },
+    {
+      "id": "resolveIsResolvedAfterClear",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/isResolved",
+      "body": {
+        "question": "$threadT1.post"
+      },
+      "response": {
+        "resolved": false
+      }
+    },
+    {
+      "id": "resolveReaccept",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/resolutions/accept",
+      "body": {
+        "session": "$loginMara.session",
+        "question": "$threadT1.post",
+        "answer": "$replyNoah.post"
+      },
+      "response": {
+        "resolution": "uuid#10"
+      }
+    },
+    {
+      "id": "feedLatest",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/latest",
+      "body": {},
+      "response": {
+        "conversations": [
+          {
+            "conversation": "uuid#21",
+            "root": "uuid#22",
+            "item": "uuid#20",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": true,
+            "resolved": false,
+            "post": {
+              "author": "uuid#3",
+              "content": "Lost umbrella in the lab",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3"]
+          },
+          {
+            "conversation": "uuid#18",
+            "root": "uuid#19",
+            "item": "uuid#17",
+            "createdAt": "<date>",
+            "category": {
+              "category": "uuid#9",
+              "name": "Meta",
+              "description": "About the forum"
+            },
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": "uuid#5",
+              "content": "Office hours this week?",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#5"]
+          },
+          {
+            "conversation": "uuid#11",
+            "root": "uuid#12",
+            "item": "uuid#10",
+            "createdAt": "<date>",
+            "category": {
+              "category": "uuid#7",
+              "name": "Logistics",
+              "description": "Course logistics and scheduling"
+            },
+            "tags": [
+              {
+                "tag": "uuid#23",
+                "name": "homework"
+              },
+              {
+                "tag": "uuid#24",
+                "name": "urgent"
+              }
+            ],
+            "locked": false,
+            "resolved": true,
+            "post": {
+              "author": "uuid#3",
+              "content": "How do I submit HW1? I cannot find the button.",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 2,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3", "uuid#5"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "feedActivity",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/activity",
+      "body": {},
+      "response": {
+        "conversations": [
+          {
+            "conversation": "uuid#21",
+            "root": "uuid#22",
+            "item": "uuid#20",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": true,
+            "resolved": false,
+            "post": {
+              "author": "uuid#3",
+              "content": "Lost umbrella in the lab",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3"]
+          },
+          {
+            "conversation": "uuid#18",
+            "root": "uuid#19",
+            "item": "uuid#17",
+            "createdAt": "<date>",
+            "category": {
+              "category": "uuid#9",
+              "name": "Meta",
+              "description": "About the forum"
+            },
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": "uuid#5",
+              "content": "Office hours this week?",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#5"]
+          },
+          {
+            "conversation": "uuid#11",
+            "root": "uuid#12",
+            "item": "uuid#10",
+            "createdAt": "<date>",
+            "category": {
+              "category": "uuid#7",
+              "name": "Logistics",
+              "description": "Course logistics and scheduling"
+            },
+            "tags": [
+              {
+                "tag": "uuid#23",
+                "name": "homework"
+              },
+              {
+                "tag": "uuid#24",
+                "name": "urgent"
+              }
+            ],
+            "locked": false,
+            "resolved": true,
+            "post": {
+              "author": "uuid#3",
+              "content": "How do I submit HW1? I cannot find the button.",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 2,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3", "uuid#5"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "enrichTreeT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/get",
+      "body": {
+        "conversation": "$threadT1.conversation"
+      },
+      "response": {
+        "thread": [
+          {
+            "node": "uuid#12",
+            "item": "uuid#10",
+            "parent": null,
+            "depth": 0,
+            "post": {
+              "author": "uuid#3",
+              "content": "How do I submit HW1? I cannot find the button.",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>How do I submit HW1? I cannot find the button.</p>\n"
+          },
+          {
+            "node": "uuid#14",
+            "item": "uuid#13",
+            "parent": "uuid#12",
+            "depth": 1,
+            "post": {
+              "author": "uuid#5",
+              "content": "Use the assignments page.",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Use the assignments page.</p>\n"
+          },
+          {
+            "node": "uuid#16",
+            "item": "uuid#15",
+            "parent": "uuid#12",
+            "depth": 1,
+            "post": {
+              "author": "uuid#3",
+              "content": "Found it, thanks!",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Found it, thanks!</p>\n"
+          }
+        ],
+        "context": [
+          {
+            "item": "uuid#10",
+            "category": {
+              "category": "uuid#7",
+              "name": "Logistics",
+              "description": "Course logistics and scheduling"
+            },
+            "tags": [
+              {
+                "tag": "uuid#23",
+                "name": "homework"
+              },
+              {
+                "tag": "uuid#24",
+                "name": "urgent"
+              }
+            ],
+            "locked": false,
+            "acceptedAnswer": "uuid#13",
+            "replyCount": 2,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3", "uuid#5"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "enrichCatT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/forItem",
+      "body": {
+        "item": "$threadT1.post"
+      },
+      "response": {
+        "category": [
+          {
+            "category": "uuid#7",
+            "name": "Logistics",
+            "description": "Course logistics and scheduling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "enrichLockedT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/isLocked",
+      "body": {
+        "target": "$threadT1.conversation"
+      },
+      "response": {
+        "locked": false
+      }
+    },
+    {
+      "id": "enrichLockedT3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/locks/isLocked",
+      "body": {
+        "target": "$threadT3.conversation"
+      },
+      "response": {
+        "locked": true
+      }
+    },
+    {
+      "id": "enrichResolvedT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/isResolved",
+      "body": {
+        "question": "$threadT1.post"
+      },
+      "response": {
+        "resolved": true
+      }
+    },
+    {
+      "id": "catAssignReply",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/categories/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyNoah.post",
+        "category": "$catCreateLogistics.category"
+      },
+      "response": {
+        "item": "uuid#13"
+      }
+    },
+    {
+      "id": "tagAddReply",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/tags/add",
+      "body": {
+        "session": "$loginMara.session",
+        "target": "$replyNoah.post",
+        "tag": "$tagCreateHomework.tag"
+      },
+      "response": {
+        "target": "uuid#13"
+      }
+    },
+    {
+      "id": "trashReply",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyNoah.post"
+      },
+      "response": {
+        "item": "uuid#13"
+      }
+    },
+    {
+      "id": "purgeReply",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyNoah.post"
+      },
+      "response": {
+        "item": "uuid#13"
+      }
+    },
+    {
+      "id": "tagsAfterPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/forTarget",
+      "body": {
+        "target": "$replyNoah.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "catAfterPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/forItem",
+      "body": {
+        "item": "$replyNoah.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "catItemsAfterPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/categories/items",
+      "body": {
+        "category": "$catCreateLogistics.category"
+      },
+      "response": {
+        "items": [
+          {
+            "item": "uuid#10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "resolveAfterPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/get",
+      "body": {
+        "question": "$threadT1.post"
+      },
+      "response": {
+        "resolution": []
+      }
+    },
+    {
+      "id": "isResolvedAfterPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/isResolved",
+      "body": {
+        "question": "$threadT1.post"
+      },
+      "response": {
+        "resolved": false
+      }
+    },
+    {
+      "id": "treeAfterPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/get",
+      "body": {
+        "conversation": "$threadT1.conversation"
+      },
+      "response": {
+        "thread": [
+          {
+            "node": "uuid#12",
+            "item": "uuid#10",
+            "parent": null,
+            "depth": 0,
+            "post": {
+              "author": "uuid#3",
+              "content": "How do I submit HW1? I cannot find the button.",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>How do I submit HW1? I cannot find the button.</p>\n"
+          },
+          {
+            "node": "uuid#16",
+            "item": "uuid#15",
+            "parent": "uuid#12",
+            "depth": 1,
+            "post": {
+              "author": "uuid#3",
+              "content": "Found it, thanks!",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Found it, thanks!</p>\n"
+          }
+        ],
+        "context": [
+          {
+            "item": "uuid#10",
+            "category": {
+              "category": "uuid#7",
+              "name": "Logistics",
+              "description": "Course logistics and scheduling"
+            },
+            "tags": [
+              {
+                "tag": "uuid#23",
+                "name": "homework"
+              },
+              {
+                "tag": "uuid#24",
+                "name": "urgent"
+              }
+            ],
+            "locked": false,
+            "acceptedAnswer": null,
+            "replyCount": 1,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "tagDeleteConceptSide",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Tagging.deleteTag",
+      "body": {
+        "tag": "$tagCreateUrgent.tag"
+      },
+      "response": {
+        "tag": "uuid#24"
+      }
+    },
+    {
+      "id": "tagListAfterDelete",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/tags/list",
+      "body": {},
+      "response": {
+        "tags": [
+          {
+            "tag": "uuid#23",
+            "name": "homework"
+          }
+        ]
+      }
+    }
+  ]
+}

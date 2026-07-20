@@ -1,0 +1,948 @@
+{
+  "name": "late days boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u5_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "u5_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u5_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "regStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u5_staff",
+        "password": "password123",
+        "displayName": "Staff",
+        "email": "u5_staff@example.com"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u5_staff",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#4",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "regAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u5_alice",
+        "password": "password123",
+        "displayName": "Alice",
+        "email": "u5_alice@example.com"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "loginAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u5_alice",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#6",
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "regBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u5_bob",
+        "password": "password123",
+        "displayName": "Bob",
+        "email": "u5_bob@example.com"
+      },
+      "response": {
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "loginBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u5_bob",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#8",
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "defineLmsAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "u5-lms-admin",
+        "capabilities": ["roster:manage", "assignments:manage"]
+      },
+      "response": {
+        "role": "uuid#9"
+      }
+    },
+    {
+      "id": "grantLmsAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/grant",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$regAdmin.user",
+        "context": "forum",
+        "role": "$defineLmsAdmin.role"
+      },
+      "response": {
+        "grant": "uuid#10"
+      }
+    },
+    {
+      "id": "configureClass",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/configure-class",
+      "body": {
+        "session": "$loginAdmin.session",
+        "code": "CS101",
+        "title": "Intro to CS",
+        "term": "Fall 2026",
+        "timezone": "America/New_York"
+      },
+      "response": {
+        "class": {
+          "_id": "uuid#11",
+          "code": "CS101",
+          "title": "Intro to CS",
+          "term": "Fall 2026",
+          "timezone": "America/New_York",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "secA",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/sections/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "Section A",
+        "location": "Room 101",
+        "meetingPattern": "MW 10am"
+      },
+      "response": {
+        "section": {
+          "_id": "uuid#12",
+          "name": "Section A",
+          "location": "Room 101",
+          "meetingPattern": "MW 10am",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "importSeats",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/import",
+      "body": {
+        "session": "$loginAdmin.session",
+        "rows": [
+          {
+            "externalKey": "u5-staff-1",
+            "email": "u5_staff@example.com",
+            "rosterName": "Staff",
+            "kind": "STAFF"
+          },
+          {
+            "externalKey": "u5-stu-1",
+            "email": "u5_alice@example.com",
+            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "$secA.section._id"
+          },
+          {
+            "externalKey": "u5-stu-2",
+            "email": "u5_bob@example.com",
+            "rosterName": "Bob",
+            "kind": "STUDENT",
+            "section": "$secA.section._id"
+          }
+        ]
+      },
+      "response": {
+        "created": [
+          {
+            "_id": "uuid#13",
+            "externalKey": "u5-staff-1",
+            "email": "u5_staff@example.com",
+            "rosterName": "Staff",
+            "kind": "STAFF",
+            "section": null,
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#14",
+            "externalKey": "u5-stu-1",
+            "email": "u5_alice@example.com",
+            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "uuid#12",
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#15",
+            "externalKey": "u5-stu-2",
+            "email": "u5_bob@example.com",
+            "rosterName": "Bob",
+            "kind": "STUDENT",
+            "section": "uuid#12",
+            "status": "PENDING"
+          }
+        ],
+        "skipped": []
+      }
+    },
+    {
+      "id": "claimStaff",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginStaff.session",
+        "externalKey": "u5-staff-1"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#13",
+          "externalKey": "u5-staff-1",
+          "email": "u5_staff@example.com",
+          "rosterName": "Staff",
+          "kind": "STAFF",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#3"
+        }
+      }
+    },
+    {
+      "id": "claimAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginAlice.session",
+        "externalKey": "u5-stu-1"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#14",
+          "externalKey": "u5-stu-1",
+          "email": "u5_alice@example.com",
+          "rosterName": "Alice",
+          "kind": "STUDENT",
+          "section": "uuid#12",
+          "status": "ACTIVE",
+          "user": "uuid#5"
+        }
+      }
+    },
+    {
+      "id": "claimBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roster/claim-seat",
+      "body": {
+        "session": "$loginBob.session",
+        "externalKey": "u5-stu-2"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#15",
+          "externalKey": "u5-stu-2",
+          "email": "u5_bob@example.com",
+          "rosterName": "Bob",
+          "kind": "STUDENT",
+          "section": "uuid#12",
+          "status": "ACTIVE",
+          "user": "uuid#7"
+        }
+      }
+    },
+    {
+      "id": "createHw1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginStaff.session",
+        "title": "Homework 1",
+        "instructions": "Do the problems.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T17:31:32.691Z",
+        "dueAt": "2026-07-20T17:31:32.691Z",
+        "closeAt": "2026-07-27T17:31:32.691Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#16"
+      }
+    },
+    {
+      "id": "publishHw1",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginStaff.session",
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "assignment": "uuid#16"
+      }
+    },
+    {
+      "id": "createHw2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/create-draft",
+      "body": {
+        "session": "$loginStaff.session",
+        "title": "Homework 2",
+        "instructions": "Do the problems.",
+        "kind": "HOMEWORK",
+        "availableAt": "2026-07-14T17:31:32.691Z",
+        "dueAt": "2026-07-20T17:31:32.691Z",
+        "closeAt": "2026-07-27T17:31:32.691Z",
+        "acceptsSubmissions": true,
+        "audience": "EVERYONE",
+        "targets": []
+      },
+      "response": {
+        "assignment": "uuid#17"
+      }
+    },
+    {
+      "id": "publishHw2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/assignments/publish",
+      "body": {
+        "session": "$loginStaff.session",
+        "assignment": "$createHw2.assignment"
+      },
+      "response": {
+        "assignment": "uuid#17"
+      }
+    },
+    {
+      "id": "balanceAliceEarly",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/balance",
+      "body": {
+        "learner": "$regAlice.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "applyNoBalance",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "days": 1
+      },
+      "response": {
+        "error": "INSUFFICIENT_BALANCE"
+      }
+    },
+    {
+      "id": "configureByStudent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/configure-policy",
+      "body": {
+        "session": "$loginAlice.session",
+        "defaultDays": 3,
+        "unitHours": 24,
+        "maxDaysPerItem": 2
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "configureByAdmin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/configure-policy",
+      "body": {
+        "session": "$loginAdmin.session",
+        "defaultDays": 3,
+        "unitHours": 24,
+        "maxDaysPerItem": 2
+      },
+      "response": {
+        "policy": true
+      }
+    },
+    {
+      "id": "configurePartial",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/configure-policy",
+      "body": {
+        "session": "$loginStaff.session",
+        "defaultDays": 3
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "policyBeforeConfig",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Banking._getTerms",
+      "body": {},
+      "response": {
+        "allowance": 3,
+        "perItemLimit": 2,
+        "unitHours": 24
+      }
+    },
+    {
+      "id": "configurePolicy",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/configure-policy",
+      "body": {
+        "session": "$loginStaff.session",
+        "defaultDays": 3,
+        "unitHours": 24,
+        "maxDaysPerItem": 2
+      },
+      "response": {
+        "policy": true
+      }
+    },
+    {
+      "id": "applyTooMany",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "days": 3
+      },
+      "response": {
+        "error": "LATE_DAYS_EXCEED_MAX"
+      }
+    },
+    {
+      "id": "applyAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "days": 2
+      },
+      "response": {
+        "use": "uuid#18"
+      }
+    },
+    {
+      "id": "balanceAfterApply",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Banking._getBalance",
+      "body": {
+        "learner": "$regAlice.user"
+      },
+      "response": {
+        "granted": 3,
+        "used": 2,
+        "remaining": 1
+      }
+    },
+    {
+      "id": "applyDuplicate",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "days": 1
+      },
+      "response": {
+        "error": "LATE_USE_ALREADY_EXISTS"
+      }
+    },
+    {
+      "id": "applyInsufficient",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw2.assignment",
+        "days": 2
+      },
+      "response": {
+        "error": "INSUFFICIENT_BALANCE"
+      }
+    },
+    {
+      "id": "applyGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginBob.session",
+        "assignment": "never-existed",
+        "days": 1
+      },
+      "response": {
+        "use": "uuid#19"
+      }
+    },
+    {
+      "id": "applyNoDays",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw2.assignment"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "applyByStaff",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginStaff.session",
+        "assignment": "$createHw1.assignment",
+        "days": 1
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "grantByStudent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/grant",
+      "body": {
+        "session": "$loginAlice.session",
+        "learner": "$regAlice.user",
+        "days": 5,
+        "reason": "self-serve"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "grantNegative",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/grant",
+      "body": {
+        "session": "$loginStaff.session",
+        "learner": "$regAlice.user",
+        "days": -1,
+        "reason": "typo"
+      },
+      "response": {
+        "error": "LATE_DAYS_MUST_BE_POSITIVE"
+      }
+    },
+    {
+      "id": "grantAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/grant",
+      "body": {
+        "session": "$loginStaff.session",
+        "learner": "$regAlice.user",
+        "days": 2,
+        "reason": "conference travel"
+      },
+      "response": {
+        "grant": "uuid#20"
+      }
+    },
+    {
+      "id": "balanceAfterGrant",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Banking._getBalance",
+      "body": {
+        "learner": "$regAlice.user"
+      },
+      "response": {
+        "granted": 5,
+        "used": 2,
+        "remaining": 3
+      }
+    },
+    {
+      "id": "applyHw2Again",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw2.assignment",
+        "days": 2
+      },
+      "response": {
+        "use": "uuid#21"
+      }
+    },
+    {
+      "id": "changeDown",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/change",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "days": 1
+      },
+      "response": {
+        "use": "uuid#18"
+      }
+    },
+    {
+      "id": "appliedAfterChangeDown",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Banking._getApplied",
+      "body": {
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment"
+      },
+      "response": [
+        {
+          "use": "uuid#18",
+          "days": 1,
+          "appliedAt": "<date>"
+        }
+      ]
+    },
+    {
+      "id": "changeExceedMax",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/change",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "days": 3
+      },
+      "response": {
+        "error": "LATE_DAYS_EXCEED_MAX"
+      }
+    },
+    {
+      "id": "changeNegative",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/change",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "days": -1
+      },
+      "response": {
+        "error": "LATE_DAYS_NEGATIVE"
+      }
+    },
+    {
+      "id": "changeToZero",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/change",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw1.assignment",
+        "days": 0
+      },
+      "response": {
+        "use": "uuid#18"
+      }
+    },
+    {
+      "id": "appliedAfterChangeZero",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Banking._getApplied",
+      "body": {
+        "learner": "$regAlice.user",
+        "item": "$createHw1.assignment"
+      },
+      "response": [
+        {
+          "use": "uuid#18",
+          "days": 0,
+          "appliedAt": "<date>"
+        }
+      ]
+    },
+    {
+      "id": "changeNoUse",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/change",
+      "body": {
+        "session": "$loginBob.session",
+        "assignment": "$createHw1.assignment",
+        "days": 1
+      },
+      "response": {
+        "error": "LATE_USE_NOT_FOUND"
+      }
+    },
+    {
+      "id": "changeByStaff",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/change",
+      "body": {
+        "session": "$loginStaff.session",
+        "assignment": "$createHw1.assignment",
+        "days": 1
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "cancelHw2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/cancel",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw2.assignment"
+      },
+      "response": {
+        "use": "uuid#21"
+      }
+    },
+    {
+      "id": "cancelAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/cancel",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw2.assignment"
+      },
+      "response": {
+        "error": "LATE_USE_NOT_FOUND"
+      }
+    },
+    {
+      "id": "reapplyHw2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/apply",
+      "body": {
+        "session": "$loginAlice.session",
+        "assignment": "$createHw2.assignment",
+        "days": 1
+      },
+      "response": {
+        "use": "uuid#22"
+      }
+    },
+    {
+      "id": "listStub",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/list",
+      "body": {
+        "session": "$loginStaff.session"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "listByAdmin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/list",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "forAssignmentHw1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/for-assignment",
+      "body": {
+        "session": "$loginStaff.session",
+        "assignment": "$createHw1.assignment"
+      },
+      "response": {
+        "users": [
+          {
+            "learner": "uuid#5",
+            "days": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "balanceAliceEnd",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/late-days/balance",
+      "body": {
+        "learner": "$regAlice.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "balanceEnd",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Banking._getBalance",
+      "body": {
+        "learner": "$regAlice.user"
+      },
+      "response": {
+        "granted": 5,
+        "used": 1,
+        "remaining": 4
+      }
+    },
+    {
+      "id": "usesEnd",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Banking._getUses",
+      "body": {
+        "learner": "$regAlice.user"
+      },
+      "response": [
+        {
+          "use": "uuid#18",
+          "item": "uuid#16",
+          "days": 0,
+          "status": "APPLIED",
+          "appliedAt": "<date>"
+        },
+        {
+          "use": "uuid#21",
+          "item": "uuid#17",
+          "days": 2,
+          "status": "CANCELED",
+          "appliedAt": "<date>"
+        },
+        {
+          "use": "uuid#22",
+          "item": "uuid#17",
+          "days": 1,
+          "status": "APPLIED",
+          "appliedAt": "<date>"
+        }
+      ]
+    },
+    {
+      "id": "usersForItemEnd",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Banking._getUsesForItem",
+      "body": {
+        "item": "$createHw1.assignment"
+      },
+      "response": [
+        {
+          "learner": "uuid#5",
+          "days": 0
+        }
+      ]
+    }
+  ]
+}

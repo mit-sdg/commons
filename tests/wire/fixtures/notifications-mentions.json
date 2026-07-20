@@ -1,0 +1,1174 @@
+{
+  "name": "forum notifications boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u2_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "u2_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u2_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "regMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u2_mara",
+        "password": "password123",
+        "displayName": "Mara",
+        "email": "u2_mara@example.com"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u2_mara",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#4",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "regNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u2_noah",
+        "password": "password123",
+        "displayName": "Noah",
+        "email": "u2_noah@example.com"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "loginNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u2_noah",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#6",
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "regIris",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u2_iris",
+        "password": "password123",
+        "displayName": "Iris",
+        "email": "u2_iris@example.com"
+      },
+      "response": {
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "loginIris",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u2_iris",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#8",
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "t1Create",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginMara.session",
+        "content": "Notification test thread"
+      },
+      "response": {
+        "post": "uuid#9",
+        "conversation": "uuid#10",
+        "node": "uuid#11"
+      }
+    },
+    {
+      "id": "replyNoah1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginNoah.session",
+        "parent": "$t1Create.node",
+        "content": "First reply"
+      },
+      "response": {
+        "post": "uuid#12",
+        "node": "uuid#13"
+      }
+    },
+    {
+      "id": "inboxMara1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#14",
+            "kind": "reply",
+            "subject": "uuid#12",
+            "link": "uuid#12",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "countMara1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/unreadCount",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "count": 1
+      }
+    },
+    {
+      "id": "subIris",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/subscriptions/subscribe",
+      "body": {
+        "session": "$loginIris.session",
+        "target": "$t1Create.conversation"
+      },
+      "response": {
+        "subscription": "uuid#15"
+      }
+    },
+    {
+      "id": "subIrisDupe",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/subscriptions/subscribe",
+      "body": {
+        "session": "$loginIris.session",
+        "target": "$t1Create.conversation"
+      },
+      "response": {
+        "error": "ALREADY_SUBSCRIBED"
+      }
+    },
+    {
+      "id": "replyNoah2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginNoah.session",
+        "parent": "$t1Create.node",
+        "content": "Second reply"
+      },
+      "response": {
+        "post": "uuid#16",
+        "node": "uuid#17"
+      }
+    },
+    {
+      "id": "inboxMara2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#18",
+            "kind": "reply",
+            "subject": "uuid#16",
+            "link": "uuid#16",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#14",
+            "kind": "reply",
+            "subject": "uuid#12",
+            "link": "uuid#12",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "inboxIris1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginIris.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#19",
+            "kind": "followed_reply",
+            "subject": "uuid#16",
+            "link": "uuid#16",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "replyIris",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginIris.session",
+        "parent": "$t1Create.node",
+        "content": "Iris replies"
+      },
+      "response": {
+        "post": "uuid#20",
+        "node": "uuid#21"
+      }
+    },
+    {
+      "id": "inboxIris2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginIris.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#19",
+            "kind": "followed_reply",
+            "subject": "uuid#16",
+            "link": "uuid#16",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "subMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/subscriptions/subscribe",
+      "body": {
+        "session": "$loginMara.session",
+        "target": "$t1Create.conversation"
+      },
+      "response": {
+        "subscription": "uuid#22"
+      }
+    },
+    {
+      "id": "replyNoah3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginNoah.session",
+        "parent": "$t1Create.node",
+        "content": "Third reply"
+      },
+      "response": {
+        "post": "uuid#23",
+        "node": "uuid#24"
+      }
+    },
+    {
+      "id": "inboxMara3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#25",
+            "kind": "reply",
+            "subject": "uuid#23",
+            "link": "uuid#23",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#26",
+            "kind": "reply",
+            "subject": "uuid#20",
+            "link": "uuid#20",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#18",
+            "kind": "reply",
+            "subject": "uuid#16",
+            "link": "uuid#16",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#14",
+            "kind": "reply",
+            "subject": "uuid#12",
+            "link": "uuid#12",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "t2Mention",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginNoah.session",
+        "content": "Root post pinging @u2_mara"
+      },
+      "response": {
+        "post": "uuid#27",
+        "conversation": "uuid#28",
+        "node": "uuid#29"
+      }
+    },
+    {
+      "id": "inboxMara4",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#30",
+            "kind": "mention",
+            "subject": "uuid#27",
+            "link": "uuid#27",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#25",
+            "kind": "reply",
+            "subject": "uuid#23",
+            "link": "uuid#23",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#26",
+            "kind": "reply",
+            "subject": "uuid#20",
+            "link": "uuid#20",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#18",
+            "kind": "reply",
+            "subject": "uuid#16",
+            "link": "uuid#16",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#14",
+            "kind": "reply",
+            "subject": "uuid#12",
+            "link": "uuid#12",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "replyMentionParent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginIris.session",
+        "parent": "$t1Create.node",
+        "content": "thanks @u2_mara"
+      },
+      "response": {
+        "post": "uuid#31",
+        "node": "uuid#32"
+      }
+    },
+    {
+      "id": "inboxMara5",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#33",
+            "kind": "reply",
+            "subject": "uuid#31",
+            "link": "uuid#31",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#30",
+            "kind": "mention",
+            "subject": "uuid#27",
+            "link": "uuid#27",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#25",
+            "kind": "reply",
+            "subject": "uuid#23",
+            "link": "uuid#23",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#26",
+            "kind": "reply",
+            "subject": "uuid#20",
+            "link": "uuid#20",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#18",
+            "kind": "reply",
+            "subject": "uuid#16",
+            "link": "uuid#16",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#14",
+            "kind": "reply",
+            "subject": "uuid#12",
+            "link": "uuid#12",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "replyMentionThird",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginIris.session",
+        "parent": "$t1Create.node",
+        "content": "cc @u2_noah"
+      },
+      "response": {
+        "post": "uuid#34",
+        "node": "uuid#35"
+      }
+    },
+    {
+      "id": "inboxNoah1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginNoah.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#36",
+            "kind": "mention",
+            "subject": "uuid#34",
+            "link": "uuid#34",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "replyMentionWatcher",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginNoah.session",
+        "parent": "$t1Create.node",
+        "content": "for @u2_iris"
+      },
+      "response": {
+        "post": "uuid#37",
+        "node": "uuid#38"
+      }
+    },
+    {
+      "id": "inboxIris3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginIris.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#39",
+            "kind": "mention",
+            "subject": "uuid#37",
+            "link": "uuid#37",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#40",
+            "kind": "followed_reply",
+            "subject": "uuid#23",
+            "link": "uuid#23",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#19",
+            "kind": "followed_reply",
+            "subject": "uuid#16",
+            "link": "uuid#16",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "selfMention",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginMara.session",
+        "parent": "$t1Create.node",
+        "content": "note to self @u2_mara"
+      },
+      "response": {
+        "post": "uuid#41",
+        "node": "uuid#42"
+      }
+    },
+    {
+      "id": "ghostMention",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginNoah.session",
+        "parent": "$t1Create.node",
+        "content": "hi @u2_ghost"
+      },
+      "response": {
+        "post": "uuid#43",
+        "node": "uuid#44"
+      }
+    },
+    {
+      "id": "dupeMention",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginIris.session",
+        "parent": "$t1Create.node",
+        "content": "@u2_noah @u2_noah twice"
+      },
+      "response": {
+        "post": "uuid#45",
+        "node": "uuid#46"
+      }
+    },
+    {
+      "id": "inboxNoah2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginNoah.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#47",
+            "kind": "mention",
+            "subject": "uuid#45",
+            "link": "uuid#45",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#36",
+            "kind": "mention",
+            "subject": "uuid#34",
+            "link": "uuid#34",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "editMention",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "$loginNoah.session",
+        "post": "$replyNoah3.post",
+        "content": "now pinging @u2_iris"
+      },
+      "response": {
+        "post": "uuid#23"
+      }
+    },
+    {
+      "id": "acceptAnswer",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/accept",
+      "body": {
+        "session": "$loginMara.session",
+        "question": "$t1Create.post",
+        "answer": "$replyNoah1.post"
+      },
+      "response": {
+        "resolution": "uuid#9"
+      }
+    },
+    {
+      "id": "inboxNoah3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginNoah.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#48",
+            "kind": "accepted",
+            "subject": "uuid#12",
+            "link": "uuid#12",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#47",
+            "kind": "mention",
+            "subject": "uuid#45",
+            "link": "uuid#45",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#36",
+            "kind": "mention",
+            "subject": "uuid#34",
+            "link": "uuid#34",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "selfAccept",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/resolutions/accept",
+      "body": {
+        "session": "$loginNoah.session",
+        "question": "$t2Mention.post",
+        "answer": "$t2Mention.post"
+      },
+      "response": {
+        "resolution": "uuid#27"
+      }
+    },
+    {
+      "id": "markRead",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/markRead",
+      "body": {
+        "session": "$loginMara.session",
+        "notification": "$inboxMara5.notifications.0.notification"
+      },
+      "response": {
+        "notification": "uuid#33"
+      }
+    },
+    {
+      "id": "markReadForeign",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/markRead",
+      "body": {
+        "session": "$loginNoah.session",
+        "notification": "$inboxMara5.notifications.0.notification"
+      },
+      "response": {
+        "error": "NOTIFICATION_NOT_FOUND"
+      }
+    },
+    {
+      "id": "countAfterRead",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/unreadCount",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "count": 9
+      }
+    },
+    {
+      "id": "markAllRead",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/markAllRead",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "recipient": "uuid#3"
+      }
+    },
+    {
+      "id": "countZero",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/unreadCount",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "count": 0
+      }
+    },
+    {
+      "id": "dismiss",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/dismiss",
+      "body": {
+        "session": "$loginNoah.session",
+        "notification": "$inboxNoah3.notifications.0.notification"
+      },
+      "response": {
+        "notification": "uuid#48"
+      }
+    },
+    {
+      "id": "dismissGone",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/dismiss",
+      "body": {
+        "session": "$loginNoah.session",
+        "notification": "$inboxNoah3.notifications.0.notification"
+      },
+      "response": {
+        "error": "NOTIFICATION_NOT_FOUND"
+      }
+    },
+    {
+      "id": "listBadSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "no-such-session"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "countBadSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/unreadCount",
+      "body": {
+        "session": "no-such-session"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "markAllBadSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/markAllRead",
+      "body": {
+        "session": "no-such-session"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "pageIdx1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$inboxMara5.notifications.0.link"
+      },
+      "response": {
+        "conversation": "uuid#10"
+      }
+    },
+    {
+      "id": "pageIdx2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/get",
+      "body": {
+        "post": "$inboxMara5.notifications.0.link"
+      },
+      "response": {
+        "post": {
+          "author": "uuid#7",
+          "content": "thanks @u2_mara",
+          "createdAt": "<date>",
+          "editedAt": null,
+          "rendered": "<p>thanks <a href=\"/u/u2_mara\">@u2_mara</a></p>\n"
+        }
+      }
+    },
+    {
+      "id": "mineIris",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/subscriptions/mine",
+      "body": {
+        "session": "$loginIris.session"
+      },
+      "response": {
+        "subscriptions": [
+          {
+            "target": "uuid#10",
+            "subscribedAt": "<date>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "feedForSubsPage",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/latest",
+      "body": {},
+      "response": {
+        "conversations": [
+          {
+            "conversation": "uuid#28",
+            "root": "uuid#29",
+            "item": "uuid#27",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": true,
+            "post": {
+              "author": "uuid#5",
+              "content": "Root post pinging @u2_mara",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#5"]
+          },
+          {
+            "conversation": "uuid#10",
+            "root": "uuid#11",
+            "item": "uuid#9",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": true,
+            "post": {
+              "author": "uuid#3",
+              "content": "Notification test thread",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 10,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3", "uuid#5", "uuid#7"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "isSubYes",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/subscriptions/isSubscribed",
+      "body": {
+        "session": "$loginIris.session",
+        "target": "$t1Create.conversation"
+      },
+      "response": {
+        "subscribed": true
+      }
+    },
+    {
+      "id": "subscribersT1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/subscriptions/subscribers",
+      "body": {
+        "target": "$t1Create.conversation"
+      },
+      "response": {
+        "subscribers": [
+          {
+            "user": "uuid#7"
+          },
+          {
+            "user": "uuid#3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsubIris",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/subscriptions/unsubscribe",
+      "body": {
+        "session": "$loginIris.session",
+        "target": "$t1Create.conversation"
+      },
+      "response": {
+        "subscription": "uuid#15"
+      }
+    },
+    {
+      "id": "unsubGone",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/subscriptions/unsubscribe",
+      "body": {
+        "session": "$loginIris.session",
+        "target": "$t1Create.conversation"
+      },
+      "response": {
+        "error": "NOT_SUBSCRIBED"
+      }
+    },
+    {
+      "id": "trashP2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyNoah1.post"
+      },
+      "response": {
+        "item": "uuid#12"
+      }
+    },
+    {
+      "id": "purgeP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyNoah1.post"
+      },
+      "response": {
+        "item": "uuid#12"
+      }
+    },
+    {
+      "id": "inboxAfterPurge",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginMara.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#49",
+            "kind": "reply",
+            "subject": "uuid#45",
+            "link": "uuid#45",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#50",
+            "kind": "reply",
+            "subject": "uuid#43",
+            "link": "uuid#43",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#51",
+            "kind": "reply",
+            "subject": "uuid#37",
+            "link": "uuid#37",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#52",
+            "kind": "reply",
+            "subject": "uuid#34",
+            "link": "uuid#34",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#33",
+            "kind": "reply",
+            "subject": "uuid#31",
+            "link": "uuid#31",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#30",
+            "kind": "mention",
+            "subject": "uuid#27",
+            "link": "uuid#27",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#25",
+            "kind": "reply",
+            "subject": "uuid#23",
+            "link": "uuid#23",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#26",
+            "kind": "reply",
+            "subject": "uuid#20",
+            "link": "uuid#20",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#18",
+            "kind": "reply",
+            "subject": "uuid#16",
+            "link": "uuid#16",
+            "createdAt": "<date>",
+            "read": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "idxPurged",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$replyNoah1.post"
+      },
+      "response": {
+        "conversation": null
+      }
+    }
+  ]
+}

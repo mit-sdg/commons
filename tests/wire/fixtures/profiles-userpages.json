@@ -1,0 +1,508 @@
+{
+  "name": "forum profiles boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u4_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "u4_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u4_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "regMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u4_mara",
+        "password": "password123",
+        "displayName": "Mara",
+        "email": "u4_mara@example.com"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u4_mara",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#4",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "regNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u4_noah",
+        "password": "password123",
+        "displayName": "Noah",
+        "email": "u4_noah@example.com"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "loginNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u4_noah",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#6",
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "t1Create",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginMara.session",
+        "content": "Mara's thread"
+      },
+      "response": {
+        "post": "uuid#7",
+        "conversation": "uuid#8",
+        "node": "uuid#9"
+      }
+    },
+    {
+      "id": "t2Create",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginNoah.session",
+        "content": "Noah's thread"
+      },
+      "response": {
+        "post": "uuid#10",
+        "conversation": "uuid#11",
+        "node": "uuid#12"
+      }
+    },
+    {
+      "id": "t2Reply",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginMara.session",
+        "parent": "$t2Create.node",
+        "content": "Mara's reply in T2"
+      },
+      "response": {
+        "post": "uuid#13",
+        "node": "uuid#14"
+      }
+    },
+    {
+      "id": "profileGetMara",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/get",
+      "body": {
+        "user": "$loginMara.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "setBioMara",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/setBio",
+      "body": {
+        "session": "$loginMara.session",
+        "bio": "Ports engines by day."
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "setDisplayNameMara",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/setDisplayName",
+      "body": {
+        "session": "$loginMara.session",
+        "displayName": "Mara V."
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "setAvatarMara",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/setAvatar",
+      "body": {
+        "session": "$loginMara.session",
+        "avatar": "https://example.com/mara.png"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "profileGetMara2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/get",
+      "body": {
+        "user": "$loginMara.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "setNameEmpty",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/setDisplayName",
+      "body": {
+        "session": "$loginNoah.session",
+        "displayName": ""
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "profileGetNoah",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/get",
+      "body": {
+        "user": "$loginNoah.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "setNameNoahBack",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/profiles/setDisplayName",
+      "body": {
+        "session": "$loginNoah.session",
+        "displayName": "Noah"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "setBioNoSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/setBio",
+      "body": {
+        "bio": "x"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "setBioBadSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/setBio",
+      "body": {
+        "session": "no-such-session",
+        "bio": "x"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "profileGetGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/get",
+      "body": {
+        "user": "00000000-0000-4000-8000-00000000dead"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "resolveMara",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/resolve",
+      "body": {
+        "username": "u4_mara"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "resolveUnknown",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/resolve",
+      "body": {
+        "username": "nobody_here"
+      },
+      "response": {
+        "user": null
+      }
+    },
+    {
+      "id": "searchPrefix",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/users/search",
+      "body": {
+        "session": "$loginAdmin.session",
+        "query": "u4_m"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "searchAll",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/users/search",
+      "body": {
+        "session": "$loginAdmin.session",
+        "query": "u4_"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "searchEmpty",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/users/search",
+      "body": {
+        "session": "$loginAdmin.session",
+        "query": ""
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "searchNone",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/users/search",
+      "body": {
+        "session": "$loginAdmin.session",
+        "query": "zzz"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "searchNoSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/users/search",
+      "body": {
+        "query": "u4_"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "searchBadSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/users/search",
+      "body": {
+        "session": "no-such-session",
+        "query": "u4_"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "pageProfile",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/profiles/get",
+      "body": {
+        "user": "$loginMara.user"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "pageByAuthor",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/byAuthor",
+      "body": {
+        "author": "$loginMara.user"
+      },
+      "response": {
+        "posts": [
+          {
+            "post": "uuid#13"
+          },
+          {
+            "post": "uuid#7"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pageRolesForUser",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/forUser",
+      "body": {
+        "user": "$loginMara.user",
+        "context": "forum"
+      },
+      "response": {
+        "roles": []
+      }
+    },
+    {
+      "id": "pageForItemP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "conversation": "uuid#8"
+      }
+    },
+    {
+      "id": "pageForItemP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$t2Reply.post"
+      },
+      "response": {
+        "conversation": "uuid#11"
+      }
+    },
+    {
+      "id": "pagePostGetP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/get",
+      "body": {
+        "post": "$t1Create.post"
+      },
+      "response": {
+        "post": {
+          "author": "uuid#3",
+          "content": "Mara's thread",
+          "createdAt": "<date>",
+          "editedAt": null,
+          "rendered": "<p>Mara's thread</p>\n"
+        }
+      }
+    },
+    {
+      "id": "pagePostGetP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/get",
+      "body": {
+        "post": "$t2Reply.post"
+      },
+      "response": {
+        "post": {
+          "author": "uuid#3",
+          "content": "Mara's reply in T2",
+          "createdAt": "<date>",
+          "editedAt": null,
+          "rendered": "<p>Mara's reply in T2</p>\n"
+        }
+      }
+    },
+    {
+      "id": "conceptGetProfileGhost",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Profiling._getProfile",
+      "body": {
+        "user": "00000000-0000-4000-8000-00000000dead"
+      },
+      "response": []
+    },
+    {
+      "id": "conceptSearchCase",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Authenticating._search",
+      "body": {
+        "query": "U4_M"
+      },
+      "response": [
+        {
+          "user": "uuid#3",
+          "username": "u4_mara"
+        }
+      ]
+    }
+  ]
+}

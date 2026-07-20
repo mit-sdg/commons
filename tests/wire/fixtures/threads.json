@@ -1,0 +1,475 @@
+{
+  "name": "forum threads boundary",
+  "steps": [
+    {
+      "id": "regAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "alice",
+        "password": "password123",
+        "displayName": "Alice",
+        "email": "alice@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "alice",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "meAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/me",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "user": "uuid#1",
+        "username": "alice",
+        "email": "alice@example.com",
+        "profile": {
+          "displayName": "Alice",
+          "bio": "",
+          "avatar": "",
+          "email": "alice@example.com"
+        }
+      }
+    },
+    {
+      "id": "regBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "bob",
+        "password": "password123",
+        "displayName": "Bob",
+        "email": "bob@example.com"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "bob",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#4",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "create1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginAlice.session",
+        "content": "Hello forum"
+      },
+      "response": {
+        "post": "uuid#5",
+        "conversation": "uuid#6",
+        "node": "uuid#7"
+      }
+    },
+    {
+      "id": "reply1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginBob.session",
+        "parent": "$create1.node",
+        "content": "Hi alice!"
+      },
+      "response": {
+        "post": "uuid#8",
+        "node": "uuid#9"
+      }
+    },
+    {
+      "id": "reply2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginAlice.session",
+        "parent": "$reply1.node",
+        "content": "Nested reply"
+      },
+      "response": {
+        "post": "uuid#10",
+        "node": "uuid#11"
+      }
+    },
+    {
+      "id": "get1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/get",
+      "body": {
+        "conversation": "$create1.conversation"
+      },
+      "response": {
+        "thread": [
+          {
+            "node": "uuid#7",
+            "item": "uuid#5",
+            "parent": null,
+            "depth": 0,
+            "post": {
+              "author": "uuid#1",
+              "content": "Hello forum",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Hello forum</p>\n"
+          },
+          {
+            "node": "uuid#9",
+            "item": "uuid#8",
+            "parent": "uuid#7",
+            "depth": 1,
+            "post": {
+              "author": "uuid#3",
+              "content": "Hi alice!",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Hi alice!</p>\n"
+          },
+          {
+            "node": "uuid#11",
+            "item": "uuid#10",
+            "parent": "uuid#9",
+            "depth": 2,
+            "post": {
+              "author": "uuid#1",
+              "content": "Nested reply",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Nested reply</p>\n"
+          }
+        ],
+        "context": [
+          {
+            "item": "uuid#5",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "acceptedAnswer": null,
+            "replyCount": 2,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#1", "uuid#3"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "forItemPlaced",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$reply1.post"
+      },
+      "response": {
+        "conversation": "uuid#6"
+      }
+    },
+    {
+      "id": "forItemUnknown",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "00000000-0000-7000-8000-00000000dead"
+      },
+      "response": {
+        "conversation": null
+      }
+    },
+    {
+      "id": "create2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginBob.session",
+        "content": "Second topic"
+      },
+      "response": {
+        "post": "uuid#12",
+        "conversation": "uuid#13",
+        "node": "uuid#14"
+      }
+    },
+    {
+      "id": "reply3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginBob.session",
+        "parent": "$create1.node",
+        "content": "Bump"
+      },
+      "response": {
+        "post": "uuid#15",
+        "node": "uuid#16"
+      }
+    },
+    {
+      "id": "listCreated",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/latest",
+      "body": {},
+      "response": {
+        "conversations": [
+          {
+            "conversation": "uuid#13",
+            "root": "uuid#14",
+            "item": "uuid#12",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": "uuid#3",
+              "content": "Second topic",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3"]
+          },
+          {
+            "conversation": "uuid#6",
+            "root": "uuid#7",
+            "item": "uuid#5",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": "uuid#1",
+              "content": "Hello forum",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 3,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#1", "uuid#3"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "listActivity",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/activity",
+      "body": {},
+      "response": {
+        "conversations": [
+          {
+            "conversation": "uuid#6",
+            "root": "uuid#7",
+            "item": "uuid#5",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": "uuid#1",
+              "content": "Hello forum",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 3,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#1", "uuid#3"]
+          },
+          {
+            "conversation": "uuid#13",
+            "root": "uuid#14",
+            "item": "uuid#12",
+            "createdAt": "<date>",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": "uuid#3",
+              "content": "Second topic",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#3"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "trashNested",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Trashing.trash",
+      "body": {
+        "item": "$reply2.post",
+        "by": "$meAlice.user"
+      },
+      "response": {
+        "item": "uuid#10"
+      }
+    },
+    {
+      "id": "getAfterTrash",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/get",
+      "body": {
+        "conversation": "$create1.conversation"
+      },
+      "response": {
+        "thread": [
+          {
+            "node": "uuid#7",
+            "item": "uuid#5",
+            "parent": null,
+            "depth": 0,
+            "post": {
+              "author": "uuid#1",
+              "content": "Hello forum",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Hello forum</p>\n"
+          },
+          {
+            "node": "uuid#9",
+            "item": "uuid#8",
+            "parent": "uuid#7",
+            "depth": 1,
+            "post": {
+              "author": "uuid#3",
+              "content": "Hi alice!",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Hi alice!</p>\n"
+          },
+          {
+            "node": "uuid#16",
+            "item": "uuid#15",
+            "parent": "uuid#7",
+            "depth": 1,
+            "post": {
+              "author": "uuid#3",
+              "content": "Bump",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Bump</p>\n"
+          }
+        ],
+        "context": [
+          {
+            "item": "uuid#5",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "acceptedAnswer": null,
+            "replyCount": 2,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#1", "uuid#3"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "forItemTrashed",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/forItem",
+      "body": {
+        "item": "$reply2.post"
+      },
+      "response": {
+        "conversation": null
+      }
+    },
+    {
+      "id": "lockConv1",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Locking.lock",
+      "body": {
+        "target": "$create1.conversation"
+      },
+      "response": {
+        "target": "uuid#6"
+      }
+    },
+    {
+      "id": "replyLocked",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginBob.session",
+        "parent": "$create1.node",
+        "content": "While locked"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "replyMissingParent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginBob.session",
+        "parent": "00000000-0000-7000-8000-00000000dead",
+        "content": "Into the void"
+      },
+      "response": {
+        "error": "PARENT_NODE_NOT_FOUND"
+      }
+    }
+  ]
+}

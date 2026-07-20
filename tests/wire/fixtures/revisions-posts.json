@@ -1,0 +1,659 @@
+{
+  "name": "forum revisions boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u3_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "u3_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u3_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "regMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u3_mara",
+        "password": "password123",
+        "displayName": "Mara",
+        "email": "u3_mara@example.com"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginMara",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u3_mara",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#4",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "regNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "u3_noah",
+        "password": "password123",
+        "displayName": "Noah",
+        "email": "u3_noah@example.com"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "loginNoah",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "u3_noah",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#6",
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "t1Create",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginMara.session",
+        "content": "Original P1 content"
+      },
+      "response": {
+        "post": "uuid#7",
+        "conversation": "uuid#8",
+        "node": "uuid#9"
+      }
+    },
+    {
+      "id": "t1Reply",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginNoah.session",
+        "parent": "$t1Create.node",
+        "content": "Reply P2 original"
+      },
+      "response": {
+        "post": "uuid#10",
+        "node": "uuid#11"
+      }
+    },
+    {
+      "id": "t2Create",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginNoah.session",
+        "content": "T2 root P3 original"
+      },
+      "response": {
+        "post": "uuid#12",
+        "conversation": "uuid#13",
+        "node": "uuid#14"
+      }
+    },
+    {
+      "id": "revListP1v1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/list",
+      "body": {
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "revisions": [
+          {
+            "revision": "uuid#15",
+            "number": 1,
+            "content": "Original P1 content",
+            "savedAt": "<date>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "editP1v2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "$loginMara.session",
+        "post": "$t1Create.post",
+        "content": "P1 v2 — see [[$t2Create.post]], hello @u3_noah and @u3_mara"
+      },
+      "response": {
+        "post": "uuid#7"
+      }
+    },
+    {
+      "id": "postGetP1v2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/get",
+      "body": {
+        "post": "$t1Create.post"
+      },
+      "response": {
+        "post": {
+          "author": "uuid#3",
+          "content": "P1 v2 — see [[uuid#12]], hello @u3_noah and @u3_mara",
+          "createdAt": "<date>",
+          "editedAt": "<date>",
+          "rendered": "<p>P1 v2 — see [[uuid#12]], hello <a href=\"/u/u3_noah\">@u3_noah</a> and <a href=\"/u/u3_mara\">@u3_mara</a></p>\n"
+        }
+      }
+    },
+    {
+      "id": "inboxNoahAfterEditMention",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/notifications/list",
+      "body": {
+        "session": "$loginNoah.session"
+      },
+      "response": {
+        "notifications": [
+          {
+            "notification": "uuid#16",
+            "kind": "mention",
+            "subject": "uuid#7",
+            "link": "uuid#7",
+            "createdAt": "<date>",
+            "read": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "linksP1AfterEdit",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/links/forward",
+      "body": {
+        "source": "$t1Create.post"
+      },
+      "response": {
+        "targets": [
+          {
+            "target": "uuid#12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "editP1v3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "$loginMara.session",
+        "post": "$t1Create.post",
+        "content": "P1 v3 final, still @u3_noah"
+      },
+      "response": {
+        "post": "uuid#7"
+      }
+    },
+    {
+      "id": "revListP1v3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/list",
+      "body": {
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "revisions": [
+          {
+            "revision": "uuid#15",
+            "number": 1,
+            "content": "Original P1 content",
+            "savedAt": "<date>"
+          },
+          {
+            "revision": "uuid#17",
+            "number": 2,
+            "content": "P1 v2 — see [[uuid#12]], hello @u3_noah and @u3_mara",
+            "savedAt": "<date>"
+          },
+          {
+            "revision": "uuid#18",
+            "number": 3,
+            "content": "P1 v3 final, still @u3_noah",
+            "savedAt": "<date>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "revLatestP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/latest",
+      "body": {
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "revision": [
+          {
+            "revision": "uuid#18",
+            "number": 3,
+            "content": "P1 v3 final, still @u3_noah",
+            "savedAt": "<date>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "revGetP1n2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/get",
+      "body": {
+        "item": "$t1Create.post",
+        "number": 2
+      },
+      "response": {
+        "revision": [
+          {
+            "content": "P1 v2 — see [[uuid#12]], hello @u3_noah and @u3_mara",
+            "savedAt": "<date>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "revGetP1n9",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/get",
+      "body": {
+        "item": "$t1Create.post",
+        "number": 9
+      },
+      "response": {
+        "revision": []
+      }
+    },
+    {
+      "id": "revListGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/list",
+      "body": {
+        "item": "00000000-0000-4000-8000-00000000dead"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "editNotAuthor",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "$loginNoah.session",
+        "post": "$t1Create.post",
+        "content": "noah tries to edit P1"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "editGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "$loginMara.session",
+        "post": "00000000-0000-4000-8000-00000000dead",
+        "content": "editing a ghost post"
+      },
+      "response": {
+        "error": "POST_NOT_FOUND"
+      }
+    },
+    {
+      "id": "editNoSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "post": "$t1Create.post",
+        "content": "edit with no session key"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "editBadSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "no-such-session",
+        "post": "$t1Create.post",
+        "content": "edit with a bad session value"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "byAuthorNoah",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/byAuthor",
+      "body": {
+        "author": "$loginNoah.user"
+      },
+      "response": {
+        "posts": [
+          {
+            "post": "uuid#12"
+          },
+          {
+            "post": "uuid#10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "trashP2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "item": "uuid#10"
+      }
+    },
+    {
+      "id": "revListTrashedP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/list",
+      "body": {
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "postGetTrashedP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/get",
+      "body": {
+        "post": "$t1Reply.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "editTrashedP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "$loginNoah.session",
+        "post": "$t1Reply.post",
+        "content": "editing a trashed post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "revListP2AfterTrashedEdit",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/list",
+      "body": {
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "byAuthorNoahAfterTrash",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/byAuthor",
+      "body": {
+        "author": "$loginNoah.user"
+      },
+      "response": {
+        "posts": [
+          {
+            "post": "uuid#12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lockT2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/locks/lock",
+      "body": {
+        "session": "$loginAdmin.session",
+        "target": "$t2Create.conversation"
+      },
+      "response": {
+        "target": "uuid#13"
+      }
+    },
+    {
+      "id": "editLockedP3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "$loginNoah.session",
+        "post": "$t2Create.post",
+        "content": "edited inside a locked thread"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "purgeP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "item": "uuid#10"
+      }
+    },
+    {
+      "id": "revListPurgedP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/list",
+      "body": {
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "revLatestPurgedP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/latest",
+      "body": {
+        "item": "$t1Reply.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "postGetPurgedP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/get",
+      "body": {
+        "post": "$t1Reply.post"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "editPurgedP2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "$loginNoah.session",
+        "post": "$t1Reply.post",
+        "content": "editing a purged post"
+      },
+      "response": {
+        "error": "POST_NOT_FOUND"
+      }
+    },
+    {
+      "id": "editSameContent",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/edit",
+      "body": {
+        "session": "$loginNoah.session",
+        "post": "$t2Create.post",
+        "content": "edited inside a locked thread"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "revListP3",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/revisions/list",
+      "body": {
+        "item": "$t2Create.post"
+      },
+      "response": {
+        "revisions": [
+          {
+            "revision": "uuid#19",
+            "number": 1,
+            "content": "T2 root P3 original",
+            "savedAt": "<date>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "revLatestP2Concept",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Revising._getLatest",
+      "body": {
+        "item": "$t1Reply.post"
+      },
+      "response": []
+    },
+    {
+      "id": "byAuthorNoahConcept",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Posting._getByAuthor",
+      "body": {
+        "author": "$loginNoah.user"
+      },
+      "response": [
+        {
+          "post": "uuid#12"
+        }
+      ]
+    },
+    {
+      "id": "renderedP1Concept",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Formatting._getRendered",
+      "body": {
+        "target": "$t1Create.post"
+      },
+      "response": [
+        {
+          "rendered": "<p>P1 v3 final, still <a href=\"/u/u3_noah\">@u3_noah</a></p>\n"
+        }
+      ]
+    },
+    {
+      "id": "linksP1Concept",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Linking._getLinks",
+      "body": {
+        "source": "$t1Create.post"
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,0 +1,960 @@
+{
+  "name": "forum links, pins, unread, and account boundary",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "f0_admin",
+        "password": "password123",
+        "email": "f0_admin@example.com",
+        "displayName": "f0_admin"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "f0_admin",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#2",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "regAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "f0_alice",
+        "password": "password123",
+        "email": "f0_alice@example.com",
+        "displayName": "f0_alice"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginAlice",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "f0_alice",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#4",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "regBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/register",
+      "body": {
+        "username": "f0_bob",
+        "password": "password123",
+        "email": "f0_bob@example.com",
+        "displayName": "f0_bob"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "loginBob",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "f0_bob",
+        "password": "password123"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#6",
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "t1Create",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginAdmin.session",
+        "content": "Root of thread T1, by admin."
+      },
+      "response": {
+        "post": "uuid#7",
+        "conversation": "uuid#8",
+        "node": "uuid#9"
+      }
+    },
+    {
+      "id": "r1Reply",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginAlice.session",
+        "content": "Reply R1 by alice, plain, no links.",
+        "parent": "$t1Create.node"
+      },
+      "response": {
+        "post": "uuid#10",
+        "node": "uuid#11"
+      }
+    },
+    {
+      "id": "r2Reply",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/reply",
+      "body": {
+        "session": "$loginBob.session",
+        "content": "Reply R2 by bob, references [[$t1Create.post]].",
+        "parent": "$t1Create.node"
+      },
+      "response": {
+        "post": "uuid#12",
+        "node": "uuid#13"
+      }
+    },
+    {
+      "id": "t2Create",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/threads/create",
+      "body": {
+        "session": "$loginAlice.session",
+        "content": "Root of thread T2 by alice, references [[$t1Create.post]]."
+      },
+      "response": {
+        "post": "uuid#14",
+        "conversation": "uuid#15",
+        "node": "uuid#16"
+      }
+    },
+    {
+      "id": "unreadListBob",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/list",
+      "body": {
+        "session": "$loginBob.session",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "items": [
+          {
+            "item": "uuid#7"
+          },
+          {
+            "item": "uuid#10"
+          },
+          {
+            "item": "uuid#12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unreadCountBob",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/count",
+      "body": {
+        "session": "$loginBob.session",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "count": 3
+      }
+    },
+    {
+      "id": "markSeenBobP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/markSeen",
+      "body": {
+        "session": "$loginBob.session",
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "item": "uuid#7"
+      }
+    },
+    {
+      "id": "unreadCountBobAfter",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/count",
+      "body": {
+        "session": "$loginBob.session",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "count": 2
+      }
+    },
+    {
+      "id": "markSeenAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/markSeen",
+      "body": {
+        "session": "$loginBob.session",
+        "item": "$t1Create.post"
+      },
+      "response": {
+        "error": "ITEM_ALREADY_SEEN"
+      }
+    },
+    {
+      "id": "markSeenGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/markSeen",
+      "body": {
+        "session": "$loginBob.session",
+        "item": "00000000-0000-4000-8000-00000000dead"
+      },
+      "response": {
+        "error": "ITEM_NOT_REGISTERED"
+      }
+    },
+    {
+      "id": "markAllSeenBob",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/markAllSeen",
+      "body": {
+        "session": "$loginBob.session",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "unreadCountBobZero",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/count",
+      "body": {
+        "session": "$loginBob.session",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "count": 0
+      }
+    },
+    {
+      "id": "markAllSeenAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/markAllSeen",
+      "body": {
+        "session": "$loginBob.session",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "user": "uuid#5"
+      }
+    },
+    {
+      "id": "unreadListGhostScope",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/list",
+      "body": {
+        "session": "$loginBob.session",
+        "scope": "00000000-0000-4000-8000-00000000dead"
+      },
+      "response": {
+        "items": []
+      }
+    },
+    {
+      "id": "unreadNoSession",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/count",
+      "body": {
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "backlinksP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/links/backlinks",
+      "body": {
+        "target": "$t1Create.post"
+      },
+      "response": {
+        "sources": [
+          {
+            "source": "uuid#12"
+          },
+          {
+            "source": "uuid#14"
+          }
+        ]
+      }
+    },
+    {
+      "id": "forwardR2",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/links/forward",
+      "body": {
+        "source": "$r2Reply.post"
+      },
+      "response": {
+        "targets": [
+          {
+            "target": "uuid#7"
+          }
+        ]
+      }
+    },
+    {
+      "id": "backlinksNone",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/links/backlinks",
+      "body": {
+        "target": "$r1Reply.post"
+      },
+      "response": {
+        "sources": []
+      }
+    },
+    {
+      "id": "pinP1Admin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/pin",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$t1Create.post",
+        "scope": "$t1Create.conversation",
+        "priority": 1
+      },
+      "response": {
+        "pin": "uuid#17"
+      }
+    },
+    {
+      "id": "pinAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/pin",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$t1Create.post",
+        "scope": "$t1Create.conversation",
+        "priority": 2
+      },
+      "response": {
+        "error": "ITEM_ALREADY_PINNED"
+      }
+    },
+    {
+      "id": "pinByAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/pin",
+      "body": {
+        "session": "$loginAlice.session",
+        "item": "$r1Reply.post",
+        "scope": "$t1Create.conversation",
+        "priority": 5
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "definePinRole",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "f0-pinner",
+        "capabilities": ["pin"]
+      },
+      "response": {
+        "role": "uuid#18"
+      }
+    },
+    {
+      "id": "grantPinRole",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/grant",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$loginAlice.user",
+        "context": "$t1Create.conversation",
+        "role": "$definePinRole.role"
+      },
+      "response": {
+        "grant": "uuid#19"
+      }
+    },
+    {
+      "id": "pinByAliceScoped",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/pin",
+      "body": {
+        "session": "$loginAlice.session",
+        "item": "$r1Reply.post",
+        "scope": "$t1Create.conversation",
+        "priority": 5
+      },
+      "response": {
+        "pin": "uuid#20"
+      }
+    },
+    {
+      "id": "pinAliceOtherScope",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/pin",
+      "body": {
+        "session": "$loginAlice.session",
+        "item": "$t2Create.post",
+        "scope": "$t2Create.conversation",
+        "priority": 1
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "forScopeC1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/forScope",
+      "body": {
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "pinned": [
+          {
+            "item": "uuid#10",
+            "priority": 5
+          },
+          {
+            "item": "uuid#7",
+            "priority": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "setPriorityP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/setPriority",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$t1Create.post",
+        "scope": "$t1Create.conversation",
+        "priority": 10
+      },
+      "response": {
+        "pin": "uuid#17"
+      }
+    },
+    {
+      "id": "forScopeC1After",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/forScope",
+      "body": {
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "pinned": [
+          {
+            "item": "uuid#7",
+            "priority": 10
+          },
+          {
+            "item": "uuid#10",
+            "priority": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "isPinnedP1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/isPinned",
+      "body": {
+        "item": "$t1Create.post",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "pinned": true
+      }
+    },
+    {
+      "id": "isPinnedGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/isPinned",
+      "body": {
+        "item": "00000000-0000-4000-8000-00000000dead",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "unpinR1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/unpin",
+      "body": {
+        "session": "$loginAlice.session",
+        "item": "$r1Reply.post",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "pin": "uuid#20"
+      }
+    },
+    {
+      "id": "unpinAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/unpin",
+      "body": {
+        "session": "$loginAlice.session",
+        "item": "$r1Reply.post",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "error": "ITEM_NOT_PINNED"
+      }
+    },
+    {
+      "id": "pinNoPriority",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/pin",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$r1Reply.post",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "pinR2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/pins/pin",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$r2Reply.post",
+        "scope": "$t1Create.conversation",
+        "priority": 3
+      },
+      "response": {
+        "pin": "uuid#21"
+      }
+    },
+    {
+      "id": "trashR2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$r2Reply.post"
+      },
+      "response": {
+        "item": "uuid#12"
+      }
+    },
+    {
+      "id": "purgeR2",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$r2Reply.post"
+      },
+      "response": {
+        "item": "uuid#12"
+      }
+    },
+    {
+      "id": "forScopeGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/forScope",
+      "body": {
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "pinned": [
+          {
+            "item": "uuid#7",
+            "priority": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "isPinnedPurged",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/pins/isPinned",
+      "body": {
+        "item": "$r2Reply.post",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "error": "NOT_FOUND"
+      }
+    },
+    {
+      "id": "conceptGetPinnedC1",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Pinning._getPinned",
+      "body": {
+        "scope": "$t1Create.conversation"
+      },
+      "response": [
+        {
+          "item": "uuid#7",
+          "priority": 10
+        }
+      ]
+    },
+    {
+      "id": "unreadCountAliceGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/count",
+      "body": {
+        "session": "$loginAlice.session",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "count": 2
+      }
+    },
+    {
+      "id": "conceptGetUnreadAlice1",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Tracking._getUnread",
+      "body": {
+        "user": "$loginAlice.user",
+        "scope": "$t1Create.conversation"
+      },
+      "response": [
+        {
+          "item": "uuid#7"
+        },
+        {
+          "item": "uuid#10"
+        }
+      ]
+    },
+    {
+      "id": "deleteR1ByBob",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/delete",
+      "body": {
+        "session": "$loginBob.session",
+        "post": "$r1Reply.post"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "deleteP1WithReplies",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/delete",
+      "body": {
+        "session": "$loginAdmin.session",
+        "post": "$t1Create.post"
+      },
+      "response": {
+        "error": "POST_HAS_REPLIES"
+      }
+    },
+    {
+      "id": "deleteR1ByAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/delete",
+      "body": {
+        "session": "$loginAlice.session",
+        "post": "$r1Reply.post"
+      },
+      "response": {
+        "post": "uuid#10"
+      }
+    },
+    {
+      "id": "backlinksAfterDelete",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/links/backlinks",
+      "body": {
+        "target": "$t1Create.post"
+      },
+      "response": {
+        "sources": [
+          {
+            "source": "uuid#14"
+          }
+        ]
+      }
+    },
+    {
+      "id": "conceptGetBacklinksP1",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Linking._getBacklinks",
+      "body": {
+        "target": "$t1Create.post"
+      },
+      "response": [
+        {
+          "source": "uuid#14"
+        }
+      ]
+    },
+    {
+      "id": "threadsGetGhostNode",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/threads/get",
+      "body": {
+        "conversation": "$t1Create.conversation"
+      },
+      "response": {
+        "thread": [
+          {
+            "node": "uuid#9",
+            "item": "uuid#7",
+            "parent": null,
+            "depth": 0,
+            "post": {
+              "author": "uuid#1",
+              "content": "Root of thread T1, by admin.",
+              "createdAt": "<date>",
+              "editedAt": null
+            },
+            "rendered": "<p>Root of thread T1, by admin.</p>\n"
+          }
+        ],
+        "context": [
+          {
+            "item": "uuid#7",
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "acceptedAnswer": null,
+            "replyCount": 0,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#1"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "conceptGetThreadC1",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Conversing._getThread",
+      "body": {
+        "conversation": "$t1Create.conversation"
+      },
+      "response": [
+        {
+          "node": "uuid#9",
+          "item": "uuid#7",
+          "parent": null,
+          "depth": 0
+        }
+      ]
+    },
+    {
+      "id": "unreadCountAliceAfterDelete",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/unread/count",
+      "body": {
+        "session": "$loginAlice.session",
+        "scope": "$t1Create.conversation"
+      },
+      "response": {
+        "count": 1
+      }
+    },
+    {
+      "id": "conceptGetUnreadAlice2",
+      "phase": "assert",
+      "kind": "concept",
+      "target": "Tracking._getUnread",
+      "body": {
+        "user": "$loginAlice.user",
+        "scope": "$t1Create.conversation"
+      },
+      "response": [
+        {
+          "item": "uuid#7"
+        }
+      ]
+    },
+    {
+      "id": "deleteGhost",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/posts/delete",
+      "body": {
+        "session": "$loginAlice.session",
+        "post": "00000000-0000-4000-8000-00000000dead"
+      },
+      "response": {
+        "error": "POST_NOT_FOUND"
+      }
+    },
+    {
+      "id": "changePwWrongOld",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/changePassword",
+      "body": {
+        "session": "$loginAlice.session",
+        "oldPassword": "wrongpassword",
+        "newPassword": "newpass456"
+      },
+      "response": {
+        "error": "INVALID_CREDENTIALS"
+      }
+    },
+    {
+      "id": "changePwShort",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/changePassword",
+      "body": {
+        "session": "$loginAlice.session",
+        "oldPassword": "password123",
+        "newPassword": "x"
+      },
+      "response": {
+        "error": "PASSWORD_INVALID_LENGTH"
+      }
+    },
+    {
+      "id": "changePwNoOld",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/changePassword",
+      "body": {
+        "session": "$loginAlice.session",
+        "newPassword": "newpass456"
+      },
+      "response": {
+        "error": "INVALID_INPUT"
+      }
+    },
+    {
+      "id": "changePwAlice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/changePassword",
+      "body": {
+        "session": "$loginAlice.session",
+        "oldPassword": "password123",
+        "newPassword": "newpass456"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "meAfterChange",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/me",
+      "body": {
+        "session": "$loginAlice.session"
+      },
+      "response": {
+        "error": "UNAUTHORIZED"
+      }
+    },
+    {
+      "id": "loginOldPw",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "f0_alice",
+        "password": "password123"
+      },
+      "response": {
+        "error": "INVALID_CREDENTIALS"
+      }
+    },
+    {
+      "id": "loginNewPw",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "f0_alice",
+        "password": "newpass456"
+      },
+      "response": {
+        "expiresAt": "<date>",
+        "session": "uuid#22",
+        "user": "uuid#3"
+      }
+    }
+  ]
+}
