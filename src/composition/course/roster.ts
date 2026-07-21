@@ -1,14 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import {
-  each,
-  former,
-  no,
-  reaction,
-  request,
-  view,
-  when,
-  where,
-} from "@mit-sdg/sync-engine/language";
+import { each, former, no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { COURSE_STAFF_ROLE, FORUM, STAFF_CAPABILITIES } from "../access/capabilities.ts";
 import { mayManageRoster, mayNotManageRoster } from "../access/policy.ts";
@@ -56,7 +47,7 @@ export const identityMatchedSeat = view(
     ),
 );
 export const StaffSeatGrantsCourseStaff = reaction(({ claimer, role }) =>
-  when(Rostering.claimSeat, { user: claimer }, { kind: "STAFF" })
+  when(Rostering.claimSeat({ user: claimer }).responds({ kind: "STAFF" }))
     .where(
       Roling._holdsRoleNamed({
         user: claimer,
@@ -65,21 +56,19 @@ export const StaffSeatGrantsCourseStaff = reaction(({ claimer, role }) =>
       }).is({ held: false }),
     )
     .then(
-      request(
-        Roling.ensureRole,
-        { name: COURSE_STAFF_ROLE, capabilities: STAFF_CAPABILITIES },
-        { role },
-      ),
-      request(Roling.grant, { user: claimer, context: FORUM, role }),
-    ),
+      Roling.ensureRole({ name: COURSE_STAFF_ROLE, capabilities: STAFF_CAPABILITIES }).responds({
+        role,
+      }),
+    )
+    .then(Roling.grant({ user: claimer, context: FORUM, role })),
 );
 export const DroppedStaffSeatRevokesCourseStaff = reaction(({ holder, role }) =>
-  when(Rostering.dropSeat, {}, { kind: "STAFF", user: holder })
+  when(Rostering.dropSeat({}).responds({ kind: "STAFF", user: holder }))
     .where(
       Roling._getRoleByName({ name: COURSE_STAFF_ROLE }).is({ role }),
       Roling._getRoles({ user: holder, context: FORUM }).is({ role }),
     )
-    .then(request(Roling.revoke, { user: holder, context: FORUM, role })),
+    .then(Roling.revoke({ user: holder, context: FORUM, role })),
 );
 
 export const ConfigureClass = endpoint(
@@ -87,10 +76,8 @@ export const ConfigureClass = endpoint(
   ({ session, code, title, term, timezone, user, class: classDoc }) =>
     receive({ session, code, title, term, timezone })
       .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-      .then(
-        request(Rostering.configureClass, { code, title, term, timezone }, { class: classDoc }),
-        respond({ class: classDoc }),
-      ),
+      .then(Rostering.configureClass({ code, title, term, timezone }).responds({ class: classDoc }))
+      .then(respond({ class: classDoc })),
 );
 
 export const ConfigureClassForbidden = endpoint(
@@ -104,9 +91,11 @@ export const ConfigureClassForbidden = endpoint(
 export const RosterMe = endpoint("/roster/me", ({ session, user, seat }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }))
-    .either(
-      where(theSeatOf({ user }).is({ seat })).then(respond({ seat })),
-      where(no(theSeatOf({ user }))).then(respond({ seat: null })),
+    .then(
+      where(theSeatOf({ user }).is({ seat })).then(respond({ seat })).named("case-1"),
+      where(no(theSeatOf({ user })))
+        .then(respond({ seat: null }))
+        .named("case-2"),
     ),
 );
 
@@ -119,10 +108,8 @@ export const SectionsCreate = endpoint(
   ({ session, name, location, meetingPattern, user, section }) =>
     receive({ session, name, location, meetingPattern })
       .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-      .then(
-        request(Rostering.createSection, { name, location, meetingPattern }, { section }),
-        respond({ section }),
-      ),
+      .then(Rostering.createSection({ name, location, meetingPattern }).responds({ section }))
+      .then(respond({ section })),
   {
     input: {
       required: ["session", "name"],
@@ -145,13 +132,11 @@ export const SectionsUpdate = endpoint(
     receive({ session, section, name, location, meetingPattern })
       .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
       .then(
-        request(
-          Rostering.updateSection,
-          { section, name, location, meetingPattern },
-          { section: updated },
-        ),
-        respond({ section: updated }),
-      ),
+        Rostering.updateSection({ section, name, location, meetingPattern }).responds({
+          section: updated,
+        }),
+      )
+      .then(respond({ section: updated })),
 );
 
 export const SectionsUpdateForbidden = endpoint(
@@ -162,16 +147,16 @@ export const SectionsUpdateForbidden = endpoint(
       .then(respond({ error: "FORBIDDEN" })),
 );
 export const ImportPreview = endpoint("/roster/import-preview", ({ csv, rows }) =>
-  receive({ csv }).then(request(Rostering.previewImport, { csv }, { rows }), respond({ rows })),
+  receive({ csv })
+    .then(Rostering.previewImport({ csv }).responds({ rows }))
+    .then(respond({ rows })),
 );
 
 export const ImportSeats = endpoint("/roster/import", ({ session, rows, user, created, skipped }) =>
   receive({ session, rows })
     .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-    .then(
-      request(Rostering.importSeats, { rows }, { created, skipped }),
-      respond({ created, skipped }),
-    ),
+    .then(Rostering.importSeats({ rows }).responds({ created, skipped }))
+    .then(respond({ created, skipped })),
 );
 
 export const ImportSeatsForbidden = endpoint("/roster/import", ({ session, rows, user }) =>
@@ -185,14 +170,14 @@ export const ClaimSeat = endpoint(
   ({ session, externalKey, user, seat, claimed }) =>
     receive({ session, externalKey })
       .where(activeUser({ session }).is({ user }))
-      .either(
-        where(identityMatchedSeat({ user, externalKey }).is({ seat })).then(
-          request(Rostering.claimSeat, { seat, user }, { seat: claimed }),
-          respond({ seat: claimed }),
-        ),
-        where(no(identityMatchedSeat({ user, externalKey }))).then(
-          respond({ error: "SEAT_NOT_FOUND" }),
-        ),
+      .then(
+        where(identityMatchedSeat({ user, externalKey }).is({ seat }))
+          .then(Rostering.claimSeat({ seat, user }).responds({ seat: claimed }))
+          .then(respond({ seat: claimed }))
+          .named("case-1"),
+        where(no(identityMatchedSeat({ user, externalKey })))
+          .then(respond({ error: "SEAT_NOT_FOUND" }))
+          .named("case-2"),
       ),
 );
 export const LinkUser = endpoint(
@@ -200,10 +185,8 @@ export const LinkUser = endpoint(
   ({ session, seat, user: target, actor, linked }) =>
     receive({ session, seat, user: target })
       .where(activeUser({ session }).is({ user: actor }), mayManageRoster({ user: actor }))
-      .then(
-        request(Rostering.claimSeat, { seat, user: target }, { seat: linked }),
-        respond({ seat: linked }),
-      ),
+      .then(Rostering.claimSeat({ seat, user: target }).responds({ seat: linked }))
+      .then(respond({ seat: linked })),
 );
 
 export const LinkUserForbidden = endpoint(
@@ -229,20 +212,16 @@ export const RosterListForbidden = endpoint("/roster/list", ({ session, user }) 
 export const DropSeat = endpoint("/roster/drop", ({ session, seat, user, dropped }) =>
   receive({ session, seat })
     .where(activeUser({ session }).is({ user }))
-    .then(
-      request(Roling.requireCapability, { user, context: FORUM, capability: "roster:manage" }),
-      request(Rostering.dropSeat, { seat }, { seat: dropped }),
-      respond({ seat: dropped }),
-    ),
+    .then(Roling.requireCapability({ user, context: FORUM, capability: "roster:manage" }))
+    .then(Rostering.dropSeat({ seat }).responds({ seat: dropped }))
+    .then(respond({ seat: dropped })),
 );
 
 export const ReinstateSeat = endpoint("/roster/reinstate", ({ session, seat, user, reinstated }) =>
   receive({ session, seat })
     .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-    .then(
-      request(Rostering.reinstateSeat, { seat }, { seat: reinstated }),
-      respond({ seat: reinstated }),
-    ),
+    .then(Rostering.reinstateSeat({ seat }).responds({ seat: reinstated }))
+    .then(respond({ seat: reinstated })),
 );
 
 export const ReinstateSeatForbidden = endpoint("/roster/reinstate", ({ session, seat, user }) =>
@@ -256,10 +235,8 @@ export const MoveSection = endpoint(
   ({ session, seat, section, user, moved }) =>
     receive({ session, seat, section })
       .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-      .then(
-        request(Rostering.moveSection, { seat, section }, { seat: moved }),
-        respond({ seat: moved }),
-      ),
+      .then(Rostering.moveSection({ seat, section }).responds({ seat: moved }))
+      .then(respond({ seat: moved })),
 );
 
 export const MoveSectionForbidden = endpoint(

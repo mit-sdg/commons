@@ -1914,7 +1914,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.GetAssignment
+### assignments.GetAssignment:case-1
 
 ```reaction
 when RequestBoundary.request (assignment, requestId, path: "/assignments/get")
@@ -1924,7 +1924,7 @@ then
   request RequestBoundary.respond (assignment: detail, requestId)
 ```
 
-### assignments.GetAssignment:2
+### assignments.GetAssignment:case-2
 
 ```reaction
 when RequestBoundary.request (assignment, requestId, path: "/assignments/get")
@@ -2097,7 +2097,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.StaffSummary
+### assignments.StaffSummary:case-1
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/staff-summary")
@@ -2109,7 +2109,7 @@ then
   request RequestBoundary.respond (summary: detail, requestId)
 ```
 
-### assignments.StaffSummary:2
+### assignments.StaffSummary:case-2
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/staff-summary")
@@ -2268,7 +2268,7 @@ then
   request RequestBoundary.respond (user, requestId)
 ```
 
-### auth.InvalidSessionIsRejected
+### auth.InvalidSessionIsRejected:case-1
 
 ```reaction
 when RequestBoundary.request (session, requestId)
@@ -2280,7 +2280,7 @@ then
   request RequestBoundary.respond (error: "UNAUTHORIZED", requestId)
 ```
 
-### auth.InvalidSessionIsRejected:2
+### auth.InvalidSessionIsRejected:case-2
 
 ```reaction
 when RequestBoundary.request (session, requestId)
@@ -2291,10 +2291,10 @@ then
   request Sessioning.end (session)
 ```
 
-### auth.InvalidSessionIsRejected:2#2
+### auth.InvalidSessionIsRejected:case-2#2
 
 ```reaction
-when Sessioning.end (session), asked by auth.InvalidSessionIsRejected:2
+when Sessioning.end (session), asked by auth.InvalidSessionIsRejected:case-2
 where
   earlier, RequestBoundary.request (session, requestId)
 then
@@ -2397,7 +2397,7 @@ then
   request RequestBoundary.respond (user, requestId)
 ```
 
-### auth.Resolve
+### auth.Resolve:case-1
 
 ```reaction
 when RequestBoundary.request (username, requestId, path: "/auth/resolve")
@@ -2407,7 +2407,7 @@ then
   request RequestBoundary.respond (user, requestId)
 ```
 
-### auth.Resolve:2
+### auth.Resolve:case-2
 
 ```reaction
 when RequestBoundary.request (username, requestId, path: "/auth/resolve")
@@ -4433,7 +4433,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### notes.StudentsDetail
+### notes.StudentsDetail:case-1
 
 ```reaction
 when RequestBoundary.request (session, user: target, requestId, path: "/students/detail")
@@ -4445,7 +4445,7 @@ then
   request RequestBoundary.respond (detail, requestId)
 ```
 
-### notes.StudentsDetail:2
+### notes.StudentsDetail:case-2
 
 ```reaction
 when RequestBoundary.request (session, user: target, requestId, path: "/students/detail")
@@ -4900,7 +4900,7 @@ then
   request Tagging.clearTarget (target: post)
 ```
 
-### posts.DeletePost
+### posts.DeletePost:case-1-1-1-1
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
@@ -4915,17 +4915,17 @@ then
   request Posting.delete (post)
 ```
 
-### posts.DeletePost#2
+### posts.DeletePost:case-1-1-1-1#2
 
 ```reaction
-when Posting.delete (post), asked by posts.DeletePost
+when Posting.delete (post), asked by posts.DeletePost:case-1-1-1-1
 where
   earlier, RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 then
   request RequestBoundary.respond (post, requestId)
 ```
 
-### posts.DeletePost:2
+### posts.DeletePost:case-1-1-1-2
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
@@ -4940,7 +4940,7 @@ then
   request RequestBoundary.respond (error: "POST_HAS_REPLIES", requestId)
 ```
 
-### posts.DeletePost:3
+### posts.DeletePost:case-1-1-2
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
@@ -4953,24 +4953,24 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### posts.DeletePost:4
+### posts.DeletePost:case-1-2
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 where
-  the active user of session has (user)
+  the active user of session
   Posting._getPost (post)
   Trashing._isTrashed (item: post) has (trashed: true)
 then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### posts.DeletePost:5
+### posts.DeletePost:case-2
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 where
-  the active user of session has (user)
+  the active user of session
   no Posting._getPost (post)
 then
   request RequestBoundary.respond (error: "POST_NOT_FOUND", requestId)
@@ -5907,7 +5907,7 @@ then
   request RequestBoundary.respond (roles: the roles held by (subject) in (context), requestId)
 ```
 
-### roster.ClaimSeat
+### roster.ClaimSeat:case-1
 
 ```reaction
 when RequestBoundary.request (session, externalKey, requestId, path: "/roster/claim-seat")
@@ -5918,17 +5918,17 @@ then
   request Rostering.claimSeat (seat, user)
 ```
 
-### roster.ClaimSeat#2
+### roster.ClaimSeat:case-1#2
 
 ```reaction
-when Rostering.claimSeat (seat, user, result.seat: claimed), asked by roster.ClaimSeat
+when Rostering.claimSeat (seat, user, result.seat: claimed), asked by roster.ClaimSeat:case-1
 where
   earlier, RequestBoundary.request (session, externalKey, requestId, path: "/roster/claim-seat")
 then
   request RequestBoundary.respond (seat: claimed, requestId)
 ```
 
-### roster.ClaimSeat:2
+### roster.ClaimSeat:case-2
 
 ```reaction
 when RequestBoundary.request (session, externalKey, requestId, path: "/roster/claim-seat")
@@ -6180,7 +6180,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### roster.RosterMe
+### roster.RosterMe:case-1
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/me")
@@ -6191,7 +6191,7 @@ then
   request RequestBoundary.respond (seat, requestId)
 ```
 
-### roster.RosterMe:2
+### roster.RosterMe:case-2
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/me")
@@ -6382,7 +6382,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### submissions.Latest
+### submissions.Latest:case-1
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
@@ -6394,7 +6394,7 @@ then
   request RequestBoundary.respond (submission: latest, requestId)
 ```
 
-### submissions.Latest:2
+### submissions.Latest:case-2
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
@@ -6452,7 +6452,7 @@ then
   request RequestBoundary.respond (submissions: the submissions by (submitter), requestId)
 ```
 
-### submissions.StaffLatest
+### submissions.StaffLatest:case-1
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
@@ -6465,7 +6465,7 @@ then
   request RequestBoundary.respond (submission: latest, requestId)
 ```
 
-### submissions.StaffLatest:2
+### submissions.StaffLatest:case-2
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
@@ -6780,7 +6780,7 @@ then
   request Linking.setLinksFrom (source: post, content)
 ```
 
-### threads.ForItem
+### threads.ForItem:case-1
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/threads/forItem")
@@ -6790,7 +6790,7 @@ then
   request RequestBoundary.respond (conversation, requestId)
 ```
 
-### threads.ForItem:2
+### threads.ForItem:case-2
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/threads/forItem")
@@ -6832,7 +6832,7 @@ then
   request Formatting.setSource (target: post, source: content)
 ```
 
-### threads.ReplyToThread
+### threads.ReplyToThread:case-1-1
 
 ```reaction
 when RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
@@ -6845,44 +6845,44 @@ then
   request Posting.create (author: user, content, at)
 ```
 
-### threads.ReplyToThread#2
+### threads.ReplyToThread:case-1-1#2
 
 ```reaction
-when Posting.create (author: user, content, at, post), asked by threads.ReplyToThread
+when Posting.create (author: user, content, at, post), asked by threads.ReplyToThread:case-1-1
 where
   earlier, RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 then
   request Conversing.reply (item: post, parent, at)
 ```
 
-### threads.ReplyToThread#3
+### threads.ReplyToThread:case-1-1#3
 
 ```reaction
-when Conversing.reply (item: post, parent, at, node), asked by threads.ReplyToThread#2
+when Conversing.reply (item: post, parent, at, node), asked by threads.ReplyToThread:case-1-1#2
 where
   earlier, RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 then
   request RequestBoundary.respond (post, node, requestId)
 ```
 
-### threads.ReplyToThread:2
+### threads.ReplyToThread:case-1-2
 
 ```reaction
 when RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 where
-  the active user of session has (user)
+  the active user of session
   Conversing._getConversation (node: parent) has (conversation)
   Locking._isLocked (target: conversation) has (locked: true)
 then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### threads.ReplyToThread:3
+### threads.ReplyToThread:case-2
 
 ```reaction
 when RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 where
-  the active user of session has (user)
+  the active user of session
   no Conversing._getConversation (node: parent)
 then
   request RequestBoundary.respond (error: "PARENT_NODE_NOT_FOUND", requestId)

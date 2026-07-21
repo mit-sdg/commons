@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, request, where } from "@mit-sdg/sync-engine/language";
+import { each, former, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -48,13 +48,13 @@ export const ConfigurePolicy = endpoint(
     receive({ session, defaultDays, unitHours, maxDaysPerItem })
       .where(activeUser({ session }).is({ user }), mayManageLateDays({ user }))
       .then(
-        request(Banking.setTerms, {
+        Banking.setTerms({
           allowance: defaultDays,
           perItemLimit: maxDaysPerItem,
           unitHours,
         }),
-        respond({ policy: true }),
-      ),
+      )
+      .then(respond({ policy: true })),
   { input: { required: ["session", "defaultDays", "unitHours", "maxDaysPerItem"] } },
 );
 
@@ -75,7 +75,8 @@ export const Grant = endpoint(
         activeUser({ session }).is({ user }),
         mayManageLateDays({ user }),
       )
-      .then(request(Banking.grant, { learner, days, reason, at }, { grant }), respond({ grant })),
+      .then(Banking.grant({ learner, days, reason, at }).responds({ grant }))
+      .then(respond({ grant })),
   { input: { required: ["session", "learner", "days", "reason"] } },
 );
 
@@ -96,10 +97,8 @@ export const Apply = endpoint(
         activeUser({ session }).is({ user }),
         isActiveStudent({ user }),
       )
-      .then(
-        request(Banking.apply, { learner: user, item: assignment, days, at }, { use }),
-        respond({ use }),
-      ),
+      .then(Banking.apply({ learner: user, item: assignment, days, at }).responds({ use }))
+      .then(respond({ use })),
   { input: { required: ["session", "assignment", "days"] } },
 );
 
@@ -114,10 +113,8 @@ export const Change = endpoint(
   ({ session, assignment, days, user, use }) =>
     receive({ session, assignment, days })
       .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(
-        request(Banking.change, { learner: user, item: assignment, days }, { use }),
-        respond({ use }),
-      ),
+      .then(Banking.change({ learner: user, item: assignment, days }).responds({ use }))
+      .then(respond({ use })),
   { input: { required: ["session", "assignment", "days"] } },
 );
 
@@ -134,10 +131,8 @@ export const Cancel = endpoint(
   ({ session, assignment, user, use }) =>
     receive({ session, assignment })
       .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(
-        request(Banking.cancel, { learner: user, item: assignment }, { use }),
-        respond({ use }),
-      ),
+      .then(Banking.cancel({ learner: user, item: assignment }).responds({ use }))
+      .then(respond({ use })),
   { input: { required: ["session", "assignment"] } },
 );
 
@@ -206,10 +201,8 @@ export const StaffChange = endpoint(
         mayManageLateDays({ user }),
         isActiveStudent({ user: learner }),
       )
-      .then(
-        request(Banking.change, { learner, item: assignment, days }, { use }),
-        respond({ use }),
-      ),
+      .then(Banking.change({ learner, item: assignment, days }).responds({ use }))
+      .then(respond({ use })),
   { input: { required: ["session", "learner", "assignment", "days"] } },
 );
 
@@ -222,7 +215,8 @@ export const StaffCancel = endpoint(
         mayManageLateDays({ user }),
         isActiveStudent({ user: learner }),
       )
-      .then(request(Banking.cancel, { learner, item: assignment }, { use }), respond({ use })),
+      .then(Banking.cancel({ learner, item: assignment }).responds({ use }))
+      .then(respond({ use })),
   { input: { required: ["session", "learner", "assignment"] } },
 );
 

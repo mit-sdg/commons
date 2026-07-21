@@ -1,14 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import {
-  each,
-  form,
-  former,
-  no,
-  request,
-  view,
-  where,
-  whether,
-} from "@mit-sdg/sync-engine/language";
+import { each, form, former, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { FORUM } from "../access/capabilities.ts";
 import { isActiveCourseMember, mayManageRoster, mayNotManageRoster } from "../access/policy.ts";
@@ -104,7 +95,8 @@ export const SetDisplayName = endpoint(
   ({ session, displayName, user }) =>
     receive({ session, displayName })
       .where(activeUser({ session }).is({ user }))
-      .then(request(Profiling.setDisplayName, { user, displayName }), respond({ user })),
+      .then(Profiling.setDisplayName({ user, displayName }))
+      .then(respond({ user })),
   { input: { required: ["session", "displayName"] } },
 );
 
@@ -113,7 +105,8 @@ export const SetBio = endpoint(
   ({ session, bio, user }) =>
     receive({ session, bio })
       .where(activeUser({ session }).is({ user }))
-      .then(request(Profiling.setBio, { user, bio }), respond({ user })),
+      .then(Profiling.setBio({ user, bio }))
+      .then(respond({ user })),
   { input: { required: ["session", "bio"] } },
 );
 
@@ -122,7 +115,8 @@ export const SetAvatar = endpoint(
   ({ session, avatar, user }) =>
     receive({ session, avatar })
       .where(activeUser({ session }).is({ user }))
-      .then(request(Profiling.setAvatar, { user, avatar }), respond({ user })),
+      .then(Profiling.setAvatar({ user, avatar }))
+      .then(respond({ user })),
   { input: { required: ["session", "avatar"] } },
 );
 export const SearchUsers = endpoint(

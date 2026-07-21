@@ -79,13 +79,13 @@ export const Latest = endpoint(
   ({ session, assignment, submitter, latest }) =>
     receive({ session, assignment, submitter })
       .where(activeUser({ session }).is({ user: submitter }), isActiveStudent({ user: submitter }))
-      .either(
-        where(theLatestSubmission({ assignment, submitter }).is({ latest })).then(
-          respond({ submission: latest }),
-        ),
-        where(no(theLatestSubmission({ assignment, submitter }))).then(
-          respond({ submission: null }),
-        ),
+      .then(
+        where(theLatestSubmission({ assignment, submitter }).is({ latest }))
+          .then(respond({ submission: latest }))
+          .named("case-1"),
+        where(no(theLatestSubmission({ assignment, submitter })))
+          .then(respond({ submission: null }))
+          .named("case-2"),
       ),
 );
 export const StaffLatest = endpoint(
@@ -97,13 +97,13 @@ export const StaffLatest = endpoint(
         mayViewAllSubmissions({ user }),
         isActiveStudent({ user: submitter }),
       )
-      .either(
-        where(theLatestSubmission({ assignment, submitter }).is({ latest })).then(
-          respond({ submission: latest }),
-        ),
-        where(no(theLatestSubmission({ assignment, submitter }))).then(
-          respond({ submission: null }),
-        ),
+      .then(
+        where(theLatestSubmission({ assignment, submitter }).is({ latest }))
+          .then(respond({ submission: latest }))
+          .named("case-1"),
+        where(no(theLatestSubmission({ assignment, submitter })))
+          .then(respond({ submission: null }))
+          .named("case-2"),
       ),
 );
 

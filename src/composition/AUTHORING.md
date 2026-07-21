@@ -28,7 +28,7 @@ reactions when it is purged:
 
 ```ts
 export const PurgeClearsReactions = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item }).then(request(Reacting.clearTarget, { target: item })),
+  when(Trashing.purge({}).responds({ item })).then(Reacting.clearTarget({ target: item })),
 );
 ```
 

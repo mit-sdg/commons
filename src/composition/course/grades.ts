@@ -1,15 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import {
-  each,
-  form,
-  former,
-  is,
-  no,
-  reaction,
-  request,
-  whether,
-  when,
-} from "@mit-sdg/sync-engine/language";
+import { each, form, former, is, no, reaction, whether, when } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -114,14 +104,16 @@ export const theGradebook = former("the gradebook ()", (vars) => {
 });
 export const RevisedAcceptingAssignmentEnsuresGradeItem = reaction(({ assignment, title }) =>
   when(
-    Assigning.revise,
-    { title },
-    { assignment, status: "PUBLISHED", acceptsSubmissions: true },
-  ).then(request(Itemizing.ensureItem, { item: assignment, label: title, maxPoints: 100 })),
+    Assigning.revise({ title }).responds({
+      assignment,
+      status: "PUBLISHED",
+      acceptsSubmissions: true,
+    }),
+  ).then(Itemizing.ensureItem({ item: assignment, label: title, maxPoints: 100 })),
 );
 export const RemovedCriterionClearsScores = reaction(({ criterion }) =>
-  when(Itemizing.removeCriterion, {}, { criterion }).then(
-    request(Grading.clearCriterionScores, { criterion }),
+  when(Itemizing.removeCriterion({}).responds({ criterion })).then(
+    Grading.clearCriterionScores({ criterion }),
   ),
 );
 
@@ -130,10 +122,8 @@ export const GradesConfigureItem = endpoint(
   ({ session, item, label, maxPoints, user, gradeItem }) =>
     receive({ session, item, label, maxPoints })
       .where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
-      .then(
-        request(Itemizing.configureItem, { item, label, maxPoints }, { gradeItem }),
-        respond({ gradeItem }),
-      ),
+      .then(Itemizing.configureItem({ item, label, maxPoints }).responds({ gradeItem }))
+      .then(respond({ gradeItem })),
 );
 
 export const GradesConfigureItemForbidden = endpoint(
@@ -149,10 +139,8 @@ export const GradesAddCriterion = endpoint(
   ({ session, item, name, maxPoints, position, user, criterion }) =>
     receive({ session, item, name, maxPoints, position })
       .where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
-      .then(
-        request(Itemizing.addCriterion, { item, name, maxPoints, position }, { criterion }),
-        respond({ criterion }),
-      ),
+      .then(Itemizing.addCriterion({ item, name, maxPoints, position }).responds({ criterion }))
+      .then(respond({ criterion })),
 );
 
 export const GradesAddCriterionForbidden = endpoint(
@@ -169,13 +157,11 @@ export const GradesReviseCriterion = endpoint(
     receive({ session, criterion, name, maxPoints, position })
       .where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
       .then(
-        request(
-          Itemizing.reviseCriterion,
-          { criterion, name, maxPoints, position },
-          { criterion: revised },
-        ),
-        respond({ criterion: revised }),
-      ),
+        Itemizing.reviseCriterion({ criterion, name, maxPoints, position }).responds({
+          criterion: revised,
+        }),
+      )
+      .then(respond({ criterion: revised })),
 );
 
 export const GradesReviseCriterionForbidden = endpoint(
@@ -191,10 +177,8 @@ export const GradesRemoveCriterion = endpoint(
   ({ session, criterion, user, removed }) =>
     receive({ session, criterion })
       .where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
-      .then(
-        request(Itemizing.removeCriterion, { criterion }, { criterion: removed }),
-        respond({ criterion: removed }),
-      ),
+      .then(Itemizing.removeCriterion({ criterion }).responds({ criterion: removed }))
+      .then(respond({ criterion: removed })),
 );
 
 export const GradesRemoveCriterionForbidden = endpoint(
@@ -215,13 +199,18 @@ export const GradesRecord = endpoint(
         Itemizing._getItem({ item }).is({ maxPoints }),
       )
       .then(
-        request(
-          Grading.record,
-          { learner, item, evidence, grader: user, score, outOf: maxPoints, feedback, at },
-          { grade },
-        ),
-        respond({ grade }),
-      ),
+        Grading.record({
+          learner,
+          item,
+          evidence,
+          grader: user,
+          score,
+          outOf: maxPoints,
+          feedback,
+          at,
+        }).responds({ grade }),
+      )
+      .then(respond({ grade })),
   {
     input: {
       required: ["session", "learner", "item", "score", "feedback"],
@@ -259,13 +248,16 @@ export const GradesScoreCriterion = endpoint(
         Itemizing._getCriterion({ criterion }).is({ item, maxPoints: critMax }),
       )
       .then(
-        request(
-          Grading.scoreCriterion,
-          { learner, item, criterion, points, outOf: critMax, feedback },
-          { criterionScore },
-        ),
-        respond({ criterionScore }),
-      ),
+        Grading.scoreCriterion({
+          learner,
+          item,
+          criterion,
+          points,
+          outOf: critMax,
+          feedback,
+        }).responds({ criterionScore }),
+      )
+      .then(respond({ criterionScore })),
 );
 
 export const GradesScoreCriterionForbidden = endpoint(
@@ -308,7 +300,8 @@ export const GradesRelease = endpoint(
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
       )
-      .then(request(Grading.release, { learner, item, at }, { grade }), respond({ grade })),
+      .then(Grading.release({ learner, item, at }).responds({ grade }))
+      .then(respond({ grade })),
 );
 
 export const GradesReleaseForbidden = endpoint(
@@ -328,7 +321,8 @@ export const GradesReleaseItem = endpoint(
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
       )
-      .then(request(Grading.releaseItem, { item, at }, { released }), respond({ released })),
+      .then(Grading.releaseItem({ item, at }).responds({ released }))
+      .then(respond({ released })),
 );
 
 export const GradesReleaseItemForbidden = endpoint(
@@ -348,7 +342,8 @@ export const GradesRetract = endpoint(
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
       )
-      .then(request(Grading.retract, { learner, item, at }, { grade }), respond({ grade })),
+      .then(Grading.retract({ learner, item, at }).responds({ grade }))
+      .then(respond({ grade })),
 );
 
 export const GradesRetractForbidden = endpoint(
@@ -368,10 +363,8 @@ export const GradesExcuse = endpoint(
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
       )
-      .then(
-        request(Grading.excuse, { learner, item, grader: user, feedback, at }, { grade }),
-        respond({ grade }),
-      ),
+      .then(Grading.excuse({ learner, item, grader: user, feedback, at }).responds({ grade }))
+      .then(respond({ grade })),
 );
 
 export const GradesExcuseForbidden = endpoint(

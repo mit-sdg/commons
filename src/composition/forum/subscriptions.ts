@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, no, reaction, request, when, whether } from "@mit-sdg/sync-engine/language";
+import { each, former, no, reaction, when, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { thePostSummaryOf, theThreadStatsOf } from "./fragments.ts";
@@ -48,12 +48,12 @@ export const theWatchedThreadsOf = former(
 );
 
 export const PurgeClearsConversationSubscriptions = reaction(({ item, node, conversation }) =>
-  when(Trashing.purge, {}, { item })
+  when(Trashing.purge({}).responds({ item }))
     .where(
       Conversing._getNodeByItem({ item }).is({ node }),
       Conversing._getConversation({ node }).is({ conversation }),
     )
-    .then(request(Subscribing.clearTarget, { target: conversation })),
+    .then(Subscribing.clearTarget({ target: conversation })),
 );
 
 export const Subscribe = endpoint(
@@ -65,10 +65,8 @@ export const Subscribe = endpoint(
         activeUser({ session }).is({ user }),
         readableConversation({ conversation: target }),
       )
-      .then(
-        request(Subscribing.subscribe, { user, target, at }, { subscription }),
-        respond({ subscription }),
-      ),
+      .then(Subscribing.subscribe({ user, target, at }).responds({ subscription }))
+      .then(respond({ subscription })),
 );
 
 export const Unsubscribe = endpoint(
@@ -76,10 +74,8 @@ export const Unsubscribe = endpoint(
   ({ session, target, user, subscription }) =>
     receive({ session, target })
       .where(activeUser({ session }).is({ user }), readableConversation({ conversation: target }))
-      .then(
-        request(Subscribing.unsubscribe, { user, target }, { subscription }),
-        respond({ subscription }),
-      ),
+      .then(Subscribing.unsubscribe({ user, target }).responds({ subscription }))
+      .then(respond({ subscription })),
 );
 
 export const MySubscriptions = endpoint("/subscriptions/mine", ({ session, user }) =>

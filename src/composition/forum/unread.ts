@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, request } from "@mit-sdg/sync-engine/language";
+import { each, former } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 
@@ -36,7 +36,8 @@ export const MarkSeen = endpoint(
   ({ session, item, user }) =>
     receive({ session, item })
       .where(activeUser({ session }).is({ user }))
-      .then(request(Tracking.markSeen, { user, item }), respond({ item })),
+      .then(Tracking.markSeen({ user, item }))
+      .then(respond({ item })),
   { input: { required: ["session", "item"] } },
 );
 
@@ -45,6 +46,7 @@ export const MarkAllSeen = endpoint(
   ({ session, scope, user }) =>
     receive({ session, scope })
       .where(activeUser({ session }).is({ user }))
-      .then(request(Tracking.markAllSeen, { user, scope }), respond({ user })),
+      .then(Tracking.markAllSeen({ user, scope }))
+      .then(respond({ user })),
   { input: { required: ["session", "scope"] } },
 );

@@ -1,5 +1,5 @@
 import { activeUser } from "./session.ts";
-import { no, reaction, request, view, when, where } from "@mit-sdg/sync-engine/language";
+import { no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { ADMIN_ROLE, FORUM, INITIAL_ADMIN_CAPABILITIES } from "./capabilities.ts";
@@ -8,19 +8,21 @@ const { Authenticating, Profiling, Roling, Sessioning, Timing } = concepts;
 export const InvalidSessionIsRejected = reaction(({ session, at }) =>
   receive({ session })
     .where(Timing._now({}).is({ at }))
-    .either(
+    .then(
       where(
         Sessioning._isExpired({ session, at }).is({ expired: false }),
         no(activeUser({ session })),
-      ).then(respond({ error: "UNAUTHORIZED" })),
-      where(Sessioning._isExpired({ session, at }).is({ expired: true })).then(
-        request(Sessioning.end, { session }),
-        respond({ error: "UNAUTHORIZED" }),
-      ),
+      )
+        .then(respond({ error: "UNAUTHORIZED" }))
+        .named("case-1"),
+      where(Sessioning._isExpired({ session, at }).is({ expired: true }))
+        .then(Sessioning.end({ session }))
+        .then(respond({ error: "UNAUTHORIZED" }))
+        .named("case-2"),
     ),
 );
 export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
-  when(Authenticating.register, {}, { user })
+  when(Authenticating.register({}).responds({ user }))
     .where(
       Authenticating._getUserCount({}).is({ count: 1 }),
       Roling._hasCapabilityHolder({ context: FORUM, capability: "administer" }).is({
@@ -28,17 +30,15 @@ export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
       }),
     )
     .then(
-      request(
-        Roling.ensureRole,
-        { name: ADMIN_ROLE, capabilities: INITIAL_ADMIN_CAPABILITIES },
-        { role },
-      ),
-      request(Roling.grant, { user, context: FORUM, role }),
-    ),
+      Roling.ensureRole({ name: ADMIN_ROLE, capabilities: INITIAL_ADMIN_CAPABILITIES }).responds({
+        role,
+      }),
+    )
+    .then(Roling.grant({ user, context: FORUM, role })),
 );
 
 export const BootstrapAdminOnLogin = reaction(({ user, role }) =>
-  when(Authenticating.authenticate, {}, { user })
+  when(Authenticating.authenticate({}).responds({ user }))
     .where(
       Authenticating._getUserCount({}).is({ count: 1 }),
       Roling._hasCapabilityHolder({ context: FORUM, capability: "administer" }).is({
@@ -46,13 +46,11 @@ export const BootstrapAdminOnLogin = reaction(({ user, role }) =>
       }),
     )
     .then(
-      request(
-        Roling.ensureRole,
-        { name: ADMIN_ROLE, capabilities: INITIAL_ADMIN_CAPABILITIES },
-        { role },
-      ),
-      request(Roling.grant, { user, context: FORUM, role }),
-    ),
+      Roling.ensureRole({ name: ADMIN_ROLE, capabilities: INITIAL_ADMIN_CAPABILITIES }).responds({
+        role,
+      }),
+    )
+    .then(Roling.grant({ user, context: FORUM, role })),
 );
 export const theUserNamed = view(
   "the user named (username) with optional (user)",
@@ -62,28 +60,27 @@ export const theUserNamed = view(
 export const Register = endpoint(
   "/auth/register",
   ({ username, password, displayName, email, user }) =>
-    receive({ username, password, displayName, email }).then(
-      request(Authenticating.register, { username, password, email }, { user }),
-      request(Profiling.createProfile, { user, displayName, email }),
-      respond({ user }),
-    ),
+    receive({ username, password, displayName, email })
+      .then(Authenticating.register({ username, password, email }).responds({ user }))
+      .then(Profiling.createProfile({ user, displayName, email }))
+      .then(respond({ user })),
 );
 
 export const Login = endpoint(
   "/auth/login",
   ({ username, password, user, session, expiresAt, at }) =>
-    receive({ username, password }).then(
-      request(Authenticating.authenticate, { username, password }, { user }),
-      request(Timing.capture, {}, { at }),
-      request(Sessioning.start, { user, at }, { session, expiresAt }),
-      respond({ session, expiresAt, user }),
-    ),
+    receive({ username, password })
+      .then(Authenticating.authenticate({ username, password }).responds({ user }))
+      .then(Timing.capture({}).responds({ at }))
+      .then(Sessioning.start({ user, at }).responds({ session, expiresAt }))
+      .then(respond({ session, expiresAt, user })),
 );
 
 export const Logout = endpoint("/auth/logout", ({ session }) =>
   receive({ session })
     .where(activeUser({ session }))
-    .then(request(Sessioning.end, { session }), respond({ ok: true })),
+    .then(Sessioning.end({ session }))
+    .then(respond({ ok: true })),
 );
 
 export const Me = endpoint("/auth/me", ({ session, user, username, email, profile }) =>
@@ -97,9 +94,11 @@ export const Me = endpoint("/auth/me", ({ session, user, username, email, profil
 );
 
 export const Resolve = endpoint("/auth/resolve", ({ username, user }) =>
-  receive({ username }).either(
-    where(theUserNamed({ username }).is({ user })).then(respond({ user })),
-    where(no(theUserNamed({ username }))).then(respond({ user: null })),
+  receive({ username }).then(
+    where(theUserNamed({ username }).is({ user })).then(respond({ user })).named("case-1"),
+    where(no(theUserNamed({ username })))
+      .then(respond({ user: null }))
+      .named("case-2"),
   ),
 );
 export const ChangePassword = endpoint(
@@ -107,10 +106,8 @@ export const ChangePassword = endpoint(
   ({ session, oldPassword, newPassword, user }) =>
     receive({ session, oldPassword, newPassword })
       .where(activeUser({ session }).is({ user }))
-      .then(
-        request(Authenticating.changePassword, { user, oldPassword, newPassword }),
-        request(Sessioning.endAllForUser, { user }),
-        respond({ user }),
-      ),
+      .then(Authenticating.changePassword({ user, oldPassword, newPassword }))
+      .then(Sessioning.endAllForUser({ user }))
+      .then(respond({ user })),
   { input: { required: ["session", "oldPassword", "newPassword"] } },
 );

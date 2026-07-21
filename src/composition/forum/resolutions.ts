@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, request, when } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { authored, didNotAuthor } from "../access/policy.ts";
 import { concepts } from "../../concepts/index.ts";
@@ -21,16 +21,16 @@ export const theResolutionOf = former(
 );
 
 export const PurgeClearsQuestionResolution = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item })
+  when(Trashing.purge({}).responds({ item }))
     .where(Resolving._getResolution({ question: item }))
-    .then(request(Resolving.clear, { question: item })),
+    .then(Resolving.clear({ question: item })),
 );
 export const PurgeClearsAnsweringResolutions = reaction(({ item, question }) =>
-  when(Trashing.purge, {}, { item })
+  when(Trashing.purge({}).responds({ item }))
     .where(
       Resolving._getQuestionsAnswered({ answer: item }).is({ question }).is.not({ question: item }),
     )
-    .then(request(Resolving.clear, { question })),
+    .then(Resolving.clear({ question })),
 );
 
 export const AcceptAnswer = endpoint(
@@ -44,10 +44,8 @@ export const AcceptAnswer = endpoint(
         readable({ post: question }),
         readable({ post: answer }),
       )
-      .then(
-        request(Resolving.accept, { question, answer, by: user, at }, { resolution }),
-        respond({ resolution }),
-      ),
+      .then(Resolving.accept({ question, answer, by: user, at }).responds({ resolution }))
+      .then(respond({ resolution })),
 );
 
 export const AcceptAnswerNotAuthor = endpoint(
@@ -71,10 +69,8 @@ export const ClearResolution = endpoint(
         authored({ user, post: question }),
         readable({ post: question }),
       )
-      .then(
-        request(Resolving.clear, { question }, { question: cleared }),
-        respond({ question: cleared }),
-      ),
+      .then(Resolving.clear({ question }).responds({ question: cleared }))
+      .then(respond({ question: cleared })),
 );
 
 export const ClearResolutionNotAuthor = endpoint(

@@ -1,14 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import {
-  each,
-  former,
-  no,
-  reaction,
-  request,
-  view,
-  when,
-  where,
-} from "@mit-sdg/sync-engine/language";
+import { each, former, no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayEditPost, mayNotEditPost } from "../access/policy.ts";
 import { concepts } from "../../concepts/index.ts";
@@ -55,55 +46,55 @@ export const thePublicPostsOf = former("the public posts of (author)", ({ author
 );
 
 export const RenderEditedSource = reaction(({ content, post }) =>
-  when(Posting.edit, { content }, { post }).then(
-    request(Formatting.setSource, { target: post, source: content }),
+  when(Posting.edit({ content }).responds({ post })).then(
+    Formatting.setSource({ target: post, source: content }),
   ),
 );
 
 export const DeriveEditedLinks = reaction(({ content, post }) =>
-  when(Posting.edit, { content }, { post }).then(
-    request(Linking.setLinksFrom, { source: post, content }),
+  when(Posting.edit({ content }).responds({ post })).then(
+    Linking.setLinksFrom({ source: post, content }),
   ),
 );
 export const DeleteClearsFormatting = reaction(({ post }) =>
-  when(Posting.delete, {}, { post }).then(request(Formatting.clear, { target: post })),
+  when(Posting.delete({}).responds({ post })).then(Formatting.clear({ target: post })),
 );
 
 export const DeleteClearsReactions = reaction(({ post }) =>
-  when(Posting.delete, {}, { post }).then(request(Reacting.clearTarget, { target: post })),
+  when(Posting.delete({}).responds({ post })).then(Reacting.clearTarget({ target: post })),
 );
 
 export const DeleteClearsPins = reaction(({ post }) =>
-  when(Posting.delete, {}, { post }).then(request(Pinning.clearItem, { item: post })),
+  when(Posting.delete({}).responds({ post })).then(Pinning.clearItem({ item: post })),
 );
 
 export const DeleteClearsBookmarks = reaction(({ post }) =>
-  when(Posting.delete, {}, { post }).then(request(Bookmarking.clearItem, { item: post })),
+  when(Posting.delete({}).responds({ post })).then(Bookmarking.clearItem({ item: post })),
 );
 
 export const DeleteClearsTags = reaction(({ post }) =>
-  when(Posting.delete, {}, { post }).then(request(Tagging.clearTarget, { target: post })),
+  when(Posting.delete({}).responds({ post })).then(Tagging.clearTarget({ target: post })),
 );
 
 export const DeleteUnregisters = reaction(({ post }) =>
-  when(Posting.delete, {}, { post }).then(request(Tracking.unregister, { item: post })),
+  when(Posting.delete({}).responds({ post })).then(Tracking.unregister({ item: post })),
 );
 
 export const DeleteClearsLinks = reaction(({ post }) =>
-  when(Posting.delete, {}, { post }).then(request(Linking.clearLinks, { source: post })),
+  when(Posting.delete({}).responds({ post })).then(Linking.clearLinks({ source: post })),
 );
 
 export const DeleteClearsBacklinks = reaction(({ post }) =>
-  when(Posting.delete, {}, { post }).then(request(Linking.clearBacklinks, { target: post })),
+  when(Posting.delete({}).responds({ post })).then(Linking.clearBacklinks({ target: post })),
 );
 
 export const DeleteRemovesLeafNode = reaction(({ post, node }) =>
-  when(Posting.delete, {}, { post })
+  when(Posting.delete({}).responds({ post }))
     .where(
       Conversing._getNodeByItem({ item: post }).is({ node }),
       Conversing._hasChildren({ node }).is({ present: false }),
     )
-    .then(request(Conversing.remove, { node })),
+    .then(Conversing.remove({ node })),
 );
 
 export const GetPost = endpoint(
@@ -134,7 +125,8 @@ export const EditPost = endpoint(
         activeUser({ session }).is({ user }),
         mayEditPost({ user, post }),
       )
-      .then(request(Posting.edit, { post, content, at }), respond({ post })),
+      .then(Posting.edit({ post, content, at }))
+      .then(respond({ post })),
   { input: { required: ["session", "post", "content"] } },
 );
 export const EditTrashedPost = endpoint("/posts/edit", ({ session, post, content }) =>
@@ -155,32 +147,46 @@ export const EditMissingPost = endpoint("/posts/edit", ({ session, post, content
 export const DeletePost = endpoint(
   "/posts/delete",
   ({ session, post, user, node }) =>
-    receive({ session, post })
-      .where(activeUser({ session }).is({ user }))
-      .either(
-        where(Posting._getPost({ post })).either(
-          where(Trashing._isTrashed({ item: post }).is({ trashed: false })).either(
-            where(
-              Posting._getPost({ post }).is({ author: user }),
-              Conversing._getNodeByItem({ item: post }).is({ node }),
-            ).either(
-              where(Conversing._hasChildren({ node }).is({ present: false })).then(
-                request(Posting.delete, { post }),
-                respond({ post }),
-              ),
-              where(Conversing._hasChildren({ node }).is({ present: true })).then(
-                respond({ error: "POST_HAS_REPLIES" }),
-              ),
-            ),
-            where(Posting._getPost({ post }).is.not({ author: user })).then(
-              respond({ error: "FORBIDDEN" }),
-            ),
-          ),
-          where(Trashing._isTrashed({ item: post }).is({ trashed: true })).then(
-            respond({ error: "NOT_FOUND" }),
-          ),
-        ),
-        where(no(Posting._getPost({ post }))).then(respond({ error: "POST_NOT_FOUND" })),
-      ),
+    receive({ session, post }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        Posting._getPost({ post }),
+        Trashing._isTrashed({ item: post }).is({ trashed: false }),
+        Posting._getPost({ post }).is({ author: user }),
+        Conversing._getNodeByItem({ item: post }).is({ node }),
+        Conversing._hasChildren({ node }).is({ present: false }),
+      )
+        .then(Posting.delete({ post }))
+        .then(respond({ post }))
+        .named("case-1-1-1-1"),
+      where(
+        activeUser({ session }).is({ user }),
+        Posting._getPost({ post }),
+        Trashing._isTrashed({ item: post }).is({ trashed: false }),
+        Posting._getPost({ post }).is({ author: user }),
+        Conversing._getNodeByItem({ item: post }).is({ node }),
+        Conversing._hasChildren({ node }).is({ present: true }),
+      )
+        .then(respond({ error: "POST_HAS_REPLIES" }))
+        .named("case-1-1-1-2"),
+      where(
+        activeUser({ session }).is({ user }),
+        Posting._getPost({ post }),
+        Trashing._isTrashed({ item: post }).is({ trashed: false }),
+        Posting._getPost({ post }).is.not({ author: user }),
+      )
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("case-1-1-2"),
+      where(
+        activeUser({ session }),
+        Posting._getPost({ post }),
+        Trashing._isTrashed({ item: post }).is({ trashed: true }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("case-1-2"),
+      where(activeUser({ session }), no(Posting._getPost({ post })))
+        .then(respond({ error: "POST_NOT_FOUND" }))
+        .named("case-2"),
+    ),
   { input: { required: ["session", "post"] } },
 );

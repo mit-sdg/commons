@@ -1,5 +1,5 @@
 import { activeUser } from "./session.ts";
-import { each, former, request } from "@mit-sdg/sync-engine/language";
+import { each, former } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { mayAdminister, mayNotAdminister } from "./policy.ts";
@@ -25,7 +25,8 @@ export const theRolesHeldBy = former(
 export const DefineRole = endpoint("/roles/define", ({ session, name, capabilities, user, role }) =>
   receive({ session, name, capabilities })
     .where(activeUser({ session }).is({ user }), mayAdminister({ user }))
-    .then(request(Roling.defineRole, { name, capabilities }, { role }), respond({ role })),
+    .then(Roling.defineRole({ name, capabilities }).responds({ role }))
+    .then(respond({ role })),
 );
 
 export const DefineRoleForbidden = endpoint(
@@ -46,10 +47,8 @@ export const GrantRole = endpoint(
         Authenticating._denotedUser({ ref: user }).is({ user: subject }),
         Roling._denotedRole({ ref: role }).is({ role: resolved }),
       )
-      .then(
-        request(Roling.grant, { user: subject, context, role: resolved }, { grant }),
-        respond({ grant }),
-      ),
+      .then(Roling.grant({ user: subject, context, role: resolved }).responds({ grant }))
+      .then(respond({ grant })),
 );
 
 export const GrantRoleForbidden = endpoint(
@@ -70,10 +69,8 @@ export const RevokeRole = endpoint(
         Authenticating._denotedUser({ ref: user }).is({ user: subject }),
         Roling._denotedRole({ ref: role }).is({ role: resolved }),
       )
-      .then(
-        request(Roling.revoke, { user: subject, context, role: resolved }, { grant }),
-        respond({ grant }),
-      ),
+      .then(Roling.revoke({ user: subject, context, role: resolved }).responds({ grant }))
+      .then(respond({ grant })),
 );
 
 export const RevokeRoleForbidden = endpoint(

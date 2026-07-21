@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, request, when } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { notReadable, readable } from "./posts.ts";
@@ -25,7 +25,7 @@ export const theReactionCountsOn = former(
 );
 
 export const PurgeClearsReactions = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item }).then(request(Reacting.clearTarget, { target: item })),
+  when(Trashing.purge({}).responds({ item })).then(Reacting.clearTarget({ target: item })),
 );
 
 export const AddReaction = endpoint(
@@ -37,10 +37,8 @@ export const AddReaction = endpoint(
         activeUser({ session }).is({ user }),
         readable({ post: target }),
       )
-      .then(
-        request(Reacting.react, { reactor: user, target, kind, at }, { reaction }),
-        respond({ reaction }),
-      ),
+      .then(Reacting.react({ reactor: user, target, kind, at }).responds({ reaction }))
+      .then(respond({ reaction })),
   { input: { required: ["session", "target", "kind"] } },
 );
 
@@ -49,10 +47,8 @@ export const RemoveReaction = endpoint(
   ({ session, target, kind, user, reaction }) =>
     receive({ session, target, kind })
       .where(activeUser({ session }).is({ user }), readable({ post: target }))
-      .then(
-        request(Reacting.unreact, { reactor: user, target, kind }, { reaction }),
-        respond({ ok: true }),
-      ),
+      .then(Reacting.unreact({ reactor: user, target, kind }).responds({ reaction }))
+      .then(respond({ ok: true })),
 );
 export const AddReactionHidden = endpoint("/reactions/add", ({ session, target, kind }) =>
   receive({ session, target, kind })

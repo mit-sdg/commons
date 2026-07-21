@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, no, reaction, request, when } from "@mit-sdg/sync-engine/language";
+import { each, former, no, reaction, when } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
@@ -42,18 +42,18 @@ export const theLatestRevisionOf = former(
 );
 
 export const RecordRevisionOnCreate = reaction(({ content, post, at }) =>
-  when(Posting.create, { content, at }, { post }).then(
-    request(Revising.record, { item: post, content, at }),
+  when(Posting.create({ content, at }).responds({ post })).then(
+    Revising.record({ item: post, content, at }),
   ),
 );
 
 export const RecordRevisionOnEdit = reaction(({ content, post, at }) =>
-  when(Posting.edit, { content, at }, { post }).then(
-    request(Revising.record, { item: post, content, at }),
+  when(Posting.edit({ content, at }).responds({ post })).then(
+    Revising.record({ item: post, content, at }),
   ),
 );
 export const PurgeClearsRevisions = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item }).then(request(Revising.clearItem, { item })),
+  when(Trashing.purge({}).responds({ item })).then(Revising.clearItem({ item })),
 );
 
 export const ListRevisions = endpoint(

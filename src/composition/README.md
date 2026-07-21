@@ -14,7 +14,7 @@ _Source: [`forum/reactions.ts`](forum/reactions.ts)_
 
 ```ts
 export const PurgeClearsReactions = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item }).then(request(Reacting.clearTarget, { target: item })),
+  when(Trashing.purge({}).responds({ item })).then(Reacting.clearTarget({ target: item })),
 );
 ```
 
@@ -62,7 +62,8 @@ export const PinItem = endpoint(
         mayPinInScope({ user, scope }),
         readable({ post: item }),
       )
-      .then(request(Pinning.pin, { item, scope, priority, at }, { pin }), respond({ pin })),
+      .then(Pinning.pin({ item, scope, priority, at }).responds({ pin }))
+      .then(respond({ pin })),
   { input: { required: ["session", "item", "scope", "priority"] } },
 );
 ```

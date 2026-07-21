@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, request, view, when, where } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { thePostSummaryOf } from "./fragments.ts";
@@ -30,7 +30,7 @@ export const theBookmarkedPostsOf = former(
 );
 
 export const PurgeClearsBookmarks = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item }).then(request(Bookmarking.clearItem, { item })),
+  when(Trashing.purge({}).responds({ item })).then(Bookmarking.clearItem({ item })),
 );
 
 export const SaveBookmark = endpoint("/bookmarks/save", ({ session, item, user, at, bookmark }) =>
@@ -40,13 +40,15 @@ export const SaveBookmark = endpoint("/bookmarks/save", ({ session, item, user, 
       activeUser({ session }).is({ user }),
       readable({ post: item }),
     )
-    .then(request(Bookmarking.save, { user, item, at }, { bookmark }), respond({ bookmark })),
+    .then(Bookmarking.save({ user, item, at }).responds({ bookmark }))
+    .then(respond({ bookmark })),
 );
 
 export const UnsaveBookmark = endpoint("/bookmarks/unsave", ({ session, item, user, bookmark }) =>
   receive({ session, item })
     .where(activeUser({ session }).is({ user }), readable({ post: item }))
-    .then(request(Bookmarking.unsave, { user, item }, { bookmark }), respond({ bookmark })),
+    .then(Bookmarking.unsave({ user, item }).responds({ bookmark }))
+    .then(respond({ bookmark })),
 );
 export const SaveBookmarkHidden = endpoint("/bookmarks/save", ({ session, item }) =>
   receive({ session, item })

@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, request, when } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { notReadable, readable } from "./posts.ts";
@@ -35,7 +35,7 @@ export const theTargetsTaggedWithName = former(
 );
 
 export const PurgeClearsTags = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item }).then(request(Tagging.clearTarget, { target: item })),
+  when(Trashing.purge({}).responds({ item })).then(Tagging.clearTarget({ target: item })),
 );
 
 export const CreateTag = endpoint(
@@ -43,26 +43,23 @@ export const CreateTag = endpoint(
   ({ session, name, tag }) =>
     receive({ session, name })
       .where(activeUser({ session }))
-      .then(request(Tagging.createTag, { name }, { tag }), respond({ tag })),
+      .then(Tagging.createTag({ name }).responds({ tag }))
+      .then(respond({ tag })),
   { input: { required: ["session", "name"] } },
 );
 
 export const AddTag = endpoint("/tags/add", ({ session, target, tag, tagged }) =>
   receive({ session, target, tag })
     .where(activeUser({ session }), readable({ post: target }))
-    .then(
-      request(Tagging.addTag, { target, tag }, { target: tagged }),
-      respond({ target: tagged }),
-    ),
+    .then(Tagging.addTag({ target, tag }).responds({ target: tagged }))
+    .then(respond({ target: tagged })),
 );
 
 export const RemoveTag = endpoint("/tags/remove", ({ session, target, tag, untagged }) =>
   receive({ session, target, tag })
     .where(activeUser({ session }), readable({ post: target }))
-    .then(
-      request(Tagging.removeTag, { target, tag }, { target: untagged }),
-      respond({ target: untagged }),
-    ),
+    .then(Tagging.removeTag({ target, tag }).responds({ target: untagged }))
+    .then(respond({ target: untagged })),
 );
 export const AddTagHidden = endpoint("/tags/add", ({ session, target, tag }) =>
   receive({ session, target, tag })

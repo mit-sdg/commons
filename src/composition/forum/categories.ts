@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, request, when } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayAdminister, mayModerate, mayNotAdminister, mayNotModerate } from "../access/policy.ts";
 import { concepts } from "../../concepts/index.ts";
@@ -34,9 +34,9 @@ export const theCategoryOf = former(
 );
 
 export const PurgeUnassignsCategory = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item })
+  when(Trashing.purge({}).responds({ item }))
     .where(Categorizing._getCategory({ item }))
-    .then(request(Categorizing.unassign, { item })),
+    .then(Categorizing.unassign({ item })),
 );
 
 export const CreateCategory = endpoint(
@@ -44,10 +44,8 @@ export const CreateCategory = endpoint(
   ({ session, name, description, user, category }) =>
     receive({ session, name, description })
       .where(activeUser({ session }).is({ user }), mayAdminister({ user }))
-      .then(
-        request(Categorizing.createCategory, { name, description }, { category }),
-        respond({ category }),
-      ),
+      .then(Categorizing.createCategory({ name, description }).responds({ category }))
+      .then(respond({ category })),
 );
 
 export const CreateCategoryForbidden = endpoint(
@@ -63,10 +61,8 @@ export const DeleteCategory = endpoint(
   ({ session, category, user, deleted }) =>
     receive({ session, category })
       .where(activeUser({ session }).is({ user }), mayAdminister({ user }))
-      .then(
-        request(Categorizing.deleteCategory, { category }, { category: deleted }),
-        respond({ category: deleted }),
-      ),
+      .then(Categorizing.deleteCategory({ category }).responds({ category: deleted }))
+      .then(respond({ category: deleted })),
 );
 
 export const DeleteCategoryForbidden = endpoint(
@@ -82,10 +78,8 @@ export const AssignCategory = endpoint(
   ({ session, item, category, user, assigned }) =>
     receive({ session, item, category })
       .where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: item }))
-      .then(
-        request(Categorizing.assign, { item, category }, { item: assigned }),
-        respond({ item: assigned }),
-      ),
+      .then(Categorizing.assign({ item, category }).responds({ item: assigned }))
+      .then(respond({ item: assigned })),
 );
 
 export const AssignCategoryForbidden = endpoint(
@@ -112,10 +106,8 @@ export const UnassignCategory = endpoint(
   ({ session, item, user, unassigned }) =>
     receive({ session, item })
       .where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: item }))
-      .then(
-        request(Categorizing.unassign, { item }, { item: unassigned }),
-        respond({ item: unassigned }),
-      ),
+      .then(Categorizing.unassign({ item }).responds({ item: unassigned }))
+      .then(respond({ item: unassigned })),
 );
 
 export const UnassignCategoryForbidden = endpoint(

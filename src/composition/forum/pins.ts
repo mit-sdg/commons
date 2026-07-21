@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, request, when } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayNotPinInScope, mayPinInScope } from "../access/policy.ts";
 import { concepts } from "../../concepts/index.ts";
@@ -15,7 +15,7 @@ export const thePinsOf = former("the pins of (scope)", ({ scope, item, priority 
 );
 
 export const PurgeClearsPins = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item }).then(request(Pinning.clearItem, { item })),
+  when(Trashing.purge({}).responds({ item })).then(Pinning.clearItem({ item })),
 );
 
 export const PinItem = endpoint(
@@ -28,7 +28,8 @@ export const PinItem = endpoint(
         mayPinInScope({ user, scope }),
         readable({ post: item }),
       )
-      .then(request(Pinning.pin, { item, scope, priority, at }, { pin }), respond({ pin })),
+      .then(Pinning.pin({ item, scope, priority, at }).responds({ pin }))
+      .then(respond({ pin })),
   { input: { required: ["session", "item", "scope", "priority"] } },
 );
 
@@ -56,7 +57,8 @@ export const UnpinItem = endpoint(
         mayPinInScope({ user, scope }),
         readable({ post: item }),
       )
-      .then(request(Pinning.unpin, { item, scope }, { pin }), respond({ pin })),
+      .then(Pinning.unpin({ item, scope }).responds({ pin }))
+      .then(respond({ pin })),
   { input: { required: ["session", "item", "scope"] } },
 );
 
@@ -84,7 +86,8 @@ export const SetPinPriority = endpoint(
         mayPinInScope({ user, scope }),
         readable({ post: item }),
       )
-      .then(request(Pinning.setPriority, { item, scope, priority }, { pin }), respond({ pin })),
+      .then(Pinning.setPriority({ item, scope, priority }).responds({ pin }))
+      .then(respond({ pin })),
   { input: { required: ["session", "item", "scope", "priority"] } },
 );
 

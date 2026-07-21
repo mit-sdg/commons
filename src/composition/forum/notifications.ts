@@ -4,7 +4,6 @@ import {
   form,
   former,
   reaction,
-  request,
   view,
   when,
   where,
@@ -25,7 +24,7 @@ const {
 } = concepts;
 
 export const PurgeClearsNotifications = reaction(({ item }) =>
-  when(Trashing.purge, {}, { item }).then(request(Notifying.clearSubject, { subject: item })),
+  when(Trashing.purge({}).responds({ item })).then(Notifying.clearSubject({ subject: item })),
 );
 
 export const isNotMentionedIn = view(
@@ -52,14 +51,14 @@ export const otherUsersMentionedIn = view(
 
 export const ReplyNotifiesParentAuthor = reaction(
   ({ item, parent, parentItem, parentAuthor, at }) =>
-    when(Conversing.reply, { item, parent, at }, {})
+    when(Conversing.reply({ item, parent, at }).responds({}))
       .where(
         Conversing._getItem({ node: parent }).is({ item: parentItem }),
         Posting._getPost({ post: parentItem }).is({ author: parentAuthor }),
         Posting._getPost({ post: item }).is.not({ author: parentAuthor }),
       )
       .then(
-        request(Notifying.notify, {
+        Notifying.notify({
           recipient: parentAuthor,
           kind: "reply",
           subject: item,
@@ -71,7 +70,7 @@ export const ReplyNotifiesParentAuthor = reaction(
 
 export const ReplyNotifiesWatchers = reaction(
   ({ item, parent, conversation, subscriber, parentItem, at }) =>
-    when(Conversing.reply, { item, parent, at }, {})
+    when(Conversing.reply({ item, parent, at }).responds({}))
       .where(
         Conversing._getConversation({ node: parent }).is({ conversation }),
         Subscribing._getSubscribers({ target: conversation }).is({ user: subscriber }),
@@ -81,7 +80,7 @@ export const ReplyNotifiesWatchers = reaction(
         isNotMentionedIn({ user: subscriber, post: item }),
       )
       .then(
-        request(Notifying.notify, {
+        Notifying.notify({
           recipient: subscriber,
           kind: "followed_reply",
           subject: item,
@@ -92,10 +91,10 @@ export const ReplyNotifiesWatchers = reaction(
 );
 
 export const RootMentionsNotify = reaction(({ item, mentioned, at }) =>
-  when(Conversing.start, { item, at }, {})
+  when(Conversing.start({ item, at }).responds({}))
     .where(otherUsersMentionedIn({ post: item }).is({ user: mentioned }))
     .then(
-      request(Notifying.notify, {
+      Notifying.notify({
         recipient: mentioned,
         kind: "mention",
         subject: item,
@@ -106,14 +105,14 @@ export const RootMentionsNotify = reaction(({ item, mentioned, at }) =>
 );
 
 export const ReplyMentionsNotify = reaction(({ item, parent, mentioned, parentItem, at }) =>
-  when(Conversing.reply, { item, parent, at }, {})
+  when(Conversing.reply({ item, parent, at }).responds({}))
     .where(
       otherUsersMentionedIn({ post: item }).is({ user: mentioned }),
       Conversing._getItem({ node: parent }).is({ item: parentItem }),
       Posting._getPost({ post: parentItem }).is.not({ author: mentioned }),
     )
     .then(
-      request(Notifying.notify, {
+      Notifying.notify({
         recipient: mentioned,
         kind: "mention",
         subject: item,
@@ -124,13 +123,13 @@ export const ReplyMentionsNotify = reaction(({ item, parent, mentioned, parentIt
 );
 
 export const EditMentionsNotify = reaction(({ post, mentioned, at }) =>
-  when(Posting.edit, { at }, { post })
+  when(Posting.edit({ at }).responds({ post }))
     .where(
       otherUsersMentionedIn({ post }).is({ user: mentioned }),
       isNotYetNotifiedAbout({ user: mentioned, subject: post }),
     )
     .then(
-      request(Notifying.notify, {
+      Notifying.notify({
         recipient: mentioned,
         kind: "mention",
         subject: post,
@@ -141,13 +140,13 @@ export const EditMentionsNotify = reaction(({ post, mentioned, at }) =>
 );
 
 export const AcceptNotifiesAnswerAuthor = reaction(({ answer, by, answerAuthor, at }) =>
-  when(Resolving.accept, { answer, by, at }, {})
+  when(Resolving.accept({ answer, by, at }).responds({}))
     .where(
       Posting._getPost({ post: answer }).is({ author: answerAuthor }),
       Posting._getPost({ post: answer }).is.not({ author: by }),
     )
     .then(
-      request(Notifying.notify, {
+      Notifying.notify({
         recipient: answerAuthor,
         kind: "accepted",
         subject: answer,
@@ -231,18 +230,16 @@ export const MarkRead = endpoint(
     receive({ session, notification })
       .where(activeUser({ session }).is({ user }))
       .then(
-        request(Notifying.markRead, { notification, recipient: user }, { notification: marked }),
-        respond({ notification: marked }),
-      ),
+        Notifying.markRead({ notification, recipient: user }).responds({ notification: marked }),
+      )
+      .then(respond({ notification: marked })),
 );
 
 export const MarkAllRead = endpoint("/notifications/markAllRead", ({ session, user, recipient }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }))
-    .then(
-      request(Notifying.markAllRead, { recipient: user }, { recipient }),
-      respond({ recipient }),
-    ),
+    .then(Notifying.markAllRead({ recipient: user }).responds({ recipient }))
+    .then(respond({ recipient })),
 );
 
 export const Dismiss = endpoint(
@@ -251,7 +248,7 @@ export const Dismiss = endpoint(
     receive({ session, notification })
       .where(activeUser({ session }).is({ user }))
       .then(
-        request(Notifying.dismiss, { notification, recipient: user }, { notification: dismissed }),
-        respond({ notification: dismissed }),
-      ),
+        Notifying.dismiss({ notification, recipient: user }).responds({ notification: dismissed }),
+      )
+      .then(respond({ notification: dismissed })),
 );

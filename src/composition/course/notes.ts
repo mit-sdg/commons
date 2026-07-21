@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, no, request, view, where } from "@mit-sdg/sync-engine/language";
+import { each, former, no, view, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -108,13 +108,11 @@ export const Write = endpoint(
         mayManageStudentNotes({ user }),
       )
       .then(
-        request(
-          Noting.write,
-          { author: user, learner, body, visibility, tags, followUpAt, at },
-          { note },
-        ),
-        respond({ note }),
-      ),
+        Noting.write({ author: user, learner, body, visibility, tags, followUpAt, at }).responds({
+          note,
+        }),
+      )
+      .then(respond({ note })),
   { input: { required: ["session", "learner", "body", "visibility", "tags", "followUpAt"] } },
 );
 
@@ -134,10 +132,8 @@ export const Revise = endpoint(
         activeUser({ session }).is({ user }),
         mayManageStudentNotes({ user }),
       )
-      .then(
-        request(Noting.revise, { note, body, visibility, tags, followUpAt, at }, { note }),
-        respond({ note }),
-      ),
+      .then(Noting.revise({ note, body, visibility, tags, followUpAt, at }).responds({ note }))
+      .then(respond({ note })),
   { input: { required: ["session", "note", "body", "visibility", "tags", "followUpAt"] } },
 );
 
@@ -157,7 +153,8 @@ export const Resolve = endpoint(
         activeUser({ session }).is({ user }),
         mayManageStudentNotes({ user }),
       )
-      .then(request(Noting.resolve, { note, at }, { note }), respond({ note })),
+      .then(Noting.resolve({ note, at }).responds({ note }))
+      .then(respond({ note })),
   { input: { required: ["session", "note"] } },
 );
 
@@ -175,7 +172,8 @@ export const Archive = endpoint(
         activeUser({ session }).is({ user }),
         mayManageStudentNotes({ user }),
       )
-      .then(request(Noting.archive, { note, at }, { note }), respond({ note })),
+      .then(Noting.archive({ note, at }).responds({ note }))
+      .then(respond({ note })),
   { input: { required: ["session", "note"] } },
 );
 
@@ -193,7 +191,8 @@ export const Restore = endpoint(
         activeUser({ session }).is({ user }),
         mayManageStudentNotes({ user }),
       )
-      .then(request(Noting.restore, { note, at }, { note }), respond({ note })),
+      .then(Noting.restore({ note, at }).responds({ note }))
+      .then(respond({ note })),
   { input: { required: ["session", "note"] } },
 );
 
@@ -211,7 +210,8 @@ export const Acknowledge = endpoint(
         activeUser({ session }).is({ user }),
         isActiveStudent({ user }),
       )
-      .then(request(Noting.acknowledge, { note, learner: user, at }, { note }), respond({ note })),
+      .then(Noting.acknowledge({ note, learner: user, at }).responds({ note }))
+      .then(respond({ note })),
   { input: { required: ["session", "note"] } },
 );
 
@@ -255,9 +255,13 @@ export const StudentsDetail = endpoint(
   ({ session, user: caller, target, detail }) =>
     receive({ session, user: target })
       .where(activeUser({ session }).is({ user: caller }), mayManageStudentNotes({ user: caller }))
-      .either(
-        where(theSeatDetailOf({ user: target }).is({ detail })).then(respond({ detail })),
-        where(no(theSeatDetailOf({ user: target }))).then(respond({ detail: null })),
+      .then(
+        where(theSeatDetailOf({ user: target }).is({ detail }))
+          .then(respond({ detail }))
+          .named("case-1"),
+        where(no(theSeatDetailOf({ user: target })))
+          .then(respond({ detail: null }))
+          .named("case-2"),
       ),
   { input: { required: ["session", "user"] } },
 );
