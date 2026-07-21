@@ -76,136 +76,114 @@ export const theSubmissionsBy = former(
 
 export const Latest = endpoint(
   "/submissions/latest",
-  ({ session, assignment, submitter, latest }) =>
-    receive({ session, assignment, submitter })
-      .where(activeUser({ session }).is({ user: submitter }), isActiveStudent({ user: submitter }))
-      .then(
-        where(theLatestSubmission({ assignment, submitter }).is({ latest }))
-          .then(respond({ submission: latest }))
-          .named("case-1"),
-        where(no(theLatestSubmission({ assignment, submitter })))
-          .then(respond({ submission: null }))
-          .named("case-2"),
-      ),
-);
-export const StaffLatest = endpoint(
-  "/submissions/latest",
-  ({ session, assignment, submitter, user, latest }) =>
-    receive({ session, assignment, submitter })
-      .where(
+  ({ session, assignment, submitter, latest, user }) =>
+    receive({ session, assignment, submitter }).then(
+      where(
+        activeUser({ session }).is({ user: submitter }),
+        isActiveStudent({ user: submitter }),
+        theLatestSubmission({ assignment, submitter }).is({ latest }),
+      )
+        .then(respond({ submission: latest }))
+        .named("self-found"),
+      where(
+        activeUser({ session }).is({ user: submitter }),
+        isActiveStudent({ user: submitter }),
+        no(theLatestSubmission({ assignment, submitter })),
+      )
+        .then(respond({ submission: null }))
+        .named("self-missing"),
+      where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
         mayViewAllSubmissions({ user }),
         isActiveStudent({ user: submitter }),
+        theLatestSubmission({ assignment, submitter }).is({ latest }),
       )
-      .then(
-        where(theLatestSubmission({ assignment, submitter }).is({ latest }))
-          .then(respond({ submission: latest }))
-          .named("case-1"),
-        where(no(theLatestSubmission({ assignment, submitter })))
-          .then(respond({ submission: null }))
-          .named("case-2"),
-      ),
+        .then(respond({ submission: latest }))
+        .named("staff-found"),
+      where(
+        activeUser({ session }).is({ user }).is.not({ user: submitter }),
+        mayViewAllSubmissions({ user }),
+        isActiveStudent({ user: submitter }),
+        no(theLatestSubmission({ assignment, submitter })),
+      )
+        .then(respond({ submission: null }))
+        .named("staff-missing"),
+      where(
+        activeUser({ session }).is({ user }).is.not({ user: submitter }),
+        mayNotViewAllSubmissions({ user }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("latest-hidden"),
+      where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("latest-missing"),
+    ),
 );
 
-export const Attempts = endpoint("/submissions/attempts", ({ session, assignment, submitter }) =>
-  receive({ session, assignment, submitter })
-    .where(activeUser({ session }).is({ user: submitter }), isActiveStudent({ user: submitter }))
-    .then(respond({ attempts: theAttempts({ assignment, submitter }) })),
-);
-export const StaffAttempts = endpoint(
+export const Attempts = endpoint(
   "/submissions/attempts",
   ({ session, assignment, submitter, user }) =>
-    receive({ session, assignment, submitter })
-      .where(
+    receive({ session, assignment, submitter }).then(
+      where(activeUser({ session }).is({ user: submitter }), isActiveStudent({ user: submitter }))
+        .then(respond({ attempts: theAttempts({ assignment, submitter }) }))
+        .named("attempts"),
+      where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
         mayViewAllSubmissions({ user }),
         isActiveStudent({ user: submitter }),
       )
-      .then(respond({ attempts: theAttempts({ assignment, submitter }) })),
+        .then(respond({ attempts: theAttempts({ assignment, submitter }) }))
+        .named("staff-attempts"),
+      where(
+        activeUser({ session }).is({ user }).is.not({ user: submitter }),
+        mayNotViewAllSubmissions({ user }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("attempts-hidden"),
+      where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("attempts-missing"),
+    ),
 );
 
 export const ForAssignment = endpoint(
   "/submissions/for-assignment",
   ({ session, assignment, user }) =>
-    receive({ session, assignment })
-      .where(activeUser({ session }).is({ user }), mayViewAllSubmissions({ user }))
-      .then(
-        respond({
-          assigned: theAssignedPopulationForAssignment({ assignment }),
-          submissions: theSubmissionsForAssignment({ assignment }),
-        }),
-      ),
+    receive({ session, assignment }).then(
+      where(activeUser({ session }).is({ user }), mayViewAllSubmissions({ user }))
+        .then(
+          respond({
+            assigned: theAssignedPopulationForAssignment({ assignment }),
+            submissions: theSubmissionsForAssignment({ assignment }),
+          }),
+        )
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotViewAllSubmissions({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
-export const ForAssignmentForbidden = endpoint(
-  "/submissions/for-assignment",
-  ({ session, assignment, user }) =>
-    receive({ session, assignment })
-      .where(activeUser({ session }).is({ user }), mayNotViewAllSubmissions({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
-
-export const ForStudent = endpoint("/submissions/for-student", ({ session, submitter }) =>
-  receive({ session, submitter })
-    .where(activeUser({ session }).is({ user: submitter }), isActiveStudent({ user: submitter }))
-    .then(respond({ submissions: theSubmissionsBy({ submitter }) })),
-);
-export const StaffForStudent = endpoint(
-  "/submissions/for-student",
-  ({ session, submitter, user }) =>
-    receive({ session, submitter })
-      .where(
-        activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayViewAllSubmissions({ user }),
-        isActiveStudent({ user: submitter }),
-      )
-      .then(respond({ submissions: theSubmissionsBy({ submitter }) })),
-);
-
-export const LatestHidden = endpoint(
-  "/submissions/latest",
-  ({ session, assignment, submitter, user }) =>
-    receive({ session, assignment, submitter })
-      .where(
-        activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayNotViewAllSubmissions({ user }),
-      )
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const AttemptsHidden = endpoint(
-  "/submissions/attempts",
-  ({ session, assignment, submitter, user }) =>
-    receive({ session, assignment, submitter })
-      .where(
-        activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayNotViewAllSubmissions({ user }),
-      )
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const ForStudentHidden = endpoint(
-  "/submissions/for-student",
-  ({ session, submitter, user }) =>
-    receive({ session, submitter })
-      .where(
-        activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayNotViewAllSubmissions({ user }),
-      )
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const LatestMissing = endpoint("/submissions/latest", ({ session, assignment, submitter }) =>
-  receive({ session, assignment, submitter })
-    .where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const AttemptsMissing = endpoint(
-  "/submissions/attempts",
-  ({ session, assignment, submitter }) =>
-    receive({ session, assignment, submitter })
-      .where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const ForStudentMissing = endpoint("/submissions/for-student", ({ session, submitter }) =>
-  receive({ session, submitter })
-    .where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
-    .then(respond({ error: "NOT_FOUND" })),
+export const ForStudent = endpoint("/submissions/for-student", ({ session, submitter, user }) =>
+  receive({ session, submitter }).then(
+    where(activeUser({ session }).is({ user: submitter }), isActiveStudent({ user: submitter }))
+      .then(respond({ submissions: theSubmissionsBy({ submitter }) }))
+      .named("for-student"),
+    where(
+      activeUser({ session }).is({ user }).is.not({ user: submitter }),
+      mayViewAllSubmissions({ user }),
+      isActiveStudent({ user: submitter }),
+    )
+      .then(respond({ submissions: theSubmissionsBy({ submitter }) }))
+      .named("staff-for-student"),
+    where(
+      activeUser({ session }).is({ user }).is.not({ user: submitter }),
+      mayNotViewAllSubmissions({ user }),
+    )
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("for-student-hidden"),
+    where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("for-student-missing"),
+  ),
 );

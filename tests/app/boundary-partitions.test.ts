@@ -30,6 +30,7 @@ async function expectOneAnswer(
   path: string,
   body: Record<string, unknown>,
   expected: unknown,
+  expectedBy?: string,
 ) {
   const before = inspectAssembly(app).occurrences.length;
   const result = await app.invoker.invoke(path as never, body as never);
@@ -40,6 +41,9 @@ async function expectOneAnswer(
     .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");
   expect(responses.filter((event) => event.outcome?.kind === "result")).toHaveLength(1);
   expect(responses.filter((event) => event.outcome?.kind === "error")).toHaveLength(0);
+  if (expectedBy !== undefined) {
+    expect(responses.find((event) => event.outcome?.kind === "result")?.by).toBe(expectedBy);
+  }
 }
 
 describe("boundary partitions", () => {
@@ -82,14 +86,72 @@ describe("boundary partitions", () => {
     );
   });
 
-  test("a missing resolution question produces one not-found answer", async () => {
+  test("resolution acceptance names its success, policy, and absence paths", async () => {
     const app = assembleCommons();
-    const session = await actor(app, "resolution_partition");
+    const authorSession = await actor(app, "resolution_author");
+    const otherSession = await actor(app, "resolution_other");
+    const created = await app.invoker.invoke("/threads/create", {
+      session: authorSession,
+      content: "Question",
+    } as never);
+    if (!created.ok) throw new Error("could not create resolution question");
+    const question = created.value as { node: string; post: string };
+    const replied = await app.invoker.invoke("/threads/reply", {
+      session: authorSession,
+      parent: question.node,
+      content: "Answer",
+    } as never);
+    if (!replied.ok) throw new Error("could not create resolution answer");
+    const answer = replied.value as { post: string };
+
     await expectOneAnswer(
       app,
       "/resolutions/accept",
-      { session, question: "missing-question", answer: "missing-answer" },
-      { error: "NOT_FOUND" },
+      { session: otherSession, question: question.post, answer: answer.post },
+      { error: "FORBIDDEN" },
+      "resolutions.AcceptAnswer:not-author",
     );
+    await expectOneAnswer(
+      app,
+      "/resolutions/accept",
+      { session: authorSession, question: "missing-question", answer: "missing-answer" },
+      { error: "NOT_FOUND" },
+      "resolutions.AcceptAnswer:hidden-question",
+    );
+    await expectOneAnswer(
+      app,
+      "/resolutions/accept",
+      { session: authorSession, question: question.post, answer: "missing-answer" },
+      { error: "NOT_FOUND" },
+      "resolutions.AcceptAnswer:hidden-answer",
+    );
+    await expectOneAnswer(
+      app,
+      "/resolutions/accept",
+      { session: authorSession, question: question.post, answer: answer.post },
+      expect.objectContaining({ resolution: expect.any(String) }),
+      "resolutions.AcceptAnswer:accepted#2",
+    );
+  });
+
+  test("overlapping profile absence paths both fire without gaining priority", async () => {
+    const app = assembleCommons();
+    const session = await actor(app, "profile_overlap");
+    const before = inspectAssembly(app).occurrences.length;
+    const result = await app.invoker.invoke("/profiles/get", {
+      session,
+      user: "missing-user",
+    } as never);
+
+    expect(publicResult(result)).toEqual({ error: "NOT_FOUND" });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const responses = inspectAssembly(app)
+      .occurrences.slice(before)
+      .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");
+    expect(responses.filter((event) => event.outcome?.kind === "result")).toHaveLength(1);
+    expect(responses.filter((event) => event.outcome?.kind === "error")).toHaveLength(1);
+    expect(
+      responses.map((event) => event.by).sort((left, right) => left!.localeCompare(right!)),
+    ).toEqual(["profiles.GetProfile:hidden", "profiles.GetProfile:missing"]);
   });
 });

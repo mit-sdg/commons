@@ -87,43 +87,43 @@ export const theStaffAssignments = former(
     }),
 );
 
-export const PublishToEveryoneAssignsActiveStudents = reaction(({ assignment, user, at }) =>
-  when(Assigning.publish({ at }).responds({ assignment, audience: "EVERYONE" }))
-    .where(Rostering._getActiveStudents({}).is({ user }))
-    .then(Assigning.assign({ assignment, assignee: user, at })),
+export const PublishedAssignmentAssignsAudienceStudents = reaction(
+  ({ assignment, audience, targets, user, section, at }) =>
+    when(Assigning.publish({ at }).responds({ assignment, audience, targets })).then(
+      where(is.among(audience, ["EVERYONE"]), Rostering._getActiveStudents({}).is({ user }))
+        .then(Assigning.assign({ assignment, assignee: user, at }))
+        .named("everyone"),
+      where(
+        is.among(audience, ["TARGETS"]),
+        Rostering._getActiveStudents({}).is({ user, section }),
+        is.among(section, targets),
+      )
+        .then(Assigning.assign({ assignment, assignee: user, at }))
+        .named("targets"),
+    ),
 );
 
-export const PublishToTargetsAssignsSectionStudents = reaction(
-  ({ assignment, targets, user, section, at }) =>
-    when(Assigning.publish({ at }).responds({ assignment, audience: "TARGETS", targets }))
-      .where(Rostering._getActiveStudents({}).is({ user, section }), is.among(section, targets))
-      .then(Assigning.assign({ assignment, assignee: user, at })),
-);
-export const WidenedEveryoneAssignsActiveStudents = reaction(({ assignment, user, at }) =>
-  when(Assigning.revise({ at }).responds({ assignment, status: "PUBLISHED", audience: "EVERYONE" }))
-    .where(
-      Rostering._getActiveStudents({}).is({ user }),
-      Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
-    )
-    .then(Assigning.assign({ assignment, assignee: user, at })),
-);
-
-export const WidenedTargetsAssignSectionStudents = reaction(
-  ({ assignment, targets, user, section, at }) =>
-    when(
-      Assigning.revise({ at }).responds({
-        assignment,
-        status: "PUBLISHED",
-        audience: "TARGETS",
-        targets,
-      }),
-    )
-      .where(
+export const RevisedAssignmentAssignsNewAudienceStudents = reaction(
+  ({ assignment, status, audience, targets, user, section, at }) =>
+    when(Assigning.revise({ at }).responds({ assignment, status, audience, targets })).then(
+      where(
+        is.among(status, ["PUBLISHED"]),
+        is.among(audience, ["EVERYONE"]),
+        Rostering._getActiveStudents({}).is({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
+      )
+        .then(Assigning.assign({ assignment, assignee: user, at }))
+        .named("everyone"),
+      where(
+        is.among(status, ["PUBLISHED"]),
+        is.among(audience, ["TARGETS"]),
         Rostering._getActiveStudents({}).is({ user, section }),
         is.among(section, targets),
         Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
       )
-      .then(Assigning.assign({ assignment, assignee: user, at })),
+        .then(Assigning.assign({ assignment, assignee: user, at }))
+        .named("targets"),
+    ),
 );
 export const ClaimedStudentSeatReceivesPublished = reaction(({ user, section, assignment, at }) =>
   when(Rostering.claimSeat({}).responds({ kind: "STUDENT", user, section }))
@@ -178,28 +178,33 @@ export const CreateDraft = endpoint(
       acceptsSubmissions,
       audience,
       targets,
-    })
-      .where(
+    }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageAssignments({ user }),
       )
-      .then(
-        Assigning.createDraft({
-          author: user,
-          title,
-          instructions,
-          kind,
-          availableAt,
-          dueAt,
-          closeAt,
-          acceptsSubmissions,
-          audience,
-          targets,
-          at,
-        }).responds({ assignment }),
-      )
-      .then(respond({ assignment })),
+        .then(
+          Assigning.createDraft({
+            author: user,
+            title,
+            instructions,
+            kind,
+            availableAt,
+            dueAt,
+            closeAt,
+            acceptsSubmissions,
+            audience,
+            targets,
+            at,
+          }).responds({ assignment }),
+        )
+        .then(respond({ assignment }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   {
     input: {
       required: [
@@ -215,37 +220,6 @@ export const CreateDraft = endpoint(
       defaults: { closeAt: null, targets: [] },
     },
   },
-);
-
-export const CreateDraftForbidden = endpoint(
-  "/assignments/create-draft",
-  ({
-    session,
-    title,
-    instructions,
-    kind,
-    availableAt,
-    dueAt,
-    closeAt,
-    acceptsSubmissions,
-    audience,
-    targets,
-    user,
-  }) =>
-    receive({
-      session,
-      title,
-      instructions,
-      kind,
-      availableAt,
-      dueAt,
-      closeAt,
-      acceptsSubmissions,
-      audience,
-      targets,
-    })
-      .where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
 );
 
 export const Revise = endpoint(
@@ -278,28 +252,33 @@ export const Revise = endpoint(
       acceptsSubmissions,
       audience,
       targets,
-    })
-      .where(
+    }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageAssignments({ user }),
       )
-      .then(
-        Assigning.revise({
-          assignment,
-          title,
-          instructions,
-          kind,
-          availableAt,
-          dueAt,
-          closeAt,
-          acceptsSubmissions,
-          audience,
-          targets,
-          at,
-        }).responds({ assignment: revised }),
-      )
-      .then(respond({ assignment: revised })),
+        .then(
+          Assigning.revise({
+            assignment,
+            title,
+            instructions,
+            kind,
+            availableAt,
+            dueAt,
+            closeAt,
+            acceptsSubmissions,
+            audience,
+            targets,
+            at,
+          }).responds({ assignment: revised }),
+        )
+        .then(respond({ assignment: revised }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   {
     input: {
       required: [
@@ -318,188 +297,146 @@ export const Revise = endpoint(
   },
 );
 
-export const ReviseForbidden = endpoint(
-  "/assignments/revise",
-  ({
-    session,
-    assignment,
-    title,
-    instructions,
-    kind,
-    availableAt,
-    dueAt,
-    closeAt,
-    acceptsSubmissions,
-    audience,
-    targets,
-    user,
-  }) =>
-    receive({
-      session,
-      assignment,
-      title,
-      instructions,
-      kind,
-      availableAt,
-      dueAt,
-      closeAt,
-      acceptsSubmissions,
-      audience,
-      targets,
-    })
-      .where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
-
 export const Publish = endpoint(
   "/assignments/publish",
   ({ session, assignment, user, at, published }) =>
-    receive({ session, assignment })
-      .where(
+    receive({ session, assignment }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageAssignments({ user }),
       )
-      .then(Assigning.publish({ assignment, at }).responds({ assignment: published }))
-      .then(respond({ assignment: published })),
-);
-
-export const PublishForbidden = endpoint("/assignments/publish", ({ session, assignment, user }) =>
-  receive({ session, assignment })
-    .where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+        .then(Assigning.publish({ assignment, at }).responds({ assignment: published }))
+        .then(respond({ assignment: published }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const Archive = endpoint(
   "/assignments/archive",
   ({ session, assignment, user, at, archived }) =>
-    receive({ session, assignment })
-      .where(
+    receive({ session, assignment }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageAssignments({ user }),
       )
-      .then(Assigning.archive({ assignment, at }).responds({ assignment: archived }))
-      .then(respond({ assignment: archived })),
-);
-
-export const ArchiveForbidden = endpoint("/assignments/archive", ({ session, assignment, user }) =>
-  receive({ session, assignment })
-    .where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+        .then(Assigning.archive({ assignment, at }).responds({ assignment: archived }))
+        .then(respond({ assignment: archived }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const ForMe = endpoint("/assignments/for-me", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-    .then(respond({ assignments: theAssignmentsOf({ student: user }) })),
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
+      .then(respond({ assignments: theAssignmentsOf({ student: user }) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
-export const ForMeForbidden = endpoint("/assignments/for-me", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
-);
+
 export const GetAssignment = endpoint("/assignments/get", ({ assignment, detail }) =>
   receive({ assignment }).then(
     where(theAssignment({ assignment }).is({ detail }))
       .then(respond({ assignment: detail }))
-      .named("case-1"),
+      .named("found"),
     where(no(theAssignment({ assignment })))
       .then(respond({ assignment: null }))
-      .named("case-2"),
+      .named("absent"),
   ),
 );
 
 export const StaffSummary = endpoint(
   "/assignments/staff-summary",
   ({ session, assignment, user, detail }) =>
-    receive({ session, assignment })
-      .where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
-      .then(
-        where(theAssignment({ assignment }).is({ detail }))
-          .then(respond({ summary: detail }))
-          .named("case-1"),
-        where(no(theAssignment({ assignment })))
-          .then(respond({ summary: null }))
-          .named("case-2"),
-      ),
-);
-
-export const StaffSummaryForbidden = endpoint(
-  "/assignments/staff-summary",
-  ({ session, assignment, user }) =>
-    receive({ session, assignment })
-      .where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, assignment }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageAssignments({ user }),
+        theAssignment({ assignment }).is({ detail }),
+      )
+        .then(respond({ summary: detail }))
+        .named("found"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageAssignments({ user }),
+        no(theAssignment({ assignment })),
+      )
+        .then(respond({ summary: null }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const StaffList = endpoint("/assignments/staff-list", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
-    .then(respond({ assignments: theStaffAssignments({}) })),
-);
-
-export const StaffListForbidden = endpoint("/assignments/staff-list", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+      .then(respond({ assignments: theStaffAssignments({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
 export const SetDueOverride = endpoint(
   "/assignments/set-due-override",
   ({ session, assignment, assignee, dueAt, user, release }) =>
-    receive({ session, assignment, assignee, dueAt })
-      .where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
-      .then(Assigning.setDueOverride({ assignment, assignee, dueAt }).responds({ release }))
-      .then(respond({ release })),
-);
-
-export const SetDueOverrideForbidden = endpoint(
-  "/assignments/set-due-override",
-  ({ session, assignment, assignee, dueAt, user }) =>
-    receive({ session, assignment, assignee, dueAt })
-      .where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, assignment, assignee, dueAt }).then(
+      where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+        .then(Assigning.setDueOverride({ assignment, assignee, dueAt }).responds({ release }))
+        .then(respond({ release }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const ClearDueOverride = endpoint(
   "/assignments/clear-due-override",
   ({ session, assignment, assignee, user, release }) =>
-    receive({ session, assignment, assignee })
-      .where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
-      .then(Assigning.clearDueOverride({ assignment, assignee }).responds({ release }))
-      .then(respond({ release })),
+    receive({ session, assignment, assignee }).then(
+      where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+        .then(Assigning.clearDueOverride({ assignment, assignee }).responds({ release }))
+        .then(respond({ release }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
-export const ClearDueOverrideForbidden = endpoint(
-  "/assignments/clear-due-override",
-  ({ session, assignment, assignee, user }) =>
-    receive({ session, assignment, assignee })
-      .where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
 export const Submit = endpoint(
   "/assignments/submit",
   ({ session, assignment, content, user, at, post, submission }) =>
-    receive({ session, assignment, content })
-      .where(
+    receive({ session, assignment, content }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         isActiveStudent({ user }),
       )
-      .then(Posting.create({ author: user, content, at }).responds({ post }))
-      .then(
-        Submitting.submit({ assignment, submitter: user, artifact: post, at }).responds({
-          submission,
-        }),
-      )
-      .then(respond({ submission })),
-);
-
-export const SubmitForbidden = endpoint(
-  "/assignments/submit",
-  ({ session, assignment, content, user }) =>
-    receive({ session, assignment, content })
-      .where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+        .then(Posting.create({ author: user, content, at }).responds({ post }))
+        .then(
+          Submitting.submit({ assignment, submitter: user, artifact: post, at }).responds({
+            submission,
+          }),
+        )
+        .then(respond({ submission }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );

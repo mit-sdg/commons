@@ -45,48 +45,42 @@ export const theUserPage = former(
 
 export const GetProfile = endpoint(
   "/profiles/get",
-  ({ session, user }) =>
-    receive({ session, user })
-      .where(
+  ({ session, user, reader }) =>
+    receive({ session, user }).then(
+      where(
         activeUser({ session }).is({ user }),
         isActiveCourseMember({ user }),
         theProfileOf({ user }),
       )
-      .then(respond({ profile: thePrivateProfileOf({ user }) })),
+        .then(respond({ profile: thePrivateProfileOf({ user }) }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user: reader }).is.not({ user }),
+        mayManageRoster({ user: reader }),
+        theProfileOf({ user }),
+      )
+        .then(respond({ profile: thePrivateProfileOf({ user }) }))
+        .named("staff"),
+      where(
+        activeUser({ session }).is({ user: reader }).is.not({ user }),
+        isActiveCourseMember({ user: reader }),
+        mayNotManageRoster({ user: reader }),
+        theProfileOf({ user }),
+      )
+        .then(respond({ profile: theProfileFaceOf({ user }) }))
+        .named("member"),
+      where(activeUser({ session }), no(theProfileOf({ user })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(
+        activeUser({ session }).is({ user: reader }),
+        no(isActiveCourseMember({ user: reader })),
+        mayNotManageRoster({ user: reader }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
   { input: { required: ["session", "user"] } },
-);
-export const GetProfileStaff = endpoint("/profiles/get", ({ session, user, reader }) =>
-  receive({ session, user })
-    .where(
-      activeUser({ session }).is({ user: reader }).is.not({ user }),
-      mayManageRoster({ user: reader }),
-      theProfileOf({ user }),
-    )
-    .then(respond({ profile: thePrivateProfileOf({ user }) })),
-);
-export const GetProfileMember = endpoint("/profiles/get", ({ session, user, reader }) =>
-  receive({ session, user })
-    .where(
-      activeUser({ session }).is({ user: reader }).is.not({ user }),
-      isActiveCourseMember({ user: reader }),
-      mayNotManageRoster({ user: reader }),
-      theProfileOf({ user }),
-    )
-    .then(respond({ profile: theProfileFaceOf({ user }) })),
-);
-export const GetProfileMissing = endpoint("/profiles/get", ({ session, user }) =>
-  receive({ session, user })
-    .where(activeUser({ session }), no(theProfileOf({ user })))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const GetProfileHidden = endpoint("/profiles/get", ({ session, user, reader }) =>
-  receive({ session, user })
-    .where(
-      activeUser({ session }).is({ user: reader }),
-      no(isActiveCourseMember({ user: reader })),
-      mayNotManageRoster({ user: reader }),
-    )
-    .then(respond({ error: "NOT_FOUND" })),
 );
 
 export const SetDisplayName = endpoint(
@@ -120,19 +114,19 @@ export const SetAvatar = endpoint(
 );
 export const SearchUsers = endpoint(
   "/users/search",
-  ({ session, query, queryUser }) =>
-    receive({ session, query })
-      .where(
+  ({ session, query, queryUser, user }) =>
+    receive({ session, query }).then(
+      where(
         activeUser({ session }).is({ user: queryUser }),
         isActiveCourseMember({ user: queryUser }),
       )
-      .then(respond({ users: theUserSearch({ query }) })),
+        .then(respond({ users: theUserSearch({ query }) }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), no(isActiveCourseMember({ user })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
   { input: { required: ["session", "query"] } },
-);
-export const SearchUsersHidden = endpoint("/users/search", ({ session, query, user }) =>
-  receive({ session, query })
-    .where(activeUser({ session }).is({ user }), no(isActiveCourseMember({ user })))
-    .then(respond({ error: "NOT_FOUND" })),
 );
 
 export const ResolvePublicUser = endpoint("/users/resolve", ({ ref, user, username }) =>

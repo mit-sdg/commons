@@ -1,5 +1,15 @@
 import { activeUser } from "../access/session.ts";
-import { each, form, former, is, no, reaction, whether, when } from "@mit-sdg/sync-engine/language";
+import {
+  each,
+  form,
+  former,
+  is,
+  no,
+  reaction,
+  whether,
+  when,
+  where,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -112,97 +122,98 @@ export const RemovedCriterionClearsScores = reaction(({ criterion }) =>
 export const GradesConfigureItem = endpoint(
   "/grades/configure-item",
   ({ session, item, label, maxPoints, user, gradeItem }) =>
-    receive({ session, item, label, maxPoints })
-      .where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
-      .then(Itemizing.configureItem({ item, label, maxPoints }).responds({ gradeItem }))
-      .then(respond({ gradeItem })),
-);
-
-export const GradesConfigureItemForbidden = endpoint(
-  "/grades/configure-item",
-  ({ session, item, label, maxPoints, user }) =>
-    receive({ session, item, label, maxPoints })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, item, label, maxPoints }).then(
+      where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
+        .then(Itemizing.configureItem({ item, label, maxPoints }).responds({ gradeItem }))
+        .then(respond({ gradeItem }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const GradesAddCriterion = endpoint(
   "/grades/add-criterion",
   ({ session, item, name, maxPoints, position, user, criterion }) =>
-    receive({ session, item, name, maxPoints, position })
-      .where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
-      .then(Itemizing.addCriterion({ item, name, maxPoints, position }).responds({ criterion }))
-      .then(respond({ criterion })),
-);
-
-export const GradesAddCriterionForbidden = endpoint(
-  "/grades/add-criterion",
-  ({ session, item, name, maxPoints, position, user }) =>
-    receive({ session, item, name, maxPoints, position })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, item, name, maxPoints, position }).then(
+      where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
+        .then(Itemizing.addCriterion({ item, name, maxPoints, position }).responds({ criterion }))
+        .then(respond({ criterion }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const GradesReviseCriterion = endpoint(
   "/grades/revise-criterion",
   ({ session, criterion, name, maxPoints, position, user, revised }) =>
-    receive({ session, criterion, name, maxPoints, position })
-      .where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
-      .then(
-        Itemizing.reviseCriterion({ criterion, name, maxPoints, position }).responds({
-          criterion: revised,
-        }),
-      )
-      .then(respond({ criterion: revised })),
-);
-
-export const GradesReviseCriterionForbidden = endpoint(
-  "/grades/revise-criterion",
-  ({ session, criterion, name, maxPoints, position, user }) =>
-    receive({ session, criterion, name, maxPoints, position })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, criterion, name, maxPoints, position }).then(
+      where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
+        .then(
+          Itemizing.reviseCriterion({ criterion, name, maxPoints, position }).responds({
+            criterion: revised,
+          }),
+        )
+        .then(respond({ criterion: revised }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const GradesRemoveCriterion = endpoint(
   "/grades/remove-criterion",
   ({ session, criterion, user, removed }) =>
-    receive({ session, criterion })
-      .where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
-      .then(Itemizing.removeCriterion({ criterion }).responds({ criterion: removed }))
-      .then(respond({ criterion: removed })),
+    receive({ session, criterion }).then(
+      where(activeUser({ session }).is({ user }), mayManageGrades({ user }))
+        .then(Itemizing.removeCriterion({ criterion }).responds({ criterion: removed }))
+        .then(respond({ criterion: removed }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
-export const GradesRemoveCriterionForbidden = endpoint(
-  "/grades/remove-criterion",
-  ({ session, criterion, user }) =>
-    receive({ session, criterion })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
 export const GradesRecord = endpoint(
   "/grades/record",
   ({ session, learner, item, evidence, score, feedback, user, maxPoints, at, grade }) =>
-    receive({ session, learner, item, evidence, score, feedback })
-      .where(
+    receive({ session, learner, item, evidence, score, feedback }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
         Itemizing._getItem({ item }).is({ maxPoints }),
       )
-      .then(
-        Grading.record({
-          learner,
-          item,
-          evidence,
-          grader: user,
-          score,
-          outOf: maxPoints,
-          feedback,
-          at,
-        }).responds({ grade }),
+        .then(
+          Grading.record({
+            learner,
+            item,
+            evidence,
+            grader: user,
+            score,
+            outOf: maxPoints,
+            feedback,
+            at,
+          }).responds({ grade }),
+        )
+        .then(respond({ grade }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageGrades({ user }),
+        no(Itemizing._getItem({ item })),
       )
-      .then(respond({ grade })),
+        .then(respond({ error: "GRADE_ITEM_NOT_FOUND" }))
+        .named("missing-item"),
+    ),
   {
     input: {
       required: ["session", "learner", "item", "score", "feedback"],
@@ -211,219 +222,170 @@ export const GradesRecord = endpoint(
   },
 );
 
-export const GradesRecordForbidden = endpoint(
-  "/grades/record",
-  ({ session, learner, item, evidence, score, feedback, user }) =>
-    receive({ session, learner, item, evidence, score, feedback })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
-export const GradesRecordMissingItem = endpoint(
-  "/grades/record",
-  ({ session, learner, item, evidence, score, feedback, user }) =>
-    receive({ session, learner, item, evidence, score, feedback })
-      .where(
-        activeUser({ session }).is({ user }),
-        mayManageGrades({ user }),
-        no(Itemizing._getItem({ item })),
-      )
-      .then(respond({ error: "GRADE_ITEM_NOT_FOUND" })),
-);
-
 export const GradesScoreCriterion = endpoint(
   "/grades/score-criterion",
   ({ session, learner, item, criterion, points, feedback, user, critMax, criterionScore }) =>
-    receive({ session, learner, item, criterion, points, feedback })
-      .where(
+    receive({ session, learner, item, criterion, points, feedback }).then(
+      where(
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
         Itemizing._getCriterion({ criterion }).is({ item, maxPoints: critMax }),
       )
-      .then(
-        Grading.scoreCriterion({
-          learner,
-          item,
-          criterion,
-          points,
-          outOf: critMax,
-          feedback,
-        }).responds({ criterionScore }),
-      )
-      .then(respond({ criterionScore })),
-);
-
-export const GradesScoreCriterionForbidden = endpoint(
-  "/grades/score-criterion",
-  ({ session, learner, item, criterion, points, feedback, user }) =>
-    receive({ session, learner, item, criterion, points, feedback })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
-
-export const GradesScoreCriterionMissing = endpoint(
-  "/grades/score-criterion",
-  ({ session, learner, item, criterion, points, feedback, user }) =>
-    receive({ session, learner, item, criterion, points, feedback })
-      .where(
+        .then(
+          Grading.scoreCriterion({
+            learner,
+            item,
+            criterion,
+            points,
+            outOf: critMax,
+            feedback,
+          }).responds({ criterionScore }),
+        )
+        .then(respond({ criterionScore }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
         no(Itemizing._getCriterion({ criterion })),
       )
-      .then(respond({ error: "CRITERION_NOT_FOUND" })),
-);
-export const GradesScoreCriterionCrossItem = endpoint(
-  "/grades/score-criterion",
-  ({ session, learner, item, criterion, points, feedback, user }) =>
-    receive({ session, learner, item, criterion, points, feedback })
-      .where(
+        .then(respond({ error: "CRITERION_NOT_FOUND" }))
+        .named("missing"),
+      where(
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
         Itemizing._getCriterion({ criterion }).is.not({ item }),
       )
-      .then(respond({ error: "CRITERION_NOT_FOUND" })),
+        .then(respond({ error: "CRITERION_NOT_FOUND" }))
+        .named("cross-item"),
+    ),
 );
 
 export const GradesRelease = endpoint(
   "/grades/release",
   ({ session, learner, item, user, at, grade }) =>
-    receive({ session, learner, item })
-      .where(
+    receive({ session, learner, item }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
       )
-      .then(Grading.release({ learner, item, at }).responds({ grade }))
-      .then(respond({ grade })),
-);
-
-export const GradesReleaseForbidden = endpoint(
-  "/grades/release",
-  ({ session, learner, item, user }) =>
-    receive({ session, learner, item })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+        .then(Grading.release({ learner, item, at }).responds({ grade }))
+        .then(respond({ grade }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const GradesReleaseItem = endpoint(
   "/grades/release-item",
   ({ session, item, user, at, released }) =>
-    receive({ session, item })
-      .where(
+    receive({ session, item }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
       )
-      .then(Grading.releaseItem({ item, at }).responds({ released }))
-      .then(respond({ released })),
-);
-
-export const GradesReleaseItemForbidden = endpoint(
-  "/grades/release-item",
-  ({ session, item, user }) =>
-    receive({ session, item })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+        .then(Grading.releaseItem({ item, at }).responds({ released }))
+        .then(respond({ released }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const GradesRetract = endpoint(
   "/grades/retract",
   ({ session, learner, item, user, at, grade }) =>
-    receive({ session, learner, item })
-      .where(
+    receive({ session, learner, item }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
       )
-      .then(Grading.retract({ learner, item, at }).responds({ grade }))
-      .then(respond({ grade })),
-);
-
-export const GradesRetractForbidden = endpoint(
-  "/grades/retract",
-  ({ session, learner, item, user }) =>
-    receive({ session, learner, item })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+        .then(Grading.retract({ learner, item, at }).responds({ grade }))
+        .then(respond({ grade }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const GradesExcuse = endpoint(
   "/grades/excuse",
   ({ session, learner, item, feedback, user, at, grade }) =>
-    receive({ session, learner, item, feedback })
-      .where(
+    receive({ session, learner, item, feedback }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
       )
-      .then(Grading.excuse({ learner, item, grader: user, feedback, at }).responds({ grade }))
-      .then(respond({ grade })),
-);
-
-export const GradesExcuseForbidden = endpoint(
-  "/grades/excuse",
-  ({ session, learner, item, feedback, user }) =>
-    receive({ session, learner, item, feedback })
-      .where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+        .then(Grading.excuse({ learner, item, grader: user, feedback, at }).responds({ grade }))
+        .then(respond({ grade }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const GradesForMe = endpoint("/grades/for-me", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-    .then(respond({ grades: theReleasedGradesOf({ learner: user }) })),
-);
-
-export const GradesForMeNotStudent = endpoint("/grades/for-me", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
+      .then(respond({ grades: theReleasedGradesOf({ learner: user }) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("not-student"),
+  ),
 );
 
 export const GradesForStudent = endpoint("/grades/for-student", ({ session, learner, user }) =>
-  receive({ session, learner })
-    .where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
-    .then(respond({ grades: theGradesOf({ learner }) })),
-);
-
-export const GradesForStudentForbidden = endpoint(
-  "/grades/for-student",
-  ({ session, learner, user }) =>
-    receive({ session, learner })
-      .where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+  receive({ session, learner }).then(
+    where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
+      .then(respond({ grades: theGradesOf({ learner }) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
 export const GradesForItem = endpoint("/grades/for-item", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
-    .then(respond({ grades: theGradesOn({ item }) })),
-);
-
-export const GradesForItemForbidden = endpoint("/grades/for-item", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+  receive({ session, item }).then(
+    where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
+      .then(respond({ grades: theGradesOn({ item }) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
 export const GradesGradebook = endpoint("/grades/gradebook", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
-    .then(respond({ learners: theGradebookLearners({}) })),
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
+      .then(respond({ learners: theGradebookLearners({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
-export const GradesGradebookForbidden = endpoint("/grades/gradebook", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
-);
 export const GradesExport = endpoint("/grades/export", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
-    .then(respond({ csv: "" })),
-);
-
-export const GradesExportForbidden = endpoint("/grades/export", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
+      .then(respond({ csv: "" }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );

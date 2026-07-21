@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, form, former } from "@mit-sdg/sync-engine/language";
+import { each, form, former, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -86,56 +86,55 @@ export const theStaffDashboardCounts = former(
 export const CalendarMe = endpoint(
   "/calendar/me",
   ({ session, start, end, user }) =>
-    receive({ session, start, end })
-      .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(respond({ events: theCalendarBetween({ start, end }) })),
+    receive({ session, start, end }).then(
+      where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
+        .then(respond({ events: theCalendarBetween({ start, end }) }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session", "start", "end"] } },
 );
 
-export const CalendarMeForbidden = endpoint("/calendar/me", ({ session, start, end, user }) =>
-  receive({ session, start, end })
-    .where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
-);
 export const CalendarStaff = endpoint(
   "/calendar/staff",
   ({ session, start, end, user }) =>
-    receive({ session, start, end })
-      .where(activeUser({ session }).is({ user }), mayViewStaffCalendar({ user }))
-      .then(respond({ events: theCalendarBetween({ start, end }) })),
+    receive({ session, start, end }).then(
+      where(activeUser({ session }).is({ user }), mayViewStaffCalendar({ user }))
+        .then(respond({ events: theCalendarBetween({ start, end }) }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotViewStaffCalendar({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session", "start", "end"] } },
 );
 
-export const CalendarStaffForbidden = endpoint("/calendar/staff", ({ session, start, end, user }) =>
-  receive({ session, start, end })
-    .where(activeUser({ session }).is({ user }), mayNotViewStaffCalendar({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
-);
 export const LmsMe = endpoint(
   "/lms/me",
   ({ session, user }) =>
-    receive({ session })
-      .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(respond({ dashboard: theDashboardSeatOf({ user }) })),
+    receive({ session }).then(
+      where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
+        .then(respond({ dashboard: theDashboardSeatOf({ user }) }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session"] } },
 );
 
-export const LmsMeForbidden = endpoint("/lms/me", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
-);
 export const LmsStaffDashboard = endpoint(
   "/lms/staff-dashboard",
   ({ session, user }) =>
-    receive({ session })
-      .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-      .then(respond({ dashboard: theStaffDashboard({}), counts: theStaffDashboardCounts({}) })),
+    receive({ session }).then(
+      where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+        .then(respond({ dashboard: theStaffDashboard({}), counts: theStaffDashboardCounts({}) }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session"] } },
-);
-
-export const LmsStaffDashboardForbidden = endpoint("/lms/staff-dashboard", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
 );

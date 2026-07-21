@@ -827,13 +827,13 @@ the user named (username) — inputs (username); outputs (user); bindings () —
 ```
 
 ```view
-(user) may not manage late days — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (user, context: "forum", capability: "late-days:manage") has (allowed: false)
+(user) may manage late days — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (user, context: "forum", capability: "late-days:manage") has (allowed: true)
 ```
 
 ```view
-(user) may manage late days — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (user, context: "forum", capability: "late-days:manage") has (allowed: true)
+(user) may not manage late days — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (user, context: "forum", capability: "late-days:manage") has (allowed: false)
 ```
 
 ```view
@@ -962,13 +962,13 @@ the seat of (user) — inputs (user); outputs (seat); bindings () — answers at
 ```
 
 ```view
-(user) may not view all submissions — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (user, context: "forum", capability: "submissions:view-all") has (allowed: false)
+(user) may view all submissions — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (user, context: "forum", capability: "submissions:view-all") has (allowed: true)
 ```
 
 ```view
-(user) may view all submissions — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (user, context: "forum", capability: "submissions:view-all") has (allowed: true)
+(user) may not view all submissions — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (user, context: "forum", capability: "submissions:view-all") has (allowed: false)
 ```
 
 ```view
@@ -1782,7 +1782,7 @@ Form the gradebook () — inputs (); bindings (item, label, maxPoints, user, sec
 
 ## Reactions
 
-### assignments.Archive
+### assignments.Archive:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/archive")
@@ -1794,17 +1794,17 @@ then
   request Assigning.archive (assignment, at)
 ```
 
-### assignments.Archive#2
+### assignments.Archive:success#2
 
 ```reaction
-when Assigning.archive (assignment, at, result.assignment: archived), asked by assignments.Archive
+when Assigning.archive (assignment, at, result.assignment: archived), asked by assignments.Archive:success
 where
   earlier, RequestBoundary.request (session, assignment, requestId, path: "/assignments/archive")
 then
   request RequestBoundary.respond (assignment: archived, requestId)
 ```
 
-### assignments.ArchiveForbidden
+### assignments.Archive:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/archive")
@@ -1827,7 +1827,7 @@ then
   request Assigning.assign (assignment, assignee: user, at)
 ```
 
-### assignments.ClearDueOverride
+### assignments.ClearDueOverride:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, assignee, requestId, path: "/assignments/clear-due-override")
@@ -1838,17 +1838,17 @@ then
   request Assigning.clearDueOverride (assignment, assignee)
 ```
 
-### assignments.ClearDueOverride#2
+### assignments.ClearDueOverride:success#2
 
 ```reaction
-when Assigning.clearDueOverride (assignment, assignee, release), asked by assignments.ClearDueOverride
+when Assigning.clearDueOverride (assignment, assignee, release), asked by assignments.ClearDueOverride:success
 where
   earlier, RequestBoundary.request (session, assignment, assignee, requestId, path: "/assignments/clear-due-override")
 then
   request RequestBoundary.respond (release, requestId)
 ```
 
-### assignments.ClearDueOverrideForbidden
+### assignments.ClearDueOverride:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, assignee, requestId, path: "/assignments/clear-due-override")
@@ -1859,7 +1859,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.CreateDraft
+### assignments.CreateDraft:success
 
 ```reaction
 when RequestBoundary.request (session, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/create-draft")
@@ -1871,17 +1871,17 @@ then
   request Assigning.createDraft (author: user, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at)
 ```
 
-### assignments.CreateDraft#2
+### assignments.CreateDraft:success#2
 
 ```reaction
-when Assigning.createDraft (author: user, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at, assignment), asked by assignments.CreateDraft
+when Assigning.createDraft (author: user, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at, assignment), asked by assignments.CreateDraft:success
 where
   earlier, RequestBoundary.request (session, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/create-draft")
 then
   request RequestBoundary.respond (assignment, requestId)
 ```
 
-### assignments.CreateDraftForbidden
+### assignments.CreateDraft:forbidden
 
 ```reaction
 when RequestBoundary.request (session, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/create-draft")
@@ -1892,7 +1892,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.ForMe
+### assignments.ForMe:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/assignments/for-me")
@@ -1903,7 +1903,7 @@ then
   request RequestBoundary.respond (assignments: the assignments of (student) (student: user), requestId)
 ```
 
-### assignments.ForMeForbidden
+### assignments.ForMe:forbidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/assignments/for-me")
@@ -1914,7 +1914,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.GetAssignment:case-1
+### assignments.GetAssignment:found
 
 ```reaction
 when RequestBoundary.request (assignment, requestId, path: "/assignments/get")
@@ -1924,7 +1924,7 @@ then
   request RequestBoundary.respond (assignment: detail, requestId)
 ```
 
-### assignments.GetAssignment:case-2
+### assignments.GetAssignment:absent
 
 ```reaction
 when RequestBoundary.request (assignment, requestId, path: "/assignments/get")
@@ -1934,7 +1934,7 @@ then
   request RequestBoundary.respond (assignment: null, requestId)
 ```
 
-### assignments.Publish
+### assignments.Publish:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/publish")
@@ -1946,17 +1946,17 @@ then
   request Assigning.publish (assignment, at)
 ```
 
-### assignments.Publish#2
+### assignments.Publish:success#2
 
 ```reaction
-when Assigning.publish (assignment, at, result.assignment: published), asked by assignments.Publish
+when Assigning.publish (assignment, at, result.assignment: published), asked by assignments.Publish:success
 where
   earlier, RequestBoundary.request (session, assignment, requestId, path: "/assignments/publish")
 then
   request RequestBoundary.respond (assignment: published, requestId)
 ```
 
-### assignments.PublishForbidden
+### assignments.Publish:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/publish")
@@ -1967,27 +1967,6 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.PublishToEveryoneAssignsActiveStudents
-
-```reaction
-when Assigning.publish (at, assignment, audience: "EVERYONE")
-where
-  Rostering._getActiveStudents () has (user)
-then
-  request Assigning.assign (assignment, assignee: user, at)
-```
-
-### assignments.PublishToTargetsAssignsSectionStudents
-
-```reaction
-when Assigning.publish (at, assignment, audience: "TARGETS", targets)
-where
-  Rostering._getActiveStudents () has (user, section)
-  section is among targets
-then
-  request Assigning.assign (assignment, assignee: user, at)
-```
-
 ### assignments.PublishedAcceptingAssignmentGetsGradeItem
 
 ```reaction
@@ -1996,6 +1975,29 @@ where
   Assigning._getAssignments () has (assignment, title)
 then
   request Itemizing.ensureItem (item: assignment, label: title, maxPoints: 100)
+```
+
+### assignments.PublishedAssignmentAssignsAudienceStudents:everyone
+
+```reaction
+when Assigning.publish (at, assignment, audience, targets)
+where
+  audience is among ["EVERYONE"]
+  Rostering._getActiveStudents () has (user)
+then
+  request Assigning.assign (assignment, assignee: user, at)
+```
+
+### assignments.PublishedAssignmentAssignsAudienceStudents:targets
+
+```reaction
+when Assigning.publish (at, assignment, audience, targets)
+where
+  audience is among ["TARGETS"]
+  Rostering._getActiveStudents () has (user, section)
+  section is among targets
+then
+  request Assigning.assign (assignment, assignee: user, at)
 ```
 
 ### assignments.ReinstatedStudentSeatReceivesPublished
@@ -2010,7 +2012,7 @@ then
   request Assigning.assign (assignment, assignee: user, at)
 ```
 
-### assignments.Revise
+### assignments.Revise:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/revise")
@@ -2022,17 +2024,17 @@ then
   request Assigning.revise (assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at)
 ```
 
-### assignments.Revise#2
+### assignments.Revise:success#2
 
 ```reaction
-when Assigning.revise (assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at, result.assignment: revised), asked by assignments.Revise
+when Assigning.revise (assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at, result.assignment: revised), asked by assignments.Revise:success
 where
   earlier, RequestBoundary.request (session, assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/revise")
 then
   request RequestBoundary.respond (assignment: revised, requestId)
 ```
 
-### assignments.ReviseForbidden
+### assignments.Revise:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/revise")
@@ -2043,7 +2045,34 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.SetDueOverride
+### assignments.RevisedAssignmentAssignsNewAudienceStudents:everyone
+
+```reaction
+when Assigning.revise (at, assignment, status, audience, targets)
+where
+  status is among ["PUBLISHED"]
+  audience is among ["EVERYONE"]
+  Rostering._getActiveStudents () has (user)
+  Assigning._isAssigned (assignment, assignee: user) has (assigned: false)
+then
+  request Assigning.assign (assignment, assignee: user, at)
+```
+
+### assignments.RevisedAssignmentAssignsNewAudienceStudents:targets
+
+```reaction
+when Assigning.revise (at, assignment, status, audience, targets)
+where
+  status is among ["PUBLISHED"]
+  audience is among ["TARGETS"]
+  Rostering._getActiveStudents () has (user, section)
+  section is among targets
+  Assigning._isAssigned (assignment, assignee: user) has (assigned: false)
+then
+  request Assigning.assign (assignment, assignee: user, at)
+```
+
+### assignments.SetDueOverride:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, assignee, dueAt, requestId, path: "/assignments/set-due-override")
@@ -2054,17 +2083,17 @@ then
   request Assigning.setDueOverride (assignment, assignee, dueAt)
 ```
 
-### assignments.SetDueOverride#2
+### assignments.SetDueOverride:success#2
 
 ```reaction
-when Assigning.setDueOverride (assignment, assignee, dueAt, release), asked by assignments.SetDueOverride
+when Assigning.setDueOverride (assignment, assignee, dueAt, release), asked by assignments.SetDueOverride:success
 where
   earlier, RequestBoundary.request (session, assignment, assignee, dueAt, requestId, path: "/assignments/set-due-override")
 then
   request RequestBoundary.respond (release, requestId)
 ```
 
-### assignments.SetDueOverrideForbidden
+### assignments.SetDueOverride:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, assignee, dueAt, requestId, path: "/assignments/set-due-override")
@@ -2075,7 +2104,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.StaffList
+### assignments.StaffList:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/assignments/staff-list")
@@ -2086,7 +2115,7 @@ then
   request RequestBoundary.respond (assignments: the staff assignments () (), requestId)
 ```
 
-### assignments.StaffListForbidden
+### assignments.StaffList:forbidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/assignments/staff-list")
@@ -2097,7 +2126,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.StaffSummary:case-1
+### assignments.StaffSummary:found
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/staff-summary")
@@ -2109,7 +2138,7 @@ then
   request RequestBoundary.respond (summary: detail, requestId)
 ```
 
-### assignments.StaffSummary:case-2
+### assignments.StaffSummary:missing
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/staff-summary")
@@ -2121,7 +2150,7 @@ then
   request RequestBoundary.respond (summary: null, requestId)
 ```
 
-### assignments.StaffSummaryForbidden
+### assignments.StaffSummary:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/staff-summary")
@@ -2132,7 +2161,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### assignments.Submit
+### assignments.Submit:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, content, requestId, path: "/assignments/submit")
@@ -2144,27 +2173,27 @@ then
   request Posting.create (author: user, content, at)
 ```
 
-### assignments.Submit#2
+### assignments.Submit:success#2
 
 ```reaction
-when Posting.create (author: user, content, at, post), asked by assignments.Submit
+when Posting.create (author: user, content, at, post), asked by assignments.Submit:success
 where
   earlier, RequestBoundary.request (session, assignment, content, requestId, path: "/assignments/submit")
 then
   request Submitting.submit (assignment, submitter: user, artifact: post, at)
 ```
 
-### assignments.Submit#3
+### assignments.Submit:success#3
 
 ```reaction
-when Submitting.submit (assignment, submitter: user, artifact: post, at, submission), asked by assignments.Submit#2
+when Submitting.submit (assignment, submitter: user, artifact: post, at, submission), asked by assignments.Submit:success#2
 where
   earlier, RequestBoundary.request (session, assignment, content, requestId, path: "/assignments/submit")
 then
   request RequestBoundary.respond (submission, requestId)
 ```
 
-### assignments.SubmitForbidden
+### assignments.Submit:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, content, requestId, path: "/assignments/submit")
@@ -2173,29 +2202,6 @@ where
   (user) is not an active student (user)
 then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### assignments.WidenedEveryoneAssignsActiveStudents
-
-```reaction
-when Assigning.revise (at, assignment, status: "PUBLISHED", audience: "EVERYONE")
-where
-  Rostering._getActiveStudents () has (user)
-  Assigning._isAssigned (assignment, assignee: user) has (assigned: false)
-then
-  request Assigning.assign (assignment, assignee: user, at)
-```
-
-### assignments.WidenedTargetsAssignSectionStudents
-
-```reaction
-when Assigning.revise (at, assignment, status: "PUBLISHED", audience: "TARGETS", targets)
-where
-  Rostering._getActiveStudents () has (user, section)
-  section is among targets
-  Assigning._isAssigned (assignment, assignee: user) has (assigned: false)
-then
-  request Assigning.assign (assignment, assignee: user, at)
 ```
 
 ### auth.BootstrapAdminOnLogin
@@ -2268,7 +2274,7 @@ then
   request RequestBoundary.respond (user, requestId)
 ```
 
-### auth.InvalidSessionIsRejected:case-1
+### auth.InvalidSessionIsRejected:unknown-session
 
 ```reaction
 when RequestBoundary.request (session, requestId)
@@ -2280,7 +2286,7 @@ then
   request RequestBoundary.respond (error: "UNAUTHORIZED", requestId)
 ```
 
-### auth.InvalidSessionIsRejected:case-2
+### auth.InvalidSessionIsRejected:expired-session
 
 ```reaction
 when RequestBoundary.request (session, requestId)
@@ -2291,10 +2297,10 @@ then
   request Sessioning.end (session)
 ```
 
-### auth.InvalidSessionIsRejected:case-2#2
+### auth.InvalidSessionIsRejected:expired-session#2
 
 ```reaction
-when Sessioning.end (session), asked by auth.InvalidSessionIsRejected:case-2
+when Sessioning.end (session), asked by auth.InvalidSessionIsRejected:expired-session
 where
   earlier, RequestBoundary.request (session, requestId)
 then
@@ -2397,7 +2403,7 @@ then
   request RequestBoundary.respond (user, requestId)
 ```
 
-### auth.Resolve:case-1
+### auth.Resolve:found
 
 ```reaction
 when RequestBoundary.request (username, requestId, path: "/auth/resolve")
@@ -2407,7 +2413,7 @@ then
   request RequestBoundary.respond (user, requestId)
 ```
 
-### auth.Resolve:case-2
+### auth.Resolve:absent
 
 ```reaction
 when RequestBoundary.request (username, requestId, path: "/auth/resolve")
@@ -2417,7 +2423,7 @@ then
   request RequestBoundary.respond (user: null, requestId)
 ```
 
-### bookmarks.IsSaved
+### bookmarks.IsSaved:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/isSaved")
@@ -2429,7 +2435,7 @@ then
   request RequestBoundary.respond (saved, requestId)
 ```
 
-### bookmarks.IsSavedHidden
+### bookmarks.IsSaved:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/isSaved")
@@ -2458,7 +2464,7 @@ then
   request Bookmarking.clearItem (item)
 ```
 
-### bookmarks.SaveBookmark
+### bookmarks.SaveBookmark:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/save")
@@ -2470,17 +2476,17 @@ then
   request Bookmarking.save (user, item, at)
 ```
 
-### bookmarks.SaveBookmark#2
+### bookmarks.SaveBookmark:success#2
 
 ```reaction
-when Bookmarking.save (user, item, at, bookmark), asked by bookmarks.SaveBookmark
+when Bookmarking.save (user, item, at, bookmark), asked by bookmarks.SaveBookmark:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/bookmarks/save")
 then
   request RequestBoundary.respond (bookmark, requestId)
 ```
 
-### bookmarks.SaveBookmarkHidden
+### bookmarks.SaveBookmark:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/save")
@@ -2491,7 +2497,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### bookmarks.UnsaveBookmark
+### bookmarks.UnsaveBookmark:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/unsave")
@@ -2502,17 +2508,17 @@ then
   request Bookmarking.unsave (user, item)
 ```
 
-### bookmarks.UnsaveBookmark#2
+### bookmarks.UnsaveBookmark:success#2
 
 ```reaction
-when Bookmarking.unsave (user, item, bookmark), asked by bookmarks.UnsaveBookmark
+when Bookmarking.unsave (user, item, bookmark), asked by bookmarks.UnsaveBookmark:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/bookmarks/unsave")
 then
   request RequestBoundary.respond (bookmark, requestId)
 ```
 
-### bookmarks.UnsaveBookmarkHidden
+### bookmarks.UnsaveBookmark:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/unsave")
@@ -2523,7 +2529,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### calendar.CalendarMe
+### calendar.CalendarMe:success
 
 ```reaction
 when RequestBoundary.request (session, start, end, requestId, path: "/calendar/me")
@@ -2534,7 +2540,7 @@ then
   request RequestBoundary.respond (events: the calendar between (start) and (end) (start, end), requestId)
 ```
 
-### calendar.CalendarMeForbidden
+### calendar.CalendarMe:forbidden
 
 ```reaction
 when RequestBoundary.request (session, start, end, requestId, path: "/calendar/me")
@@ -2545,7 +2551,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### calendar.CalendarStaff
+### calendar.CalendarStaff:success
 
 ```reaction
 when RequestBoundary.request (session, start, end, requestId, path: "/calendar/staff")
@@ -2556,7 +2562,7 @@ then
   request RequestBoundary.respond (events: the calendar between (start) and (end) (start, end), requestId)
 ```
 
-### calendar.CalendarStaffForbidden
+### calendar.CalendarStaff:forbidden
 
 ```reaction
 when RequestBoundary.request (session, start, end, requestId, path: "/calendar/staff")
@@ -2567,7 +2573,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### calendar.LmsMe
+### calendar.LmsMe:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/lms/me")
@@ -2578,7 +2584,7 @@ then
   request RequestBoundary.respond (dashboard: the dashboard seat of (user) (user), requestId)
 ```
 
-### calendar.LmsMeForbidden
+### calendar.LmsMe:forbidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/lms/me")
@@ -2589,7 +2595,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### calendar.LmsStaffDashboard
+### calendar.LmsStaffDashboard:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/lms/staff-dashboard")
@@ -2600,7 +2606,7 @@ then
   request RequestBoundary.respond (dashboard: the staff dashboard () (), counts: the staff dashboard counts () (), requestId)
 ```
 
-### calendar.LmsStaffDashboardForbidden
+### calendar.LmsStaffDashboard:forbidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/lms/staff-dashboard")
@@ -2611,7 +2617,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### categories.AssignCategory
+### categories.AssignCategory:success
 
 ```reaction
 when RequestBoundary.request (session, item, category, requestId, path: "/categories/assign")
@@ -2623,17 +2629,17 @@ then
   request Categorizing.assign (item, category)
 ```
 
-### categories.AssignCategory#2
+### categories.AssignCategory:success#2
 
 ```reaction
-when Categorizing.assign (item, category, result.item: assigned), asked by categories.AssignCategory
+when Categorizing.assign (item, category, result.item: assigned), asked by categories.AssignCategory:success
 where
   earlier, RequestBoundary.request (session, item, category, requestId, path: "/categories/assign")
 then
   request RequestBoundary.respond (item: assigned, requestId)
 ```
 
-### categories.AssignCategoryForbidden
+### categories.AssignCategory:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, category, requestId, path: "/categories/assign")
@@ -2644,7 +2650,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### categories.AssignCategoryHidden
+### categories.AssignCategory:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, category, requestId, path: "/categories/assign")
@@ -2656,7 +2662,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### categories.CategoryForItem
+### categories.CategoryForItem:success
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/categories/forItem")
@@ -2666,7 +2672,7 @@ then
   request RequestBoundary.respond (category: the category of (item) (item), requestId)
 ```
 
-### categories.CategoryForItemHidden
+### categories.CategoryForItem:hidden
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/categories/forItem")
@@ -2684,7 +2690,7 @@ then
   request RequestBoundary.respond (items: the items in (category) (category), requestId)
 ```
 
-### categories.CreateCategory
+### categories.CreateCategory:success
 
 ```reaction
 when RequestBoundary.request (session, name, description, requestId, path: "/categories/create")
@@ -2695,17 +2701,17 @@ then
   request Categorizing.createCategory (name, description)
 ```
 
-### categories.CreateCategory#2
+### categories.CreateCategory:success#2
 
 ```reaction
-when Categorizing.createCategory (name, description, category), asked by categories.CreateCategory
+when Categorizing.createCategory (name, description, category), asked by categories.CreateCategory:success
 where
   earlier, RequestBoundary.request (session, name, description, requestId, path: "/categories/create")
 then
   request RequestBoundary.respond (category, requestId)
 ```
 
-### categories.CreateCategoryForbidden
+### categories.CreateCategory:forbidden
 
 ```reaction
 when RequestBoundary.request (session, name, description, requestId, path: "/categories/create")
@@ -2716,7 +2722,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### categories.DeleteCategory
+### categories.DeleteCategory:success
 
 ```reaction
 when RequestBoundary.request (session, category, requestId, path: "/categories/delete")
@@ -2727,17 +2733,17 @@ then
   request Categorizing.deleteCategory (category)
 ```
 
-### categories.DeleteCategory#2
+### categories.DeleteCategory:success#2
 
 ```reaction
-when Categorizing.deleteCategory (category, result.category: deleted), asked by categories.DeleteCategory
+when Categorizing.deleteCategory (category, result.category: deleted), asked by categories.DeleteCategory:success
 where
   earlier, RequestBoundary.request (session, category, requestId, path: "/categories/delete")
 then
   request RequestBoundary.respond (category: deleted, requestId)
 ```
 
-### categories.DeleteCategoryForbidden
+### categories.DeleteCategory:forbidden
 
 ```reaction
 when RequestBoundary.request (session, category, requestId, path: "/categories/delete")
@@ -2766,7 +2772,7 @@ then
   request Categorizing.unassign (item)
 ```
 
-### categories.UnassignCategory
+### categories.UnassignCategory:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/categories/unassign")
@@ -2778,17 +2784,17 @@ then
   request Categorizing.unassign (item)
 ```
 
-### categories.UnassignCategory#2
+### categories.UnassignCategory:success#2
 
 ```reaction
-when Categorizing.unassign (item, result.item: unassigned), asked by categories.UnassignCategory
+when Categorizing.unassign (item, result.item: unassigned), asked by categories.UnassignCategory:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/categories/unassign")
 then
   request RequestBoundary.respond (item: unassigned, requestId)
 ```
 
-### categories.UnassignCategoryForbidden
+### categories.UnassignCategory:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/categories/unassign")
@@ -2799,7 +2805,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### categories.UnassignCategoryHidden
+### categories.UnassignCategory:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/categories/unassign")
@@ -2811,7 +2817,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### grades.GradesAddCriterion
+### grades.GradesAddCriterion:success
 
 ```reaction
 when RequestBoundary.request (session, item, name, maxPoints, position, requestId, path: "/grades/add-criterion")
@@ -2822,17 +2828,17 @@ then
   request Itemizing.addCriterion (item, name, maxPoints, position)
 ```
 
-### grades.GradesAddCriterion#2
+### grades.GradesAddCriterion:success#2
 
 ```reaction
-when Itemizing.addCriterion (item, name, maxPoints, position, criterion), asked by grades.GradesAddCriterion
+when Itemizing.addCriterion (item, name, maxPoints, position, criterion), asked by grades.GradesAddCriterion:success
 where
   earlier, RequestBoundary.request (session, item, name, maxPoints, position, requestId, path: "/grades/add-criterion")
 then
   request RequestBoundary.respond (criterion, requestId)
 ```
 
-### grades.GradesAddCriterionForbidden
+### grades.GradesAddCriterion:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, name, maxPoints, position, requestId, path: "/grades/add-criterion")
@@ -2843,7 +2849,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesConfigureItem
+### grades.GradesConfigureItem:success
 
 ```reaction
 when RequestBoundary.request (session, item, label, maxPoints, requestId, path: "/grades/configure-item")
@@ -2854,17 +2860,17 @@ then
   request Itemizing.configureItem (item, label, maxPoints)
 ```
 
-### grades.GradesConfigureItem#2
+### grades.GradesConfigureItem:success#2
 
 ```reaction
-when Itemizing.configureItem (item, label, maxPoints, gradeItem), asked by grades.GradesConfigureItem
+when Itemizing.configureItem (item, label, maxPoints, gradeItem), asked by grades.GradesConfigureItem:success
 where
   earlier, RequestBoundary.request (session, item, label, maxPoints, requestId, path: "/grades/configure-item")
 then
   request RequestBoundary.respond (gradeItem, requestId)
 ```
 
-### grades.GradesConfigureItemForbidden
+### grades.GradesConfigureItem:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, label, maxPoints, requestId, path: "/grades/configure-item")
@@ -2875,7 +2881,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesExcuse
+### grades.GradesExcuse:success
 
 ```reaction
 when RequestBoundary.request (session, learner, item, feedback, requestId, path: "/grades/excuse")
@@ -2887,17 +2893,17 @@ then
   request Grading.excuse (learner, item, grader: user, feedback, at)
 ```
 
-### grades.GradesExcuse#2
+### grades.GradesExcuse:success#2
 
 ```reaction
-when Grading.excuse (learner, item, grader: user, feedback, at, grade), asked by grades.GradesExcuse
+when Grading.excuse (learner, item, grader: user, feedback, at, grade), asked by grades.GradesExcuse:success
 where
   earlier, RequestBoundary.request (session, learner, item, feedback, requestId, path: "/grades/excuse")
 then
   request RequestBoundary.respond (grade, requestId)
 ```
 
-### grades.GradesExcuseForbidden
+### grades.GradesExcuse:forbidden
 
 ```reaction
 when RequestBoundary.request (session, learner, item, feedback, requestId, path: "/grades/excuse")
@@ -2908,7 +2914,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesExport
+### grades.GradesExport:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/export")
@@ -2919,7 +2925,7 @@ then
   request RequestBoundary.respond (csv: "", requestId)
 ```
 
-### grades.GradesExportForbidden
+### grades.GradesExport:forbidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/export")
@@ -2930,7 +2936,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesForItem
+### grades.GradesForItem:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/grades/for-item")
@@ -2941,7 +2947,7 @@ then
   request RequestBoundary.respond (grades: the grades on (item) (item), requestId)
 ```
 
-### grades.GradesForItemForbidden
+### grades.GradesForItem:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/grades/for-item")
@@ -2952,7 +2958,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesForMe
+### grades.GradesForMe:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/for-me")
@@ -2963,7 +2969,7 @@ then
   request RequestBoundary.respond (grades: the released grades of (learner) (learner: user), requestId)
 ```
 
-### grades.GradesForMeNotStudent
+### grades.GradesForMe:not-student
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/for-me")
@@ -2974,7 +2980,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesForStudent
+### grades.GradesForStudent:success
 
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/grades/for-student")
@@ -2985,7 +2991,7 @@ then
   request RequestBoundary.respond (grades: the grades of (learner) (learner), requestId)
 ```
 
-### grades.GradesForStudentForbidden
+### grades.GradesForStudent:forbidden
 
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/grades/for-student")
@@ -2996,7 +3002,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesGradebook
+### grades.GradesGradebook:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/gradebook")
@@ -3007,7 +3013,7 @@ then
   request RequestBoundary.respond (learners: the gradebook learners () (), requestId)
 ```
 
-### grades.GradesGradebookForbidden
+### grades.GradesGradebook:forbidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/gradebook")
@@ -3018,7 +3024,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesRecord
+### grades.GradesRecord:success
 
 ```reaction
 when RequestBoundary.request (session, learner, item, evidence, score, feedback, requestId, path: "/grades/record")
@@ -3031,17 +3037,17 @@ then
   request Grading.record (learner, item, evidence, grader: user, score, outOf: maxPoints, feedback, at)
 ```
 
-### grades.GradesRecord#2
+### grades.GradesRecord:success#2
 
 ```reaction
-when Grading.record (learner, item, evidence, grader: user, score, outOf: maxPoints, feedback, at, grade), asked by grades.GradesRecord
+when Grading.record (learner, item, evidence, grader: user, score, outOf: maxPoints, feedback, at, grade), asked by grades.GradesRecord:success
 where
   earlier, RequestBoundary.request (session, learner, item, evidence, score, feedback, requestId, path: "/grades/record")
 then
   request RequestBoundary.respond (grade, requestId)
 ```
 
-### grades.GradesRecordForbidden
+### grades.GradesRecord:forbidden
 
 ```reaction
 when RequestBoundary.request (session, learner, item, evidence, score, feedback, requestId, path: "/grades/record")
@@ -3052,7 +3058,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesRecordMissingItem
+### grades.GradesRecord:missing-item
 
 ```reaction
 when RequestBoundary.request (session, learner, item, evidence, score, feedback, requestId, path: "/grades/record")
@@ -3064,7 +3070,7 @@ then
   request RequestBoundary.respond (error: "GRADE_ITEM_NOT_FOUND", requestId)
 ```
 
-### grades.GradesRelease
+### grades.GradesRelease:success
 
 ```reaction
 when RequestBoundary.request (session, learner, item, requestId, path: "/grades/release")
@@ -3076,17 +3082,17 @@ then
   request Grading.release (learner, item, at)
 ```
 
-### grades.GradesRelease#2
+### grades.GradesRelease:success#2
 
 ```reaction
-when Grading.release (learner, item, at, grade), asked by grades.GradesRelease
+when Grading.release (learner, item, at, grade), asked by grades.GradesRelease:success
 where
   earlier, RequestBoundary.request (session, learner, item, requestId, path: "/grades/release")
 then
   request RequestBoundary.respond (grade, requestId)
 ```
 
-### grades.GradesReleaseForbidden
+### grades.GradesRelease:forbidden
 
 ```reaction
 when RequestBoundary.request (session, learner, item, requestId, path: "/grades/release")
@@ -3097,7 +3103,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesReleaseItem
+### grades.GradesReleaseItem:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/grades/release-item")
@@ -3109,17 +3115,17 @@ then
   request Grading.releaseItem (item, at)
 ```
 
-### grades.GradesReleaseItem#2
+### grades.GradesReleaseItem:success#2
 
 ```reaction
-when Grading.releaseItem (item, at, released), asked by grades.GradesReleaseItem
+when Grading.releaseItem (item, at, released), asked by grades.GradesReleaseItem:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/grades/release-item")
 then
   request RequestBoundary.respond (released, requestId)
 ```
 
-### grades.GradesReleaseItemForbidden
+### grades.GradesReleaseItem:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/grades/release-item")
@@ -3130,7 +3136,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesRemoveCriterion
+### grades.GradesRemoveCriterion:success
 
 ```reaction
 when RequestBoundary.request (session, criterion, requestId, path: "/grades/remove-criterion")
@@ -3141,17 +3147,17 @@ then
   request Itemizing.removeCriterion (criterion)
 ```
 
-### grades.GradesRemoveCriterion#2
+### grades.GradesRemoveCriterion:success#2
 
 ```reaction
-when Itemizing.removeCriterion (criterion, result.criterion: removed), asked by grades.GradesRemoveCriterion
+when Itemizing.removeCriterion (criterion, result.criterion: removed), asked by grades.GradesRemoveCriterion:success
 where
   earlier, RequestBoundary.request (session, criterion, requestId, path: "/grades/remove-criterion")
 then
   request RequestBoundary.respond (criterion: removed, requestId)
 ```
 
-### grades.GradesRemoveCriterionForbidden
+### grades.GradesRemoveCriterion:forbidden
 
 ```reaction
 when RequestBoundary.request (session, criterion, requestId, path: "/grades/remove-criterion")
@@ -3162,7 +3168,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesRetract
+### grades.GradesRetract:success
 
 ```reaction
 when RequestBoundary.request (session, learner, item, requestId, path: "/grades/retract")
@@ -3174,17 +3180,17 @@ then
   request Grading.retract (learner, item, at)
 ```
 
-### grades.GradesRetract#2
+### grades.GradesRetract:success#2
 
 ```reaction
-when Grading.retract (learner, item, at, grade), asked by grades.GradesRetract
+when Grading.retract (learner, item, at, grade), asked by grades.GradesRetract:success
 where
   earlier, RequestBoundary.request (session, learner, item, requestId, path: "/grades/retract")
 then
   request RequestBoundary.respond (grade, requestId)
 ```
 
-### grades.GradesRetractForbidden
+### grades.GradesRetract:forbidden
 
 ```reaction
 when RequestBoundary.request (session, learner, item, requestId, path: "/grades/retract")
@@ -3195,7 +3201,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesReviseCriterion
+### grades.GradesReviseCriterion:success
 
 ```reaction
 when RequestBoundary.request (session, criterion, name, maxPoints, position, requestId, path: "/grades/revise-criterion")
@@ -3206,17 +3212,17 @@ then
   request Itemizing.reviseCriterion (criterion, name, maxPoints, position)
 ```
 
-### grades.GradesReviseCriterion#2
+### grades.GradesReviseCriterion:success#2
 
 ```reaction
-when Itemizing.reviseCriterion (criterion, name, maxPoints, position, result.criterion: revised), asked by grades.GradesReviseCriterion
+when Itemizing.reviseCriterion (criterion, name, maxPoints, position, result.criterion: revised), asked by grades.GradesReviseCriterion:success
 where
   earlier, RequestBoundary.request (session, criterion, name, maxPoints, position, requestId, path: "/grades/revise-criterion")
 then
   request RequestBoundary.respond (criterion: revised, requestId)
 ```
 
-### grades.GradesReviseCriterionForbidden
+### grades.GradesReviseCriterion:forbidden
 
 ```reaction
 when RequestBoundary.request (session, criterion, name, maxPoints, position, requestId, path: "/grades/revise-criterion")
@@ -3227,7 +3233,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesScoreCriterion
+### grades.GradesScoreCriterion:success
 
 ```reaction
 when RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
@@ -3239,29 +3245,17 @@ then
   request Grading.scoreCriterion (learner, item, criterion, points, outOf: critMax, feedback)
 ```
 
-### grades.GradesScoreCriterion#2
+### grades.GradesScoreCriterion:success#2
 
 ```reaction
-when Grading.scoreCriterion (learner, item, criterion, points, outOf: critMax, feedback, criterionScore), asked by grades.GradesScoreCriterion
+when Grading.scoreCriterion (learner, item, criterion, points, outOf: critMax, feedback, criterionScore), asked by grades.GradesScoreCriterion:success
 where
   earlier, RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
 then
   request RequestBoundary.respond (criterionScore, requestId)
 ```
 
-### grades.GradesScoreCriterionCrossItem
-
-```reaction
-when RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
-where
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
-  Itemizing._getCriterion (criterion) and not (item)
-then
-  request RequestBoundary.respond (error: "CRITERION_NOT_FOUND", requestId)
-```
-
-### grades.GradesScoreCriterionForbidden
+### grades.GradesScoreCriterion:forbidden
 
 ```reaction
 when RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
@@ -3272,7 +3266,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### grades.GradesScoreCriterionMissing
+### grades.GradesScoreCriterion:missing
 
 ```reaction
 when RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
@@ -3280,6 +3274,18 @@ where
   the active user of (session) (session) has (user)
   (user) may manage grades (user)
   no Itemizing._getCriterion (criterion)
+then
+  request RequestBoundary.respond (error: "CRITERION_NOT_FOUND", requestId)
+```
+
+### grades.GradesScoreCriterion:cross-item
+
+```reaction
+when RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
+where
+  the active user of (session) (session) has (user)
+  (user) may manage grades (user)
+  Itemizing._getCriterion (criterion) and not (item)
 then
   request RequestBoundary.respond (error: "CRITERION_NOT_FOUND", requestId)
 ```
@@ -3300,7 +3306,7 @@ then
   request Itemizing.ensureItem (item: assignment, label: title, maxPoints: 100)
 ```
 
-### lateDays.Apply
+### lateDays.Apply:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/apply")
@@ -3312,17 +3318,17 @@ then
   request Banking.apply (learner: user, item: assignment, days, at)
 ```
 
-### lateDays.Apply#2
+### lateDays.Apply:success#2
 
 ```reaction
-when Banking.apply (learner: user, item: assignment, days, at, use), asked by lateDays.Apply
+when Banking.apply (learner: user, item: assignment, days, at, use), asked by lateDays.Apply:success
 where
   earlier, RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/apply")
 then
   request RequestBoundary.respond (use, requestId)
 ```
 
-### lateDays.ApplyForbidden
+### lateDays.Apply:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/apply")
@@ -3333,7 +3339,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### lateDays.Balance
+### lateDays.Balance:balance
 
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/late-days/balance")
@@ -3344,18 +3350,19 @@ then
   request RequestBoundary.respond (balance: the late-day balance of (learner) (learner), requestId)
 ```
 
-### lateDays.BalanceMissing
+### lateDays.Balance:staff-balance
 
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/late-days/balance")
 where
-  the active user of (session) (session)
-  (user) is not an active student (user: learner)
+  the active user of (session) (session) has (user)
+  (user) may manage late days (user)
+  (user) is an active student (user: learner)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  request RequestBoundary.respond (balance: the late-day balance of (learner) (learner), requestId)
 ```
 
-### lateDays.BalanceUnauthorized
+### lateDays.Balance:balance-unauthorized
 
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/late-days/balance")
@@ -3367,7 +3374,18 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### lateDays.Cancel
+### lateDays.Balance:balance-missing
+
+```reaction
+when RequestBoundary.request (session, learner, requestId, path: "/late-days/balance")
+where
+  the active user of (session) (session)
+  (user) is not an active student (user: learner)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### lateDays.Cancel:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/late-days/cancel")
@@ -3378,17 +3396,17 @@ then
   request Banking.cancel (learner: user, item: assignment)
 ```
 
-### lateDays.Cancel#2
+### lateDays.Cancel:success#2
 
 ```reaction
-when Banking.cancel (learner: user, item: assignment, use), asked by lateDays.Cancel
+when Banking.cancel (learner: user, item: assignment, use), asked by lateDays.Cancel:success
 where
   earlier, RequestBoundary.request (session, assignment, requestId, path: "/late-days/cancel")
 then
   request RequestBoundary.respond (use, requestId)
 ```
 
-### lateDays.CancelForbidden
+### lateDays.Cancel:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/late-days/cancel")
@@ -3399,7 +3417,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### lateDays.Change
+### lateDays.Change:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/change")
@@ -3410,17 +3428,17 @@ then
   request Banking.change (learner: user, item: assignment, days)
 ```
 
-### lateDays.Change#2
+### lateDays.Change:success#2
 
 ```reaction
-when Banking.change (learner: user, item: assignment, days, use), asked by lateDays.Change
+when Banking.change (learner: user, item: assignment, days, use), asked by lateDays.Change:success
 where
   earlier, RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/change")
 then
   request RequestBoundary.respond (use, requestId)
 ```
 
-### lateDays.ChangeForbidden
+### lateDays.Change:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/change")
@@ -3431,7 +3449,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### lateDays.ConfigurePolicy
+### lateDays.ConfigurePolicy:success
 
 ```reaction
 when RequestBoundary.request (session, defaultDays, unitHours, maxDaysPerItem, requestId, path: "/late-days/configure-policy")
@@ -3442,17 +3460,17 @@ then
   request Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours)
 ```
 
-### lateDays.ConfigurePolicy#2
+### lateDays.ConfigurePolicy:success#2
 
 ```reaction
-when Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours), asked by lateDays.ConfigurePolicy
+when Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours), asked by lateDays.ConfigurePolicy:success
 where
   earlier, RequestBoundary.request (session, defaultDays, unitHours, maxDaysPerItem, requestId, path: "/late-days/configure-policy")
 then
   request RequestBoundary.respond (policy: true, requestId)
 ```
 
-### lateDays.ConfigurePolicyForbidden
+### lateDays.ConfigurePolicy:forbidden
 
 ```reaction
 when RequestBoundary.request (session, defaultDays, unitHours, maxDaysPerItem, requestId, path: "/late-days/configure-policy")
@@ -3463,7 +3481,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### lateDays.ForAssignment
+### lateDays.ForAssignment:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/late-days/for-assignment")
@@ -3474,7 +3492,7 @@ then
   request RequestBoundary.respond (users: the late-day uses on (assignment) (assignment), requestId)
 ```
 
-### lateDays.ForAssignmentForbidden
+### lateDays.ForAssignment:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/late-days/for-assignment")
@@ -3485,7 +3503,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### lateDays.Grant
+### lateDays.Grant:success
 
 ```reaction
 when RequestBoundary.request (session, learner, days, reason, requestId, path: "/late-days/grant")
@@ -3497,17 +3515,17 @@ then
   request Banking.grant (learner, days, reason, at)
 ```
 
-### lateDays.Grant#2
+### lateDays.Grant:success#2
 
 ```reaction
-when Banking.grant (learner, days, reason, at, grant), asked by lateDays.Grant
+when Banking.grant (learner, days, reason, at, grant), asked by lateDays.Grant:success
 where
   earlier, RequestBoundary.request (session, learner, days, reason, requestId, path: "/late-days/grant")
 then
   request RequestBoundary.respond (grant, requestId)
 ```
 
-### lateDays.GrantForbidden
+### lateDays.Grant:forbidden
 
 ```reaction
 when RequestBoundary.request (session, learner, days, reason, requestId, path: "/late-days/grant")
@@ -3518,7 +3536,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### lateDays.List
+### lateDays.List:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/late-days/list")
@@ -3529,7 +3547,7 @@ then
   request RequestBoundary.respond (uses: the late-day uses of (learner) (learner: user), requestId)
 ```
 
-### lateDays.ListForbidden
+### lateDays.List:forbidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/late-days/list")
@@ -3540,19 +3558,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### lateDays.StaffBalance
-
-```reaction
-when RequestBoundary.request (session, learner, requestId, path: "/late-days/balance")
-where
-  the active user of (session) (session) has (user)
-  (user) may manage late days (user)
-  (user) is an active student (user: learner)
-then
-  request RequestBoundary.respond (balance: the late-day balance of (learner) (learner), requestId)
-```
-
-### lateDays.StaffCancel
+### lateDays.StaffCancel:success
 
 ```reaction
 when RequestBoundary.request (session, learner, assignment, requestId, path: "/late-days/staff-cancel")
@@ -3564,17 +3570,17 @@ then
   request Banking.cancel (learner, item: assignment)
 ```
 
-### lateDays.StaffCancel#2
+### lateDays.StaffCancel:success#2
 
 ```reaction
-when Banking.cancel (learner, item: assignment, use), asked by lateDays.StaffCancel
+when Banking.cancel (learner, item: assignment, use), asked by lateDays.StaffCancel:success
 where
   earlier, RequestBoundary.request (session, learner, assignment, requestId, path: "/late-days/staff-cancel")
 then
   request RequestBoundary.respond (use, requestId)
 ```
 
-### lateDays.StaffCancelHidden
+### lateDays.StaffCancel:hidden
 
 ```reaction
 when RequestBoundary.request (session, learner, assignment, requestId, path: "/late-days/staff-cancel")
@@ -3585,7 +3591,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### lateDays.StaffCancelUnauthorized
+### lateDays.StaffCancel:unauthorized
 
 ```reaction
 when RequestBoundary.request (session, learner, assignment, requestId, path: "/late-days/staff-cancel")
@@ -3597,7 +3603,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### lateDays.StaffChange
+### lateDays.StaffChange:success
 
 ```reaction
 when RequestBoundary.request (session, learner, assignment, days, requestId, path: "/late-days/staff-change")
@@ -3609,17 +3615,17 @@ then
   request Banking.change (learner, item: assignment, days)
 ```
 
-### lateDays.StaffChange#2
+### lateDays.StaffChange:success#2
 
 ```reaction
-when Banking.change (learner, item: assignment, days, use), asked by lateDays.StaffChange
+when Banking.change (learner, item: assignment, days, use), asked by lateDays.StaffChange:success
 where
   earlier, RequestBoundary.request (session, learner, assignment, days, requestId, path: "/late-days/staff-change")
 then
   request RequestBoundary.respond (use, requestId)
 ```
 
-### lateDays.StaffChangeHidden
+### lateDays.StaffChange:hidden
 
 ```reaction
 when RequestBoundary.request (session, learner, assignment, days, requestId, path: "/late-days/staff-change")
@@ -3630,7 +3636,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### lateDays.StaffChangeUnauthorized
+### lateDays.StaffChange:unauthorized
 
 ```reaction
 when RequestBoundary.request (session, learner, assignment, days, requestId, path: "/late-days/staff-change")
@@ -3642,7 +3648,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### links.Backlinks
+### links.Backlinks:success
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/links/backlinks")
@@ -3652,7 +3658,7 @@ then
   request RequestBoundary.respond (sources: the backlinks of (target) (target), requestId)
 ```
 
-### links.BacklinksHidden
+### links.Backlinks:hidden
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/links/backlinks")
@@ -3662,7 +3668,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### links.Forward
+### links.Forward:success
 
 ```reaction
 when RequestBoundary.request (source, requestId, path: "/links/forward")
@@ -3672,7 +3678,7 @@ then
   request RequestBoundary.respond (targets: the forward links of (source) (source), requestId)
 ```
 
-### links.ForwardHidden
+### links.Forward:hidden
 
 ```reaction
 when RequestBoundary.request (source, requestId, path: "/links/forward")
@@ -3682,7 +3688,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.FlagRaise
+### moderation.FlagRaise:success
 
 ```reaction
 when RequestBoundary.request (session, target, reason, requestId, path: "/flags/raise")
@@ -3694,17 +3700,17 @@ then
   request Flagging.flag (reporter: user, target, reason, at)
 ```
 
-### moderation.FlagRaise#2
+### moderation.FlagRaise:success#2
 
 ```reaction
-when Flagging.flag (reporter: user, target, reason, at, flag), asked by moderation.FlagRaise
+when Flagging.flag (reporter: user, target, reason, at, flag), asked by moderation.FlagRaise:success
 where
   earlier, RequestBoundary.request (session, target, reason, requestId, path: "/flags/raise")
 then
   request RequestBoundary.respond (flag, requestId)
 ```
 
-### moderation.FlagRaiseHidden
+### moderation.FlagRaise:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, reason, requestId, path: "/flags/raise")
@@ -3715,7 +3721,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.FlagResolve
+### moderation.FlagResolve:success
 
 ```reaction
 when RequestBoundary.request (session, target, outcome, requestId, path: "/flags/resolve")
@@ -3727,17 +3733,17 @@ then
   request Flagging.resolve (target, outcome)
 ```
 
-### moderation.FlagResolve#2
+### moderation.FlagResolve:success#2
 
 ```reaction
-when Flagging.resolve (target, outcome), asked by moderation.FlagResolve
+when Flagging.resolve (target, outcome), asked by moderation.FlagResolve:success
 where
   earlier, RequestBoundary.request (session, target, outcome, requestId, path: "/flags/resolve")
 then
   request RequestBoundary.respond (target, requestId)
 ```
 
-### moderation.FlagResolveForbidden
+### moderation.FlagResolve:forbidden
 
 ```reaction
 when RequestBoundary.request (session, target, outcome, requestId, path: "/flags/resolve")
@@ -3748,7 +3754,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### moderation.FlagResolveHidden
+### moderation.FlagResolve:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, outcome, requestId, path: "/flags/resolve")
@@ -3760,19 +3766,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.FlagsForMissingTarget
-
-```reaction
-when RequestBoundary.request (session, target, requestId, path: "/flags/forTarget")
-where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (post) is not readable (post: target)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### moderation.FlagsForTarget
+### moderation.FlagsForTarget:target
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/flags/forTarget")
@@ -3784,7 +3778,7 @@ then
   request RequestBoundary.respond (flags: the flags on (target) (target), requestId)
 ```
 
-### moderation.FlagsForTargetHidden
+### moderation.FlagsForTarget:target-hidden
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/flags/forTarget")
@@ -3795,7 +3789,19 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.FlagsOpen
+### moderation.FlagsForTarget:missing-target
+
+```reaction
+when RequestBoundary.request (session, target, requestId, path: "/flags/forTarget")
+where
+  the active user of (session) (session) has (user)
+  (user) may moderate (user)
+  (post) is not readable (post: target)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### moderation.FlagsOpen:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/flags/open")
@@ -3806,7 +3812,7 @@ then
   request RequestBoundary.respond (targets: the open flags () (), requestId)
 ```
 
-### moderation.FlagsOpenHidden
+### moderation.FlagsOpen:hidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/flags/open")
@@ -3817,7 +3823,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.GetTrashedPost
+### moderation.GetTrashedPost:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/posts/get")
@@ -3830,7 +3836,7 @@ then
   request RequestBoundary.respond (post: the post (post) (post: item), requestId)
 ```
 
-### moderation.GetTrashedPostHidden
+### moderation.GetTrashedPost:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/posts/get")
@@ -3841,7 +3847,19 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.GetTrashedPostLive
+### moderation.GetTrashedPost:missing
+
+```reaction
+when RequestBoundary.request (session, item, requestId, path: "/moderation/posts/get")
+where
+  the active user of (session) (session) has (user)
+  (user) may moderate (user)
+  no Posting._getPost (post: item)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### moderation.GetTrashedPost:live
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/posts/get")
@@ -3854,19 +3872,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.GetTrashedPostMissing
-
-```reaction
-when RequestBoundary.request (session, item, requestId, path: "/moderation/posts/get")
-where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  no Posting._getPost (post: item)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### moderation.IsLocked
+### moderation.IsLocked:success
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/locks/isLocked")
@@ -3877,7 +3883,7 @@ then
   request RequestBoundary.respond (locked, requestId)
 ```
 
-### moderation.IsLockedHidden
+### moderation.IsLocked:hidden
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/locks/isLocked")
@@ -3887,7 +3893,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.IsTrashed
+### moderation.IsTrashed:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/isTrashed")
@@ -3899,7 +3905,7 @@ then
   request RequestBoundary.respond (trashed, requestId)
 ```
 
-### moderation.IsTrashedHidden
+### moderation.IsTrashed:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/isTrashed")
@@ -3918,7 +3924,7 @@ then
   request RequestBoundary.respond (locked: the locked list () (), requestId)
 ```
 
-### moderation.LockTarget
+### moderation.LockTarget:success
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/lock")
@@ -3931,17 +3937,17 @@ then
   request Locking.lock (target, at)
 ```
 
-### moderation.LockTarget#2
+### moderation.LockTarget:success#2
 
 ```reaction
-when Locking.lock (target, at), asked by moderation.LockTarget
+when Locking.lock (target, at), asked by moderation.LockTarget:success
 where
   earlier, RequestBoundary.request (session, target, requestId, path: "/locks/lock")
 then
   request RequestBoundary.respond (target, requestId)
 ```
 
-### moderation.LockTargetForbidden
+### moderation.LockTarget:forbidden
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/lock")
@@ -3952,7 +3958,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### moderation.LockTargetHidden
+### moderation.LockTarget:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/lock")
@@ -3964,49 +3970,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.PurgeClearsBacklinks
-
-```reaction
-when Trashing.purge (item)
-then
-  request Linking.clearBacklinks (target: item)
-```
-
-### moderation.PurgeClearsFlags
-
-```reaction
-when Trashing.purge (item)
-then
-  request Flagging.clearTarget (target: item)
-```
-
-### moderation.PurgeClearsFormatting
-
-```reaction
-when Trashing.purge (item)
-then
-  request Formatting.clear (target: item)
-```
-
-### moderation.PurgeClearsLinks
-
-```reaction
-when Trashing.purge (item)
-then
-  request Linking.clearLinks (source: item)
-```
-
-### moderation.PurgeDeletesPost
-
-```reaction
-when Trashing.purge (item)
-where
-  Posting._getPost (post: item)
-then
-  request Posting.delete (post: item)
-```
-
-### moderation.PurgeItem
+### moderation.PurgeItem:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/purge")
@@ -4017,17 +3981,17 @@ then
   request Trashing.purge (item)
 ```
 
-### moderation.PurgeItem#2
+### moderation.PurgeItem:success#2
 
 ```reaction
-when Trashing.purge (item), asked by moderation.PurgeItem
+when Trashing.purge (item), asked by moderation.PurgeItem:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/trash/purge")
 then
   request RequestBoundary.respond (item, requestId)
 ```
 
-### moderation.PurgeItemForbidden
+### moderation.PurgeItem:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/purge")
@@ -4038,18 +4002,59 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### moderation.PurgeRemovesLeafNode
+### moderation.PurgedItemClearsModerationState:post
 
 ```reaction
 when Trashing.purge (item)
 where
-  Conversing._getNodeByItem (item) has (node)
-  Conversing._hasChildren (node) has (present: false)
+  Posting._getPost (post: item)
 then
-  request Conversing.remove (node)
+  request Posting.delete (post: item)
 ```
 
-### moderation.PurgeUnlocksConversation
+### moderation.PurgedItemClearsModerationState:formatting
+
+```reaction
+when Trashing.purge (item)
+then
+  request Formatting.clear (target: item)
+```
+
+### moderation.PurgedItemClearsModerationState:links
+
+```reaction
+when Trashing.purge (item)
+then
+  request Linking.clearLinks (source: item)
+```
+
+### moderation.PurgedItemClearsModerationState:backlinks
+
+```reaction
+when Trashing.purge (item)
+then
+  request Linking.clearBacklinks (target: item)
+```
+
+### moderation.PurgedItemClearsModerationState:flags
+
+```reaction
+when Trashing.purge (item)
+then
+  request Flagging.clearTarget (target: item)
+```
+
+### moderation.PurgedItemClearsModerationState:item-lock
+
+```reaction
+when Trashing.purge (item)
+where
+  Locking._isLocked (target: item) has (locked: true)
+then
+  request Locking.unlock (target: item)
+```
+
+### moderation.PurgedItemClearsModerationState:conversation-lock
 
 ```reaction
 when Trashing.purge (item)
@@ -4061,17 +4066,7 @@ then
   request Locking.unlock (target: conversation)
 ```
 
-### moderation.PurgeUnlocksItem
-
-```reaction
-when Trashing.purge (item)
-where
-  Locking._isLocked (target: item) has (locked: true)
-then
-  request Locking.unlock (target: item)
-```
-
-### moderation.PurgeUnregistersTracking
+### moderation.PurgedItemClearsModerationState:tracking
 
 ```reaction
 when Trashing.purge (item)
@@ -4079,7 +4074,18 @@ then
   request Tracking.unregister (item)
 ```
 
-### moderation.RestoreItem
+### moderation.PurgedItemClearsModerationState:leaf-node
+
+```reaction
+when Trashing.purge (item)
+where
+  Conversing._getNodeByItem (item) has (node)
+  Conversing._hasChildren (node) has (present: false)
+then
+  request Conversing.remove (node)
+```
+
+### moderation.RestoreItem:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/restore")
@@ -4090,17 +4096,17 @@ then
   request Trashing.restore (item)
 ```
 
-### moderation.RestoreItem#2
+### moderation.RestoreItem:success#2
 
 ```reaction
-when Trashing.restore (item), asked by moderation.RestoreItem
+when Trashing.restore (item), asked by moderation.RestoreItem:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/trash/restore")
 then
   request RequestBoundary.respond (item, requestId)
 ```
 
-### moderation.RestoreItemForbidden
+### moderation.RestoreItem:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/restore")
@@ -4111,7 +4117,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### moderation.TrashItem
+### moderation.TrashItem:success
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/trash")
@@ -4124,17 +4130,17 @@ then
   request Trashing.trash (item, by: user, at)
 ```
 
-### moderation.TrashItem#2
+### moderation.TrashItem:success#2
 
 ```reaction
-when Trashing.trash (item, by: user, at), asked by moderation.TrashItem
+when Trashing.trash (item, by: user, at), asked by moderation.TrashItem:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/trash/trash")
 then
   request RequestBoundary.respond (item, requestId)
 ```
 
-### moderation.TrashItemForbidden
+### moderation.TrashItem:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/trash")
@@ -4145,7 +4151,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### moderation.TrashItemMissing
+### moderation.TrashItem:missing
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/trash")
@@ -4157,7 +4163,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.TrashList
+### moderation.TrashList:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/trash/list")
@@ -4168,7 +4174,7 @@ then
   request RequestBoundary.respond (trashed: the trash bin () (), requestId)
 ```
 
-### moderation.TrashListHidden
+### moderation.TrashList:hidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/trash/list")
@@ -4179,7 +4185,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### moderation.UnlockTarget
+### moderation.UnlockTarget:success
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/unlock")
@@ -4191,17 +4197,17 @@ then
   request Locking.unlock (target)
 ```
 
-### moderation.UnlockTarget#2
+### moderation.UnlockTarget:success#2
 
 ```reaction
-when Locking.unlock (target), asked by moderation.UnlockTarget
+when Locking.unlock (target), asked by moderation.UnlockTarget:success
 where
   earlier, RequestBoundary.request (session, target, requestId, path: "/locks/unlock")
 then
   request RequestBoundary.respond (target, requestId)
 ```
 
-### moderation.UnlockTargetForbidden
+### moderation.UnlockTarget:forbidden
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/unlock")
@@ -4212,7 +4218,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### moderation.UnlockTargetHidden
+### moderation.UnlockTarget:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/unlock")
@@ -4224,7 +4230,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### notes.Acknowledge
+### notes.Acknowledge:success
 
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/acknowledge")
@@ -4236,17 +4242,17 @@ then
   request Noting.acknowledge (note, learner: user, at)
 ```
 
-### notes.Acknowledge#2
+### notes.Acknowledge:success#2
 
 ```reaction
-when Noting.acknowledge (note, learner: user, at), asked by notes.Acknowledge
+when Noting.acknowledge (note, learner: user, at), asked by notes.Acknowledge:success
 where
   earlier, RequestBoundary.request (session, note, requestId, path: "/students/notes/acknowledge")
 then
   request RequestBoundary.respond (note, requestId)
 ```
 
-### notes.AcknowledgeForbidden
+### notes.Acknowledge:forbidden
 
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/acknowledge")
@@ -4257,7 +4263,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### notes.Archive
+### notes.Archive:success
 
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/archive")
@@ -4269,17 +4275,17 @@ then
   request Noting.archive (note, at)
 ```
 
-### notes.Archive#2
+### notes.Archive:success#2
 
 ```reaction
-when Noting.archive (note, at), asked by notes.Archive
+when Noting.archive (note, at), asked by notes.Archive:success
 where
   earlier, RequestBoundary.request (session, note, requestId, path: "/students/notes/archive")
 then
   request RequestBoundary.respond (note, requestId)
 ```
 
-### notes.ArchiveForbidden
+### notes.Archive:forbidden
 
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/archive")
@@ -4290,7 +4296,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### notes.NotesList
+### notes.NotesList:success
 
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/students/notes/list")
@@ -4301,7 +4307,7 @@ then
   request RequestBoundary.respond (notes: the staff notes on (learner) (learner), requestId)
 ```
 
-### notes.NotesListForbidden
+### notes.NotesList:forbidden
 
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/students/notes/list")
@@ -4312,7 +4318,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### notes.NotesVisible
+### notes.NotesVisible:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/students/notes/visible")
@@ -4323,7 +4329,7 @@ then
   request RequestBoundary.respond (notes: the notes shown to (learner) (learner: user), requestId)
 ```
 
-### notes.NotesVisibleForbidden
+### notes.NotesVisible:forbidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/students/notes/visible")
@@ -4334,7 +4340,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### notes.Resolve
+### notes.Resolve:success
 
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/resolve")
@@ -4346,17 +4352,17 @@ then
   request Noting.resolve (note, at)
 ```
 
-### notes.Resolve#2
+### notes.Resolve:success#2
 
 ```reaction
-when Noting.resolve (note, at), asked by notes.Resolve
+when Noting.resolve (note, at), asked by notes.Resolve:success
 where
   earlier, RequestBoundary.request (session, note, requestId, path: "/students/notes/resolve")
 then
   request RequestBoundary.respond (note, requestId)
 ```
 
-### notes.ResolveForbidden
+### notes.Resolve:forbidden
 
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/resolve")
@@ -4367,7 +4373,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### notes.Restore
+### notes.Restore:success
 
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/restore")
@@ -4379,17 +4385,17 @@ then
   request Noting.restore (note, at)
 ```
 
-### notes.Restore#2
+### notes.Restore:success#2
 
 ```reaction
-when Noting.restore (note, at), asked by notes.Restore
+when Noting.restore (note, at), asked by notes.Restore:success
 where
   earlier, RequestBoundary.request (session, note, requestId, path: "/students/notes/restore")
 then
   request RequestBoundary.respond (note, requestId)
 ```
 
-### notes.RestoreForbidden
+### notes.Restore:forbidden
 
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/restore")
@@ -4400,7 +4406,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### notes.Revise
+### notes.Revise:success
 
 ```reaction
 when RequestBoundary.request (session, note, body, visibility, tags, followUpAt, requestId, path: "/students/notes/revise")
@@ -4412,17 +4418,17 @@ then
   request Noting.revise (note, body, visibility, tags, followUpAt, at)
 ```
 
-### notes.Revise#2
+### notes.Revise:success#2
 
 ```reaction
-when Noting.revise (note, body, visibility, tags, followUpAt, at), asked by notes.Revise
+when Noting.revise (note, body, visibility, tags, followUpAt, at), asked by notes.Revise:success
 where
   earlier, RequestBoundary.request (session, note, body, visibility, tags, followUpAt, requestId, path: "/students/notes/revise")
 then
   request RequestBoundary.respond (note, requestId)
 ```
 
-### notes.ReviseForbidden
+### notes.Revise:forbidden
 
 ```reaction
 when RequestBoundary.request (session, note, body, visibility, tags, followUpAt, requestId, path: "/students/notes/revise")
@@ -4433,7 +4439,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### notes.StudentsDetail:case-1
+### notes.StudentsDetail:found
 
 ```reaction
 when RequestBoundary.request (session, user: target, requestId, path: "/students/detail")
@@ -4445,7 +4451,7 @@ then
   request RequestBoundary.respond (detail, requestId)
 ```
 
-### notes.StudentsDetail:case-2
+### notes.StudentsDetail:missing
 
 ```reaction
 when RequestBoundary.request (session, user: target, requestId, path: "/students/detail")
@@ -4457,7 +4463,7 @@ then
   request RequestBoundary.respond (detail: null, requestId)
 ```
 
-### notes.StudentsDetailForbidden
+### notes.StudentsDetail:forbidden
 
 ```reaction
 when RequestBoundary.request (session, user: target, requestId, path: "/students/detail")
@@ -4468,7 +4474,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### notes.Write
+### notes.Write:success
 
 ```reaction
 when RequestBoundary.request (session, learner, body, visibility, tags, followUpAt, requestId, path: "/students/notes/write")
@@ -4480,17 +4486,17 @@ then
   request Noting.write (author: user, learner, body, visibility, tags, followUpAt, at)
 ```
 
-### notes.Write#2
+### notes.Write:success#2
 
 ```reaction
-when Noting.write (author: user, learner, body, visibility, tags, followUpAt, at, note), asked by notes.Write
+when Noting.write (author: user, learner, body, visibility, tags, followUpAt, at, note), asked by notes.Write:success
 where
   earlier, RequestBoundary.request (session, learner, body, visibility, tags, followUpAt, requestId, path: "/students/notes/write")
 then
   request RequestBoundary.respond (note, requestId)
 ```
 
-### notes.WriteForbidden
+### notes.Write:forbidden
 
 ```reaction
 when RequestBoundary.request (session, learner, body, visibility, tags, followUpAt, requestId, path: "/students/notes/write")
@@ -4671,7 +4677,7 @@ then
   request RequestBoundary.respond (count, requestId)
 ```
 
-### pins.IsPinned
+### pins.IsPinned:success
 
 ```reaction
 when RequestBoundary.request (item, scope, requestId, path: "/pins/isPinned")
@@ -4682,7 +4688,7 @@ then
   request RequestBoundary.respond (pinned, requestId)
 ```
 
-### pins.IsPinnedHidden
+### pins.IsPinned:hidden
 
 ```reaction
 when RequestBoundary.request (item, scope, requestId, path: "/pins/isPinned")
@@ -4692,7 +4698,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### pins.PinItem
+### pins.PinItem:success
 
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/pin")
@@ -4705,17 +4711,17 @@ then
   request Pinning.pin (item, scope, priority, at)
 ```
 
-### pins.PinItem#2
+### pins.PinItem:success#2
 
 ```reaction
-when Pinning.pin (item, scope, priority, at, pin), asked by pins.PinItem
+when Pinning.pin (item, scope, priority, at, pin), asked by pins.PinItem:success
 where
   earlier, RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/pin")
 then
   request RequestBoundary.respond (pin, requestId)
 ```
 
-### pins.PinItemForbidden
+### pins.PinItem:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/pin")
@@ -4726,7 +4732,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### pins.PinItemHidden
+### pins.PinItem:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/pin")
@@ -4754,7 +4760,7 @@ then
   request Pinning.clearItem (item)
 ```
 
-### pins.SetPinPriority
+### pins.SetPinPriority:success
 
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/setPriority")
@@ -4766,17 +4772,17 @@ then
   request Pinning.setPriority (item, scope, priority)
 ```
 
-### pins.SetPinPriority#2
+### pins.SetPinPriority:success#2
 
 ```reaction
-when Pinning.setPriority (item, scope, priority, pin), asked by pins.SetPinPriority
+when Pinning.setPriority (item, scope, priority, pin), asked by pins.SetPinPriority:success
 where
   earlier, RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/setPriority")
 then
   request RequestBoundary.respond (pin, requestId)
 ```
 
-### pins.SetPinPriorityForbidden
+### pins.SetPinPriority:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/setPriority")
@@ -4787,7 +4793,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### pins.SetPinPriorityHidden
+### pins.SetPinPriority:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/setPriority")
@@ -4799,7 +4805,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### pins.UnpinItem
+### pins.UnpinItem:success
 
 ```reaction
 when RequestBoundary.request (session, item, scope, requestId, path: "/pins/unpin")
@@ -4811,17 +4817,17 @@ then
   request Pinning.unpin (item, scope)
 ```
 
-### pins.UnpinItem#2
+### pins.UnpinItem:success#2
 
 ```reaction
-when Pinning.unpin (item, scope, pin), asked by pins.UnpinItem
+when Pinning.unpin (item, scope, pin), asked by pins.UnpinItem:success
 where
   earlier, RequestBoundary.request (session, item, scope, requestId, path: "/pins/unpin")
 then
   request RequestBoundary.respond (pin, requestId)
 ```
 
-### pins.UnpinItemForbidden
+### pins.UnpinItem:forbidden
 
 ```reaction
 when RequestBoundary.request (session, item, scope, requestId, path: "/pins/unpin")
@@ -4832,7 +4838,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### pins.UnpinItemHidden
+### pins.UnpinItem:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, scope, requestId, path: "/pins/unpin")
@@ -4844,63 +4850,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### posts.DeleteClearsBacklinks
-
-```reaction
-when Posting.delete (post)
-then
-  request Linking.clearBacklinks (target: post)
-```
-
-### posts.DeleteClearsBookmarks
-
-```reaction
-when Posting.delete (post)
-then
-  request Bookmarking.clearItem (item: post)
-```
-
-### posts.DeleteClearsFormatting
-
-```reaction
-when Posting.delete (post)
-then
-  request Formatting.clear (target: post)
-```
-
-### posts.DeleteClearsLinks
-
-```reaction
-when Posting.delete (post)
-then
-  request Linking.clearLinks (source: post)
-```
-
-### posts.DeleteClearsPins
-
-```reaction
-when Posting.delete (post)
-then
-  request Pinning.clearItem (item: post)
-```
-
-### posts.DeleteClearsReactions
-
-```reaction
-when Posting.delete (post)
-then
-  request Reacting.clearTarget (target: post)
-```
-
-### posts.DeleteClearsTags
-
-```reaction
-when Posting.delete (post)
-then
-  request Tagging.clearTarget (target: post)
-```
-
-### posts.DeletePost:case-1-1-1-1
+### posts.DeletePost:delete
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
@@ -4915,17 +4865,17 @@ then
   request Posting.delete (post)
 ```
 
-### posts.DeletePost:case-1-1-1-1#2
+### posts.DeletePost:delete#2
 
 ```reaction
-when Posting.delete (post), asked by posts.DeletePost:case-1-1-1-1
+when Posting.delete (post), asked by posts.DeletePost:delete
 where
   earlier, RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 then
   request RequestBoundary.respond (post, requestId)
 ```
 
-### posts.DeletePost:case-1-1-1-2
+### posts.DeletePost:has-replies
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
@@ -4940,7 +4890,7 @@ then
   request RequestBoundary.respond (error: "POST_HAS_REPLIES", requestId)
 ```
 
-### posts.DeletePost:case-1-1-2
+### posts.DeletePost:forbidden
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
@@ -4953,7 +4903,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### posts.DeletePost:case-1-2
+### posts.DeletePost:trashed
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
@@ -4965,7 +4915,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### posts.DeletePost:case-2
+### posts.DeletePost:missing
 
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
@@ -4976,7 +4926,71 @@ then
   request RequestBoundary.respond (error: "POST_NOT_FOUND", requestId)
 ```
 
-### posts.DeleteRemovesLeafNode
+### posts.DeletedPostClearsSatellites:formatting
+
+```reaction
+when Posting.delete (post)
+then
+  request Formatting.clear (target: post)
+```
+
+### posts.DeletedPostClearsSatellites:reactions
+
+```reaction
+when Posting.delete (post)
+then
+  request Reacting.clearTarget (target: post)
+```
+
+### posts.DeletedPostClearsSatellites:pins
+
+```reaction
+when Posting.delete (post)
+then
+  request Pinning.clearItem (item: post)
+```
+
+### posts.DeletedPostClearsSatellites:bookmarks
+
+```reaction
+when Posting.delete (post)
+then
+  request Bookmarking.clearItem (item: post)
+```
+
+### posts.DeletedPostClearsSatellites:tags
+
+```reaction
+when Posting.delete (post)
+then
+  request Tagging.clearTarget (target: post)
+```
+
+### posts.DeletedPostClearsSatellites:tracking
+
+```reaction
+when Posting.delete (post)
+then
+  request Tracking.unregister (item: post)
+```
+
+### posts.DeletedPostClearsSatellites:links
+
+```reaction
+when Posting.delete (post)
+then
+  request Linking.clearLinks (source: post)
+```
+
+### posts.DeletedPostClearsSatellites:backlinks
+
+```reaction
+when Posting.delete (post)
+then
+  request Linking.clearBacklinks (target: post)
+```
+
+### posts.DeletedPostClearsSatellites:leaf-node
 
 ```reaction
 when Posting.delete (post)
@@ -4987,23 +5001,7 @@ then
   request Conversing.remove (node)
 ```
 
-### posts.DeleteUnregisters
-
-```reaction
-when Posting.delete (post)
-then
-  request Tracking.unregister (item: post)
-```
-
-### posts.DeriveEditedLinks
-
-```reaction
-when Posting.edit (content, post)
-then
-  request Linking.setLinksFrom (source: post, content)
-```
-
-### posts.EditMissingPost
+### posts.EditPost:missing-post
 
 ```reaction
 when RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
@@ -5014,7 +5012,7 @@ then
   request RequestBoundary.respond (error: "POST_NOT_FOUND", requestId)
 ```
 
-### posts.EditPost
+### posts.EditPost:post
 
 ```reaction
 when RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
@@ -5026,28 +5024,17 @@ then
   request Posting.edit (post, content, at)
 ```
 
-### posts.EditPost#2
+### posts.EditPost:post#2
 
 ```reaction
-when Posting.edit (post, content, at), asked by posts.EditPost
+when Posting.edit (post, content, at), asked by posts.EditPost:post
 where
   earlier, RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
 then
   request RequestBoundary.respond (post, requestId)
 ```
 
-### posts.EditPostForbidden
-
-```reaction
-when RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
-where
-  the active user of (session) (session) has (user)
-  (user) may not edit (post) (user, post)
-then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### posts.EditTrashedPost
+### posts.EditPost:trashed-post
 
 ```reaction
 when RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
@@ -5058,7 +5045,34 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### posts.GetPost
+### posts.EditPost:post-forbidden
+
+```reaction
+when RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
+where
+  the active user of (session) (session) has (user)
+  (user) may not edit (post) (user, post)
+then
+  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### posts.EditedPostRefreshesDerivedContent:render
+
+```reaction
+when Posting.edit (content, post)
+then
+  request Formatting.setSource (target: post, source: content)
+```
+
+### posts.EditedPostRefreshesDerivedContent:links
+
+```reaction
+when Posting.edit (content, post)
+then
+  request Linking.setLinksFrom (source: post, content)
+```
+
+### posts.GetPost:success
 
 ```reaction
 when RequestBoundary.request (post, requestId, path: "/posts/get")
@@ -5068,7 +5082,7 @@ then
   request RequestBoundary.respond (post: the post (post) (post), requestId)
 ```
 
-### posts.GetPostNotFound
+### posts.GetPost:not-found
 
 ```reaction
 when RequestBoundary.request (post, requestId, path: "/posts/get")
@@ -5086,15 +5100,7 @@ then
   request RequestBoundary.respond (posts: the public posts of (author) (author), requestId)
 ```
 
-### posts.RenderEditedSource
-
-```reaction
-when Posting.edit (content, post)
-then
-  request Formatting.setSource (target: post, source: content)
-```
-
-### profiles.GetProfile
+### profiles.GetProfile:success
 
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
@@ -5106,19 +5112,19 @@ then
   request RequestBoundary.respond (profile: the private profile of (user) (user), requestId)
 ```
 
-### profiles.GetProfileHidden
+### profiles.GetProfile:staff
 
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
 where
-  the active user of (session) (session) has (user: reader)
-  no (user) is an active course member (user: reader)
-  (user) may not manage the roster (user: reader)
+  the active user of (session) (session) has (user: reader) and not (user)
+  (user) may manage the roster (user: reader)
+  the profile of (user) (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  request RequestBoundary.respond (profile: the private profile of (user) (user), requestId)
 ```
 
-### profiles.GetProfileMember
+### profiles.GetProfile:member
 
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
@@ -5131,7 +5137,7 @@ then
   request RequestBoundary.respond (profile: the profile face of (user) (user), requestId)
 ```
 
-### profiles.GetProfileMissing
+### profiles.GetProfile:missing
 
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
@@ -5142,16 +5148,16 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### profiles.GetProfileStaff
+### profiles.GetProfile:hidden
 
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
 where
-  the active user of (session) (session) has (user: reader) and not (user)
-  (user) may manage the roster (user: reader)
-  the profile of (user) (user)
+  the active user of (session) (session) has (user: reader)
+  no (user) is an active course member (user: reader)
+  (user) may not manage the roster (user: reader)
 then
-  request RequestBoundary.respond (profile: the private profile of (user) (user), requestId)
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### profiles.ResolvePublicUser
@@ -5164,7 +5170,7 @@ then
   request RequestBoundary.respond (user, username, requestId)
 ```
 
-### profiles.SearchUsers
+### profiles.SearchUsers:success
 
 ```reaction
 when RequestBoundary.request (session, query, requestId, path: "/users/search")
@@ -5175,7 +5181,7 @@ then
   request RequestBoundary.respond (users: the user search (query) (query), requestId)
 ```
 
-### profiles.SearchUsersHidden
+### profiles.SearchUsers:hidden
 
 ```reaction
 when RequestBoundary.request (session, query, requestId, path: "/users/search")
@@ -5246,7 +5252,7 @@ then
   request RequestBoundary.respond (user, requestId)
 ```
 
-### reactions.AddReaction
+### reactions.AddReaction:success
 
 ```reaction
 when RequestBoundary.request (session, target, kind, requestId, path: "/reactions/add")
@@ -5258,17 +5264,17 @@ then
   request Reacting.react (reactor: user, target, kind, at)
 ```
 
-### reactions.AddReaction#2
+### reactions.AddReaction:success#2
 
 ```reaction
-when Reacting.react (reactor: user, target, kind, at, reaction), asked by reactions.AddReaction
+when Reacting.react (reactor: user, target, kind, at, reaction), asked by reactions.AddReaction:success
 where
   earlier, RequestBoundary.request (session, target, kind, requestId, path: "/reactions/add")
 then
   request RequestBoundary.respond (reaction, requestId)
 ```
 
-### reactions.AddReactionHidden
+### reactions.AddReaction:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, kind, requestId, path: "/reactions/add")
@@ -5287,7 +5293,7 @@ then
   request Reacting.clearTarget (target: item)
 ```
 
-### reactions.ReactionsForTarget
+### reactions.ReactionsForTarget:success
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/reactions/forTarget")
@@ -5297,7 +5303,7 @@ then
   request RequestBoundary.respond (reactions: the reactions on (target) (target), requestId)
 ```
 
-### reactions.ReactionsForTargetHidden
+### reactions.ReactionsForTarget:hidden
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/reactions/forTarget")
@@ -5307,7 +5313,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### reactions.RemoveReaction
+### reactions.RemoveReaction:success
 
 ```reaction
 when RequestBoundary.request (session, target, kind, requestId, path: "/reactions/remove")
@@ -5318,17 +5324,17 @@ then
   request Reacting.unreact (reactor: user, target, kind)
 ```
 
-### reactions.RemoveReaction#2
+### reactions.RemoveReaction:success#2
 
 ```reaction
-when Reacting.unreact (reactor: user, target, kind, reaction), asked by reactions.RemoveReaction
+when Reacting.unreact (reactor: user, target, kind, reaction), asked by reactions.RemoveReaction:success
 where
   earlier, RequestBoundary.request (session, target, kind, requestId, path: "/reactions/remove")
 then
   request RequestBoundary.respond (ok: true, requestId)
 ```
 
-### reactions.RemoveReactionHidden
+### reactions.RemoveReaction:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, kind, requestId, path: "/reactions/remove")
@@ -5339,7 +5345,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### resolutions.AcceptAnswer
+### resolutions.AcceptAnswer:accepted
 
 ```reaction
 when RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
@@ -5353,28 +5359,17 @@ then
   request Resolving.accept (question, answer, by: user, at)
 ```
 
-### resolutions.AcceptAnswer#2
+### resolutions.AcceptAnswer:accepted#2
 
 ```reaction
-when Resolving.accept (question, answer, by: user, at, resolution), asked by resolutions.AcceptAnswer
+when Resolving.accept (question, answer, by: user, at, resolution), asked by resolutions.AcceptAnswer:accepted
 where
   earlier, RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
 then
   request RequestBoundary.respond (resolution, requestId)
 ```
 
-### resolutions.AcceptAnswerHidden
-
-```reaction
-when RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
-where
-  the active user of (session) (session)
-  (post) is not readable (post: question)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### resolutions.AcceptAnswerNotAuthor
+### resolutions.AcceptAnswer:not-author
 
 ```reaction
 when RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
@@ -5387,7 +5382,18 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### resolutions.AcceptHiddenAnswer
+### resolutions.AcceptAnswer:hidden-question
+
+```reaction
+when RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
+where
+  the active user of (session) (session)
+  (post) is not readable (post: question)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### resolutions.AcceptAnswer:hidden-answer
 
 ```reaction
 when RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
@@ -5399,7 +5405,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### resolutions.ClearResolution
+### resolutions.ClearResolution:success
 
 ```reaction
 when RequestBoundary.request (session, question, requestId, path: "/resolutions/clear")
@@ -5411,28 +5417,17 @@ then
   request Resolving.clear (question)
 ```
 
-### resolutions.ClearResolution#2
+### resolutions.ClearResolution:success#2
 
 ```reaction
-when Resolving.clear (question, result.question: cleared), asked by resolutions.ClearResolution
+when Resolving.clear (question, result.question: cleared), asked by resolutions.ClearResolution:success
 where
   earlier, RequestBoundary.request (session, question, requestId, path: "/resolutions/clear")
 then
   request RequestBoundary.respond (question: cleared, requestId)
 ```
 
-### resolutions.ClearResolutionHidden
-
-```reaction
-when RequestBoundary.request (session, question, requestId, path: "/resolutions/clear")
-where
-  the active user of (session) (session)
-  (post) is not readable (post: question)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### resolutions.ClearResolutionNotAuthor
+### resolutions.ClearResolution:not-author
 
 ```reaction
 when RequestBoundary.request (session, question, requestId, path: "/resolutions/clear")
@@ -5444,7 +5439,18 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### resolutions.GetResolution
+### resolutions.ClearResolution:hidden
+
+```reaction
+when RequestBoundary.request (session, question, requestId, path: "/resolutions/clear")
+where
+  the active user of (session) (session)
+  (post) is not readable (post: question)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### resolutions.GetResolution:success
 
 ```reaction
 when RequestBoundary.request (question, requestId, path: "/resolutions/get")
@@ -5454,7 +5460,7 @@ then
   request RequestBoundary.respond (resolution: the resolution of (question) (question), requestId)
 ```
 
-### resolutions.GetResolutionHidden
+### resolutions.GetResolution:hidden
 
 ```reaction
 when RequestBoundary.request (question, requestId, path: "/resolutions/get")
@@ -5464,7 +5470,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### resolutions.IsResolved
+### resolutions.IsResolved:success
 
 ```reaction
 when RequestBoundary.request (question, requestId, path: "/resolutions/isResolved")
@@ -5475,7 +5481,7 @@ then
   request RequestBoundary.respond (resolved, requestId)
 ```
 
-### resolutions.IsResolvedHidden
+### resolutions.IsResolved:hidden
 
 ```reaction
 when RequestBoundary.request (question, requestId, path: "/resolutions/isResolved")
@@ -5485,17 +5491,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### resolutions.PurgeClearsAnsweringResolutions
-
-```reaction
-when Trashing.purge (item)
-where
-  Resolving._getQuestionsAnswered (answer: item) has (question) and not (question: item)
-then
-  request Resolving.clear (question)
-```
-
-### resolutions.PurgeClearsQuestionResolution
+### resolutions.PurgedPostClearsResolutions:question
 
 ```reaction
 when Trashing.purge (item)
@@ -5505,7 +5501,17 @@ then
   request Resolving.clear (question: item)
 ```
 
-### revisions.GetRevision
+### resolutions.PurgedPostClearsResolutions:answer
+
+```reaction
+when Trashing.purge (item)
+where
+  Resolving._getQuestionsAnswered (answer: item) has (question) and not (question: item)
+then
+  request Resolving.clear (question)
+```
+
+### revisions.GetRevision:success
 
 ```reaction
 when RequestBoundary.request (item, number, requestId, path: "/revisions/get")
@@ -5516,7 +5522,7 @@ then
   request RequestBoundary.respond (revision: the revision numbered (number) of (item) (number, item), requestId)
 ```
 
-### revisions.GetRevisionHidden
+### revisions.GetRevision:hidden
 
 ```reaction
 when RequestBoundary.request (item, number, requestId, path: "/revisions/get")
@@ -5526,7 +5532,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.GetRevisionMissing
+### revisions.GetRevision:missing
 
 ```reaction
 when RequestBoundary.request (item, number, requestId, path: "/revisions/get")
@@ -5536,7 +5542,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.LatestRevision
+### revisions.LatestRevision:success
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/revisions/latest")
@@ -5547,7 +5553,7 @@ then
   request RequestBoundary.respond (revision: the latest revision of (item) (item), requestId)
 ```
 
-### revisions.LatestRevisionHidden
+### revisions.LatestRevision:hidden
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/revisions/latest")
@@ -5557,7 +5563,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.LatestRevisionMissing
+### revisions.LatestRevision:missing
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/revisions/latest")
@@ -5567,7 +5573,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.ListRevisions
+### revisions.ListRevisions:success
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/revisions/list")
@@ -5578,7 +5584,7 @@ then
   request RequestBoundary.respond (revisions: the revision history of (item) (item), requestId)
 ```
 
-### revisions.ListRevisionsHidden
+### revisions.ListRevisions:hidden
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/revisions/list")
@@ -5588,7 +5594,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.ListRevisionsMissing
+### revisions.ListRevisions:missing
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/revisions/list")
@@ -5598,43 +5604,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.ModeratorGetHidden
-
-```reaction
-when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
-where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### revisions.ModeratorGetLive
-
-```reaction
-when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
-where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  Posting._getPost (post: item)
-  (item) is intact (item)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### revisions.ModeratorGetMissing
-
-```reaction
-when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
-where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  no Posting._getPost (post: item)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### revisions.ModeratorGetRevision
+### revisions.ModeratorGetRevision:revision
 
 ```reaction
 when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
@@ -5647,10 +5617,10 @@ then
   request RequestBoundary.respond (revision: the revision numbered (number) of (item) (number, item), requestId)
 ```
 
-### revisions.ModeratorLatestHidden
+### revisions.ModeratorGetRevision:hidden
 
 ```reaction
-when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
+when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
 where
   the active user of (session) (session) has (user)
   (user) may not moderate (user)
@@ -5658,10 +5628,22 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.ModeratorLatestLive
+### revisions.ModeratorGetRevision:missing
 
 ```reaction
-when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
+when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
+where
+  the active user of (session) (session) has (user)
+  (user) may moderate (user)
+  no Posting._getPost (post: item)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### revisions.ModeratorGetRevision:live
+
+```reaction
+when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
 where
   the active user of (session) (session) has (user)
   (user) may moderate (user)
@@ -5671,19 +5653,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.ModeratorLatestMissing
-
-```reaction
-when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
-where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  no Posting._getPost (post: item)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### revisions.ModeratorLatestRevision
+### revisions.ModeratorLatestRevision:revision
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
@@ -5696,7 +5666,56 @@ then
   request RequestBoundary.respond (revision: the latest revision of (item) (item), requestId)
 ```
 
-### revisions.ModeratorListHidden
+### revisions.ModeratorLatestRevision:hidden
+
+```reaction
+when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
+where
+  the active user of (session) (session) has (user)
+  (user) may not moderate (user)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### revisions.ModeratorLatestRevision:missing
+
+```reaction
+when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
+where
+  the active user of (session) (session) has (user)
+  (user) may moderate (user)
+  no Posting._getPost (post: item)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### revisions.ModeratorLatestRevision:live
+
+```reaction
+when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
+where
+  the active user of (session) (session) has (user)
+  (user) may moderate (user)
+  Posting._getPost (post: item)
+  (item) is intact (item)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### revisions.ModeratorListRevisions:revisions
+
+```reaction
+when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/list")
+where
+  the active user of (session) (session) has (user)
+  (user) may moderate (user)
+  Posting._getPost (post: item)
+  Trashing._isTrashed (item) has (trashed: true)
+then
+  request RequestBoundary.respond (revisions: the revision history of (item) (item), requestId)
+```
+
+### revisions.ModeratorListRevisions:hidden
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/list")
@@ -5707,20 +5726,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.ModeratorListLive
-
-```reaction
-when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/list")
-where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  Posting._getPost (post: item)
-  (item) is intact (item)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### revisions.ModeratorListMissing
+### revisions.ModeratorListRevisions:missing
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/list")
@@ -5732,7 +5738,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### revisions.ModeratorListRevisions
+### revisions.ModeratorListRevisions:live
 
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/list")
@@ -5740,9 +5746,9 @@ where
   the active user of (session) (session) has (user)
   (user) may moderate (user)
   Posting._getPost (post: item)
-  Trashing._isTrashed (item) has (trashed: true)
+  (item) is intact (item)
 then
-  request RequestBoundary.respond (revisions: the revision history of (item) (item), requestId)
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.PurgeClearsRevisions
@@ -5769,7 +5775,7 @@ then
   request Revising.record (item: post, content, at)
 ```
 
-### roles.DefineRole
+### roles.DefineRole:success
 
 ```reaction
 when RequestBoundary.request (session, name, capabilities, requestId, path: "/roles/define")
@@ -5780,17 +5786,17 @@ then
   request Roling.defineRole (name, capabilities)
 ```
 
-### roles.DefineRole#2
+### roles.DefineRole:success#2
 
 ```reaction
-when Roling.defineRole (name, capabilities, role), asked by roles.DefineRole
+when Roling.defineRole (name, capabilities, role), asked by roles.DefineRole:success
 where
   earlier, RequestBoundary.request (session, name, capabilities, requestId, path: "/roles/define")
 then
   request RequestBoundary.respond (role, requestId)
 ```
 
-### roles.DefineRoleForbidden
+### roles.DefineRole:forbidden
 
 ```reaction
 when RequestBoundary.request (session, name, capabilities, requestId, path: "/roles/define")
@@ -5801,7 +5807,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### roles.GrantRole
+### roles.GrantRole:success
 
 ```reaction
 when RequestBoundary.request (session, user, context, role, requestId, path: "/roles/grant")
@@ -5814,17 +5820,17 @@ then
   request Roling.grant (user: subject, context, role: resolved)
 ```
 
-### roles.GrantRole#2
+### roles.GrantRole:success#2
 
 ```reaction
-when Roling.grant (user: subject, context, role: resolved, grant), asked by roles.GrantRole
+when Roling.grant (user: subject, context, role: resolved, grant), asked by roles.GrantRole:success
 where
   earlier, RequestBoundary.request (session, user, context, role, requestId, path: "/roles/grant")
 then
   request RequestBoundary.respond (grant, requestId)
 ```
 
-### roles.GrantRoleForbidden
+### roles.GrantRole:forbidden
 
 ```reaction
 when RequestBoundary.request (session, user, context, role, requestId, path: "/roles/grant")
@@ -5835,7 +5841,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### roles.RevokeRole
+### roles.RevokeRole:success
 
 ```reaction
 when RequestBoundary.request (session, user, context, role, requestId, path: "/roles/revoke")
@@ -5848,17 +5854,17 @@ then
   request Roling.revoke (user: subject, context, role: resolved)
 ```
 
-### roles.RevokeRole#2
+### roles.RevokeRole:success#2
 
 ```reaction
-when Roling.revoke (user: subject, context, role: resolved, grant), asked by roles.RevokeRole
+when Roling.revoke (user: subject, context, role: resolved, grant), asked by roles.RevokeRole:success
 where
   earlier, RequestBoundary.request (session, user, context, role, requestId, path: "/roles/revoke")
 then
   request RequestBoundary.respond (grant, requestId)
 ```
 
-### roles.RevokeRoleForbidden
+### roles.RevokeRole:forbidden
 
 ```reaction
 when RequestBoundary.request (session, user, context, role, requestId, path: "/roles/revoke")
@@ -5907,7 +5913,7 @@ then
   request RequestBoundary.respond (roles: the roles held by (user) in (context) (user: subject, context), requestId)
 ```
 
-### roster.ClaimSeat:case-1
+### roster.ClaimSeat:matched-seat
 
 ```reaction
 when RequestBoundary.request (session, externalKey, requestId, path: "/roster/claim-seat")
@@ -5918,17 +5924,17 @@ then
   request Rostering.claimSeat (seat, user)
 ```
 
-### roster.ClaimSeat:case-1#2
+### roster.ClaimSeat:matched-seat#2
 
 ```reaction
-when Rostering.claimSeat (seat, user, result.seat: claimed), asked by roster.ClaimSeat:case-1
+when Rostering.claimSeat (seat, user, result.seat: claimed), asked by roster.ClaimSeat:matched-seat
 where
   earlier, RequestBoundary.request (session, externalKey, requestId, path: "/roster/claim-seat")
 then
   request RequestBoundary.respond (seat: claimed, requestId)
 ```
 
-### roster.ClaimSeat:case-2
+### roster.ClaimSeat:missing-seat
 
 ```reaction
 when RequestBoundary.request (session, externalKey, requestId, path: "/roster/claim-seat")
@@ -5939,7 +5945,7 @@ then
   request RequestBoundary.respond (error: "SEAT_NOT_FOUND", requestId)
 ```
 
-### roster.ConfigureClass
+### roster.ConfigureClass:success
 
 ```reaction
 when RequestBoundary.request (session, code, title, term, timezone, requestId, path: "/roster/configure-class")
@@ -5950,17 +5956,17 @@ then
   request Rostering.configureClass (code, title, term, timezone)
 ```
 
-### roster.ConfigureClass#2
+### roster.ConfigureClass:success#2
 
 ```reaction
-when Rostering.configureClass (code, title, term, timezone, class), asked by roster.ConfigureClass
+when Rostering.configureClass (code, title, term, timezone, class), asked by roster.ConfigureClass:success
 where
   earlier, RequestBoundary.request (session, code, title, term, timezone, requestId, path: "/roster/configure-class")
 then
   request RequestBoundary.respond (class, requestId)
 ```
 
-### roster.ConfigureClassForbidden
+### roster.ConfigureClass:forbidden
 
 ```reaction
 when RequestBoundary.request (session, code, title, term, timezone, requestId, path: "/roster/configure-class")
@@ -6030,7 +6036,7 @@ then
   request RequestBoundary.respond (rows, requestId)
 ```
 
-### roster.ImportSeats
+### roster.ImportSeats:success
 
 ```reaction
 when RequestBoundary.request (session, rows, requestId, path: "/roster/import")
@@ -6041,17 +6047,17 @@ then
   request Rostering.importSeats (rows)
 ```
 
-### roster.ImportSeats#2
+### roster.ImportSeats:success#2
 
 ```reaction
-when Rostering.importSeats (rows, created, skipped), asked by roster.ImportSeats
+when Rostering.importSeats (rows, created, skipped), asked by roster.ImportSeats:success
 where
   earlier, RequestBoundary.request (session, rows, requestId, path: "/roster/import")
 then
   request RequestBoundary.respond (created, skipped, requestId)
 ```
 
-### roster.ImportSeatsForbidden
+### roster.ImportSeats:forbidden
 
 ```reaction
 when RequestBoundary.request (session, rows, requestId, path: "/roster/import")
@@ -6062,7 +6068,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### roster.LinkUser
+### roster.LinkUser:success
 
 ```reaction
 when RequestBoundary.request (session, seat, user, requestId, path: "/roster/link-user")
@@ -6073,17 +6079,17 @@ then
   request Rostering.claimSeat (seat, user)
 ```
 
-### roster.LinkUser#2
+### roster.LinkUser:success#2
 
 ```reaction
-when Rostering.claimSeat (seat, user, result.seat: linked), asked by roster.LinkUser
+when Rostering.claimSeat (seat, user, result.seat: linked), asked by roster.LinkUser:success
 where
   earlier, RequestBoundary.request (session, seat, user, requestId, path: "/roster/link-user")
 then
   request RequestBoundary.respond (seat: linked, requestId)
 ```
 
-### roster.LinkUserForbidden
+### roster.LinkUser:forbidden
 
 ```reaction
 when RequestBoundary.request (session, seat, user, requestId, path: "/roster/link-user")
@@ -6094,7 +6100,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### roster.MoveSection
+### roster.MoveSection:success
 
 ```reaction
 when RequestBoundary.request (session, seat, section, requestId, path: "/roster/move-section")
@@ -6105,17 +6111,17 @@ then
   request Rostering.moveSection (seat, section)
 ```
 
-### roster.MoveSection#2
+### roster.MoveSection:success#2
 
 ```reaction
-when Rostering.moveSection (seat, section, result.seat: moved), asked by roster.MoveSection
+when Rostering.moveSection (seat, section, result.seat: moved), asked by roster.MoveSection:success
 where
   earlier, RequestBoundary.request (session, seat, section, requestId, path: "/roster/move-section")
 then
   request RequestBoundary.respond (seat: moved, requestId)
 ```
 
-### roster.MoveSectionForbidden
+### roster.MoveSection:forbidden
 
 ```reaction
 when RequestBoundary.request (session, seat, section, requestId, path: "/roster/move-section")
@@ -6126,7 +6132,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### roster.ReinstateSeat
+### roster.ReinstateSeat:success
 
 ```reaction
 when RequestBoundary.request (session, seat, requestId, path: "/roster/reinstate")
@@ -6137,17 +6143,17 @@ then
   request Rostering.reinstateSeat (seat)
 ```
 
-### roster.ReinstateSeat#2
+### roster.ReinstateSeat:success#2
 
 ```reaction
-when Rostering.reinstateSeat (seat, result.seat: reinstated), asked by roster.ReinstateSeat
+when Rostering.reinstateSeat (seat, result.seat: reinstated), asked by roster.ReinstateSeat:success
 where
   earlier, RequestBoundary.request (session, seat, requestId, path: "/roster/reinstate")
 then
   request RequestBoundary.respond (seat: reinstated, requestId)
 ```
 
-### roster.ReinstateSeatForbidden
+### roster.ReinstateSeat:forbidden
 
 ```reaction
 when RequestBoundary.request (session, seat, requestId, path: "/roster/reinstate")
@@ -6158,7 +6164,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### roster.RosterList
+### roster.RosterList:success
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/list")
@@ -6169,7 +6175,7 @@ then
   request RequestBoundary.respond (members: the roster () (), requestId)
 ```
 
-### roster.RosterListForbidden
+### roster.RosterList:forbidden
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/list")
@@ -6180,7 +6186,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### roster.RosterMe:case-1
+### roster.RosterMe:found
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/me")
@@ -6191,7 +6197,7 @@ then
   request RequestBoundary.respond (seat, requestId)
 ```
 
-### roster.RosterMe:case-2
+### roster.RosterMe:absent
 
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/me")
@@ -6202,7 +6208,7 @@ then
   request RequestBoundary.respond (seat: null, requestId)
 ```
 
-### roster.SectionsCreate
+### roster.SectionsCreate:success
 
 ```reaction
 when RequestBoundary.request (session, name, location, meetingPattern, requestId, path: "/roster/sections/create")
@@ -6213,17 +6219,17 @@ then
   request Rostering.createSection (name, location, meetingPattern)
 ```
 
-### roster.SectionsCreate#2
+### roster.SectionsCreate:success#2
 
 ```reaction
-when Rostering.createSection (name, location, meetingPattern, section), asked by roster.SectionsCreate
+when Rostering.createSection (name, location, meetingPattern, section), asked by roster.SectionsCreate:success
 where
   earlier, RequestBoundary.request (session, name, location, meetingPattern, requestId, path: "/roster/sections/create")
 then
   request RequestBoundary.respond (section, requestId)
 ```
 
-### roster.SectionsCreateForbidden
+### roster.SectionsCreate:forbidden
 
 ```reaction
 when RequestBoundary.request (session, name, location, meetingPattern, requestId, path: "/roster/sections/create")
@@ -6242,7 +6248,7 @@ then
   request RequestBoundary.respond (sections: the sections () (), requestId)
 ```
 
-### roster.SectionsUpdate
+### roster.SectionsUpdate:success
 
 ```reaction
 when RequestBoundary.request (session, section, name, location, meetingPattern, requestId, path: "/roster/sections/update")
@@ -6253,17 +6259,17 @@ then
   request Rostering.updateSection (section, name, location, meetingPattern)
 ```
 
-### roster.SectionsUpdate#2
+### roster.SectionsUpdate:success#2
 
 ```reaction
-when Rostering.updateSection (section, name, location, meetingPattern, result.section: updated), asked by roster.SectionsUpdate
+when Rostering.updateSection (section, name, location, meetingPattern, result.section: updated), asked by roster.SectionsUpdate:success
 where
   earlier, RequestBoundary.request (session, section, name, location, meetingPattern, requestId, path: "/roster/sections/update")
 then
   request RequestBoundary.respond (section: updated, requestId)
 ```
 
-### roster.SectionsUpdateForbidden
+### roster.SectionsUpdate:forbidden
 
 ```reaction
 when RequestBoundary.request (session, section, name, location, meetingPattern, requestId, path: "/roster/sections/update")
@@ -6294,7 +6300,7 @@ then
   request Roling.grant (user: claimer, context: "forum", role)
 ```
 
-### submissions.Attempts
+### submissions.Attempts:attempts
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/attempts")
@@ -6305,7 +6311,19 @@ then
   request RequestBoundary.respond (attempts: the attempts for (assignment) by (submitter) (assignment, submitter), requestId)
 ```
 
-### submissions.AttemptsHidden
+### submissions.Attempts:staff-attempts
+
+```reaction
+when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/attempts")
+where
+  the active user of (session) (session) has (user) and not (user: submitter)
+  (user) may view all submissions (user)
+  (user) is an active student (user: submitter)
+then
+  request RequestBoundary.respond (attempts: the attempts for (assignment) by (submitter) (assignment, submitter), requestId)
+```
+
+### submissions.Attempts:attempts-hidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/attempts")
@@ -6316,7 +6334,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### submissions.AttemptsMissing
+### submissions.Attempts:attempts-missing
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/attempts")
@@ -6327,7 +6345,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### submissions.ForAssignment
+### submissions.ForAssignment:success
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/submissions/for-assignment")
@@ -6338,7 +6356,7 @@ then
   request RequestBoundary.respond (assigned: the assigned population for (assignment) (assignment), submissions: the submissions for (assignment) (assignment), requestId)
 ```
 
-### submissions.ForAssignmentForbidden
+### submissions.ForAssignment:forbidden
 
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/submissions/for-assignment")
@@ -6349,7 +6367,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### submissions.ForStudent
+### submissions.ForStudent:for-student
 
 ```reaction
 when RequestBoundary.request (session, submitter, requestId, path: "/submissions/for-student")
@@ -6360,7 +6378,19 @@ then
   request RequestBoundary.respond (submissions: the submissions by (submitter) (submitter), requestId)
 ```
 
-### submissions.ForStudentHidden
+### submissions.ForStudent:staff-for-student
+
+```reaction
+when RequestBoundary.request (session, submitter, requestId, path: "/submissions/for-student")
+where
+  the active user of (session) (session) has (user) and not (user: submitter)
+  (user) may view all submissions (user)
+  (user) is an active student (user: submitter)
+then
+  request RequestBoundary.respond (submissions: the submissions by (submitter) (submitter), requestId)
+```
+
+### submissions.ForStudent:for-student-hidden
 
 ```reaction
 when RequestBoundary.request (session, submitter, requestId, path: "/submissions/for-student")
@@ -6371,7 +6401,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### submissions.ForStudentMissing
+### submissions.ForStudent:for-student-missing
 
 ```reaction
 when RequestBoundary.request (session, submitter, requestId, path: "/submissions/for-student")
@@ -6382,7 +6412,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### submissions.Latest:case-1
+### submissions.Latest:self-found
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
@@ -6394,7 +6424,7 @@ then
   request RequestBoundary.respond (submission: latest, requestId)
 ```
 
-### submissions.Latest:case-2
+### submissions.Latest:self-missing
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
@@ -6406,53 +6436,7 @@ then
   request RequestBoundary.respond (submission: null, requestId)
 ```
 
-### submissions.LatestHidden
-
-```reaction
-when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
-where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may not view all submissions (user)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### submissions.LatestMissing
-
-```reaction
-when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
-where
-  the active user of (session) (session)
-  (user) is not an active student (user: submitter)
-then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### submissions.StaffAttempts
-
-```reaction
-when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/attempts")
-where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may view all submissions (user)
-  (user) is an active student (user: submitter)
-then
-  request RequestBoundary.respond (attempts: the attempts for (assignment) by (submitter) (assignment, submitter), requestId)
-```
-
-### submissions.StaffForStudent
-
-```reaction
-when RequestBoundary.request (session, submitter, requestId, path: "/submissions/for-student")
-where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may view all submissions (user)
-  (user) is an active student (user: submitter)
-then
-  request RequestBoundary.respond (submissions: the submissions by (submitter) (submitter), requestId)
-```
-
-### submissions.StaffLatest:case-1
+### submissions.Latest:staff-found
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
@@ -6465,7 +6449,7 @@ then
   request RequestBoundary.respond (submission: latest, requestId)
 ```
 
-### submissions.StaffLatest:case-2
+### submissions.Latest:staff-missing
 
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
@@ -6478,7 +6462,29 @@ then
   request RequestBoundary.respond (submission: null, requestId)
 ```
 
-### subscriptions.IsSubscribed
+### submissions.Latest:latest-hidden
+
+```reaction
+when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
+where
+  the active user of (session) (session) has (user) and not (user: submitter)
+  (user) may not view all submissions (user)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### submissions.Latest:latest-missing
+
+```reaction
+when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
+where
+  the active user of (session) (session)
+  (user) is not an active student (user: submitter)
+then
+  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### subscriptions.IsSubscribed:success
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/isSubscribed")
@@ -6490,7 +6496,7 @@ then
   request RequestBoundary.respond (subscribed, requestId)
 ```
 
-### subscriptions.IsSubscribedHidden
+### subscriptions.IsSubscribed:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/isSubscribed")
@@ -6522,7 +6528,7 @@ then
   request Subscribing.clearTarget (target: conversation)
 ```
 
-### subscriptions.Subscribe
+### subscriptions.Subscribe:success
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/subscribe")
@@ -6534,17 +6540,17 @@ then
   request Subscribing.subscribe (user, target, at)
 ```
 
-### subscriptions.Subscribe#2
+### subscriptions.Subscribe:success#2
 
 ```reaction
-when Subscribing.subscribe (user, target, at, subscription), asked by subscriptions.Subscribe
+when Subscribing.subscribe (user, target, at, subscription), asked by subscriptions.Subscribe:success
 where
   earlier, RequestBoundary.request (session, target, requestId, path: "/subscriptions/subscribe")
 then
   request RequestBoundary.respond (subscription, requestId)
 ```
 
-### subscriptions.SubscribeHidden
+### subscriptions.Subscribe:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/subscribe")
@@ -6555,7 +6561,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### subscriptions.Subscribers
+### subscriptions.Subscribers:success
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/subscriptions/subscribers")
@@ -6565,7 +6571,7 @@ then
   request RequestBoundary.respond (subscribers: the subscribers of (target) (target), requestId)
 ```
 
-### subscriptions.SubscribersHidden
+### subscriptions.Subscribers:hidden
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/subscriptions/subscribers")
@@ -6575,7 +6581,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### subscriptions.Unsubscribe
+### subscriptions.Unsubscribe:success
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/unsubscribe")
@@ -6586,17 +6592,17 @@ then
   request Subscribing.unsubscribe (user, target)
 ```
 
-### subscriptions.Unsubscribe#2
+### subscriptions.Unsubscribe:success#2
 
 ```reaction
-when Subscribing.unsubscribe (user, target, subscription), asked by subscriptions.Unsubscribe
+when Subscribing.unsubscribe (user, target, subscription), asked by subscriptions.Unsubscribe:success
 where
   earlier, RequestBoundary.request (session, target, requestId, path: "/subscriptions/unsubscribe")
 then
   request RequestBoundary.respond (subscription, requestId)
 ```
 
-### subscriptions.UnsubscribeHidden
+### subscriptions.Unsubscribe:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/unsubscribe")
@@ -6607,7 +6613,7 @@ then
   request RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### tags.AddTag
+### tags.AddTag:success
 
 ```reaction
 when RequestBoundary.request (session, target, tag, requestId, path: "/tags/add")
@@ -6618,17 +6624,17 @@ then
   request Tagging.addTag (target, tag)
 ```
 
-### tags.AddTag#2
+### tags.AddTag:success#2
 
 ```reaction
-when Tagging.addTag (target, tag, result.target: tagged), asked by tags.AddTag
+when Tagging.addTag (target, tag, result.target: tagged), asked by tags.AddTag:success
 where
   earlier, RequestBoundary.request (session, target, tag, requestId, path: "/tags/add")
 then
   request RequestBoundary.respond (target: tagged, requestId)
 ```
 
-### tags.AddTagHidden
+### tags.AddTag:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, tag, requestId, path: "/tags/add")
@@ -6675,7 +6681,7 @@ then
   request Tagging.clearTarget (target: item)
 ```
 
-### tags.RemoveTag
+### tags.RemoveTag:success
 
 ```reaction
 when RequestBoundary.request (session, target, tag, requestId, path: "/tags/remove")
@@ -6686,17 +6692,17 @@ then
   request Tagging.removeTag (target, tag)
 ```
 
-### tags.RemoveTag#2
+### tags.RemoveTag:success#2
 
 ```reaction
-when Tagging.removeTag (target, tag, result.target: untagged), asked by tags.RemoveTag
+when Tagging.removeTag (target, tag, result.target: untagged), asked by tags.RemoveTag:success
 where
   earlier, RequestBoundary.request (session, target, tag, requestId, path: "/tags/remove")
 then
   request RequestBoundary.respond (target: untagged, requestId)
 ```
 
-### tags.RemoveTagHidden
+### tags.RemoveTag:hidden
 
 ```reaction
 when RequestBoundary.request (session, target, tag, requestId, path: "/tags/remove")
@@ -6723,7 +6729,7 @@ then
   request RequestBoundary.respond (targets: the targets tagged with (name) (name), requestId)
 ```
 
-### tags.TagsForTarget
+### tags.TagsForTarget:success
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/tags/forTarget")
@@ -6733,7 +6739,7 @@ then
   request RequestBoundary.respond (tags: the tags on (target) (target), requestId)
 ```
 
-### tags.TagsForTargetHidden
+### tags.TagsForTarget:hidden
 
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/tags/forTarget")
@@ -6772,7 +6778,15 @@ then
   request RequestBoundary.respond (post, conversation, node, requestId)
 ```
 
-### threads.DerivePostLinks
+### threads.CreatedPostRefreshesDerivedContent:render
+
+```reaction
+when Posting.create (content, post)
+then
+  request Formatting.setSource (target: post, source: content)
+```
+
+### threads.CreatedPostRefreshesDerivedContent:links
 
 ```reaction
 when Posting.create (content, post)
@@ -6780,7 +6794,7 @@ then
   request Linking.setLinksFrom (source: post, content)
 ```
 
-### threads.ForItem:case-1
+### threads.ForItem:found
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/threads/forItem")
@@ -6790,7 +6804,7 @@ then
   request RequestBoundary.respond (conversation, requestId)
 ```
 
-### threads.ForItem:case-2
+### threads.ForItem:absent
 
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/threads/forItem")
@@ -6824,15 +6838,7 @@ then
   request RequestBoundary.respond (conversations: the home feed by creation () (), requestId)
 ```
 
-### threads.RenderPostSource
-
-```reaction
-when Posting.create (content, post)
-then
-  request Formatting.setSource (target: post, source: content)
-```
-
-### threads.ReplyToThread:case-1-1
+### threads.ReplyToThread:reply
 
 ```reaction
 when RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
@@ -6845,27 +6851,27 @@ then
   request Posting.create (author: user, content, at)
 ```
 
-### threads.ReplyToThread:case-1-1#2
+### threads.ReplyToThread:reply#2
 
 ```reaction
-when Posting.create (author: user, content, at, post), asked by threads.ReplyToThread:case-1-1
+when Posting.create (author: user, content, at, post), asked by threads.ReplyToThread:reply
 where
   earlier, RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 then
   request Conversing.reply (item: post, parent, at)
 ```
 
-### threads.ReplyToThread:case-1-1#3
+### threads.ReplyToThread:reply#3
 
 ```reaction
-when Conversing.reply (item: post, parent, at, node), asked by threads.ReplyToThread:case-1-1#2
+when Conversing.reply (item: post, parent, at, node), asked by threads.ReplyToThread:reply#2
 where
   earlier, RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 then
   request RequestBoundary.respond (post, node, requestId)
 ```
 
-### threads.ReplyToThread:case-1-2
+### threads.ReplyToThread:locked
 
 ```reaction
 when RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
@@ -6877,7 +6883,7 @@ then
   request RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### threads.ReplyToThread:case-2
+### threads.ReplyToThread:missing-parent
 
 ```reaction
 when RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")

@@ -45,233 +45,196 @@ export const theLateDayUsesOf = former(
 export const ConfigurePolicy = endpoint(
   "/late-days/configure-policy",
   ({ session, defaultDays, unitHours, maxDaysPerItem, user }) =>
-    receive({ session, defaultDays, unitHours, maxDaysPerItem })
-      .where(activeUser({ session }).is({ user }), mayManageLateDays({ user }))
-      .then(
-        Banking.setTerms({
-          allowance: defaultDays,
-          perItemLimit: maxDaysPerItem,
-          unitHours,
-        }),
-      )
-      .then(respond({ policy: true })),
+    receive({ session, defaultDays, unitHours, maxDaysPerItem }).then(
+      where(activeUser({ session }).is({ user }), mayManageLateDays({ user }))
+        .then(
+          Banking.setTerms({
+            allowance: defaultDays,
+            perItemLimit: maxDaysPerItem,
+            unitHours,
+          }),
+        )
+        .then(respond({ policy: true }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session", "defaultDays", "unitHours", "maxDaysPerItem"] } },
-);
-
-export const ConfigurePolicyForbidden = endpoint(
-  "/late-days/configure-policy",
-  ({ session, defaultDays, unitHours, maxDaysPerItem, user }) =>
-    receive({ session, defaultDays, unitHours, maxDaysPerItem })
-      .where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
 );
 
 export const Grant = endpoint(
   "/late-days/grant",
   ({ session, learner, days, reason, user, at, grant }) =>
-    receive({ session, learner, days, reason })
-      .where(
+    receive({ session, learner, days, reason }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         mayManageLateDays({ user }),
       )
-      .then(Banking.grant({ learner, days, reason, at }).responds({ grant }))
-      .then(respond({ grant })),
+        .then(Banking.grant({ learner, days, reason, at }).responds({ grant }))
+        .then(respond({ grant }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session", "learner", "days", "reason"] } },
-);
-
-export const GrantForbidden = endpoint(
-  "/late-days/grant",
-  ({ session, learner, days, reason, user }) =>
-    receive({ session, learner, days, reason })
-      .where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
 );
 
 export const Apply = endpoint(
   "/late-days/apply",
   ({ session, assignment, days, user, at, use }) =>
-    receive({ session, assignment, days })
-      .where(
+    receive({ session, assignment, days }).then(
+      where(
         Timing._now({}).is({ at }),
         activeUser({ session }).is({ user }),
         isActiveStudent({ user }),
       )
-      .then(Banking.apply({ learner: user, item: assignment, days, at }).responds({ use }))
-      .then(respond({ use })),
+        .then(Banking.apply({ learner: user, item: assignment, days, at }).responds({ use }))
+        .then(respond({ use }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session", "assignment", "days"] } },
-);
-
-export const ApplyForbidden = endpoint("/late-days/apply", ({ session, assignment, days, user }) =>
-  receive({ session, assignment, days })
-    .where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
 );
 
 export const Change = endpoint(
   "/late-days/change",
   ({ session, assignment, days, user, use }) =>
-    receive({ session, assignment, days })
-      .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(Banking.change({ learner: user, item: assignment, days }).responds({ use }))
-      .then(respond({ use })),
+    receive({ session, assignment, days }).then(
+      where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
+        .then(Banking.change({ learner: user, item: assignment, days }).responds({ use }))
+        .then(respond({ use }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session", "assignment", "days"] } },
-);
-
-export const ChangeForbidden = endpoint(
-  "/late-days/change",
-  ({ session, assignment, days, user }) =>
-    receive({ session, assignment, days })
-      .where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
 );
 
 export const Cancel = endpoint(
   "/late-days/cancel",
   ({ session, assignment, user, use }) =>
-    receive({ session, assignment })
-      .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(Banking.cancel({ learner: user, item: assignment }).responds({ use }))
-      .then(respond({ use })),
+    receive({ session, assignment }).then(
+      where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
+        .then(Banking.cancel({ learner: user, item: assignment }).responds({ use }))
+        .then(respond({ use }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session", "assignment"] } },
-);
-
-export const CancelForbidden = endpoint("/late-days/cancel", ({ session, assignment, user }) =>
-  receive({ session, assignment })
-    .where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
 );
 
 export const List = endpoint(
   "/late-days/list",
   ({ session, user }) =>
-    receive({ session })
-      .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(respond({ uses: theLateDayUsesOf({ learner: user }) })),
+    receive({ session }).then(
+      where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
+        .then(respond({ uses: theLateDayUsesOf({ learner: user }) }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session"] } },
-);
-
-export const ListForbidden = endpoint("/late-days/list", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
 );
 
 export const Balance = endpoint(
   "/late-days/balance",
-  ({ session, learner }) =>
-    receive({ session, learner })
-      .where(activeUser({ session }).is({ user: learner }), isActiveStudent({ user: learner }))
-      .then(respond({ balance: theLateDayBalanceOf({ learner }) })),
+  ({ session, learner, user }) =>
+    receive({ session, learner }).then(
+      where(activeUser({ session }).is({ user: learner }), isActiveStudent({ user: learner }))
+        .then(respond({ balance: theLateDayBalanceOf({ learner }) }))
+        .named("balance"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageLateDays({ user }),
+        isActiveStudent({ user: learner }),
+      )
+        .then(respond({ balance: theLateDayBalanceOf({ learner }) }))
+        .named("staff-balance"),
+      where(
+        activeUser({ session }).is({ user }).is.not({ user: learner }),
+        mayNotManageLateDays({ user }),
+        isActiveStudent({ user: learner }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("balance-unauthorized"),
+      where(activeUser({ session }), isNotActiveStudent({ user: learner }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("balance-missing"),
+    ),
   { input: { required: ["session", "learner"] } },
-);
-
-export const StaffBalance = endpoint("/late-days/balance", ({ session, learner, user }) =>
-  receive({ session, learner })
-    .where(
-      activeUser({ session }).is({ user }),
-      mayManageLateDays({ user }),
-      isActiveStudent({ user: learner }),
-    )
-    .then(respond({ balance: theLateDayBalanceOf({ learner }) })),
-);
-
-export const BalanceUnauthorized = endpoint("/late-days/balance", ({ session, learner, user }) =>
-  receive({ session, learner })
-    .where(
-      activeUser({ session }).is({ user }).is.not({ user: learner }),
-      mayNotManageLateDays({ user }),
-      isActiveStudent({ user: learner }),
-    )
-    .then(respond({ error: "NOT_FOUND" })),
-);
-
-export const BalanceMissing = endpoint("/late-days/balance", ({ session, learner }) =>
-  receive({ session, learner })
-    .where(activeUser({ session }), isNotActiveStudent({ user: learner }))
-    .then(respond({ error: "NOT_FOUND" })),
 );
 
 export const StaffChange = endpoint(
   "/late-days/staff-change",
   ({ session, learner, assignment, days, user, use }) =>
-    receive({ session, learner, assignment, days })
-      .where(
+    receive({ session, learner, assignment, days }).then(
+      where(
         activeUser({ session }).is({ user }),
         mayManageLateDays({ user }),
         isActiveStudent({ user: learner }),
       )
-      .then(Banking.change({ learner, item: assignment, days }).responds({ use }))
-      .then(respond({ use })),
+        .then(Banking.change({ learner, item: assignment, days }).responds({ use }))
+        .then(respond({ use }))
+        .named("success"),
+      where(activeUser({ session }), isNotActiveStudent({ user: learner }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayNotManageLateDays({ user }),
+        isActiveStudent({ user: learner }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unauthorized"),
+    ),
   { input: { required: ["session", "learner", "assignment", "days"] } },
 );
 
 export const StaffCancel = endpoint(
   "/late-days/staff-cancel",
   ({ session, learner, assignment, user, use }) =>
-    receive({ session, learner, assignment })
-      .where(
+    receive({ session, learner, assignment }).then(
+      where(
         activeUser({ session }).is({ user }),
         mayManageLateDays({ user }),
         isActiveStudent({ user: learner }),
       )
-      .then(Banking.cancel({ learner, item: assignment }).responds({ use }))
-      .then(respond({ use })),
+        .then(Banking.cancel({ learner, item: assignment }).responds({ use }))
+        .then(respond({ use }))
+        .named("success"),
+      where(activeUser({ session }), isNotActiveStudent({ user: learner }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayNotManageLateDays({ user }),
+        isActiveStudent({ user: learner }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unauthorized"),
+    ),
   { input: { required: ["session", "learner", "assignment"] } },
-);
-
-export const StaffChangeHidden = endpoint(
-  "/late-days/staff-change",
-  ({ session, learner, assignment, days }) =>
-    receive({ session, learner, assignment, days })
-      .where(activeUser({ session }), isNotActiveStudent({ user: learner }))
-      .then(respond({ error: "NOT_FOUND" })),
-);
-
-export const StaffCancelHidden = endpoint(
-  "/late-days/staff-cancel",
-  ({ session, learner, assignment }) =>
-    receive({ session, learner, assignment })
-      .where(activeUser({ session }), isNotActiveStudent({ user: learner }))
-      .then(respond({ error: "NOT_FOUND" })),
-);
-
-export const StaffChangeUnauthorized = endpoint(
-  "/late-days/staff-change",
-  ({ session, learner, assignment, days, user }) =>
-    receive({ session, learner, assignment, days })
-      .where(
-        activeUser({ session }).is({ user }),
-        mayNotManageLateDays({ user }),
-        isActiveStudent({ user: learner }),
-      )
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const StaffCancelUnauthorized = endpoint(
-  "/late-days/staff-cancel",
-  ({ session, learner, assignment, user }) =>
-    receive({ session, learner, assignment })
-      .where(
-        activeUser({ session }).is({ user }),
-        mayNotManageLateDays({ user }),
-        isActiveStudent({ user: learner }),
-      )
-      .then(respond({ error: "NOT_FOUND" })),
 );
 
 export const ForAssignment = endpoint(
   "/late-days/for-assignment",
   ({ session, assignment, user }) =>
-    receive({ session, assignment })
-      .where(activeUser({ session }).is({ user }), mayManageLateDays({ user }))
-      .then(respond({ users: theLateDayUsesOn({ assignment }) })),
+    receive({ session, assignment }).then(
+      where(activeUser({ session }).is({ user }), mayManageLateDays({ user }))
+        .then(respond({ users: theLateDayUsesOn({ assignment }) }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   { input: { required: ["session", "assignment"] } },
-);
-
-export const ForAssignmentForbidden = endpoint(
-  "/late-days/for-assignment",
-  ({ session, assignment, user }) =>
-    receive({ session, assignment })
-      .where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
 );

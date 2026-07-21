@@ -1,4 +1,4 @@
-import { each, former } from "@mit-sdg/sync-engine/language";
+import { each, former, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { notReadable, readable } from "./posts.ts";
@@ -22,27 +22,27 @@ export const theForwardLinksOf = former("the forward links of (source)", ({ sour
 export const Backlinks = endpoint(
   "/links/backlinks",
   ({ target }) =>
-    receive({ target })
-      .where(readable({ post: target }))
-      .then(respond({ sources: theBacklinksOf({ target }) })),
+    receive({ target }).then(
+      where(readable({ post: target }))
+        .then(respond({ sources: theBacklinksOf({ target }) }))
+        .named("success"),
+      where(notReadable({ post: target }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
   { input: { required: ["target"] } },
 );
 
 export const Forward = endpoint(
   "/links/forward",
   ({ source }) =>
-    receive({ source })
-      .where(readable({ post: source }))
-      .then(respond({ targets: theForwardLinksOf({ source }) })),
+    receive({ source }).then(
+      where(readable({ post: source }))
+        .then(respond({ targets: theForwardLinksOf({ source }) }))
+        .named("success"),
+      where(notReadable({ post: source }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
   { input: { required: ["source"] } },
-);
-export const BacklinksHidden = endpoint("/links/backlinks", ({ target }) =>
-  receive({ target })
-    .where(notReadable({ post: target }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const ForwardHidden = endpoint("/links/forward", ({ source }) =>
-  receive({ source })
-    .where(notReadable({ post: source }))
-    .then(respond({ error: "NOT_FOUND" })),
 );

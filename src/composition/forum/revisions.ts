@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, no, reaction, when } from "@mit-sdg/sync-engine/language";
+import { each, former, no, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
@@ -59,182 +59,147 @@ export const PurgeClearsRevisions = reaction(({ item }) =>
 export const ListRevisions = endpoint(
   "/revisions/list",
   ({ item }) =>
-    receive({ item })
-      .where(Posting._getPost({ post: item }), intact({ item }))
-      .then(respond({ revisions: theRevisionHistoryOf({ item }) })),
+    receive({ item }).then(
+      where(Posting._getPost({ post: item }), intact({ item }))
+        .then(respond({ revisions: theRevisionHistoryOf({ item }) }))
+        .named("success"),
+      where(Trashing._isTrashed({ item }).is({ trashed: true }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+      where(no(Posting._getPost({ post: item })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+    ),
   { input: { required: ["item"] } },
 );
 
 export const GetRevision = endpoint(
   "/revisions/get",
   ({ item, number }) =>
-    receive({ item, number })
-      .where(Posting._getPost({ post: item }), intact({ item }))
-      .then(respond({ revision: theRevisionNumberedOf({ number, item }) })),
+    receive({ item, number }).then(
+      where(Posting._getPost({ post: item }), intact({ item }))
+        .then(respond({ revision: theRevisionNumberedOf({ number, item }) }))
+        .named("success"),
+      where(Trashing._isTrashed({ item }).is({ trashed: true }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+      where(no(Posting._getPost({ post: item })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+    ),
   { input: { required: ["item", "number"] } },
 );
 
 export const LatestRevision = endpoint(
   "/revisions/latest",
   ({ item }) =>
-    receive({ item })
-      .where(Posting._getPost({ post: item }), intact({ item }))
-      .then(respond({ revision: theLatestRevisionOf({ item }) })),
+    receive({ item }).then(
+      where(Posting._getPost({ post: item }), intact({ item }))
+        .then(respond({ revision: theLatestRevisionOf({ item }) }))
+        .named("success"),
+      where(Trashing._isTrashed({ item }).is({ trashed: true }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+      where(no(Posting._getPost({ post: item })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+    ),
   { input: { required: ["item"] } },
-);
-
-export const ListRevisionsHidden = endpoint("/revisions/list", ({ item }) =>
-  receive({ item })
-    .where(Trashing._isTrashed({ item }).is({ trashed: true }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const GetRevisionHidden = endpoint("/revisions/get", ({ item, number }) =>
-  receive({ item, number })
-    .where(Trashing._isTrashed({ item }).is({ trashed: true }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const LatestRevisionHidden = endpoint("/revisions/latest", ({ item }) =>
-  receive({ item })
-    .where(Trashing._isTrashed({ item }).is({ trashed: true }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const ListRevisionsMissing = endpoint("/revisions/list", ({ item }) =>
-  receive({ item })
-    .where(no(Posting._getPost({ post: item })))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const GetRevisionMissing = endpoint("/revisions/get", ({ item, number }) =>
-  receive({ item, number })
-    .where(no(Posting._getPost({ post: item })))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const LatestRevisionMissing = endpoint("/revisions/latest", ({ item }) =>
-  receive({ item })
-    .where(no(Posting._getPost({ post: item })))
-    .then(respond({ error: "NOT_FOUND" })),
 );
 
 export const ModeratorListRevisions = endpoint(
   "/moderation/revisions/list",
   ({ session, item, user }) =>
-    receive({ session, item })
-      .where(
+    receive({ session, item }).then(
+      where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         Posting._getPost({ post: item }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
-      .then(respond({ revisions: theRevisionHistoryOf({ item }) })),
+        .then(respond({ revisions: theRevisionHistoryOf({ item }) }))
+        .named("revisions"),
+      where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayModerate({ user }),
+        no(Posting._getPost({ post: item })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayModerate({ user }),
+        Posting._getPost({ post: item }),
+        intact({ item }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("live"),
+    ),
 );
 export const ModeratorGetRevision = endpoint(
   "/moderation/revisions/get",
   ({ session, item, number, user }) =>
-    receive({ session, item, number })
-      .where(
+    receive({ session, item, number }).then(
+      where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         Posting._getPost({ post: item }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
-      .then(respond({ revision: theRevisionNumberedOf({ number, item }) })),
+        .then(respond({ revision: theRevisionNumberedOf({ number, item }) }))
+        .named("revision"),
+      where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayModerate({ user }),
+        no(Posting._getPost({ post: item })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayModerate({ user }),
+        Posting._getPost({ post: item }),
+        intact({ item }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("live"),
+    ),
 );
 export const ModeratorLatestRevision = endpoint(
   "/moderation/revisions/latest",
   ({ session, item, user }) =>
-    receive({ session, item })
-      .where(
+    receive({ session, item }).then(
+      where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         Posting._getPost({ post: item }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
-      .then(respond({ revision: theLatestRevisionOf({ item }) })),
-);
-export const ModeratorListHidden = endpoint(
-  "/moderation/revisions/list",
-  ({ session, item, user }) =>
-    receive({ session, item })
-      .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const ModeratorGetHidden = endpoint(
-  "/moderation/revisions/get",
-  ({ session, item, number, user }) =>
-    receive({ session, item, number })
-      .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const ModeratorLatestHidden = endpoint(
-  "/moderation/revisions/latest",
-  ({ session, item, user }) =>
-    receive({ session, item })
-      .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const ModeratorListMissing = endpoint(
-  "/moderation/revisions/list",
-  ({ session, item, user }) =>
-    receive({ session, item })
-      .where(
+        .then(respond({ revision: theLatestRevisionOf({ item }) }))
+        .named("revision"),
+      where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+      where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         no(Posting._getPost({ post: item })),
       )
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const ModeratorGetMissing = endpoint(
-  "/moderation/revisions/get",
-  ({ session, item, number, user }) =>
-    receive({ session, item, number })
-      .where(
-        activeUser({ session }).is({ user }),
-        mayModerate({ user }),
-        no(Posting._getPost({ post: item })),
-      )
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const ModeratorLatestMissing = endpoint(
-  "/moderation/revisions/latest",
-  ({ session, item, user }) =>
-    receive({ session, item })
-      .where(
-        activeUser({ session }).is({ user }),
-        mayModerate({ user }),
-        no(Posting._getPost({ post: item })),
-      )
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const ModeratorListLive = endpoint("/moderation/revisions/list", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(
-      activeUser({ session }).is({ user }),
-      mayModerate({ user }),
-      Posting._getPost({ post: item }),
-      intact({ item }),
-    )
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const ModeratorGetLive = endpoint(
-  "/moderation/revisions/get",
-  ({ session, item, number, user }) =>
-    receive({ session, item, number })
-      .where(
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         Posting._getPost({ post: item }),
         intact({ item }),
       )
-      .then(respond({ error: "NOT_FOUND" })),
-);
-export const ModeratorLatestLive = endpoint(
-  "/moderation/revisions/latest",
-  ({ session, item, user }) =>
-    receive({ session, item })
-      .where(
-        activeUser({ session }).is({ user }),
-        mayModerate({ user }),
-        Posting._getPost({ post: item }),
-        intact({ item }),
-      )
-      .then(respond({ error: "NOT_FOUND" })),
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("live"),
+    ),
 );

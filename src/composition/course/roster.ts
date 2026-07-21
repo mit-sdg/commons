@@ -74,28 +74,27 @@ export const DroppedStaffSeatRevokesCourseStaff = reaction(({ holder, role }) =>
 export const ConfigureClass = endpoint(
   "/roster/configure-class",
   ({ session, code, title, term, timezone, user, class: classDoc }) =>
-    receive({ session, code, title, term, timezone })
-      .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-      .then(Rostering.configureClass({ code, title, term, timezone }).responds({ class: classDoc }))
-      .then(respond({ class: classDoc })),
-);
-
-export const ConfigureClassForbidden = endpoint(
-  "/roster/configure-class",
-  ({ session, code, title, term, timezone, user }) =>
-    receive({ session, code, title, term, timezone })
-      .where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, code, title, term, timezone }).then(
+      where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+        .then(
+          Rostering.configureClass({ code, title, term, timezone }).responds({ class: classDoc }),
+        )
+        .then(respond({ class: classDoc }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const RosterMe = endpoint("/roster/me", ({ session, user, seat }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }))
     .then(
-      where(theSeatOf({ user }).is({ seat })).then(respond({ seat })).named("case-1"),
+      where(theSeatOf({ user }).is({ seat })).then(respond({ seat })).named("found"),
       where(no(theSeatOf({ user })))
         .then(respond({ seat: null }))
-        .named("case-2"),
+        .named("absent"),
     ),
 );
 
@@ -106,10 +105,15 @@ export const SectionsList = endpoint("/roster/sections/list", () =>
 export const SectionsCreate = endpoint(
   "/roster/sections/create",
   ({ session, name, location, meetingPattern, user, section }) =>
-    receive({ session, name, location, meetingPattern })
-      .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-      .then(Rostering.createSection({ name, location, meetingPattern }).responds({ section }))
-      .then(respond({ section })),
+    receive({ session, name, location, meetingPattern }).then(
+      where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+        .then(Rostering.createSection({ name, location, meetingPattern }).responds({ section }))
+        .then(respond({ section }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
   {
     input: {
       required: ["session", "name"],
@@ -118,34 +122,24 @@ export const SectionsCreate = endpoint(
   },
 );
 
-export const SectionsCreateForbidden = endpoint(
-  "/roster/sections/create",
-  ({ session, name, location, meetingPattern, user }) =>
-    receive({ session, name, location, meetingPattern })
-      .where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
-
 export const SectionsUpdate = endpoint(
   "/roster/sections/update",
   ({ session, section, name, location, meetingPattern, user, updated }) =>
-    receive({ session, section, name, location, meetingPattern })
-      .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-      .then(
-        Rostering.updateSection({ section, name, location, meetingPattern }).responds({
-          section: updated,
-        }),
-      )
-      .then(respond({ section: updated })),
+    receive({ session, section, name, location, meetingPattern }).then(
+      where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+        .then(
+          Rostering.updateSection({ section, name, location, meetingPattern }).responds({
+            section: updated,
+          }),
+        )
+        .then(respond({ section: updated }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
-export const SectionsUpdateForbidden = endpoint(
-  "/roster/sections/update",
-  ({ session, section, name, location, meetingPattern, user }) =>
-    receive({ session, section, name, location, meetingPattern })
-      .where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
 export const ImportPreview = endpoint("/roster/import-preview", ({ csv, rows }) =>
   receive({ csv })
     .then(Rostering.previewImport({ csv }).responds({ rows }))
@@ -153,16 +147,15 @@ export const ImportPreview = endpoint("/roster/import-preview", ({ csv, rows }) 
 );
 
 export const ImportSeats = endpoint("/roster/import", ({ session, rows, user, created, skipped }) =>
-  receive({ session, rows })
-    .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-    .then(Rostering.importSeats({ rows }).responds({ created, skipped }))
-    .then(respond({ created, skipped })),
-);
-
-export const ImportSeatsForbidden = endpoint("/roster/import", ({ session, rows, user }) =>
-  receive({ session, rows })
-    .where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+  receive({ session, rows }).then(
+    where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+      .then(Rostering.importSeats({ rows }).responds({ created, skipped }))
+      .then(respond({ created, skipped }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
 export const ClaimSeat = endpoint(
@@ -174,39 +167,35 @@ export const ClaimSeat = endpoint(
         where(identityMatchedSeat({ user, externalKey }).is({ seat }))
           .then(Rostering.claimSeat({ seat, user }).responds({ seat: claimed }))
           .then(respond({ seat: claimed }))
-          .named("case-1"),
+          .named("matched-seat"),
         where(no(identityMatchedSeat({ user, externalKey })))
           .then(respond({ error: "SEAT_NOT_FOUND" }))
-          .named("case-2"),
+          .named("missing-seat"),
       ),
 );
 export const LinkUser = endpoint(
   "/roster/link-user",
   ({ session, seat, user: target, actor, linked }) =>
-    receive({ session, seat, user: target })
-      .where(activeUser({ session }).is({ user: actor }), mayManageRoster({ user: actor }))
-      .then(Rostering.claimSeat({ seat, user: target }).responds({ seat: linked }))
-      .then(respond({ seat: linked })),
-);
-
-export const LinkUserForbidden = endpoint(
-  "/roster/link-user",
-  ({ session, seat, user: target, actor }) =>
-    receive({ session, seat, user: target })
-      .where(activeUser({ session }).is({ user: actor }), mayNotManageRoster({ user: actor }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, seat, user: target }).then(
+      where(activeUser({ session }).is({ user: actor }), mayManageRoster({ user: actor }))
+        .then(Rostering.claimSeat({ seat, user: target }).responds({ seat: linked }))
+        .then(respond({ seat: linked }))
+        .named("success"),
+      where(activeUser({ session }).is({ user: actor }), mayNotManageRoster({ user: actor }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const RosterList = endpoint("/roster/list", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-    .then(respond({ members: theRoster({}) })),
-);
-
-export const RosterListForbidden = endpoint("/roster/list", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+      .then(respond({ members: theRoster({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
 export const DropSeat = endpoint("/roster/drop", ({ session, seat, user, dropped }) =>
@@ -218,31 +207,27 @@ export const DropSeat = endpoint("/roster/drop", ({ session, seat, user, dropped
 );
 
 export const ReinstateSeat = endpoint("/roster/reinstate", ({ session, seat, user, reinstated }) =>
-  receive({ session, seat })
-    .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-    .then(Rostering.reinstateSeat({ seat }).responds({ seat: reinstated }))
-    .then(respond({ seat: reinstated })),
-);
-
-export const ReinstateSeatForbidden = endpoint("/roster/reinstate", ({ session, seat, user }) =>
-  receive({ session, seat })
-    .where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+  receive({ session, seat }).then(
+    where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+      .then(Rostering.reinstateSeat({ seat }).responds({ seat: reinstated }))
+      .then(respond({ seat: reinstated }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
 export const MoveSection = endpoint(
   "/roster/move-section",
   ({ session, seat, section, user, moved }) =>
-    receive({ session, seat, section })
-      .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-      .then(Rostering.moveSection({ seat, section }).responds({ seat: moved }))
-      .then(respond({ seat: moved })),
-);
-
-export const MoveSectionForbidden = endpoint(
-  "/roster/move-section",
-  ({ session, seat, section, user }) =>
-    receive({ session, seat, section })
-      .where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, seat, section }).then(
+      where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+        .then(Rostering.moveSection({ seat, section }).responds({ seat: moved }))
+        .then(respond({ seat: moved }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );

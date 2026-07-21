@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, when } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayAdminister, mayModerate, mayNotAdminister, mayNotModerate } from "../access/policy.ts";
 import { concepts } from "../../concepts/index.ts";
@@ -44,85 +44,71 @@ export const PurgeUnassignsCategory = reaction(({ item }) =>
 export const CreateCategory = endpoint(
   "/categories/create",
   ({ session, name, description, user, category }) =>
-    receive({ session, name, description })
-      .where(activeUser({ session }).is({ user }), mayAdminister({ user }))
-      .then(Categorizing.createCategory({ name, description }).responds({ category }))
-      .then(respond({ category })),
-);
-
-export const CreateCategoryForbidden = endpoint(
-  "/categories/create",
-  ({ session, name, description, user }) =>
-    receive({ session, name, description })
-      .where(activeUser({ session }).is({ user }), mayNotAdminister({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, name, description }).then(
+      where(activeUser({ session }).is({ user }), mayAdminister({ user }))
+        .then(Categorizing.createCategory({ name, description }).responds({ category }))
+        .then(respond({ category }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotAdminister({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const DeleteCategory = endpoint(
   "/categories/delete",
   ({ session, category, user, deleted }) =>
-    receive({ session, category })
-      .where(activeUser({ session }).is({ user }), mayAdminister({ user }))
-      .then(Categorizing.deleteCategory({ category }).responds({ category: deleted }))
-      .then(respond({ category: deleted })),
-);
-
-export const DeleteCategoryForbidden = endpoint(
-  "/categories/delete",
-  ({ session, category, user }) =>
-    receive({ session, category })
-      .where(activeUser({ session }).is({ user }), mayNotAdminister({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
+    receive({ session, category }).then(
+      where(activeUser({ session }).is({ user }), mayAdminister({ user }))
+        .then(Categorizing.deleteCategory({ category }).responds({ category: deleted }))
+        .then(respond({ category: deleted }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotAdminister({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const AssignCategory = endpoint(
   "/categories/assign",
   ({ session, item, category, user, assigned }) =>
-    receive({ session, item, category })
-      .where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: item }))
-      .then(Categorizing.assign({ item, category }).responds({ item: assigned }))
-      .then(respond({ item: assigned })),
-);
-
-export const AssignCategoryForbidden = endpoint(
-  "/categories/assign",
-  ({ session, item, category, user }) =>
-    receive({ session, item, category })
-      .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
-export const AssignCategoryHidden = endpoint(
-  "/categories/assign",
-  ({ session, item, category, user }) =>
-    receive({ session, item, category })
-      .where(
+    receive({ session, item, category }).then(
+      where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: item }))
+        .then(Categorizing.assign({ item, category }).responds({ item: assigned }))
+        .then(respond({ item: assigned }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         notReadable({ post: item }),
       )
-      .then(respond({ error: "NOT_FOUND" })),
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
 );
 
 export const UnassignCategory = endpoint(
   "/categories/unassign",
   ({ session, item, user, unassigned }) =>
-    receive({ session, item })
-      .where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: item }))
-      .then(Categorizing.unassign({ item }).responds({ item: unassigned }))
-      .then(respond({ item: unassigned })),
-);
-
-export const UnassignCategoryForbidden = endpoint(
-  "/categories/unassign",
-  ({ session, item, user }) =>
-    receive({ session, item })
-      .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
-export const UnassignCategoryHidden = endpoint("/categories/unassign", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayModerate({ user }), notReadable({ post: item }))
-    .then(respond({ error: "NOT_FOUND" })),
+    receive({ session, item }).then(
+      where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: item }))
+        .then(Categorizing.unassign({ item }).responds({ item: unassigned }))
+        .then(respond({ item: unassigned }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayModerate({ user }),
+        notReadable({ post: item }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
 );
 
 export const ListCategories = endpoint("/categories/list", () =>
@@ -134,12 +120,12 @@ export const CategoryItems = endpoint("/categories/items", ({ category }) =>
 );
 
 export const CategoryForItem = endpoint("/categories/forItem", ({ item }) =>
-  receive({ item })
-    .where(readable({ post: item }))
-    .then(respond({ category: theCategoryOf({ item }) })),
-);
-export const CategoryForItemHidden = endpoint("/categories/forItem", ({ item }) =>
-  receive({ item })
-    .where(notReadable({ post: item }))
-    .then(respond({ error: "NOT_FOUND" })),
+  receive({ item }).then(
+    where(readable({ post: item }))
+      .then(respond({ category: theCategoryOf({ item }) }))
+      .named("success"),
+    where(notReadable({ post: item }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );

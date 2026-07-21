@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
+import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { theStaffDashboardCounts } from "../../src/composition/course/calendar.ts";
 
@@ -129,5 +130,85 @@ describe("course staff composition", () => {
       gradeItems: 1,
       lateDayUses: 1,
     });
+  });
+});
+
+describe("consolidated reaction groups", () => {
+  test("deleting a leaf post asks every cleanup sibling", async () => {
+    const app = assembleCommons();
+    const at = new Date("2026-07-20T12:00:00.000Z");
+    const { post } = await app.concepts.Posting.create({ author: "author", content: "Body", at });
+    await app.concepts.Conversing.start({ item: post, at });
+    const before = inspectAssembly(app).occurrences.length;
+
+    await app.concepts.Posting.delete({ post });
+
+    const asks = inspectAssembly(app)
+      .occurrences.slice(before)
+      .map((event) => event.by)
+      .filter((by): by is string => by?.startsWith("posts.DeletedPostClearsSatellites:") ?? false)
+      .sort((left, right) => left.localeCompare(right));
+    expect(asks).toEqual([
+      "posts.DeletedPostClearsSatellites:backlinks",
+      "posts.DeletedPostClearsSatellites:bookmarks",
+      "posts.DeletedPostClearsSatellites:formatting",
+      "posts.DeletedPostClearsSatellites:leaf-node",
+      "posts.DeletedPostClearsSatellites:links",
+      "posts.DeletedPostClearsSatellites:pins",
+      "posts.DeletedPostClearsSatellites:reactions",
+      "posts.DeletedPostClearsSatellites:tags",
+      "posts.DeletedPostClearsSatellites:tracking",
+    ]);
+  });
+
+  test("purging a post keeps direct and deletion cleanup occurrences", async () => {
+    const app = assembleCommons();
+    const at = new Date("2026-07-20T12:00:00.000Z");
+    const { post } = await app.concepts.Posting.create({ author: "author", content: "Body", at });
+    await app.concepts.Trashing.trash({ item: post, by: "moderator", at });
+    const before = inspectAssembly(app).occurrences.length;
+
+    await app.concepts.Trashing.purge({ item: post });
+
+    const formattingClears = inspectAssembly(app)
+      .occurrences.slice(before)
+      .filter((event) => event.concept === "Formatting" && event.action === "clear")
+      .map((event) => event.by)
+      .sort((left, right) => left!.localeCompare(right!));
+    expect(formattingClears).toEqual([
+      "moderation.PurgedItemClearsModerationState:formatting",
+      "posts.DeletedPostClearsSatellites:formatting",
+    ]);
+  });
+
+  test("purging a resolved answer clears both resolution roles", async () => {
+    const app = assembleCommons();
+    const at = new Date("2026-07-20T12:00:00.000Z");
+    await app.concepts.Resolving.accept({
+      question: "question",
+      answer: "answer",
+      by: "author",
+      at,
+    });
+    await app.concepts.Resolving.accept({
+      question: "answer",
+      answer: "nested-answer",
+      by: "author",
+      at,
+    });
+    await app.concepts.Trashing.trash({ item: "answer", by: "moderator", at });
+    const before = inspectAssembly(app).occurrences.length;
+
+    await app.concepts.Trashing.purge({ item: "answer" });
+
+    const clears = inspectAssembly(app)
+      .occurrences.slice(before)
+      .filter((event) => event.concept === "Resolving" && event.action === "clear")
+      .map((event) => event.by)
+      .sort((left, right) => left!.localeCompare(right!));
+    expect(clears).toEqual([
+      "resolutions.PurgedPostClearsResolutions:answer",
+      "resolutions.PurgedPostClearsResolutions:question",
+    ]);
   });
 });

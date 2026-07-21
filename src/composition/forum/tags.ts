@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, when } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts/index.ts";
 import { notReadable, readable } from "./posts.ts";
@@ -49,27 +49,27 @@ export const CreateTag = endpoint(
 );
 
 export const AddTag = endpoint("/tags/add", ({ session, target, tag, tagged }) =>
-  receive({ session, target, tag })
-    .where(activeUser({ session }), readable({ post: target }))
-    .then(Tagging.addTag({ target, tag }).responds({ target: tagged }))
-    .then(respond({ target: tagged })),
+  receive({ session, target, tag }).then(
+    where(activeUser({ session }), readable({ post: target }))
+      .then(Tagging.addTag({ target, tag }).responds({ target: tagged }))
+      .then(respond({ target: tagged }))
+      .named("success"),
+    where(activeUser({ session }), notReadable({ post: target }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const RemoveTag = endpoint("/tags/remove", ({ session, target, tag, untagged }) =>
-  receive({ session, target, tag })
-    .where(activeUser({ session }), readable({ post: target }))
-    .then(Tagging.removeTag({ target, tag }).responds({ target: untagged }))
-    .then(respond({ target: untagged })),
-);
-export const AddTagHidden = endpoint("/tags/add", ({ session, target, tag }) =>
-  receive({ session, target, tag })
-    .where(activeUser({ session }), notReadable({ post: target }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const RemoveTagHidden = endpoint("/tags/remove", ({ session, target, tag }) =>
-  receive({ session, target, tag })
-    .where(activeUser({ session }), notReadable({ post: target }))
-    .then(respond({ error: "NOT_FOUND" })),
+  receive({ session, target, tag }).then(
+    where(activeUser({ session }), readable({ post: target }))
+      .then(Tagging.removeTag({ target, tag }).responds({ target: untagged }))
+      .then(respond({ target: untagged }))
+      .named("success"),
+    where(activeUser({ session }), notReadable({ post: target }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const TagTargets = endpoint("/tags/targets", ({ tag }) =>
@@ -81,14 +81,14 @@ export const TagTargetsByName = endpoint("/tags/targetsByName", ({ name }) =>
 );
 
 export const TagsForTarget = endpoint("/tags/forTarget", ({ target }) =>
-  receive({ target })
-    .where(readable({ post: target }))
-    .then(respond({ tags: theTagsOn({ target }) })),
-);
-export const TagsForTargetHidden = endpoint("/tags/forTarget", ({ target }) =>
-  receive({ target })
-    .where(notReadable({ post: target }))
-    .then(respond({ error: "NOT_FOUND" })),
+  receive({ target }).then(
+    where(readable({ post: target }))
+      .then(respond({ tags: theTagsOn({ target }) }))
+      .named("success"),
+    where(notReadable({ post: target }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const ListTags = endpoint("/tags/list", () =>

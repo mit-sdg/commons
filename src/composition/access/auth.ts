@@ -14,11 +14,11 @@ export const InvalidSessionIsRejected = reaction(({ session, at }) =>
         no(activeUser({ session })),
       )
         .then(respond({ error: "UNAUTHORIZED" }))
-        .named("case-1"),
+        .named("unknown-session"),
       where(Sessioning._isExpired({ session, at }).is({ expired: true }))
         .then(Sessioning.end({ session }))
         .then(respond({ error: "UNAUTHORIZED" }))
-        .named("case-2"),
+        .named("expired-session"),
     ),
 );
 export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
@@ -94,10 +94,10 @@ export const Me = endpoint("/auth/me", ({ session, user, username, email, profil
 
 export const Resolve = endpoint("/auth/resolve", ({ username, user }) =>
   receive({ username }).then(
-    where(theUserNamed({ username }).is({ user })).then(respond({ user })).named("case-1"),
+    where(theUserNamed({ username }).is({ user })).then(respond({ user })).named("found"),
     where(no(theUserNamed({ username })))
       .then(respond({ user: null }))
-      .named("case-2"),
+      .named("absent"),
   ),
 );
 export const ChangePassword = endpoint(

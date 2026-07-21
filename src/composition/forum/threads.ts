@@ -57,15 +57,10 @@ export const placementOf = view(
     ),
 ).optional();
 
-export const RenderPostSource = reaction(({ content, post }) =>
+export const CreatedPostRefreshesDerivedContent = reaction(({ content, post }) =>
   when(Posting.create({ content }).responds({ post })).then(
-    Formatting.setSource({ target: post, source: content }),
-  ),
-);
-
-export const DerivePostLinks = reaction(({ content, post }) =>
-  when(Posting.create({ content }).responds({ post })).then(
-    Linking.setLinksFrom({ source: post, content }),
+    Formatting.setSource({ target: post, source: content }).named("render"),
+    Linking.setLinksFrom({ source: post, content }).named("links"),
   ),
 );
 
@@ -104,17 +99,17 @@ export const ReplyToThread = endpoint(
         .then(Posting.create({ author: user, content, at }).responds({ post }))
         .then(Conversing.reply({ item: post, parent, at }).responds({ node }))
         .then(respond({ post, node }))
-        .named("case-1-1"),
+        .named("reply"),
       where(
         activeUser({ session }),
         Conversing._getConversation({ node: parent }).is({ conversation }),
         Locking._isLocked({ target: conversation }).is({ locked: true }),
       )
         .then(respond({ error: "FORBIDDEN" }))
-        .named("case-1-2"),
+        .named("locked"),
       where(activeUser({ session }), no(Conversing._getConversation({ node: parent })))
         .then(respond({ error: "PARENT_NODE_NOT_FOUND" }))
-        .named("case-2"),
+        .named("missing-parent"),
     ),
 );
 
@@ -122,9 +117,9 @@ export const ForItem = endpoint("/threads/forItem", ({ item, conversation }) =>
   receive({ item }).then(
     where(placementOf({ item }).is({ conversation }))
       .then(respond({ conversation }))
-      .named("case-1"),
+      .named("found"),
     where(no(placementOf({ item })))
       .then(respond({ conversation: null }))
-      .named("case-2"),
+      .named("absent"),
   ),
 );

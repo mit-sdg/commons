@@ -1,5 +1,14 @@
 import { activeUser } from "../access/session.ts";
-import { each, form, former, no, reaction, when, whether } from "@mit-sdg/sync-engine/language";
+import {
+  each,
+  form,
+  former,
+  no,
+  reaction,
+  when,
+  whether,
+  where,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
 import { concepts } from "../../concepts/index.ts";
@@ -93,213 +102,173 @@ export const theModerationQueue = former(
       }),
 );
 
-export const PurgeDeletesPost = reaction(({ item }) =>
-  when(Trashing.purge({ item }).responds({}))
-    .where(Posting._getPost({ post: item }))
-    .then(Posting.delete({ post: item })),
-);
-
-export const PurgeClearsFormatting = reaction(({ item }) =>
-  when(Trashing.purge({ item }).responds({})).then(Formatting.clear({ target: item })),
-);
-
-export const PurgeClearsLinks = reaction(({ item }) =>
-  when(Trashing.purge({ item }).responds({})).then(Linking.clearLinks({ source: item })),
-);
-
-export const PurgeClearsBacklinks = reaction(({ item }) =>
-  when(Trashing.purge({ item }).responds({})).then(Linking.clearBacklinks({ target: item })),
-);
-export const PurgeClearsFlags = reaction(({ item }) =>
-  when(Trashing.purge({}).responds({ item })).then(Flagging.clearTarget({ target: item })),
-);
-export const PurgeUnlocksItem = reaction(({ item }) =>
-  when(Trashing.purge({}).responds({ item }))
-    .where(Locking._isLocked({ target: item }).is({ locked: true }))
-    .then(Locking.unlock({ target: item })),
-);
-export const PurgeUnlocksConversation = reaction(({ item, node, conversation }) =>
-  when(Trashing.purge({}).responds({ item }))
-    .where(
+export const PurgedItemClearsModerationState = reaction(({ item, node, conversation }) =>
+  when(Trashing.purge({ item }).responds()).then(
+    where(Posting._getPost({ post: item }))
+      .then(Posting.delete({ post: item }))
+      .named("post"),
+    Formatting.clear({ target: item }).named("formatting"),
+    Linking.clearLinks({ source: item }).named("links"),
+    Linking.clearBacklinks({ target: item }).named("backlinks"),
+    Flagging.clearTarget({ target: item }).named("flags"),
+    where(Locking._isLocked({ target: item }).is({ locked: true }))
+      .then(Locking.unlock({ target: item }))
+      .named("item-lock"),
+    where(
       Conversing._getNodeByItem({ item }).is({ node }),
       Conversing._getConversation({ node }).is({ conversation }),
       Locking._isLocked({ target: conversation }).is({ locked: true }),
     )
-    .then(Locking.unlock({ target: conversation })),
-);
-
-export const PurgeUnregistersTracking = reaction(({ item }) =>
-  when(Trashing.purge({ item }).responds({})).then(Tracking.unregister({ item })),
-);
-export const PurgeRemovesLeafNode = reaction(({ item, node }) =>
-  when(Trashing.purge({ item }).responds({}))
-    .where(
+      .then(Locking.unlock({ target: conversation }))
+      .named("conversation-lock"),
+    Tracking.unregister({ item }).named("tracking"),
+    where(
       Conversing._getNodeByItem({ item }).is({ node }),
       Conversing._hasChildren({ node }).is({ present: false }),
     )
-    .then(Conversing.remove({ node })),
+      .then(Conversing.remove({ node }))
+      .named("leaf-node"),
+  ),
 );
 
 export const TrashItem = endpoint("/trash/trash", ({ session, item, user, at }) =>
-  receive({ session, item })
-    .where(
+  receive({ session, item }).then(
+    where(
       Timing._now({}).is({ at }),
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       Posting._getPost({ post: item }),
     )
-    .then(Trashing.trash({ item, by: user, at }))
-    .then(respond({ item })),
-);
-
-export const TrashItemForbidden = endpoint("/trash/trash", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
-);
-export const TrashItemMissing = endpoint("/trash/trash", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(
+      .then(Trashing.trash({ item, by: user, at }))
+      .then(respond({ item }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+    where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       no(Posting._getPost({ post: item })),
     )
-    .then(respond({ error: "NOT_FOUND" })),
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("missing"),
+  ),
 );
 
 export const RestoreItem = endpoint("/trash/restore", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayModerate({ user }))
-    .then(Trashing.restore({ item }))
-    .then(respond({ item })),
-);
-
-export const RestoreItemForbidden = endpoint("/trash/restore", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+  receive({ session, item }).then(
+    where(activeUser({ session }).is({ user }), mayModerate({ user }))
+      .then(Trashing.restore({ item }))
+      .then(respond({ item }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
 export const PurgeItem = endpoint("/trash/purge", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayModerate({ user }))
-    .then(Trashing.purge({ item }))
-    .then(respond({ item })),
+  receive({ session, item }).then(
+    where(activeUser({ session }).is({ user }), mayModerate({ user }))
+      .then(Trashing.purge({ item }))
+      .then(respond({ item }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
-export const PurgeItemForbidden = endpoint("/trash/purge", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
-);
 export const TrashList = endpoint("/trash/list", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayModerate({ user }))
-    .then(respond({ trashed: theTrashBin({}) })),
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), mayModerate({ user }))
+      .then(respond({ trashed: theTrashBin({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const IsTrashed = endpoint("/trash/isTrashed", ({ session, item, trashed, user }) =>
-  receive({ session, item })
-    .where(
+  receive({ session, item }).then(
+    where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       Trashing._isTrashed({ item }).is({ trashed }),
     )
-    .then(respond({ trashed })),
-);
-export const TrashListHidden = endpoint("/trash/list", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const IsTrashedHidden = endpoint("/trash/isTrashed", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "NOT_FOUND" })),
+      .then(respond({ trashed }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const GetTrashedPost = endpoint("/moderation/posts/get", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(
+  receive({ session, item }).then(
+    where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       Posting._getPost({ post: item }),
       Trashing._isTrashed({ item }).is({ trashed: true }),
     )
-    .then(respond({ post: thePost({ post: item }) })),
-);
-export const GetTrashedPostHidden = endpoint("/moderation/posts/get", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const GetTrashedPostMissing = endpoint("/moderation/posts/get", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(
+      .then(respond({ post: thePost({ post: item }) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+    where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       no(Posting._getPost({ post: item })),
     )
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const GetTrashedPostLive = endpoint("/moderation/posts/get", ({ session, item, user }) =>
-  receive({ session, item })
-    .where(
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("missing"),
+    where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       Posting._getPost({ post: item }),
       Trashing._isTrashed({ item }).is({ trashed: false }),
     )
-    .then(respond({ error: "NOT_FOUND" })),
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("live"),
+  ),
 );
 
 export const LockTarget = endpoint("/locks/lock", ({ session, target, user, at }) =>
-  receive({ session, target })
-    .where(
+  receive({ session, target }).then(
+    where(
       Timing._now({}).is({ at }),
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       publicTarget({ target }),
     )
-    .then(Locking.lock({ target, at }))
-    .then(respond({ target })),
-);
-
-export const LockTargetForbidden = endpoint("/locks/lock", ({ session, target, user }) =>
-  receive({ session, target })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
+      .then(Locking.lock({ target, at }))
+      .then(respond({ target }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+    where(activeUser({ session }).is({ user }), mayModerate({ user }), no(publicTarget({ target })))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const UnlockTarget = endpoint("/locks/unlock", ({ session, target, user }) =>
-  receive({ session, target })
-    .where(activeUser({ session }).is({ user }), mayModerate({ user }), publicTarget({ target }))
-    .then(Locking.unlock({ target }))
-    .then(respond({ target })),
-);
-
-export const UnlockTargetForbidden = endpoint("/locks/unlock", ({ session, target, user }) =>
-  receive({ session, target })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "FORBIDDEN" })),
-);
-export const LockTargetHidden = endpoint("/locks/lock", ({ session, target, user }) =>
-  receive({ session, target })
-    .where(
-      activeUser({ session }).is({ user }),
-      mayModerate({ user }),
-      no(publicTarget({ target })),
-    )
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const UnlockTargetHidden = endpoint("/locks/unlock", ({ session, target, user }) =>
-  receive({ session, target })
-    .where(
-      activeUser({ session }).is({ user }),
-      mayModerate({ user }),
-      no(publicTarget({ target })),
-    )
-    .then(respond({ error: "NOT_FOUND" })),
+  receive({ session, target }).then(
+    where(activeUser({ session }).is({ user }), mayModerate({ user }), publicTarget({ target }))
+      .then(Locking.unlock({ target }))
+      .then(respond({ target }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+    where(activeUser({ session }).is({ user }), mayModerate({ user }), no(publicTarget({ target })))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const LockList = endpoint("/locks/list", () =>
@@ -307,91 +276,79 @@ export const LockList = endpoint("/locks/list", () =>
 );
 
 export const IsLocked = endpoint("/locks/isLocked", ({ target, locked }) =>
-  receive({ target })
-    .where(publicTarget({ target }), Locking._isLocked({ target }).is({ locked }))
-    .then(respond({ locked })),
-);
-export const IsLockedHidden = endpoint("/locks/isLocked", ({ target }) =>
-  receive({ target })
-    .where(no(publicTarget({ target })))
-    .then(respond({ error: "NOT_FOUND" })),
+  receive({ target }).then(
+    where(publicTarget({ target }), Locking._isLocked({ target }).is({ locked }))
+      .then(respond({ locked }))
+      .named("success"),
+    where(no(publicTarget({ target })))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const FlagRaise = endpoint("/flags/raise", ({ session, target, reason, user, at, flag }) =>
-  receive({ session, target, reason })
-    .where(
+  receive({ session, target, reason }).then(
+    where(
       Timing._now({}).is({ at }),
       activeUser({ session }).is({ user }),
       readable({ post: target }),
     )
-    .then(Flagging.flag({ reporter: user, target, reason, at }).responds({ flag }))
-    .then(respond({ flag })),
-);
-export const FlagRaiseHidden = endpoint("/flags/raise", ({ session, target, reason }) =>
-  receive({ session, target, reason })
-    .where(activeUser({ session }), notReadable({ post: target }))
-    .then(respond({ error: "NOT_FOUND" })),
+      .then(Flagging.flag({ reporter: user, target, reason, at }).responds({ flag }))
+      .then(respond({ flag }))
+      .named("success"),
+    where(activeUser({ session }), notReadable({ post: target }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const FlagResolve = endpoint(
   "/flags/resolve",
   ({ session, target, outcome, user }) =>
-    receive({ session, target, outcome })
-      .where(
+    receive({ session, target, outcome }).then(
+      where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: target }))
+        .then(Flagging.resolve({ target, outcome }))
+        .then(respond({ target }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        readable({ post: target }),
+        notReadable({ post: target }),
       )
-      .then(Flagging.resolve({ target, outcome }))
-      .then(respond({ target })),
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
   { input: { required: ["session", "target", "outcome"] } },
 );
 
-export const FlagResolveForbidden = endpoint(
-  "/flags/resolve",
-  ({ session, target, outcome, user }) =>
-    receive({ session, target, outcome })
-      .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "FORBIDDEN" })),
-);
-export const FlagResolveHidden = endpoint("/flags/resolve", ({ session, target, outcome, user }) =>
-  receive({ session, target, outcome })
-    .where(
-      activeUser({ session }).is({ user }),
-      mayModerate({ user }),
-      notReadable({ post: target }),
-    )
-    .then(respond({ error: "NOT_FOUND" })),
-);
-
 export const FlagsOpen = endpoint("/flags/open", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayModerate({ user }))
-    .then(respond({ targets: theOpenFlags({}) })),
-);
-
-export const FlagsOpenHidden = endpoint("/flags/open", ({ session, user }) =>
-  receive({ session })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "NOT_FOUND" })),
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), mayModerate({ user }))
+      .then(respond({ targets: theOpenFlags({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const FlagsForTarget = endpoint("/flags/forTarget", ({ session, target, user }) =>
-  receive({ session, target })
-    .where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: target }))
-    .then(respond({ flags: theFlagsOn({ target }) })),
-);
-export const FlagsForTargetHidden = endpoint("/flags/forTarget", ({ session, target, user }) =>
-  receive({ session, target })
-    .where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const FlagsForMissingTarget = endpoint("/flags/forTarget", ({ session, target, user }) =>
-  receive({ session, target })
-    .where(
+  receive({ session, target }).then(
+    where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: target }))
+      .then(respond({ flags: theFlagsOn({ target }) }))
+      .named("target"),
+    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("target-hidden"),
+    where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       notReadable({ post: target }),
     )
-    .then(respond({ error: "NOT_FOUND" })),
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("missing-target"),
+  ),
 );

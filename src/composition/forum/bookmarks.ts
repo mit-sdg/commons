@@ -34,31 +34,31 @@ export const PurgeClearsBookmarks = reaction(({ item }) =>
 );
 
 export const SaveBookmark = endpoint("/bookmarks/save", ({ session, item, user, at, bookmark }) =>
-  receive({ session, item })
-    .where(
+  receive({ session, item }).then(
+    where(
       Timing._now({}).is({ at }),
       activeUser({ session }).is({ user }),
       readable({ post: item }),
     )
-    .then(Bookmarking.save({ user, item, at }).responds({ bookmark }))
-    .then(respond({ bookmark })),
+      .then(Bookmarking.save({ user, item, at }).responds({ bookmark }))
+      .then(respond({ bookmark }))
+      .named("success"),
+    where(activeUser({ session }), notReadable({ post: item }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const UnsaveBookmark = endpoint("/bookmarks/unsave", ({ session, item, user, bookmark }) =>
-  receive({ session, item })
-    .where(activeUser({ session }).is({ user }), readable({ post: item }))
-    .then(Bookmarking.unsave({ user, item }).responds({ bookmark }))
-    .then(respond({ bookmark })),
-);
-export const SaveBookmarkHidden = endpoint("/bookmarks/save", ({ session, item }) =>
-  receive({ session, item })
-    .where(activeUser({ session }), notReadable({ post: item }))
-    .then(respond({ error: "NOT_FOUND" })),
-);
-export const UnsaveBookmarkHidden = endpoint("/bookmarks/unsave", ({ session, item }) =>
-  receive({ session, item })
-    .where(activeUser({ session }), notReadable({ post: item }))
-    .then(respond({ error: "NOT_FOUND" })),
+  receive({ session, item }).then(
+    where(activeUser({ session }).is({ user }), readable({ post: item }))
+      .then(Bookmarking.unsave({ user, item }).responds({ bookmark }))
+      .then(respond({ bookmark }))
+      .named("success"),
+    where(activeUser({ session }), notReadable({ post: item }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
 
 export const ListBookmarks = endpoint("/bookmarks/list", ({ session, user }) =>
@@ -68,16 +68,16 @@ export const ListBookmarks = endpoint("/bookmarks/list", ({ session, user }) =>
 );
 
 export const IsSaved = endpoint("/bookmarks/isSaved", ({ session, item, user, saved }) =>
-  receive({ session, item })
-    .where(
+  receive({ session, item }).then(
+    where(
       activeUser({ session }).is({ user }),
       readable({ post: item }),
       Bookmarking._isSaved({ user, item }).is({ saved }),
     )
-    .then(respond({ saved })),
-);
-export const IsSavedHidden = endpoint("/bookmarks/isSaved", ({ session, item }) =>
-  receive({ session, item })
-    .where(activeUser({ session }), notReadable({ post: item }))
-    .then(respond({ error: "NOT_FOUND" })),
+      .then(respond({ saved }))
+      .named("success"),
+    where(activeUser({ session }), notReadable({ post: item }))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
