@@ -34,9 +34,9 @@ standing pins in a scope and produces the band a page displays:
 _Read-back of [`forum/pins.ts`](forum/pins.ts)_
 
 ```
-Form the pins of (scope) as follows:
+Former "the pins of (scope)" — inputs (scope); bindings (item, priority); promises exactly one record — forms:
   each Pinning._getPinned (scope) has (item, priority)
-    where item is readable
+    where view "(post) is readable" with (post: item)
     form a record of
       item
       priority

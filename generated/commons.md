@@ -847,15 +847,15 @@ the user named (username) — inputs (username); outputs (user); bindings () —
     Conversing._getThread (conversation) has (node, item)
     no Conversing._parentOf (node)
     Posting._getPost (post: item)
-    (item) is intact (item)
+    view "(item) is intact" with (item)
 ```
 
 ```view
 (target) is public — inputs (target); outputs (); bindings ()
   where
     Posting._getPost (post: target)
-    (item) is intact (item: target)
-  where (conversation) is readable (conversation: target)
+    view "(item) is intact" with (item: target)
+  where view "(conversation) is readable" with (conversation: target)
 ```
 
 ```view
@@ -981,7 +981,7 @@ the conversation placing (item) — inputs (item); outputs (conversation); bindi
   where
     Conversing._getNodeByItem (item) has (node)
     Posting._getPost (post: item)
-    (item) is intact (item)
+    view "(item) is intact" with (item)
     Conversing._getConversation (node) has (conversation)
 ```
 
@@ -989,21 +989,21 @@ the conversation placing (item) — inputs (item); outputs (conversation); bindi
 the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bindings () — answers any number of (item, savedAt)
   where
     Bookmarking._getSaved (user) has (item, savedAt)
-    (post) is readable (post: item)
+    view "(post) is readable" with (post: item)
 ```
 
 ```view
 the public posts by (author) — inputs (author); outputs (post); bindings () — answers any number of (post)
   where
     Posting._getByAuthor (author) has (post)
-    (item) is intact (item: post)
+    view "(item) is intact" with (item: post)
 ```
 
 ```view
 the public posts in (conversation) — inputs (conversation); outputs (node, item, author, createdAt); bindings () — answers any number of (node, item, author, createdAt)
   where
     Conversing._getThread (conversation) has (node, item)
-    (item) is intact (item)
+    view "(item) is intact" with (item)
     Posting._getPost (post: item) has (author, createdAt)
 ```
 
@@ -1013,7 +1013,7 @@ _Formers name result shapes evaluated when asked. The source former owns_
 _the authored explanation; this section records the generated shape._
 
 ```former
-Form the assignments of (student) — inputs (student); bindings (assignment, release, dueOverride, status) as follows:
+Former "the assignments of (student)" — inputs (student); bindings (assignment, release, dueOverride, status); promises exactly one record — forms:
   each Assigning._getAssigned (assignee: student) has (assignment, release, dueOverride, status)
     form a record of
       assignment
@@ -1023,7 +1023,7 @@ Form the assignments of (student) — inputs (student); bindings (assignment, re
 ```
 
 ```former
-Form the staff assignments () — inputs (); bindings (assignment, author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, status, createdAt, updatedAt) as follows:
+Former "the staff assignments ()" — inputs (); bindings (assignment, author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, status, createdAt, updatedAt); promises exactly one record — forms:
   each Assigning._getAssignments () has (assignment, author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, status, createdAt, updatedAt)
     form a record of
       assignment
@@ -1043,15 +1043,15 @@ Form the staff assignments () — inputs (); bindings (assignment, author, title
 ```
 
 ```former
-Form the bookmarks of (user) — inputs (user); bindings (item, savedAt) as follows:
-  each the readable bookmarks of (user) (user) has (item, savedAt)
+Former "the bookmarks of (user)" — inputs (user); bindings (item, savedAt); promises exactly one record — forms:
+  each view "the readable bookmarks of (user)" with (user) has (item, savedAt)
     form a record of
       item
       savedAt
 ```
 
 ```former
-Form the calendar between (start) and (end) — inputs (start, end); bindings (assignment, title, kind, availableAt, dueAt, closeAt, status) as follows:
+Former "the calendar between (start) and (end)" — inputs (start, end); bindings (assignment, title, kind, availableAt, dueAt, closeAt, status); promises exactly one record — forms:
   each Assigning._getPublishedInWindow (start, end) has (assignment)
     where Assigning._getAssignments () has (assignment, title, kind, availableAt, dueAt, closeAt, status)
     form a record of
@@ -1065,7 +1065,7 @@ Form the calendar between (start) and (end) — inputs (start, end); bindings (a
 ```
 
 ```former
-Form the dashboard seat of (user) — inputs (user); bindings (seat, holder, externalKey, email, rosterName, kind, section, status) as follows:
+Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder, externalKey, email, rosterName, kind, section, status); promises exactly one record — forms:
   each Rostering._getSeatByUser (user) has (seat, user: holder, externalKey, email, rosterName, kind, section, status)
     form a record of
       seat
@@ -1079,7 +1079,7 @@ Form the dashboard seat of (user) — inputs (user); bindings (seat, holder, ext
 ```
 
 ```former
-Form the staff dashboard () — inputs (); bindings (user, seat, kind, section, rosterName, email) as follows:
+Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
   each Rostering._getActiveMembers () has (user, seat, kind, section, rosterName, email)
     form a record of
       user
@@ -1091,7 +1091,7 @@ Form the staff dashboard () — inputs (); bindings (user, seat, kind, section, 
 ```
 
 ```former
-Form the staff dashboard counts () — inputs (); bindings (assignment, item, learner, use) as follows:
+Former "the staff dashboard counts ()" — inputs (); bindings (assignment, item, learner, use); promises exactly one record — forms:
   a record of
     assignments: the count of Assigning._getAssignments () has (assignment)
     gradeItems: the count of Itemizing._getItems () has (item)
@@ -1100,7 +1100,7 @@ Form the staff dashboard counts () — inputs (); bindings (assignment, item, le
 ```
 
 ```former
-Form the category of (item) — inputs (item); bindings (category, name, description) as follows:
+Former "the category of (item)" — inputs (item); bindings (category, name, description); promises exactly one record — forms:
   each Categorizing._getCategory (item) has (category, name, description)
     form a record of
       category
@@ -1109,15 +1109,15 @@ Form the category of (item) — inputs (item); bindings (category, name, descrip
 ```
 
 ```former
-Form the items in (category) — inputs (category); bindings (item) as follows:
+Former "the items in (category)" — inputs (category); bindings (item); promises exactly one record — forms:
   each Categorizing._getItems (category) has (item)
-    where (post) is readable (post: item)
+    where view "(post) is readable" with (post: item)
     form a record of
       item
 ```
 
 ```former
-Form the categories () — inputs (); bindings (category, name, description) as follows:
+Former "the categories ()" — inputs (); bindings (category, name, description); promises exactly one record — forms:
   each Categorizing._getAllCategories () has (category, name, description)
     form a record of
       category
@@ -1126,7 +1126,7 @@ Form the categories () — inputs (); bindings (category, name, description) as 
 ```
 
 ```former
-Form the grades on (item) — inputs (item); bindings (learner, grade, score, status) as follows:
+Former "the grades on (item)" — inputs (item); bindings (learner, grade, score, status); promises exactly one record — forms:
   each Grading._getGradesForItem (item) has (learner, grade, score, status)
     form a record of
       learner
@@ -1136,7 +1136,7 @@ Form the grades on (item) — inputs (item); bindings (learner, grade, score, st
 ```
 
 ```former
-Form the released grades of (learner) — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label) as follows:
+Former "the released grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
   each Grading._getGradesForLearner (learner) has (item, grade, score, outOf, status, feedback)
     where whether Itemizing._getItem (item) has (label)
     where status is among ["RELEASED", "EXCUSED"]
@@ -1151,7 +1151,7 @@ Form the released grades of (learner) — inputs (learner); bindings (item, grad
 ```
 
 ```former
-Form the grades of (learner) — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label) as follows:
+Former "the grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
   each Grading._getGradesForLearner (learner) has (item, grade, score, outOf, status, feedback)
     where whether Itemizing._getItem (item) has (label)
     form a record of
@@ -1165,7 +1165,7 @@ Form the grades of (learner) — inputs (learner); bindings (item, grade, score,
 ```
 
 ```former
-Form the gradebook learners () — inputs (); bindings (user, seat, section, rosterName, email) as follows:
+Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, rosterName, email); promises exactly one record — forms:
   each Rostering._getActiveStudents () has (user, seat, section, rosterName, email)
     form a record of
       user
@@ -1176,7 +1176,7 @@ Form the gradebook learners () — inputs (); bindings (user, seat, section, ros
 ```
 
 ```former
-Form the late-day balance of (learner) — inputs (learner); bindings (granted, used, remaining) as follows:
+Former "the late-day balance of (learner)" — inputs (learner); bindings (granted, used, remaining); promises exactly one record — forms:
   a record of
     where Banking._getBalance (learner) has (granted, used, remaining)
     granted
@@ -1185,7 +1185,7 @@ Form the late-day balance of (learner) — inputs (learner); bindings (granted, 
 ```
 
 ```former
-Form the late-day uses on (assignment) — inputs (assignment); bindings (learner, days) as follows:
+Former "the late-day uses on (assignment)" — inputs (assignment); bindings (learner, days); promises exactly one record — forms:
   each Banking._getUsesForItem (item: assignment) has (learner, days)
     form a record of
       learner
@@ -1193,7 +1193,7 @@ Form the late-day uses on (assignment) — inputs (assignment); bindings (learne
 ```
 
 ```former
-Form the late-day uses of (learner) — inputs (learner); bindings (use, item, days, status, appliedAt) as follows:
+Former "the late-day uses of (learner)" — inputs (learner); bindings (use, item, days, status, appliedAt); promises exactly one record — forms:
   each Banking._getUses (learner) has (use, item, days, status, appliedAt)
     form a record of
       use
@@ -1204,23 +1204,23 @@ Form the late-day uses of (learner) — inputs (learner); bindings (use, item, d
 ```
 
 ```former
-Form the backlinks of (target) — inputs (target); bindings (source) as follows:
+Former "the backlinks of (target)" — inputs (target); bindings (source); promises exactly one record — forms:
   each Linking._getBacklinks (target) has (source)
-    where (post) is readable (post: source)
+    where view "(post) is readable" with (post: source)
     form a record of
       source
 ```
 
 ```former
-Form the forward links of (source) — inputs (source); bindings (target) as follows:
+Former "the forward links of (source)" — inputs (source); bindings (target); promises exactly one record — forms:
   each Linking._getLinks (source) has (target)
-    where (post) is readable (post: target)
+    where view "(post) is readable" with (post: target)
     form a record of
       target
 ```
 
 ```former
-Form the flags on (target) — inputs (target); bindings (flag, reporter, reason, status, createdAt) as follows:
+Former "the flags on (target)" — inputs (target); bindings (flag, reporter, reason, status, createdAt); promises exactly one record — forms:
   each Flagging._getFlags (target) has (flag, reporter, reason, status, createdAt)
     form a record of
       flag
@@ -1231,16 +1231,16 @@ Form the flags on (target) — inputs (target); bindings (flag, reporter, reason
 ```
 
 ```former
-Form the open flags () — inputs (); bindings (target, count) as follows:
+Former "the open flags ()" — inputs (); bindings (target, count); promises exactly one record — forms:
   each Flagging._getOpenTargets () has (target, count)
-    where (post) is readable (post: target)
+    where view "(post) is readable" with (post: target)
     form a record of
       target
       count
 ```
 
 ```former
-Form the post (post) — inputs (post); bindings (author, content, createdAt, editedAt, rendered) as follows:
+Former "the post (post)" — inputs (post); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
   a record of
     where Posting._getPost (post) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target: post) has (rendered)
@@ -1252,16 +1252,16 @@ Form the post (post) — inputs (post); bindings (author, content, createdAt, ed
 ```
 
 ```former
-Form the locked list () — inputs (); bindings (target, lockedAt) as follows:
+Former "the locked list ()" — inputs (); bindings (target, lockedAt); promises exactly one record — forms:
   each Locking._getLocked () has (target, lockedAt)
-    where (target) is public (target)
+    where view "(target) is public" with (target)
     form a record of
       target
       lockedAt
 ```
 
 ```former
-Form the trash bin () — inputs (); bindings (item, trashedBy, trashedAt) as follows:
+Former "the trash bin ()" — inputs (); bindings (item, trashedBy, trashedAt); promises exactly one record — forms:
   each Trashing._getTrashed () has (item, trashedBy, trashedAt)
     form a record of
       item
@@ -1270,7 +1270,7 @@ Form the trash bin () — inputs (); bindings (item, trashedBy, trashedAt) as fo
 ```
 
 ```former
-Form the staff notes on (learner) — inputs (learner); bindings (note, author, body, visibility, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags) as follows:
+Former "the staff notes on (learner)" — inputs (learner); bindings (note, author, body, visibility, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags); promises exactly one record — forms:
   each Noting._getActiveNotesFor (learner) has (note, author, body, visibility, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags)
     form a record of
       note
@@ -1287,7 +1287,7 @@ Form the staff notes on (learner) — inputs (learner); bindings (note, author, 
 ```
 
 ```former
-Form the notes shown to (learner) — inputs (learner); bindings (note, author, body, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags) as follows:
+Former "the notes shown to (learner)" — inputs (learner); bindings (note, author, body, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags); promises exactly one record — forms:
   each Noting._getShownTo (learner) has (note, author, body, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags)
     form a record of
       note
@@ -1303,7 +1303,7 @@ Form the notes shown to (learner) — inputs (learner); bindings (note, author, 
 ```
 
 ```former
-Form the notifications of (user) — inputs (user); bindings (notification, kind, subject, link, createdAt, read) as follows:
+Former "the notifications of (user)" — inputs (user); bindings (notification, kind, subject, link, createdAt, read); promises exactly one record — forms:
   each Notifying._getInbox (recipient: user) has (notification, kind, subject, link, createdAt, read)
     form a record of
       notification
@@ -1315,7 +1315,7 @@ Form the notifications of (user) — inputs (user); bindings (notification, kind
 ```
 
 ```former
-Form the notification presentation of (item) — inputs (item); bindings (author, content, createdAt, editedAt, username, displayName, avatar) as follows:
+Former "the notification presentation of (item)" — inputs (item); bindings (author, content, createdAt, editedAt, username, displayName, avatar); promises exactly one record — forms:
   a record of
     where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
     where Authenticating._getById (user: author) has (username)
@@ -1333,7 +1333,7 @@ Form the notification presentation of (item) — inputs (item); bindings (author
 ```
 
 ```former
-Form the inbox of (user) — inputs (user); bindings (notification, kind, link, createdAt, read) as follows:
+Former "the inbox of (user)" — inputs (user); bindings (notification, kind, link, createdAt, read); promises exactly one record — forms:
   each Notifying._getInbox (recipient: user) has (notification, kind, link, createdAt, read)
     form a record of
       notification
@@ -1341,27 +1341,27 @@ Form the inbox of (user) — inputs (user); bindings (notification, kind, link, 
       link
       createdAt
       read
-      … the notification presentation of (item) (item: link), with blank leaves if absent
+      … former "the notification presentation of (item)" with (item: link), with blank leaves if absent
 ```
 
 ```former
-Form the pins of (scope) — inputs (scope); bindings (item, priority) as follows:
+Former "the pins of (scope)" — inputs (scope); bindings (item, priority); promises exactly one record — forms:
   each Pinning._getPinned (scope) has (item, priority)
-    where (post) is readable (post: item)
+    where view "(post) is readable" with (post: item)
     form a record of
       item
       priority
 ```
 
 ```former
-Form the public posts of (author) — inputs (author); bindings (post) as follows:
-  each the public posts by (author) (author) has (post)
+Former "the public posts of (author)" — inputs (author); bindings (post); promises exactly one record — forms:
+  each view "the public posts by (author)" with (author) has (post)
     form a record of
       post
 ```
 
 ```former
-If available, form the private profile of (user) — inputs (user); bindings (displayName, bio, avatar, email) as follows:
+Former "the private profile of (user)" — inputs (user); bindings (displayName, bio, avatar, email); promises at most one record — forms:
   a record of
     where Profiling._getProfileFields (user) has (displayName, bio, avatar, email)
     displayName
@@ -1371,7 +1371,7 @@ If available, form the private profile of (user) — inputs (user); bindings (di
 ```
 
 ```former
-If available, form the profile face of (user) — inputs (user); bindings (displayName, bio, avatar) as follows:
+Former "the profile face of (user)" — inputs (user); bindings (displayName, bio, avatar); promises at most one record — forms:
   a record of
     where Profiling._getProfileFields (user) has (displayName, bio, avatar)
     displayName
@@ -1380,16 +1380,16 @@ If available, form the profile face of (user) — inputs (user); bindings (displ
 ```
 
 ```former
-Form the user search (query) — inputs (query); bindings (user, username) as follows:
+Former "the user search (query)" — inputs (query); bindings (user, username); promises exactly one record — forms:
   each Authenticating._search (query) has (user, username)
     form a record of
       user
       username
-      profile: the profile face of (user) (user)
+      profile: former "the profile face of (user)" with (user)
 ```
 
 ```former
-Form the reactions on (target) — inputs (target); bindings (reaction, reactor, kind) as follows:
+Former "the reactions on (target)" — inputs (target); bindings (reaction, reactor, kind); promises exactly one record — forms:
   each Reacting._getReactionsForTarget (target) has (reaction, reactor, kind)
     form a record of
       reaction
@@ -1398,9 +1398,9 @@ Form the reactions on (target) — inputs (target); bindings (reaction, reactor,
 ```
 
 ```former
-Form the resolution of (question) — inputs (question); bindings (answer, resolvedBy, resolvedAt) as follows:
+Former "the resolution of (question)" — inputs (question); bindings (answer, resolvedBy, resolvedAt); promises exactly one record — forms:
   each Resolving._getResolution (question) has (answer, resolvedBy, resolvedAt)
-    where (post) is readable (post: answer)
+    where view "(post) is readable" with (post: answer)
     form a record of
       answer
       resolvedBy
@@ -1408,7 +1408,7 @@ Form the resolution of (question) — inputs (question); bindings (answer, resol
 ```
 
 ```former
-Form the revision numbered (number) of (item) — inputs (number, item); bindings (content, savedAt) as follows:
+Former "the revision numbered (number) of (item)" — inputs (number, item); bindings (content, savedAt); promises exactly one record — forms:
   each Revising._getRevision (item, number) has (content, savedAt)
     form a record of
       content
@@ -1416,7 +1416,7 @@ Form the revision numbered (number) of (item) — inputs (number, item); binding
 ```
 
 ```former
-Form the latest revision of (item) — inputs (item); bindings (revision, number, content, savedAt) as follows:
+Former "the latest revision of (item)" — inputs (item); bindings (revision, number, content, savedAt); promises exactly one record — forms:
   each Revising._getLatest (item) has (revision, number, content, savedAt)
     form a record of
       revision
@@ -1426,7 +1426,7 @@ Form the latest revision of (item) — inputs (item); bindings (revision, number
 ```
 
 ```former
-Form the revision history of (item) — inputs (item); bindings (revision, number, content, savedAt) as follows:
+Former "the revision history of (item)" — inputs (item); bindings (revision, number, content, savedAt); promises exactly one record — forms:
   each Revising._getRevisions (item) has (revision, number, content, savedAt)
     form a record of
       revision
@@ -1436,7 +1436,7 @@ Form the revision history of (item) — inputs (item); bindings (revision, numbe
 ```
 
 ```former
-Form the defined roles () — inputs (); bindings (role, name, capabilities) as follows:
+Former "the defined roles ()" — inputs (); bindings (role, name, capabilities); promises exactly one record — forms:
   each Roling._listRoles () has (role, name, capabilities)
     form a record of
       role
@@ -1445,14 +1445,14 @@ Form the defined roles () — inputs (); bindings (role, name, capabilities) as 
 ```
 
 ```former
-Form the roles held by (user) in (context) — inputs (user, context); bindings (role) as follows:
+Former "the roles held by (user) in (context)" — inputs (user, context); bindings (role); promises exactly one record — forms:
   each Roling._getRoles (user, context) has (role)
     form a record of
       role
 ```
 
 ```former
-Form the roster () — inputs (); bindings (user, seat, kind, section, rosterName, email) as follows:
+Former "the roster ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
   each Rostering._getActiveMembers () has (user, seat, kind, section, rosterName, email)
     form a record of
       user
@@ -1464,7 +1464,7 @@ Form the roster () — inputs (); bindings (user, seat, kind, section, rosterNam
 ```
 
 ```former
-Form the sections () — inputs (); bindings (section, name, location, meetingPattern, status) as follows:
+Former "the sections ()" — inputs (); bindings (section, name, location, meetingPattern, status); promises exactly one record — forms:
   each Rostering._getSections () has (section, name, location, meetingPattern, status)
     form a record of
       section
@@ -1475,7 +1475,7 @@ Form the sections () — inputs (); bindings (section, name, location, meetingPa
 ```
 
 ```former
-Form the attempts for (assignment) by (submitter) — inputs (assignment, submitter); bindings (submission, artifacts, submittedAt, number, status) as follows:
+Former "the attempts for (assignment) by (submitter)" — inputs (assignment, submitter); bindings (submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
   each Submitting._getAttempts (assignment, submitter) has (submission, artifacts, submittedAt, number, status)
     form a record of
       submission
@@ -1486,7 +1486,7 @@ Form the attempts for (assignment) by (submitter) — inputs (assignment, submit
 ```
 
 ```former
-Form the assigned population for (assignment) — inputs (assignment); bindings (assignee, rosterName) as follows:
+Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, rosterName); promises exactly one record — forms:
   each Assigning._getAssignees (assignment) has (assignee)
     where Rostering._getSeatByUser (user: assignee) has (rosterName)
     form a record of
@@ -1495,7 +1495,7 @@ Form the assigned population for (assignment) — inputs (assignment); bindings 
 ```
 
 ```former
-Form the submissions for (assignment) — inputs (assignment); bindings (submitter, submitterName, submission, submittedAt, number, status) as follows:
+Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, submittedAt, number, status); promises exactly one record — forms:
   each Submitting._getSubmissionsForAssignment (assignment) has (submitter, submission, submittedAt, number, status)
     where Rostering._getSeatByUser (user: submitter) has (rosterName: submitterName)
     form a record of
@@ -1508,7 +1508,7 @@ Form the submissions for (assignment) — inputs (assignment); bindings (submitt
 ```
 
 ```former
-Form the submissions by (submitter) — inputs (submitter); bindings (assignment, submission, submittedAt, number, status) as follows:
+Former "the submissions by (submitter)" — inputs (submitter); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
   each Submitting._getSubmissionsForSubmitter (submitter) has (assignment, submission, submittedAt, number, status)
     form a record of
       assignment
@@ -1519,24 +1519,24 @@ Form the submissions by (submitter) — inputs (submitter); bindings (assignment
 ```
 
 ```former
-Form the subscriptions of (user) — inputs (user); bindings (target, subscribedAt) as follows:
+Former "the subscriptions of (user)" — inputs (user); bindings (target, subscribedAt); promises exactly one record — forms:
   each Subscribing._getSubscriptions (user) has (target, subscribedAt)
-    where (conversation) is readable (conversation: target)
+    where view "(conversation) is readable" with (conversation: target)
     form a record of
       target
       subscribedAt
 ```
 
 ```former
-Form the subscribers of (target) — inputs (target); bindings (user) as follows:
+Former "the subscribers of (target)" — inputs (target); bindings (user); promises exactly one record — forms:
   each Subscribing._getSubscribers (target) has (user)
-    where (conversation) is readable (conversation: target)
+    where view "(conversation) is readable" with (conversation: target)
     form a record of
       user
 ```
 
 ```former
-Form the tags () — inputs (); bindings (tag, name) as follows:
+Former "the tags ()" — inputs (); bindings (tag, name); promises exactly one record — forms:
   each Tagging._getAllTags () has (tag, name)
     form a record of
       tag
@@ -1544,35 +1544,35 @@ Form the tags () — inputs (); bindings (tag, name) as follows:
 ```
 
 ```former
-Form the targets tagged (tag) — inputs (tag); bindings (target) as follows:
+Former "the targets tagged (tag)" — inputs (tag); bindings (target); promises exactly one record — forms:
   each Tagging._getTargets (tag) has (target)
-    where (post) is readable (post: target)
+    where view "(post) is readable" with (post: target)
     form a record of
       target
 ```
 
 ```former
-Form the targets tagged with (name) — inputs (name); bindings (tag, target) as follows:
+Former "the targets tagged with (name)" — inputs (name); bindings (tag, target); promises exactly one record — forms:
   each Tagging._getByName (name) has (tag)
     where Tagging._getTargets (tag) has (target)
-    where (post) is readable (post: target)
+    where view "(post) is readable" with (post: target)
     form a record of
       target
 ```
 
 ```former
-Form the tags on (target) — inputs (target); bindings (tag, name) as follows:
+Former "the tags on (target)" — inputs (target); bindings (tag, name); promises exactly one record — forms:
   each Tagging._getTags (target) has (tag, name)
-    where (post) is readable (post: target)
+    where view "(post) is readable" with (post: target)
     form a record of
       tag
       name
 ```
 
 ```former
-Form the thread (conversation) — inputs (conversation); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered) as follows:
+Former "the thread (conversation)" — inputs (conversation); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
   each Conversing._getThread (conversation) has (node, item, parent, depth)
-    where (item) is intact (item)
+    where view "(item) is intact" with (item)
     where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target: item) has (rendered)
     form a record of
@@ -1589,20 +1589,20 @@ Form the thread (conversation) — inputs (conversation); bindings (node, item, 
 ```
 
 ```former
-Form the thread stats of (conversation) — inputs (conversation); bindings (replyNode, replyItem, activityItem, activityAt, partItem, participant) as follows:
+Former "the thread stats of (conversation)" — inputs (conversation); bindings (replyNode, replyItem, activityItem, activityAt, partItem, participant); promises exactly one record — forms:
   a record of
-    replyCount: the count of the public posts in (conversation) (conversation) has (node: replyNode, item: replyItem)
+    replyCount: the count of view "the public posts in (conversation)" with (conversation) has (node: replyNode, item: replyItem)
       where Conversing._parentOf (node: replyNode)
-    lastActivityAt: the activityAt of the first the public posts in (conversation) (conversation) has (item: activityItem, createdAt: activityAt)
+    lastActivityAt: the activityAt of the first view "the public posts in (conversation)" with (conversation) has (item: activityItem, createdAt: activityAt)
       arranged by activityAt, descending
-    participants: the distinct participant of each the public posts in (conversation) (conversation) has (item: partItem, author: participant)
+    participants: the distinct participant of each view "the public posts in (conversation)" with (conversation) has (item: partItem, author: participant)
 ```
 
 ```former
-Form the thread context (conversation) — inputs (conversation); bindings (node, item, category, tag, tagName, locked, answer) as follows:
+Former "the thread context (conversation)" — inputs (conversation); bindings (node, item, category, tag, tagName, locked, answer); promises exactly one record — forms:
   each Conversing._getThread (conversation) has (node, item)
     where no Conversing._parentOf (node)
-    where (item) is intact (item)
+    where view "(item) is intact" with (item)
     where whether Categorizing._getHome (item) has (home: category)
     where Locking._isLocked (target: conversation) has (locked)
     where whether Resolving._getResolution (question: item) has (answer)
@@ -1615,11 +1615,11 @@ Form the thread context (conversation) — inputs (conversation); bindings (node
           name: tagName
       locked
       acceptedAnswer: answer
-      … the thread stats of (conversation) (conversation)
+      … former "the thread stats of (conversation)" with (conversation)
 ```
 
 ```former
-If available, form the post summary of (item) — inputs (item); bindings (author, content, createdAt, editedAt) as follows:
+Former "the post summary of (item)" — inputs (item); bindings (author, content, createdAt, editedAt); promises at most one record — forms:
   a record of
     where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
     author
@@ -1629,9 +1629,9 @@ If available, form the post summary of (item) — inputs (item); bindings (autho
 ```
 
 ```former
-Form the home feed by activity () — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName) as follows:
+Former "the home feed by activity ()" — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName); promises exactly one record — forms:
   each Conversing._getConversationsByLastActivity () has (conversation, root, item, createdAt)
-    where (item) is intact (item)
+    where view "(item) is intact" with (item)
     where Locking._isLocked (target: conversation) has (locked)
     where Resolving._isResolved (question: item) has (resolved)
     where whether Categorizing._getHome (item) has (home)
@@ -1647,14 +1647,14 @@ Form the home feed by activity () — inputs (); bindings (conversation, root, i
           name: tagName
       locked
       resolved
-      post: the post summary of (item) (item)
-      … the thread stats of (conversation) (conversation)
+      post: former "the post summary of (item)" with (item)
+      … former "the thread stats of (conversation)" with (conversation)
 ```
 
 ```former
-Form the home feed by creation () — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName) as follows:
+Former "the home feed by creation ()" — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName); promises exactly one record — forms:
   each Conversing._getConversations () has (conversation, root, item, createdAt)
-    where (item) is intact (item)
+    where view "(item) is intact" with (item)
     where Locking._isLocked (target: conversation) has (locked)
     where Resolving._isResolved (question: item) has (resolved)
     where whether Categorizing._getHome (item) has (home)
@@ -1670,19 +1670,19 @@ Form the home feed by creation () — inputs (); bindings (conversation, root, i
           name: tagName
       locked
       resolved
-      post: the post summary of (item) (item)
-      … the thread stats of (conversation) (conversation)
+      post: former "the post summary of (item)" with (item)
+      … former "the thread stats of (conversation)" with (conversation)
 ```
 
 ```former
-Form the unread of (user) in (scope) — inputs (user, scope); bindings (item) as follows:
+Former "the unread of (user) in (scope)" — inputs (user, scope); bindings (item); promises exactly one record — forms:
   each Tracking._getUnread (user, scope) has (item)
     form a record of
       item
 ```
 
 ```former
-Form the moderation queue () — inputs (); bindings (target, count, node, conversation, author, content, createdAt, editedAt, rendered, flag, reporter, reason, status, flaggedAt) as follows:
+Former "the moderation queue ()" — inputs (); bindings (target, count, node, conversation, author, content, createdAt, editedAt, rendered, flag, reporter, reason, status, flaggedAt); promises exactly one record — forms:
   each Flagging._getOpenTargets () has (target, count)
     where Posting._getPost (post: target) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target) has (rendered)
@@ -1708,26 +1708,26 @@ Form the moderation queue () — inputs (); bindings (target, count, node, conve
 ```
 
 ```former
-Form the user page of (user) — inputs (user); bindings (role, name, post, node, conversation) as follows:
+Former "the user page of (user)" — inputs (user); bindings (role, name, post, node, conversation); promises exactly one record — forms:
   a record of
-    profile: whether the profile face of (user) (user)
+    profile: whether former "the profile face of (user)" with (user)
     roles: each Roling._getRoles (user, context: "forum") has (role)
       where Roling._getRoleDetail (role) has (name)
       form a record of
         role
         name
     posts: each Posting._getByAuthor (author: user) has (post)
-      where (item) is intact (item: post)
+      where view "(item) is intact" with (item: post)
       where whether Conversing._getNodeByItem (item: post) has (node)
       where whether Conversing._getConversation (node) has (conversation)
       form a record of
         item: post
         conversation
-        post: whether the post summary of (item) (item: post)
+        post: whether former "the post summary of (item)" with (item: post)
 ```
 
 ```former
-Form the reaction counts on (target) — inputs (target); bindings (kind, count) as follows:
+Former "the reaction counts on (target)" — inputs (target); bindings (kind, count); promises exactly one record — forms:
   each Reacting._countByKind (target) has (kind, count)
     form a record of
       kind
@@ -1735,29 +1735,29 @@ Form the reaction counts on (target) — inputs (target); bindings (kind, count)
 ```
 
 ```former
-Form the bookmarked posts of (user) — inputs (user); bindings (item, savedAt) as follows:
-  each the readable bookmarks of (user) (user) has (item, savedAt)
+Former "the bookmarked posts of (user)" — inputs (user); bindings (item, savedAt); promises exactly one record — forms:
+  each view "the readable bookmarks of (user)" with (user) has (item, savedAt)
     form a record of
       item
       savedAt
-      post: the post summary of (item) (item)
+      post: former "the post summary of (item)" with (item)
 ```
 
 ```former
-Form the watched threads of (user) — inputs (user); bindings (target, subscribedAt, rootItem, rootNode) as follows:
+Former "the watched threads of (user)" — inputs (user); bindings (target, subscribedAt, rootItem, rootNode); promises exactly one record — forms:
   each Subscribing._getSubscriptions (user) has (target, subscribedAt)
-    where (conversation) is readable (conversation: target)
+    where view "(conversation) is readable" with (conversation: target)
     where Conversing._getThread (conversation: target) has (node: rootNode, item: rootItem)
     where no Conversing._parentOf (node: rootNode)
     form a record of
       conversation: target
       subscribedAt
-      post: whether the post summary of (item) (item: rootItem)
-      … the thread stats of (conversation) (conversation: target), with blank leaves if absent
+      post: whether former "the post summary of (item)" with (item: rootItem)
+      … former "the thread stats of (conversation)" with (conversation: target), with blank leaves if absent
 ```
 
 ```former
-Form the gradebook () — inputs (); bindings (item, label, maxPoints, user, section, rosterName, email, cellItem, grade, score, status) as follows:
+Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, rosterName, email, cellItem, grade, score, status); promises exactly one record — forms:
   a record of
     items: each Itemizing._getItems () has (item, label, maxPoints)
       form a record of
@@ -1788,10 +1788,10 @@ Form the gradebook () — inputs (); bindings (item, label, maxPoints, user, sec
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/archive")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage assignments" with (user)
 then
-  request Assigning.archive (assignment, at)
+  Assigning.archive (assignment, at)
 ```
 
 ### assignments.Archive:success#2
@@ -1801,7 +1801,7 @@ when Assigning.archive (assignment, at, result.assignment: archived), asked by a
 where
   earlier, RequestBoundary.request (session, assignment, requestId, path: "/assignments/archive")
 then
-  request RequestBoundary.respond (assignment: archived, requestId)
+  RequestBoundary.respond (assignment: archived, requestId)
 ```
 
 ### assignments.Archive:forbidden
@@ -1809,10 +1809,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/archive")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage assignments" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### assignments.ClaimedStudentSeatReceivesPublished
@@ -1824,7 +1824,7 @@ where
   Assigning._getPublishedForAudience (audience: section) has (assignment)
   Assigning._isAssigned (assignment, assignee: user) has (assigned: false)
 then
-  request Assigning.assign (assignment, assignee: user, at)
+  Assigning.assign (assignment, assignee: user, at)
 ```
 
 ### assignments.ClearDueOverride:success
@@ -1832,10 +1832,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, assignee, requestId, path: "/assignments/clear-due-override")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage assignments" with (user)
 then
-  request Assigning.clearDueOverride (assignment, assignee)
+  Assigning.clearDueOverride (assignment, assignee)
 ```
 
 ### assignments.ClearDueOverride:success#2
@@ -1845,7 +1845,7 @@ when Assigning.clearDueOverride (assignment, assignee, release), asked by assign
 where
   earlier, RequestBoundary.request (session, assignment, assignee, requestId, path: "/assignments/clear-due-override")
 then
-  request RequestBoundary.respond (release, requestId)
+  RequestBoundary.respond (release, requestId)
 ```
 
 ### assignments.ClearDueOverride:forbidden
@@ -1853,10 +1853,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, assignee, requestId, path: "/assignments/clear-due-override")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage assignments" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### assignments.CreateDraft:success
@@ -1865,10 +1865,10 @@ then
 when RequestBoundary.request (session, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/create-draft")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage assignments" with (user)
 then
-  request Assigning.createDraft (author: user, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at)
+  Assigning.createDraft (author: user, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at)
 ```
 
 ### assignments.CreateDraft:success#2
@@ -1878,7 +1878,7 @@ when Assigning.createDraft (author: user, title, instructions, kind, availableAt
 where
   earlier, RequestBoundary.request (session, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/create-draft")
 then
-  request RequestBoundary.respond (assignment, requestId)
+  RequestBoundary.respond (assignment, requestId)
 ```
 
 ### assignments.CreateDraft:forbidden
@@ -1886,10 +1886,10 @@ then
 ```reaction
 when RequestBoundary.request (session, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/create-draft")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage assignments" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### assignments.ForMe:success
@@ -1897,10 +1897,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/assignments/for-me")
 where
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request RequestBoundary.respond (assignments: the assignments of (student) (student: user), requestId)
+  RequestBoundary.respond (assignments: former "the assignments of (student)" with (student: user), requestId)
 ```
 
 ### assignments.ForMe:forbidden
@@ -1908,10 +1908,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/assignments/for-me")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### assignments.GetAssignment:found
@@ -1919,9 +1919,9 @@ then
 ```reaction
 when RequestBoundary.request (assignment, requestId, path: "/assignments/get")
 where
-  the assignment (assignment) (assignment) has (detail)
+  view "the assignment (assignment)" with (assignment) has (detail)
 then
-  request RequestBoundary.respond (assignment: detail, requestId)
+  RequestBoundary.respond (assignment: detail, requestId)
 ```
 
 ### assignments.GetAssignment:absent
@@ -1929,9 +1929,9 @@ then
 ```reaction
 when RequestBoundary.request (assignment, requestId, path: "/assignments/get")
 where
-  no the assignment (assignment) (assignment)
+  no view "the assignment (assignment)" with (assignment)
 then
-  request RequestBoundary.respond (assignment: null, requestId)
+  RequestBoundary.respond (assignment: null, requestId)
 ```
 
 ### assignments.Publish:success
@@ -1940,10 +1940,10 @@ then
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/publish")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage assignments" with (user)
 then
-  request Assigning.publish (assignment, at)
+  Assigning.publish (assignment, at)
 ```
 
 ### assignments.Publish:success#2
@@ -1953,7 +1953,7 @@ when Assigning.publish (assignment, at, result.assignment: published), asked by 
 where
   earlier, RequestBoundary.request (session, assignment, requestId, path: "/assignments/publish")
 then
-  request RequestBoundary.respond (assignment: published, requestId)
+  RequestBoundary.respond (assignment: published, requestId)
 ```
 
 ### assignments.Publish:forbidden
@@ -1961,10 +1961,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/publish")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage assignments" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### assignments.PublishedAcceptingAssignmentGetsGradeItem
@@ -1974,7 +1974,7 @@ when Assigning.publish (assignment, acceptsSubmissions: true)
 where
   Assigning._getAssignments () has (assignment, title)
 then
-  request Itemizing.ensureItem (item: assignment, label: title, maxPoints: 100)
+  Itemizing.ensureItem (item: assignment, label: title, maxPoints: 100)
 ```
 
 ### assignments.PublishedAssignmentAssignsAudienceStudents:everyone
@@ -1985,7 +1985,7 @@ where
   audience is among ["EVERYONE"]
   Rostering._getActiveStudents () has (user)
 then
-  request Assigning.assign (assignment, assignee: user, at)
+  Assigning.assign (assignment, assignee: user, at)
 ```
 
 ### assignments.PublishedAssignmentAssignsAudienceStudents:targets
@@ -1997,7 +1997,7 @@ where
   Rostering._getActiveStudents () has (user, section)
   section is among targets
 then
-  request Assigning.assign (assignment, assignee: user, at)
+  Assigning.assign (assignment, assignee: user, at)
 ```
 
 ### assignments.ReinstatedStudentSeatReceivesPublished
@@ -2009,7 +2009,7 @@ where
   Assigning._getPublishedForAudience (audience: section) has (assignment)
   Assigning._isAssigned (assignment, assignee: user) has (assigned: false)
 then
-  request Assigning.assign (assignment, assignee: user, at)
+  Assigning.assign (assignment, assignee: user, at)
 ```
 
 ### assignments.Revise:success
@@ -2018,10 +2018,10 @@ then
 when RequestBoundary.request (session, assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/revise")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage assignments" with (user)
 then
-  request Assigning.revise (assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at)
+  Assigning.revise (assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, at)
 ```
 
 ### assignments.Revise:success#2
@@ -2031,7 +2031,7 @@ when Assigning.revise (assignment, title, instructions, kind, availableAt, dueAt
 where
   earlier, RequestBoundary.request (session, assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/revise")
 then
-  request RequestBoundary.respond (assignment: revised, requestId)
+  RequestBoundary.respond (assignment: revised, requestId)
 ```
 
 ### assignments.Revise:forbidden
@@ -2039,10 +2039,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, requestId, path: "/assignments/revise")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage assignments" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### assignments.RevisedAssignmentAssignsNewAudienceStudents:everyone
@@ -2055,7 +2055,7 @@ where
   Rostering._getActiveStudents () has (user)
   Assigning._isAssigned (assignment, assignee: user) has (assigned: false)
 then
-  request Assigning.assign (assignment, assignee: user, at)
+  Assigning.assign (assignment, assignee: user, at)
 ```
 
 ### assignments.RevisedAssignmentAssignsNewAudienceStudents:targets
@@ -2069,7 +2069,7 @@ where
   section is among targets
   Assigning._isAssigned (assignment, assignee: user) has (assigned: false)
 then
-  request Assigning.assign (assignment, assignee: user, at)
+  Assigning.assign (assignment, assignee: user, at)
 ```
 
 ### assignments.SetDueOverride:success
@@ -2077,10 +2077,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, assignee, dueAt, requestId, path: "/assignments/set-due-override")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage assignments" with (user)
 then
-  request Assigning.setDueOverride (assignment, assignee, dueAt)
+  Assigning.setDueOverride (assignment, assignee, dueAt)
 ```
 
 ### assignments.SetDueOverride:success#2
@@ -2090,7 +2090,7 @@ when Assigning.setDueOverride (assignment, assignee, dueAt, release), asked by a
 where
   earlier, RequestBoundary.request (session, assignment, assignee, dueAt, requestId, path: "/assignments/set-due-override")
 then
-  request RequestBoundary.respond (release, requestId)
+  RequestBoundary.respond (release, requestId)
 ```
 
 ### assignments.SetDueOverride:forbidden
@@ -2098,10 +2098,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, assignee, dueAt, requestId, path: "/assignments/set-due-override")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage assignments" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### assignments.StaffList:success
@@ -2109,10 +2109,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/assignments/staff-list")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage assignments" with (user)
 then
-  request RequestBoundary.respond (assignments: the staff assignments () (), requestId)
+  RequestBoundary.respond (assignments: former "the staff assignments ()", requestId)
 ```
 
 ### assignments.StaffList:forbidden
@@ -2120,10 +2120,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/assignments/staff-list")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage assignments" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### assignments.StaffSummary:found
@@ -2131,11 +2131,11 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/staff-summary")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage assignments (user)
-  the assignment (assignment) (assignment) has (detail)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage assignments" with (user)
+  view "the assignment (assignment)" with (assignment) has (detail)
 then
-  request RequestBoundary.respond (summary: detail, requestId)
+  RequestBoundary.respond (summary: detail, requestId)
 ```
 
 ### assignments.StaffSummary:missing
@@ -2143,11 +2143,11 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/staff-summary")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage assignments (user)
-  no the assignment (assignment) (assignment)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage assignments" with (user)
+  no view "the assignment (assignment)" with (assignment)
 then
-  request RequestBoundary.respond (summary: null, requestId)
+  RequestBoundary.respond (summary: null, requestId)
 ```
 
 ### assignments.StaffSummary:forbidden
@@ -2155,10 +2155,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/assignments/staff-summary")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage assignments (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage assignments" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### assignments.Submit:success
@@ -2167,10 +2167,10 @@ then
 when RequestBoundary.request (session, assignment, content, requestId, path: "/assignments/submit")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request Posting.create (author: user, content, at)
+  Posting.create (author: user, content, at)
 ```
 
 ### assignments.Submit:success#2
@@ -2180,7 +2180,7 @@ when Posting.create (author: user, content, at, post), asked by assignments.Subm
 where
   earlier, RequestBoundary.request (session, assignment, content, requestId, path: "/assignments/submit")
 then
-  request Submitting.submit (assignment, submitter: user, artifact: post, at)
+  Submitting.submit (assignment, submitter: user, artifact: post, at)
 ```
 
 ### assignments.Submit:success#3
@@ -2190,7 +2190,7 @@ when Submitting.submit (assignment, submitter: user, artifact: post, at, submiss
 where
   earlier, RequestBoundary.request (session, assignment, content, requestId, path: "/assignments/submit")
 then
-  request RequestBoundary.respond (submission, requestId)
+  RequestBoundary.respond (submission, requestId)
 ```
 
 ### assignments.Submit:forbidden
@@ -2198,10 +2198,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, content, requestId, path: "/assignments/submit")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### auth.BootstrapAdminOnLogin
@@ -2212,7 +2212,7 @@ where
   Authenticating._getUserCount () has (count: 1)
   Roling._hasCapabilityHolder (context: "forum", capability: "administer") has (present: false)
 then
-  request Roling.ensureRole (name: "administrator", capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"])
+  Roling.ensureRole (name: "administrator", capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"])
 ```
 
 ### auth.BootstrapAdminOnLogin#2
@@ -2222,7 +2222,7 @@ when Roling.ensureRole (name: "administrator", capabilities: ["administer", "mod
 where
   earlier, Authenticating.authenticate (user)
 then
-  request Roling.grant (user, context: "forum", role)
+  Roling.grant (user, context: "forum", role)
 ```
 
 ### auth.BootstrapAdminOnRegister
@@ -2233,7 +2233,7 @@ where
   Authenticating._getUserCount () has (count: 1)
   Roling._hasCapabilityHolder (context: "forum", capability: "administer") has (present: false)
 then
-  request Roling.ensureRole (name: "administrator", capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"])
+  Roling.ensureRole (name: "administrator", capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"])
 ```
 
 ### auth.BootstrapAdminOnRegister#2
@@ -2243,7 +2243,7 @@ when Roling.ensureRole (name: "administrator", capabilities: ["administer", "mod
 where
   earlier, Authenticating.register (user)
 then
-  request Roling.grant (user, context: "forum", role)
+  Roling.grant (user, context: "forum", role)
 ```
 
 ### auth.ChangePassword
@@ -2251,9 +2251,9 @@ then
 ```reaction
 when RequestBoundary.request (session, oldPassword, newPassword, requestId, path: "/auth/changePassword")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Authenticating.changePassword (user, oldPassword, newPassword)
+  Authenticating.changePassword (user, oldPassword, newPassword)
 ```
 
 ### auth.ChangePassword#2
@@ -2261,7 +2261,7 @@ then
 ```reaction
 when Authenticating.changePassword (user, oldPassword, newPassword), asked by auth.ChangePassword
 then
-  request Sessioning.endAllForUser (user)
+  Sessioning.endAllForUser (user)
 ```
 
 ### auth.ChangePassword#3
@@ -2271,7 +2271,7 @@ when Sessioning.endAllForUser (user), asked by auth.ChangePassword#2
 where
   earlier, RequestBoundary.request (session, oldPassword, newPassword, requestId, path: "/auth/changePassword")
 then
-  request RequestBoundary.respond (user, requestId)
+  RequestBoundary.respond (user, requestId)
 ```
 
 ### auth.InvalidSessionIsRejected:unknown-session
@@ -2281,9 +2281,9 @@ when RequestBoundary.request (session, requestId)
 where
   Timing._now () has (at)
   Sessioning._isExpired (session, at) has (expired: false)
-  no the active user of (session) (session)
+  no view "the active user of (session)" with (session)
 then
-  request RequestBoundary.respond (error: "UNAUTHORIZED", requestId)
+  RequestBoundary.respond (error: "UNAUTHORIZED", requestId)
 ```
 
 ### auth.InvalidSessionIsRejected:expired-session
@@ -2294,7 +2294,7 @@ where
   Timing._now () has (at)
   Sessioning._isExpired (session, at) has (expired: true)
 then
-  request Sessioning.end (session)
+  Sessioning.end (session)
 ```
 
 ### auth.InvalidSessionIsRejected:expired-session#2
@@ -2304,7 +2304,7 @@ when Sessioning.end (session), asked by auth.InvalidSessionIsRejected:expired-se
 where
   earlier, RequestBoundary.request (session, requestId)
 then
-  request RequestBoundary.respond (error: "UNAUTHORIZED", requestId)
+  RequestBoundary.respond (error: "UNAUTHORIZED", requestId)
 ```
 
 ### auth.Login
@@ -2312,7 +2312,7 @@ then
 ```reaction
 when RequestBoundary.request (username, password, requestId, path: "/auth/login")
 then
-  request Authenticating.authenticate (username, password)
+  Authenticating.authenticate (username, password)
 ```
 
 ### auth.Login#2
@@ -2320,7 +2320,7 @@ then
 ```reaction
 when Authenticating.authenticate (username, password, user), asked by auth.Login
 then
-  request Timing.capture ()
+  Timing.capture ()
 ```
 
 ### auth.Login#3
@@ -2330,7 +2330,7 @@ when Timing.capture (at), asked by auth.Login#2
 where
   earlier, Authenticating.authenticate (username, password, user), asked by auth.Login
 then
-  request Sessioning.start (user, at)
+  Sessioning.start (user, at)
 ```
 
 ### auth.Login#4
@@ -2340,7 +2340,7 @@ when Sessioning.start (user, at, session, expiresAt), asked by auth.Login#3
 where
   earlier, RequestBoundary.request (username, password, requestId, path: "/auth/login")
 then
-  request RequestBoundary.respond (session, expiresAt, user, requestId)
+  RequestBoundary.respond (session, expiresAt, user, requestId)
 ```
 
 ### auth.Logout
@@ -2348,9 +2348,9 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/auth/logout")
 where
-  the active user of (session) (session)
+  view "the active user of (session)" with (session)
 then
-  request Sessioning.end (session)
+  Sessioning.end (session)
 ```
 
 ### auth.Logout#2
@@ -2360,7 +2360,7 @@ when Sessioning.end (session), asked by auth.Logout
 where
   earlier, RequestBoundary.request (session, requestId, path: "/auth/logout")
 then
-  request RequestBoundary.respond (ok: true, requestId)
+  RequestBoundary.respond (ok: true, requestId)
 ```
 
 ### auth.Me
@@ -2368,11 +2368,11 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/auth/me")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
   Authenticating._getById (user) has (username, email)
   Profiling._getProfile (user) has (profile)
 then
-  request RequestBoundary.respond (user, username, email, profile, requestId)
+  RequestBoundary.respond (user, username, email, profile, requestId)
 ```
 
 ### auth.Register
@@ -2380,7 +2380,7 @@ then
 ```reaction
 when RequestBoundary.request (username, password, displayName, email, requestId, path: "/auth/register")
 then
-  request Authenticating.register (username, password, email)
+  Authenticating.register (username, password, email)
 ```
 
 ### auth.Register#2
@@ -2390,7 +2390,7 @@ when Authenticating.register (username, password, email, user), asked by auth.Re
 where
   earlier, RequestBoundary.request (username, password, displayName, email, requestId, path: "/auth/register")
 then
-  request Profiling.createProfile (user, displayName, email)
+  Profiling.createProfile (user, displayName, email)
 ```
 
 ### auth.Register#3
@@ -2400,7 +2400,7 @@ when Profiling.createProfile (user, displayName, email), asked by auth.Register#
 where
   earlier, RequestBoundary.request (username, password, displayName, email, requestId, path: "/auth/register")
 then
-  request RequestBoundary.respond (user, requestId)
+  RequestBoundary.respond (user, requestId)
 ```
 
 ### auth.Resolve:found
@@ -2408,9 +2408,9 @@ then
 ```reaction
 when RequestBoundary.request (username, requestId, path: "/auth/resolve")
 where
-  the user named (username) (username) has (user)
+  view "the user named (username)" with (username) has (user)
 then
-  request RequestBoundary.respond (user, requestId)
+  RequestBoundary.respond (user, requestId)
 ```
 
 ### auth.Resolve:absent
@@ -2418,9 +2418,9 @@ then
 ```reaction
 when RequestBoundary.request (username, requestId, path: "/auth/resolve")
 where
-  no the user named (username) (username)
+  no view "the user named (username)" with (username)
 then
-  request RequestBoundary.respond (user: null, requestId)
+  RequestBoundary.respond (user: null, requestId)
 ```
 
 ### bookmarks.IsSaved:success
@@ -2428,11 +2428,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/isSaved")
 where
-  the active user of (session) (session) has (user)
-  (post) is readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: item)
   Bookmarking._isSaved (user, item) has (saved)
 then
-  request RequestBoundary.respond (saved, requestId)
+  RequestBoundary.respond (saved, requestId)
 ```
 
 ### bookmarks.IsSaved:hidden
@@ -2440,10 +2440,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/isSaved")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: item)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### bookmarks.ListBookmarks
@@ -2451,9 +2451,9 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/bookmarks/list")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request RequestBoundary.respond (bookmarks: the bookmarks of (user) (user), requestId)
+  RequestBoundary.respond (bookmarks: former "the bookmarks of (user)" with (user), requestId)
 ```
 
 ### bookmarks.PurgeClearsBookmarks
@@ -2461,7 +2461,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Bookmarking.clearItem (item)
+  Bookmarking.clearItem (item)
 ```
 
 ### bookmarks.SaveBookmark:success
@@ -2470,10 +2470,10 @@ then
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/save")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (post) is readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: item)
 then
-  request Bookmarking.save (user, item, at)
+  Bookmarking.save (user, item, at)
 ```
 
 ### bookmarks.SaveBookmark:success#2
@@ -2483,7 +2483,7 @@ when Bookmarking.save (user, item, at, bookmark), asked by bookmarks.SaveBookmar
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/bookmarks/save")
 then
-  request RequestBoundary.respond (bookmark, requestId)
+  RequestBoundary.respond (bookmark, requestId)
 ```
 
 ### bookmarks.SaveBookmark:hidden
@@ -2491,10 +2491,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/save")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: item)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### bookmarks.UnsaveBookmark:success
@@ -2502,10 +2502,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/unsave")
 where
-  the active user of (session) (session) has (user)
-  (post) is readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: item)
 then
-  request Bookmarking.unsave (user, item)
+  Bookmarking.unsave (user, item)
 ```
 
 ### bookmarks.UnsaveBookmark:success#2
@@ -2515,7 +2515,7 @@ when Bookmarking.unsave (user, item, bookmark), asked by bookmarks.UnsaveBookmar
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/bookmarks/unsave")
 then
-  request RequestBoundary.respond (bookmark, requestId)
+  RequestBoundary.respond (bookmark, requestId)
 ```
 
 ### bookmarks.UnsaveBookmark:hidden
@@ -2523,10 +2523,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/bookmarks/unsave")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: item)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### calendar.CalendarMe:success
@@ -2534,10 +2534,10 @@ then
 ```reaction
 when RequestBoundary.request (session, start, end, requestId, path: "/calendar/me")
 where
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request RequestBoundary.respond (events: the calendar between (start) and (end) (start, end), requestId)
+  RequestBoundary.respond (events: former "the calendar between (start) and (end)" with (start, end), requestId)
 ```
 
 ### calendar.CalendarMe:forbidden
@@ -2545,10 +2545,10 @@ then
 ```reaction
 when RequestBoundary.request (session, start, end, requestId, path: "/calendar/me")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### calendar.CalendarStaff:success
@@ -2556,10 +2556,10 @@ then
 ```reaction
 when RequestBoundary.request (session, start, end, requestId, path: "/calendar/staff")
 where
-  the active user of (session) (session) has (user)
-  (user) may view the staff calendar (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may view the staff calendar" with (user)
 then
-  request RequestBoundary.respond (events: the calendar between (start) and (end) (start, end), requestId)
+  RequestBoundary.respond (events: former "the calendar between (start) and (end)" with (start, end), requestId)
 ```
 
 ### calendar.CalendarStaff:forbidden
@@ -2567,10 +2567,10 @@ then
 ```reaction
 when RequestBoundary.request (session, start, end, requestId, path: "/calendar/staff")
 where
-  the active user of (session) (session) has (user)
-  (user) may not view the staff calendar (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not view the staff calendar" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### calendar.LmsMe:success
@@ -2578,10 +2578,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/lms/me")
 where
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request RequestBoundary.respond (dashboard: the dashboard seat of (user) (user), requestId)
+  RequestBoundary.respond (dashboard: former "the dashboard seat of (user)" with (user), requestId)
 ```
 
 ### calendar.LmsMe:forbidden
@@ -2589,10 +2589,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/lms/me")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### calendar.LmsStaffDashboard:success
@@ -2600,10 +2600,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/lms/staff-dashboard")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
 then
-  request RequestBoundary.respond (dashboard: the staff dashboard () (), counts: the staff dashboard counts () (), requestId)
+  RequestBoundary.respond (dashboard: former "the staff dashboard ()", counts: former "the staff dashboard counts ()", requestId)
 ```
 
 ### calendar.LmsStaffDashboard:forbidden
@@ -2611,10 +2611,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/lms/staff-dashboard")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### categories.AssignCategory:success
@@ -2622,11 +2622,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, category, requestId, path: "/categories/assign")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (post) is readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(post) is readable" with (post: item)
 then
-  request Categorizing.assign (item, category)
+  Categorizing.assign (item, category)
 ```
 
 ### categories.AssignCategory:success#2
@@ -2636,7 +2636,7 @@ when Categorizing.assign (item, category, result.item: assigned), asked by categ
 where
   earlier, RequestBoundary.request (session, item, category, requestId, path: "/categories/assign")
 then
-  request RequestBoundary.respond (item: assigned, requestId)
+  RequestBoundary.respond (item: assigned, requestId)
 ```
 
 ### categories.AssignCategory:forbidden
@@ -2644,10 +2644,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, category, requestId, path: "/categories/assign")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### categories.AssignCategory:hidden
@@ -2655,11 +2655,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, category, requestId, path: "/categories/assign")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (post) is not readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### categories.CategoryForItem:success
@@ -2667,9 +2667,9 @@ then
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/categories/forItem")
 where
-  (post) is readable (post: item)
+  view "(post) is readable" with (post: item)
 then
-  request RequestBoundary.respond (category: the category of (item) (item), requestId)
+  RequestBoundary.respond (category: former "the category of (item)" with (item), requestId)
 ```
 
 ### categories.CategoryForItem:hidden
@@ -2677,9 +2677,9 @@ then
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/categories/forItem")
 where
-  (post) is not readable (post: item)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### categories.CategoryItems
@@ -2687,7 +2687,7 @@ then
 ```reaction
 when RequestBoundary.request (category, requestId, path: "/categories/items")
 then
-  request RequestBoundary.respond (items: the items in (category) (category), requestId)
+  RequestBoundary.respond (items: former "the items in (category)" with (category), requestId)
 ```
 
 ### categories.CreateCategory:success
@@ -2695,10 +2695,10 @@ then
 ```reaction
 when RequestBoundary.request (session, name, description, requestId, path: "/categories/create")
 where
-  the active user of (session) (session) has (user)
-  (user) may administer (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may administer" with (user)
 then
-  request Categorizing.createCategory (name, description)
+  Categorizing.createCategory (name, description)
 ```
 
 ### categories.CreateCategory:success#2
@@ -2708,7 +2708,7 @@ when Categorizing.createCategory (name, description, category), asked by categor
 where
   earlier, RequestBoundary.request (session, name, description, requestId, path: "/categories/create")
 then
-  request RequestBoundary.respond (category, requestId)
+  RequestBoundary.respond (category, requestId)
 ```
 
 ### categories.CreateCategory:forbidden
@@ -2716,10 +2716,10 @@ then
 ```reaction
 when RequestBoundary.request (session, name, description, requestId, path: "/categories/create")
 where
-  the active user of (session) (session) has (user)
-  (user) may not administer (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not administer" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### categories.DeleteCategory:success
@@ -2727,10 +2727,10 @@ then
 ```reaction
 when RequestBoundary.request (session, category, requestId, path: "/categories/delete")
 where
-  the active user of (session) (session) has (user)
-  (user) may administer (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may administer" with (user)
 then
-  request Categorizing.deleteCategory (category)
+  Categorizing.deleteCategory (category)
 ```
 
 ### categories.DeleteCategory:success#2
@@ -2740,7 +2740,7 @@ when Categorizing.deleteCategory (category, result.category: deleted), asked by 
 where
   earlier, RequestBoundary.request (session, category, requestId, path: "/categories/delete")
 then
-  request RequestBoundary.respond (category: deleted, requestId)
+  RequestBoundary.respond (category: deleted, requestId)
 ```
 
 ### categories.DeleteCategory:forbidden
@@ -2748,10 +2748,10 @@ then
 ```reaction
 when RequestBoundary.request (session, category, requestId, path: "/categories/delete")
 where
-  the active user of (session) (session) has (user)
-  (user) may not administer (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not administer" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### categories.ListCategories
@@ -2759,7 +2759,7 @@ then
 ```reaction
 when RequestBoundary.request (requestId, path: "/categories/list")
 then
-  request RequestBoundary.respond (categories: the categories () (), requestId)
+  RequestBoundary.respond (categories: former "the categories ()", requestId)
 ```
 
 ### categories.PurgeUnassignsCategory
@@ -2769,7 +2769,7 @@ when Trashing.purge (item)
 where
   Categorizing._getCategory (item)
 then
-  request Categorizing.unassign (item)
+  Categorizing.unassign (item)
 ```
 
 ### categories.UnassignCategory:success
@@ -2777,11 +2777,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/categories/unassign")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (post) is readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(post) is readable" with (post: item)
 then
-  request Categorizing.unassign (item)
+  Categorizing.unassign (item)
 ```
 
 ### categories.UnassignCategory:success#2
@@ -2791,7 +2791,7 @@ when Categorizing.unassign (item, result.item: unassigned), asked by categories.
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/categories/unassign")
 then
-  request RequestBoundary.respond (item: unassigned, requestId)
+  RequestBoundary.respond (item: unassigned, requestId)
 ```
 
 ### categories.UnassignCategory:forbidden
@@ -2799,10 +2799,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/categories/unassign")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### categories.UnassignCategory:hidden
@@ -2810,11 +2810,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/categories/unassign")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (post) is not readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### grades.GradesAddCriterion:success
@@ -2822,10 +2822,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, name, maxPoints, position, requestId, path: "/grades/add-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
 then
-  request Itemizing.addCriterion (item, name, maxPoints, position)
+  Itemizing.addCriterion (item, name, maxPoints, position)
 ```
 
 ### grades.GradesAddCriterion:success#2
@@ -2835,7 +2835,7 @@ when Itemizing.addCriterion (item, name, maxPoints, position, criterion), asked 
 where
   earlier, RequestBoundary.request (session, item, name, maxPoints, position, requestId, path: "/grades/add-criterion")
 then
-  request RequestBoundary.respond (criterion, requestId)
+  RequestBoundary.respond (criterion, requestId)
 ```
 
 ### grades.GradesAddCriterion:forbidden
@@ -2843,10 +2843,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, name, maxPoints, position, requestId, path: "/grades/add-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesConfigureItem:success
@@ -2854,10 +2854,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, label, maxPoints, requestId, path: "/grades/configure-item")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
 then
-  request Itemizing.configureItem (item, label, maxPoints)
+  Itemizing.configureItem (item, label, maxPoints)
 ```
 
 ### grades.GradesConfigureItem:success#2
@@ -2867,7 +2867,7 @@ when Itemizing.configureItem (item, label, maxPoints, gradeItem), asked by grade
 where
   earlier, RequestBoundary.request (session, item, label, maxPoints, requestId, path: "/grades/configure-item")
 then
-  request RequestBoundary.respond (gradeItem, requestId)
+  RequestBoundary.respond (gradeItem, requestId)
 ```
 
 ### grades.GradesConfigureItem:forbidden
@@ -2875,10 +2875,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, label, maxPoints, requestId, path: "/grades/configure-item")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesExcuse:success
@@ -2887,10 +2887,10 @@ then
 when RequestBoundary.request (session, learner, item, feedback, requestId, path: "/grades/excuse")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
 then
-  request Grading.excuse (learner, item, grader: user, feedback, at)
+  Grading.excuse (learner, item, grader: user, feedback, at)
 ```
 
 ### grades.GradesExcuse:success#2
@@ -2900,7 +2900,7 @@ when Grading.excuse (learner, item, grader: user, feedback, at, grade), asked by
 where
   earlier, RequestBoundary.request (session, learner, item, feedback, requestId, path: "/grades/excuse")
 then
-  request RequestBoundary.respond (grade, requestId)
+  RequestBoundary.respond (grade, requestId)
 ```
 
 ### grades.GradesExcuse:forbidden
@@ -2908,10 +2908,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, item, feedback, requestId, path: "/grades/excuse")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesExport:success
@@ -2919,10 +2919,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/export")
 where
-  the active user of (session) (session) has (user)
-  (user) may view all grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may view all grades" with (user)
 then
-  request RequestBoundary.respond (csv: "", requestId)
+  RequestBoundary.respond (csv: "", requestId)
 ```
 
 ### grades.GradesExport:forbidden
@@ -2930,10 +2930,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/export")
 where
-  the active user of (session) (session) has (user)
-  (user) may not view all grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not view all grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesForItem:success
@@ -2941,10 +2941,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/grades/for-item")
 where
-  the active user of (session) (session) has (user)
-  (user) may view all grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may view all grades" with (user)
 then
-  request RequestBoundary.respond (grades: the grades on (item) (item), requestId)
+  RequestBoundary.respond (grades: former "the grades on (item)" with (item), requestId)
 ```
 
 ### grades.GradesForItem:forbidden
@@ -2952,10 +2952,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/grades/for-item")
 where
-  the active user of (session) (session) has (user)
-  (user) may not view all grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not view all grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesForMe:success
@@ -2963,10 +2963,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/for-me")
 where
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request RequestBoundary.respond (grades: the released grades of (learner) (learner: user), requestId)
+  RequestBoundary.respond (grades: former "the released grades of (learner)" with (learner: user), requestId)
 ```
 
 ### grades.GradesForMe:not-student
@@ -2974,10 +2974,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/for-me")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesForStudent:success
@@ -2985,10 +2985,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/grades/for-student")
 where
-  the active user of (session) (session) has (user)
-  (user) may view all grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may view all grades" with (user)
 then
-  request RequestBoundary.respond (grades: the grades of (learner) (learner), requestId)
+  RequestBoundary.respond (grades: former "the grades of (learner)" with (learner), requestId)
 ```
 
 ### grades.GradesForStudent:forbidden
@@ -2996,10 +2996,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/grades/for-student")
 where
-  the active user of (session) (session) has (user)
-  (user) may not view all grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not view all grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesGradebook:success
@@ -3007,10 +3007,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/gradebook")
 where
-  the active user of (session) (session) has (user)
-  (user) may view all grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may view all grades" with (user)
 then
-  request RequestBoundary.respond (learners: the gradebook learners () (), requestId)
+  RequestBoundary.respond (learners: former "the gradebook learners ()", requestId)
 ```
 
 ### grades.GradesGradebook:forbidden
@@ -3018,10 +3018,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/grades/gradebook")
 where
-  the active user of (session) (session) has (user)
-  (user) may not view all grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not view all grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesRecord:success
@@ -3030,11 +3030,11 @@ then
 when RequestBoundary.request (session, learner, item, evidence, score, feedback, requestId, path: "/grades/record")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
   Itemizing._getItem (item) has (maxPoints)
 then
-  request Grading.record (learner, item, evidence, grader: user, score, outOf: maxPoints, feedback, at)
+  Grading.record (learner, item, evidence, grader: user, score, outOf: maxPoints, feedback, at)
 ```
 
 ### grades.GradesRecord:success#2
@@ -3044,7 +3044,7 @@ when Grading.record (learner, item, evidence, grader: user, score, outOf: maxPoi
 where
   earlier, RequestBoundary.request (session, learner, item, evidence, score, feedback, requestId, path: "/grades/record")
 then
-  request RequestBoundary.respond (grade, requestId)
+  RequestBoundary.respond (grade, requestId)
 ```
 
 ### grades.GradesRecord:forbidden
@@ -3052,10 +3052,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, item, evidence, score, feedback, requestId, path: "/grades/record")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesRecord:missing-item
@@ -3063,11 +3063,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, item, evidence, score, feedback, requestId, path: "/grades/record")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
   no Itemizing._getItem (item)
 then
-  request RequestBoundary.respond (error: "GRADE_ITEM_NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "GRADE_ITEM_NOT_FOUND", requestId)
 ```
 
 ### grades.GradesRelease:success
@@ -3076,10 +3076,10 @@ then
 when RequestBoundary.request (session, learner, item, requestId, path: "/grades/release")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
 then
-  request Grading.release (learner, item, at)
+  Grading.release (learner, item, at)
 ```
 
 ### grades.GradesRelease:success#2
@@ -3089,7 +3089,7 @@ when Grading.release (learner, item, at, grade), asked by grades.GradesRelease:s
 where
   earlier, RequestBoundary.request (session, learner, item, requestId, path: "/grades/release")
 then
-  request RequestBoundary.respond (grade, requestId)
+  RequestBoundary.respond (grade, requestId)
 ```
 
 ### grades.GradesRelease:forbidden
@@ -3097,10 +3097,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, item, requestId, path: "/grades/release")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesReleaseItem:success
@@ -3109,10 +3109,10 @@ then
 when RequestBoundary.request (session, item, requestId, path: "/grades/release-item")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
 then
-  request Grading.releaseItem (item, at)
+  Grading.releaseItem (item, at)
 ```
 
 ### grades.GradesReleaseItem:success#2
@@ -3122,7 +3122,7 @@ when Grading.releaseItem (item, at, released), asked by grades.GradesReleaseItem
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/grades/release-item")
 then
-  request RequestBoundary.respond (released, requestId)
+  RequestBoundary.respond (released, requestId)
 ```
 
 ### grades.GradesReleaseItem:forbidden
@@ -3130,10 +3130,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/grades/release-item")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesRemoveCriterion:success
@@ -3141,10 +3141,10 @@ then
 ```reaction
 when RequestBoundary.request (session, criterion, requestId, path: "/grades/remove-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
 then
-  request Itemizing.removeCriterion (criterion)
+  Itemizing.removeCriterion (criterion)
 ```
 
 ### grades.GradesRemoveCriterion:success#2
@@ -3154,7 +3154,7 @@ when Itemizing.removeCriterion (criterion, result.criterion: removed), asked by 
 where
   earlier, RequestBoundary.request (session, criterion, requestId, path: "/grades/remove-criterion")
 then
-  request RequestBoundary.respond (criterion: removed, requestId)
+  RequestBoundary.respond (criterion: removed, requestId)
 ```
 
 ### grades.GradesRemoveCriterion:forbidden
@@ -3162,10 +3162,10 @@ then
 ```reaction
 when RequestBoundary.request (session, criterion, requestId, path: "/grades/remove-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesRetract:success
@@ -3174,10 +3174,10 @@ then
 when RequestBoundary.request (session, learner, item, requestId, path: "/grades/retract")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
 then
-  request Grading.retract (learner, item, at)
+  Grading.retract (learner, item, at)
 ```
 
 ### grades.GradesRetract:success#2
@@ -3187,7 +3187,7 @@ when Grading.retract (learner, item, at, grade), asked by grades.GradesRetract:s
 where
   earlier, RequestBoundary.request (session, learner, item, requestId, path: "/grades/retract")
 then
-  request RequestBoundary.respond (grade, requestId)
+  RequestBoundary.respond (grade, requestId)
 ```
 
 ### grades.GradesRetract:forbidden
@@ -3195,10 +3195,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, item, requestId, path: "/grades/retract")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesReviseCriterion:success
@@ -3206,10 +3206,10 @@ then
 ```reaction
 when RequestBoundary.request (session, criterion, name, maxPoints, position, requestId, path: "/grades/revise-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
 then
-  request Itemizing.reviseCriterion (criterion, name, maxPoints, position)
+  Itemizing.reviseCriterion (criterion, name, maxPoints, position)
 ```
 
 ### grades.GradesReviseCriterion:success#2
@@ -3219,7 +3219,7 @@ when Itemizing.reviseCriterion (criterion, name, maxPoints, position, result.cri
 where
   earlier, RequestBoundary.request (session, criterion, name, maxPoints, position, requestId, path: "/grades/revise-criterion")
 then
-  request RequestBoundary.respond (criterion: revised, requestId)
+  RequestBoundary.respond (criterion: revised, requestId)
 ```
 
 ### grades.GradesReviseCriterion:forbidden
@@ -3227,10 +3227,10 @@ then
 ```reaction
 when RequestBoundary.request (session, criterion, name, maxPoints, position, requestId, path: "/grades/revise-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesScoreCriterion:success
@@ -3238,11 +3238,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
   Itemizing._getCriterion (criterion) has (item, maxPoints: critMax)
 then
-  request Grading.scoreCriterion (learner, item, criterion, points, outOf: critMax, feedback)
+  Grading.scoreCriterion (learner, item, criterion, points, outOf: critMax, feedback)
 ```
 
 ### grades.GradesScoreCriterion:success#2
@@ -3252,7 +3252,7 @@ when Grading.scoreCriterion (learner, item, criterion, points, outOf: critMax, f
 where
   earlier, RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
 then
-  request RequestBoundary.respond (criterionScore, requestId)
+  RequestBoundary.respond (criterionScore, requestId)
 ```
 
 ### grades.GradesScoreCriterion:forbidden
@@ -3260,10 +3260,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage grades" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### grades.GradesScoreCriterion:missing
@@ -3271,11 +3271,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
   no Itemizing._getCriterion (criterion)
 then
-  request RequestBoundary.respond (error: "CRITERION_NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "CRITERION_NOT_FOUND", requestId)
 ```
 
 ### grades.GradesScoreCriterion:cross-item
@@ -3283,11 +3283,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, item, criterion, points, feedback, requestId, path: "/grades/score-criterion")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage grades (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage grades" with (user)
   Itemizing._getCriterion (criterion) and not (item)
 then
-  request RequestBoundary.respond (error: "CRITERION_NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "CRITERION_NOT_FOUND", requestId)
 ```
 
 ### grades.RemovedCriterionClearsScores
@@ -3295,7 +3295,7 @@ then
 ```reaction
 when Itemizing.removeCriterion (criterion)
 then
-  request Grading.clearCriterionScores (criterion)
+  Grading.clearCriterionScores (criterion)
 ```
 
 ### grades.RevisedAcceptingAssignmentEnsuresGradeItem
@@ -3303,7 +3303,7 @@ then
 ```reaction
 when Assigning.revise (title, assignment, status: "PUBLISHED", acceptsSubmissions: true)
 then
-  request Itemizing.ensureItem (item: assignment, label: title, maxPoints: 100)
+  Itemizing.ensureItem (item: assignment, label: title, maxPoints: 100)
 ```
 
 ### lateDays.Apply:success
@@ -3312,10 +3312,10 @@ then
 when RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/apply")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request Banking.apply (learner: user, item: assignment, days, at)
+  Banking.apply (learner: user, item: assignment, days, at)
 ```
 
 ### lateDays.Apply:success#2
@@ -3325,7 +3325,7 @@ when Banking.apply (learner: user, item: assignment, days, at, use), asked by la
 where
   earlier, RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/apply")
 then
-  request RequestBoundary.respond (use, requestId)
+  RequestBoundary.respond (use, requestId)
 ```
 
 ### lateDays.Apply:forbidden
@@ -3333,10 +3333,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/apply")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### lateDays.Balance:balance
@@ -3344,10 +3344,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/late-days/balance")
 where
-  the active user of (session) (session) has (user: learner)
-  (user) is an active student (user: learner)
+  view "the active user of (session)" with (session) has (user: learner)
+  view "(user) is an active student" with (user: learner)
 then
-  request RequestBoundary.respond (balance: the late-day balance of (learner) (learner), requestId)
+  RequestBoundary.respond (balance: former "the late-day balance of (learner)" with (learner), requestId)
 ```
 
 ### lateDays.Balance:staff-balance
@@ -3355,11 +3355,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/late-days/balance")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage late days (user)
-  (user) is an active student (user: learner)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage late days" with (user)
+  view "(user) is an active student" with (user: learner)
 then
-  request RequestBoundary.respond (balance: the late-day balance of (learner) (learner), requestId)
+  RequestBoundary.respond (balance: former "the late-day balance of (learner)" with (learner), requestId)
 ```
 
 ### lateDays.Balance:balance-unauthorized
@@ -3367,11 +3367,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/late-days/balance")
 where
-  the active user of (session) (session) has (user) and not (user: learner)
-  (user) may not manage late days (user)
-  (user) is an active student (user: learner)
+  view "the active user of (session)" with (session) has (user) and not (user: learner)
+  view "(user) may not manage late days" with (user)
+  view "(user) is an active student" with (user: learner)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### lateDays.Balance:balance-missing
@@ -3379,10 +3379,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/late-days/balance")
 where
-  the active user of (session) (session)
-  (user) is not an active student (user: learner)
+  view "the active user of (session)" with (session)
+  view "(user) is not an active student" with (user: learner)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### lateDays.Cancel:success
@@ -3390,10 +3390,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/late-days/cancel")
 where
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request Banking.cancel (learner: user, item: assignment)
+  Banking.cancel (learner: user, item: assignment)
 ```
 
 ### lateDays.Cancel:success#2
@@ -3403,7 +3403,7 @@ when Banking.cancel (learner: user, item: assignment, use), asked by lateDays.Ca
 where
   earlier, RequestBoundary.request (session, assignment, requestId, path: "/late-days/cancel")
 then
-  request RequestBoundary.respond (use, requestId)
+  RequestBoundary.respond (use, requestId)
 ```
 
 ### lateDays.Cancel:forbidden
@@ -3411,10 +3411,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/late-days/cancel")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### lateDays.Change:success
@@ -3422,10 +3422,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/change")
 where
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request Banking.change (learner: user, item: assignment, days)
+  Banking.change (learner: user, item: assignment, days)
 ```
 
 ### lateDays.Change:success#2
@@ -3435,7 +3435,7 @@ when Banking.change (learner: user, item: assignment, days, use), asked by lateD
 where
   earlier, RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/change")
 then
-  request RequestBoundary.respond (use, requestId)
+  RequestBoundary.respond (use, requestId)
 ```
 
 ### lateDays.Change:forbidden
@@ -3443,10 +3443,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, days, requestId, path: "/late-days/change")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### lateDays.ConfigurePolicy:success
@@ -3454,10 +3454,10 @@ then
 ```reaction
 when RequestBoundary.request (session, defaultDays, unitHours, maxDaysPerItem, requestId, path: "/late-days/configure-policy")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage late days (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage late days" with (user)
 then
-  request Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours)
+  Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours)
 ```
 
 ### lateDays.ConfigurePolicy:success#2
@@ -3467,7 +3467,7 @@ when Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, uni
 where
   earlier, RequestBoundary.request (session, defaultDays, unitHours, maxDaysPerItem, requestId, path: "/late-days/configure-policy")
 then
-  request RequestBoundary.respond (policy: true, requestId)
+  RequestBoundary.respond (policy: true, requestId)
 ```
 
 ### lateDays.ConfigurePolicy:forbidden
@@ -3475,10 +3475,10 @@ then
 ```reaction
 when RequestBoundary.request (session, defaultDays, unitHours, maxDaysPerItem, requestId, path: "/late-days/configure-policy")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage late days (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage late days" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### lateDays.ForAssignment:success
@@ -3486,10 +3486,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/late-days/for-assignment")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage late days (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage late days" with (user)
 then
-  request RequestBoundary.respond (users: the late-day uses on (assignment) (assignment), requestId)
+  RequestBoundary.respond (users: former "the late-day uses on (assignment)" with (assignment), requestId)
 ```
 
 ### lateDays.ForAssignment:forbidden
@@ -3497,10 +3497,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/late-days/for-assignment")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage late days (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage late days" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### lateDays.Grant:success
@@ -3509,10 +3509,10 @@ then
 when RequestBoundary.request (session, learner, days, reason, requestId, path: "/late-days/grant")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage late days (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage late days" with (user)
 then
-  request Banking.grant (learner, days, reason, at)
+  Banking.grant (learner, days, reason, at)
 ```
 
 ### lateDays.Grant:success#2
@@ -3522,7 +3522,7 @@ when Banking.grant (learner, days, reason, at, grant), asked by lateDays.Grant:s
 where
   earlier, RequestBoundary.request (session, learner, days, reason, requestId, path: "/late-days/grant")
 then
-  request RequestBoundary.respond (grant, requestId)
+  RequestBoundary.respond (grant, requestId)
 ```
 
 ### lateDays.Grant:forbidden
@@ -3530,10 +3530,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, days, reason, requestId, path: "/late-days/grant")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage late days (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage late days" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### lateDays.List:success
@@ -3541,10 +3541,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/late-days/list")
 where
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request RequestBoundary.respond (uses: the late-day uses of (learner) (learner: user), requestId)
+  RequestBoundary.respond (uses: former "the late-day uses of (learner)" with (learner: user), requestId)
 ```
 
 ### lateDays.List:forbidden
@@ -3552,10 +3552,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/late-days/list")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### lateDays.StaffCancel:success
@@ -3563,11 +3563,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, assignment, requestId, path: "/late-days/staff-cancel")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage late days (user)
-  (user) is an active student (user: learner)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage late days" with (user)
+  view "(user) is an active student" with (user: learner)
 then
-  request Banking.cancel (learner, item: assignment)
+  Banking.cancel (learner, item: assignment)
 ```
 
 ### lateDays.StaffCancel:success#2
@@ -3577,7 +3577,7 @@ when Banking.cancel (learner, item: assignment, use), asked by lateDays.StaffCan
 where
   earlier, RequestBoundary.request (session, learner, assignment, requestId, path: "/late-days/staff-cancel")
 then
-  request RequestBoundary.respond (use, requestId)
+  RequestBoundary.respond (use, requestId)
 ```
 
 ### lateDays.StaffCancel:hidden
@@ -3585,10 +3585,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, assignment, requestId, path: "/late-days/staff-cancel")
 where
-  the active user of (session) (session)
-  (user) is not an active student (user: learner)
+  view "the active user of (session)" with (session)
+  view "(user) is not an active student" with (user: learner)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### lateDays.StaffCancel:unauthorized
@@ -3596,11 +3596,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, assignment, requestId, path: "/late-days/staff-cancel")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage late days (user)
-  (user) is an active student (user: learner)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage late days" with (user)
+  view "(user) is an active student" with (user: learner)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### lateDays.StaffChange:success
@@ -3608,11 +3608,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, assignment, days, requestId, path: "/late-days/staff-change")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage late days (user)
-  (user) is an active student (user: learner)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage late days" with (user)
+  view "(user) is an active student" with (user: learner)
 then
-  request Banking.change (learner, item: assignment, days)
+  Banking.change (learner, item: assignment, days)
 ```
 
 ### lateDays.StaffChange:success#2
@@ -3622,7 +3622,7 @@ when Banking.change (learner, item: assignment, days, use), asked by lateDays.St
 where
   earlier, RequestBoundary.request (session, learner, assignment, days, requestId, path: "/late-days/staff-change")
 then
-  request RequestBoundary.respond (use, requestId)
+  RequestBoundary.respond (use, requestId)
 ```
 
 ### lateDays.StaffChange:hidden
@@ -3630,10 +3630,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, assignment, days, requestId, path: "/late-days/staff-change")
 where
-  the active user of (session) (session)
-  (user) is not an active student (user: learner)
+  view "the active user of (session)" with (session)
+  view "(user) is not an active student" with (user: learner)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### lateDays.StaffChange:unauthorized
@@ -3641,11 +3641,11 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, assignment, days, requestId, path: "/late-days/staff-change")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage late days (user)
-  (user) is an active student (user: learner)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage late days" with (user)
+  view "(user) is an active student" with (user: learner)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### links.Backlinks:success
@@ -3653,9 +3653,9 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/links/backlinks")
 where
-  (post) is readable (post: target)
+  view "(post) is readable" with (post: target)
 then
-  request RequestBoundary.respond (sources: the backlinks of (target) (target), requestId)
+  RequestBoundary.respond (sources: former "the backlinks of (target)" with (target), requestId)
 ```
 
 ### links.Backlinks:hidden
@@ -3663,9 +3663,9 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/links/backlinks")
 where
-  (post) is not readable (post: target)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### links.Forward:success
@@ -3673,9 +3673,9 @@ then
 ```reaction
 when RequestBoundary.request (source, requestId, path: "/links/forward")
 where
-  (post) is readable (post: source)
+  view "(post) is readable" with (post: source)
 then
-  request RequestBoundary.respond (targets: the forward links of (source) (source), requestId)
+  RequestBoundary.respond (targets: former "the forward links of (source)" with (source), requestId)
 ```
 
 ### links.Forward:hidden
@@ -3683,9 +3683,9 @@ then
 ```reaction
 when RequestBoundary.request (source, requestId, path: "/links/forward")
 where
-  (post) is not readable (post: source)
+  view "(post) is not readable" with (post: source)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.FlagRaise:success
@@ -3694,10 +3694,10 @@ then
 when RequestBoundary.request (session, target, reason, requestId, path: "/flags/raise")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (post) is readable (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: target)
 then
-  request Flagging.flag (reporter: user, target, reason, at)
+  Flagging.flag (reporter: user, target, reason, at)
 ```
 
 ### moderation.FlagRaise:success#2
@@ -3707,7 +3707,7 @@ when Flagging.flag (reporter: user, target, reason, at, flag), asked by moderati
 where
   earlier, RequestBoundary.request (session, target, reason, requestId, path: "/flags/raise")
 then
-  request RequestBoundary.respond (flag, requestId)
+  RequestBoundary.respond (flag, requestId)
 ```
 
 ### moderation.FlagRaise:hidden
@@ -3715,10 +3715,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, reason, requestId, path: "/flags/raise")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: target)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.FlagResolve:success
@@ -3726,11 +3726,11 @@ then
 ```reaction
 when RequestBoundary.request (session, target, outcome, requestId, path: "/flags/resolve")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (post) is readable (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(post) is readable" with (post: target)
 then
-  request Flagging.resolve (target, outcome)
+  Flagging.resolve (target, outcome)
 ```
 
 ### moderation.FlagResolve:success#2
@@ -3740,7 +3740,7 @@ when Flagging.resolve (target, outcome), asked by moderation.FlagResolve:success
 where
   earlier, RequestBoundary.request (session, target, outcome, requestId, path: "/flags/resolve")
 then
-  request RequestBoundary.respond (target, requestId)
+  RequestBoundary.respond (target, requestId)
 ```
 
 ### moderation.FlagResolve:forbidden
@@ -3748,10 +3748,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, outcome, requestId, path: "/flags/resolve")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### moderation.FlagResolve:hidden
@@ -3759,11 +3759,11 @@ then
 ```reaction
 when RequestBoundary.request (session, target, outcome, requestId, path: "/flags/resolve")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (post) is not readable (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.FlagsForTarget:target
@@ -3771,11 +3771,11 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/flags/forTarget")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (post) is readable (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(post) is readable" with (post: target)
 then
-  request RequestBoundary.respond (flags: the flags on (target) (target), requestId)
+  RequestBoundary.respond (flags: former "the flags on (target)" with (target), requestId)
 ```
 
 ### moderation.FlagsForTarget:target-hidden
@@ -3783,10 +3783,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/flags/forTarget")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.FlagsForTarget:missing-target
@@ -3794,11 +3794,11 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/flags/forTarget")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (post) is not readable (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.FlagsOpen:success
@@ -3806,10 +3806,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/flags/open")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
 then
-  request RequestBoundary.respond (targets: the open flags () (), requestId)
+  RequestBoundary.respond (targets: former "the open flags ()", requestId)
 ```
 
 ### moderation.FlagsOpen:hidden
@@ -3817,10 +3817,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/flags/open")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.GetTrashedPost:success
@@ -3828,12 +3828,12 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/posts/get")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Posting._getPost (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
-  request RequestBoundary.respond (post: the post (post) (post: item), requestId)
+  RequestBoundary.respond (post: former "the post (post)" with (post: item), requestId)
 ```
 
 ### moderation.GetTrashedPost:hidden
@@ -3841,10 +3841,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/posts/get")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.GetTrashedPost:missing
@@ -3852,11 +3852,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/posts/get")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   no Posting._getPost (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.GetTrashedPost:live
@@ -3864,12 +3864,12 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/posts/get")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Posting._getPost (post: item)
   Trashing._isTrashed (item) has (trashed: false)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.IsLocked:success
@@ -3877,10 +3877,10 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/locks/isLocked")
 where
-  (target) is public (target)
+  view "(target) is public" with (target)
   Locking._isLocked (target) has (locked)
 then
-  request RequestBoundary.respond (locked, requestId)
+  RequestBoundary.respond (locked, requestId)
 ```
 
 ### moderation.IsLocked:hidden
@@ -3888,9 +3888,9 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/locks/isLocked")
 where
-  no (target) is public (target)
+  no view "(target) is public" with (target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.IsTrashed:success
@@ -3898,11 +3898,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/isTrashed")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Trashing._isTrashed (item) has (trashed)
 then
-  request RequestBoundary.respond (trashed, requestId)
+  RequestBoundary.respond (trashed, requestId)
 ```
 
 ### moderation.IsTrashed:hidden
@@ -3910,10 +3910,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/isTrashed")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.LockList
@@ -3921,7 +3921,7 @@ then
 ```reaction
 when RequestBoundary.request (requestId, path: "/locks/list")
 then
-  request RequestBoundary.respond (locked: the locked list () (), requestId)
+  RequestBoundary.respond (locked: former "the locked list ()", requestId)
 ```
 
 ### moderation.LockTarget:success
@@ -3930,11 +3930,11 @@ then
 when RequestBoundary.request (session, target, requestId, path: "/locks/lock")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (target) is public (target)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(target) is public" with (target)
 then
-  request Locking.lock (target, at)
+  Locking.lock (target, at)
 ```
 
 ### moderation.LockTarget:success#2
@@ -3944,7 +3944,7 @@ when Locking.lock (target, at), asked by moderation.LockTarget:success
 where
   earlier, RequestBoundary.request (session, target, requestId, path: "/locks/lock")
 then
-  request RequestBoundary.respond (target, requestId)
+  RequestBoundary.respond (target, requestId)
 ```
 
 ### moderation.LockTarget:forbidden
@@ -3952,10 +3952,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/lock")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### moderation.LockTarget:hidden
@@ -3963,11 +3963,11 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/lock")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  no (target) is public (target)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  no view "(target) is public" with (target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.PurgeItem:success
@@ -3975,10 +3975,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/purge")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
 then
-  request Trashing.purge (item)
+  Trashing.purge (item)
 ```
 
 ### moderation.PurgeItem:success#2
@@ -3988,7 +3988,7 @@ when Trashing.purge (item), asked by moderation.PurgeItem:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/trash/purge")
 then
-  request RequestBoundary.respond (item, requestId)
+  RequestBoundary.respond (item, requestId)
 ```
 
 ### moderation.PurgeItem:forbidden
@@ -3996,10 +3996,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/purge")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### moderation.PurgedItemClearsModerationState:post
@@ -4009,7 +4009,7 @@ when Trashing.purge (item)
 where
   Posting._getPost (post: item)
 then
-  request Posting.delete (post: item)
+  Posting.delete (post: item)
 ```
 
 ### moderation.PurgedItemClearsModerationState:formatting
@@ -4017,7 +4017,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Formatting.clear (target: item)
+  Formatting.clear (target: item)
 ```
 
 ### moderation.PurgedItemClearsModerationState:links
@@ -4025,7 +4025,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Linking.clearLinks (source: item)
+  Linking.clearLinks (source: item)
 ```
 
 ### moderation.PurgedItemClearsModerationState:backlinks
@@ -4033,7 +4033,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Linking.clearBacklinks (target: item)
+  Linking.clearBacklinks (target: item)
 ```
 
 ### moderation.PurgedItemClearsModerationState:flags
@@ -4041,7 +4041,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Flagging.clearTarget (target: item)
+  Flagging.clearTarget (target: item)
 ```
 
 ### moderation.PurgedItemClearsModerationState:item-lock
@@ -4051,7 +4051,7 @@ when Trashing.purge (item)
 where
   Locking._isLocked (target: item) has (locked: true)
 then
-  request Locking.unlock (target: item)
+  Locking.unlock (target: item)
 ```
 
 ### moderation.PurgedItemClearsModerationState:conversation-lock
@@ -4063,7 +4063,7 @@ where
   Conversing._getConversation (node) has (conversation)
   Locking._isLocked (target: conversation) has (locked: true)
 then
-  request Locking.unlock (target: conversation)
+  Locking.unlock (target: conversation)
 ```
 
 ### moderation.PurgedItemClearsModerationState:tracking
@@ -4071,7 +4071,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Tracking.unregister (item)
+  Tracking.unregister (item)
 ```
 
 ### moderation.PurgedItemClearsModerationState:leaf-node
@@ -4082,7 +4082,7 @@ where
   Conversing._getNodeByItem (item) has (node)
   Conversing._hasChildren (node) has (present: false)
 then
-  request Conversing.remove (node)
+  Conversing.remove (node)
 ```
 
 ### moderation.RestoreItem:success
@@ -4090,10 +4090,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/restore")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
 then
-  request Trashing.restore (item)
+  Trashing.restore (item)
 ```
 
 ### moderation.RestoreItem:success#2
@@ -4103,7 +4103,7 @@ when Trashing.restore (item), asked by moderation.RestoreItem:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/trash/restore")
 then
-  request RequestBoundary.respond (item, requestId)
+  RequestBoundary.respond (item, requestId)
 ```
 
 ### moderation.RestoreItem:forbidden
@@ -4111,10 +4111,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/restore")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### moderation.TrashItem:success
@@ -4123,11 +4123,11 @@ then
 when RequestBoundary.request (session, item, requestId, path: "/trash/trash")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Posting._getPost (post: item)
 then
-  request Trashing.trash (item, by: user, at)
+  Trashing.trash (item, by: user, at)
 ```
 
 ### moderation.TrashItem:success#2
@@ -4137,7 +4137,7 @@ when Trashing.trash (item, by: user, at), asked by moderation.TrashItem:success
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/trash/trash")
 then
-  request RequestBoundary.respond (item, requestId)
+  RequestBoundary.respond (item, requestId)
 ```
 
 ### moderation.TrashItem:forbidden
@@ -4145,10 +4145,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/trash")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### moderation.TrashItem:missing
@@ -4156,11 +4156,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/trash/trash")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   no Posting._getPost (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.TrashList:success
@@ -4168,10 +4168,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/trash/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
 then
-  request RequestBoundary.respond (trashed: the trash bin () (), requestId)
+  RequestBoundary.respond (trashed: former "the trash bin ()", requestId)
 ```
 
 ### moderation.TrashList:hidden
@@ -4179,10 +4179,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/trash/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### moderation.UnlockTarget:success
@@ -4190,11 +4190,11 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/unlock")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  (target) is public (target)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(target) is public" with (target)
 then
-  request Locking.unlock (target)
+  Locking.unlock (target)
 ```
 
 ### moderation.UnlockTarget:success#2
@@ -4204,7 +4204,7 @@ when Locking.unlock (target), asked by moderation.UnlockTarget:success
 where
   earlier, RequestBoundary.request (session, target, requestId, path: "/locks/unlock")
 then
-  request RequestBoundary.respond (target, requestId)
+  RequestBoundary.respond (target, requestId)
 ```
 
 ### moderation.UnlockTarget:forbidden
@@ -4212,10 +4212,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/unlock")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### moderation.UnlockTarget:hidden
@@ -4223,11 +4223,11 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/locks/unlock")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
-  no (target) is public (target)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  no view "(target) is public" with (target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### notes.Acknowledge:success
@@ -4236,10 +4236,10 @@ then
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/acknowledge")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request Noting.acknowledge (note, learner: user, at)
+  Noting.acknowledge (note, learner: user, at)
 ```
 
 ### notes.Acknowledge:success#2
@@ -4249,7 +4249,7 @@ when Noting.acknowledge (note, learner: user, at), asked by notes.Acknowledge:su
 where
   earlier, RequestBoundary.request (session, note, requestId, path: "/students/notes/acknowledge")
 then
-  request RequestBoundary.respond (note, requestId)
+  RequestBoundary.respond (note, requestId)
 ```
 
 ### notes.Acknowledge:forbidden
@@ -4257,10 +4257,10 @@ then
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/acknowledge")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### notes.Archive:success
@@ -4269,10 +4269,10 @@ then
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/archive")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage student notes" with (user)
 then
-  request Noting.archive (note, at)
+  Noting.archive (note, at)
 ```
 
 ### notes.Archive:success#2
@@ -4282,7 +4282,7 @@ when Noting.archive (note, at), asked by notes.Archive:success
 where
   earlier, RequestBoundary.request (session, note, requestId, path: "/students/notes/archive")
 then
-  request RequestBoundary.respond (note, requestId)
+  RequestBoundary.respond (note, requestId)
 ```
 
 ### notes.Archive:forbidden
@@ -4290,10 +4290,10 @@ then
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/archive")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage student notes" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### notes.NotesList:success
@@ -4301,10 +4301,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/students/notes/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage student notes" with (user)
 then
-  request RequestBoundary.respond (notes: the staff notes on (learner) (learner), requestId)
+  RequestBoundary.respond (notes: former "the staff notes on (learner)" with (learner), requestId)
 ```
 
 ### notes.NotesList:forbidden
@@ -4312,10 +4312,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, requestId, path: "/students/notes/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage student notes" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### notes.NotesVisible:success
@@ -4323,10 +4323,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/students/notes/visible")
 where
-  the active user of (session) (session) has (user)
-  (user) is an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
 then
-  request RequestBoundary.respond (notes: the notes shown to (learner) (learner: user), requestId)
+  RequestBoundary.respond (notes: former "the notes shown to (learner)" with (learner: user), requestId)
 ```
 
 ### notes.NotesVisible:forbidden
@@ -4334,10 +4334,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/students/notes/visible")
 where
-  the active user of (session) (session) has (user)
-  (user) is not an active student (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### notes.Resolve:success
@@ -4346,10 +4346,10 @@ then
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/resolve")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage student notes" with (user)
 then
-  request Noting.resolve (note, at)
+  Noting.resolve (note, at)
 ```
 
 ### notes.Resolve:success#2
@@ -4359,7 +4359,7 @@ when Noting.resolve (note, at), asked by notes.Resolve:success
 where
   earlier, RequestBoundary.request (session, note, requestId, path: "/students/notes/resolve")
 then
-  request RequestBoundary.respond (note, requestId)
+  RequestBoundary.respond (note, requestId)
 ```
 
 ### notes.Resolve:forbidden
@@ -4367,10 +4367,10 @@ then
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/resolve")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage student notes" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### notes.Restore:success
@@ -4379,10 +4379,10 @@ then
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/restore")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage student notes" with (user)
 then
-  request Noting.restore (note, at)
+  Noting.restore (note, at)
 ```
 
 ### notes.Restore:success#2
@@ -4392,7 +4392,7 @@ when Noting.restore (note, at), asked by notes.Restore:success
 where
   earlier, RequestBoundary.request (session, note, requestId, path: "/students/notes/restore")
 then
-  request RequestBoundary.respond (note, requestId)
+  RequestBoundary.respond (note, requestId)
 ```
 
 ### notes.Restore:forbidden
@@ -4400,10 +4400,10 @@ then
 ```reaction
 when RequestBoundary.request (session, note, requestId, path: "/students/notes/restore")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage student notes" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### notes.Revise:success
@@ -4412,10 +4412,10 @@ then
 when RequestBoundary.request (session, note, body, visibility, tags, followUpAt, requestId, path: "/students/notes/revise")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage student notes" with (user)
 then
-  request Noting.revise (note, body, visibility, tags, followUpAt, at)
+  Noting.revise (note, body, visibility, tags, followUpAt, at)
 ```
 
 ### notes.Revise:success#2
@@ -4425,7 +4425,7 @@ when Noting.revise (note, body, visibility, tags, followUpAt, at), asked by note
 where
   earlier, RequestBoundary.request (session, note, body, visibility, tags, followUpAt, requestId, path: "/students/notes/revise")
 then
-  request RequestBoundary.respond (note, requestId)
+  RequestBoundary.respond (note, requestId)
 ```
 
 ### notes.Revise:forbidden
@@ -4433,10 +4433,10 @@ then
 ```reaction
 when RequestBoundary.request (session, note, body, visibility, tags, followUpAt, requestId, path: "/students/notes/revise")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage student notes" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### notes.StudentsDetail:found
@@ -4444,11 +4444,11 @@ then
 ```reaction
 when RequestBoundary.request (session, user: target, requestId, path: "/students/detail")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage student notes (user)
-  the seat detail of (user) (user: target) has (detail)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage student notes" with (user)
+  view "the seat detail of (user)" with (user: target) has (detail)
 then
-  request RequestBoundary.respond (detail, requestId)
+  RequestBoundary.respond (detail, requestId)
 ```
 
 ### notes.StudentsDetail:missing
@@ -4456,11 +4456,11 @@ then
 ```reaction
 when RequestBoundary.request (session, user: target, requestId, path: "/students/detail")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage student notes (user)
-  no the seat detail of (user) (user: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage student notes" with (user)
+  no view "the seat detail of (user)" with (user: target)
 then
-  request RequestBoundary.respond (detail: null, requestId)
+  RequestBoundary.respond (detail: null, requestId)
 ```
 
 ### notes.StudentsDetail:forbidden
@@ -4468,10 +4468,10 @@ then
 ```reaction
 when RequestBoundary.request (session, user: target, requestId, path: "/students/detail")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage student notes" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### notes.Write:success
@@ -4480,10 +4480,10 @@ then
 when RequestBoundary.request (session, learner, body, visibility, tags, followUpAt, requestId, path: "/students/notes/write")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage student notes" with (user)
 then
-  request Noting.write (author: user, learner, body, visibility, tags, followUpAt, at)
+  Noting.write (author: user, learner, body, visibility, tags, followUpAt, at)
 ```
 
 ### notes.Write:success#2
@@ -4493,7 +4493,7 @@ when Noting.write (author: user, learner, body, visibility, tags, followUpAt, at
 where
   earlier, RequestBoundary.request (session, learner, body, visibility, tags, followUpAt, requestId, path: "/students/notes/write")
 then
-  request RequestBoundary.respond (note, requestId)
+  RequestBoundary.respond (note, requestId)
 ```
 
 ### notes.Write:forbidden
@@ -4501,10 +4501,10 @@ then
 ```reaction
 when RequestBoundary.request (session, learner, body, visibility, tags, followUpAt, requestId, path: "/students/notes/write")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage student notes (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage student notes" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### notifications.AcceptNotifiesAnswerAuthor
@@ -4515,7 +4515,7 @@ where
   Posting._getPost (post: answer) has (author: answerAuthor)
   Posting._getPost (post: answer) and not (author: by)
 then
-  request Notifying.notify (recipient: answerAuthor, kind: "accepted", subject: answer, link: answer, at)
+  Notifying.notify (recipient: answerAuthor, kind: "accepted", subject: answer, link: answer, at)
 ```
 
 ### notifications.Dismiss
@@ -4523,9 +4523,9 @@ then
 ```reaction
 when RequestBoundary.request (session, notification, requestId, path: "/notifications/dismiss")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Notifying.dismiss (notification, recipient: user)
+  Notifying.dismiss (notification, recipient: user)
 ```
 
 ### notifications.Dismiss#2
@@ -4535,7 +4535,7 @@ when Notifying.dismiss (notification, recipient: user, result.notification: dism
 where
   earlier, RequestBoundary.request (session, notification, requestId, path: "/notifications/dismiss")
 then
-  request RequestBoundary.respond (notification: dismissed, requestId)
+  RequestBoundary.respond (notification: dismissed, requestId)
 ```
 
 ### notifications.EditMentionsNotify
@@ -4543,10 +4543,10 @@ then
 ```reaction
 when Posting.edit (at, post)
 where
-  the other users mentioned in (post) (post) has (user: mentioned)
-  (user) is not yet notified about (subject) (user: mentioned, subject: post)
+  view "the other users mentioned in (post)" with (post) has (user: mentioned)
+  view "(user) is not yet notified about (subject)" with (user: mentioned, subject: post)
 then
-  request Notifying.notify (recipient: mentioned, kind: "mention", subject: post, link: post, at)
+  Notifying.notify (recipient: mentioned, kind: "mention", subject: post, link: post, at)
 ```
 
 ### notifications.ListNotifications
@@ -4554,9 +4554,9 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/notifications/list")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request RequestBoundary.respond (notifications: the notifications of (user) (user), requestId)
+  RequestBoundary.respond (notifications: former "the notifications of (user)" with (user), requestId)
 ```
 
 ### notifications.MarkAllRead
@@ -4564,9 +4564,9 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/notifications/markAllRead")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Notifying.markAllRead (recipient: user)
+  Notifying.markAllRead (recipient: user)
 ```
 
 ### notifications.MarkAllRead#2
@@ -4576,7 +4576,7 @@ when Notifying.markAllRead (recipient: user, result.recipient), asked by notific
 where
   earlier, RequestBoundary.request (session, requestId, path: "/notifications/markAllRead")
 then
-  request RequestBoundary.respond (recipient, requestId)
+  RequestBoundary.respond (recipient, requestId)
 ```
 
 ### notifications.MarkRead
@@ -4584,9 +4584,9 @@ then
 ```reaction
 when RequestBoundary.request (session, notification, requestId, path: "/notifications/markRead")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Notifying.markRead (notification, recipient: user)
+  Notifying.markRead (notification, recipient: user)
 ```
 
 ### notifications.MarkRead#2
@@ -4596,7 +4596,7 @@ when Notifying.markRead (notification, recipient: user, result.notification: mar
 where
   earlier, RequestBoundary.request (session, notification, requestId, path: "/notifications/markRead")
 then
-  request RequestBoundary.respond (notification: marked, requestId)
+  RequestBoundary.respond (notification: marked, requestId)
 ```
 
 ### notifications.PurgeClearsNotifications
@@ -4604,7 +4604,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Notifying.clearSubject (subject: item)
+  Notifying.clearSubject (subject: item)
 ```
 
 ### notifications.ReadInbox
@@ -4612,9 +4612,9 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/notifications/inbox")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request RequestBoundary.respond (notifications: the inbox of (user) (user), requestId)
+  RequestBoundary.respond (notifications: former "the inbox of (user)" with (user), requestId)
 ```
 
 ### notifications.ReplyMentionsNotify
@@ -4622,11 +4622,11 @@ then
 ```reaction
 when Conversing.reply (item, parent, at)
 where
-  the other users mentioned in (post) (post: item) has (user: mentioned)
+  view "the other users mentioned in (post)" with (post: item) has (user: mentioned)
   Conversing._getItem (node: parent) has (item: parentItem)
   Posting._getPost (post: parentItem) and not (author: mentioned)
 then
-  request Notifying.notify (recipient: mentioned, kind: "mention", subject: item, link: item, at)
+  Notifying.notify (recipient: mentioned, kind: "mention", subject: item, link: item, at)
 ```
 
 ### notifications.ReplyNotifiesParentAuthor
@@ -4638,7 +4638,7 @@ where
   Posting._getPost (post: parentItem) has (author: parentAuthor)
   Posting._getPost (post: item) and not (author: parentAuthor)
 then
-  request Notifying.notify (recipient: parentAuthor, kind: "reply", subject: item, link: item, at)
+  Notifying.notify (recipient: parentAuthor, kind: "reply", subject: item, link: item, at)
 ```
 
 ### notifications.ReplyNotifiesWatchers
@@ -4651,9 +4651,9 @@ where
   Posting._getPost (post: item) and not (author: subscriber)
   Conversing._getItem (node: parent) has (item: parentItem)
   Posting._getPost (post: parentItem) and not (author: subscriber)
-  (user) is not mentioned in (post) (user: subscriber, post: item)
+  view "(user) is not mentioned in (post)" with (user: subscriber, post: item)
 then
-  request Notifying.notify (recipient: subscriber, kind: "followed_reply", subject: item, link: item, at)
+  Notifying.notify (recipient: subscriber, kind: "followed_reply", subject: item, link: item, at)
 ```
 
 ### notifications.RootMentionsNotify
@@ -4661,9 +4661,9 @@ then
 ```reaction
 when Conversing.start (item, at)
 where
-  the other users mentioned in (post) (post: item) has (user: mentioned)
+  view "the other users mentioned in (post)" with (post: item) has (user: mentioned)
 then
-  request Notifying.notify (recipient: mentioned, kind: "mention", subject: item, link: item, at)
+  Notifying.notify (recipient: mentioned, kind: "mention", subject: item, link: item, at)
 ```
 
 ### notifications.UnreadCount
@@ -4671,10 +4671,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/notifications/unreadCount")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
   Notifying._getUnreadCount (recipient: user) has (count)
 then
-  request RequestBoundary.respond (count, requestId)
+  RequestBoundary.respond (count, requestId)
 ```
 
 ### pins.IsPinned:success
@@ -4682,10 +4682,10 @@ then
 ```reaction
 when RequestBoundary.request (item, scope, requestId, path: "/pins/isPinned")
 where
-  (post) is readable (post: item)
+  view "(post) is readable" with (post: item)
   Pinning._isPinned (item, scope) has (pinned)
 then
-  request RequestBoundary.respond (pinned, requestId)
+  RequestBoundary.respond (pinned, requestId)
 ```
 
 ### pins.IsPinned:hidden
@@ -4693,9 +4693,9 @@ then
 ```reaction
 when RequestBoundary.request (item, scope, requestId, path: "/pins/isPinned")
 where
-  (post) is not readable (post: item)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### pins.PinItem:success
@@ -4704,11 +4704,11 @@ then
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/pin")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may pin in (scope) (user, scope)
-  (post) is readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may pin in (scope)" with (user, scope)
+  view "(post) is readable" with (post: item)
 then
-  request Pinning.pin (item, scope, priority, at)
+  Pinning.pin (item, scope, priority, at)
 ```
 
 ### pins.PinItem:success#2
@@ -4718,7 +4718,7 @@ when Pinning.pin (item, scope, priority, at, pin), asked by pins.PinItem:success
 where
   earlier, RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/pin")
 then
-  request RequestBoundary.respond (pin, requestId)
+  RequestBoundary.respond (pin, requestId)
 ```
 
 ### pins.PinItem:forbidden
@@ -4726,10 +4726,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/pin")
 where
-  the active user of (session) (session) has (user)
-  (user) may not pin in (scope) (user, scope)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not pin in (scope)" with (user, scope)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### pins.PinItem:hidden
@@ -4737,11 +4737,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/pin")
 where
-  the active user of (session) (session) has (user)
-  (user) may pin in (scope) (user, scope)
-  (post) is not readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may pin in (scope)" with (user, scope)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### pins.PinsForScope
@@ -4749,7 +4749,7 @@ then
 ```reaction
 when RequestBoundary.request (scope, requestId, path: "/pins/forScope")
 then
-  request RequestBoundary.respond (pinned: the pins of (scope) (scope), requestId)
+  RequestBoundary.respond (pinned: former "the pins of (scope)" with (scope), requestId)
 ```
 
 ### pins.PurgeClearsPins
@@ -4757,7 +4757,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Pinning.clearItem (item)
+  Pinning.clearItem (item)
 ```
 
 ### pins.SetPinPriority:success
@@ -4765,11 +4765,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/setPriority")
 where
-  the active user of (session) (session) has (user)
-  (user) may pin in (scope) (user, scope)
-  (post) is readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may pin in (scope)" with (user, scope)
+  view "(post) is readable" with (post: item)
 then
-  request Pinning.setPriority (item, scope, priority)
+  Pinning.setPriority (item, scope, priority)
 ```
 
 ### pins.SetPinPriority:success#2
@@ -4779,7 +4779,7 @@ when Pinning.setPriority (item, scope, priority, pin), asked by pins.SetPinPrior
 where
   earlier, RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/setPriority")
 then
-  request RequestBoundary.respond (pin, requestId)
+  RequestBoundary.respond (pin, requestId)
 ```
 
 ### pins.SetPinPriority:forbidden
@@ -4787,10 +4787,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/setPriority")
 where
-  the active user of (session) (session) has (user)
-  (user) may not pin in (scope) (user, scope)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not pin in (scope)" with (user, scope)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### pins.SetPinPriority:hidden
@@ -4798,11 +4798,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, scope, priority, requestId, path: "/pins/setPriority")
 where
-  the active user of (session) (session) has (user)
-  (user) may pin in (scope) (user, scope)
-  (post) is not readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may pin in (scope)" with (user, scope)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### pins.UnpinItem:success
@@ -4810,11 +4810,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, scope, requestId, path: "/pins/unpin")
 where
-  the active user of (session) (session) has (user)
-  (user) may pin in (scope) (user, scope)
-  (post) is readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may pin in (scope)" with (user, scope)
+  view "(post) is readable" with (post: item)
 then
-  request Pinning.unpin (item, scope)
+  Pinning.unpin (item, scope)
 ```
 
 ### pins.UnpinItem:success#2
@@ -4824,7 +4824,7 @@ when Pinning.unpin (item, scope, pin), asked by pins.UnpinItem:success
 where
   earlier, RequestBoundary.request (session, item, scope, requestId, path: "/pins/unpin")
 then
-  request RequestBoundary.respond (pin, requestId)
+  RequestBoundary.respond (pin, requestId)
 ```
 
 ### pins.UnpinItem:forbidden
@@ -4832,10 +4832,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, scope, requestId, path: "/pins/unpin")
 where
-  the active user of (session) (session) has (user)
-  (user) may not pin in (scope) (user, scope)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not pin in (scope)" with (user, scope)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### pins.UnpinItem:hidden
@@ -4843,11 +4843,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, scope, requestId, path: "/pins/unpin")
 where
-  the active user of (session) (session) has (user)
-  (user) may pin in (scope) (user, scope)
-  (post) is not readable (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may pin in (scope)" with (user, scope)
+  view "(post) is not readable" with (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### posts.DeletePost:delete
@@ -4855,14 +4855,14 @@ then
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
   Posting._getPost (post)
   Trashing._isTrashed (item: post) has (trashed: false)
   Posting._getPost (post) has (author: user)
   Conversing._getNodeByItem (item: post) has (node)
   Conversing._hasChildren (node) has (present: false)
 then
-  request Posting.delete (post)
+  Posting.delete (post)
 ```
 
 ### posts.DeletePost:delete#2
@@ -4872,7 +4872,7 @@ when Posting.delete (post), asked by posts.DeletePost:delete
 where
   earlier, RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 then
-  request RequestBoundary.respond (post, requestId)
+  RequestBoundary.respond (post, requestId)
 ```
 
 ### posts.DeletePost:has-replies
@@ -4880,14 +4880,14 @@ then
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
   Posting._getPost (post)
   Trashing._isTrashed (item: post) has (trashed: false)
   Posting._getPost (post) has (author: user)
   Conversing._getNodeByItem (item: post) has (node)
   Conversing._hasChildren (node) has (present: true)
 then
-  request RequestBoundary.respond (error: "POST_HAS_REPLIES", requestId)
+  RequestBoundary.respond (error: "POST_HAS_REPLIES", requestId)
 ```
 
 ### posts.DeletePost:forbidden
@@ -4895,12 +4895,12 @@ then
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
   Posting._getPost (post)
   Trashing._isTrashed (item: post) has (trashed: false)
   Posting._getPost (post) and not (author: user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### posts.DeletePost:trashed
@@ -4908,11 +4908,11 @@ then
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 where
-  the active user of (session) (session)
+  view "the active user of (session)" with (session)
   Posting._getPost (post)
   Trashing._isTrashed (item: post) has (trashed: true)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### posts.DeletePost:missing
@@ -4920,10 +4920,10 @@ then
 ```reaction
 when RequestBoundary.request (session, post, requestId, path: "/posts/delete")
 where
-  the active user of (session) (session)
+  view "the active user of (session)" with (session)
   no Posting._getPost (post)
 then
-  request RequestBoundary.respond (error: "POST_NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "POST_NOT_FOUND", requestId)
 ```
 
 ### posts.DeletedPostClearsSatellites:formatting
@@ -4931,7 +4931,7 @@ then
 ```reaction
 when Posting.delete (post)
 then
-  request Formatting.clear (target: post)
+  Formatting.clear (target: post)
 ```
 
 ### posts.DeletedPostClearsSatellites:reactions
@@ -4939,7 +4939,7 @@ then
 ```reaction
 when Posting.delete (post)
 then
-  request Reacting.clearTarget (target: post)
+  Reacting.clearTarget (target: post)
 ```
 
 ### posts.DeletedPostClearsSatellites:pins
@@ -4947,7 +4947,7 @@ then
 ```reaction
 when Posting.delete (post)
 then
-  request Pinning.clearItem (item: post)
+  Pinning.clearItem (item: post)
 ```
 
 ### posts.DeletedPostClearsSatellites:bookmarks
@@ -4955,7 +4955,7 @@ then
 ```reaction
 when Posting.delete (post)
 then
-  request Bookmarking.clearItem (item: post)
+  Bookmarking.clearItem (item: post)
 ```
 
 ### posts.DeletedPostClearsSatellites:tags
@@ -4963,7 +4963,7 @@ then
 ```reaction
 when Posting.delete (post)
 then
-  request Tagging.clearTarget (target: post)
+  Tagging.clearTarget (target: post)
 ```
 
 ### posts.DeletedPostClearsSatellites:tracking
@@ -4971,7 +4971,7 @@ then
 ```reaction
 when Posting.delete (post)
 then
-  request Tracking.unregister (item: post)
+  Tracking.unregister (item: post)
 ```
 
 ### posts.DeletedPostClearsSatellites:links
@@ -4979,7 +4979,7 @@ then
 ```reaction
 when Posting.delete (post)
 then
-  request Linking.clearLinks (source: post)
+  Linking.clearLinks (source: post)
 ```
 
 ### posts.DeletedPostClearsSatellites:backlinks
@@ -4987,7 +4987,7 @@ then
 ```reaction
 when Posting.delete (post)
 then
-  request Linking.clearBacklinks (target: post)
+  Linking.clearBacklinks (target: post)
 ```
 
 ### posts.DeletedPostClearsSatellites:leaf-node
@@ -4998,7 +4998,7 @@ where
   Conversing._getNodeByItem (item: post) has (node)
   Conversing._hasChildren (node) has (present: false)
 then
-  request Conversing.remove (node)
+  Conversing.remove (node)
 ```
 
 ### posts.EditPost:missing-post
@@ -5006,10 +5006,10 @@ then
 ```reaction
 when RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
 where
-  the active user of (session) (session)
+  view "the active user of (session)" with (session)
   no Posting._getPost (post)
 then
-  request RequestBoundary.respond (error: "POST_NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "POST_NOT_FOUND", requestId)
 ```
 
 ### posts.EditPost:post
@@ -5018,10 +5018,10 @@ then
 when RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) may edit (post) (user, post)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may edit (post)" with (user, post)
 then
-  request Posting.edit (post, content, at)
+  Posting.edit (post, content, at)
 ```
 
 ### posts.EditPost:post#2
@@ -5031,7 +5031,7 @@ when Posting.edit (post, content, at), asked by posts.EditPost:post
 where
   earlier, RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
 then
-  request RequestBoundary.respond (post, requestId)
+  RequestBoundary.respond (post, requestId)
 ```
 
 ### posts.EditPost:trashed-post
@@ -5039,10 +5039,10 @@ then
 ```reaction
 when RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
 where
-  the active user of (session) (session)
+  view "the active user of (session)" with (session)
   Trashing._isTrashed (item: post) has (trashed: true)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### posts.EditPost:post-forbidden
@@ -5050,10 +5050,10 @@ then
 ```reaction
 when RequestBoundary.request (session, post, content, requestId, path: "/posts/edit")
 where
-  the active user of (session) (session) has (user)
-  (user) may not edit (post) (user, post)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not edit (post)" with (user, post)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### posts.EditedPostRefreshesDerivedContent:render
@@ -5061,7 +5061,7 @@ then
 ```reaction
 when Posting.edit (content, post)
 then
-  request Formatting.setSource (target: post, source: content)
+  Formatting.setSource (target: post, source: content)
 ```
 
 ### posts.EditedPostRefreshesDerivedContent:links
@@ -5069,7 +5069,7 @@ then
 ```reaction
 when Posting.edit (content, post)
 then
-  request Linking.setLinksFrom (source: post, content)
+  Linking.setLinksFrom (source: post, content)
 ```
 
 ### posts.GetPost:success
@@ -5077,9 +5077,9 @@ then
 ```reaction
 when RequestBoundary.request (post, requestId, path: "/posts/get")
 where
-  (post) is readable (post)
+  view "(post) is readable" with (post)
 then
-  request RequestBoundary.respond (post: the post (post) (post), requestId)
+  RequestBoundary.respond (post: former "the post (post)" with (post), requestId)
 ```
 
 ### posts.GetPost:not-found
@@ -5087,9 +5087,9 @@ then
 ```reaction
 when RequestBoundary.request (post, requestId, path: "/posts/get")
 where
-  (post) is not readable (post)
+  view "(post) is not readable" with (post)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### posts.PostsByAuthor
@@ -5097,7 +5097,7 @@ then
 ```reaction
 when RequestBoundary.request (author, requestId, path: "/posts/byAuthor")
 then
-  request RequestBoundary.respond (posts: the public posts of (author) (author), requestId)
+  RequestBoundary.respond (posts: former "the public posts of (author)" with (author), requestId)
 ```
 
 ### profiles.GetProfile:success
@@ -5105,11 +5105,11 @@ then
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
 where
-  the active user of (session) (session) has (user)
-  (user) is an active course member (user)
-  the profile of (user) (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active course member" with (user)
+  view "the profile of (user)" with (user)
 then
-  request RequestBoundary.respond (profile: the private profile of (user) (user), requestId)
+  RequestBoundary.respond (profile: former "the private profile of (user)" with (user), requestId)
 ```
 
 ### profiles.GetProfile:staff
@@ -5117,11 +5117,11 @@ then
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
 where
-  the active user of (session) (session) has (user: reader) and not (user)
-  (user) may manage the roster (user: reader)
-  the profile of (user) (user)
+  view "the active user of (session)" with (session) has (user: reader) and not (user)
+  view "(user) may manage the roster" with (user: reader)
+  view "the profile of (user)" with (user)
 then
-  request RequestBoundary.respond (profile: the private profile of (user) (user), requestId)
+  RequestBoundary.respond (profile: former "the private profile of (user)" with (user), requestId)
 ```
 
 ### profiles.GetProfile:member
@@ -5129,12 +5129,12 @@ then
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
 where
-  the active user of (session) (session) has (user: reader) and not (user)
-  (user) is an active course member (user: reader)
-  (user) may not manage the roster (user: reader)
-  the profile of (user) (user)
+  view "the active user of (session)" with (session) has (user: reader) and not (user)
+  view "(user) is an active course member" with (user: reader)
+  view "(user) may not manage the roster" with (user: reader)
+  view "the profile of (user)" with (user)
 then
-  request RequestBoundary.respond (profile: the profile face of (user) (user), requestId)
+  RequestBoundary.respond (profile: former "the profile face of (user)" with (user), requestId)
 ```
 
 ### profiles.GetProfile:missing
@@ -5142,10 +5142,10 @@ then
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
 where
-  the active user of (session) (session)
-  no the profile of (user) (user)
+  view "the active user of (session)" with (session)
+  no view "the profile of (user)" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### profiles.GetProfile:hidden
@@ -5153,11 +5153,11 @@ then
 ```reaction
 when RequestBoundary.request (session, user, requestId, path: "/profiles/get")
 where
-  the active user of (session) (session) has (user: reader)
-  no (user) is an active course member (user: reader)
-  (user) may not manage the roster (user: reader)
+  view "the active user of (session)" with (session) has (user: reader)
+  no view "(user) is an active course member" with (user: reader)
+  view "(user) may not manage the roster" with (user: reader)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### profiles.ResolvePublicUser
@@ -5167,7 +5167,7 @@ when RequestBoundary.request (ref, requestId, path: "/users/resolve")
 where
   Authenticating._resolveIdentity (ref) has (user, username)
 then
-  request RequestBoundary.respond (user, username, requestId)
+  RequestBoundary.respond (user, username, requestId)
 ```
 
 ### profiles.SearchUsers:success
@@ -5175,10 +5175,10 @@ then
 ```reaction
 when RequestBoundary.request (session, query, requestId, path: "/users/search")
 where
-  the active user of (session) (session) has (user: queryUser)
-  (user) is an active course member (user: queryUser)
+  view "the active user of (session)" with (session) has (user: queryUser)
+  view "(user) is an active course member" with (user: queryUser)
 then
-  request RequestBoundary.respond (users: the user search (query) (query), requestId)
+  RequestBoundary.respond (users: former "the user search (query)" with (query), requestId)
 ```
 
 ### profiles.SearchUsers:hidden
@@ -5186,10 +5186,10 @@ then
 ```reaction
 when RequestBoundary.request (session, query, requestId, path: "/users/search")
 where
-  the active user of (session) (session) has (user)
-  no (user) is an active course member (user)
+  view "the active user of (session)" with (session) has (user)
+  no view "(user) is an active course member" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### profiles.SetAvatar
@@ -5197,9 +5197,9 @@ then
 ```reaction
 when RequestBoundary.request (session, avatar, requestId, path: "/profiles/setAvatar")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Profiling.setAvatar (user, avatar)
+  Profiling.setAvatar (user, avatar)
 ```
 
 ### profiles.SetAvatar#2
@@ -5209,7 +5209,7 @@ when Profiling.setAvatar (user, avatar), asked by profiles.SetAvatar
 where
   earlier, RequestBoundary.request (session, avatar, requestId, path: "/profiles/setAvatar")
 then
-  request RequestBoundary.respond (user, requestId)
+  RequestBoundary.respond (user, requestId)
 ```
 
 ### profiles.SetBio
@@ -5217,9 +5217,9 @@ then
 ```reaction
 when RequestBoundary.request (session, bio, requestId, path: "/profiles/setBio")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Profiling.setBio (user, bio)
+  Profiling.setBio (user, bio)
 ```
 
 ### profiles.SetBio#2
@@ -5229,7 +5229,7 @@ when Profiling.setBio (user, bio), asked by profiles.SetBio
 where
   earlier, RequestBoundary.request (session, bio, requestId, path: "/profiles/setBio")
 then
-  request RequestBoundary.respond (user, requestId)
+  RequestBoundary.respond (user, requestId)
 ```
 
 ### profiles.SetDisplayName
@@ -5237,9 +5237,9 @@ then
 ```reaction
 when RequestBoundary.request (session, displayName, requestId, path: "/profiles/setDisplayName")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Profiling.setDisplayName (user, displayName)
+  Profiling.setDisplayName (user, displayName)
 ```
 
 ### profiles.SetDisplayName#2
@@ -5249,7 +5249,7 @@ when Profiling.setDisplayName (user, displayName), asked by profiles.SetDisplayN
 where
   earlier, RequestBoundary.request (session, displayName, requestId, path: "/profiles/setDisplayName")
 then
-  request RequestBoundary.respond (user, requestId)
+  RequestBoundary.respond (user, requestId)
 ```
 
 ### reactions.AddReaction:success
@@ -5258,10 +5258,10 @@ then
 when RequestBoundary.request (session, target, kind, requestId, path: "/reactions/add")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (post) is readable (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: target)
 then
-  request Reacting.react (reactor: user, target, kind, at)
+  Reacting.react (reactor: user, target, kind, at)
 ```
 
 ### reactions.AddReaction:success#2
@@ -5271,7 +5271,7 @@ when Reacting.react (reactor: user, target, kind, at, reaction), asked by reacti
 where
   earlier, RequestBoundary.request (session, target, kind, requestId, path: "/reactions/add")
 then
-  request RequestBoundary.respond (reaction, requestId)
+  RequestBoundary.respond (reaction, requestId)
 ```
 
 ### reactions.AddReaction:hidden
@@ -5279,10 +5279,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, kind, requestId, path: "/reactions/add")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: target)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### reactions.PurgeClearsReactions
@@ -5290,7 +5290,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Reacting.clearTarget (target: item)
+  Reacting.clearTarget (target: item)
 ```
 
 ### reactions.ReactionsForTarget:success
@@ -5298,9 +5298,9 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/reactions/forTarget")
 where
-  (post) is readable (post: target)
+  view "(post) is readable" with (post: target)
 then
-  request RequestBoundary.respond (reactions: the reactions on (target) (target), requestId)
+  RequestBoundary.respond (reactions: former "the reactions on (target)" with (target), requestId)
 ```
 
 ### reactions.ReactionsForTarget:hidden
@@ -5308,9 +5308,9 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/reactions/forTarget")
 where
-  (post) is not readable (post: target)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### reactions.RemoveReaction:success
@@ -5318,10 +5318,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, kind, requestId, path: "/reactions/remove")
 where
-  the active user of (session) (session) has (user)
-  (post) is readable (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: target)
 then
-  request Reacting.unreact (reactor: user, target, kind)
+  Reacting.unreact (reactor: user, target, kind)
 ```
 
 ### reactions.RemoveReaction:success#2
@@ -5331,7 +5331,7 @@ when Reacting.unreact (reactor: user, target, kind, reaction), asked by reaction
 where
   earlier, RequestBoundary.request (session, target, kind, requestId, path: "/reactions/remove")
 then
-  request RequestBoundary.respond (ok: true, requestId)
+  RequestBoundary.respond (ok: true, requestId)
 ```
 
 ### reactions.RemoveReaction:hidden
@@ -5339,10 +5339,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, kind, requestId, path: "/reactions/remove")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: target)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### resolutions.AcceptAnswer:accepted
@@ -5351,12 +5351,12 @@ then
 when RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (user) authored (post) (user, post: question)
-  (post) is readable (post: question)
-  (post) is readable (post: answer)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) authored (post)" with (user, post: question)
+  view "(post) is readable" with (post: question)
+  view "(post) is readable" with (post: answer)
 then
-  request Resolving.accept (question, answer, by: user, at)
+  Resolving.accept (question, answer, by: user, at)
 ```
 
 ### resolutions.AcceptAnswer:accepted#2
@@ -5366,7 +5366,7 @@ when Resolving.accept (question, answer, by: user, at, resolution), asked by res
 where
   earlier, RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
 then
-  request RequestBoundary.respond (resolution, requestId)
+  RequestBoundary.respond (resolution, requestId)
 ```
 
 ### resolutions.AcceptAnswer:not-author
@@ -5374,12 +5374,12 @@ then
 ```reaction
 when RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
 where
-  the active user of (session) (session) has (user)
-  (user) did not author (post) (user, post: question)
-  (post) is readable (post: question)
-  (post) is readable (post: answer)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) did not author (post)" with (user, post: question)
+  view "(post) is readable" with (post: question)
+  view "(post) is readable" with (post: answer)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### resolutions.AcceptAnswer:hidden-question
@@ -5387,10 +5387,10 @@ then
 ```reaction
 when RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: question)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: question)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### resolutions.AcceptAnswer:hidden-answer
@@ -5398,11 +5398,11 @@ then
 ```reaction
 when RequestBoundary.request (session, question, answer, requestId, path: "/resolutions/accept")
 where
-  the active user of (session) (session)
-  (post) is readable (post: question)
-  (post) is not readable (post: answer)
+  view "the active user of (session)" with (session)
+  view "(post) is readable" with (post: question)
+  view "(post) is not readable" with (post: answer)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### resolutions.ClearResolution:success
@@ -5410,11 +5410,11 @@ then
 ```reaction
 when RequestBoundary.request (session, question, requestId, path: "/resolutions/clear")
 where
-  the active user of (session) (session) has (user)
-  (user) authored (post) (user, post: question)
-  (post) is readable (post: question)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) authored (post)" with (user, post: question)
+  view "(post) is readable" with (post: question)
 then
-  request Resolving.clear (question)
+  Resolving.clear (question)
 ```
 
 ### resolutions.ClearResolution:success#2
@@ -5424,7 +5424,7 @@ when Resolving.clear (question, result.question: cleared), asked by resolutions.
 where
   earlier, RequestBoundary.request (session, question, requestId, path: "/resolutions/clear")
 then
-  request RequestBoundary.respond (question: cleared, requestId)
+  RequestBoundary.respond (question: cleared, requestId)
 ```
 
 ### resolutions.ClearResolution:not-author
@@ -5432,11 +5432,11 @@ then
 ```reaction
 when RequestBoundary.request (session, question, requestId, path: "/resolutions/clear")
 where
-  the active user of (session) (session) has (user)
-  (user) did not author (post) (user, post: question)
-  (post) is readable (post: question)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) did not author (post)" with (user, post: question)
+  view "(post) is readable" with (post: question)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### resolutions.ClearResolution:hidden
@@ -5444,10 +5444,10 @@ then
 ```reaction
 when RequestBoundary.request (session, question, requestId, path: "/resolutions/clear")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: question)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: question)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### resolutions.GetResolution:success
@@ -5455,9 +5455,9 @@ then
 ```reaction
 when RequestBoundary.request (question, requestId, path: "/resolutions/get")
 where
-  (post) is readable (post: question)
+  view "(post) is readable" with (post: question)
 then
-  request RequestBoundary.respond (resolution: the resolution of (question) (question), requestId)
+  RequestBoundary.respond (resolution: former "the resolution of (question)" with (question), requestId)
 ```
 
 ### resolutions.GetResolution:hidden
@@ -5465,9 +5465,9 @@ then
 ```reaction
 when RequestBoundary.request (question, requestId, path: "/resolutions/get")
 where
-  (post) is not readable (post: question)
+  view "(post) is not readable" with (post: question)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### resolutions.IsResolved:success
@@ -5475,10 +5475,10 @@ then
 ```reaction
 when RequestBoundary.request (question, requestId, path: "/resolutions/isResolved")
 where
-  (post) is readable (post: question)
+  view "(post) is readable" with (post: question)
   Resolving._isResolved (question) has (resolved)
 then
-  request RequestBoundary.respond (resolved, requestId)
+  RequestBoundary.respond (resolved, requestId)
 ```
 
 ### resolutions.IsResolved:hidden
@@ -5486,9 +5486,9 @@ then
 ```reaction
 when RequestBoundary.request (question, requestId, path: "/resolutions/isResolved")
 where
-  (post) is not readable (post: question)
+  view "(post) is not readable" with (post: question)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### resolutions.PurgedPostClearsResolutions:question
@@ -5498,7 +5498,7 @@ when Trashing.purge (item)
 where
   Resolving._getResolution (question: item)
 then
-  request Resolving.clear (question: item)
+  Resolving.clear (question: item)
 ```
 
 ### resolutions.PurgedPostClearsResolutions:answer
@@ -5508,7 +5508,7 @@ when Trashing.purge (item)
 where
   Resolving._getQuestionsAnswered (answer: item) has (question) and not (question: item)
 then
-  request Resolving.clear (question)
+  Resolving.clear (question)
 ```
 
 ### revisions.GetRevision:success
@@ -5517,9 +5517,9 @@ then
 when RequestBoundary.request (item, number, requestId, path: "/revisions/get")
 where
   Posting._getPost (post: item)
-  (item) is intact (item)
+  view "(item) is intact" with (item)
 then
-  request RequestBoundary.respond (revision: the revision numbered (number) of (item) (number, item), requestId)
+  RequestBoundary.respond (revision: former "the revision numbered (number) of (item)" with (number, item), requestId)
 ```
 
 ### revisions.GetRevision:hidden
@@ -5529,7 +5529,7 @@ when RequestBoundary.request (item, number, requestId, path: "/revisions/get")
 where
   Trashing._isTrashed (item) has (trashed: true)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.GetRevision:missing
@@ -5539,7 +5539,7 @@ when RequestBoundary.request (item, number, requestId, path: "/revisions/get")
 where
   no Posting._getPost (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.LatestRevision:success
@@ -5548,9 +5548,9 @@ then
 when RequestBoundary.request (item, requestId, path: "/revisions/latest")
 where
   Posting._getPost (post: item)
-  (item) is intact (item)
+  view "(item) is intact" with (item)
 then
-  request RequestBoundary.respond (revision: the latest revision of (item) (item), requestId)
+  RequestBoundary.respond (revision: former "the latest revision of (item)" with (item), requestId)
 ```
 
 ### revisions.LatestRevision:hidden
@@ -5560,7 +5560,7 @@ when RequestBoundary.request (item, requestId, path: "/revisions/latest")
 where
   Trashing._isTrashed (item) has (trashed: true)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.LatestRevision:missing
@@ -5570,7 +5570,7 @@ when RequestBoundary.request (item, requestId, path: "/revisions/latest")
 where
   no Posting._getPost (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ListRevisions:success
@@ -5579,9 +5579,9 @@ then
 when RequestBoundary.request (item, requestId, path: "/revisions/list")
 where
   Posting._getPost (post: item)
-  (item) is intact (item)
+  view "(item) is intact" with (item)
 then
-  request RequestBoundary.respond (revisions: the revision history of (item) (item), requestId)
+  RequestBoundary.respond (revisions: former "the revision history of (item)" with (item), requestId)
 ```
 
 ### revisions.ListRevisions:hidden
@@ -5591,7 +5591,7 @@ when RequestBoundary.request (item, requestId, path: "/revisions/list")
 where
   Trashing._isTrashed (item) has (trashed: true)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ListRevisions:missing
@@ -5601,7 +5601,7 @@ when RequestBoundary.request (item, requestId, path: "/revisions/list")
 where
   no Posting._getPost (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ModeratorGetRevision:revision
@@ -5609,12 +5609,12 @@ then
 ```reaction
 when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Posting._getPost (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
-  request RequestBoundary.respond (revision: the revision numbered (number) of (item) (number, item), requestId)
+  RequestBoundary.respond (revision: former "the revision numbered (number) of (item)" with (number, item), requestId)
 ```
 
 ### revisions.ModeratorGetRevision:hidden
@@ -5622,10 +5622,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ModeratorGetRevision:missing
@@ -5633,11 +5633,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   no Posting._getPost (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ModeratorGetRevision:live
@@ -5645,12 +5645,12 @@ then
 ```reaction
 when RequestBoundary.request (session, item, number, requestId, path: "/moderation/revisions/get")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Posting._getPost (post: item)
-  (item) is intact (item)
+  view "(item) is intact" with (item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ModeratorLatestRevision:revision
@@ -5658,12 +5658,12 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Posting._getPost (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
-  request RequestBoundary.respond (revision: the latest revision of (item) (item), requestId)
+  RequestBoundary.respond (revision: former "the latest revision of (item)" with (item), requestId)
 ```
 
 ### revisions.ModeratorLatestRevision:hidden
@@ -5671,10 +5671,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ModeratorLatestRevision:missing
@@ -5682,11 +5682,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   no Posting._getPost (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ModeratorLatestRevision:live
@@ -5694,12 +5694,12 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/latest")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Posting._getPost (post: item)
-  (item) is intact (item)
+  view "(item) is intact" with (item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ModeratorListRevisions:revisions
@@ -5707,12 +5707,12 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Posting._getPost (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
-  request RequestBoundary.respond (revisions: the revision history of (item) (item), requestId)
+  RequestBoundary.respond (revisions: former "the revision history of (item)" with (item), requestId)
 ```
 
 ### revisions.ModeratorListRevisions:hidden
@@ -5720,10 +5720,10 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may not moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ModeratorListRevisions:missing
@@ -5731,11 +5731,11 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   no Posting._getPost (post: item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.ModeratorListRevisions:live
@@ -5743,12 +5743,12 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/moderation/revisions/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may moderate (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
   Posting._getPost (post: item)
-  (item) is intact (item)
+  view "(item) is intact" with (item)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### revisions.PurgeClearsRevisions
@@ -5756,7 +5756,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Revising.clearItem (item)
+  Revising.clearItem (item)
 ```
 
 ### revisions.RecordRevisionOnCreate
@@ -5764,7 +5764,7 @@ then
 ```reaction
 when Posting.create (content, at, post)
 then
-  request Revising.record (item: post, content, at)
+  Revising.record (item: post, content, at)
 ```
 
 ### revisions.RecordRevisionOnEdit
@@ -5772,7 +5772,7 @@ then
 ```reaction
 when Posting.edit (content, at, post)
 then
-  request Revising.record (item: post, content, at)
+  Revising.record (item: post, content, at)
 ```
 
 ### roles.DefineRole:success
@@ -5780,10 +5780,10 @@ then
 ```reaction
 when RequestBoundary.request (session, name, capabilities, requestId, path: "/roles/define")
 where
-  the active user of (session) (session) has (user)
-  (user) may administer (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may administer" with (user)
 then
-  request Roling.defineRole (name, capabilities)
+  Roling.defineRole (name, capabilities)
 ```
 
 ### roles.DefineRole:success#2
@@ -5793,7 +5793,7 @@ when Roling.defineRole (name, capabilities, role), asked by roles.DefineRole:suc
 where
   earlier, RequestBoundary.request (session, name, capabilities, requestId, path: "/roles/define")
 then
-  request RequestBoundary.respond (role, requestId)
+  RequestBoundary.respond (role, requestId)
 ```
 
 ### roles.DefineRole:forbidden
@@ -5801,10 +5801,10 @@ then
 ```reaction
 when RequestBoundary.request (session, name, capabilities, requestId, path: "/roles/define")
 where
-  the active user of (session) (session) has (user)
-  (user) may not administer (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not administer" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roles.GrantRole:success
@@ -5812,12 +5812,12 @@ then
 ```reaction
 when RequestBoundary.request (session, user, context, role, requestId, path: "/roles/grant")
 where
-  the active user of (session) (session) has (user: actor)
-  (user) may administer (user: actor)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
   Authenticating._denotedUser (ref: user) has (user: subject)
   Roling._denotedRole (ref: role) has (role: resolved)
 then
-  request Roling.grant (user: subject, context, role: resolved)
+  Roling.grant (user: subject, context, role: resolved)
 ```
 
 ### roles.GrantRole:success#2
@@ -5827,7 +5827,7 @@ when Roling.grant (user: subject, context, role: resolved, grant), asked by role
 where
   earlier, RequestBoundary.request (session, user, context, role, requestId, path: "/roles/grant")
 then
-  request RequestBoundary.respond (grant, requestId)
+  RequestBoundary.respond (grant, requestId)
 ```
 
 ### roles.GrantRole:forbidden
@@ -5835,10 +5835,10 @@ then
 ```reaction
 when RequestBoundary.request (session, user, context, role, requestId, path: "/roles/grant")
 where
-  the active user of (session) (session) has (user: actor)
-  (user) may not administer (user: actor)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roles.RevokeRole:success
@@ -5846,12 +5846,12 @@ then
 ```reaction
 when RequestBoundary.request (session, user, context, role, requestId, path: "/roles/revoke")
 where
-  the active user of (session) (session) has (user: actor)
-  (user) may administer (user: actor)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
   Authenticating._denotedUser (ref: user) has (user: subject)
   Roling._denotedRole (ref: role) has (role: resolved)
 then
-  request Roling.revoke (user: subject, context, role: resolved)
+  Roling.revoke (user: subject, context, role: resolved)
 ```
 
 ### roles.RevokeRole:success#2
@@ -5861,7 +5861,7 @@ when Roling.revoke (user: subject, context, role: resolved, grant), asked by rol
 where
   earlier, RequestBoundary.request (session, user, context, role, requestId, path: "/roles/revoke")
 then
-  request RequestBoundary.respond (grant, requestId)
+  RequestBoundary.respond (grant, requestId)
 ```
 
 ### roles.RevokeRole:forbidden
@@ -5869,10 +5869,10 @@ then
 ```reaction
 when RequestBoundary.request (session, user, context, role, requestId, path: "/roles/revoke")
 where
-  the active user of (session) (session) has (user: actor)
-  (user) may not administer (user: actor)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roles.RoleCan
@@ -5882,7 +5882,7 @@ when RequestBoundary.request (user, context, capability, requestId, path: "/role
 where
   Roling._hasCapability (user, context, capability) has (allowed)
 then
-  request RequestBoundary.respond (allowed, requestId)
+  RequestBoundary.respond (allowed, requestId)
 ```
 
 ### roles.RoleGet
@@ -5892,7 +5892,7 @@ when RequestBoundary.request (role, requestId, path: "/roles/get")
 where
   Roling._getRoleDetail (role) has (name, capabilities)
 then
-  request RequestBoundary.respond (name, capabilities, requestId)
+  RequestBoundary.respond (name, capabilities, requestId)
 ```
 
 ### roles.RoleList
@@ -5900,7 +5900,7 @@ then
 ```reaction
 when RequestBoundary.request (requestId, path: "/roles/list")
 then
-  request RequestBoundary.respond (roles: the defined roles () (), requestId)
+  RequestBoundary.respond (roles: former "the defined roles ()", requestId)
 ```
 
 ### roles.RolesForUser
@@ -5910,7 +5910,7 @@ when RequestBoundary.request (user, context, requestId, path: "/roles/forUser")
 where
   Authenticating._denotedUser (ref: user) has (user: subject)
 then
-  request RequestBoundary.respond (roles: the roles held by (user) in (context) (user: subject, context), requestId)
+  RequestBoundary.respond (roles: former "the roles held by (user) in (context)" with (user: subject, context), requestId)
 ```
 
 ### roster.ClaimSeat:matched-seat
@@ -5918,10 +5918,10 @@ then
 ```reaction
 when RequestBoundary.request (session, externalKey, requestId, path: "/roster/claim-seat")
 where
-  the active user of (session) (session) has (user)
-  the seat matching (user) and (externalKey) (user, externalKey) has (seat)
+  view "the active user of (session)" with (session) has (user)
+  view "the seat matching (user) and (externalKey)" with (user, externalKey) has (seat)
 then
-  request Rostering.claimSeat (seat, user)
+  Rostering.claimSeat (seat, user)
 ```
 
 ### roster.ClaimSeat:matched-seat#2
@@ -5931,7 +5931,7 @@ when Rostering.claimSeat (seat, user, result.seat: claimed), asked by roster.Cla
 where
   earlier, RequestBoundary.request (session, externalKey, requestId, path: "/roster/claim-seat")
 then
-  request RequestBoundary.respond (seat: claimed, requestId)
+  RequestBoundary.respond (seat: claimed, requestId)
 ```
 
 ### roster.ClaimSeat:missing-seat
@@ -5939,10 +5939,10 @@ then
 ```reaction
 when RequestBoundary.request (session, externalKey, requestId, path: "/roster/claim-seat")
 where
-  the active user of (session) (session) has (user)
-  no the seat matching (user) and (externalKey) (user, externalKey)
+  view "the active user of (session)" with (session) has (user)
+  no view "the seat matching (user) and (externalKey)" with (user, externalKey)
 then
-  request RequestBoundary.respond (error: "SEAT_NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "SEAT_NOT_FOUND", requestId)
 ```
 
 ### roster.ConfigureClass:success
@@ -5950,10 +5950,10 @@ then
 ```reaction
 when RequestBoundary.request (session, code, title, term, timezone, requestId, path: "/roster/configure-class")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
 then
-  request Rostering.configureClass (code, title, term, timezone)
+  Rostering.configureClass (code, title, term, timezone)
 ```
 
 ### roster.ConfigureClass:success#2
@@ -5963,7 +5963,7 @@ when Rostering.configureClass (code, title, term, timezone, class), asked by ros
 where
   earlier, RequestBoundary.request (session, code, title, term, timezone, requestId, path: "/roster/configure-class")
 then
-  request RequestBoundary.respond (class, requestId)
+  RequestBoundary.respond (class, requestId)
 ```
 
 ### roster.ConfigureClass:forbidden
@@ -5971,10 +5971,10 @@ then
 ```reaction
 when RequestBoundary.request (session, code, title, term, timezone, requestId, path: "/roster/configure-class")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roster.DropSeat
@@ -5982,9 +5982,9 @@ then
 ```reaction
 when RequestBoundary.request (session, seat, requestId, path: "/roster/drop")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Roling.requireCapability (user, context: "forum", capability: "roster:manage")
+  Roling.requireCapability (user, context: "forum", capability: "roster:manage")
 ```
 
 ### roster.DropSeat#2
@@ -5994,7 +5994,7 @@ when Roling.requireCapability (user, context: "forum", capability: "roster:manag
 where
   earlier, RequestBoundary.request (session, seat, requestId, path: "/roster/drop")
 then
-  request Rostering.dropSeat (seat)
+  Rostering.dropSeat (seat)
 ```
 
 ### roster.DropSeat#3
@@ -6004,7 +6004,7 @@ when Rostering.dropSeat (seat, result.seat: dropped), asked by roster.DropSeat#2
 where
   earlier, RequestBoundary.request (session, seat, requestId, path: "/roster/drop")
 then
-  request RequestBoundary.respond (seat: dropped, requestId)
+  RequestBoundary.respond (seat: dropped, requestId)
 ```
 
 ### roster.DroppedStaffSeatRevokesCourseStaff
@@ -6015,7 +6015,7 @@ where
   Roling._getRoleByName (name: "course-staff") has (role)
   Roling._getRoles (user: holder, context: "forum") has (role)
 then
-  request Roling.revoke (user: holder, context: "forum", role)
+  Roling.revoke (user: holder, context: "forum", role)
 ```
 
 ### roster.ImportPreview
@@ -6023,7 +6023,7 @@ then
 ```reaction
 when RequestBoundary.request (csv, requestId, path: "/roster/import-preview")
 then
-  request Rostering.previewImport (csv)
+  Rostering.previewImport (csv)
 ```
 
 ### roster.ImportPreview#2
@@ -6033,7 +6033,7 @@ when Rostering.previewImport (csv, rows), asked by roster.ImportPreview
 where
   earlier, RequestBoundary.request (csv, requestId, path: "/roster/import-preview")
 then
-  request RequestBoundary.respond (rows, requestId)
+  RequestBoundary.respond (rows, requestId)
 ```
 
 ### roster.ImportSeats:success
@@ -6041,10 +6041,10 @@ then
 ```reaction
 when RequestBoundary.request (session, rows, requestId, path: "/roster/import")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
 then
-  request Rostering.importSeats (rows)
+  Rostering.importSeats (rows)
 ```
 
 ### roster.ImportSeats:success#2
@@ -6054,7 +6054,7 @@ when Rostering.importSeats (rows, created, skipped), asked by roster.ImportSeats
 where
   earlier, RequestBoundary.request (session, rows, requestId, path: "/roster/import")
 then
-  request RequestBoundary.respond (created, skipped, requestId)
+  RequestBoundary.respond (created, skipped, requestId)
 ```
 
 ### roster.ImportSeats:forbidden
@@ -6062,10 +6062,10 @@ then
 ```reaction
 when RequestBoundary.request (session, rows, requestId, path: "/roster/import")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roster.LinkUser:success
@@ -6073,10 +6073,10 @@ then
 ```reaction
 when RequestBoundary.request (session, seat, user, requestId, path: "/roster/link-user")
 where
-  the active user of (session) (session) has (user: actor)
-  (user) may manage the roster (user: actor)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may manage the roster" with (user: actor)
 then
-  request Rostering.claimSeat (seat, user)
+  Rostering.claimSeat (seat, user)
 ```
 
 ### roster.LinkUser:success#2
@@ -6086,7 +6086,7 @@ when Rostering.claimSeat (seat, user, result.seat: linked), asked by roster.Link
 where
   earlier, RequestBoundary.request (session, seat, user, requestId, path: "/roster/link-user")
 then
-  request RequestBoundary.respond (seat: linked, requestId)
+  RequestBoundary.respond (seat: linked, requestId)
 ```
 
 ### roster.LinkUser:forbidden
@@ -6094,10 +6094,10 @@ then
 ```reaction
 when RequestBoundary.request (session, seat, user, requestId, path: "/roster/link-user")
 where
-  the active user of (session) (session) has (user: actor)
-  (user) may not manage the roster (user: actor)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not manage the roster" with (user: actor)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roster.MoveSection:success
@@ -6105,10 +6105,10 @@ then
 ```reaction
 when RequestBoundary.request (session, seat, section, requestId, path: "/roster/move-section")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
 then
-  request Rostering.moveSection (seat, section)
+  Rostering.moveSection (seat, section)
 ```
 
 ### roster.MoveSection:success#2
@@ -6118,7 +6118,7 @@ when Rostering.moveSection (seat, section, result.seat: moved), asked by roster.
 where
   earlier, RequestBoundary.request (session, seat, section, requestId, path: "/roster/move-section")
 then
-  request RequestBoundary.respond (seat: moved, requestId)
+  RequestBoundary.respond (seat: moved, requestId)
 ```
 
 ### roster.MoveSection:forbidden
@@ -6126,10 +6126,10 @@ then
 ```reaction
 when RequestBoundary.request (session, seat, section, requestId, path: "/roster/move-section")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roster.ReinstateSeat:success
@@ -6137,10 +6137,10 @@ then
 ```reaction
 when RequestBoundary.request (session, seat, requestId, path: "/roster/reinstate")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
 then
-  request Rostering.reinstateSeat (seat)
+  Rostering.reinstateSeat (seat)
 ```
 
 ### roster.ReinstateSeat:success#2
@@ -6150,7 +6150,7 @@ when Rostering.reinstateSeat (seat, result.seat: reinstated), asked by roster.Re
 where
   earlier, RequestBoundary.request (session, seat, requestId, path: "/roster/reinstate")
 then
-  request RequestBoundary.respond (seat: reinstated, requestId)
+  RequestBoundary.respond (seat: reinstated, requestId)
 ```
 
 ### roster.ReinstateSeat:forbidden
@@ -6158,10 +6158,10 @@ then
 ```reaction
 when RequestBoundary.request (session, seat, requestId, path: "/roster/reinstate")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roster.RosterList:success
@@ -6169,10 +6169,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
 then
-  request RequestBoundary.respond (members: the roster () (), requestId)
+  RequestBoundary.respond (members: former "the roster ()", requestId)
 ```
 
 ### roster.RosterList:forbidden
@@ -6180,10 +6180,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/list")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roster.RosterMe:found
@@ -6191,10 +6191,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/me")
 where
-  the active user of (session) (session) has (user)
-  the seat of (user) (user) has (seat)
+  view "the active user of (session)" with (session) has (user)
+  view "the seat of (user)" with (user) has (seat)
 then
-  request RequestBoundary.respond (seat, requestId)
+  RequestBoundary.respond (seat, requestId)
 ```
 
 ### roster.RosterMe:absent
@@ -6202,10 +6202,10 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/roster/me")
 where
-  the active user of (session) (session) has (user)
-  no the seat of (user) (user)
+  view "the active user of (session)" with (session) has (user)
+  no view "the seat of (user)" with (user)
 then
-  request RequestBoundary.respond (seat: null, requestId)
+  RequestBoundary.respond (seat: null, requestId)
 ```
 
 ### roster.SectionsCreate:success
@@ -6213,10 +6213,10 @@ then
 ```reaction
 when RequestBoundary.request (session, name, location, meetingPattern, requestId, path: "/roster/sections/create")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
 then
-  request Rostering.createSection (name, location, meetingPattern)
+  Rostering.createSection (name, location, meetingPattern)
 ```
 
 ### roster.SectionsCreate:success#2
@@ -6226,7 +6226,7 @@ when Rostering.createSection (name, location, meetingPattern, section), asked by
 where
   earlier, RequestBoundary.request (session, name, location, meetingPattern, requestId, path: "/roster/sections/create")
 then
-  request RequestBoundary.respond (section, requestId)
+  RequestBoundary.respond (section, requestId)
 ```
 
 ### roster.SectionsCreate:forbidden
@@ -6234,10 +6234,10 @@ then
 ```reaction
 when RequestBoundary.request (session, name, location, meetingPattern, requestId, path: "/roster/sections/create")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roster.SectionsList
@@ -6245,7 +6245,7 @@ then
 ```reaction
 when RequestBoundary.request (requestId, path: "/roster/sections/list")
 then
-  request RequestBoundary.respond (sections: the sections () (), requestId)
+  RequestBoundary.respond (sections: former "the sections ()", requestId)
 ```
 
 ### roster.SectionsUpdate:success
@@ -6253,10 +6253,10 @@ then
 ```reaction
 when RequestBoundary.request (session, section, name, location, meetingPattern, requestId, path: "/roster/sections/update")
 where
-  the active user of (session) (session) has (user)
-  (user) may manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
 then
-  request Rostering.updateSection (section, name, location, meetingPattern)
+  Rostering.updateSection (section, name, location, meetingPattern)
 ```
 
 ### roster.SectionsUpdate:success#2
@@ -6266,7 +6266,7 @@ when Rostering.updateSection (section, name, location, meetingPattern, result.se
 where
   earlier, RequestBoundary.request (session, section, name, location, meetingPattern, requestId, path: "/roster/sections/update")
 then
-  request RequestBoundary.respond (section: updated, requestId)
+  RequestBoundary.respond (section: updated, requestId)
 ```
 
 ### roster.SectionsUpdate:forbidden
@@ -6274,10 +6274,10 @@ then
 ```reaction
 when RequestBoundary.request (session, section, name, location, meetingPattern, requestId, path: "/roster/sections/update")
 where
-  the active user of (session) (session) has (user)
-  (user) may not manage the roster (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### roster.StaffSeatGrantsCourseStaff
@@ -6287,7 +6287,7 @@ when Rostering.claimSeat (user: claimer, kind: "STAFF")
 where
   Roling._holdsRoleNamed (user: claimer, context: "forum", name: "course-staff") has (held: false)
 then
-  request Roling.ensureRole (name: "course-staff", capabilities: ["roster:manage", "assignments:manage", "submissions:view-all", "grades:manage", "grades:view-all", "late-days:manage", "student-notes:manage", "calendar:view-staff"])
+  Roling.ensureRole (name: "course-staff", capabilities: ["roster:manage", "assignments:manage", "submissions:view-all", "grades:manage", "grades:view-all", "late-days:manage", "student-notes:manage", "calendar:view-staff"])
 ```
 
 ### roster.StaffSeatGrantsCourseStaff#2
@@ -6297,7 +6297,7 @@ when Roling.ensureRole (name: "course-staff", capabilities: ["roster:manage", "a
 where
   earlier, Rostering.claimSeat (user: claimer, kind: "STAFF")
 then
-  request Roling.grant (user: claimer, context: "forum", role)
+  Roling.grant (user: claimer, context: "forum", role)
 ```
 
 ### submissions.Attempts:attempts
@@ -6305,10 +6305,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/attempts")
 where
-  the active user of (session) (session) has (user: submitter)
-  (user) is an active student (user: submitter)
+  view "the active user of (session)" with (session) has (user: submitter)
+  view "(user) is an active student" with (user: submitter)
 then
-  request RequestBoundary.respond (attempts: the attempts for (assignment) by (submitter) (assignment, submitter), requestId)
+  RequestBoundary.respond (attempts: former "the attempts for (assignment) by (submitter)" with (assignment, submitter), requestId)
 ```
 
 ### submissions.Attempts:staff-attempts
@@ -6316,11 +6316,11 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/attempts")
 where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may view all submissions (user)
-  (user) is an active student (user: submitter)
+  view "the active user of (session)" with (session) has (user) and not (user: submitter)
+  view "(user) may view all submissions" with (user)
+  view "(user) is an active student" with (user: submitter)
 then
-  request RequestBoundary.respond (attempts: the attempts for (assignment) by (submitter) (assignment, submitter), requestId)
+  RequestBoundary.respond (attempts: former "the attempts for (assignment) by (submitter)" with (assignment, submitter), requestId)
 ```
 
 ### submissions.Attempts:attempts-hidden
@@ -6328,10 +6328,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/attempts")
 where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may not view all submissions (user)
+  view "the active user of (session)" with (session) has (user) and not (user: submitter)
+  view "(user) may not view all submissions" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### submissions.Attempts:attempts-missing
@@ -6339,10 +6339,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/attempts")
 where
-  the active user of (session) (session)
-  (user) is not an active student (user: submitter)
+  view "the active user of (session)" with (session)
+  view "(user) is not an active student" with (user: submitter)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### submissions.ForAssignment:success
@@ -6350,10 +6350,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/submissions/for-assignment")
 where
-  the active user of (session) (session) has (user)
-  (user) may view all submissions (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may view all submissions" with (user)
 then
-  request RequestBoundary.respond (assigned: the assigned population for (assignment) (assignment), submissions: the submissions for (assignment) (assignment), requestId)
+  RequestBoundary.respond (assigned: former "the assigned population for (assignment)" with (assignment), submissions: former "the submissions for (assignment)" with (assignment), requestId)
 ```
 
 ### submissions.ForAssignment:forbidden
@@ -6361,10 +6361,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, requestId, path: "/submissions/for-assignment")
 where
-  the active user of (session) (session) has (user)
-  (user) may not view all submissions (user)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not view all submissions" with (user)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### submissions.ForStudent:for-student
@@ -6372,10 +6372,10 @@ then
 ```reaction
 when RequestBoundary.request (session, submitter, requestId, path: "/submissions/for-student")
 where
-  the active user of (session) (session) has (user: submitter)
-  (user) is an active student (user: submitter)
+  view "the active user of (session)" with (session) has (user: submitter)
+  view "(user) is an active student" with (user: submitter)
 then
-  request RequestBoundary.respond (submissions: the submissions by (submitter) (submitter), requestId)
+  RequestBoundary.respond (submissions: former "the submissions by (submitter)" with (submitter), requestId)
 ```
 
 ### submissions.ForStudent:staff-for-student
@@ -6383,11 +6383,11 @@ then
 ```reaction
 when RequestBoundary.request (session, submitter, requestId, path: "/submissions/for-student")
 where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may view all submissions (user)
-  (user) is an active student (user: submitter)
+  view "the active user of (session)" with (session) has (user) and not (user: submitter)
+  view "(user) may view all submissions" with (user)
+  view "(user) is an active student" with (user: submitter)
 then
-  request RequestBoundary.respond (submissions: the submissions by (submitter) (submitter), requestId)
+  RequestBoundary.respond (submissions: former "the submissions by (submitter)" with (submitter), requestId)
 ```
 
 ### submissions.ForStudent:for-student-hidden
@@ -6395,10 +6395,10 @@ then
 ```reaction
 when RequestBoundary.request (session, submitter, requestId, path: "/submissions/for-student")
 where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may not view all submissions (user)
+  view "the active user of (session)" with (session) has (user) and not (user: submitter)
+  view "(user) may not view all submissions" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### submissions.ForStudent:for-student-missing
@@ -6406,10 +6406,10 @@ then
 ```reaction
 when RequestBoundary.request (session, submitter, requestId, path: "/submissions/for-student")
 where
-  the active user of (session) (session)
-  (user) is not an active student (user: submitter)
+  view "the active user of (session)" with (session)
+  view "(user) is not an active student" with (user: submitter)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### submissions.Latest:self-found
@@ -6417,11 +6417,11 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
 where
-  the active user of (session) (session) has (user: submitter)
-  (user) is an active student (user: submitter)
-  the latest submission for (assignment) by (submitter) (assignment, submitter) has (latest)
+  view "the active user of (session)" with (session) has (user: submitter)
+  view "(user) is an active student" with (user: submitter)
+  view "the latest submission for (assignment) by (submitter)" with (assignment, submitter) has (latest)
 then
-  request RequestBoundary.respond (submission: latest, requestId)
+  RequestBoundary.respond (submission: latest, requestId)
 ```
 
 ### submissions.Latest:self-missing
@@ -6429,11 +6429,11 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
 where
-  the active user of (session) (session) has (user: submitter)
-  (user) is an active student (user: submitter)
-  no the latest submission for (assignment) by (submitter) (assignment, submitter)
+  view "the active user of (session)" with (session) has (user: submitter)
+  view "(user) is an active student" with (user: submitter)
+  no view "the latest submission for (assignment) by (submitter)" with (assignment, submitter)
 then
-  request RequestBoundary.respond (submission: null, requestId)
+  RequestBoundary.respond (submission: null, requestId)
 ```
 
 ### submissions.Latest:staff-found
@@ -6441,12 +6441,12 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
 where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may view all submissions (user)
-  (user) is an active student (user: submitter)
-  the latest submission for (assignment) by (submitter) (assignment, submitter) has (latest)
+  view "the active user of (session)" with (session) has (user) and not (user: submitter)
+  view "(user) may view all submissions" with (user)
+  view "(user) is an active student" with (user: submitter)
+  view "the latest submission for (assignment) by (submitter)" with (assignment, submitter) has (latest)
 then
-  request RequestBoundary.respond (submission: latest, requestId)
+  RequestBoundary.respond (submission: latest, requestId)
 ```
 
 ### submissions.Latest:staff-missing
@@ -6454,12 +6454,12 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
 where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may view all submissions (user)
-  (user) is an active student (user: submitter)
-  no the latest submission for (assignment) by (submitter) (assignment, submitter)
+  view "the active user of (session)" with (session) has (user) and not (user: submitter)
+  view "(user) may view all submissions" with (user)
+  view "(user) is an active student" with (user: submitter)
+  no view "the latest submission for (assignment) by (submitter)" with (assignment, submitter)
 then
-  request RequestBoundary.respond (submission: null, requestId)
+  RequestBoundary.respond (submission: null, requestId)
 ```
 
 ### submissions.Latest:latest-hidden
@@ -6467,10 +6467,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
 where
-  the active user of (session) (session) has (user) and not (user: submitter)
-  (user) may not view all submissions (user)
+  view "the active user of (session)" with (session) has (user) and not (user: submitter)
+  view "(user) may not view all submissions" with (user)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### submissions.Latest:latest-missing
@@ -6478,10 +6478,10 @@ then
 ```reaction
 when RequestBoundary.request (session, assignment, submitter, requestId, path: "/submissions/latest")
 where
-  the active user of (session) (session)
-  (user) is not an active student (user: submitter)
+  view "the active user of (session)" with (session)
+  view "(user) is not an active student" with (user: submitter)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### subscriptions.IsSubscribed:success
@@ -6489,11 +6489,11 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/isSubscribed")
 where
-  the active user of (session) (session) has (user)
-  (conversation) is readable (conversation: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(conversation) is readable" with (conversation: target)
   Subscribing._isSubscribed (user, target) has (subscribed)
 then
-  request RequestBoundary.respond (subscribed, requestId)
+  RequestBoundary.respond (subscribed, requestId)
 ```
 
 ### subscriptions.IsSubscribed:hidden
@@ -6501,10 +6501,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/isSubscribed")
 where
-  the active user of (session) (session)
-  no (conversation) is readable (conversation: target)
+  view "the active user of (session)" with (session)
+  no view "(conversation) is readable" with (conversation: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### subscriptions.MySubscriptions
@@ -6512,9 +6512,9 @@ then
 ```reaction
 when RequestBoundary.request (session, requestId, path: "/subscriptions/mine")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request RequestBoundary.respond (subscriptions: the subscriptions of (user) (user), requestId)
+  RequestBoundary.respond (subscriptions: former "the subscriptions of (user)" with (user), requestId)
 ```
 
 ### subscriptions.PurgeClearsConversationSubscriptions
@@ -6525,7 +6525,7 @@ where
   Conversing._getNodeByItem (item) has (node)
   Conversing._getConversation (node) has (conversation)
 then
-  request Subscribing.clearTarget (target: conversation)
+  Subscribing.clearTarget (target: conversation)
 ```
 
 ### subscriptions.Subscribe:success
@@ -6534,10 +6534,10 @@ then
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/subscribe")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
-  (conversation) is readable (conversation: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(conversation) is readable" with (conversation: target)
 then
-  request Subscribing.subscribe (user, target, at)
+  Subscribing.subscribe (user, target, at)
 ```
 
 ### subscriptions.Subscribe:success#2
@@ -6547,7 +6547,7 @@ when Subscribing.subscribe (user, target, at, subscription), asked by subscripti
 where
   earlier, RequestBoundary.request (session, target, requestId, path: "/subscriptions/subscribe")
 then
-  request RequestBoundary.respond (subscription, requestId)
+  RequestBoundary.respond (subscription, requestId)
 ```
 
 ### subscriptions.Subscribe:hidden
@@ -6555,10 +6555,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/subscribe")
 where
-  the active user of (session) (session)
-  no (conversation) is readable (conversation: target)
+  view "the active user of (session)" with (session)
+  no view "(conversation) is readable" with (conversation: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### subscriptions.Subscribers:success
@@ -6566,9 +6566,9 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/subscriptions/subscribers")
 where
-  (conversation) is readable (conversation: target)
+  view "(conversation) is readable" with (conversation: target)
 then
-  request RequestBoundary.respond (subscribers: the subscribers of (target) (target), requestId)
+  RequestBoundary.respond (subscribers: former "the subscribers of (target)" with (target), requestId)
 ```
 
 ### subscriptions.Subscribers:hidden
@@ -6576,9 +6576,9 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/subscriptions/subscribers")
 where
-  no (conversation) is readable (conversation: target)
+  no view "(conversation) is readable" with (conversation: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### subscriptions.Unsubscribe:success
@@ -6586,10 +6586,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/unsubscribe")
 where
-  the active user of (session) (session) has (user)
-  (conversation) is readable (conversation: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(conversation) is readable" with (conversation: target)
 then
-  request Subscribing.unsubscribe (user, target)
+  Subscribing.unsubscribe (user, target)
 ```
 
 ### subscriptions.Unsubscribe:success#2
@@ -6599,7 +6599,7 @@ when Subscribing.unsubscribe (user, target, subscription), asked by subscription
 where
   earlier, RequestBoundary.request (session, target, requestId, path: "/subscriptions/unsubscribe")
 then
-  request RequestBoundary.respond (subscription, requestId)
+  RequestBoundary.respond (subscription, requestId)
 ```
 
 ### subscriptions.Unsubscribe:hidden
@@ -6607,10 +6607,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, requestId, path: "/subscriptions/unsubscribe")
 where
-  the active user of (session) (session)
-  no (conversation) is readable (conversation: target)
+  view "the active user of (session)" with (session)
+  no view "(conversation) is readable" with (conversation: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### tags.AddTag:success
@@ -6618,10 +6618,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, tag, requestId, path: "/tags/add")
 where
-  the active user of (session) (session)
-  (post) is readable (post: target)
+  view "the active user of (session)" with (session)
+  view "(post) is readable" with (post: target)
 then
-  request Tagging.addTag (target, tag)
+  Tagging.addTag (target, tag)
 ```
 
 ### tags.AddTag:success#2
@@ -6631,7 +6631,7 @@ when Tagging.addTag (target, tag, result.target: tagged), asked by tags.AddTag:s
 where
   earlier, RequestBoundary.request (session, target, tag, requestId, path: "/tags/add")
 then
-  request RequestBoundary.respond (target: tagged, requestId)
+  RequestBoundary.respond (target: tagged, requestId)
 ```
 
 ### tags.AddTag:hidden
@@ -6639,10 +6639,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, tag, requestId, path: "/tags/add")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: target)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### tags.CreateTag
@@ -6650,9 +6650,9 @@ then
 ```reaction
 when RequestBoundary.request (session, name, requestId, path: "/tags/create")
 where
-  the active user of (session) (session)
+  view "the active user of (session)" with (session)
 then
-  request Tagging.createTag (name)
+  Tagging.createTag (name)
 ```
 
 ### tags.CreateTag#2
@@ -6662,7 +6662,7 @@ when Tagging.createTag (name, tag), asked by tags.CreateTag
 where
   earlier, RequestBoundary.request (session, name, requestId, path: "/tags/create")
 then
-  request RequestBoundary.respond (tag, requestId)
+  RequestBoundary.respond (tag, requestId)
 ```
 
 ### tags.ListTags
@@ -6670,7 +6670,7 @@ then
 ```reaction
 when RequestBoundary.request (requestId, path: "/tags/list")
 then
-  request RequestBoundary.respond (tags: the tags () (), requestId)
+  RequestBoundary.respond (tags: former "the tags ()", requestId)
 ```
 
 ### tags.PurgeClearsTags
@@ -6678,7 +6678,7 @@ then
 ```reaction
 when Trashing.purge (item)
 then
-  request Tagging.clearTarget (target: item)
+  Tagging.clearTarget (target: item)
 ```
 
 ### tags.RemoveTag:success
@@ -6686,10 +6686,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, tag, requestId, path: "/tags/remove")
 where
-  the active user of (session) (session)
-  (post) is readable (post: target)
+  view "the active user of (session)" with (session)
+  view "(post) is readable" with (post: target)
 then
-  request Tagging.removeTag (target, tag)
+  Tagging.removeTag (target, tag)
 ```
 
 ### tags.RemoveTag:success#2
@@ -6699,7 +6699,7 @@ when Tagging.removeTag (target, tag, result.target: untagged), asked by tags.Rem
 where
   earlier, RequestBoundary.request (session, target, tag, requestId, path: "/tags/remove")
 then
-  request RequestBoundary.respond (target: untagged, requestId)
+  RequestBoundary.respond (target: untagged, requestId)
 ```
 
 ### tags.RemoveTag:hidden
@@ -6707,10 +6707,10 @@ then
 ```reaction
 when RequestBoundary.request (session, target, tag, requestId, path: "/tags/remove")
 where
-  the active user of (session) (session)
-  (post) is not readable (post: target)
+  view "the active user of (session)" with (session)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### tags.TagTargets
@@ -6718,7 +6718,7 @@ then
 ```reaction
 when RequestBoundary.request (tag, requestId, path: "/tags/targets")
 then
-  request RequestBoundary.respond (targets: the targets tagged (tag) (tag), requestId)
+  RequestBoundary.respond (targets: former "the targets tagged (tag)" with (tag), requestId)
 ```
 
 ### tags.TagTargetsByName
@@ -6726,7 +6726,7 @@ then
 ```reaction
 when RequestBoundary.request (name, requestId, path: "/tags/targetsByName")
 then
-  request RequestBoundary.respond (targets: the targets tagged with (name) (name), requestId)
+  RequestBoundary.respond (targets: former "the targets tagged with (name)" with (name), requestId)
 ```
 
 ### tags.TagsForTarget:success
@@ -6734,9 +6734,9 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/tags/forTarget")
 where
-  (post) is readable (post: target)
+  view "(post) is readable" with (post: target)
 then
-  request RequestBoundary.respond (tags: the tags on (target) (target), requestId)
+  RequestBoundary.respond (tags: former "the tags on (target)" with (target), requestId)
 ```
 
 ### tags.TagsForTarget:hidden
@@ -6744,9 +6744,9 @@ then
 ```reaction
 when RequestBoundary.request (target, requestId, path: "/tags/forTarget")
 where
-  (post) is not readable (post: target)
+  view "(post) is not readable" with (post: target)
 then
-  request RequestBoundary.respond (error: "NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### threads.CreateThread
@@ -6755,9 +6755,9 @@ then
 when RequestBoundary.request (session, content, requestId, path: "/threads/create")
 where
   Timing._now () has (at)
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Posting.create (author: user, content, at)
+  Posting.create (author: user, content, at)
 ```
 
 ### threads.CreateThread#2
@@ -6765,7 +6765,7 @@ then
 ```reaction
 when Posting.create (author: user, content, at, post), asked by threads.CreateThread
 then
-  request Conversing.start (item: post, at)
+  Conversing.start (item: post, at)
 ```
 
 ### threads.CreateThread#3
@@ -6775,7 +6775,7 @@ when Conversing.start (item: post, at, conversation, node), asked by threads.Cre
 where
   earlier, RequestBoundary.request (session, content, requestId, path: "/threads/create")
 then
-  request RequestBoundary.respond (post, conversation, node, requestId)
+  RequestBoundary.respond (post, conversation, node, requestId)
 ```
 
 ### threads.CreatedPostRefreshesDerivedContent:render
@@ -6783,7 +6783,7 @@ then
 ```reaction
 when Posting.create (content, post)
 then
-  request Formatting.setSource (target: post, source: content)
+  Formatting.setSource (target: post, source: content)
 ```
 
 ### threads.CreatedPostRefreshesDerivedContent:links
@@ -6791,7 +6791,7 @@ then
 ```reaction
 when Posting.create (content, post)
 then
-  request Linking.setLinksFrom (source: post, content)
+  Linking.setLinksFrom (source: post, content)
 ```
 
 ### threads.ForItem:found
@@ -6799,9 +6799,9 @@ then
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/threads/forItem")
 where
-  the conversation placing (item) (item) has (conversation)
+  view "the conversation placing (item)" with (item) has (conversation)
 then
-  request RequestBoundary.respond (conversation, requestId)
+  RequestBoundary.respond (conversation, requestId)
 ```
 
 ### threads.ForItem:absent
@@ -6809,9 +6809,9 @@ then
 ```reaction
 when RequestBoundary.request (item, requestId, path: "/threads/forItem")
 where
-  no the conversation placing (item) (item)
+  no view "the conversation placing (item)" with (item)
 then
-  request RequestBoundary.respond (conversation: null, requestId)
+  RequestBoundary.respond (conversation: null, requestId)
 ```
 
 ### threads.GetThread
@@ -6819,7 +6819,7 @@ then
 ```reaction
 when RequestBoundary.request (conversation, requestId, path: "/threads/get")
 then
-  request RequestBoundary.respond (thread: the thread (conversation) (conversation), context: the thread context (conversation) (conversation), requestId)
+  RequestBoundary.respond (thread: former "the thread (conversation)" with (conversation), context: former "the thread context (conversation)" with (conversation), requestId)
 ```
 
 ### threads.ListActivity
@@ -6827,7 +6827,7 @@ then
 ```reaction
 when RequestBoundary.request (requestId, path: "/threads/activity")
 then
-  request RequestBoundary.respond (conversations: the home feed by activity () (), requestId)
+  RequestBoundary.respond (conversations: former "the home feed by activity ()", requestId)
 ```
 
 ### threads.ListLatest
@@ -6835,7 +6835,7 @@ then
 ```reaction
 when RequestBoundary.request (requestId, path: "/threads/latest")
 then
-  request RequestBoundary.respond (conversations: the home feed by creation () (), requestId)
+  RequestBoundary.respond (conversations: former "the home feed by creation ()", requestId)
 ```
 
 ### threads.ReplyToThread:reply
@@ -6843,12 +6843,12 @@ then
 ```reaction
 when RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
   Conversing._getConversation (node: parent) has (conversation)
   Locking._isLocked (target: conversation) has (locked: false)
   Timing._now () has (at)
 then
-  request Posting.create (author: user, content, at)
+  Posting.create (author: user, content, at)
 ```
 
 ### threads.ReplyToThread:reply#2
@@ -6858,7 +6858,7 @@ when Posting.create (author: user, content, at, post), asked by threads.ReplyToT
 where
   earlier, RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 then
-  request Conversing.reply (item: post, parent, at)
+  Conversing.reply (item: post, parent, at)
 ```
 
 ### threads.ReplyToThread:reply#3
@@ -6868,7 +6868,7 @@ when Conversing.reply (item: post, parent, at, node), asked by threads.ReplyToTh
 where
   earlier, RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 then
-  request RequestBoundary.respond (post, node, requestId)
+  RequestBoundary.respond (post, node, requestId)
 ```
 
 ### threads.ReplyToThread:locked
@@ -6876,11 +6876,11 @@ then
 ```reaction
 when RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 where
-  the active user of (session) (session)
+  view "the active user of (session)" with (session)
   Conversing._getConversation (node: parent) has (conversation)
   Locking._isLocked (target: conversation) has (locked: true)
 then
-  request RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### threads.ReplyToThread:missing-parent
@@ -6888,10 +6888,10 @@ then
 ```reaction
 when RequestBoundary.request (session, parent, content, requestId, path: "/threads/reply")
 where
-  the active user of (session) (session)
+  view "the active user of (session)" with (session)
   no Conversing._getConversation (node: parent)
 then
-  request RequestBoundary.respond (error: "PARENT_NODE_NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "PARENT_NODE_NOT_FOUND", requestId)
 ```
 
 ### threads.TrackReplyUnread
@@ -6901,7 +6901,7 @@ when Conversing.reply (item, node)
 where
   Conversing._getConversation (node) has (conversation)
 then
-  request Tracking.register (item, scope: conversation)
+  Tracking.register (item, scope: conversation)
 ```
 
 ### threads.TrackRootUnread
@@ -6909,7 +6909,7 @@ then
 ```reaction
 when Conversing.start (item, conversation)
 then
-  request Tracking.register (item, scope: conversation)
+  Tracking.register (item, scope: conversation)
 ```
 
 ### unread.MarkAllSeen
@@ -6917,9 +6917,9 @@ then
 ```reaction
 when RequestBoundary.request (session, scope, requestId, path: "/unread/markAllSeen")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Tracking.markAllSeen (user, scope)
+  Tracking.markAllSeen (user, scope)
 ```
 
 ### unread.MarkAllSeen#2
@@ -6929,7 +6929,7 @@ when Tracking.markAllSeen (user, scope), asked by unread.MarkAllSeen
 where
   earlier, RequestBoundary.request (session, scope, requestId, path: "/unread/markAllSeen")
 then
-  request RequestBoundary.respond (user, requestId)
+  RequestBoundary.respond (user, requestId)
 ```
 
 ### unread.MarkSeen
@@ -6937,9 +6937,9 @@ then
 ```reaction
 when RequestBoundary.request (session, item, requestId, path: "/unread/markSeen")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request Tracking.markSeen (user, item)
+  Tracking.markSeen (user, item)
 ```
 
 ### unread.MarkSeen#2
@@ -6949,7 +6949,7 @@ when Tracking.markSeen (user, item), asked by unread.MarkSeen
 where
   earlier, RequestBoundary.request (session, item, requestId, path: "/unread/markSeen")
 then
-  request RequestBoundary.respond (item, requestId)
+  RequestBoundary.respond (item, requestId)
 ```
 
 ### unread.UnreadCount
@@ -6957,10 +6957,10 @@ then
 ```reaction
 when RequestBoundary.request (session, scope, requestId, path: "/unread/count")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
   Tracking._getUnreadCount (user, scope) has (count)
 then
-  request RequestBoundary.respond (count, requestId)
+  RequestBoundary.respond (count, requestId)
 ```
 
 ### unread.UnreadList
@@ -6968,9 +6968,9 @@ then
 ```reaction
 when RequestBoundary.request (session, scope, requestId, path: "/unread/list")
 where
-  the active user of (session) (session) has (user)
+  view "the active user of (session)" with (session) has (user)
 then
-  request RequestBoundary.respond (items: the unread of (user) in (scope) (user, scope), requestId)
+  RequestBoundary.respond (items: former "the unread of (user) in (scope)" with (user, scope), requestId)
 ```
 
 ### DeliverRefusalToAsker
@@ -6980,7 +6980,7 @@ when any action is refused (message), except RequestBoundary
 where
   earlier, RequestBoundary.request (requestId)
 then
-  request RequestBoundary.respond (requestId, error: message)
+  RequestBoundary.respond (requestId, error: message)
 ```
 
 ### DeliverFaultToAsker
@@ -6990,7 +6990,7 @@ when any action is faulted, not asked by DeliverFaultToAsker
 where
   earlier, RequestBoundary.request (requestId)
 then
-  request RequestBoundary.respond (requestId, error: "INTERNAL_ERROR", errorKind: "framework")
+  RequestBoundary.respond (requestId, error: "INTERNAL_ERROR", errorKind: "framework")
 ```
 
 ## Endpoint input contracts

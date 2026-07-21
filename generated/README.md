@@ -34,9 +34,9 @@ The read-back omits each concept's full State, Actions, and Questions sections.
 Those sections remain in its `spec.md`; the read-back shows only what the
 running assembly can derive and register from the authored sources.
 
-Reaction headings sometimes end with generated positional suffixes. `Name:2`
-is the second declaration in one endpoint partition. `Name#2` is the second
-step in one reaction's consequence chain after the engine lowers that chain
-into executable reactions. A heading such as `Name:2#2` combines both. The
-suffix distinguishes registered reactions; the trigger, conditions, and
-consequence printed beneath the heading state its behavior.
+Reaction headings sometimes carry a stable path label and a generated step
+suffix. `Name:found` is the sibling path labeled `found`. `Name:found#2` is its
+second consequence step after the engine lowers the chain into executable
+reactions. The path label survives source reordering; the step suffix records
+temporal position within that path. The trigger, conditions, and consequence
+printed beneath the heading state its behavior.
