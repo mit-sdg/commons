@@ -29,25 +29,26 @@ export const PurgeClearsNotifications = reaction(({ item }) =>
 
 export const isNotMentionedIn = view(
   "(user) is not mentioned in (post)",
-  ({ user, post, username }) =>
+  ({ user, post }, _outputs, { username }) =>
     where(
       Authenticating._getById({ user }).is({ username }),
       Posting._isMentioned({ post, handle: username }).is({ mentioned: false }),
     ),
-);
+).holds();
 export const isNotYetNotifiedAbout = view(
   "(user) is not yet notified about (subject)",
-  ({ user, subject }) => where(Notifying._hasFor({ user, subject }).is({ notified: false })),
-);
+  ({ user, subject }, _outputs, _bindings) =>
+    where(Notifying._hasFor({ user, subject }).is({ notified: false })),
+).holds();
 export const otherUsersMentionedIn = view(
-  "the other users mentioned in (post) with many (user)",
-  ({ post, user, handle }) =>
+  "the other users mentioned in (post)",
+  ({ post }, { user }, { handle }) =>
     where(
       Posting._getMentions({ post }).is({ handle }),
       Authenticating._getByUsername({ username: handle }).is({ user }),
       Posting._getPost({ post }).is.not({ author: user }),
     ),
-);
+).many();
 
 export const ReplyNotifiesParentAuthor = reaction(
   ({ item, parent, parentItem, parentAuthor, at }) =>
@@ -159,7 +160,7 @@ export const AcceptNotifiesAnswerAuthor = reaction(({ answer, by, answerAuthor, 
 /** Which notifications belong to this recipient? */
 export const theNotificationsOf = former(
   "the notifications of (user)",
-  ({ user, notification, kind, subject, link, createdAt, read }) =>
+  ({ user }, { notification, kind, subject, link, createdAt, read }) =>
     each(
       Notifying._getInbox({ recipient: user }).is({
         notification,
@@ -175,7 +176,7 @@ export const theNotificationsOf = former(
 /** What post and public author identity present this notification? */
 export const theNotificationPresentationOf = former(
   "the notification presentation of (item)",
-  ({ item, author, content, createdAt, editedAt, username, displayName, avatar }) =>
+  ({ item }, { author, content, createdAt, editedAt, username, displayName, avatar }) =>
     where(
       Posting._getPost({ post: item }).is({ author, content, createdAt, editedAt }),
       Authenticating._getById({ user: author }).is({ username }),
@@ -189,7 +190,7 @@ export const theNotificationPresentationOf = former(
 /** What is this recipient's notification inbox? */
 export const theInboxOf = former(
   "the inbox of (user)",
-  ({ user, notification, kind, link, createdAt, read }) =>
+  ({ user }, { notification, kind, link, createdAt, read }) =>
     each(
       Notifying._getInbox({ recipient: user }).is({
         notification,
@@ -200,19 +201,19 @@ export const theInboxOf = former(
       }),
     )
       .form({ notification, kind, link, createdAt, read })
-      .splicing(whether(theNotificationPresentationOf(link))),
+      .splicing(whether(theNotificationPresentationOf({ item: link }))),
 );
 
 export const ListNotifications = endpoint("/notifications/list", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }))
-    .then(respond({ notifications: theNotificationsOf(user) })),
+    .then(respond({ notifications: theNotificationsOf({ user }) })),
 );
 
 export const ReadInbox = endpoint("/notifications/inbox", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }))
-    .then(respond({ notifications: theInboxOf(user) })),
+    .then(respond({ notifications: theInboxOf({ user }) })),
 );
 
 export const UnreadCount = endpoint("/notifications/unreadCount", ({ session, user, count }) =>

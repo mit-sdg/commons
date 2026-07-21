@@ -9,7 +9,7 @@ const { Reacting, Trashing, Timing } = concepts;
 /** Which reactions are on this target? */
 export const theReactionsOn = former(
   "the reactions on (target)",
-  ({ target, reaction, reactor, kind }) =>
+  ({ target }, { reaction, reactor, kind }) =>
     each(Reacting._getReactionsForTarget({ target }).is({ reaction, reactor, kind })).form({
       reaction,
       user: reactor,
@@ -20,7 +20,7 @@ export const theReactionsOn = former(
 /** How many reactions of each kind are on this target? */
 export const theReactionCountsOn = former(
   "the reaction counts on (target)",
-  ({ target, kind, count }) =>
+  ({ target }, { kind, count }) =>
     each(Reacting._countByKind({ target }).is({ kind, count })).form({ kind, count }),
 );
 
@@ -64,7 +64,7 @@ export const RemoveReactionHidden = endpoint("/reactions/remove", ({ session, ta
 export const ReactionsForTarget = endpoint("/reactions/forTarget", ({ target }) =>
   receive({ target })
     .where(readable({ post: target }))
-    .then(respond({ reactions: theReactionsOn(target) })),
+    .then(respond({ reactions: theReactionsOn({ target }) })),
 );
 export const ReactionsForTargetHidden = endpoint("/reactions/forTarget", ({ target }) =>
   receive({ target })

@@ -13,19 +13,21 @@ const { Noting, Rostering, Timing } = concepts;
 /** Which staff notes are about this learner? */
 export const theStaffNotesOn = former(
   "the staff notes on (learner)",
-  ({
-    learner,
-    note,
-    author,
-    body,
-    visibility,
-    status,
-    createdAt,
-    updatedAt,
-    followUpAt,
-    acknowledgedAt,
-    tags,
-  }) =>
+  (
+    { learner },
+    {
+      note,
+      author,
+      body,
+      visibility,
+      status,
+      createdAt,
+      updatedAt,
+      followUpAt,
+      acknowledgedAt,
+      tags,
+    },
+  ) =>
     each(
       Noting._getActiveNotesFor({ learner }).is({
         note,
@@ -56,18 +58,10 @@ export const theStaffNotesOn = former(
 /** Which notes are shown to this learner? */
 export const theNotesShownTo = former(
   "the notes shown to (learner)",
-  ({
-    learner,
-    note,
-    author,
-    body,
-    status,
-    createdAt,
-    updatedAt,
-    followUpAt,
-    acknowledgedAt,
-    tags,
-  }) =>
+  (
+    { learner },
+    { note, author, body, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags },
+  ) =>
     each(
       Noting._getShownTo({ learner }).is({
         note,
@@ -95,9 +89,9 @@ export const theNotesShownTo = former(
 );
 /** What seat detail belongs to this user? */
 export const theSeatDetailOf = view(
-  "the seat detail of (user) with optional (detail)",
-  ({ user, detail }) => where(Rostering._getSeatDetail({ user }).is({ detail })),
-);
+  "the seat detail of (user)",
+  ({ user }, { detail }, _bindings) => where(Rostering._getSeatDetail({ user }).is({ detail })),
+).optional();
 export const Write = endpoint(
   "/students/notes/write",
   ({ session, learner, body, visibility, tags, followUpAt, user, at, note }) =>
@@ -227,7 +221,7 @@ export const NotesList = endpoint(
   ({ session, learner, user }) =>
     receive({ session, learner })
       .where(activeUser({ session }).is({ user }), mayManageStudentNotes({ user }))
-      .then(respond({ notes: theStaffNotesOn(learner) })),
+      .then(respond({ notes: theStaffNotesOn({ learner }) })),
   { input: { required: ["session", "learner"] } },
 );
 
@@ -241,7 +235,7 @@ export const NotesVisible = endpoint(
   ({ session, user }) =>
     receive({ session })
       .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(respond({ notes: theNotesShownTo(user) })),
+      .then(respond({ notes: theNotesShownTo({ learner: user }) })),
   { input: { required: ["session"] } },
 );
 

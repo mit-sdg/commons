@@ -52,10 +52,9 @@ export const BootstrapAdminOnLogin = reaction(({ user, role }) =>
     )
     .then(Roling.grant({ user, context: FORUM, role })),
 );
-export const theUserNamed = view(
-  "the user named (username) with optional (user)",
-  ({ username, user }) => where(Authenticating._getByUsername({ username }).is({ user })),
-);
+export const theUserNamed = view("the user named (username)", ({ username }, { user }, _bindings) =>
+  where(Authenticating._getByUsername({ username }).is({ user })),
+).optional();
 
 export const Register = endpoint(
   "/auth/register",

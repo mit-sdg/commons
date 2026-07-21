@@ -10,7 +10,7 @@ const { Resolving, Trashing, Timing } = concepts;
 /** What is the accepted resolution of this question? */
 export const theResolutionOf = former(
   "the resolution of (question)",
-  ({ question, answer, resolvedBy, resolvedAt }) =>
+  ({ question }, { answer, resolvedBy, resolvedAt }) =>
     each(Resolving._getResolution({ question }).is({ answer, resolvedBy, resolvedAt }))
       .where(readable({ post: answer }))
       .form({
@@ -104,7 +104,7 @@ export const ClearResolutionHidden = endpoint("/resolutions/clear", ({ session, 
 export const GetResolution = endpoint("/resolutions/get", ({ question }) =>
   receive({ question })
     .where(readable({ post: question }))
-    .then(respond({ resolution: theResolutionOf(question) })),
+    .then(respond({ resolution: theResolutionOf({ question }) })),
 );
 
 export const IsResolved = endpoint("/resolutions/isResolved", ({ question, resolved }) =>

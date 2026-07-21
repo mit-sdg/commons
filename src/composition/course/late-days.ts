@@ -13,7 +13,7 @@ const { Banking, Timing } = concepts;
 /** What late-day balance does this learner have? */
 export const theLateDayBalanceOf = former(
   "the late-day balance of (learner)",
-  ({ learner, granted, used, remaining }) =>
+  ({ learner }, { granted, used, remaining }) =>
     where(Banking._getBalance({ learner }).is({ granted, used, remaining })).form({
       granted,
       used,
@@ -23,7 +23,7 @@ export const theLateDayBalanceOf = former(
 /** Which late-day uses belong to this assignment? */
 export const theLateDayUsesOn = former(
   "the late-day uses on (assignment)",
-  ({ assignment, learner, days }) =>
+  ({ assignment }, { learner, days }) =>
     each(Banking._getUsesForItem({ item: assignment }).is({ learner, days })).form({
       learner,
       days,
@@ -32,7 +32,7 @@ export const theLateDayUsesOn = former(
 /** Which late-day uses belong to this learner? */
 export const theLateDayUsesOf = former(
   "the late-day uses of (learner)",
-  ({ learner, use, item, days, status, appliedAt }) =>
+  ({ learner }, { use, item, days, status, appliedAt }) =>
     each(Banking._getUses({ learner }).is({ use, item, days, status, appliedAt })).form({
       use,
       item,
@@ -147,7 +147,7 @@ export const List = endpoint(
   ({ session, user }) =>
     receive({ session })
       .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(respond({ uses: theLateDayUsesOf(user) })),
+      .then(respond({ uses: theLateDayUsesOf({ learner: user }) })),
   { input: { required: ["session"] } },
 );
 
@@ -162,7 +162,7 @@ export const Balance = endpoint(
   ({ session, learner }) =>
     receive({ session, learner })
       .where(activeUser({ session }).is({ user: learner }), isActiveStudent({ user: learner }))
-      .then(respond({ balance: theLateDayBalanceOf(learner) })),
+      .then(respond({ balance: theLateDayBalanceOf({ learner }) })),
   { input: { required: ["session", "learner"] } },
 );
 
@@ -173,7 +173,7 @@ export const StaffBalance = endpoint("/late-days/balance", ({ session, learner, 
       mayManageLateDays({ user }),
       isActiveStudent({ user: learner }),
     )
-    .then(respond({ balance: theLateDayBalanceOf(learner) })),
+    .then(respond({ balance: theLateDayBalanceOf({ learner }) })),
 );
 
 export const BalanceUnauthorized = endpoint("/late-days/balance", ({ session, learner, user }) =>
@@ -264,7 +264,7 @@ export const ForAssignment = endpoint(
   ({ session, assignment, user }) =>
     receive({ session, assignment })
       .where(activeUser({ session }).is({ user }), mayManageLateDays({ user }))
-      .then(respond({ users: theLateDayUsesOn(assignment) })),
+      .then(respond({ users: theLateDayUsesOn({ assignment }) })),
   { input: { required: ["session", "assignment"] } },
 );
 

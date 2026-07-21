@@ -25,7 +25,9 @@ describe("forum identity and lookup presentation", () => {
     const { tag } = await app.concepts.Tagging.createTag({ name: "design" });
     await app.concepts.Tagging.addTag({ target: post, tag });
 
-    expect(await app.form(theTargetsTaggedWithName("design"))).toEqual([{ target: post }]);
+    expect(await app.form(theTargetsTaggedWithName({ name: "design" }))).toEqual([
+      { target: post },
+    ]);
     expect(await send(app, "/tags/targetsByName", { name: "design" })).toEqual({
       targets: [{ target: post }],
     });
@@ -68,7 +70,7 @@ describe("forum identity and lookup presentation", () => {
       at,
     });
 
-    expect(await app.form(theInboxOf(recipient))).toEqual([
+    expect(await app.form(theInboxOf({ user: recipient }))).toEqual([
       {
         notification: expect.any(String),
         kind: "reply",
@@ -95,7 +97,7 @@ describe("forum identity and lookup presentation", () => {
     ]);
 
     await app.concepts.Profiling.setDisplayName({ user: actor, displayName: "Mara V." });
-    const [afterRename] = (await app.form(theInboxOf(recipient))) as {
+    const [afterRename] = (await app.form(theInboxOf({ user: recipient }))) as {
       actor: { user: string; username: string; displayName: string };
     }[];
     expect(afterRename.actor).toMatchObject({

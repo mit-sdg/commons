@@ -16,7 +16,7 @@ const { Assigning, Grading, Itemizing, Rostering, Timing } = concepts;
 /** Which released grades belong to this learner? */
 export const theReleasedGradesOf = former(
   "the released grades of (learner)",
-  ({ learner, item, grade, score, outOf, status, feedback, label }) =>
+  ({ learner }, { item, grade, score, outOf, status, feedback, label }) =>
     each(
       Grading._getGradesForLearner({ learner }).is({ item, grade, score, outOf, status, feedback }),
     )
@@ -29,7 +29,7 @@ export const theReleasedGradesOf = former(
 /** Which grades belong to this learner? */
 export const theGradesOf = former(
   "the grades of (learner)",
-  ({ learner, item, grade, score, outOf, status, feedback, label }) =>
+  ({ learner }, { item, grade, score, outOf, status, feedback, label }) =>
     each(
       Grading._getGradesForLearner({ learner }).is({ item, grade, score, outOf, status, feedback }),
     )
@@ -40,7 +40,7 @@ export const theGradesOf = former(
 /** Which grades are on this item? */
 export const theGradesOn = former(
   "the grades on (item)",
-  ({ item, learner, grade, score, status }) =>
+  ({ item }, { learner, grade, score, status }) =>
     each(Grading._getGradesForItem({ item }).is({ learner, grade, score, status })).form({
       learner,
       grade,
@@ -51,7 +51,7 @@ export const theGradesOn = former(
 /** Which learners belong in the gradebook? */
 export const theGradebookLearners = former(
   "the gradebook learners ()",
-  ({ user, seat, section, rosterName, email }) =>
+  (_inputs, { user, seat, section, rosterName, email }) =>
     each(Rostering._getActiveStudents({}).is({ user, seat, section, rosterName, email })).form({
       user,
       seat,
@@ -61,47 +61,39 @@ export const theGradebookLearners = former(
     }),
 );
 /** What is the course gradebook? */
-export const theGradebook = former("the gradebook ()", (vars) => {
-  const {
-    item,
-    label,
-    maxPoints,
-    user,
-    section,
-    rosterName,
-    email,
-    cellItem,
-    grade,
-    score,
-    status,
-  } = vars;
-  return form({
-    items: each(Itemizing._getItems({}).is({ item, label, maxPoints })).form({
-      item,
-      label,
-      maxPoints,
-    }),
-    learners: each(Rostering._getActiveStudents({}).is({ user, section, rosterName, email }))
-      .arranged(rosterName, "ascending")
-      .form({
-        learner: user,
-        rosterName,
-        email,
-        section,
-        cells: each(Itemizing._getItems({}).is({ item: cellItem }))
-          .where(
-            whether(
-              Grading._getGrade({ learner: user, item: cellItem }).is({
-                grade,
-                score,
-                status,
-              }),
-            ),
-          )
-          .form({ item: cellItem, grade, score, status }),
+export const theGradebook = former(
+  "the gradebook ()",
+  (
+    _inputs,
+    { item, label, maxPoints, user, section, rosterName, email, cellItem, grade, score, status },
+  ) =>
+    form({
+      items: each(Itemizing._getItems({}).is({ item, label, maxPoints })).form({
+        item,
+        label,
+        maxPoints,
       }),
-  });
-});
+      learners: each(Rostering._getActiveStudents({}).is({ user, section, rosterName, email }))
+        .arranged(rosterName, "ascending")
+        .form({
+          learner: user,
+          rosterName,
+          email,
+          section,
+          cells: each(Itemizing._getItems({}).is({ item: cellItem }))
+            .where(
+              whether(
+                Grading._getGrade({ learner: user, item: cellItem }).is({
+                  grade,
+                  score,
+                  status,
+                }),
+              ),
+            )
+            .form({ item: cellItem, grade, score, status }),
+        }),
+    }),
+);
 export const RevisedAcceptingAssignmentEnsuresGradeItem = reaction(({ assignment, title }) =>
   when(
     Assigning.revise({ title }).responds({
@@ -378,7 +370,7 @@ export const GradesExcuseForbidden = endpoint(
 export const GradesForMe = endpoint("/grades/for-me", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-    .then(respond({ grades: theReleasedGradesOf(user) })),
+    .then(respond({ grades: theReleasedGradesOf({ learner: user }) })),
 );
 
 export const GradesForMeNotStudent = endpoint("/grades/for-me", ({ session, user }) =>
@@ -390,7 +382,7 @@ export const GradesForMeNotStudent = endpoint("/grades/for-me", ({ session, user
 export const GradesForStudent = endpoint("/grades/for-student", ({ session, learner, user }) =>
   receive({ session, learner })
     .where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
-    .then(respond({ grades: theGradesOf(learner) })),
+    .then(respond({ grades: theGradesOf({ learner }) })),
 );
 
 export const GradesForStudentForbidden = endpoint(
@@ -404,7 +396,7 @@ export const GradesForStudentForbidden = endpoint(
 export const GradesForItem = endpoint("/grades/for-item", ({ session, item, user }) =>
   receive({ session, item })
     .where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
-    .then(respond({ grades: theGradesOn(item) })),
+    .then(respond({ grades: theGradesOn({ item }) })),
 );
 
 export const GradesForItemForbidden = endpoint("/grades/for-item", ({ session, item, user }) =>
@@ -416,7 +408,7 @@ export const GradesForItemForbidden = endpoint("/grades/for-item", ({ session, i
 export const GradesGradebook = endpoint("/grades/gradebook", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
-    .then(respond({ learners: theGradebookLearners() })),
+    .then(respond({ learners: theGradebookLearners({}) })),
 );
 
 export const GradesGradebookForbidden = endpoint("/grades/gradebook", ({ session, user }) =>

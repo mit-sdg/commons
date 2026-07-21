@@ -15,7 +15,7 @@ const { Assigning, Banking, Itemizing, Rostering } = concepts;
 /** Which calendar entries fall between these moments? */
 export const theCalendarBetween = former(
   "the calendar between (start) and (end)",
-  ({ start, end, assignment, title, kind, availableAt, dueAt, closeAt, status }) =>
+  ({ start, end }, { assignment, title, kind, availableAt, dueAt, closeAt, status }) =>
     each(Assigning._getPublishedInWindow({ start, end }).is({ assignment }))
       .where(
         Assigning._getAssignments({}).is({
@@ -33,7 +33,7 @@ export const theCalendarBetween = former(
 /** What dashboard seat belongs to this user? */
 export const theDashboardSeatOf = former(
   "the dashboard seat of (user)",
-  ({ user, seat, holder, externalKey, email, rosterName, kind, section, status }) =>
+  ({ user }, { seat, holder, externalKey, email, rosterName, kind, section, status }) =>
     each(
       Rostering._getSeatByUser({ user }).is({
         seat,
@@ -59,7 +59,7 @@ export const theDashboardSeatOf = former(
 /** What belongs on the staff dashboard? */
 export const theStaffDashboard = former(
   "the staff dashboard ()",
-  ({ user, seat, kind, section, rosterName, email }) =>
+  (_inputs, { user, seat, kind, section, rosterName, email }) =>
     each(Rostering._getActiveMembers({}).is({ user, seat, kind, section, rosterName, email })).form(
       {
         user,
@@ -74,7 +74,7 @@ export const theStaffDashboard = former(
 /** What coursework counts belong on the staff dashboard? */
 export const theStaffDashboardCounts = former(
   "the staff dashboard counts ()",
-  ({ assignment, item, learner, use }) =>
+  (_inputs, { assignment, item, learner, use }) =>
     form({
       assignments: each(Assigning._getAssignments({}).is({ assignment })).count(),
       gradeItems: each(Itemizing._getItems({}).is({ item })).count(),
@@ -88,7 +88,7 @@ export const CalendarMe = endpoint(
   ({ session, start, end, user }) =>
     receive({ session, start, end })
       .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(respond({ events: theCalendarBetween(start, end) })),
+      .then(respond({ events: theCalendarBetween({ start, end }) })),
   { input: { required: ["session", "start", "end"] } },
 );
 
@@ -102,7 +102,7 @@ export const CalendarStaff = endpoint(
   ({ session, start, end, user }) =>
     receive({ session, start, end })
       .where(activeUser({ session }).is({ user }), mayViewStaffCalendar({ user }))
-      .then(respond({ events: theCalendarBetween(start, end) })),
+      .then(respond({ events: theCalendarBetween({ start, end }) })),
   { input: { required: ["session", "start", "end"] } },
 );
 
@@ -116,7 +116,7 @@ export const LmsMe = endpoint(
   ({ session, user }) =>
     receive({ session })
       .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(respond({ dashboard: theDashboardSeatOf(user) })),
+      .then(respond({ dashboard: theDashboardSeatOf({ user }) })),
   { input: { required: ["session"] } },
 );
 
@@ -130,7 +130,7 @@ export const LmsStaffDashboard = endpoint(
   ({ session, user }) =>
     receive({ session })
       .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-      .then(respond({ dashboard: theStaffDashboard(), counts: theStaffDashboardCounts() })),
+      .then(respond({ dashboard: theStaffDashboard({}), counts: theStaffDashboardCounts({}) })),
   { input: { required: ["session"] } },
 );
 

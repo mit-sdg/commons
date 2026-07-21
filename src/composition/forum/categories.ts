@@ -8,16 +8,18 @@ import { notReadable, readable } from "./posts.ts";
 const { Categorizing, Trashing } = concepts;
 
 /** Which categories exist? */
-export const theCategories = former("the categories ()", ({ category, name, description }) =>
-  each(Categorizing._getAllCategories({}).is({ category, name, description })).form({
-    category,
-    name,
-    description,
-  }),
+export const theCategories = former(
+  "the categories ()",
+  (_inputs, { category, name, description }) =>
+    each(Categorizing._getAllCategories({}).is({ category, name, description })).form({
+      category,
+      name,
+      description,
+    }),
 );
 
 /** Which items are in this category? */
-export const theItemsIn = former("the items in (category)", ({ category, item }) =>
+export const theItemsIn = former("the items in (category)", ({ category }, { item }) =>
   each(Categorizing._getItems({ category }).is({ item }))
     .where(readable({ post: item }))
     .form({ item }),
@@ -25,7 +27,7 @@ export const theItemsIn = former("the items in (category)", ({ category, item })
 /** Which category contains this item? */
 export const theCategoryOf = former(
   "the category of (item)",
-  ({ item, category, name, description }) =>
+  ({ item }, { category, name, description }) =>
     each(Categorizing._getCategory({ item }).is({ category, name, description })).form({
       category,
       name,
@@ -124,17 +126,17 @@ export const UnassignCategoryHidden = endpoint("/categories/unassign", ({ sessio
 );
 
 export const ListCategories = endpoint("/categories/list", () =>
-  receive({}).then(respond({ categories: theCategories() })),
+  receive({}).then(respond({ categories: theCategories({}) })),
 );
 
 export const CategoryItems = endpoint("/categories/items", ({ category }) =>
-  receive({ category }).then(respond({ items: theItemsIn(category) })),
+  receive({ category }).then(respond({ items: theItemsIn({ category }) })),
 );
 
 export const CategoryForItem = endpoint("/categories/forItem", ({ item }) =>
   receive({ item })
     .where(readable({ post: item }))
-    .then(respond({ category: theCategoryOf(item) })),
+    .then(respond({ category: theCategoryOf({ item }) })),
 );
 export const CategoryForItemHidden = endpoint("/categories/forItem", ({ item }) =>
   receive({ item })

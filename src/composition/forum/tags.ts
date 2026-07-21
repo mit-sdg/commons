@@ -7,19 +7,19 @@ import { notReadable, readable } from "./posts.ts";
 const { Tagging, Trashing } = concepts;
 
 /** Which tags exist? */
-export const theTags = former("the tags ()", ({ tag, name }) =>
+export const theTags = former("the tags ()", (_inputs, { tag, name }) =>
   each(Tagging._getAllTags({}).is({ tag, name })).form({ tag, name }),
 );
 
 /** Which tags are on this target? */
-export const theTagsOn = former("the tags on (target)", ({ target, tag, name }) =>
+export const theTagsOn = former("the tags on (target)", ({ target }, { tag, name }) =>
   each(Tagging._getTags({ target }).is({ tag, name }))
     .where(readable({ post: target }))
     .form({ tag, name }),
 );
 
 /** Which targets carry this tag? */
-export const theTargetsTagged = former("the targets tagged (tag)", ({ tag, target }) =>
+export const theTargetsTagged = former("the targets tagged (tag)", ({ tag }, { target }) =>
   each(Tagging._getTargets({ tag }).is({ target }))
     .where(readable({ post: target }))
     .form({ target }),
@@ -28,7 +28,7 @@ export const theTargetsTagged = former("the targets tagged (tag)", ({ tag, targe
 /** Which targets carry the tag with this name? */
 export const theTargetsTaggedWithName = former(
   "the targets tagged with (name)",
-  ({ name, tag, target }) =>
+  ({ name }, { tag, target }) =>
     each(Tagging._getByName({ name }).is({ tag }))
       .where(Tagging._getTargets({ tag }).is({ target }), readable({ post: target }))
       .form({ target }),
@@ -73,17 +73,17 @@ export const RemoveTagHidden = endpoint("/tags/remove", ({ session, target, tag 
 );
 
 export const TagTargets = endpoint("/tags/targets", ({ tag }) =>
-  receive({ tag }).then(respond({ targets: theTargetsTagged(tag) })),
+  receive({ tag }).then(respond({ targets: theTargetsTagged({ tag }) })),
 );
 
 export const TagTargetsByName = endpoint("/tags/targetsByName", ({ name }) =>
-  receive({ name }).then(respond({ targets: theTargetsTaggedWithName(name) })),
+  receive({ name }).then(respond({ targets: theTargetsTaggedWithName({ name }) })),
 );
 
 export const TagsForTarget = endpoint("/tags/forTarget", ({ target }) =>
   receive({ target })
     .where(readable({ post: target }))
-    .then(respond({ tags: theTagsOn(target) })),
+    .then(respond({ tags: theTagsOn({ target }) })),
 );
 export const TagsForTargetHidden = endpoint("/tags/forTarget", ({ target }) =>
   receive({ target })
@@ -92,5 +92,5 @@ export const TagsForTargetHidden = endpoint("/tags/forTarget", ({ target }) =>
 );
 
 export const ListTags = endpoint("/tags/list", () =>
-  receive({}).then(respond({ tags: theTags() })),
+  receive({}).then(respond({ tags: theTags({}) })),
 );

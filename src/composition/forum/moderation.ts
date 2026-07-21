@@ -10,7 +10,7 @@ const { Conversing, Flagging, Formatting, Linking, Locking, Posting, Tracking, T
   concepts;
 
 /** Which items are in the trash? */
-export const theTrashBin = former("the trash bin ()", ({ item, trashedBy, trashedAt }) =>
+export const theTrashBin = former("the trash bin ()", (_inputs, { item, trashedBy, trashedAt }) =>
   each(Trashing._getTrashed({}).is({ item, trashedBy, trashedAt })).form({
     item,
     trashedBy,
@@ -19,14 +19,14 @@ export const theTrashBin = former("the trash bin ()", ({ item, trashedBy, trashe
 );
 
 /** Which targets are locked? */
-export const theLockedList = former("the locked list ()", ({ target, lockedAt }) =>
+export const theLockedList = former("the locked list ()", (_inputs, { target, lockedAt }) =>
   each(Locking._getLocked({}).is({ target, lockedAt }))
     .where(publicTarget({ target }))
     .form({ target, lockedAt }),
 );
 
 /** Which targets have open flags? */
-export const theOpenFlags = former("the open flags ()", ({ target, count }) =>
+export const theOpenFlags = former("the open flags ()", (_inputs, { target, count }) =>
   each(Flagging._getOpenTargets({}).is({ target, count }))
     .where(readable({ post: target }))
     .form({ target, count }),
@@ -35,7 +35,7 @@ export const theOpenFlags = former("the open flags ()", ({ target, count }) =>
 /** Which flags are on this target? */
 export const theFlagsOn = former(
   "the flags on (target)",
-  ({ target, flag, reporter, reason, status, createdAt }) =>
+  ({ target }, { flag, reporter, reason, status, createdAt }) =>
     each(Flagging._getFlags({ target }).is({ flag, reporter, reason, status, createdAt })).form({
       flag,
       reporter,
@@ -47,22 +47,25 @@ export const theFlagsOn = former(
 /** What is the moderation queue? */
 export const theModerationQueue = former(
   "the moderation queue ()",
-  ({
-    target,
-    count,
-    node,
-    conversation,
-    author,
-    content,
-    createdAt,
-    editedAt,
-    rendered,
-    flag,
-    reporter,
-    reason,
-    status,
-    flaggedAt,
-  }) =>
+  (
+    _inputs,
+    {
+      target,
+      count,
+      node,
+      conversation,
+      author,
+      content,
+      createdAt,
+      editedAt,
+      rendered,
+      flag,
+      reporter,
+      reason,
+      status,
+      flaggedAt,
+    },
+  ) =>
     each(Flagging._getOpenTargets({}).is({ target, count }))
       .where(
         Posting._getPost({ post: target }).is({ author, content, createdAt, editedAt }),
@@ -192,7 +195,7 @@ export const PurgeItemForbidden = endpoint("/trash/purge", ({ session, item, use
 export const TrashList = endpoint("/trash/list", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }), mayModerate({ user }))
-    .then(respond({ trashed: theTrashBin() })),
+    .then(respond({ trashed: theTrashBin({}) })),
 );
 
 export const IsTrashed = endpoint("/trash/isTrashed", ({ session, item, trashed, user }) =>
@@ -223,7 +226,7 @@ export const GetTrashedPost = endpoint("/moderation/posts/get", ({ session, item
       Posting._getPost({ post: item }),
       Trashing._isTrashed({ item }).is({ trashed: true }),
     )
-    .then(respond({ post: thePost(item) })),
+    .then(respond({ post: thePost({ post: item }) })),
 );
 export const GetTrashedPostHidden = endpoint("/moderation/posts/get", ({ session, item, user }) =>
   receive({ session, item })
@@ -300,7 +303,7 @@ export const UnlockTargetHidden = endpoint("/locks/unlock", ({ session, target, 
 );
 
 export const LockList = endpoint("/locks/list", () =>
-  receive().then(respond({ locked: theLockedList() })),
+  receive().then(respond({ locked: theLockedList({}) })),
 );
 
 export const IsLocked = endpoint("/locks/isLocked", ({ target, locked }) =>
@@ -364,7 +367,7 @@ export const FlagResolveHidden = endpoint("/flags/resolve", ({ session, target, 
 export const FlagsOpen = endpoint("/flags/open", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }), mayModerate({ user }))
-    .then(respond({ targets: theOpenFlags() })),
+    .then(respond({ targets: theOpenFlags({}) })),
 );
 
 export const FlagsOpenHidden = endpoint("/flags/open", ({ session, user }) =>
@@ -376,7 +379,7 @@ export const FlagsOpenHidden = endpoint("/flags/open", ({ session, user }) =>
 export const FlagsForTarget = endpoint("/flags/forTarget", ({ session, target, user }) =>
   receive({ session, target })
     .where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: target }))
-    .then(respond({ flags: theFlagsOn(target) })),
+    .then(respond({ flags: theFlagsOn({ target }) })),
 );
 export const FlagsForTargetHidden = endpoint("/flags/forTarget", ({ session, target, user }) =>
   receive({ session, target })

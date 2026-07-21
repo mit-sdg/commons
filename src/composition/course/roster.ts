@@ -10,7 +10,7 @@ const { Profiling, Roling, Rostering } = concepts;
 /** Which sections exist? */
 export const theSections = former(
   "the sections ()",
-  ({ section, name, location, meetingPattern, status }) =>
+  (_inputs, { section, name, location, meetingPattern, status }) =>
     each(Rostering._getSections({}).is({ section, name, location, meetingPattern, status })).form({
       section,
       name,
@@ -22,7 +22,7 @@ export const theSections = former(
 /** Who belongs on the active roster? */
 export const theRoster = former(
   "the roster ()",
-  ({ user, seat, kind, section, rosterName, email }) =>
+  (_inputs, { user, seat, kind, section, rosterName, email }) =>
     each(Rostering._getActiveMembers({}).is({ user, seat, kind, section, rosterName, email })).form(
       {
         user,
@@ -35,17 +35,17 @@ export const theRoster = former(
     ),
 );
 /** Which seat belongs to this user? */
-export const theSeatOf = view("the seat of (user) with optional (seat)", ({ user, seat }) =>
+export const theSeatOf = view("the seat of (user)", ({ user }, { seat }, _bindings) =>
   where(Rostering._getSeatByUser({ user }).is({ seat })),
-);
+).optional();
 export const identityMatchedSeat = view(
-  "the seat matching (user) and (externalKey) with optional (seat)",
-  ({ user, externalKey, seat, email }) =>
+  "the seat matching (user) and (externalKey)",
+  ({ user, externalKey }, { seat }, { email }) =>
     where(
       Profiling._getProfileFields({ user }).is({ email }),
       Rostering._getSeatByExternalKey({ externalKey }).is({ seat, email }),
     ),
-);
+).optional();
 export const StaffSeatGrantsCourseStaff = reaction(({ claimer, role }) =>
   when(Rostering.claimSeat({ user: claimer }).responds({ kind: "STAFF" }))
     .where(
@@ -100,7 +100,7 @@ export const RosterMe = endpoint("/roster/me", ({ session, user, seat }) =>
 );
 
 export const SectionsList = endpoint("/roster/sections/list", () =>
-  receive().then(respond({ sections: theSections() })),
+  receive().then(respond({ sections: theSections({}) })),
 );
 
 export const SectionsCreate = endpoint(
@@ -200,7 +200,7 @@ export const LinkUserForbidden = endpoint(
 export const RosterList = endpoint("/roster/list", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
-    .then(respond({ members: theRoster() })),
+    .then(respond({ members: theRoster({}) })),
 );
 
 export const RosterListForbidden = endpoint("/roster/list", ({ session, user }) =>

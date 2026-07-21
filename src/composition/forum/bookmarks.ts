@@ -8,24 +8,24 @@ import { notReadable, readable } from "./posts.ts";
 const { Bookmarking, Trashing, Timing } = concepts;
 
 export const readableBookmarksOf = view(
-  "the readable bookmarks of (user) with many (item, savedAt)",
-  ({ user, item, savedAt }) =>
+  "the readable bookmarks of (user)",
+  ({ user }, { item, savedAt }, _bindings) =>
     where(Bookmarking._getSaved({ user }).is({ item, savedAt }), readable({ post: item })),
-);
+).many();
 
 /** Which items has this user bookmarked? */
-export const theBookmarksOf = former("the bookmarks of (user)", ({ user, item, savedAt }) =>
+export const theBookmarksOf = former("the bookmarks of (user)", ({ user }, { item, savedAt }) =>
   each(readableBookmarksOf({ user }).is({ item, savedAt })).form({ item, savedAt }),
 );
 
 /** Which bookmarked posts should this user see? */
 export const theBookmarkedPostsOf = former(
   "the bookmarked posts of (user)",
-  ({ user, item, savedAt }) =>
+  ({ user }, { item, savedAt }) =>
     each(readableBookmarksOf({ user }).is({ item, savedAt })).form({
       item,
       savedAt,
-      post: thePostSummaryOf(item),
+      post: thePostSummaryOf({ item }),
     }),
 );
 
@@ -64,7 +64,7 @@ export const UnsaveBookmarkHidden = endpoint("/bookmarks/unsave", ({ session, it
 export const ListBookmarks = endpoint("/bookmarks/list", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }))
-    .then(respond({ bookmarks: theBookmarksOf(user) })),
+    .then(respond({ bookmarks: theBookmarksOf({ user }) })),
 );
 
 export const IsSaved = endpoint("/bookmarks/isSaved", ({ session, item, user, saved }) =>

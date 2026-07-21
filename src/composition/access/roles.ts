@@ -7,18 +7,20 @@ import { mayAdminister, mayNotAdminister } from "./policy.ts";
 const { Authenticating, Roling } = concepts;
 
 /** Which roles are defined? */
-export const theDefinedRoles = former("the defined roles ()", ({ role, name, capabilities }) =>
-  each(Roling._listRoles({}).is({ role, name, capabilities })).form({
-    role,
-    name,
-    capabilities,
-  }),
+export const theDefinedRoles = former(
+  "the defined roles ()",
+  (_inputs, { role, name, capabilities }) =>
+    each(Roling._listRoles({}).is({ role, name, capabilities })).form({
+      role,
+      name,
+      capabilities,
+    }),
 );
 
 /** Which roles does this user hold in this context? */
 export const theRolesHeldBy = former(
   "the roles held by (user) in (context)",
-  ({ user, context, role }) =>
+  ({ user, context }, { role }) =>
     each(Roling._getRoles({ user, context }).is({ role })).form({ role }),
 );
 
@@ -84,7 +86,7 @@ export const RevokeRoleForbidden = endpoint(
 export const RolesForUser = endpoint("/roles/forUser", ({ user, context, subject }) =>
   receive({ user, context })
     .where(Authenticating._denotedUser({ ref: user }).is({ user: subject }))
-    .then(respond({ roles: theRolesHeldBy(subject, context) })),
+    .then(respond({ roles: theRolesHeldBy({ user: subject, context }) })),
 );
 
 export const RoleCan = endpoint("/roles/can", ({ user, context, capability, allowed }) =>
@@ -100,5 +102,5 @@ export const RoleGet = endpoint("/roles/get", ({ role, name, capabilities }) =>
 );
 
 export const RoleList = endpoint("/roles/list", () =>
-  receive().then(respond({ roles: theDefinedRoles() })),
+  receive().then(respond({ roles: theDefinedRoles({}) })),
 );

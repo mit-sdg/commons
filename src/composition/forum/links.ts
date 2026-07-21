@@ -6,14 +6,14 @@ import { notReadable, readable } from "./posts.ts";
 const { Linking } = concepts;
 
 /** Which sources link to this target? */
-export const theBacklinksOf = former("the backlinks of (target)", ({ target, source }) =>
+export const theBacklinksOf = former("the backlinks of (target)", ({ target }, { source }) =>
   each(Linking._getBacklinks({ target }).is({ source }))
     .where(readable({ post: source }))
     .form({ source }),
 );
 
 /** Which targets does this source link to? */
-export const theForwardLinksOf = former("the forward links of (source)", ({ source, target }) =>
+export const theForwardLinksOf = former("the forward links of (source)", ({ source }, { target }) =>
   each(Linking._getLinks({ source }).is({ target }))
     .where(readable({ post: target }))
     .form({ target }),
@@ -24,7 +24,7 @@ export const Backlinks = endpoint(
   ({ target }) =>
     receive({ target })
       .where(readable({ post: target }))
-      .then(respond({ sources: theBacklinksOf(target) })),
+      .then(respond({ sources: theBacklinksOf({ target }) })),
   { input: { required: ["target"] } },
 );
 
@@ -33,7 +33,7 @@ export const Forward = endpoint(
   ({ source }) =>
     receive({ source })
       .where(readable({ post: source }))
-      .then(respond({ targets: theForwardLinksOf(source) })),
+      .then(respond({ targets: theForwardLinksOf({ source }) })),
   { input: { required: ["source"] } },
 );
 export const BacklinksHidden = endpoint("/links/backlinks", ({ target }) =>

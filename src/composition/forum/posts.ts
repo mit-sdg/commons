@@ -19,29 +19,29 @@ const {
   Timing,
 } = concepts;
 
-export const readable = view("(post) is readable", ({ post }) =>
+export const readable = view("(post) is readable", ({ post }, _outputs, _bindings) =>
   where(Posting._getPost({ post }), Trashing._isTrashed({ item: post }).is({ trashed: false })),
-);
-export const notReadable = view("(post) is not readable", ({ post }) => [
+).holds();
+export const notReadable = view("(post) is not readable", ({ post }, _outputs, _bindings) => [
   where(Trashing._isTrashed({ item: post }).is({ trashed: true })),
   where(no(Posting._getPost({ post }))),
-]);
+]).holds();
 export const publicPostsBy = view(
-  "the public posts by (author) with many (post)",
-  ({ author, post }) =>
+  "the public posts by (author)",
+  ({ author }, { post }, _bindings) =>
     where(Posting._getByAuthor({ author }).is({ post }), intact({ item: post })),
-);
+).many();
 /** What is this post? */
 export const thePost = former(
   "the post (post)",
-  ({ post, author, content, createdAt, editedAt, rendered }) =>
+  ({ post }, { author, content, createdAt, editedAt, rendered }) =>
     where(
       Posting._getPost({ post }).is({ author, content, createdAt, editedAt }),
       Formatting._getRendered({ target: post }).is({ rendered }),
     ).form({ author, content, createdAt, editedAt, rendered }),
 );
 /** Which public posts belong to this author? */
-export const thePublicPostsOf = former("the public posts of (author)", ({ author, post }) =>
+export const thePublicPostsOf = former("the public posts of (author)", ({ author }, { post }) =>
   each(publicPostsBy({ author }).is({ post })).form({ post }),
 );
 
@@ -102,7 +102,7 @@ export const GetPost = endpoint(
   ({ post }) =>
     receive({ post })
       .where(readable({ post }))
-      .then(respond({ post: thePost(post) })),
+      .then(respond({ post: thePost({ post }) })),
   { input: { required: ["post"] } },
 );
 export const GetPostNotFound = endpoint("/posts/get", ({ post }) =>
@@ -113,7 +113,7 @@ export const GetPostNotFound = endpoint("/posts/get", ({ post }) =>
 
 export const PostsByAuthor = endpoint(
   "/posts/byAuthor",
-  ({ author }) => receive({ author }).then(respond({ posts: thePublicPostsOf(author) })),
+  ({ author }) => receive({ author }).then(respond({ posts: thePublicPostsOf({ author }) })),
   { input: { required: ["author"] } },
 );
 export const EditPost = endpoint(

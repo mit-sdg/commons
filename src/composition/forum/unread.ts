@@ -6,7 +6,7 @@ import { concepts } from "../../concepts/index.ts";
 const { Tracking } = concepts;
 
 /** Which items are unread for this user in this scope? */
-export const theUnreadOf = former("the unread of (user) in (scope)", ({ user, scope, item }) =>
+export const theUnreadOf = former("the unread of (user) in (scope)", ({ user, scope }, { item }) =>
   each(Tracking._getUnread({ user, scope }).is({ item })).form({ item }),
 );
 
@@ -15,7 +15,7 @@ export const UnreadList = endpoint(
   ({ session, scope, user }) =>
     receive({ session, scope })
       .where(activeUser({ session }).is({ user }))
-      .then(respond({ items: theUnreadOf(user, scope) })),
+      .then(respond({ items: theUnreadOf({ user, scope }) })),
   { input: { required: ["session", "scope"] } },
 );
 

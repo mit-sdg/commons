@@ -9,24 +9,23 @@ import { intact } from "./threads.ts";
 
 const { Authenticating, Conversing, Posting, Profiling, Roling } = concepts;
 /** What is this user's profile? */
-export const theProfileOf = view(
-  "the profile of (user) with optional (profile)",
-  ({ user, profile }) => where(Profiling._getProfile({ user }).is({ profile })),
-);
+export const theProfileOf = view("the profile of (user)", ({ user }, { profile }, _bindings) =>
+  where(Profiling._getProfile({ user }).is({ profile })),
+).optional();
 /** Which users match this search? */
-export const theUserSearch = former("the user search (query)", ({ query, user, username }) =>
+export const theUserSearch = former("the user search (query)", ({ query }, { user, username }) =>
   each(Authenticating._search({ query }).is({ user, username })).form({
     user,
     username,
-    profile: theProfileFaceOf(user),
+    profile: theProfileFaceOf({ user }),
   }),
 );
 /** What belongs on this user's page? */
 export const theUserPage = former(
   "the user page of (user)",
-  ({ user, role, name, post, node, conversation }) =>
+  ({ user }, { role, name, post, node, conversation }) =>
     form({
-      profile: whether(theProfileFaceOf(user)),
+      profile: whether(theProfileFaceOf({ user })),
       roles: each(Roling._getRoles({ user, context: FORUM }).is({ role }))
         .where(Roling._getRoleDetail({ role }).is({ name }))
         .form({ role, name }),
@@ -39,7 +38,7 @@ export const theUserPage = former(
         .form({
           item: post,
           conversation,
-          post: whether(thePostSummaryOf(post)),
+          post: whether(thePostSummaryOf({ item: post })),
         }),
     }),
 );
@@ -53,7 +52,7 @@ export const GetProfile = endpoint(
         isActiveCourseMember({ user }),
         theProfileOf({ user }),
       )
-      .then(respond({ profile: thePrivateProfileOf(user) })),
+      .then(respond({ profile: thePrivateProfileOf({ user }) })),
   { input: { required: ["session", "user"] } },
 );
 export const GetProfileStaff = endpoint("/profiles/get", ({ session, user, reader }) =>
@@ -63,7 +62,7 @@ export const GetProfileStaff = endpoint("/profiles/get", ({ session, user, reade
       mayManageRoster({ user: reader }),
       theProfileOf({ user }),
     )
-    .then(respond({ profile: thePrivateProfileOf(user) })),
+    .then(respond({ profile: thePrivateProfileOf({ user }) })),
 );
 export const GetProfileMember = endpoint("/profiles/get", ({ session, user, reader }) =>
   receive({ session, user })
@@ -73,7 +72,7 @@ export const GetProfileMember = endpoint("/profiles/get", ({ session, user, read
       mayNotManageRoster({ user: reader }),
       theProfileOf({ user }),
     )
-    .then(respond({ profile: theProfileFaceOf(user) })),
+    .then(respond({ profile: theProfileFaceOf({ user }) })),
 );
 export const GetProfileMissing = endpoint("/profiles/get", ({ session, user }) =>
   receive({ session, user })
@@ -127,7 +126,7 @@ export const SearchUsers = endpoint(
         activeUser({ session }).is({ user: queryUser }),
         isActiveCourseMember({ user: queryUser }),
       )
-      .then(respond({ users: theUserSearch(query) })),
+      .then(respond({ users: theUserSearch({ query }) })),
   { input: { required: ["session", "query"] } },
 );
 export const SearchUsersHidden = endpoint("/users/search", ({ session, query, user }) =>

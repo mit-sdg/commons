@@ -13,7 +13,7 @@ const { Assigning, Itemizing, Posting, Rostering, Submitting, Timing } = concept
 /** Which assignments belong to this learner? */
 export const theAssignmentsOf = former(
   "the assignments of (student)",
-  ({ student, assignment, release, dueOverride, status }) =>
+  ({ student }, { assignment, release, dueOverride, status }) =>
     each(
       Assigning._getAssigned({ assignee: student }).is({
         assignment,
@@ -25,29 +25,33 @@ export const theAssignmentsOf = former(
 );
 /** What is this assignment? */
 export const theAssignment = view(
-  "the assignment (assignment) with optional (detail)",
-  ({ assignment, detail }) => where(Assigning._getDetail({ assignment }).is({ detail })),
-);
+  "the assignment (assignment)",
+  ({ assignment }, { detail }, _bindings) =>
+    where(Assigning._getDetail({ assignment }).is({ detail })),
+).optional();
 
 /** Which assignments can staff manage? */
 export const theStaffAssignments = former(
   "the staff assignments ()",
-  ({
-    assignment,
-    author,
-    title,
-    instructions,
-    kind,
-    availableAt,
-    dueAt,
-    closeAt,
-    acceptsSubmissions,
-    audience,
-    targets,
-    status,
-    createdAt,
-    updatedAt,
-  }) =>
+  (
+    _inputs,
+    {
+      assignment,
+      author,
+      title,
+      instructions,
+      kind,
+      availableAt,
+      dueAt,
+      closeAt,
+      acceptsSubmissions,
+      audience,
+      targets,
+      status,
+      createdAt,
+      updatedAt,
+    },
+  ) =>
     each(
       Assigning._getAssignments({}).is({
         assignment,
@@ -388,7 +392,7 @@ export const ArchiveForbidden = endpoint("/assignments/archive", ({ session, ass
 export const ForMe = endpoint("/assignments/for-me", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-    .then(respond({ assignments: theAssignmentsOf(user) })),
+    .then(respond({ assignments: theAssignmentsOf({ student: user }) })),
 );
 export const ForMeForbidden = endpoint("/assignments/for-me", ({ session, user }) =>
   receive({ session })
@@ -432,7 +436,7 @@ export const StaffSummaryForbidden = endpoint(
 export const StaffList = endpoint("/assignments/staff-list", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
-    .then(respond({ assignments: theStaffAssignments() })),
+    .then(respond({ assignments: theStaffAssignments({}) })),
 );
 
 export const StaffListForbidden = endpoint("/assignments/staff-list", ({ session, user }) =>

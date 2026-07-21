@@ -5,27 +5,30 @@ import { concepts } from "../../concepts/index.ts";
 
 const { Conversing, Formatting, Linking, Locking, Posting, Tracking, Trashing, Timing } = concepts;
 
-export const intact = view("(item) is intact", ({ item }) =>
+export const intact = view("(item) is intact", ({ item }, _outputs, _bindings) =>
   where(Trashing._isTrashed({ item }).is({ trashed: false })),
-);
+).holds();
 export const readableConversation = view(
   "(conversation) is readable",
-  ({ conversation, node, item }) =>
+  ({ conversation }, _outputs, { node, item }) =>
     where(
       Conversing._getThread({ conversation }).is({ node, item }),
       no(Conversing._parentOf({ node })),
       Posting._getPost({ post: item }),
       intact({ item }),
     ),
-);
-export const publicTarget = view("(target) is public", ({ target }) => [
+).holds();
+export const publicTarget = view("(target) is public", ({ target }, _outputs, _bindings) => [
   where(Posting._getPost({ post: target }), intact({ item: target })),
   where(readableConversation({ conversation: target })),
-]);
+]).holds();
 /** What is this conversation's thread? */
 export const theThread = former(
   "the thread (conversation)",
-  ({ conversation, node, item, parent, depth, author, content, createdAt, editedAt, rendered }) =>
+  (
+    { conversation },
+    { node, item, parent, depth, author, content, createdAt, editedAt, rendered },
+  ) =>
     each(Conversing._getThread({ conversation }).is({ node, item, parent, depth }))
       .where(
         intact({ item }),
@@ -44,15 +47,15 @@ export const theThread = former(
 
 /** Which conversation contains this item? */
 export const placementOf = view(
-  "the conversation placing (item) with optional (conversation)",
-  ({ item, node, conversation }) =>
+  "the conversation placing (item)",
+  ({ item }, { conversation }, { node }) =>
     where(
       Conversing._getNodeByItem({ item }).is({ node }),
       Posting._getPost({ post: item }),
       intact({ item }),
       Conversing._getConversation({ node }).is({ conversation }),
     ),
-);
+).optional();
 
 export const RenderPostSource = reaction(({ content, post }) =>
   when(Posting.create({ content }).responds({ post })).then(

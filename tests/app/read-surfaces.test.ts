@@ -26,7 +26,7 @@ describe("composed application reads", () => {
     await app.concepts.Assigning.publish({ assignment, at });
     await app.concepts.Assigning.assign({ assignment, assignee: learner, at });
 
-    expect(await app.form(theAssignmentsOf(learner))).toEqual([
+    expect(await app.form(theAssignmentsOf({ student: learner }))).toEqual([
       expect.objectContaining({
         assignment,
         release: expect.any(String),
@@ -62,7 +62,7 @@ describe("composed application reads", () => {
     await app.concepts.Locking.lock({ target: conversation, at });
     await app.concepts.Resolving.accept({ question: post, answer: reply, by: "mara", at: later });
 
-    expect(await app.form(theHomeFeedByActivity())).toEqual([
+    expect(await app.form(theHomeFeedByActivity({}))).toEqual([
       expect.objectContaining({
         conversation,
         item: post,
@@ -77,7 +77,7 @@ describe("composed application reads", () => {
       }),
     ]);
 
-    expect(await app.form(theThreadContext(conversation))).toEqual([
+    expect(await app.form(theThreadContext({ conversation }))).toEqual([
       expect.objectContaining({
         item: post,
         category: { category, name: "Design", description: "Questions about the design" },
@@ -103,7 +103,7 @@ describe("composed application reads", () => {
     await app.concepts.Flagging.flag({ reporter: "noah", target: post, reason: "spam", at });
     await app.concepts.Flagging.flag({ reporter: "iris", target: post, reason: "duplicate", at });
 
-    expect(await app.form(theModerationQueue())).toEqual([
+    expect(await app.form(theModerationQueue({}))).toEqual([
       expect.objectContaining({
         target: post,
         count: 2,
@@ -137,7 +137,7 @@ describe("composed application reads", () => {
     });
     await app.concepts.Rostering.claimSeat({ seat: created[0]._id, user: "learner" });
 
-    expect(await app.form(theRoster())).toEqual([
+    expect(await app.form(theRoster({}))).toEqual([
       expect.objectContaining({
         seat: created[0]._id,
         user: "learner",

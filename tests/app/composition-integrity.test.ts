@@ -124,7 +124,7 @@ describe("course staff composition", () => {
     await app.concepts.Banking.setTerms({ allowance: 2, perItemLimit: 5, unitHours: 24 });
     await app.concepts.Banking.apply({ learner: "learner", item: assignment, days: 1, at });
 
-    expect(await app.form(theStaffDashboardCounts())).toEqual({
+    expect(await app.form(theStaffDashboardCounts({}))).toEqual({
       assignments: 1,
       gradeItems: 1,
       lateDayUses: 1,

@@ -8,7 +8,7 @@ import { notReadable, readable } from "./posts.ts";
 const { Pinning, Trashing, Timing } = concepts;
 
 /** Which items are pinned in this scope? */
-export const thePinsOf = former("the pins of (scope)", ({ scope, item, priority }) =>
+export const thePinsOf = former("the pins of (scope)", ({ scope }, { item, priority }) =>
   each(Pinning._getPinned({ scope }).is({ item, priority }))
     .where(readable({ post: item }))
     .form({ item, priority }),
@@ -111,7 +111,7 @@ export const SetPinPriorityHidden = endpoint(
 );
 export const PinsForScope = endpoint(
   "/pins/forScope",
-  ({ scope }) => receive({ scope }).then(respond({ pinned: thePinsOf(scope) })),
+  ({ scope }) => receive({ scope }).then(respond({ pinned: thePinsOf({ scope }) })),
   { input: { required: ["scope"] } },
 );
 export const IsPinned = endpoint(

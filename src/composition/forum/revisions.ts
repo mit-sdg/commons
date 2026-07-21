@@ -10,7 +10,7 @@ const { Posting, Revising, Trashing } = concepts;
 /** What is the revision history of this item? */
 export const theRevisionHistoryOf = former(
   "the revision history of (item)",
-  ({ item, revision, number, content, savedAt }) =>
+  ({ item }, { revision, number, content, savedAt }) =>
     each(Revising._getRevisions({ item }).is({ revision, number, content, savedAt })).form({
       revision,
       number,
@@ -22,7 +22,7 @@ export const theRevisionHistoryOf = former(
 /** What is this numbered revision of the item? */
 export const theRevisionNumberedOf = former(
   "the revision numbered (number) of (item)",
-  ({ number, item, content, savedAt }) =>
+  ({ number, item }, { content, savedAt }) =>
     each(Revising._getRevision({ item, number }).is({ content, savedAt })).form({
       content,
       savedAt,
@@ -32,7 +32,7 @@ export const theRevisionNumberedOf = former(
 /** What is the latest revision of this item? */
 export const theLatestRevisionOf = former(
   "the latest revision of (item)",
-  ({ item, revision, number, content, savedAt }) =>
+  ({ item }, { revision, number, content, savedAt }) =>
     each(Revising._getLatest({ item }).is({ revision, number, content, savedAt })).form({
       revision,
       number,
@@ -61,7 +61,7 @@ export const ListRevisions = endpoint(
   ({ item }) =>
     receive({ item })
       .where(Posting._getPost({ post: item }), intact({ item }))
-      .then(respond({ revisions: theRevisionHistoryOf(item) })),
+      .then(respond({ revisions: theRevisionHistoryOf({ item }) })),
   { input: { required: ["item"] } },
 );
 
@@ -70,7 +70,7 @@ export const GetRevision = endpoint(
   ({ item, number }) =>
     receive({ item, number })
       .where(Posting._getPost({ post: item }), intact({ item }))
-      .then(respond({ revision: theRevisionNumberedOf(number, item) })),
+      .then(respond({ revision: theRevisionNumberedOf({ number, item }) })),
   { input: { required: ["item", "number"] } },
 );
 
@@ -79,7 +79,7 @@ export const LatestRevision = endpoint(
   ({ item }) =>
     receive({ item })
       .where(Posting._getPost({ post: item }), intact({ item }))
-      .then(respond({ revision: theLatestRevisionOf(item) })),
+      .then(respond({ revision: theLatestRevisionOf({ item }) })),
   { input: { required: ["item"] } },
 );
 
@@ -124,7 +124,7 @@ export const ModeratorListRevisions = endpoint(
         Posting._getPost({ post: item }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
-      .then(respond({ revisions: theRevisionHistoryOf(item) })),
+      .then(respond({ revisions: theRevisionHistoryOf({ item }) })),
 );
 export const ModeratorGetRevision = endpoint(
   "/moderation/revisions/get",
@@ -136,7 +136,7 @@ export const ModeratorGetRevision = endpoint(
         Posting._getPost({ post: item }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
-      .then(respond({ revision: theRevisionNumberedOf(number, item) })),
+      .then(respond({ revision: theRevisionNumberedOf({ number, item }) })),
 );
 export const ModeratorLatestRevision = endpoint(
   "/moderation/revisions/latest",
@@ -148,7 +148,7 @@ export const ModeratorLatestRevision = endpoint(
         Posting._getPost({ post: item }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
-      .then(respond({ revision: theLatestRevisionOf(item) })),
+      .then(respond({ revision: theLatestRevisionOf({ item }) })),
 );
 export const ModeratorListHidden = endpoint(
   "/moderation/revisions/list",

@@ -10,7 +10,7 @@ const { Conversing, Subscribing, Trashing, Timing } = concepts;
 /** Which targets does this user follow? */
 export const theSubscriptionsOf = former(
   "the subscriptions of (user)",
-  ({ user, target, subscribedAt }) =>
+  ({ user }, { target, subscribedAt }) =>
     each(Subscribing._getSubscriptions({ user }).is({ target, subscribedAt }))
       .where(readableConversation({ conversation: target }))
       .form({
@@ -20,7 +20,7 @@ export const theSubscriptionsOf = former(
 );
 
 /** Which users follow this target? */
-export const theSubscribersOf = former("the subscribers of (target)", ({ target, user }) =>
+export const theSubscribersOf = former("the subscribers of (target)", ({ target }, { user }) =>
   each(Subscribing._getSubscribers({ target }).is({ user }))
     .where(readableConversation({ conversation: target }))
     .form({ user }),
@@ -29,7 +29,7 @@ export const theSubscribersOf = former("the subscribers of (target)", ({ target,
 /** Which followed conversations should this user see? */
 export const theWatchedThreadsOf = former(
   "the watched threads of (user)",
-  ({ user, target, subscribedAt, rootItem, rootNode }) =>
+  ({ user }, { target, subscribedAt, rootItem, rootNode }) =>
     each(Subscribing._getSubscriptions({ user }).is({ target, subscribedAt }))
       .where(
         readableConversation({ conversation: target }),
@@ -42,9 +42,9 @@ export const theWatchedThreadsOf = former(
       .form({
         conversation: target,
         subscribedAt,
-        post: whether(thePostSummaryOf(rootItem)),
+        post: whether(thePostSummaryOf({ item: rootItem })),
       })
-      .splicing(whether(theThreadStatsOf(target))),
+      .splicing(whether(theThreadStatsOf({ conversation: target }))),
 );
 
 export const PurgeClearsConversationSubscriptions = reaction(({ item, node, conversation }) =>
@@ -81,7 +81,7 @@ export const Unsubscribe = endpoint(
 export const MySubscriptions = endpoint("/subscriptions/mine", ({ session, user }) =>
   receive({ session })
     .where(activeUser({ session }).is({ user }))
-    .then(respond({ subscriptions: theSubscriptionsOf(user) })),
+    .then(respond({ subscriptions: theSubscriptionsOf({ user }) })),
 );
 
 export const IsSubscribed = endpoint(
@@ -99,7 +99,7 @@ export const IsSubscribed = endpoint(
 export const Subscribers = endpoint("/subscriptions/subscribers", ({ target }) =>
   receive({ target })
     .where(readableConversation({ conversation: target }))
-    .then(respond({ subscribers: theSubscribersOf(target) })),
+    .then(respond({ subscribers: theSubscribersOf({ target }) })),
 );
 export const SubscribeHidden = endpoint("/subscriptions/subscribe", ({ session, target }) =>
   receive({ session, target })
