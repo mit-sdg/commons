@@ -4,8 +4,8 @@
     {
       "id": "regAdmin",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "gb_admin",
         "password": "password123",
@@ -163,8 +163,8 @@
     {
       "id": "regAlice",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "gb_alice",
         "password": "password123",
@@ -215,8 +215,8 @@
     {
       "id": "regBob",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "gb_bob",
         "password": "password123",

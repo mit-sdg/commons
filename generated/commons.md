@@ -845,6 +845,77 @@ _Engine-evaluated reads enforce query cardinality. Types, results, and behavior 
 
 ##### `_getCriterionScores (learner: String, item: String) : many (criterion: String, points: Number, feedback: String)`
 
+### Inviting
+
+**Purpose.** Issue durable, single-use invitations through an application-selected delivery
+channel.
+
+**Principle.** An administrator invites Nadia at an address on a delivery channel. The
+application creates one durable, non-expiring invitation with a temporary credential.
+Inviting the same channel and address again returns the same invitation and
+credential; it does not rotate them. Nadia uses both values to claim the
+invitation once.
+
+Inviting does not interpret channels or addresses. A composition chooses the
+channel and delegates validation, normalization, and delivery to the concept
+that owns that channel.
+
+_Registration checks member names, recoverable input names, and refusal mappings._
+_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+
+#### Actions
+
+##### `invite (channel: String, address: String, at: Date) : return (invitation: Invitation, channel: String, address: String, credential: String, created: Boolean)`
+
+**Authored behavior:**
+
+    where no invitation has channel and address
+    then
+      add a new invitation with createdAt and lastInvitedAt at, inviteCount 1, and no user
+      return invitation, channel, address, its derived credential, and true
+    where an unclaimed invitation has channel and address
+    then
+      set its lastInvitedAt to at and increment its inviteCount
+      return that invitation, channel, address, its unchanged derived credential, and false
+    where a claimed invitation has channel and address
+    then
+      refuse INVITATION_ALREADY_CLAIMED "That invitation has already been used."
+
+**Registered refusal codes:** `INVITATION_ALREADY_CLAIMED`
+
+##### `verify (invitation: Invitation, credential: String, channel: String) : return (invitation: Invitation, address: String)`
+
+**Authored behavior:**
+
+    where invitation exists on channel, has no user, and credential matches
+    then
+      return invitation and its address
+    where no such unclaimed invitation matches
+    then
+      refuse INVITATION_INVALID "That invitation is not valid."
+
+**Registered refusal codes:** `INVITATION_INVALID`
+
+##### `claim (invitation: Invitation, credential: String, user: String) : return (invitation: Invitation, channel: String, address: String)`
+
+**Authored behavior:**
+
+    where invitation exists, has no user, and credential matches
+    then
+      set its user to user
+      return invitation, channel, and address
+    where no such unclaimed invitation matches
+    then
+      refuse INVITATION_INVALID "That invitation is not valid."
+
+**Registered refusal codes:** `INVITATION_INVALID`
+
+#### Queries
+
+##### `_getAvailable (invitation: String, credential: String) : optional (channel: String, address: String)`
+
+##### `_getInvitations () : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: String | Null)`
+
 ### Itemizing
 
 **Purpose.** Describe how an item is assessed with a label, a maximum score, and optional
@@ -1060,6 +1131,71 @@ _Engine-evaluated reads enforce query cardinality. Types, results, and behavior 
 ##### `_isLocked (target: String) : one (locked: Boolean)`
 
 ##### `_getLocked () : many (target: String, lockedAt: Date)`
+
+### Mailing
+
+**Purpose.** Keep a durable outbox of email messages that the application has decided to
+send, independently of the SMTP transport that delivers them.
+
+**Principle.** An application queues an email it has already rendered. A host worker reads
+queued messages, sends them through SMTP, and marks successful deliveries sent.
+Failed messages remain queued for a later attempt.
+
+_Registration checks member names, recoverable input names, and refusal mappings._
+_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+
+#### Actions
+
+##### `normalizeRecipient (recipient: String) : return (recipient: String)`
+
+**Authored behavior:**
+
+    where recipient looks like an email address
+    then
+      return the trimmed, lower-cased recipient
+    where recipient does not look like an email address
+    then
+      refuse MAIL_RECIPIENT_INVALID "The mail recipient is not well formed."
+
+**Registered refusal codes:** `MAIL_RECIPIENT_INVALID`
+
+##### `enqueue (key: String, recipient: String, subject: String, text: String, html: String, at: Date) : return (message: Message)`
+
+**Authored behavior:**
+
+    where recipient looks like an email address and no message has key
+    then
+      add the message with its normalized recipient and no sentAt
+      return message
+    where recipient looks like an email address and a message already has key
+    then
+      clear its sentAt and replace its delivery content using the normalized recipient
+      return that message
+    where recipient does not look like an email address
+    then
+      refuse MAIL_RECIPIENT_INVALID "The mail recipient is not well formed."
+
+**Registered refusal codes:** `MAIL_RECIPIENT_INVALID`
+
+##### `markSent (message: Message, at: Date) : return (message: Message)`
+
+**Authored behavior:**
+
+    where message exists
+    then
+      set sentAt to at
+      return message
+    where message does not exist
+    then
+      refuse MAIL_NOT_FOUND "There is no such mail message."
+
+**Registered refusal codes:** `MAIL_NOT_FOUND`
+
+#### Queries
+
+##### `_getPending () : many (message: String, key: String, recipient: String, subject: String, text: String, html: String, createdAt: Date)`
+
+##### `_getStatus (message: String) : optional (sentAt: Date | Null)`
 
 ### Notifying
 
@@ -2931,6 +3067,19 @@ Former "the inbox of (user)" — inputs (user); bindings (notification, kind, li
 ```
 
 ```former
+Former "the invitations ()" — inputs (); bindings (invitation, channel, address, createdAt, lastInvitedAt, inviteCount, user); promises exactly one record — forms:
+  each Inviting._getInvitations () has (address, channel, createdAt, invitation, inviteCount, lastInvitedAt, user)
+    form a record of
+      address
+      channel
+      createdAt
+      invitation
+      inviteCount
+      lastInvitedAt
+      user
+```
+
+```former
 Former "the items in (category)" — inputs (category); bindings (item); promises exactly one record — forms:
   each Categorizing._getItems (category) has (item)
     where view "(post) is readable" with (post: item)
@@ -3416,6 +3565,54 @@ Former "the watched threads of (user)" — inputs (user); bindings (target, subs
 
 ## Reactions
 
+### Access.auth.AcceptInvitation
+
+```reaction
+when RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
+then
+  Inviting.verify (channel: "email", credential: temporaryPassword, invitation)
+```
+
+### Access.auth.AcceptInvitation#2
+
+```reaction
+when Inviting.verify (channel: "email", credential: temporaryPassword, invitation, address: email), asked by Access.auth.AcceptInvitation
+where
+  earlier, RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
+then
+  Authenticating.register (email, password, username)
+```
+
+### Access.auth.AcceptInvitation#3
+
+```reaction
+when Authenticating.register (email, password, username, user), asked by Access.auth.AcceptInvitation#2
+where
+  earlier, RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
+then
+  Profiling.createProfile (displayName, email, user)
+```
+
+### Access.auth.AcceptInvitation#4
+
+```reaction
+when Profiling.createProfile (displayName, email, user), asked by Access.auth.AcceptInvitation#3
+where
+  earlier, Inviting.verify (channel: "email", credential: temporaryPassword, invitation, address: email), asked by Access.auth.AcceptInvitation
+then
+  Inviting.claim (credential: temporaryPassword, invitation, user)
+```
+
+### Access.auth.AcceptInvitation#5
+
+```reaction
+when Inviting.claim (credential: temporaryPassword, invitation, user), asked by Access.auth.AcceptInvitation#4
+where
+  earlier, RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
+then
+  RequestBoundary.respond (requestId, user)
+```
+
 ### Access.auth.BootstrapAdminOnLogin
 
 ```reaction
@@ -3587,34 +3784,6 @@ then
   RequestBoundary.respond (email, profile, requestId, user, username)
 ```
 
-### Access.auth.Register
-
-```reaction
-when RequestBoundary.request (displayName, email, password, path: "/auth/register", requestId, username)
-then
-  Authenticating.register (email, password, username)
-```
-
-### Access.auth.Register#2
-
-```reaction
-when Authenticating.register (email, password, username, user), asked by Access.auth.Register
-where
-  earlier, RequestBoundary.request (displayName, email, password, path: "/auth/register", requestId, username)
-then
-  Profiling.createProfile (displayName, email, user)
-```
-
-### Access.auth.Register#3
-
-```reaction
-when Profiling.createProfile (displayName, email, user), asked by Access.auth.Register#2
-where
-  earlier, RequestBoundary.request (displayName, email, password, path: "/auth/register", requestId, username)
-then
-  RequestBoundary.respond (requestId, user)
-```
-
 ### Access.auth.Resolve:absent
 
 ```reaction
@@ -3633,6 +3802,89 @@ where
   view "the user named (username)" with (username) has (user)
 then
   RequestBoundary.respond (requestId, user)
+```
+
+### Access.invitations.EmailInvitationQueuesMail
+
+```reaction
+when Inviting.invite (address, at, channel: "email", created, credential, invitation)
+where
+  text is invitationMailText (credential, invitation)
+  html is invitationMailHtml (credential, invitation)
+then
+  Mailing.enqueue (at, html, key: invitation, recipient: address, subject: "Your Commons invitation", text)
+```
+
+### Access.invitations.Invite:forbidden
+
+```reaction
+when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.invitations.Invite:success
+
+```reaction
+when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+then
+  Mailing.normalizeRecipient (recipient: email)
+```
+
+### Access.invitations.Invite:success#2
+
+```reaction
+when Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.invitations.Invite:success
+then
+  Timing.capture ()
+```
+
+### Access.invitations.Invite:success#3
+
+```reaction
+when Timing.capture (at), asked by Access.invitations.Invite:success#2
+where
+  earlier, Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.invitations.Invite:success
+then
+  Inviting.invite (address: recipient, at, channel: "email")
+```
+
+### Access.invitations.Invite:success#4
+
+```reaction
+when Inviting.invite (address: recipient, at, channel: "email", created, invitation), asked by Access.invitations.Invite:success#3
+where
+  earlier, RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
+then
+  RequestBoundary.respond (created, email: recipient, invitation, requestId)
+```
+
+### Access.invitations.List:forbidden
+
+```reaction
+when RequestBoundary.request (path: "/invitations/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.invitations.List:success
+
+```reaction
+when RequestBoundary.request (path: "/invitations/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+then
+  RequestBoundary.respond (invitations: former "the invitations ()", requestId)
 ```
 
 ### Access.roles.DefineRole:forbidden
@@ -6962,6 +7214,18 @@ then
   RequestBoundary.respond (notification: marked, requestId)
 ```
 
+### Forum.notifications.NotificationQueuesEmail
+
+```reaction
+when Notifying.notify (at, kind, recipient, notification)
+where
+  Authenticating._getById (user: recipient) has (email)
+  text is notificationMailText (notification)
+  html is notificationMailHtml (notification)
+then
+  Mailing.enqueue (at, html, key: notification, recipient: email, subject: "New Commons notification", text)
+```
+
 ### Forum.notifications.PurgeClearsNotifications
 
 ```reaction
@@ -8645,11 +8909,11 @@ not listed here have no explicit input contract.
 - `/assignments/staff-list` — requires `session`
 - `/assignments/staff-summary` — requires `assignment`, `session`
 - `/assignments/submit` — requires `assignment`, `content`, `session`
+- `/auth/accept-invitation` — requires `displayName`, `invitation`, `password`, `temporaryPassword`, `username`
 - `/auth/changePassword` — requires `session`, `oldPassword`, `newPassword`
 - `/auth/login` — requires `password`, `username`
 - `/auth/logout` — requires `session`
 - `/auth/me` — requires `session`
-- `/auth/register` — requires `displayName`, `email`, `password`, `username`
 - `/auth/resolve` — requires `username`
 - `/bookmarks/isSaved` — requires `item`, `session`
 - `/bookmarks/list` — requires `session`
@@ -8682,6 +8946,8 @@ not listed here have no explicit input contract.
 - `/grades/retract` — requires `item`, `learner`, `session`
 - `/grades/revise-criterion` — requires `criterion`, `maxPoints`, `name`, `position`, `session`
 - `/grades/score-criterion` — requires `criterion`, `feedback`, `item`, `learner`, `points`, `session`
+- `/invitations/invite` — requires `email`, `session`
+- `/invitations/list` — requires `session`
 - `/late-days/apply` — requires `session`, `assignment`, `days`
 - `/late-days/balance` — requires `session`, `learner`
 - `/late-days/cancel` — requires `session`, `assignment`

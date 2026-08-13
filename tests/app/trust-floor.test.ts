@@ -27,14 +27,18 @@ describe("HTTP authorization and privacy", () => {
   };
   const register = async (username: string): Promise<Actor> => {
     const email = `${username}@example.edu`;
-    const made = await call("/auth/register", {
+    const made = await edge.application.concepts.Authenticating.register({
       username,
       password: "password123",
       email,
+    });
+    await edge.application.concepts.Profiling.createProfile({
+      user: made.user,
       displayName: username,
+      email,
     });
     const login = await call("/auth/login", { username, password: "password123" });
-    return { user: made.body.user as string, cookie: login.cookie as string, email };
+    return { user: made.user, cookie: login.cookie as string, email };
   };
 
   let admin: Actor;
@@ -250,7 +254,7 @@ describe("HTTP authorization and privacy", () => {
     }
   });
 
-  test("public revision routes return 404 for trashed items while moderate readers may use moderation routes", async () => {
+  test("revision routes require a member session and hide trashed items while moderate readers may use moderation routes", async () => {
     const thread = await call("/threads/create", { content: "private after trash" }, admin.cookie);
     const item = thread.body.post as string;
     for (const [path, body] of [
@@ -258,7 +262,7 @@ describe("HTTP authorization and privacy", () => {
       ["/revisions/get", { item, number: 1 }],
       ["/revisions/latest", { item }],
     ] as const)
-      expect((await call(path, body)).status).toBe(200);
+      expect((await call(path, body, learner.cookie)).status).toBe(200);
     await call("/trash/trash", { item }, admin.cookie);
     for (const [publicPath, moderationPath, body] of [
       ["/revisions/list", "/moderation/revisions/list", { item }],
@@ -266,8 +270,8 @@ describe("HTTP authorization and privacy", () => {
       ["/revisions/latest", "/moderation/revisions/latest", { item }],
     ] as const) {
       const unknownBody = { ...body, item: crypto.randomUUID() };
-      const hidden = await call(publicPath, body);
-      expect(hidden).toEqual(await call(publicPath, unknownBody));
+      const hidden = await call(publicPath, body, learner.cookie);
+      expect(hidden).toEqual(await call(publicPath, unknownBody, learner.cookie));
       expect(hidden).toEqual({ status: 404, body: { error: "NOT_FOUND" }, cookie: undefined });
       expect((await call(moderationPath, body, admin.cookie)).status).toBe(200);
       expect(await call(moderationPath, body, outsider.cookie)).toMatchObject({
@@ -355,10 +359,12 @@ describe("HTTP authorization and privacy", () => {
     ] as const;
 
     for (const [path, bodyOf, cookie] of probes) {
-      expect((await call(path, bodyOf(item), cookie)).status, path).toBe(200);
+      expect((await call(path, bodyOf(item), cookie ?? learner.cookie)).status, path).toBe(200);
     }
     for (const [path, bodyOf, cookie] of conversationProbes) {
-      expect((await call(path, bodyOf(conversation), cookie)).status, path).toBe(200);
+      expect((await call(path, bodyOf(conversation), cookie ?? learner.cookie)).status, path).toBe(
+        200,
+      );
     }
     expect((await call("/flags/open", {}, admin.cookie)).status).toBe(200);
     expect(await call("/flags/open", {}, outsider.cookie)).toMatchObject({
@@ -447,11 +453,15 @@ test("the HTTP edge rejects and clears a cookie at the server-side expiry bounda
     );
     return response;
   };
-  await post("/auth/register", {
+  const expiring = await edge.application.concepts.Authenticating.register({
     username: "expiring",
     password: "password123",
     email: "expiring@example.edu",
+  });
+  await edge.application.concepts.Profiling.createProfile({
+    user: expiring.user,
     displayName: "Expiring",
+    email: "expiring@example.edu",
   });
   const login = await post("/auth/login", { username: "expiring", password: "password123" });
   const cookie = login.headers.get("set-cookie")?.split(";")[0] as string;
@@ -475,14 +485,19 @@ test("dropping the actor's staff seat returns one response before roster:manage 
     return result.ok ? (result.value as Record<string, unknown>) : {};
   };
   const actor = async (username: string) => {
-    const registered = await send("/auth/register", {
+    const email = `${username}@example.edu`;
+    const registered = await app.concepts.Authenticating.register({
       username,
       password: "password123",
-      email: `${username}@example.edu`,
+      email,
+    });
+    await app.concepts.Profiling.createProfile({
+      user: registered.user,
       displayName: username,
+      email,
     });
     const login = await send("/auth/login", { username, password: "password123" });
-    return { user: registered.user as string, session: login.session as string };
+    return { user: registered.user, session: login.session as string };
   };
 
   const admin = await actor("roster_admin");

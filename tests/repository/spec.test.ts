@@ -4,12 +4,12 @@ import { assembleCommons } from "../../src/assembly/application.ts";
 import generated from "../../generated.config.ts";
 
 describe("the rendered application specification", () => {
-  test("renders every declared construction with no unlowered reactions or compute operations", () => {
+  test("renders every declared construction and its mail-content computations", () => {
     const ir = inspectAssembly(assembleCommons()).app;
     expect(ir.unlowered ?? []).toEqual([]);
-    expect(JSON.stringify(ir)).not.toContain('"op":"compute"');
+    expect(JSON.stringify(ir).match(/"op":"compute"/g)).toHaveLength(4);
     expect(ir.views).toHaveLength(49);
-    expect(ir.formers).toHaveLength(66);
+    expect(ir.formers).toHaveLength(67);
   });
 
   test("every concept's purpose and principle are authored — zero unwritten stubs", () => {

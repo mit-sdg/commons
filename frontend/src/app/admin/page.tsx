@@ -1,6 +1,13 @@
 "use client";
 
-import { FolderPlus, List, Shield, Trash2, UserCog } from "lucide-react";
+import {
+  FolderPlus,
+  List,
+  MailPlus,
+  Shield,
+  Trash2,
+  UserCog,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CategoryDot } from "@/components/forum/badges";
@@ -25,6 +32,91 @@ const CAPABILITY_INFO: Record<string, string> = {
     "Content moderation — lock threads, trash posts, and manage categories.",
   pin: "Pin threads to the top of category listings.",
 };
+
+function InvitationAdmin() {
+  const [emails, setEmails] = useState("");
+  const [busy, setBusy] = useState(false);
+  const invitations = useQuery(() => api.invitations.list({}), []);
+
+  async function sendInvitations() {
+    const unique = [
+      ...new Set(
+        emails
+          .split(/[\s,;]+/)
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    ];
+    if (unique.length === 0) return;
+    setBusy(true);
+    let sent = 0;
+    for (const email of unique) {
+      const result = await api.invitations.invite({ email });
+      if ("error" in result)
+        toast.error(`${email}: ${publicErrorMessage(result.error)}`);
+      else sent += 1;
+    }
+    setBusy(false);
+    if (sent > 0)
+      toast.success(`${sent} invitation${sent === 1 ? "" : "s"} queued.`);
+    setEmails("");
+    invitations.refetch();
+  }
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-xl border border-border bg-card p-5">
+        <h3 className="mb-2 flex items-center gap-2 font-display text-lg font-semibold">
+          <MailPlus className="size-5" /> Invite members
+        </h3>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Enter email addresses separated by spaces, commas, or new lines.
+          Re-inviting a pending address sends the same temporary password again.
+        </p>
+        <Label htmlFor="invite-emails">Email addresses</Label>
+        <textarea
+          id="invite-emails"
+          className="mt-2 min-h-32 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+          value={emails}
+          onChange={(event) => setEmails(event.target.value)}
+          placeholder="member@example.edu"
+        />
+        <Button
+          className="mt-3"
+          disabled={busy || !emails.trim()}
+          onClick={sendInvitations}
+        >
+          {busy ? "Queuing…" : "Send invitations"}
+        </Button>
+      </section>
+      <section>
+        <h3 className="eyebrow mb-3">Invitations</h3>
+        <div className="divide-y divide-border rounded-xl border border-border bg-card">
+          {invitations.data && !("error" in invitations.data)
+            ? invitations.data.invitations.map((invitation) => (
+                <div
+                  key={String(invitation.invitation)}
+                  className="flex items-center justify-between p-4"
+                >
+                  <div>
+                    <p className="font-medium">{invitation.address}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Invited {invitation.inviteCount} time
+                      {invitation.inviteCount === 1 ? "" : "s"} via{" "}
+                      {invitation.channel}
+                    </p>
+                  </div>
+                  <Badge variant={invitation.user ? "default" : "secondary"}>
+                    {invitation.user ? "Registered" : "Pending"}
+                  </Badge>
+                </div>
+              ))
+            : null}
+        </div>
+      </section>
+    </div>
+  );
+}
 
 function CategoryAdmin() {
   const { session } = useAuth();
@@ -505,11 +597,15 @@ export default function AdminPage() {
         title="Administration"
         description="Manage categories and the roles that grant moderation powers."
       />
-      <Tabs defaultValue="categories">
+      <Tabs defaultValue="invitations">
         <TabsList>
+          <TabsTrigger value="invitations">Invitations</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="roles">Roles</TabsTrigger>
         </TabsList>
+        <TabsContent value="invitations" className="mt-6">
+          <InvitationAdmin />
+        </TabsContent>
         <TabsContent value="categories" className="mt-6">
           <CategoryAdmin />
         </TabsContent>

@@ -4,8 +4,8 @@
     {
       "id": "regAdmin",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "hf_admin",
         "password": "password123",
@@ -34,8 +34,8 @@
     {
       "id": "regMara",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "hf_mara",
         "password": "password123",
@@ -64,8 +64,8 @@
     {
       "id": "regNoah",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "hf_noah",
         "password": "password123",

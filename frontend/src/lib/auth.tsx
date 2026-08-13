@@ -20,10 +20,11 @@ export interface AuthState {
   can: { administer: boolean; moderate: boolean; pin: boolean };
   login: (username: string, password: string) => Promise<void>;
   register: (
+    invitation: string,
+    temporaryPassword: string,
     username: string,
     password: string,
     displayName: string,
-    email: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -86,13 +87,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(
     async (
+      invitation: string,
+      temporaryPassword: string,
       username: string,
       password: string,
       displayName: string,
-      email: string,
     ) => {
       unwrap(
-        await api.auth.register({ username, password, displayName, email }),
+        await api.auth["accept-invitation"]({
+          invitation,
+          temporaryPassword,
+          username,
+          password,
+          displayName,
+        }),
       );
       unwrap(await api.auth.login({ username, password }));
       setSession(true);

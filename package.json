@@ -28,11 +28,13 @@
     "@mit-sdg/sync-engine-http": "1.0.0-beta.9",
     "marked": "^18.0.6",
     "mongodb": "^7.2.0",
+    "nodemailer": "^9.0.5",
     "sanitize-html": "^2.17.6"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
     "@types/node": "^24.0.0",
+    "@types/nodemailer": "^8.0.1",
     "@types/sanitize-html": "^2.16.1",
     "mongodb-memory-server": "^11.2.0",
     "typescript": "^5.9.0",

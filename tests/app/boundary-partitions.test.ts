@@ -3,17 +3,21 @@ import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 
 async function actor(app: ReturnType<typeof assembleCommons>, username: string) {
-  const registered = await app.invoker.invoke("/auth/register", {
+  const registered = await app.concepts.Authenticating.register({
     username,
     password: "password123",
+    email: `${username}@example.edu`,
+  });
+  await app.concepts.Profiling.createProfile({
+    user: registered.user,
     displayName: username,
     email: `${username}@example.edu`,
-  } as never);
+  });
   const login = await app.invoker.invoke("/auth/login", {
     username,
     password: "password123",
   } as never);
-  if (!registered.ok || !login.ok) throw new Error(`could not create ${username}`);
+  if (!login.ok) throw new Error(`could not create ${username}`);
   return (login.value as { session: string }).session;
 }
 

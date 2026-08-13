@@ -4,7 +4,7 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../vocabulary.ts";
 import { ADMIN_ROLE, FORUM, INITIAL_ADMIN_CAPABILITIES } from "./capabilities.ts";
 
-const { Authenticating, Profiling, Roling, Sessioning, Timing } = concepts;
+const { Authenticating, Inviting, Profiling, Roling, Sessioning, Timing } = concepts;
 export const InvalidSessionIsRejected = reaction(({ session, at }) =>
   receive({ session })
     .where(Timing._now({}).is({ at }))
@@ -56,12 +56,18 @@ export const theUserNamed = view("the user named (username)", ({ username }, { u
   where(Authenticating._getByUsername({ username }).is({ user })),
 ).optional();
 
-export const Register = endpoint(
-  "/auth/register",
-  ({ username, password, displayName, email, user }) =>
-    receive({ username, password, displayName, email })
+export const AcceptInvitation = endpoint(
+  "/auth/accept-invitation",
+  ({ invitation, temporaryPassword, username, password, displayName, email, user }) =>
+    receive({ invitation, temporaryPassword, username, password, displayName })
+      .then(
+        Inviting.verify({ invitation, credential: temporaryPassword, channel: "email" }).responds({
+          address: email,
+        }),
+      )
       .then(Authenticating.register({ username, password, email }).responds({ user }))
       .then(Profiling.createProfile({ user, displayName, email }))
+      .then(Inviting.claim({ invitation, credential: temporaryPassword, user }))
       .then(respond({ user })),
 );
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthGate } from "@/components/auth-gate";
 import { SiteHeader } from "@/components/site-header";
 import { Providers } from "./providers";
 
@@ -41,7 +42,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Providers>
           <SiteHeader />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1">
+            <AuthGate>{children}</AuthGate>
+          </main>
         </Providers>
       </body>
     </html>

@@ -37,15 +37,19 @@ const post = async (
 };
 
 const register = async (edge: ReturnType<typeof createEdge>, username: string, email: string) => {
-  const made = await post(edge, "/auth/register", {
+  const made = await edge.application.concepts.Authenticating.register({
     username,
     password: "password123",
+    email,
+  });
+  await edge.application.concepts.Profiling.createProfile({
+    user: made.user,
     displayName: username,
     email,
   });
   const login = await post(edge, "/auth/login", { username, password: "password123" });
   return {
-    user: made.body.user as string,
+    user: made.user,
     cookie: login.cookie as string,
   };
 };
@@ -252,16 +256,20 @@ test("a mismatched claim retains no compared email and emits one public response
   const send = async (path: string, body: Record<string, unknown>) =>
     app.invoker.invoke(path, body as never);
   const actor = async (username: string, email: string) => {
-    const registered = await send("/auth/register", {
+    const registered = await app.concepts.Authenticating.register({
       username,
       password: "password123",
+      email,
+    });
+    await app.concepts.Profiling.createProfile({
+      user: registered.user,
       displayName: username,
       email,
     });
     const login = await send("/auth/login", { username, password: "password123" });
-    if (!registered.ok || !login.ok) throw new Error(`could not create ${username}`);
+    if (!login.ok) throw new Error(`could not create ${username}`);
     return {
-      user: (registered.value as { user: string }).user,
+      user: registered.user,
       session: (login.value as { session: string }).session,
     };
   };

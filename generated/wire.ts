@@ -162,6 +162,19 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
+  "/auth/accept-invitation": {
+    input: {
+      "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
+      "invitation": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["verify"]>[0], ["invitation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["claim"]>[0], ["invitation"]>]>>;
+      "password": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["password"]>>;
+      "temporaryPassword": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["verify"]>[0], ["credential"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["claim"]>[0], ["credential"]>]>>;
+      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["username"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["claim"]>[0], ["user"]>>;
+    };
+    error: { error: AppWideError | "GRANT_ALREADY_EXISTS" | "INVALID_BODY" | "INVALID_INPUT" | "INVITATION_INVALID" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
+  };
   "/auth/changePassword": {
     input: {
       "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["changePassword"]>[0], ["newPassword"]>>;
@@ -205,18 +218,6 @@ export type CommonsWire = {
       "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
     };
     error: { error: AppWideError | "INVALID_INPUT" };
-  };
-  "/auth/register": {
-    input: {
-      "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
-      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["email"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["email"]>]>>;
-      "password": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["password"]>>;
-      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["username"]>>;
-    };
-    output: {
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["user"]>>;
-    };
-    error: { error: AppWideError | "GRANT_ALREADY_EXISTS" | "INVALID_BODY" | "INVALID_INPUT" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
   };
   "/auth/resolve": {
     input: {
@@ -627,6 +628,35 @@ export type CommonsWire = {
       "criterionScore": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>>, ["criterionScore"]>>;
     };
     error: { error: AppWideError | "CRITERION_NOT_FOUND" | "FORBIDDEN" | "GRADE_ALREADY_RELEASED" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "LEARNER_EXCUSED" | "SCORE_OUT_OF_RANGE" };
+  };
+  "/invitations/invite": {
+    input: {
+      "email": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Mailing"]["normalizeRecipient"]>[0], ["recipient"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "created": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["invite"]>>, ["created"]>>;
+      "email": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["invite"]>[0], ["address"]>>;
+      "invitation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["invite"]>>, ["invitation"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVITATION_ALREADY_CLAIMED" | "MAIL_RECIPIENT_INVALID" };
+  };
+  "/invitations/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "invitations": {
+        "address": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["address"]>>;
+        "channel": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["channel"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["createdAt"]>>;
+        "invitation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["invitation"]>>;
+        "inviteCount": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["inviteCount"]>>;
+        "lastInvitedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["lastInvitedAt"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/late-days/apply": {
     input: {
@@ -1077,7 +1107,7 @@ export type CommonsWire = {
     output: {
       "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Posting"]["edit"]>[0], ["post"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" | "POST_NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "NOT_FOUND" | "POST_NOT_FOUND" };
   };
   "/posts/get": {
     input: {
@@ -1189,7 +1219,7 @@ export type CommonsWire = {
     output: {
       "resolution": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Resolving"]["accept"]>>, ["resolution"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "NOT_FOUND" };
   };
   "/resolutions/clear": {
     input: {
@@ -1845,7 +1875,7 @@ export type CommonsWire = {
       "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["start"]>>, ["node"]>>;
       "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["start"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" };
+    error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" | "MAIL_RECIPIENT_INVALID" };
   };
   "/threads/forItem": {
     input: {
@@ -1928,7 +1958,7 @@ export type CommonsWire = {
       "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Conversing"]["reply"]>>, ["node"]>>;
       "post": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Conversing"]["reply"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" | "PARENT_NODE_NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" | "MAIL_RECIPIENT_INVALID" | "PARENT_NODE_NOT_FOUND" };
   };
   "/trash/isTrashed": {
     input: {
@@ -2194,6 +2224,19 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
+  "/auth/accept-invitation": {
+    input: {
+      "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
+      "invitation": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["verify"]>[0], ["invitation"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["claim"]>[0], ["invitation"]>]>>;
+      "password": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["password"]>>;
+      "temporaryPassword": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["verify"]>[0], ["credential"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["claim"]>[0], ["credential"]>]>>;
+      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["username"]>>;
+    };
+    output: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["claim"]>[0], ["user"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
   "/auth/changePassword": {
     input: {
       "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["changePassword"]>[0], ["newPassword"]>>;
@@ -2230,18 +2273,6 @@ export type CommonsWireHttp = {
       "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
-  };
-  "/auth/register": {
-    input: {
-      "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
-      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["email"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["email"]>]>>;
-      "password": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["password"]>>;
-      "username": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Authenticating"]["register"]>[0], ["username"]>>;
-    };
-    output: {
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Profiling"]["createProfile"]>[0], ["user"]>>;
-    };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/auth/resolve": {
     input: {
@@ -2618,6 +2649,32 @@ export type CommonsWireHttp = {
       "criterionScore": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["scoreCriterion"]>>, ["criterionScore"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/invitations/invite": {
+    input: {
+      "email": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Mailing"]["normalizeRecipient"]>[0], ["recipient"]>>;
+    };
+    output: {
+      "created": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["invite"]>>, ["created"]>>;
+      "email": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Inviting"]["invite"]>[0], ["address"]>>;
+      "invitation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["invite"]>>, ["invitation"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/invitations/list": {
+    input: Record<string, never>;
+    output: {
+      "invitations": {
+        "address": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["address"]>>;
+        "channel": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["channel"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["createdAt"]>>;
+        "invitation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["invitation"]>>;
+        "inviteCount": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["inviteCount"]>>;
+        "lastInvitedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["lastInvitedAt"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Inviting"]["_getInvitations"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
   "/late-days/apply": {
     input: {

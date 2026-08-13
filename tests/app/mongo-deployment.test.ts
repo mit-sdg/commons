@@ -95,6 +95,13 @@ async function startEdge(mongodbUrl: string | undefined, port: number) {
     ...process.env,
     PORT: String(port),
     LOG_LEVEL: "error",
+    INVITATION_SECRET: "deployment-invitation-secret",
+    COMMONS_TEST_BOOTSTRAP: JSON.stringify({
+      username: "operator",
+      password: "password123",
+      displayName: "Local Operator",
+      email: "operator@example.com",
+    }),
   };
   if (mongodbUrl === undefined) delete env.MONGODB_URL;
   else env.MONGODB_URL = mongodbUrl;
@@ -111,7 +118,7 @@ async function startEdge(mongodbUrl: string | undefined, port: number) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({}),
         });
-        return response.status === 200;
+        return response.status === 401;
       } catch {
         return false;
       }
@@ -259,13 +266,13 @@ describe("the Commons process with MongoDB", () => {
         `commons: storing concept state in MongoDB database ${database}.`,
       );
 
-      const operatorRegistration = await post(edge.origin, "/api/auth/register", {
-        username: "operator",
+      const closedRegistration = await post(edge.origin, "/api/auth/register", {
+        username: "anyone",
         password: "password123",
-        displayName: "Local Operator",
-        email: "operator@example.com",
+        displayName: "Anyone",
+        email: "anyone@example.com",
       });
-      expect(operatorRegistration.response.status).toBe(200);
+      expect(closedRegistration.response.status).toBe(404);
       const operatorLogin = await post(edge.origin, "/api/auth/login", {
         username: "operator",
         password: "password123",
@@ -273,11 +280,33 @@ describe("the Commons process with MongoDB", () => {
       const operatorCookie = sessionCookie(operatorLogin.response);
       expect(operatorCookie).toMatch(/^__Host-commons-session=/);
 
-      const learnerRegistration = await post(edge.origin, "/api/auth/register", {
+      const learnerInvitation = await post(
+        edge.origin,
+        "/api/invitations/invite",
+        { email: "learner@example.com" },
+        operatorCookie,
+      );
+      expect(learnerInvitation.response.status).toBe(200);
+      const databaseClient = new MongoClient(mongodbUrl);
+      await databaseClient.connect();
+      const invitationDoc = await databaseClient
+        .db()
+        .collection<{ _id: string }>("inviting.invitations")
+        .findOne({ channel: "email", address: "learner@example.com" });
+      await databaseClient.close();
+      expect(invitationDoc).not.toBeNull();
+      const { createHmac } = await import("node:crypto");
+      const invitation = invitationDoc?._id ?? "";
+      const temporaryPassword = `C-${createHmac("sha256", "deployment-invitation-secret")
+        .update(`commons-invitation-v1\0${invitation}`)
+        .digest("base64url")
+        .slice(0, 24)}`;
+      const learnerRegistration = await post(edge.origin, "/api/auth/accept-invitation", {
+        invitation,
+        temporaryPassword,
         username: "learner",
         password: "password123",
         displayName: "Local Learner",
-        email: "learner@example.com",
       });
       expect(learnerRegistration.response.status).toBe(200);
       const learnerLogin = await post(edge.origin, "/api/auth/login", {
@@ -319,13 +348,23 @@ describe("the Commons process with MongoDB", () => {
       expect(replyResult.response.status).toBe(200);
       const replyPost = String(replyResult.body.post);
 
-      const formedThread = await post(edge.origin, "/api/threads/get", { conversation });
+      const formedThread = await post(
+        edge.origin,
+        "/api/threads/get",
+        { conversation },
+        operatorCookie,
+      );
       expect(formedThread.response.status).toBe(200);
       const thread = formedThread.body.thread as { rendered: string }[];
       expect(thread).toHaveLength(2);
       expect(thread[0].rendered).toContain("<h1>");
 
-      const links = await post(edge.origin, "/api/links/forward", { source: replyPost });
+      const links = await post(
+        edge.origin,
+        "/api/links/forward",
+        { source: replyPost },
+        operatorCookie,
+      );
       expect(links.body.targets).toEqual([{ target: rootPost }]);
       const unread = await post(
         edge.origin,
@@ -470,7 +509,12 @@ describe("the Commons process with MongoDB", () => {
 
       const retainedSession = await post(edge.origin, "/api/auth/me", {}, learnerCookie);
       expect(retainedSession.body.username).toBe("learner");
-      const retainedThread = await post(edge.origin, "/api/threads/get", { conversation });
+      const retainedThread = await post(
+        edge.origin,
+        "/api/threads/get",
+        { conversation },
+        learnerCookie,
+      );
       expect(retainedThread.body.thread as unknown[]).toHaveLength(2);
       const retainedCourse = await post(edge.origin, "/api/assignments/for-me", {}, learnerCookie);
       expect(
@@ -480,7 +524,12 @@ describe("the Commons process with MongoDB", () => {
       ).toBe(true);
       const composedDashboard = await post(edge.origin, "/api/lms/me", {}, learnerCookie);
       expect((composedDashboard.body.dashboard as unknown[]).length).toBeGreaterThan(0);
-      const retainedLinks = await post(edge.origin, "/api/links/forward", { source: replyPost });
+      const retainedLinks = await post(
+        edge.origin,
+        "/api/links/forward",
+        { source: replyPost },
+        learnerCookie,
+      );
       expect(retainedLinks.body.targets).toEqual([{ target: rootPost }]);
 
       frontend = await startFrontend(edge.origin, await freePort());
@@ -489,12 +538,12 @@ describe("the Commons process with MongoDB", () => {
       expect(await loginPage.text()).toContain("Sign in");
       const homePage = await fetch(frontend.origin);
       expect(homePage.status).toBe(200);
-      expect(await homePage.text()).toContain("Welcome to Commons");
+      expect(await homePage.text()).toContain("Checking your session");
       const assignmentsPage = await fetch(`${frontend.origin}/assignments`, {
         headers: { Cookie: learnerCookie ?? "" },
       });
       expect(assignmentsPage.status).toBe(200);
-      expect(await assignmentsPage.text()).toContain("Assignments");
+      expect(await assignmentsPage.text()).toContain("Checking your session");
       const throughProxy = await post(frontend.origin, "/api/auth/me", {}, learnerCookie);
       expect(throughProxy.response.status).toBe(200);
       expect(throughProxy.body.username).toBe("learner");
@@ -632,7 +681,7 @@ describe("the Commons process with MongoDB", () => {
         headers: { "Content-Type": "application/json", Origin: origin },
         body: "{}",
       });
-      expect(fromFrontendOrigin.status).toBe(200);
+      expect(fromFrontendOrigin.status).toBe(401);
       const publicReadFromAnotherOrigin = await fetch(
         `http://127.0.0.1:${port}/api/threads/activity`,
         {
@@ -644,7 +693,7 @@ describe("the Commons process with MongoDB", () => {
           body: "{}",
         },
       );
-      expect(publicReadFromAnotherOrigin.status).toBe(200);
+      expect(publicReadFromAnotherOrigin.status).toBe(401);
       expect(await stopChild(running)).toBe(0);
       expect(running.output.join("")).toContain("commons: temporary MongoDB stopped");
     } finally {

@@ -14,9 +14,13 @@ async function mongoApp() {
       : { error: result.error.kind === "domain" ? result.error.value : result.error.code };
   };
   const signUp = async (username: string, email = `${username}@example.com`) => {
-    await send("/auth/register", {
+    const registered = await app.concepts.Authenticating.register({
       username,
       password: "password123",
+      email,
+    });
+    await app.concepts.Profiling.createProfile({
+      user: registered.user,
       displayName: username,
       email,
     });

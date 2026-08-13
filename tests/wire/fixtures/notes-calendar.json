@@ -4,8 +4,8 @@
     {
       "id": "regAdmin",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "u6_admin",
         "password": "password123",
@@ -170,8 +170,8 @@
     {
       "id": "regStaff",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "u6_staff",
         "password": "password123",
@@ -222,8 +222,8 @@
     {
       "id": "regAlice",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "u6_alice",
         "password": "password123",
@@ -274,8 +274,8 @@
     {
       "id": "regBob",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "u6_bob",
         "password": "password123",

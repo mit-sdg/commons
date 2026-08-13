@@ -5,7 +5,7 @@ import { assembleCommons } from "../../src/assembly/application.ts";
 export interface WireStep {
   id: string;
   phase: "setup" | "assert";
-  kind: "send" | "concept";
+  kind: "send" | "concept" | "setup";
   target: string;
   body: Record<string, unknown>;
   response: unknown;
@@ -98,7 +98,29 @@ export async function runWireFixture(fixture: WireFixture) {
   for (const step of fixture.steps) {
     const body = resolveWireValue(step.body, responses) as Record<string, unknown>;
     let response: unknown;
-    if (step.kind === "concept") {
+    if (step.kind === "setup") {
+      if (step.target !== "register-user") throw new Error(`unknown setup action ${step.target}`);
+      try {
+        const registered = await app.concepts.Authenticating.register({
+          username: String(body.username),
+          password: String(body.password),
+          email: String(body.email),
+        });
+        if ("error" in registered) {
+          response = { error: registered.error };
+        } else {
+          await app.concepts.Profiling.createProfile({
+            user: registered.user,
+            displayName: String(body.displayName),
+            email: String(body.email),
+          });
+          response = registered;
+        }
+      } catch (error) {
+        const refusal = error as Error & { code?: string };
+        response = { error: refusal.code };
+      }
+    } else if (step.kind === "concept") {
       const [conceptName, action] = step.target.split(".");
       const member = concepts[conceptName]?.[action];
       if (member === undefined) throw new Error(`unknown concept action ${step.target}`);

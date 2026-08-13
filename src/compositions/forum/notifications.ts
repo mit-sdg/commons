@@ -1,5 +1,6 @@
 import { activeUser } from "../access/session.ts";
 import {
+  compute,
   each,
   form,
   former,
@@ -10,11 +11,12 @@ import {
   whether,
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../vocabulary.ts";
+import { computations, concepts } from "../../vocabulary.ts";
 
 const {
   Authenticating,
   Conversing,
+  Mailing,
   Notifying,
   Posting,
   Profiling,
@@ -25,6 +27,26 @@ const {
 
 export const PurgeClearsNotifications = reaction(({ item }) =>
   when(Trashing.purge({}).responds({ item })).then(Notifying.clearSubject({ subject: item })),
+);
+
+export const NotificationQueuesEmail = reaction(
+  ({ notification, recipient, kind, email, at, text, html, message }) =>
+    when(Notifying.notify({ recipient, kind, at }).responds({ notification }))
+      .where(
+        Authenticating._getById({ user: recipient }).is({ email }),
+        compute(computations.notificationMailText, { notification }, text),
+        compute(computations.notificationMailHtml, { notification }, html),
+      )
+      .then(
+        Mailing.enqueue({
+          key: notification,
+          recipient: email,
+          subject: "New Commons notification",
+          text,
+          html,
+          at,
+        }).responds({ message }),
+      ),
 );
 
 export const isNotMentionedIn = view(
