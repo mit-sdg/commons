@@ -495,22 +495,7 @@
         "assignment": "$createHw1.assignment"
       },
       "response": {
-        "assignment": {
-          "assignment": "uuid#18",
-          "author": "uuid#1",
-          "title": "Homework 1",
-          "instructions": "Problems 1-5.",
-          "kind": "HOMEWORK",
-          "availableAt": "<date>",
-          "dueAt": "<date>",
-          "closeAt": "<date>",
-          "acceptsSubmissions": true,
-          "audience": "EVERYONE",
-          "targets": [],
-          "status": "DRAFT",
-          "createdAt": "<date>",
-          "updatedAt": null
-        }
+        "error": "INVALID_INPUT"
       }
     },
     {
@@ -522,7 +507,7 @@
         "assignment": "no-such-assignment"
       },
       "response": {
-        "assignment": null
+        "error": "INVALID_INPUT"
       }
     },
     {
@@ -677,7 +662,8 @@
       "kind": "send",
       "target": "/assignments/get",
       "body": {
-        "assignment": "$createHw1.assignment"
+        "assignment": "$createHw1.assignment",
+        "session": "$loginAlice.session"
       },
       "response": {
         "assignment": {
@@ -1093,19 +1079,31 @@
         "assigned": [
           {
             "assignee": "uuid#12",
-            "rosterName": "Alice"
+            "rosterName": "Alice",
+            "release": "uuid#20",
+            "dueOverride": null,
+            "status": "ASSIGNED"
           },
           {
             "assignee": "uuid#14",
-            "rosterName": "Bob"
+            "rosterName": "Bob",
+            "release": "uuid#22",
+            "dueOverride": null,
+            "status": "ASSIGNED"
           },
           {
             "assignee": "uuid#24",
-            "rosterName": "Dana"
+            "rosterName": "Dana",
+            "release": "uuid#26",
+            "dueOverride": null,
+            "status": "ASSIGNED"
           },
           {
             "assignee": "uuid#16",
-            "rosterName": "Eve"
+            "rosterName": "Eve",
+            "release": "uuid#28",
+            "dueOverride": null,
+            "status": "ASSIGNED"
           }
         ],
         "submissions": [
@@ -1334,12 +1332,6 @@
           {
             "assignment": "uuid#21",
             "release": "uuid#30",
-            "dueOverride": null,
-            "status": "ASSIGNED"
-          },
-          {
-            "assignment": "uuid#33",
-            "release": "uuid#38",
             "dueOverride": null,
             "status": "ASSIGNED"
           }

@@ -59,7 +59,7 @@ export type CommonsWire = {
     };
     output: {
       "assignments": {
-        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>>;
+        "assignment": Jsonify<AllOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>]>>;
         "dueOverride": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["dueOverride"]>>;
         "release": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["release"]>>;
         "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["status"]>>;
@@ -69,12 +69,13 @@ export type CommonsWire = {
   };
   "/assignments/get": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>[0], ["assignment"]>>;
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_isAssigned"]>[0], ["assignment"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>>>, ["detail"]>> | null;
     };
-    error: { error: AppWideError | "INVALID_INPUT" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/assignments/publish": {
     input: {
@@ -460,6 +461,22 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SCORE_OUT_OF_RANGE" };
   };
+  "/grades/criterion-scores": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>[0], ["learner"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "scores": {
+        "criterion": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriterion"]>[0], ["criterion"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>>>, ["criterion"]>]>>;
+        "feedback": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>>>, ["feedback"]>>;
+        "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriterion"]>>>, ["maxPoints"]>>;
+        "points": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>>>, ["points"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
   "/grades/excuse": {
     input: {
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>[0], ["feedback"]>>;
@@ -536,15 +553,46 @@ export type CommonsWire = {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "learners": {
-        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["email"]>>;
-        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["rosterName"]>>;
-        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["seat"]>>;
-        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["section"]>>;
-        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["user"]>>;
-      }[];
+      "gradebook": {
+        "items": {
+          "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItems"]>>>, ["item"]>>;
+          "label": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItems"]>>>, ["label"]>>;
+          "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItems"]>>>, ["maxPoints"]>>;
+        }[];
+        "learners": ({
+          "cells": ({
+            "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGrade"]>>>, ["grade"]>> | null;
+            "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGrade"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItems"]>>>, ["item"]>]>>;
+            "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGrade"]>>>, ["score"]>> | null;
+            "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGrade"]>>>, ["status"]>> | null;
+          })[];
+          "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["email"]>>;
+          "learner": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["user"]>>;
+          "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["rosterName"]>>;
+          "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["section"]>>;
+        })[];
+      };
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/grades/item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "criteria": {
+        "criterion": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriteria"]>>>, ["criterion"]>>;
+        "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriteria"]>>>, ["maxPoints"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriteria"]>>>, ["name"]>>;
+        "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriteria"]>>>, ["position"]>>;
+      }[];
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>>;
+      "label": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["label"]>>;
+      "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["maxPoints"]>>;
+      "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["status"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_ITEM_NOT_FOUND" | "INVALID_INPUT" };
   };
   "/grades/record": {
     input: {
@@ -753,6 +801,17 @@ export type CommonsWire = {
         "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["status"]>>;
         "use": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["use"]>>;
       }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/late-days/policy": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "defaultDays": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getTerms"]>>>, ["allowance"]>>;
+      "maxDaysPerItem": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getTerms"]>>>, ["perItemLimit"]>>;
+      "unitHours": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getTerms"]>>>, ["unitHours"]>>;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
@@ -1383,6 +1442,15 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "GRANT_ALREADY_EXISTS" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" };
   };
+  "/roster/class": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "class": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getClass"]>>>, ["detail"]>> | null;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
   "/roster/configure-class": {
     input: {
       "code": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["code"]>>;
@@ -1405,6 +1473,22 @@ export type CommonsWire = {
       "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["dropSeat"]>>, ["seat"]>>;
     };
     error: { error: AppWideError | "FORBIDDEN" | "GRANT_NOT_FOUND" | "INVALID_INPUT" | "SEAT_NOT_ACTIVE" | "SEAT_NOT_FOUND" };
+  };
+  "/roster/dropped": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "members": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["email"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["section"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/roster/import": {
     input: {
@@ -1472,6 +1556,22 @@ export type CommonsWire = {
       "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["moveSection"]>>, ["seat"]>>;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SEAT_NOT_FOUND" };
+  };
+  "/roster/pending": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "members": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["email"]>>;
+        "externalKey": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["externalKey"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["section"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/roster/reinstate": {
     input: {
@@ -1660,13 +1760,16 @@ export type CommonsWire = {
   };
   "/submissions/for-assignment": {
     input: {
-      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>]>>;
+      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "assigned": {
-        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
+        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
+        "dueOverride": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["dueOverride"]>>;
+        "release": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["release"]>>;
         "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["rosterName"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["status"]>>;
       }[];
       "submissions": {
         "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["number"]>>;
@@ -2128,7 +2231,7 @@ export type CommonsWireHttp = {
     input: Record<string, never>;
     output: {
       "assignments": {
-        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>>;
+        "assignment": Jsonify<AllOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>]>>;
         "dueOverride": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["dueOverride"]>>;
         "release": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["release"]>>;
         "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["status"]>>;
@@ -2138,12 +2241,12 @@ export type CommonsWireHttp = {
   };
   "/assignments/get": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>[0], ["assignment"]>>;
+      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_isAssigned"]>[0], ["assignment"]>>;
     };
     output: {
       "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getDetail"]>>>, ["detail"]>> | null;
     };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
   "/assignments/publish": {
     input: {
@@ -2497,6 +2600,21 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
+  "/grades/criterion-scores": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>[0], ["learner"]>>;
+    };
+    output: {
+      "scores": {
+        "criterion": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriterion"]>[0], ["criterion"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>>>, ["criterion"]>]>>;
+        "feedback": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>>>, ["feedback"]>>;
+        "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriterion"]>>>, ["maxPoints"]>>;
+        "points": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getCriterionScores"]>>>, ["points"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
   "/grades/excuse": {
     input: {
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["excuse"]>[0], ["feedback"]>>;
@@ -2564,15 +2682,45 @@ export type CommonsWireHttp = {
   "/grades/gradebook": {
     input: Record<string, never>;
     output: {
-      "learners": {
-        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["email"]>>;
-        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["rosterName"]>>;
-        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["seat"]>>;
-        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["section"]>>;
-        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["user"]>>;
-      }[];
+      "gradebook": {
+        "items": {
+          "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItems"]>>>, ["item"]>>;
+          "label": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItems"]>>>, ["label"]>>;
+          "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItems"]>>>, ["maxPoints"]>>;
+        }[];
+        "learners": ({
+          "cells": ({
+            "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGrade"]>>>, ["grade"]>> | null;
+            "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGrade"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItems"]>>>, ["item"]>]>>;
+            "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGrade"]>>>, ["score"]>> | null;
+            "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Grading"]["_getGrade"]>>>, ["status"]>> | null;
+          })[];
+          "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["email"]>>;
+          "learner": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["user"]>>;
+          "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["rosterName"]>>;
+          "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getActiveStudents"]>>>, ["section"]>>;
+        })[];
+      };
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/grades/item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>>;
+    };
+    output: {
+      "criteria": {
+        "criterion": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriteria"]>>>, ["criterion"]>>;
+        "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriteria"]>>>, ["maxPoints"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriteria"]>>>, ["name"]>>;
+        "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getCriteria"]>>>, ["position"]>>;
+      }[];
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>>;
+      "label": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["label"]>>;
+      "maxPoints": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["maxPoints"]>>;
+      "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Itemizing"]["_getItem"]>>>, ["status"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/grades/record": {
     input: {
@@ -2762,6 +2910,15 @@ export type CommonsWireHttp = {
         "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["status"]>>;
         "use": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getUses"]>>>, ["use"]>>;
       }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/late-days/policy": {
+    input: Record<string, never>;
+    output: {
+      "defaultDays": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getTerms"]>>>, ["allowance"]>>;
+      "maxDaysPerItem": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getTerms"]>>>, ["perItemLimit"]>>;
+      "unitHours": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Banking"]["_getTerms"]>>>, ["unitHours"]>>;
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
@@ -3353,6 +3510,13 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
+  "/roster/class": {
+    input: Record<string, never>;
+    output: {
+      "class": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getClass"]>>>, ["detail"]>> | null;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
   "/roster/configure-class": {
     input: {
       "code": Jsonify<AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["configureClass"]>[0], ["code"]>>;
@@ -3373,6 +3537,20 @@ export type CommonsWireHttp = {
       "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["dropSeat"]>>, ["seat"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roster/dropped": {
+    input: Record<string, never>;
+    output: {
+      "members": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["email"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["section"]>>;
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getDroppedSeats"]>>>, ["user"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
   "/roster/import": {
     input: {
@@ -3433,6 +3611,20 @@ export type CommonsWireHttp = {
       "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["moveSection"]>>, ["seat"]>>;
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roster/pending": {
+    input: Record<string, never>;
+    output: {
+      "members": {
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["email"]>>;
+        "externalKey": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["externalKey"]>>;
+        "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["kind"]>>;
+        "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["rosterName"]>>;
+        "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["seat"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["section"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
   "/roster/reinstate": {
     input: {
@@ -3607,12 +3799,15 @@ export type CommonsWireHttp = {
   };
   "/submissions/for-assignment": {
     input: {
-      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>]>>;
+      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>]>>;
     };
     output: {
       "assigned": {
-        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
+        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
+        "dueOverride": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["dueOverride"]>>;
+        "release": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["release"]>>;
         "rosterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Rostering"]["_getSeatByUser"]>>>, ["rosterName"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Assigning"]["_getAssigned"]>>>, ["status"]>>;
       }[];
       "submissions": {
         "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationVocabulary.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["number"]>>;

@@ -11,17 +11,21 @@ import { Label } from "@/components/ui/label";
 import { api, CommonsError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-function NewTopicForm() {
+function NewDiscussionForm() {
   const router = useRouter();
   const { session } = useAuth();
   const [title, setTitle] = useState("");
 
   async function create(body: string) {
     if (!session) return;
-    const content = title.trim() ? `# ${title.trim()}\n\n${body}` : body;
+    if (!title.trim()) {
+      toast.error("Add a title before posting.");
+      return;
+    }
+    const content = `# ${title.trim()}\n\n${body}`;
     try {
       const { conversation } = unwrap(await api.threads.create({ content }));
-      toast.success("Topic posted.");
+      toast.success("Discussion posted.");
       router.push(`/t/${conversation}`);
     } catch (err) {
       toast.error(
@@ -35,9 +39,9 @@ function NewTopicForm() {
   return (
     <PageContainer width="narrow">
       <PageHeader
-        eyebrow="Start a conversation"
-        title="New topic"
-        description="Give it a clear title, then write your opening post in Markdown."
+        eyebrow="Discussions"
+        title="Start a discussion"
+        description="Give your discussion a clear title, then write an opening post in Markdown."
       />
       <div className="space-y-5">
         <div className="space-y-2">
@@ -49,13 +53,14 @@ function NewTopicForm() {
             placeholder="What would you like to discuss?"
             className="text-base"
             autoFocus
+            required
           />
         </div>
         <div className="space-y-2">
           <Label>Opening post</Label>
           <Composer
             session={session ?? undefined}
-            submitLabel="Post topic"
+            submitLabel="Post discussion"
             minRows={10}
             placeholder="Lay out your question or idea. You can mention a post with [[post-id]]."
             onSubmit={create}
@@ -66,10 +71,10 @@ function NewTopicForm() {
   );
 }
 
-export default function NewTopicPage() {
+export default function NewDiscussionPage() {
   return (
     <RequireAuth>
-      <NewTopicForm />
+      <NewDiscussionForm />
     </RequireAuth>
   );
 }

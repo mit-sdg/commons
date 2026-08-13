@@ -9,6 +9,7 @@ import {
   StickyNote,
 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import { CategoryDot } from "@/components/forum/badges";
 import { TopicRow } from "@/components/forum/topic-row";
 import { Link } from "@/components/link";
@@ -16,8 +17,10 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useQuery } from "@/hooks/use-query";
-import { api } from "@/lib/api";
+import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
   loadAssignments,
@@ -26,7 +29,6 @@ import {
   loadRosterMe,
   loadVisibleNotes,
 } from "@/lib/lms";
-import { lmsNavigation } from "@/lib/lms-navigation";
 import { loadFeed } from "@/lib/loaders";
 
 function CategoriesCard() {
@@ -75,9 +77,15 @@ function LmsDashboard({
   permissionLoading: boolean;
 }) {
   const { session, me } = useAuth();
-  const { data: rosterData, loading: rosterLoading } = useQuery<{
-    seat: unknown;
-  }>(session ? () => loadRosterMe() : null, [session]);
+  const {
+    data: rosterData,
+    loading: rosterLoading,
+    refetch: refetchRoster,
+  } = useQuery<{ seat: unknown }>(session ? () => loadRosterMe() : null, [
+    session,
+  ]);
+  const [externalKey, setExternalKey] = useState("");
+  const [claiming, setClaiming] = useState(false);
 
   const learnerReady =
     Boolean(session && rosterData?.seat) && mayManageAssignments === false;
@@ -106,14 +114,65 @@ function LmsDashboard({
 
   const hasSeat = rosterData?.seat && !("error" in rosterData);
 
+  async function claimSeat() {
+    if (!session || !externalKey.trim()) return;
+    setClaiming(true);
+    const result = await api.roster["claim-seat"]({
+      externalKey: externalKey.trim(),
+    });
+    setClaiming(false);
+    if ("error" in result) toast.error(publicErrorMessage(result.error));
+    else {
+      toast.success("Course seat claimed");
+      setExternalKey("");
+      refetchRoster();
+    }
+  }
+
   if (rosterLoading || permissionLoading) return null;
-  if (!hasSeat) return null;
+  if (!hasSeat) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-primary/10 p-2 text-primary">
+            <GraduationCap className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-lg font-semibold">
+              Join the course
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              If course staff imported a seat for you, enter its roster key to
+              connect assignments, grades, and course tools to your account.
+            </p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex-1 space-y-1.5">
+                <Label htmlFor="roster-key">Roster key</Label>
+                <Input
+                  id="roster-key"
+                  value={externalKey}
+                  onChange={(event) => setExternalKey(event.target.value)}
+                  placeholder="Your course roster key"
+                />
+              </div>
+              <Button
+                onClick={claimSeat}
+                disabled={claiming || !externalKey.trim()}
+              >
+                {claiming ? "Connecting…" : "Connect course"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (mayManageAssignments) {
     return (
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
         <h3 className="font-display text-lg font-semibold tracking-tight flex items-center gap-2">
-          <GraduationCap className="size-5" /> Course Staff
+          <GraduationCap className="size-5" /> Course staff
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage the roster, assignments, grades, and calendar from the staff
@@ -153,7 +212,7 @@ function LmsDashboard({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-display text-lg font-semibold tracking-tight flex items-center gap-2">
-              <GraduationCap className="size-5" /> My Class
+              <GraduationCap className="size-5" /> Course overview
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Review your assignments, grades, notes, and late-day balance.
@@ -312,7 +371,6 @@ export default function HomePage() {
   );
 
   const showLms = me !== null;
-  const quickLinks = lmsNavigation(Boolean(staffPermission?.allowed));
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_18rem] lg:py-10">
@@ -329,7 +387,7 @@ export default function HomePage() {
         <div className="mb-5 flex items-end justify-between border-b border-border pb-4">
           <div>
             <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              Conversations
+              Discussions
             </h1>
             <div className="mt-2 inline-flex rounded-lg border bg-card p-0.5 shadow-xs">
               <button
@@ -342,7 +400,7 @@ export default function HomePage() {
                 }`}
                 onClick={() => setSort("latest")}
               >
-                Latest
+                Newest topics
               </button>
               <button
                 type="button"
@@ -354,13 +412,13 @@ export default function HomePage() {
                 }`}
                 onClick={() => setSort("activity")}
               >
-                Activity
+                Recent activity
               </button>
             </div>
           </div>
           <Button asChild size="sm" className="gap-1.5">
             <Link href="/new">
-              <PenLine className="size-4" /> New topic
+              <PenLine className="size-4" /> New discussion
             </Link>
           </Button>
         </div>
@@ -382,11 +440,11 @@ export default function HomePage() {
         ) : (
           <EmptyState
             icon={MessagesSquare}
-            title="No conversations yet"
-            description="Start the first conversation for this class."
+            title="No discussions yet"
+            description="Start the first discussion for this course."
             action={
               <Button asChild size="sm">
-                <Link href="/new">Start a topic</Link>
+                <Link href="/new">Start a discussion</Link>
               </Button>
             }
           />
@@ -395,20 +453,6 @@ export default function HomePage() {
 
       <aside className="space-y-5 lg:sticky lg:top-20 lg:self-start">
         <CategoriesCard />
-        {showLms && (
-          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-            <p className="eyebrow">Quick Links</p>
-            {quickLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-2 text-sm hover:text-primary"
-              >
-                <item.icon className="size-4" /> {item.label}
-              </Link>
-            ))}
-          </div>
-        )}
       </aside>
     </div>
   );

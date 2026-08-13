@@ -42,6 +42,27 @@ export const theLateDayUsesOf = former(
     }),
 );
 
+export const Policy = endpoint(
+  "/late-days/policy",
+  ({ session, user, defaultDays, maxDaysPerItem, unitHours }) =>
+    receive({ session }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageLateDays({ user }),
+        Banking._getTerms({}).is({
+          allowance: defaultDays,
+          perItemLimit: maxDaysPerItem,
+          unitHours,
+        }),
+      )
+        .then(respond({ defaultDays, maxDaysPerItem, unitHours }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+
 export const ConfigurePolicy = endpoint(
   "/late-days/configure-policy",
   ({ session, defaultDays, unitHours, maxDaysPerItem, user }) =>

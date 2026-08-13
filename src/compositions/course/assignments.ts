@@ -13,15 +13,17 @@ const { Assigning, Itemizing, Posting, Rostering, Submitting, Timing } = concept
 /** Which assignments belong to this learner? */
 export const theAssignmentsOf = former(
   "the assignments of (student)",
-  ({ student }, { assignment, release, dueOverride, status }) =>
+  ({ student }, { assignment, release, dueOverride, releaseStatus }) =>
     each(
       Assigning._getAssigned({ assignee: student }).is({
         assignment,
         release,
         dueOverride,
-        status,
+        status: releaseStatus,
       }),
-    ).form({ assignment, release, dueOverride, status }),
+    )
+      .where(Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" }))
+      .form({ assignment, release, dueOverride, status: releaseStatus }),
 );
 /** What is this assignment? */
 export const theAssignment = view(
@@ -344,14 +346,35 @@ export const ForMe = endpoint("/assignments/for-me", ({ session, user }) =>
   ),
 );
 
-export const GetAssignment = endpoint("/assignments/get", ({ assignment, detail }) =>
-  receive({ assignment }).then(
-    where(theAssignment({ assignment }).is({ detail }))
+export const GetAssignment = endpoint("/assignments/get", ({ session, assignment, user, detail }) =>
+  receive({ session, assignment }).then(
+    where(
+      activeUser({ session }).is({ user }),
+      isActiveStudent({ user }),
+      Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+      Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" }),
+      theAssignment({ assignment }).is({ detail }),
+    )
       .then(respond({ assignment: detail }))
       .named("found"),
-    where(no(theAssignment({ assignment })))
+    where(
+      activeUser({ session }).is({ user }),
+      isActiveStudent({ user }),
+      Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
+    )
       .then(respond({ assignment: null }))
-      .named("absent"),
+      .named("not-assigned"),
+    where(
+      activeUser({ session }).is({ user }),
+      isActiveStudent({ user }),
+      Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+      no(Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" })),
+    )
+      .then(respond({ assignment: null }))
+      .named("not-published"),
+    where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
   ),
 );
 

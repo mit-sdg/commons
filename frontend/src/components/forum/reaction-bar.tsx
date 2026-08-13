@@ -16,6 +16,17 @@ import { REACTION_KINDS } from "@/lib/constants";
 import type { Reaction } from "@/lib/models";
 import { cn } from "@/lib/utils";
 
+const REACTION_LABELS: Record<string, string> = {
+  "👍": "thumbs up",
+  "❤️": "heart",
+  "🎉": "celebrate",
+  "😄": "smile",
+  "😮": "surprised",
+  "🤔": "thinking",
+  "👀": "eyes",
+  "🙏": "thanks",
+};
+
 export function ReactionBar({ target }: { target: string }) {
   const { session, me } = useAuth();
   const { data, refetch } = useQuery<{ reactions: Reaction[] }>(
@@ -63,7 +74,8 @@ export function ReactionBar({ target }: { target: string }) {
               ? "border-primary/40 bg-primary/10 text-foreground"
               : "border-border bg-card text-muted-foreground hover:bg-muted",
           )}
-          title={mine ? "Remove your reaction" : "React"}
+          aria-label={`${mine ? "Remove" : "Add"} ${REACTION_LABELS[kind] ?? kind} reaction; ${count} total`}
+          aria-pressed={mine}
         >
           <span className="leading-none">{kind}</span>
           <span className="text-xs font-semibold tabular-nums">{count}</span>
@@ -90,8 +102,10 @@ export function ReactionBar({ target }: { target: string }) {
                   key={kind}
                   type="button"
                   onClick={() => toggle(kind, mine)}
+                  aria-label={`${mine ? "Remove" : "React with"} ${REACTION_LABELS[kind] ?? kind}`}
+                  aria-pressed={mine}
                   className={cn(
-                    "rounded-md p-1.5 text-lg transition-transform hover:scale-110 hover:bg-muted",
+                    "rounded-md p-2 text-lg transition-transform hover:scale-110 hover:bg-muted",
                     mine && "bg-primary/10",
                   )}
                 >

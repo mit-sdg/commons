@@ -2,7 +2,9 @@
 
 import { Flag, Lock, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { PostPreview } from "@/components/forum/post-preview";
+import { RevisionsDialog } from "@/components/forum/revisions-dialog";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -240,6 +242,7 @@ function TrashBin() {
           <PostPreview
             key={item}
             item={item}
+            moderator
             meta={
               <span>
                 Trashed by{" "}
@@ -251,7 +254,8 @@ function TrashBin() {
               </span>
             }
             action={
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                <RevisionsDialog item={item} moderator />
                 <Button
                   size="sm"
                   variant="outline"
@@ -259,14 +263,22 @@ function TrashBin() {
                 >
                   Restore
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive"
-                  onClick={() => purge(item)}
-                >
-                  Purge
-                </Button>
+                <ConfirmAction
+                  title="Permanently delete this post?"
+                  description="This removes the post and cannot be undone."
+                  confirmLabel="Delete permanently"
+                  destructive
+                  onConfirm={() => purge(item)}
+                  trigger={
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive"
+                    >
+                      Purge
+                    </Button>
+                  }
+                />
               </div>
             }
           />

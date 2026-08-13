@@ -33,7 +33,11 @@ export default function TagPage({
 
   return (
     <PageContainer>
-      <PageHeader eyebrow="Tag" title="Tagged posts" />
+      <PageHeader
+        eyebrow="Tag"
+        title={`#${decodeURIComponent(tag)}`}
+        description="Posts carrying this tag."
+      />
       {targets.loading && !targets.data ? (
         <LoadingState />
       ) : targets.error ? (

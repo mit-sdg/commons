@@ -39,6 +39,17 @@ for (const [floor, make] of floors) {
         timezone: "America/New_York",
       });
       expect(theClass.code).toBe("6.104");
+      expect(await rostering._getClass({})).toEqual([
+        {
+          detail: {
+            code: "6.104",
+            title: "Software Design",
+            term: "Fall 2026",
+            timezone: "America/New_York",
+            status: "ACTIVE",
+          },
+        },
+      ]);
       await expectRefusal(
         () =>
           rostering.configureClass({
@@ -152,6 +163,16 @@ for (const [floor, make] of floors) {
       expect(result).toMatchObject({ kind: "STUDENT", user: "ana" });
       expect(result.seat).toMatchObject({ status: "DROPPED" });
       expect(await rostering._getActiveMembers({})).toEqual([]);
+      expect(await rostering._getDroppedSeats({})).toEqual([
+        {
+          user: "ana",
+          seat,
+          kind: "STUDENT",
+          section: null,
+          rosterName: "Ana",
+          email: "ana@example.edu",
+        },
+      ]);
     });
 
     test("reinstateSeat reactivates a dropped seat and refuses otherwise", async () => {

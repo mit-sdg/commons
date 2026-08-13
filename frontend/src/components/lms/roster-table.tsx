@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  ArrowLeftRight,
-  MoreHorizontal,
-  UserMinus,
-  UserPlus,
-} from "lucide-react";
+import { ArrowLeftRight, MoreHorizontal, UserMinus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/lms/status-badge";
@@ -83,16 +78,6 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
     }
   }
 
-  async function reinstateSeat(seat: string) {
-    if (!session) return;
-    const result = await api.roster.reinstate({ seat });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Seat reinstated");
-      onUpdate();
-    }
-  }
-
   async function doMove() {
     if (!session || !moveSeat || !targetSection) return;
     const result = await api.roster["move-section"]({
@@ -166,11 +151,6 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => dropSeat(m.seat)}>
                             <UserMinus className="size-4" /> Drop
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => reinstateSeat(m.seat)}
-                          >
-                            <UserPlus className="size-4" /> Reinstate
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() =>

@@ -2030,6 +2030,8 @@ _Engine-evaluated reads enforce query cardinality. Types, results, and behavior 
 
 #### Queries
 
+##### `_getClass () : optional (detail: Class)`
+
 ##### `_getSections () : many (section: String, name: String, location: String, meetingPattern: String, status: String)`
 
 ##### `_getSeatByExternalKey (externalKey: String) : optional (seat: String, email: String)`
@@ -2045,6 +2047,8 @@ _Engine-evaluated reads enforce query cardinality. Types, results, and behavior 
 ##### `_getActiveStudents () : many (user: String, seat: String, section: String | Null, rosterName: String, email: String)`
 
 ##### `_getUnclaimedSeats () : many (seat: String, externalKey: String, email: String, rosterName: String, kind: String, section: String | Null)`
+
+##### `_getDroppedSeats () : many (user: String | Null, seat: String, kind: String, section: String | Null, rosterName: String, email: String)`
 
 ### Sessioning
 
@@ -2707,6 +2711,11 @@ the assignment (assignment) — inputs (assignment); outputs (detail); bindings 
 ```
 
 ```view
+the class configuration () — inputs (); outputs (detail); bindings () — answers at most one (detail)
+  where Rostering._getClass () has (detail)
+```
+
+```view
 the conversation placing (item) — inputs (item); outputs (conversation); bindings (node) — answers at most one (conversation)
   where
     Conversing._getNodeByItem (item) has (node)
@@ -2783,22 +2792,27 @@ _Formers name result shapes evaluated when asked. The source former owns_
 _the authored explanation; this section records the generated shape._
 
 ```former
-Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, rosterName); promises exactly one record — forms:
+Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, rosterName, release, dueOverride, releaseStatus); promises exactly one record — forms:
   each Assigning._getAssignees (assignment) has (assignee)
     where Rostering._getSeatByUser (user: assignee) has (rosterName)
+    where Assigning._getAssigned (assignee) has (assignment, dueOverride, release, status: releaseStatus)
     form a record of
       assignee
+      dueOverride
+      release
       rosterName
+      status: releaseStatus
 ```
 
 ```former
-Former "the assignments of (student)" — inputs (student); bindings (assignment, release, dueOverride, status); promises exactly one record — forms:
-  each Assigning._getAssigned (assignee: student) has (assignment, dueOverride, release, status)
+Former "the assignments of (student)" — inputs (student); bindings (assignment, release, dueOverride, releaseStatus); promises exactly one record — forms:
+  each Assigning._getAssigned (assignee: student) has (assignment, dueOverride, release, status: releaseStatus)
+    where Assigning._getAssignments () has (assignment, status: "PUBLISHED")
     form a record of
       assignment
       dueOverride
       release
-      status
+      status: releaseStatus
 ```
 
 ```former
@@ -2880,6 +2894,27 @@ Former "the category of (item)" — inputs (item); bindings (category, name, des
 ```
 
 ```former
+Former "the criteria of (item)" — inputs (item); bindings (criterion, name, maxPoints, position); promises exactly one record — forms:
+  each Itemizing._getCriteria (item) has (criterion, maxPoints, name, position)
+    form a record of
+      criterion
+      maxPoints
+      name
+      position
+```
+
+```former
+Former "the criterion scores of (learner) on (item)" — inputs (learner, item); bindings (criterion, points, maxPoints, feedback); promises exactly one record — forms:
+  each Grading._getCriterionScores (item, learner) has (criterion, feedback, points)
+    where Itemizing._getCriterion (criterion) has (maxPoints)
+    form a record of
+      criterion
+      feedback
+      maxPoints
+      points
+```
+
+```former
 Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder, externalKey, email, rosterName, kind, section, status); promises exactly one record — forms:
   each Rostering._getSeatByUser (user) has (email, externalKey, kind, rosterName, seat, section, status, user: holder)
     form a record of
@@ -2900,6 +2935,18 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
       capabilities
       name
       role
+```
+
+```former
+Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
+  each Rostering._getDroppedSeats () has (email, kind, rosterName, seat, section, user)
+    form a record of
+      email
+      kind
+      rosterName
+      seat
+      section
+      user
 ```
 
 ```former
@@ -3195,6 +3242,18 @@ Former "the open flags ()" — inputs (); bindings (target, count); promises exa
     form a record of
       count
       target
+```
+
+```former
+Former "the pending roster ()" — inputs (); bindings (seat, externalKey, email, rosterName, kind, section); promises exactly one record — forms:
+  each Rostering._getUnclaimedSeats () has (email, externalKey, kind, rosterName, seat, section)
+    form a record of
+      email
+      externalKey
+      kind
+      rosterName
+      seat
+      section
 ```
 
 ```former
@@ -4157,24 +4216,54 @@ then
   RequestBoundary.respond (assignments: former "the assignments of (student)" with (student: user), requestId)
 ```
 
-### Course.assignments.GetAssignment:absent
+### Course.assignments.GetAssignment:forbidden
 
 ```reaction
-when RequestBoundary.request (assignment, path: "/assignments/get", requestId)
+when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
 where
-  no view "the assignment (assignment)" with (assignment)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
 then
-  RequestBoundary.respond (assignment: null, requestId)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### Course.assignments.GetAssignment:found
 
 ```reaction
-when RequestBoundary.request (assignment, path: "/assignments/get", requestId)
+when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
 where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED")
   view "the assignment (assignment)" with (assignment) has (detail)
 then
   RequestBoundary.respond (assignment: detail, requestId)
+```
+
+### Course.assignments.GetAssignment:not-assigned
+
+```reaction
+when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: false)
+then
+  RequestBoundary.respond (assignment: null, requestId)
+```
+
+### Course.assignments.GetAssignment:not-published
+
+```reaction
+when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  no Assigning._getAssignments () has (assignment, status: "PUBLISHED")
+then
+  RequestBoundary.respond (assignment: null, requestId)
 ```
 
 ### Course.assignments.Publish:forbidden
@@ -4599,6 +4688,28 @@ then
   RequestBoundary.respond (gradeItem, requestId)
 ```
 
+### Course.grades.GradesCriterionScores:forbidden
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not view all grades" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.grades.GradesCriterionScores:success
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may view all grades" with (user)
+then
+  RequestBoundary.respond (requestId, scores: former "the criterion scores of (learner) on (item)" with (item, learner))
+```
+
 ### Course.grades.GradesExcuse:forbidden
 
 ```reaction
@@ -4739,7 +4850,42 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may view all grades" with (user)
 then
-  RequestBoundary.respond (learners: former "the gradebook learners ()", requestId)
+  RequestBoundary.respond (gradebook: former "the gradebook ()", requestId)
+```
+
+### Course.grades.GradesItem:forbidden
+
+```reaction
+when RequestBoundary.request (item, path: "/grades/item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not view all grades" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.grades.GradesItem:missing
+
+```reaction
+when RequestBoundary.request (item, path: "/grades/item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may view all grades" with (user)
+  no Itemizing._getItem (item)
+then
+  RequestBoundary.respond (error: "GRADE_ITEM_NOT_FOUND", requestId)
+```
+
+### Course.grades.GradesItem:success
+
+```reaction
+when RequestBoundary.request (item, path: "/grades/item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may view all grades" with (user)
+  Itemizing._getItem (item) has (label, maxPoints, status)
+then
+  RequestBoundary.respond (criteria: former "the criteria of (item)" with (item), item, label, maxPoints, requestId, status)
 ```
 
 ### Course.grades.GradesRecord:forbidden
@@ -5276,6 +5422,29 @@ then
   RequestBoundary.respond (requestId, uses: former "the late-day uses of (learner)" with (learner: user))
 ```
 
+### Course.lateDays.Policy:forbidden
+
+```reaction
+when RequestBoundary.request (path: "/late-days/policy", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage late days" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.lateDays.Policy:success
+
+```reaction
+when RequestBoundary.request (path: "/late-days/policy", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage late days" with (user)
+  Banking._getTerms () has (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours)
+then
+  RequestBoundary.respond (defaultDays, maxDaysPerItem, requestId, unitHours)
+```
+
 ### Course.lateDays.StaffCancel:hidden
 
 ```reaction
@@ -5675,6 +5844,41 @@ then
   RequestBoundary.respond (error: "SEAT_NOT_FOUND", requestId)
 ```
 
+### Course.roster.ClassConfiguration:absent
+
+```reaction
+when RequestBoundary.request (path: "/roster/class", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
+  no view "the class configuration ()"
+then
+  RequestBoundary.respond (class: null, requestId)
+```
+
+### Course.roster.ClassConfiguration:forbidden
+
+```reaction
+when RequestBoundary.request (path: "/roster/class", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.roster.ClassConfiguration:found
+
+```reaction
+when RequestBoundary.request (path: "/roster/class", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
+  view "the class configuration ()" has (detail)
+then
+  RequestBoundary.respond (class: detail, requestId)
+```
+
 ### Course.roster.ConfigureClass:forbidden
 
 ```reaction
@@ -5735,6 +5939,28 @@ where
   earlier, RequestBoundary.request (path: "/roster/drop", requestId, seat, session)
 then
   RequestBoundary.respond (requestId, seat: dropped)
+```
+
+### Course.roster.DroppedRoster:forbidden
+
+```reaction
+when RequestBoundary.request (path: "/roster/dropped", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.roster.DroppedRoster:success
+
+```reaction
+when RequestBoundary.request (path: "/roster/dropped", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
+then
+  RequestBoundary.respond (members: former "the dropped roster ()", requestId)
 ```
 
 ### Course.roster.DroppedStaffSeatRevokesCourseStaff
@@ -5860,6 +6086,28 @@ where
   earlier, RequestBoundary.request (path: "/roster/move-section", requestId, seat, section, session)
 then
   RequestBoundary.respond (requestId, seat: moved)
+```
+
+### Course.roster.PendingRoster:forbidden
+
+```reaction
+when RequestBoundary.request (path: "/roster/pending", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the roster" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.roster.PendingRoster:success
+
+```reaction
+when RequestBoundary.request (path: "/roster/pending", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the roster" with (user)
+then
+  RequestBoundary.respond (members: former "the pending roster ()", requestId)
 ```
 
 ### Course.roster.ReinstateSeat:forbidden
@@ -8902,7 +9150,7 @@ not listed here have no explicit input contract.
 - `/assignments/clear-due-override` — requires `assignee`, `assignment`, `session`
 - `/assignments/create-draft` — requires `session`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`; fills `closeAt` with null when absent; fills `targets` with [] when absent
 - `/assignments/for-me` — requires `session`
-- `/assignments/get` — requires `assignment`
+- `/assignments/get` — requires `assignment`, `session`
 - `/assignments/publish` — requires `assignment`, `session`
 - `/assignments/revise` — requires `session`, `assignment`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`; fills `closeAt` with null when absent; fills `targets` with [] when absent
 - `/assignments/set-due-override` — requires `assignee`, `assignment`, `dueAt`, `session`
@@ -8933,12 +9181,14 @@ not listed here have no explicit input contract.
 - `/flags/resolve` — requires `session`, `target`, `outcome`
 - `/grades/add-criterion` — requires `item`, `maxPoints`, `name`, `position`, `session`
 - `/grades/configure-item` — requires `item`, `label`, `maxPoints`, `session`
+- `/grades/criterion-scores` — requires `item`, `learner`, `session`
 - `/grades/excuse` — requires `feedback`, `item`, `learner`, `session`
 - `/grades/export` — requires `session`
 - `/grades/for-item` — requires `item`, `session`
 - `/grades/for-me` — requires `session`
 - `/grades/for-student` — requires `learner`, `session`
 - `/grades/gradebook` — requires `session`
+- `/grades/item` — requires `item`, `session`
 - `/grades/record` — requires `session`, `learner`, `item`, `score`, `feedback`; fills `evidence` with null when absent
 - `/grades/release` — requires `item`, `learner`, `session`
 - `/grades/release-item` — requires `item`, `session`
@@ -8956,6 +9206,7 @@ not listed here have no explicit input contract.
 - `/late-days/for-assignment` — requires `session`, `assignment`
 - `/late-days/grant` — requires `session`, `learner`, `days`, `reason`
 - `/late-days/list` — requires `session`
+- `/late-days/policy` — requires `session`
 - `/late-days/staff-cancel` — requires `session`, `learner`, `assignment`
 - `/late-days/staff-change` — requires `session`, `learner`, `assignment`, `days`
 - `/links/backlinks` — requires `target`
@@ -9005,14 +9256,17 @@ not listed here have no explicit input contract.
 - `/roles/grant` — requires `context`, `role`, `session`, `user`
 - `/roles/revoke` — requires `context`, `role`, `session`, `user`
 - `/roster/claim-seat` — requires `externalKey`, `session`
+- `/roster/class` — requires `session`
 - `/roster/configure-class` — requires `code`, `session`, `term`, `timezone`, `title`
 - `/roster/drop` — requires `seat`, `session`
+- `/roster/dropped` — requires `session`
 - `/roster/import` — requires `rows`, `session`
 - `/roster/import-preview` — requires `csv`
 - `/roster/link-user` — requires `seat`, `session`, `user`
 - `/roster/list` — requires `session`
 - `/roster/me` — requires `session`
 - `/roster/move-section` — requires `seat`, `section`, `session`
+- `/roster/pending` — requires `session`
 - `/roster/reinstate` — requires `seat`, `session`
 - `/roster/sections/create` — requires `session`, `name`; fills `location` with null when absent; fills `meetingPattern` with null when absent
 - `/roster/sections/update` — requires `location`, `meetingPattern`, `name`, `section`, `session`

@@ -13,9 +13,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useQuery } from "@/hooks/use-query";
 import type { Input as ApiInput } from "@/lib/api";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { loadSections } from "@/lib/lms";
 
 interface AssignmentFormProps {
   onSaved: () => void;
@@ -67,7 +69,22 @@ export function AssignmentForm({
   const [audience, setAudience] = useState<
     ApiInput<"/assignments/create-draft">["audience"]
   >(existing?.audience ?? "EVERYONE");
+  const [targets, setTargets] = useState<string[]>(
+    () => existing?.targets?.map(String) ?? [],
+  );
   const [loading, setLoading] = useState(false);
+  const { data: sectionsData } = useQuery(() => loadSections(), []);
+  const sections = (sectionsData?.sections ?? []).filter(
+    (section) => section.status === "ACTIVE",
+  );
+
+  function toggleTarget(section: string) {
+    setTargets((current) =>
+      current.includes(section)
+        ? current.filter((target) => target !== section)
+        : [...current, section],
+    );
+  }
 
   async function save() {
     if (!session) return;
@@ -83,6 +100,7 @@ export function AssignmentForm({
       closeAt: closeAt ? new Date(closeAt).toISOString() : undefined,
       acceptsSubmissions,
       audience,
+      targets: audience === "TARGETS" ? targets : [],
     };
 
     const result = existing
@@ -95,6 +113,7 @@ export function AssignmentForm({
           closeAt: rawPayload.closeAt,
           acceptsSubmissions: rawPayload.acceptsSubmissions,
           audience: rawPayload.audience,
+          targets: rawPayload.targets,
           assignment: existing.assignment,
         })
       : await api.assignments["create-draft"](rawPayload);
@@ -157,6 +176,56 @@ export function AssignmentForm({
           </Select>
         </div>
       </div>
+
+      {audience === "TARGETS" ? (
+        <fieldset className="space-y-2 rounded-lg border border-border bg-muted/25 p-4">
+          <legend className="px-1 text-sm font-medium">
+            Assigned sections
+          </legend>
+          {sections.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Create a course section before targeting an assignment.
+            </p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {sections.map((section) => {
+                const id = `assignment-target-${section.section}`;
+                const selected = targets.includes(String(section.section));
+                return (
+                  <label
+                    key={String(section.section)}
+                    htmlFor={id}
+                    className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-card p-3 text-sm hover:border-primary/40"
+                  >
+                    <input
+                      id={id}
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleTarget(String(section.section))}
+                      disabled={loading}
+                      className="mt-0.5 rounded"
+                    />
+                    <span>
+                      <span className="block font-medium">{section.name}</span>
+                      {section.meetingPattern ? (
+                        <span className="block text-xs text-muted-foreground">
+                          {section.meetingPattern}
+                        </span>
+                      ) : null}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          {existing?.status === "PUBLISHED" ? (
+            <p className="text-xs text-muted-foreground">
+              Adding sections grants access to newly included learners. Removing
+              a section does not revoke access already granted.
+            </p>
+          ) : null}
+        </fieldset>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
@@ -223,7 +292,14 @@ export function AssignmentForm({
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={save} disabled={loading || !title.trim()}>
+        <Button
+          onClick={save}
+          disabled={
+            loading ||
+            !title.trim() ||
+            (audience === "TARGETS" && targets.length === 0)
+          }
+        >
           {existing ? "Save Changes" : "Create Draft"}
         </Button>
         {onCancel && (

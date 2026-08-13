@@ -18,8 +18,10 @@ import { useAuth } from "@/lib/auth";
 import { fullTime, relativeTime } from "@/lib/format";
 import {
   loadAssignmentDetail,
+  loadAssignments,
   loadGradesForMe,
   loadLateDayBalance,
+  loadLateDaysList,
   loadSubmissionAttempts,
   loadSubmissionLatest,
 } from "@/lib/lms";
@@ -47,6 +49,11 @@ export default function AssignmentDetailPage({
     error,
     refetch,
   } = useQuery(() => loadAssignmentDetail(assignment), [assignment]);
+
+  const { data: assignmentsData } = useQuery(
+    session ? () => loadAssignments() : null,
+    [session, assignment],
+  );
 
   const { data: subData, refetch: refetchSub } = useQuery<{
     submission: {
@@ -82,16 +89,8 @@ export default function AssignmentDetailPage({
     balance: { granted: number; used: number; remaining: number };
   }>(me ? () => loadLateDayBalance(String(me.user)) : null, [me]);
 
-  const { data: lateUseData, refetch: refetchLateUse } = useQuery<{
-    days: number;
-  }>(
-    me
-      ? async () => {
-          const r = await loadLateDayBalance(String(me.user));
-          if ("error" in r) return { days: 0 };
-          return { days: 0 };
-        }
-      : null,
+  const { data: lateUseData, refetch: refetchLateUse } = useQuery(
+    me ? () => loadLateDaysList() : null,
     [me, assignment],
   );
 
@@ -109,6 +108,9 @@ export default function AssignmentDetailPage({
   const attempts = attemptsData?.attempts ?? [];
   const balance = lateBalance?.balance ?? null;
   const myGrade = gradesData?.grades?.find((g) => g.item === assignment);
+  const appliedLateUse = lateUseData?.uses.find(
+    (use) => use.item === assignment && use.status === "APPLIED",
+  );
 
   async function submit() {
     if (!session || !content.trim()) return;
@@ -154,7 +156,10 @@ export default function AssignmentDetailPage({
       </PageContainer>
     );
 
-  const due = detail.dueAt;
+  const due =
+    assignmentsData?.assignments.find(
+      (release) => release.assignment === assignment,
+    )?.dueOverride ?? detail.dueAt;
   const now = new Date();
   const isOverdue = new Date(due) < now;
   const isPastClose = detail.closeAt ? new Date(detail.closeAt) < now : false;
@@ -313,7 +318,7 @@ export default function AssignmentDetailPage({
                 <p
                   className={cn("font-medium", isOverdue && "text-destructive")}
                 >
-                  {fullTime(detail.dueAt)}
+                  {fullTime(due)}
                 </p>
               </div>
               {detail.closeAt && (
@@ -328,7 +333,7 @@ export default function AssignmentDetailPage({
           <LateDayControls
             assignment={assignment}
             balance={balance}
-            appliedDays={lateUseData?.days ?? 0}
+            appliedDays={appliedLateUse?.days ?? 0}
             onUpdate={handleUpdate}
           />
 

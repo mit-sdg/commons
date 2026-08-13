@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { CategoryDot } from "@/components/forum/badges";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, LoadingState } from "@/components/states";
@@ -210,15 +211,23 @@ function CategoryAdmin() {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 text-destructive"
-                  onClick={() => remove(String(category.category))}
-                  aria-label="Delete category"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                <ConfirmAction
+                  title={`Delete ${category.name}?`}
+                  description="This removes the category. Discussions and posts are not deleted."
+                  confirmLabel="Delete category"
+                  destructive
+                  onConfirm={() => remove(String(category.category))}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 text-destructive"
+                      aria-label={`Delete ${category.name}`}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  }
+                />
               </div>
             ))}
           </div>

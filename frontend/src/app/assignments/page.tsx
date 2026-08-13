@@ -139,6 +139,7 @@ export default function AssignmentsPage() {
     const detail = details[a.assignment];
     const sub = subMap.get(a.assignment);
     const grade = gradeMap.get(a.assignment);
+    const dueAt = a.dueOverride ?? detail?.dueAt;
 
     if (search && detail) {
       const q = search.toLowerCase();
@@ -154,13 +155,13 @@ export default function AssignmentsPage() {
     if (filter === "graded") return !!grade && grade.status === "RELEASED";
     if (filter === "upcoming") {
       if (detail?.closeAt) return new Date(detail.closeAt) > now;
-      if (detail?.dueAt) return new Date(detail.dueAt) > now && !sub;
+      if (dueAt) return new Date(dueAt) > now && !sub;
       return !sub;
     }
     if (filter === "overdue") {
       if (sub) return false;
       if (detail?.closeAt) return new Date(detail.closeAt) < now;
-      if (detail?.dueAt) return new Date(detail.dueAt) < now;
+      if (dueAt) return new Date(dueAt) < now;
       return false;
     }
     return true;
@@ -226,7 +227,7 @@ export default function AssignmentsPage() {
             const detail = details[a.assignment];
             const sub = subMap.get(a.assignment);
             const grade = gradeMap.get(a.assignment);
-            const due = detail?.dueAt;
+            const due = a.dueOverride ?? detail?.dueAt;
             const isOverdue = due && new Date(due) < now && !sub;
             const title = detail?.title ?? a.assignment.slice(0, 8);
 
