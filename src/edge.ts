@@ -1,6 +1,6 @@
 import { createGateway } from "@mit-sdg/sync-engine/boundary";
 import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
-import type { CommonsOverrides } from "./assembly/application.ts";
+import type { CommonsImplementations } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
 import { commonsHttpPolicy } from "./assembly/http-policy.ts";
 import { configuredPublicOrigin } from "./deployment.ts";
@@ -17,10 +17,10 @@ function sessionFrom(request: Request): string | undefined {
 }
 
 export function createEdge(
-  overrides: CommonsOverrides = {},
+  instances: CommonsImplementations,
   origin: string = configuredPublicOrigin(),
 ) {
-  const application = assembleCommons(overrides);
+  const application = assembleCommons(instances);
   const gateway = createGateway({ application });
   const policy = commonsHttpPolicy(origin);
   const handler = createHttpHandler({ application, gateway, policy });

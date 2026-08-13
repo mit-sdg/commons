@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/assigning/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoAssigningConcept } from "../../src/concepts/assigning/assigning.mongo.ts";
-import { AssigningConcept } from "../../src/concepts/assigning/assigning.ts";
 
-const floors: [string, () => Promise<AssigningConcept | MongoAssigningConcept>][] = [
-  ["in memory", async () => new AssigningConcept()],
+const floors: [string, () => Promise<MongoAssigningConcept>][] = [
   ["on MongoDB", async () => new MongoAssigningConcept(await testDb())],
 ];
 

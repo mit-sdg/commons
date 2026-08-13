@@ -3,20 +3,26 @@
 This directory turns Commons' registered design into a running process. Its files
 have distinct responsibilities:
 
-- `application.ts` joins `src/vocabulary.ts` to the Access, Course, and Forum
-  composition groups and supplies default concept implementations;
-- `concept-floor.ts` selects memory or MongoDB implementations and owns the
-  MongoDB client lifecycle;
+- `application.ts` joins supplied production implementations to the vocabulary
+  and the Access, Course, and Forum composition groups;
+- `concept-floor.ts` constructs the registered MongoDB implementation set and
+  owns the MongoDB client lifecycle;
 - `http-policy.ts` defines the `/api` base path, public error categories, and
   session-cookie binding; and
 - `process.ts` starts the edge listener and closes its selected resources.
 
 ## Concept state
 
-The process uses in-memory implementations unless `MONGODB_URL` selects MongoDB.
-With MongoDB selected, Commons opens the configured database, closes the client
-when the process stops, and never drops an operator-supplied database. Use one
-Commons process per database; the open
+Each registration's canonical class is the implementation used in production.
+`mongo` is the complete named floor declared across every registration and
+constructed by `src/vocabulary.ts`; the stateless Timing concept uses the same
+class without a separate storage variant. Assembly accepts a complete
+implementation map so tests can replace an individual instance deliberately
+without introducing another application default.
+
+`MONGODB_URL` is required. The process opens the configured database, constructs
+the `mongo` floor, closes the client when the process stops, and never drops an
+operator-supplied database. Use one Commons process per database; the open
 [`mongo-multiprocess-integrity`](../../content/issues/open/mongo-multiprocess-integrity.md)
 work records the remaining multi-process constraint.
 

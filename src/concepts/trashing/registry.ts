@@ -1,12 +1,11 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Trashing.md" with { type: "text" };
-import { TrashingConcept } from "./trashing.ts";
 import { MongoTrashingConcept } from "./trashing.mongo.ts";
 import { ItemAlreadyTrashed, ItemNotTrashed } from "./errors.ts";
 
 export const trashing = registerConcept({
-  class: TrashingConcept,
+  class: MongoTrashingConcept,
   spec,
   refusals: {
     ITEM_ALREADY_TRASHED: ItemAlreadyTrashed,

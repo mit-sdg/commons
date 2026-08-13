@@ -1,7 +1,6 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Grading.md" with { type: "text" };
-import { GradingConcept } from "./grading.ts";
 import { MongoGradingConcept } from "./grading.mongo.ts";
 import {
   GradeAlreadyReleased,
@@ -13,7 +12,7 @@ import {
 } from "./errors.ts";
 
 export const grading = registerConcept({
-  class: GradingConcept,
+  class: MongoGradingConcept,
   spec,
   refusals: {
     SCORE_OUT_OF_RANGE: ScoreOutOfRange,

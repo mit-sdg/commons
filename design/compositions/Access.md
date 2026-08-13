@@ -1,33 +1,32 @@
 # Access
 
-Access composition turns authentication, sessions, roles, and roster membership
-into one caller identity and a set of permission decisions. Endpoints never trust
-a user identity supplied by the caller when a session can establish it.
+Access composition establishes a caller from authentication and session state,
+then applies shared authorization policy to forum and course operations. Request
+identities never substitute for the user established by the active session.
 
 ## Compositions
 
-### Authentication
+### Authentication and sessions
 
-Registration requires a durable, non-expiring invitation and its temporary
-password. The current access policy accepts invitations delivered by email.
-Login creates a session. Logout and password changes invalidate the applicable
-session state.
+Authenticating creates accounts and verifies credentials; Sessioning represents
+logged-in use. Timing supplies the instant used to create, expire, and invalidate
+sessions. Password changes invalidate the caller's sessions.
 
 ### Invitations
 
-An administrator may issue or resend an invitation through an email-specific
-composition. That composition normalizes the email recipient, asks generic
-Inviting to issue an invitation on the `email` channel. A reaction renders the
-Commons-specific message and queues the completed envelope in Mailing. Resending
-preserves the credential. Invitation administration requires
-the same administrator capability as other access controls.
+Registration consumes an email invitation before creating the account and
+profile. Inviting owns the durable credential, while composition normalizes the
+recipient, renders the Commons message, and gives Mailing a complete envelope.
+Resending preserves the invitation credential.
 
-### Roles
+### Roles and roster authority
 
-Role and capability operations connect authenticated users to the permissions
-used by forum and course behavior.
+Roling grants contextual capabilities. Rostering contributes course membership
+and staff status; composition translates those facts into the capabilities used
+by course and forum policy rather than copying them into either concept.
 
 ## Views
 
-Permission views answer whether the active user may perform an operation. Denied
-and permitted cases remain explicit so each endpoint settles deliberately.
+Access views derive the active user and paired allow/deny decisions from
+Sessioning, Roling, Rostering, and the relevant resource state. The same views
+are reused wherever a permission has the same application meaning.

@@ -1,5 +1,6 @@
 import spec from "@design/vocabulary.md" with { type: "text" };
 import { conceptSet } from "@mit-sdg/sync-engine/assembly";
+import type { Db } from "mongodb";
 import { assigning } from "./concepts/assigning/registry.ts";
 import { authenticating } from "./concepts/authenticating/registry.ts";
 import { banking } from "./concepts/banking/registry.ts";
@@ -84,4 +85,9 @@ export const learningConcepts = conceptSet(registrations, {
 export const concepts = learningConcepts.concepts;
 export const computations = learningConcepts.computations;
 export const vocabulary = learningConcepts.vocabulary;
+
+/** Construct the complete persistent implementation floor registered by every concept. */
+export function mongoImplementations(database: Db) {
+  return learningConcepts.implementations("mongo", { database });
+}
 export type CommonsVocabulary = typeof vocabulary;

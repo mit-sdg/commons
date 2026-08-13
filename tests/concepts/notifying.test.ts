@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/notifying/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoNotifyingConcept } from "../../src/concepts/notifying/notifying.mongo.ts";
-import { NotifyingConcept } from "../../src/concepts/notifying/notifying.ts";
 
-const floors: [string, () => Promise<NotifyingConcept | MongoNotifyingConcept>][] = [
-  ["in memory", async () => new NotifyingConcept()],
+const floors: [string, () => Promise<MongoNotifyingConcept>][] = [
   ["on MongoDB", async () => new MongoNotifyingConcept(await testDb())],
 ];
 

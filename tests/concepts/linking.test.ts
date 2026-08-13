@@ -1,10 +1,8 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { LinkingConcept } from "../../src/concepts/linking/linking.ts";
 import { MongoLinkingConcept } from "../../src/concepts/linking/linking.mongo.ts";
 
-const floors: [string, () => Promise<LinkingConcept | MongoLinkingConcept>][] = [
-  ["in memory", async () => new LinkingConcept()],
+const floors: [string, () => Promise<MongoLinkingConcept>][] = [
   ["on MongoDB", async () => new MongoLinkingConcept(await testDb())],
 ];
 

@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/tagging/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoTaggingConcept } from "../../src/concepts/tagging/tagging.mongo.ts";
-import { TaggingConcept } from "../../src/concepts/tagging/tagging.ts";
 
-const floors: [string, () => Promise<TaggingConcept | MongoTaggingConcept>][] = [
-  ["in memory", async () => new TaggingConcept()],
+const floors: [string, () => Promise<MongoTaggingConcept>][] = [
   ["on MongoDB", async () => new MongoTaggingConcept(await testDb())],
 ];
 

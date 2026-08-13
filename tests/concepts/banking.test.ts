@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/banking/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoBankingConcept } from "../../src/concepts/banking/banking.mongo.ts";
-import { BankingConcept } from "../../src/concepts/banking/banking.ts";
 
-const floors: [string, () => Promise<BankingConcept | MongoBankingConcept>][] = [
-  ["in memory", async () => new BankingConcept()],
+const floors: [string, () => Promise<MongoBankingConcept>][] = [
   ["on MongoDB", async () => new MongoBankingConcept(await testDb())],
 ];
 
@@ -17,7 +15,7 @@ const T0 = new Date("2026-03-01T00:00:00Z");
 const T1 = new Date("2026-03-02T00:00:00Z");
 const T2 = new Date("2026-03-03T00:00:00Z");
 
-const seat = (c: BankingConcept | MongoBankingConcept) =>
+const seat = (c: MongoBankingConcept) =>
   c.setTerms({ allowance: 3, perItemLimit: 2, unitHours: 24 });
 
 for (const [floor, make] of floors) {

@@ -27,6 +27,14 @@ describe("application-owned design integration", () => {
       expect(vocabulary, concept).toContain(`from "./concepts/${directory}/registry.ts"`);
       expect(vocabulary, concept).toMatch(new RegExp(`^  ${concept}: \\w+,$`, "m"));
       expect(existsSync(join(root, `tests/concepts/${directory}.test.ts`)), concept).toBe(true);
+      if (concept === "Timing") {
+        expect(existsSync(join(conceptsRoot, directory, `${directory}.ts`)), concept).toBe(true);
+      } else {
+        expect(existsSync(join(conceptsRoot, directory, `${directory}.mongo.ts`)), concept).toBe(
+          true,
+        );
+        expect(existsSync(join(conceptsRoot, directory, `${directory}.ts`)), concept).toBe(false);
+      }
     }
     expect(vocabulary).toContain('from "@design/vocabulary.md"');
     expect(existsSync(join(conceptsRoot, "index.ts"))).toBe(false);

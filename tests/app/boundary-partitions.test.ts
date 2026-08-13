@@ -1,4 +1,6 @@
-import { describe, expect, test } from "vite-plus/test";
+import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { afterAll, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 
@@ -52,7 +54,7 @@ async function expectOneAnswer(
 
 describe("boundary partitions", () => {
   test("thread replies choose one open, locked, or missing-parent answer", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const session = await actor(app, "thread_partition");
     const created = await app.invoker.invoke("/threads/create", {
       session,
@@ -91,7 +93,7 @@ describe("boundary partitions", () => {
   });
 
   test("resolution acceptance names its success, policy, and absence paths", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const authorSession = await actor(app, "resolution_author");
     const otherSession = await actor(app, "resolution_other");
     const created = await app.invoker.invoke("/threads/create", {
@@ -139,7 +141,7 @@ describe("boundary partitions", () => {
   });
 
   test("overlapping profile absence paths both fire without gaining priority", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const session = await actor(app, "profile_overlap");
     const before = inspectAssembly(app).occurrences.length;
     const result = await app.invoker.invoke("/profiles/get", {
@@ -159,3 +161,5 @@ describe("boundary partitions", () => {
     ).toEqual(["Forum.profiles.GetProfile:hidden", "Forum.profiles.GetProfile:missing"]);
   });
 });
+
+afterAll(stopTestDb);

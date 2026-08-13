@@ -1,20 +1,24 @@
-import { describe, expect, test } from "vite-plus/test";
+import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { afterAll, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly, renderApp } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import generated from "../../generated.config.ts";
 
 describe("the rendered application specification", () => {
-  test("renders every declared construction and its mail-content computations", () => {
-    const ir = inspectAssembly(assembleCommons()).app;
+  test("renders every declared construction and its mail-content computations", async () => {
+    const ir = inspectAssembly(assembleCommons(mongoImplementations(await testDb()))).app;
     expect(ir.unlowered ?? []).toEqual([]);
     expect(JSON.stringify(ir).match(/"op":"compute"/g)).toHaveLength(4);
     expect(ir.views).toHaveLength(49);
     expect(ir.formers).toHaveLength(67);
   });
 
-  test("every concept's purpose and principle are authored — zero unwritten stubs", () => {
-    const design = inspectAssembly(assembleCommons());
+  test("every concept's purpose and principle are authored — zero unwritten stubs", async () => {
+    const design = inspectAssembly(assembleCommons(mongoImplementations(await testDb())));
     const spec = renderApp({ title: generated.title, concepts: design.concepts, app: design.app });
     expect(spec).not.toContain("[unwritten");
   });
 });
+
+afterAll(stopTestDb);

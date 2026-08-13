@@ -1,35 +1,53 @@
 # Forum
 
-Forum composition connects posts and conversations to profiles, moderation,
-organization, subscriptions, notifications, and personal read state. Concepts
-remain independent; reactions express consequences between them.
+Forum composition turns independently owned content, conversation, moderation,
+organization, and personal-state mechanisms into a discussion space. Posting and
+Conversing remain usable without depending on those surrounding behaviors.
 
 ## Compositions
 
-### Threads and posts
+### Threads and derived content
 
-Creating a thread creates its first post and conversation membership. Replies,
-edits, revisions, links, and resolution state retain stable item identities.
+A new thread connects a Posting item to a Conversing node and conversation;
+replies extend that structure. Formatting and Linking are refreshed from post
+content, Revising records content history, and Tracking records unread items
+without becoming part of Posting's lifecycle.
+
+### Visibility and moderation
+
+Readability combines Trashing, Locking, conversation placement, and Access
+policy. Flagging, Locking, and Trashing retain separate state and authority.
+Purging content coordinates cleanup of conversation placement, rendered content,
+links, revisions, moderation records, and other dependent forum state; each
+cleanup remains an independent concept action rather than a transaction.
 
 ### Organization and personal state
 
-Categories, tags, pins, bookmarks, subscriptions, reactions, and unread tracking
-add independent views of forum items. Removing an item triggers the cleanup
-reactions owned by the affected behavior.
+Categorizing and Tagging provide shared organization; Pinning adds moderated
+prominence. Bookmarking, Reacting, Subscribing, and Tracking add user-specific
+state without changing the content they refer to. Composition filters all of
+these through the same readability decisions.
 
-### Moderation and notifications
+### Resolutions and notifications
 
-Flags, locks, trash state, and capabilities decide which content is readable and
-which operations are permitted. Notification reactions derive inbox entries from
-forum activity without making posting depend on notification storage.
+Resolving associates an accepted answer with a question. Replies, mentions,
+subscriptions, and accepted answers may create Notifying entries. Email delivery
+is a further consequence: composition renders the notification and queues it in
+Mailing, so forum actions do not depend on delivery success.
+
+### Profiles
+
+Profiling supplies forum presentation while Authenticating owns account names.
+Composition exposes private profile details only to the owner or authorized
+staff and uses public profile fragments in threads and user pages.
 
 ## Views
 
-Shared readability and moderation views centralize visibility decisions used by
-endpoints and formers.
+Forum views centralize content integrity, readability, placement, moderation,
+profile visibility, and notification deduplication decisions.
 
 ## Formers
 
-Forum formers construct thread, feed, profile, moderation, notification, and
-satellite-item responses from current concept queries. Empty collections remain
-valid current-state answers.
+Forum formers assemble threads, feeds, profiles, moderation queues,
+notifications, and satellite state from current concept queries. They do not
+persist a second forum model.

@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/rostering/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoRosteringConcept } from "../../src/concepts/rostering/rostering.mongo.ts";
-import { RosteringConcept } from "../../src/concepts/rostering/rostering.ts";
 
-const floors: [string, () => Promise<RosteringConcept | MongoRosteringConcept>][] = [
-  ["in memory", async () => new RosteringConcept()],
+const floors: [string, () => Promise<MongoRosteringConcept>][] = [
   ["on MongoDB", async () => new MongoRosteringConcept(await testDb())],
 ];
 

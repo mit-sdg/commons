@@ -1,11 +1,9 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/bookmarking/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { BookmarkingConcept } from "../../src/concepts/bookmarking/bookmarking.ts";
 import { MongoBookmarkingConcept } from "../../src/concepts/bookmarking/bookmarking.mongo.ts";
 
-const floors: [string, () => Promise<BookmarkingConcept | MongoBookmarkingConcept>][] = [
-  ["in memory", async () => new BookmarkingConcept()],
+const floors: [string, () => Promise<MongoBookmarkingConcept>][] = [
   ["on MongoDB", async () => new MongoBookmarkingConcept(await testDb())],
 ];
 

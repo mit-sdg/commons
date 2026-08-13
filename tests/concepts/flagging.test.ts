@@ -1,11 +1,9 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/flagging/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { FlaggingConcept } from "../../src/concepts/flagging/flagging.ts";
 import { MongoFlaggingConcept } from "../../src/concepts/flagging/flagging.mongo.ts";
 
-const floors: [string, () => Promise<FlaggingConcept | MongoFlaggingConcept>][] = [
-  ["in memory", async () => new FlaggingConcept()],
+const floors: [string, () => Promise<MongoFlaggingConcept>][] = [
   ["on MongoDB", async () => new MongoFlaggingConcept(await testDb())],
 ];
 

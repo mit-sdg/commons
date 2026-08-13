@@ -1,12 +1,11 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Categorizing.md" with { type: "text" };
-import { CategorizingConcept } from "./categorizing.ts";
 import { MongoCategorizingConcept } from "./categorizing.mongo.ts";
 import { CategoryAlreadyExists, CategoryNotFound, ItemNotCategorized } from "./errors.ts";
 
 export const categorizing = registerConcept({
-  class: CategorizingConcept,
+  class: MongoCategorizingConcept,
   spec,
   refusals: {
     CATEGORY_ALREADY_EXISTS: CategoryAlreadyExists,

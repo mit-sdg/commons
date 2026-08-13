@@ -1,7 +1,6 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Banking.md" with { type: "text" };
-import { BankingConcept } from "./banking.ts";
 import { MongoBankingConcept } from "./banking.mongo.ts";
 import {
   InsufficientBalance,
@@ -13,7 +12,7 @@ import {
 } from "./errors.ts";
 
 export const banking = registerConcept({
-  class: BankingConcept,
+  class: MongoBankingConcept,
   spec,
   refusals: {
     LATE_DAYS_MUST_BE_POSITIVE: LateDaysMustBePositive,

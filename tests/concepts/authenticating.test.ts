@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/authenticating/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoAuthenticatingConcept } from "../../src/concepts/authenticating/authenticating.mongo.ts";
-import { AuthenticatingConcept } from "../../src/concepts/authenticating/authenticating.ts";
 
-const floors: [string, () => Promise<AuthenticatingConcept | MongoAuthenticatingConcept>][] = [
-  ["in memory", async () => new AuthenticatingConcept()],
+const floors: [string, () => Promise<MongoAuthenticatingConcept>][] = [
   ["on MongoDB", async () => new MongoAuthenticatingConcept(await testDb())],
 ];
 
@@ -29,14 +27,11 @@ for (const [floor, make] of floors) {
       ]);
       expect(await auth._getByUsername({ username: "nadia" })).toEqual([{ user }]);
 
-      const stored =
-        auth instanceof AuthenticatingConcept
-          ? (auth as unknown as { users: Map<string, Record<string, unknown>> }).users.get(user)
-          : await (
-              auth as unknown as {
-                users: { findOne(query: unknown): Promise<Record<string, unknown>> };
-              }
-            ).users.findOne({ _id: user });
+      const stored = await (
+        auth as unknown as {
+          users: { findOne(query: unknown): Promise<Record<string, unknown>> };
+        }
+      ).users.findOne({ _id: user });
       expect(stored).not.toHaveProperty("password");
       expect(stored?.passwordVerifier).toMatch(/^\$scrypt\$/);
       expect(JSON.stringify(stored)).not.toContain(good.password);

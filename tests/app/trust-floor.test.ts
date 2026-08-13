@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, test } from "vite-plus/test";
+import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { afterAll, beforeEach, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { createEdge } from "../../src/edge.ts";
@@ -46,7 +48,7 @@ describe("HTTP authorization and privacy", () => {
   let limitedStaff: Actor;
   let outsider: Actor;
   beforeEach(async () => {
-    edge = createEdge();
+    edge = createEdge(mongoImplementations(await testDb()));
     admin = await register("admin");
     learner = await register("learner");
     limitedStaff = await register("limited_staff");
@@ -439,7 +441,10 @@ describe("HTTP authorization and privacy", () => {
 test("the HTTP edge rejects and clears a cookie at the server-side expiry boundary", async () => {
   const startedAt = Date.now() + 60_000;
   let now = new Date(startedAt);
-  const edge = createEdge({ Timing: new TimingConcept(() => now) });
+  const edge = createEdge({
+    ...mongoImplementations(await testDb()),
+    Timing: new TimingConcept(() => now),
+  });
   const post = async (path: string, body: Record<string, unknown>, cookie?: string) => {
     const response = await edge.fetch(
       new Request(`http://commons.test/api${path}`, {
@@ -478,7 +483,7 @@ test("the HTTP edge rejects and clears a cookie at the server-side expiry bounda
 });
 
 test("dropping the actor's staff seat returns one response before roster:manage is revoked", async () => {
-  const app = assembleCommons();
+  const app = assembleCommons(mongoImplementations(await testDb()));
   const send = async (path: string, body: Record<string, unknown>) => {
     const result = await app.invoker.invoke(path, body as never);
     expect(result.ok, JSON.stringify(result)).toBe(true);
@@ -543,3 +548,5 @@ test("dropping the actor's staff seat returns one response before roster:manage 
   expect(responses.filter((event) => event.outcome?.kind === "result")).toHaveLength(1);
   expect(responses.filter((event) => event.outcome?.kind === "error")).toHaveLength(0);
 });
+
+afterAll(stopTestDb);

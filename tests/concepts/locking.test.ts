@@ -1,11 +1,9 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/locking/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { LockingConcept } from "../../src/concepts/locking/locking.ts";
 import { MongoLockingConcept } from "../../src/concepts/locking/locking.mongo.ts";
 
-const floors: [string, () => Promise<LockingConcept | MongoLockingConcept>][] = [
-  ["in memory", async () => new LockingConcept()],
+const floors: [string, () => Promise<MongoLockingConcept>][] = [
   ["on MongoDB", async () => new MongoLockingConcept(await testDb())],
 ];
 

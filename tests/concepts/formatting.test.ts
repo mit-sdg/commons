@@ -1,10 +1,8 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { FormattingConcept } from "../../src/concepts/formatting/formatting.ts";
 import { MongoFormattingConcept } from "../../src/concepts/formatting/formatting.mongo.ts";
 
-const floors: [string, () => Promise<FormattingConcept | MongoFormattingConcept>][] = [
-  ["in memory", async () => new FormattingConcept()],
+const floors: [string, () => Promise<MongoFormattingConcept>][] = [
   ["on MongoDB", async () => new MongoFormattingConcept(await testDb())],
 ];
 

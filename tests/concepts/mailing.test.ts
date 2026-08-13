@@ -1,10 +1,8 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { MailingConcept } from "../../src/concepts/mailing/mailing.ts";
 import { MongoMailingConcept } from "../../src/concepts/mailing/mailing.mongo.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 
-const floors: [string, () => Promise<MailingConcept | MongoMailingConcept>][] = [
-  ["in memory", async () => new MailingConcept()],
+const floors: [string, () => Promise<MongoMailingConcept>][] = [
   ["on MongoDB", async () => new MongoMailingConcept(await testDb())],
 ];
 

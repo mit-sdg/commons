@@ -1,7 +1,6 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Authenticating.md" with { type: "text" };
-import { AuthenticatingConcept } from "./authenticating.ts";
 import { MongoAuthenticatingConcept } from "./authenticating.mongo.ts";
 import {
   EmailInvalid,
@@ -13,7 +12,7 @@ import {
 } from "./errors.ts";
 
 export const authenticating = registerConcept({
-  class: AuthenticatingConcept,
+  class: MongoAuthenticatingConcept,
   spec,
   refusals: {
     INVALID_BODY: EmailInvalid,

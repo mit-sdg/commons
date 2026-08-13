@@ -1,18 +1,14 @@
-import {
-  assemble,
-  type ImplementationOverrides,
-  type Implementations,
-} from "@mit-sdg/sync-engine/assembly";
-import { learningConcepts, vocabulary } from "../vocabulary.ts";
+import { assemble, type Implementations } from "@mit-sdg/sync-engine/assembly";
+import { vocabulary } from "../vocabulary.ts";
 import { composition } from "../compositions/index.ts";
 
-export type CommonsOverrides = ImplementationOverrides<typeof vocabulary>;
+export type CommonsImplementations = Implementations<typeof vocabulary>;
 
-export function assembleCommons(overrides: CommonsOverrides = {}) {
+export function assembleCommons(instances: CommonsImplementations) {
   const application = assemble({
     vocabulary,
     composition,
-    instances: { ...learningConcepts.implementations(), ...overrides },
+    instances,
   });
   return application as Omit<typeof application, "concepts"> & {
     concepts: Implementations<typeof vocabulary>;

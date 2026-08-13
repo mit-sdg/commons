@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/resolving/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoResolvingConcept } from "../../src/concepts/resolving/resolving.mongo.ts";
-import { ResolvingConcept } from "../../src/concepts/resolving/resolving.ts";
 
-const floors: [string, () => Promise<ResolvingConcept | MongoResolvingConcept>][] = [
-  ["in memory", async () => new ResolvingConcept()],
+const floors: [string, () => Promise<MongoResolvingConcept>][] = [
   ["on MongoDB", async () => new MongoResolvingConcept(await testDb())],
 ];
 

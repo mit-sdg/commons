@@ -1,12 +1,11 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Locking.md" with { type: "text" };
-import { LockingConcept } from "./locking.ts";
 import { MongoLockingConcept } from "./locking.mongo.ts";
 import { TargetAlreadyLocked, TargetNotLocked } from "./errors.ts";
 
 export const locking = registerConcept({
-  class: LockingConcept,
+  class: MongoLockingConcept,
   spec,
   refusals: {
     TARGET_ALREADY_LOCKED: TargetAlreadyLocked,

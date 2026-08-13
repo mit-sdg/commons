@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/subscribing/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoSubscribingConcept } from "../../src/concepts/subscribing/subscribing.mongo.ts";
-import { SubscribingConcept } from "../../src/concepts/subscribing/subscribing.ts";
 
-const floors: [string, () => Promise<SubscribingConcept | MongoSubscribingConcept>][] = [
-  ["in memory", async () => new SubscribingConcept()],
+const floors: [string, () => Promise<MongoSubscribingConcept>][] = [
   ["on MongoDB", async () => new MongoSubscribingConcept(await testDb())],
 ];
 

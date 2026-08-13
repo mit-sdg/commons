@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/pinning/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoPinningConcept } from "../../src/concepts/pinning/pinning.mongo.ts";
-import { PinningConcept } from "../../src/concepts/pinning/pinning.ts";
 
-const floors: [string, () => Promise<PinningConcept | MongoPinningConcept>][] = [
-  ["in memory", async () => new PinningConcept()],
+const floors: [string, () => Promise<MongoPinningConcept>][] = [
   ["on MongoDB", async () => new MongoPinningConcept(await testDb())],
 ];
 

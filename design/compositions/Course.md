@@ -1,23 +1,47 @@
 # Course
 
-Course composition connects roster seats, assignments, submissions, grading,
-late-day balances, notes, and calendar reads. A session establishes the acting
-user before staff or learner policy is applied.
+Course composition coordinates membership, assigned work, learner attempts,
+grades, late-day allowances, staff notes, and calendar presentation. Access
+policy first establishes whether the active user acts as a learner or as staff.
 
 ## Compositions
 
-### Roster and assignments
+### Roster
 
-Roster membership determines course roles and assignment audiences. Publishing
-an assignment makes it available to the applicable learners without coupling the
-independent roster and assignment concepts.
+Rostering seats connect external course records to application users. Claiming a
+staff seat grants the corresponding course role; dropping it revokes that role.
+Profiling remains the owner of the user's presentation and contact details.
 
-### Submission and grading
+### Assignments and submissions
 
-Submission state feeds grading and late-day decisions. Grade release and learner
-visibility remain separate from draft score entry.
+Assigning owns assignment publication and releases. Composition derives the
+released learner population from roster sections, permits Submitting only for an
+eligible release, and keeps assignment policy out of submission state.
+
+### Grades
+
+Published, submission-accepting assignments establish Itemizing grade items.
+Grading owns criteria, scores, and release state; composition controls staff
+changes and separates released learner results from the working gradebook.
+
+### Late days
+
+Banking owns balances and per-assignment use. Course policy identifies the
+learner and staff operations allowed to change those balances without making
+Banking depend on roster or assignment state.
+
+### Notes and calendar
+
+Noting records staff observations with their own visibility lifecycle. Calendar
+and dashboard reads combine roster, assignment, grade, late-day, and note state
+at request time rather than maintaining another course model.
+
+## Views
+
+Course views name release eligibility, submission ownership, learner identity,
+and note visibility where those decisions are shared across operations.
 
 ## Formers
 
-Course formers construct roster, assignment, gradebook, note, and calendar
-answers from current concept state. They do not persist a second read model.
+Course formers build roster, assignment, gradebook, note, calendar, and dashboard
+results directly from current concept queries.

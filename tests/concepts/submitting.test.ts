@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/submitting/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoSubmittingConcept } from "../../src/concepts/submitting/submitting.mongo.ts";
-import { SubmittingConcept } from "../../src/concepts/submitting/submitting.ts";
 
-const floors: [string, () => Promise<SubmittingConcept | MongoSubmittingConcept>][] = [
-  ["in memory", async () => new SubmittingConcept()],
+const floors: [string, () => Promise<MongoSubmittingConcept>][] = [
   ["on MongoDB", async () => new MongoSubmittingConcept(await testDb())],
 ];
 

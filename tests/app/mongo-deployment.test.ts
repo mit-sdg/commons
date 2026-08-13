@@ -183,18 +183,11 @@ afterEach(async () => {
 });
 
 describe("the Commons process with MongoDB", () => {
-  test("uses memory when MONGODB_URL is omitted", async () => {
-    const running = await startEdge(undefined, await freePort());
-    expect(running.output.join("")).toContain("commons: storing concept state in memory.");
-    expect(await stopChild(running)).toBe(0);
-    expect(running.output.join("")).toContain("commons: edge stopped");
+  test("requires MONGODB_URL", async () => {
+    await expect(constructConceptFloor()).rejects.toThrow("commons: MONGODB_URL is required.");
   });
 
   test("reads the database name from mongodb:// and mongodb+srv:// URL paths", async () => {
-    const memory = await constructConceptFloor();
-    expect(memory.name).toBe("memory");
-    await memory.close();
-
     for (const [url, database] of [
       ["mongodb://127.0.0.1:27017/commons", "commons"],
       [
@@ -555,6 +548,7 @@ describe("the Commons process with MongoDB", () => {
   }, 120_000);
 
   test("reports an occupied edge port as a startup failure", async () => {
+    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
     const holder = createServer();
     await new Promise<void>((resolve, reject) => {
       holder.once("error", reject);
@@ -565,13 +559,18 @@ describe("the Commons process with MongoDB", () => {
       if (address === null || typeof address === "string") throw new Error("missing port");
       const running = startChild(["bun", "src/start.ts"], {
         cwd: root,
-        env: { ...process.env, PORT: String(address.port) },
+        env: {
+          ...process.env,
+          MONGODB_URL: mongo.getUri(`occupied-${crypto.randomUUID()}`),
+          PORT: String(address.port),
+        },
       });
       expect(await running.exited).not.toBe(0);
       await Promise.allSettled(running.drains);
       expect(running.output.join("")).toContain("commons: could not listen");
     } finally {
       await new Promise<void>((resolve) => holder.close(() => resolve()));
+      await mongo.stop();
     }
   }, 20_000);
 

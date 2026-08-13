@@ -1,9 +1,11 @@
+import type { CommonsImplementations } from "./assembly/application.ts";
+import { constructConceptFloor } from "./assembly/concept-floor.ts";
 import { createLocalClient } from "@mit-sdg/sync-engine/client";
 import type { CommonsWire } from "./client.ts";
 import { createEdge } from "./edge.ts";
 
-export async function runScenario() {
-  const edge = createEdge();
+export async function runScenario(instances: CommonsImplementations) {
+  const edge = createEdge(instances);
   const commons = createLocalClient<CommonsWire>({ invoker: edge.gateway });
   const issued = await edge.application.concepts.Inviting.invite({
     channel: "email",
@@ -43,4 +45,11 @@ export async function runScenario() {
   };
 }
 
-if (import.meta.main) console.log(JSON.stringify(await runScenario(), null, 2));
+if (import.meta.main) {
+  const floor = await constructConceptFloor(process.env.MONGODB_URL);
+  try {
+    console.log(JSON.stringify(await runScenario(floor.instances), null, 2));
+  } finally {
+    await floor.close();
+  }
+}

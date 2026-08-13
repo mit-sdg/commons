@@ -2,12 +2,10 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/noting/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoNotingConcept } from "../../src/concepts/noting/noting.mongo.ts";
-import { NotingConcept } from "../../src/concepts/noting/noting.ts";
 
-type Noting = NotingConcept | MongoNotingConcept;
+type Noting = MongoNotingConcept;
 
 const floors: [string, () => Promise<Noting>][] = [
-  ["in memory", async () => new NotingConcept()],
   ["on MongoDB", async () => new MongoNotingConcept(await testDb())],
 ];
 

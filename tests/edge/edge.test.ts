@@ -1,4 +1,6 @@
-import { beforeAll, describe, expect, test } from "vite-plus/test";
+import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 
 type Edge = ReturnType<typeof createEdge>;
@@ -40,8 +42,8 @@ async function registerAndLogin(edge: Edge) {
 
 describe("HTTP route derivation", () => {
   let edge: Edge;
-  beforeAll(() => {
-    edge = createEdge();
+  beforeAll(async () => {
+    edge = createEdge(mongoImplementations(await testDb()));
   });
 
   test("every route requiring session accepts the session cookie", () => {
@@ -55,7 +57,7 @@ describe("HTTP route derivation", () => {
 
 describe("HTTP session cookies", () => {
   test("login returns user data and sets the session cookie", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const { login, body, cookie } = await registerAndLogin(edge);
     expect(login.status).toBe(200);
     expect(body).not.toHaveProperty("session");
@@ -67,7 +69,7 @@ describe("HTTP session cookies", () => {
   });
 
   test("the session cookie replaces placeholder body values", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const { cookie } = await registerAndLogin(edge);
     for (const placeholder of ["", "cookie"]) {
       const me = await post(edge, "/auth/me", { session: placeholder }, cookie);
@@ -78,7 +80,7 @@ describe("HTTP session cookies", () => {
   });
 
   test("post mutations reject body tokens and authorize the cookie's user", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const { cookie: aliceCookie } = await registerAndLogin(edge);
     const bob = await edge.application.concepts.Authenticating.register({
       username: "bob",
@@ -121,7 +123,7 @@ describe("HTTP session cookies", () => {
   });
 
   test("a placeholder without a cookie returns 401 and clears the cookie", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     await registerAndLogin(edge);
     const me = await post(edge, "/auth/me", { session: "" });
     expect(me.status).toBe(401);
@@ -132,7 +134,7 @@ describe("HTTP session cookies", () => {
   });
 
   test("logout clears the cookie", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const { cookie } = await registerAndLogin(edge);
     const out = await post(edge, "/auth/logout", { session: "" }, cookie);
     expect(out.status).toBe(200);
@@ -143,7 +145,7 @@ describe("HTTP session cookies", () => {
   });
 
   test("login succeeds even when the request includes an expired cookie", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const { cookie } = await registerAndLogin(edge);
     await post(edge, "/auth/logout", {}, cookie);
     const again = await post(
@@ -158,7 +160,7 @@ describe("HTTP session cookies", () => {
   });
 
   test("an expired cookie returns 401 and is cleared", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const { cookie } = await registerAndLogin(edge);
     await post(edge, "/auth/logout", {}, cookie);
     const me = await post(edge, "/auth/me", { session: "" }, cookie);
@@ -172,7 +174,7 @@ describe("HTTP session cookies", () => {
 
 describe("HTTP paths and failures", () => {
   test("the edge serves only the configured /api base path", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const registered = await edge.application.concepts.Authenticating.register(ALICE);
     await edge.application.concepts.Profiling.createProfile({
       user: registered.user,
@@ -191,28 +193,28 @@ describe("HTTP paths and failures", () => {
   });
 
   test("an unknown path returns 404 NOT_FOUND", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const gone = await post(edge, "/api/nowhere/at-all", {});
     expect(gone.status).toBe(404);
     expect(await gone.json()).toEqual({ error: "NOT_FOUND" });
   });
 
   test("an anonymous missing-resource read is rejected before resource lookup", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const gone = await post(edge, "/posts/get", { post: "missing" });
     expect(gone.status).toBe(401);
     expect(await gone.json()).toEqual({ error: "UNAUTHORIZED" });
   });
 
   test("a scalar JSON body returns 400 INVALID_REQUEST", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const refused = await post(edge, "/auth/login", 7);
     expect(refused.status).toBe(400);
     expect(await refused.json()).toEqual({ error: "INVALID_REQUEST" });
   });
 
   test("a malformed JSON body returns 400 INVALID_REQUEST", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const bad = await edge.fetch(
       new Request("http://edge/api/auth/login", { method: "POST", body: "{not json" }),
     );
@@ -220,3 +222,5 @@ describe("HTTP paths and failures", () => {
     expect(((await bad.json()) as { error: string }).error).toBe("INVALID_REQUEST");
   });
 });
+
+afterAll(stopTestDb);

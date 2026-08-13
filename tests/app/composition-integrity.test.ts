@@ -1,4 +1,6 @@
-import { describe, expect, test } from "vite-plus/test";
+import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { afterAll, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { theStaffDashboardCounts } from "../../src/compositions/course/calendar.ts";
@@ -31,7 +33,7 @@ async function actor(
 
 describe("course staff composition", () => {
   test("every claimed staff seat grants the course-staff role", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const { created } = await app.concepts.Rostering.importSeats({
       rows: [
         { externalKey: "staff-1", email: "one@example.edu", rosterName: "One", kind: "STAFF" },
@@ -62,7 +64,7 @@ describe("course staff composition", () => {
   });
 
   test("a custom roster role does not suppress the course-staff grant", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const staff = await actor(app, "custom_staff", "custom@example.edu");
     const { role } = await app.concepts.Roling.defineRole({
       name: "roster-helper",
@@ -95,7 +97,7 @@ describe("course staff composition", () => {
   });
 
   test("the staff dashboard counts active course work", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const at = new Date("2026-07-19T12:00:00.000Z");
     const { assignment } = await app.concepts.Assigning.createDraft({
       author: "staff",
@@ -139,7 +141,7 @@ describe("course staff composition", () => {
 
 describe("consolidated reaction groups", () => {
   test("deleting a leaf post asks every cleanup sibling", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const at = new Date("2026-07-20T12:00:00.000Z");
     const { post } = await app.concepts.Posting.create({ author: "author", content: "Body", at });
     await app.concepts.Conversing.start({ item: post, at });
@@ -168,7 +170,7 @@ describe("consolidated reaction groups", () => {
   });
 
   test("purging a post keeps direct and deletion cleanup occurrences", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const at = new Date("2026-07-20T12:00:00.000Z");
     const { post } = await app.concepts.Posting.create({ author: "author", content: "Body", at });
     await app.concepts.Trashing.trash({ item: post, by: "moderator", at });
@@ -188,7 +190,7 @@ describe("consolidated reaction groups", () => {
   });
 
   test("purging a resolved answer clears both resolution roles", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const at = new Date("2026-07-20T12:00:00.000Z");
     await app.concepts.Resolving.accept({
       question: "question",
@@ -218,3 +220,5 @@ describe("consolidated reaction groups", () => {
     ]);
   });
 });
+
+afterAll(stopTestDb);

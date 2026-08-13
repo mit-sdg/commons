@@ -1,12 +1,11 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Submitting.md" with { type: "text" };
-import { SubmittingConcept } from "./submitting.ts";
 import { MongoSubmittingConcept } from "./submitting.mongo.ts";
 import { SubmissionNotFound, SubmissionNotSubmitted, SubmissionNotWithdrawn } from "./errors.ts";
 
 export const submitting = registerConcept({
-  class: SubmittingConcept,
+  class: MongoSubmittingConcept,
   spec,
   refusals: {
     SUBMISSION_NOT_FOUND: SubmissionNotFound,

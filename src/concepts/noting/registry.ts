@@ -1,7 +1,6 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Noting.md" with { type: "text" };
-import { NotingConcept } from "./noting.ts";
 import { MongoNotingConcept } from "./noting.mongo.ts";
 import {
   InvalidVisibility,
@@ -14,7 +13,7 @@ import {
 } from "./errors.ts";
 
 export const noting = registerConcept({
-  class: NotingConcept,
+  class: MongoNotingConcept,
   spec,
   refusals: {
     INVALID_VISIBILITY: InvalidVisibility,

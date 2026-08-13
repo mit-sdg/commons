@@ -1,8 +1,10 @@
-import { describe, expect, test } from "vite-plus/test";
+import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { afterAll, describe, expect, test } from "vite-plus/test";
 import { createEngine, type LogEvent } from "@mit-sdg/sync-engine/advanced";
 import { commonsPublicErrors } from "../../src/assembly/http-policy.ts";
 import { createEdge } from "../../src/edge.ts";
-import { AuthenticatingConcept } from "../../src/concepts/authenticating/authenticating.ts";
+import { MongoAuthenticatingConcept } from "../../src/concepts/authenticating/authenticating.mongo.ts";
 
 describe("public failure vocabulary", () => {
   test("representative refusals declare their public categories", () => {
@@ -13,7 +15,7 @@ describe("public failure vocabulary", () => {
   });
 
   test("the HTTP edge omits private details and rejects absent and invalid sessions alike", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const malformed = await edge.fetch(
       new Request("http://commons.test/api/auth/login", {
         method: "POST",
@@ -44,7 +46,7 @@ describe("public failure vocabulary", () => {
     const logs: string[] = [];
     const ordinaryError = console.error;
     console.error = (...values: unknown[]) => logs.push(values.map(String).join(" "));
-    class FaultingAuthentication extends AuthenticatingConcept {
+    class FaultingAuthentication extends MongoAuthenticatingConcept {
       override async authenticate(_: {
         username: string;
         password: string;
@@ -53,7 +55,10 @@ describe("public failure vocabulary", () => {
       }
     }
     try {
-      const edge = createEdge({ Authenticating: new FaultingAuthentication() });
+      const edge = createEdge({
+        ...mongoImplementations(await testDb()),
+        Authenticating: new FaultingAuthentication(await testDb()),
+      });
       const response = await edge.fetch(
         new Request("http://commons.test/api/auth/login", {
           method: "POST",
@@ -79,7 +84,10 @@ describe("public failure vocabulary", () => {
     const engine = createEngine({
       logSink: { append: (entry) => (retained.push(entry), undefined) },
     });
-    const authentication = engine.instrumentConcept(new AuthenticatingConcept(), "Authenticating");
+    const authentication = engine.instrumentConcept(
+      new MongoAuthenticatingConcept(await testDb()),
+      "Authenticating",
+    );
     const events: LogEvent[] = [];
     engine.addObserver({ onAction: (event) => events.push(event) });
 
@@ -105,7 +113,7 @@ describe("public failure vocabulary", () => {
       expect(captured).not.toContain(loginPassword);
     }
 
-    class FaultingAuthentication extends AuthenticatingConcept {
+    class FaultingAuthentication extends MongoAuthenticatingConcept {
       override async authenticate({
         password,
       }: {
@@ -119,7 +127,10 @@ describe("public failure vocabulary", () => {
     const faultEngine = createEngine({
       logSink: { append: (entry) => (faultEntries.push(entry), undefined) },
     });
-    const faulting = faultEngine.instrumentConcept(new FaultingAuthentication(), "Authenticating");
+    const faulting = faultEngine.instrumentConcept(
+      new FaultingAuthentication(await testDb()),
+      "Authenticating",
+    );
     const faultPassword = "fault-password-sentinel";
     await expect(
       faulting.authenticate({ username: "observer_user", password: faultPassword }),
@@ -131,3 +142,5 @@ describe("public failure vocabulary", () => {
     expect(faulted).not.toContain("driver-fault");
   });
 });
+
+afterAll(stopTestDb);

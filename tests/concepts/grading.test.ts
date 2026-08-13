@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/grading/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoGradingConcept } from "../../src/concepts/grading/grading.mongo.ts";
-import { GradingConcept } from "../../src/concepts/grading/grading.ts";
 
-const floors: [string, () => Promise<GradingConcept | MongoGradingConcept>][] = [
-  ["in memory", async () => new GradingConcept()],
+const floors: [string, () => Promise<MongoGradingConcept>][] = [
   ["on MongoDB", async () => new MongoGradingConcept(await testDb())],
 ];
 
@@ -17,7 +15,7 @@ const T0 = new Date("2026-03-01T00:00:00Z");
 const T1 = new Date("2026-03-02T00:00:00Z");
 const T2 = new Date("2026-03-03T00:00:00Z");
 
-const draft = (c: GradingConcept | MongoGradingConcept, learner: string, score = 42) =>
+const draft = (c: MongoGradingConcept, learner: string, score = 42) =>
   c.record({
     learner,
     item: "essay",

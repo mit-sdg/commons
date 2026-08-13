@@ -1,4 +1,6 @@
-import { describe, expect, test } from "vite-plus/test";
+import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { afterAll, describe, expect, test } from "vite-plus/test";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { theAssignmentsOf } from "../../src/compositions/course/assignments.ts";
 import { theRoster } from "../../src/compositions/course/roster.ts";
@@ -7,7 +9,7 @@ import { theModerationQueue } from "../../src/compositions/forum/moderation.ts";
 
 describe("composed application reads", () => {
   test("the assignments read returns each assigned learner release", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const learner = "learner";
     const at = new Date("2026-07-19T12:00:00.000Z");
     const { assignment } = await app.concepts.Assigning.createDraft({
@@ -37,7 +39,7 @@ describe("composed application reads", () => {
   });
 
   test("the forum pages receive their complete formed rows", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const at = new Date("2026-07-19T12:00:00.000Z");
     const later = new Date("2026-07-19T13:00:00.000Z");
     const { post } = await app.concepts.Posting.create({
@@ -92,7 +94,7 @@ describe("composed application reads", () => {
   });
 
   test("the moderation queue carries each target's flags and post", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const at = new Date("2026-07-19T12:00:00.000Z");
     const { post } = await app.concepts.Posting.create({
       author: "mara",
@@ -118,7 +120,7 @@ describe("composed application reads", () => {
   });
 
   test("the roster read carries the active seat and section", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const { section } = await app.concepts.Rostering.createSection({
       name: "Section A",
       location: "Room 9",
@@ -147,3 +149,5 @@ describe("composed application reads", () => {
     ]);
   });
 });
+
+afterAll(stopTestDb);

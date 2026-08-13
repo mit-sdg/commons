@@ -1,10 +1,8 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoRevisingConcept } from "../../src/concepts/revising/revising.mongo.ts";
-import { RevisingConcept } from "../../src/concepts/revising/revising.ts";
 
-const floors: [string, () => Promise<RevisingConcept | MongoRevisingConcept>][] = [
-  ["in memory", async () => new RevisingConcept()],
+const floors: [string, () => Promise<MongoRevisingConcept>][] = [
   ["on MongoDB", async () => new MongoRevisingConcept(await testDb())],
 ];
 

@@ -1,3 +1,4 @@
+import { mongoImplementations } from "../../src/vocabulary.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { MongoPostingConcept } from "../../src/concepts/posting/posting.mongo.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
@@ -6,7 +7,10 @@ import { assembleCommons } from "../../src/assembly/application.ts";
 afterAll(stopTestDb);
 
 async function mongoApp() {
-  const app = assembleCommons({ Posting: new MongoPostingConcept(await testDb()) });
+  const app = assembleCommons({
+    ...mongoImplementations(await testDb()),
+    Posting: new MongoPostingConcept(await testDb()),
+  });
   const send = async (path: string, body: Record<string, unknown>) => {
     const result = await app.invoker.invoke(path, body as never);
     return result.ok

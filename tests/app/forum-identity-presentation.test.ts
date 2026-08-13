@@ -1,4 +1,6 @@
-import { describe, expect, test } from "vite-plus/test";
+import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { afterAll, describe, expect, test } from "vite-plus/test";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { theInboxOf } from "../../src/compositions/forum/notifications.ts";
 import { theTargetsTaggedWithName } from "../../src/compositions/forum/tags.ts";
@@ -16,7 +18,7 @@ async function send(
 
 describe("forum identity and lookup presentation", () => {
   test("a tag name resolves to its tag before its targets are read", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const { post } = await app.concepts.Posting.create({
       author: "author",
       content: "A tagged post",
@@ -40,7 +42,7 @@ describe("forum identity and lookup presentation", () => {
   });
 
   test("the notification inbox presents the actor's profile name and keeps the user id", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const { user: actor } = await app.concepts.Authenticating.register({
       username: "mara",
       password: "long-enough-secret",
@@ -108,7 +110,7 @@ describe("forum identity and lookup presentation", () => {
   });
 
   test("public user denotation resolves without a session and returns no match for ambiguous or unknown names", async () => {
-    const app = assembleCommons();
+    const app = assembleCommons(mongoImplementations(await testDb()));
     const { user: titleCase } = await app.concepts.Authenticating.register({
       username: "Elena",
       password: "long-enough-secret",
@@ -143,3 +145,5 @@ describe("forum identity and lookup presentation", () => {
     });
   });
 });
+
+afterAll(stopTestDb);

@@ -1,11 +1,9 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/categorizing/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { CategorizingConcept } from "../../src/concepts/categorizing/categorizing.ts";
 import { MongoCategorizingConcept } from "../../src/concepts/categorizing/categorizing.mongo.ts";
 
-const floors: [string, () => Promise<CategorizingConcept | MongoCategorizingConcept>][] = [
-  ["in memory", async () => new CategorizingConcept()],
+const floors: [string, () => Promise<MongoCategorizingConcept>][] = [
   ["on MongoDB", async () => new MongoCategorizingConcept(await testDb())],
 ];
 

@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/roling/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoRolingConcept } from "../../src/concepts/roling/roling.mongo.ts";
-import { RolingConcept } from "../../src/concepts/roling/roling.ts";
 
-const floors: [string, () => Promise<RolingConcept | MongoRolingConcept>][] = [
-  ["in memory", async () => new RolingConcept()],
+const floors: [string, () => Promise<MongoRolingConcept>][] = [
   ["on MongoDB", async () => new MongoRolingConcept(await testDb())],
 ];
 

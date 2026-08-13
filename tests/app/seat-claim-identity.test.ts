@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
-import { mongoImplementations } from "../../src/assembly/concept-floor.ts";
-import { assembleCommons, type CommonsOverrides } from "../../src/assembly/application.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { assembleCommons, type CommonsImplementations } from "../../src/assembly/application.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
 
@@ -54,8 +54,7 @@ const register = async (edge: ReturnType<typeof createEdge>, username: string, e
   };
 };
 
-const floorCases: [string, string, () => Promise<CommonsOverrides>][] = [
-  ["in memory", "memory", async () => ({})],
+const floorCases: [string, string, () => Promise<CommonsImplementations>][] = [
   ["on MongoDB", "mongo", async () => mongoImplementations(await testDb())],
 ];
 
@@ -252,7 +251,7 @@ for (const [floor, prefix, makeFloor] of floorCases) {
 }
 
 test("a mismatched claim retains no compared email and emits one public response", async () => {
-  const app = assembleCommons();
+  const app = assembleCommons(mongoImplementations(await testDb()));
   const send = async (path: string, body: Record<string, unknown>) =>
     app.invoker.invoke(path, body as never);
   const actor = async (username: string, email: string) => {

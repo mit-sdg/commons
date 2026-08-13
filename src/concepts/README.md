@@ -7,17 +7,24 @@ application.
 
 A usual concept has:
 
-- `<name>.ts` and `<name>.mongo.ts` for memory and MongoDB implementations;
+- `<name>.mongo.ts` for its production MongoDB implementation;
 - `errors.ts` for refusal classes;
-- `registry.ts`, which imports `@design/concepts/Name.md`, registers the class,
-  refusal classes, and named implementation floors; and
+- `registry.ts`, which imports `@design/concepts/Name.md`, registers that
+  implementation as the canonical class, and supplies its `mongo` floor factory;
+  and
 - a focused matching test at `tests/concepts/<name>.test.ts`.
 
+Timing has no durable state and therefore keeps its single implementation in
+`timing.ts`; its `mongo` floor factory uses that same class. Tests exercise the
+production implementation against temporary MongoDB rather than maintaining a
+second in-memory behavior.
+
 [`../vocabulary.ts`](../vocabulary.ts) collects every registration in one
-`conceptSet(...)` and exports the executable `concepts` and `vocabulary`. Query
-cardinalities, action/query signatures, and refusal codes come from the registered
-specification. Cross-concept relationships belong in
-[`../compositions/`](../compositions/), never in a concept implementation.
+`conceptSet(...)`, exports the executable `concepts` and `vocabulary`, and
+constructs the complete named MongoDB floor. Query cardinalities, action/query
+signatures, and refusal codes come from the registered specification.
+Cross-concept relationships belong in [`../compositions/`](../compositions/),
+never in a concept implementation.
 
 Use [`template.md`](template.md) as an authoring aid, but place the completed
 specification in `design/concepts/Name.md`. The ambient text declaration in

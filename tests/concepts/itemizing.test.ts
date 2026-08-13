@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/itemizing/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoItemizingConcept } from "../../src/concepts/itemizing/itemizing.mongo.ts";
-import { ItemizingConcept } from "../../src/concepts/itemizing/itemizing.ts";
 
-const floors: [string, () => Promise<ItemizingConcept | MongoItemizingConcept>][] = [
-  ["in memory", async () => new ItemizingConcept()],
+const floors: [string, () => Promise<MongoItemizingConcept>][] = [
   ["on MongoDB", async () => new MongoItemizingConcept(await testDb())],
 ];
 

@@ -1,8 +1,8 @@
 # Tests
 
 Focused concept tests live under `tests/concepts/`, matching the executable
-concepts under `src/concepts/`, and run the same behavior against memory and
-MongoDB. The application-wide suites also live here:
+concepts under `src/concepts/`, and exercise the production implementations
+against temporary MongoDB. The application-wide suites also live here:
 
 - `app/` exercises assembled behavior through the application or its edge,
   including both floor constructions and the Commons scenario.

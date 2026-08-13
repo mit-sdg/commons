@@ -1,7 +1,6 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Rostering.md" with { type: "text" };
-import { RosteringConcept } from "./rostering.ts";
 import { MongoRosteringConcept } from "./rostering.mongo.ts";
 import {
   ClassAlreadyConfigured,
@@ -14,7 +13,7 @@ import {
 } from "./errors.ts";
 
 export const rostering = registerConcept({
-  class: RosteringConcept,
+  class: MongoRosteringConcept,
   spec,
   refusals: {
     CLASS_ALREADY_CONFIGURED: ClassAlreadyConfigured,

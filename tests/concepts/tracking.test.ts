@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/tracking/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoTrackingConcept } from "../../src/concepts/tracking/tracking.mongo.ts";
-import { TrackingConcept } from "../../src/concepts/tracking/tracking.ts";
 
-const floors: [string, () => Promise<TrackingConcept | MongoTrackingConcept>][] = [
-  ["in memory", async () => new TrackingConcept()],
+const floors: [string, () => Promise<MongoTrackingConcept>][] = [
   ["on MongoDB", async () => new MongoTrackingConcept(await testDb())],
 ];
 

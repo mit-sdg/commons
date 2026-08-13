@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/trashing/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoTrashingConcept } from "../../src/concepts/trashing/trashing.mongo.ts";
-import { TrashingConcept } from "../../src/concepts/trashing/trashing.ts";
 
-const floors: [string, () => Promise<TrashingConcept | MongoTrashingConcept>][] = [
-  ["in memory", async () => new TrashingConcept()],
+const floors: [string, () => Promise<MongoTrashingConcept>][] = [
   ["on MongoDB", async () => new MongoTrashingConcept(await testDb())],
 ];
 

@@ -1,4 +1,6 @@
-import { describe, expect, test } from "vite-plus/test";
+import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { mongoImplementations } from "../../src/vocabulary.ts";
+import { afterAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { deliverPendingMail, type MailSender } from "../../src/email/worker.ts";
 
@@ -11,7 +13,7 @@ const configuration = {
 
 describe("invitations and email", () => {
   test("the application renders invitation mail before the worker transports it", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const issued = await edge.application.concepts.Inviting.invite({
       channel: "email",
       address: "new@example.edu",
@@ -50,7 +52,7 @@ describe("invitations and email", () => {
   });
 
   test("the application renders notification mail before transport", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const registered = await edge.application.concepts.Authenticating.register({
       username: "notified_member",
       password: "permanent-password",
@@ -78,7 +80,7 @@ describe("invitations and email", () => {
   });
 
   test("an invalid invitation is rejected explicitly", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     const result = await edge.gateway.invoke("/auth/accept-invitation", {
       invitation: "missing",
       temporaryPassword: "wrong",
@@ -93,7 +95,7 @@ describe("invitations and email", () => {
   });
 
   test("the HTTP boundary denies every data route without a session", async () => {
-    const edge = createEdge();
+    const edge = createEdge(mongoImplementations(await testDb()));
     expect([...edge.publicPaths].sort()).toEqual(["/auth/accept-invitation", "/auth/login"]);
     const response = await edge.fetch(
       new Request("http://edge/api/threads/latest", {
@@ -106,3 +108,5 @@ describe("invitations and email", () => {
     expect(await response.json()).toEqual({ error: "UNAUTHORIZED" });
   });
 });
+
+afterAll(stopTestDb);

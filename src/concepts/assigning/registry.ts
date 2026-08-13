@@ -1,7 +1,6 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Assigning.md" with { type: "text" };
-import { AssigningConcept } from "./assigning.ts";
 import { MongoAssigningConcept } from "./assigning.mongo.ts";
 import {
   AssignmentAudienceInvalid,
@@ -16,7 +15,7 @@ import {
 } from "./errors.ts";
 
 export const assigning = registerConcept({
-  class: AssigningConcept,
+  class: MongoAssigningConcept,
   spec,
   refusals: {
     ASSIGNMENT_AUDIENCE_INVALID: AssignmentAudienceInvalid,

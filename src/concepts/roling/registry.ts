@@ -1,7 +1,6 @@
 import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Roling.md" with { type: "text" };
-import { RolingConcept } from "./roling.ts";
 import { MongoRolingConcept } from "./roling.mongo.ts";
 import {
   CapabilityRequired,
@@ -12,7 +11,7 @@ import {
 } from "./errors.ts";
 
 export const roling = registerConcept({
-  class: RolingConcept,
+  class: MongoRolingConcept,
   spec,
   refusals: {
     FORBIDDEN: CapabilityRequired,

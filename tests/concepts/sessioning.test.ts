@@ -2,10 +2,8 @@ import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/sessioning/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoSessioningConcept } from "../../src/concepts/sessioning/sessioning.mongo.ts";
-import { SessioningConcept } from "../../src/concepts/sessioning/sessioning.ts";
 
-const floors: [string, () => Promise<SessioningConcept | MongoSessioningConcept>][] = [
-  ["in memory", async () => new SessioningConcept()],
+const floors: [string, () => Promise<MongoSessioningConcept>][] = [
   ["on MongoDB", async () => new MongoSessioningConcept(await testDb())],
 ];
 

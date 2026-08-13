@@ -1,6 +1,6 @@
 import { conceptFloor, type ConceptFloor } from "@mit-sdg/sync-engine/assembly";
 import type { Db, MongoClient } from "mongodb";
-import { learningConcepts, vocabulary } from "../vocabulary.ts";
+import { mongoImplementations, vocabulary } from "../vocabulary.ts";
 
 export type CommonsConceptFloor = ConceptFloor<typeof vocabulary>;
 
@@ -8,14 +8,6 @@ type MongoClientFactory = (url: string) => Promise<MongoClient>;
 
 const INVALID_MONGODB_URL = "commons: MONGODB_URL is not a valid MongoDB connection URL.";
 const MONGODB_CONNECTION_FAILED = "commons: could not connect to the configured MongoDB.";
-
-export function memoryImplementations() {
-  return learningConcepts.implementations();
-}
-
-export function mongoImplementations(database: Db) {
-  return learningConcepts.implementations("mongo", { database });
-}
 
 const noDatabaseSelection = (url: string): boolean => {
   const scheme = url.indexOf("://");
@@ -55,12 +47,7 @@ export async function constructConceptFloor(
   createClient: MongoClientFactory = connectMongo,
 ): Promise<CommonsConceptFloor> {
   if (mongodbUrl === undefined) {
-    return conceptFloor(vocabulary, {
-      name: "memory",
-      instances: memoryImplementations(),
-      resources: [],
-      async close() {},
-    });
+    throw new Error("commons: MONGODB_URL is required.");
   }
   if (!/^mongodb(?:\+srv)?:\/\//.test(mongodbUrl)) {
     throw new Error(INVALID_MONGODB_URL);
