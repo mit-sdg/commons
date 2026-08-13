@@ -1,6 +1,6 @@
-import { PublicError, registerConcept } from "@mit-sdg/sync-engine/assembly";
+import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
-import spec from "./spec.md" with { type: "text" };
+import spec from "@design/concepts/Tracking.md" with { type: "text" };
 import { TrackingConcept } from "./tracking.ts";
 import { MongoTrackingConcept } from "./tracking.mongo.ts";
 import { ItemAlreadyRegistered, ItemAlreadySeen, ItemNotRegistered } from "./errors.ts";
@@ -8,27 +8,10 @@ import { ItemAlreadyRegistered, ItemAlreadySeen, ItemNotRegistered } from "./err
 export const tracking = registerConcept({
   class: TrackingConcept,
   spec,
-  queries: {
-    _inScope: "many",
-    _getUnread: "many",
-    _getUnreadCount: "one",
-  },
   refusals: {
-    ITEM_ALREADY_REGISTERED: {
-      error: ItemAlreadyRegistered,
-      on: ["register"],
-      public: PublicError.CONFLICT,
-    },
-    ITEM_NOT_REGISTERED: {
-      error: ItemNotRegistered,
-      on: ["markSeen"],
-      public: PublicError.CONFLICT,
-    },
-    ITEM_ALREADY_SEEN: {
-      error: ItemAlreadySeen,
-      on: ["markSeen"],
-      public: PublicError.CONFLICT,
-    },
+    ITEM_ALREADY_REGISTERED: ItemAlreadyRegistered,
+    ITEM_NOT_REGISTERED: ItemNotRegistered,
+    ITEM_ALREADY_SEEN: ItemAlreadySeen,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoTrackingConcept(database) },
 });

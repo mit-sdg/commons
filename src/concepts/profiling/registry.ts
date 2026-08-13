@@ -1,6 +1,6 @@
-import { PublicError, registerConcept } from "@mit-sdg/sync-engine/assembly";
+import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
-import spec from "./spec.md" with { type: "text" };
+import spec from "@design/concepts/Profiling.md" with { type: "text" };
 import { ProfilingConcept } from "./profiling.ts";
 import { MongoProfilingConcept } from "./profiling.mongo.ts";
 import { ProfileAlreadyExists, ProfileNotFound } from "./errors.ts";
@@ -8,21 +8,9 @@ import { ProfileAlreadyExists, ProfileNotFound } from "./errors.ts";
 export const profiling = registerConcept({
   class: ProfilingConcept,
   spec,
-  queries: {
-    _getProfile: "optional",
-    _getProfileFields: "optional",
-  },
   refusals: {
-    PROFILE_ALREADY_EXISTS: {
-      error: ProfileAlreadyExists,
-      on: ["createProfile"],
-      public: PublicError.CONFLICT,
-    },
-    PROFILE_NOT_FOUND: {
-      error: ProfileNotFound,
-      on: ["setDisplayName", "setBio", "setAvatar"],
-      public: PublicError.NOT_FOUND,
-    },
+    PROFILE_ALREADY_EXISTS: ProfileAlreadyExists,
+    PROFILE_NOT_FOUND: ProfileNotFound,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoProfilingConcept(database) },
 });

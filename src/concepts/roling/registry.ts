@@ -1,6 +1,6 @@
-import { PublicError, registerConcept } from "@mit-sdg/sync-engine/assembly";
+import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
-import spec from "./spec.md" with { type: "text" };
+import spec from "@design/concepts/Roling.md" with { type: "text" };
 import { RolingConcept } from "./roling.ts";
 import { MongoRolingConcept } from "./roling.mongo.ts";
 import {
@@ -14,42 +14,12 @@ import {
 export const roling = registerConcept({
   class: RolingConcept,
   spec,
-  queries: {
-    _hasCapability: "one",
-    _hasCapabilityHolder: "one",
-    _holdsRoleNamed: "one",
-    _getRoles: "many",
-    _getRoleByName: "optional",
-    _getRoleDetail: "optional",
-    _listRoles: "many",
-    _denotedRole: "optional",
-  },
   refusals: {
-    FORBIDDEN: {
-      error: CapabilityRequired,
-      on: ["requireCapability"],
-      public: PublicError.FORBIDDEN,
-    },
-    ROLE_ALREADY_EXISTS: {
-      error: RoleAlreadyExists,
-      on: ["defineRole"],
-      public: PublicError.CONFLICT,
-    },
-    ROLE_NOT_FOUND: {
-      error: RoleNotFound,
-      on: ["grant"],
-      public: PublicError.NOT_FOUND,
-    },
-    GRANT_ALREADY_EXISTS: {
-      error: GrantAlreadyExists,
-      on: ["grant"],
-      public: PublicError.CONFLICT,
-    },
-    GRANT_NOT_FOUND: {
-      error: GrantNotFound,
-      on: ["revoke"],
-      public: PublicError.NOT_FOUND,
-    },
+    FORBIDDEN: CapabilityRequired,
+    ROLE_ALREADY_EXISTS: RoleAlreadyExists,
+    ROLE_NOT_FOUND: RoleNotFound,
+    GRANT_ALREADY_EXISTS: GrantAlreadyExists,
+    GRANT_NOT_FOUND: GrantNotFound,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoRolingConcept(database) },
 });

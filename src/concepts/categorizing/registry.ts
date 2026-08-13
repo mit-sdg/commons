@@ -1,6 +1,6 @@
-import { PublicError, registerConcept } from "@mit-sdg/sync-engine/assembly";
+import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
-import spec from "./spec.md" with { type: "text" };
+import spec from "@design/concepts/Categorizing.md" with { type: "text" };
 import { CategorizingConcept } from "./categorizing.ts";
 import { MongoCategorizingConcept } from "./categorizing.mongo.ts";
 import { CategoryAlreadyExists, CategoryNotFound, ItemNotCategorized } from "./errors.ts";
@@ -8,28 +8,10 @@ import { CategoryAlreadyExists, CategoryNotFound, ItemNotCategorized } from "./e
 export const categorizing = registerConcept({
   class: CategorizingConcept,
   spec,
-  queries: {
-    _getCategory: "optional",
-    _getHome: "optional",
-    _getItems: "many",
-    _getAllCategories: "many",
-  },
   refusals: {
-    CATEGORY_ALREADY_EXISTS: {
-      error: CategoryAlreadyExists,
-      on: ["createCategory"],
-      public: PublicError.CONFLICT,
-    },
-    CATEGORY_NOT_FOUND: {
-      error: CategoryNotFound,
-      on: ["assign", "deleteCategory"],
-      public: PublicError.NOT_FOUND,
-    },
-    ITEM_NOT_CATEGORIZED: {
-      error: ItemNotCategorized,
-      on: ["unassign"],
-      public: PublicError.CONFLICT,
-    },
+    CATEGORY_ALREADY_EXISTS: CategoryAlreadyExists,
+    CATEGORY_NOT_FOUND: CategoryNotFound,
+    ITEM_NOT_CATEGORIZED: ItemNotCategorized,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoCategorizingConcept(database) },
 });

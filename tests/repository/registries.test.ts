@@ -1,111 +1,76 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join } from "node:path";
 import { describe, expect, test } from "vite-plus/test";
 
 const root = join(import.meta.dirname, "../..");
+const designConcepts = join(root, "design/concepts");
 const conceptsRoot = join(root, "src/concepts");
-const compositionRoot = join(root, "src/composition");
+const compositionsRoot = join(root, "src/compositions");
 
-function filesBelow(directory: string): string[] {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    return entry.isDirectory() ? filesBelow(path) : [path];
-  });
-}
+const lowerFirst = (value: string) => `${value[0]?.toLowerCase()}${value.slice(1)}`;
 
-describe("application integration seats", () => {
-  test("every included concept has one colocated registry and one concept-set entry", () => {
-    const directories = readdirSync(conceptsRoot, { withFileTypes: true })
-      .filter(
-        (entry) => entry.isDirectory() && existsSync(join(conceptsRoot, entry.name, "spec.md")),
-      )
-      .map((entry) => entry.name)
+describe("application-owned design integration", () => {
+  test("every authored concept is registered through the vocabulary module", () => {
+    const vocabulary = readFileSync(join(root, "src/vocabulary.ts"), "utf8");
+    const designs = readdirSync(designConcepts)
+      .filter((name) => name.endsWith(".md"))
+      .map((name) => name.slice(0, -3))
       .sort();
-    const conceptSet = readFileSync(join(conceptsRoot, "index.ts"), "utf8");
 
-    for (const directory of directories) {
-      const registryPath = join(conceptsRoot, directory, "registry.ts");
-      expect(existsSync(registryPath), directory).toBe(true);
-      expect(readFileSync(registryPath, "utf8"), directory).toMatch(/floors:\s*\{\s*mongo:\s*\(/);
-      const registrationImport = conceptSet.match(
-        new RegExp(`import \\{ (\\w+) \\} from "\\./${directory}/registry\\.ts";`, "g"),
+    for (const concept of designs) {
+      const directory = lowerFirst(concept);
+      const registry = join(conceptsRoot, directory, "registry.ts");
+      expect(existsSync(registry), concept).toBe(true);
+      expect(readFileSync(registry, "utf8"), concept).toContain(
+        `from "@design/concepts/${concept}.md"`,
       );
-      expect(registrationImport, directory).toHaveLength(1);
-      const registration = registrationImport?.[0]?.match(/import \{ (\w+) \}/)?.[1];
-      const conceptName = `${directory[0]?.toUpperCase()}${directory.slice(1)}`;
-      expect(
-        conceptSet.match(new RegExp(`  ${conceptName}: ${registration},`, "g")),
-        directory,
-      ).toHaveLength(1);
+      expect(vocabulary, concept).toContain(`from "./concepts/${directory}/registry.ts"`);
+      expect(vocabulary, concept).toMatch(new RegExp(`^  ${concept}: \\w+,$`, "m"));
+      expect(existsSync(join(root, `tests/concepts/${directory}.test.ts`)), concept).toBe(true);
     }
-    expect(conceptSet.match(/from "\.\/[^/]+\/registry\.ts"/g)).toHaveLength(directories.length);
+    expect(vocabulary).toContain('from "@design/vocabulary.md"');
+    expect(existsSync(join(conceptsRoot, "index.ts"))).toBe(false);
   });
 
-  test("the concept set is the one source of composition references and wire vocabulary", () => {
-    expect(existsSync(join(compositionRoot, "vocabulary.ts"))).toBe(false);
-
-    const conceptSetPath = join(conceptsRoot, "index.ts");
-    const conceptSet = readFileSync(conceptSetPath, "utf8");
-    const conceptNames = [...conceptSet.matchAll(/^  (\w+): \w+,$/gm)].map((match) => match[1]);
-    for (const file of filesBelow(join(root, "src"))) {
-      if (!file.endsWith(".ts") || file === conceptSetPath) continue;
-      const source = readFileSync(file, "utf8");
-      const namesPresent = conceptNames.filter((name) => new RegExp(`\\b${name}\\b`).test(source));
-      expect(namesPresent, relative(root, file)).not.toHaveLength(conceptNames.length);
-    }
-
-    const authored = filesBelow(compositionRoot).filter((file) => {
-      if (!file.endsWith(".ts") || file.endsWith("/index.ts")) return false;
-      return /\b(?:reaction|endpoint|view|former)\s*\(/.test(readFileSync(file, "utf8"));
-    });
-    for (const file of authored) {
-      const source = readFileSync(file, "utf8");
-      expect(source, relative(root, file)).toContain(
-        'import { concepts } from "../../concepts/index.ts";',
+  test("composition explanations have matching executable groups", () => {
+    for (const group of ["Access", "Course", "Forum"]) {
+      const design = join(root, `design/compositions/${group}.md`);
+      const source = join(compositionsRoot, `${group}.ts`);
+      expect(existsSync(design), group).toBe(true);
+      expect(readFileSync(source, "utf8"), group).toContain(
+        `from "@design/compositions/${group}.md"`,
       );
-      expect(source, relative(root, file)).toMatch(/const \{[^;]+\} =\s*concepts;/s);
+      expect(readFileSync(join(compositionsRoot, "index.ts"), "utf8"), group).toContain(
+        `import * as ${group} from "./${group}.ts"`,
+      );
     }
-
-    const generatedConfig = readFileSync(join(root, "generated.config.ts"), "utf8");
-    expect(generatedConfig).toContain(
-      'wireVocabulary: { from: "../src/concepts/index.ts", export: "vocabulary" }',
-    );
+    expect(existsSync(join(root, "src/composition"))).toBe(false);
   });
 
-  test("concept implementations, helpers, and exceptions import no engine API", () => {
-    const files = filesBelow(conceptsRoot).filter(
-      (file) =>
-        relative(conceptsRoot, file).includes("/") &&
-        file.endsWith(".ts") &&
-        !file.endsWith("registry.ts") &&
-        !file.endsWith(".test.ts"),
-    );
-    for (const file of files) {
-      const source = readFileSync(file, "utf8");
-      expect(source, relative(root, file)).not.toMatch(/@mit-sdg\/sync-engine/);
-      expect(source, relative(root, file)).not.toMatch(/\bstatic\s+(?:readonly\s+)?queries\b/);
-    }
+  test("generated artifacts and registration-driven check select src/vocabulary.ts", () => {
+    const config = readFileSync(join(root, "generated.config.ts"), "utf8");
+    const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+    expect(config).toContain('vocabulary: { module: new URL("./src/vocabulary.ts"');
+    expect(config).toContain('httpWire({ policy, name: "CommonsWireHttp" })');
+    expect(manifest.scripts["design:check"]).toBe("sync-engine check --config generated.config.ts");
   });
 
-  test("every composition file that declares behavior has one manifest entry", () => {
-    const manifest = readFileSync(join(compositionRoot, "index.ts"), "utf8");
-    const authored = filesBelow(compositionRoot).filter((file) => {
-      if (!file.endsWith(".ts") || file.endsWith("/index.ts")) {
-        return false;
+  test("concept implementations and helpers import no engine API", () => {
+    for (const entry of readdirSync(conceptsRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      for (const name of readdirSync(join(conceptsRoot, entry.name))) {
+        if (!name.endsWith(".ts") || name === "registry.ts") continue;
+        expect(readFileSync(join(conceptsRoot, entry.name, name), "utf8"), name).not.toMatch(
+          /@mit-sdg\/sync-engine/,
+        );
       }
-      const source = readFileSync(file, "utf8");
-      return /\b(?:reaction|endpoint|view|former)\s*\(/.test(source);
-    });
-    for (const file of authored) {
-      const importPath = `./${relative(compositionRoot, file).replaceAll("\\", "/")}`;
-      expect(manifest, importPath).toContain(`from "${importPath}"`);
     }
   });
 
-  test("the application entry remains the stable concept-set and manifest join", () => {
+  test("the assembly joins only the vocabulary and composition manifest", () => {
     const source = readFileSync(join(root, "src/assembly/application.ts"), "utf8");
-    expect(source).toContain('from "../concepts/index.ts"');
-    expect(source).toContain('from "../composition/index.ts"');
-    expect(source).not.toMatch(/composition\/(?:access|course|forum)\//);
+    expect(source).toContain('from "../vocabulary.ts"');
+    expect(source).toContain('from "../compositions/index.ts"');
+    expect(source).not.toMatch(/compositions\/(?:access|course|forum)\//);
   });
 });

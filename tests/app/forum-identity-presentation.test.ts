@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import { assembleCommons } from "../../src/assembly/application.ts";
-import { theInboxOf } from "../../src/composition/forum/notifications.ts";
-import { theTargetsTaggedWithName } from "../../src/composition/forum/tags.ts";
+import { theInboxOf } from "../../src/compositions/forum/notifications.ts";
+import { theTargetsTaggedWithName } from "../../src/compositions/forum/tags.ts";
 
 async function send(
   app: ReturnType<typeof assembleCommons>,

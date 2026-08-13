@@ -10,7 +10,7 @@ describe("HTTP authorization and privacy", () => {
   let edge: ReturnType<typeof createEdge>;
   const call = async (path: string, body: Record<string, unknown>, cookie?: string) => {
     const response = await edge.fetch(
-      new Request(`http://commons.test${path}`, {
+      new Request(`http://commons.test/api${path}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -431,11 +431,12 @@ describe("HTTP authorization and privacy", () => {
 });
 
 test("the HTTP edge rejects and clears a cookie at the server-side expiry boundary", async () => {
-  let now = new Date("2026-07-19T12:00:00.000Z");
+  const startedAt = Date.now() + 60_000;
+  let now = new Date(startedAt);
   const edge = createEdge({ Timing: new TimingConcept(() => now) });
   const post = async (path: string, body: Record<string, unknown>, cookie?: string) => {
     const response = await edge.fetch(
-      new Request(`http://commons.test${path}`, {
+      new Request(`http://commons.test/api${path}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -454,9 +455,9 @@ test("the HTTP edge rejects and clears a cookie at the server-side expiry bounda
   });
   const login = await post("/auth/login", { username: "expiring", password: "password123" });
   const cookie = login.headers.get("set-cookie")?.split(";")[0] as string;
-  now = new Date("2026-07-20T11:59:59.999Z");
+  now = new Date(startedAt + 24 * 60 * 60 * 1_000 - 1);
   expect((await post("/auth/me", {}, cookie)).status).toBe(200);
-  now = new Date("2026-07-20T12:00:00.000Z");
+  now = new Date(startedAt + 24 * 60 * 60 * 1_000);
   const expired = await post("/auth/me", {}, cookie);
   expect(expired.status).toBe(401);
   expect(await expired.json()).toEqual({ error: "UNAUTHORIZED" });

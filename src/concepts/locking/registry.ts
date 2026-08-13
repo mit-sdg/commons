@@ -1,6 +1,6 @@
-import { PublicError, registerConcept } from "@mit-sdg/sync-engine/assembly";
+import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
-import spec from "./spec.md" with { type: "text" };
+import spec from "@design/concepts/Locking.md" with { type: "text" };
 import { LockingConcept } from "./locking.ts";
 import { MongoLockingConcept } from "./locking.mongo.ts";
 import { TargetAlreadyLocked, TargetNotLocked } from "./errors.ts";
@@ -8,21 +8,9 @@ import { TargetAlreadyLocked, TargetNotLocked } from "./errors.ts";
 export const locking = registerConcept({
   class: LockingConcept,
   spec,
-  queries: {
-    _isLocked: "one",
-    _getLocked: "many",
-  },
   refusals: {
-    TARGET_ALREADY_LOCKED: {
-      error: TargetAlreadyLocked,
-      on: ["lock"],
-      public: PublicError.CONFLICT,
-    },
-    TARGET_NOT_LOCKED: {
-      error: TargetNotLocked,
-      on: ["unlock"],
-      public: PublicError.CONFLICT,
-    },
+    TARGET_ALREADY_LOCKED: TargetAlreadyLocked,
+    TARGET_NOT_LOCKED: TargetNotLocked,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoLockingConcept(database) },
 });

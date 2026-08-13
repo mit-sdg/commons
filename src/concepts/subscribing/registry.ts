@@ -1,6 +1,6 @@
-import { PublicError, registerConcept } from "@mit-sdg/sync-engine/assembly";
+import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
-import spec from "./spec.md" with { type: "text" };
+import spec from "@design/concepts/Subscribing.md" with { type: "text" };
 import { SubscribingConcept } from "./subscribing.ts";
 import { MongoSubscribingConcept } from "./subscribing.mongo.ts";
 import { AlreadySubscribed, NotSubscribed } from "./errors.ts";
@@ -8,22 +8,9 @@ import { AlreadySubscribed, NotSubscribed } from "./errors.ts";
 export const subscribing = registerConcept({
   class: SubscribingConcept,
   spec,
-  queries: {
-    _getSubscribers: "many",
-    _getSubscriptions: "many",
-    _isSubscribed: "one",
-  },
   refusals: {
-    ALREADY_SUBSCRIBED: {
-      error: AlreadySubscribed,
-      on: ["subscribe"],
-      public: PublicError.CONFLICT,
-    },
-    NOT_SUBSCRIBED: {
-      error: NotSubscribed,
-      on: ["unsubscribe"],
-      public: PublicError.CONFLICT,
-    },
+    ALREADY_SUBSCRIBED: AlreadySubscribed,
+    NOT_SUBSCRIBED: NotSubscribed,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoSubscribingConcept(database) },
 });

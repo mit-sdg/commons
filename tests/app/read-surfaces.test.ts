@@ -1,9 +1,9 @@
 import { describe, expect, test } from "vite-plus/test";
 import { assembleCommons } from "../../src/assembly/application.ts";
-import { theAssignmentsOf } from "../../src/composition/course/assignments.ts";
-import { theRoster } from "../../src/composition/course/roster.ts";
-import { theHomeFeedByActivity, theThreadContext } from "../../src/composition/forum/feed.ts";
-import { theModerationQueue } from "../../src/composition/forum/moderation.ts";
+import { theAssignmentsOf } from "../../src/compositions/course/assignments.ts";
+import { theRoster } from "../../src/compositions/course/roster.ts";
+import { theHomeFeedByActivity, theThreadContext } from "../../src/compositions/forum/feed.ts";
+import { theModerationQueue } from "../../src/compositions/forum/moderation.ts";
 
 describe("composed application reads", () => {
   test("the assignments read returns each assigned learner release", async () => {

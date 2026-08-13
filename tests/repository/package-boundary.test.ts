@@ -5,15 +5,8 @@ import { describe, expect, test } from "vite-plus/test";
 const root = join(import.meta.dirname, "../..");
 const sourceRoots = ["src", "frontend/src", "scripts", "tests"];
 const standaloneSources = ["frontend/next.config.ts", "generated.config.ts"];
-const canonicalHomes = new Set([
-  "advanced",
-  "assembly",
-  "boundary",
-  "client",
-  "language",
-  "tooling",
-  "utils",
-]);
+const coreHomes = new Set(["advanced", "assembly", "boundary", "client", "language", "tooling"]);
+const httpHomes = new Set(["client", "handler", "policy", "tooling"]);
 
 function sourceFiles(path: string): string[] {
   return readdirSync(path, { withFileTypes: true }).flatMap((entry) => {
@@ -24,66 +17,48 @@ function sourceFiles(path: string): string[] {
 }
 
 describe("the engine package boundary", () => {
-  test("authored imports use the package's declared locations", () => {
+  test("authored imports use declared core and HTTP subpaths", () => {
     for (const file of [
       ...sourceRoots.flatMap((path) => sourceFiles(join(root, path))),
       ...standaloneSources.map((path) => join(root, path)),
     ]) {
       if (file === import.meta.filename) continue;
       const source = readFileSync(file, "utf8");
-      expect(source, file).not.toContain(["@sync", "engine"].join("-"));
       expect(source, file).not.toMatch(/(?:from\s+|import\()\s*["']\.\.?\/[^"']*sync-engine/);
-
-      for (const match of source.matchAll(/@mit-sdg\/sync-engine(?:\/([^"']+))?/g)) {
-        expect(match[1], file).toBeDefined();
-        expect(canonicalHomes.has(match[1] as string), `${file}: ${match[0]}`).toBe(true);
-        if (file.startsWith(join(root, "frontend", "src"))) {
-          expect(match[1], file).toBe("client");
-        }
+      for (const match of source.matchAll(/@mit-sdg\/sync-engine\/(\w+)/g)) {
+        expect(coreHomes.has(match[1] as string), `${file}: ${match[0]}`).toBe(true);
       }
-    }
-
-    for (const file of ["tsconfig.json", "frontend/tsconfig.json"]) {
-      expect(readFileSync(join(root, file), "utf8"), file).not.toContain("sync-engine");
+      for (const match of source.matchAll(/@mit-sdg\/sync-engine-http\/(\w+)/g)) {
+        expect(httpHomes.has(match[1] as string), `${file}: ${match[0]}`).toBe(true);
+      }
     }
   });
 
-  test("the one local dependency resolves through built package exports", () => {
+  test("matching beta.9 packages and public commands are pinned", () => {
     const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-    const engineDependency = manifest.dependencies["@mit-sdg/sync-engine"];
-    expect(typeof engineDependency).toBe("string");
-    if (engineDependency.startsWith("file:")) {
-      expect(engineDependency).toBe("file:../sync-engine");
-    }
-    const localDependencies = Object.entries({
-      ...manifest.dependencies,
-      ...manifest.devDependencies,
-    }).filter(([, value]) => String(value).startsWith("file:"));
-    expect(localDependencies).toEqual(
-      engineDependency.startsWith("file:") ? [["@mit-sdg/sync-engine", "file:../sync-engine"]] : [],
-    );
-    expect(manifest.scripts.artifacts).toBe(
-      "bun node_modules/@mit-sdg/sync-engine/dist/command/artifacts.js artifacts",
-    );
-
-    const installedEngine = JSON.parse(
-      readFileSync(join(root, "node_modules/@mit-sdg/sync-engine/package.json"), "utf8"),
-    );
-    expect(installedEngine.bin["sync-engine"]).toBe("./dist/command/artifacts.js");
-
-    const frontendManifest = JSON.parse(readFileSync(join(root, "frontend/package.json"), "utf8"));
-    const frontendDependencies = {
-      ...frontendManifest.dependencies,
-      ...frontendManifest.devDependencies,
-    };
-    expect(frontendDependencies["@mit-sdg/sync-engine"]).toBeUndefined();
+    expect(manifest.dependencies["@mit-sdg/sync-engine"]).toBe("1.0.0-beta.9");
+    expect(manifest.dependencies["@mit-sdg/sync-engine-http"]).toBe("1.0.0-beta.9");
+    expect(manifest.scripts.artifacts).toBe("sync-engine artifacts");
+    expect(manifest.scripts["design:check"]).toBe("sync-engine check --config generated.config.ts");
     expect(
-      Object.values(frontendDependencies).filter((value) => String(value).startsWith("file:")),
+      Object.values({ ...manifest.dependencies, ...manifest.devDependencies }).filter((value) =>
+        String(value).startsWith("file:"),
+      ),
     ).toEqual([]);
 
-    for (const home of canonicalHomes) {
-      const resolved = import.meta.resolve(`@mit-sdg/sync-engine/${home}`);
-      expect(resolved).toMatch(new RegExp(`/sync-engine/dist/${home}/index\\.js$`));
-    }
+    const installedCore = JSON.parse(
+      readFileSync(join(root, "node_modules/@mit-sdg/sync-engine/package.json"), "utf8"),
+    );
+    const installedHttp = JSON.parse(
+      readFileSync(join(root, "node_modules/@mit-sdg/sync-engine-http/package.json"), "utf8"),
+    );
+    expect(installedCore.version).toBe("1.0.0-beta.9");
+    expect(installedCore.bin["sync-engine"]).toBe("./dist/command/main.js");
+    expect(installedHttp.version).toBe("1.0.0-beta.9");
+
+    for (const home of coreHomes)
+      expect(import.meta.resolve(`@mit-sdg/sync-engine/${home}`)).toBeTruthy();
+    for (const home of httpHomes)
+      expect(import.meta.resolve(`@mit-sdg/sync-engine-http/${home}`)).toBeTruthy();
   });
 });

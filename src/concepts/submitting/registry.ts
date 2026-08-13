@@ -1,6 +1,6 @@
-import { PublicError, registerConcept } from "@mit-sdg/sync-engine/assembly";
+import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
-import spec from "./spec.md" with { type: "text" };
+import spec from "@design/concepts/Submitting.md" with { type: "text" };
 import { SubmittingConcept } from "./submitting.ts";
 import { MongoSubmittingConcept } from "./submitting.mongo.ts";
 import { SubmissionNotFound, SubmissionNotSubmitted, SubmissionNotWithdrawn } from "./errors.ts";
@@ -8,28 +8,10 @@ import { SubmissionNotFound, SubmissionNotSubmitted, SubmissionNotWithdrawn } fr
 export const submitting = registerConcept({
   class: SubmittingConcept,
   spec,
-  queries: {
-    _getLatest: "optional",
-    _getAttempts: "many",
-    _getSubmissionsForAssignment: "many",
-    _getSubmissionsForSubmitter: "many",
-  },
   refusals: {
-    SUBMISSION_NOT_FOUND: {
-      error: SubmissionNotFound,
-      on: ["withdraw", "restore"],
-      public: PublicError.NOT_FOUND,
-    },
-    SUBMISSION_NOT_SUBMITTED: {
-      error: SubmissionNotSubmitted,
-      on: ["withdraw"],
-      public: PublicError.CONFLICT,
-    },
-    SUBMISSION_NOT_WITHDRAWN: {
-      error: SubmissionNotWithdrawn,
-      on: ["restore"],
-      public: PublicError.CONFLICT,
-    },
+    SUBMISSION_NOT_FOUND: SubmissionNotFound,
+    SUBMISSION_NOT_SUBMITTED: SubmissionNotSubmitted,
+    SUBMISSION_NOT_WITHDRAWN: SubmissionNotWithdrawn,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoSubmittingConcept(database) },
 });

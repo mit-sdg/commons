@@ -30,7 +30,7 @@ export default defineConfig({
     options: { typeAware: true, typeCheck: true },
   },
   test: {
-    include: ["src/concepts/**/*.test.ts", "tests/**/*.test.ts"],
+    include: ["tests/**/*.test.ts"],
   },
   staged: {
     "*.{ts,json,md}": "vp check --fix",

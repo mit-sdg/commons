@@ -31,7 +31,8 @@ path such as `api["/threads/latest"](input)`. View-model types in
 `src/lib/models.ts` project directly from endpoint outputs, so the frontend
 typecheck points to the page that misuses a response.
 
-Only the root application client imports `@mit-sdg/sync-engine/client`.
+Only the root application client imports `@mit-sdg/sync-engine-http/client`;
+its shared client type comes from `@mit-sdg/sync-engine/client`.
 `next.config.ts` admits that client and the generated contract from the
 repository root and rewrites `/api/*` to the edge.
 

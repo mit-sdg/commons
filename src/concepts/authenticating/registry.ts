@@ -1,6 +1,6 @@
-import { PublicError, registerConcept } from "@mit-sdg/sync-engine/assembly";
+import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
-import spec from "./spec.md" with { type: "text" };
+import spec from "@design/concepts/Authenticating.md" with { type: "text" };
 import { AuthenticatingConcept } from "./authenticating.ts";
 import { MongoAuthenticatingConcept } from "./authenticating.mongo.ts";
 import {
@@ -15,45 +15,13 @@ import {
 export const authenticating = registerConcept({
   class: AuthenticatingConcept,
   spec,
-  queries: {
-    _getById: "optional",
-    _getByUsername: "optional",
-    _getUserCount: "one",
-    _search: "many",
-    _resolveIdentity: "one",
-    _denotedUser: "optional",
-  },
   refusals: {
-    INVALID_BODY: {
-      error: EmailInvalid,
-      on: ["register"],
-      public: PublicError.INVALID_REQUEST,
-    },
-    USERNAME_INVALID_LENGTH: {
-      error: UsernameInvalidLength,
-      on: ["register"],
-      public: PublicError.INVALID_REQUEST,
-    },
-    USERNAME_INVALID_CHARS: {
-      error: UsernameInvalidChars,
-      on: ["register"],
-      public: PublicError.INVALID_REQUEST,
-    },
-    PASSWORD_INVALID_LENGTH: {
-      error: PasswordInvalidLength,
-      on: ["register", "changePassword"],
-      public: PublicError.INVALID_REQUEST,
-    },
-    USERNAME_TAKEN: {
-      error: UsernameTaken,
-      on: ["register"],
-      public: PublicError.CONFLICT,
-    },
-    INVALID_CREDENTIALS: {
-      error: InvalidCredentials,
-      on: ["authenticate", "changePassword"],
-      public: PublicError.UNAUTHORIZED,
-    },
+    INVALID_BODY: EmailInvalid,
+    USERNAME_INVALID_LENGTH: UsernameInvalidLength,
+    USERNAME_INVALID_CHARS: UsernameInvalidChars,
+    PASSWORD_INVALID_LENGTH: PasswordInvalidLength,
+    USERNAME_TAKEN: UsernameTaken,
+    INVALID_CREDENTIALS: InvalidCredentials,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoAuthenticatingConcept(database) },
 });

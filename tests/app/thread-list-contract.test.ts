@@ -3,7 +3,7 @@ import { createEdge } from "../../src/edge.ts";
 
 const post = (edge: ReturnType<typeof createEdge>, path: string, body: unknown) =>
   edge.fetch(
-    new Request(`http://commons.test${path}`, {
+    new Request(`http://commons.test/api${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

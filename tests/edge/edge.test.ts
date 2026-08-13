@@ -5,7 +5,7 @@ type Edge = ReturnType<typeof createEdge>;
 
 const post = (edge: Edge, path: string, body: unknown, cookie?: string) =>
   edge.fetch(
-    new Request(`http://edge${path}`, {
+    new Request(`http://edge${path.startsWith("/api/") ? path : `/api${path}`}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -57,7 +57,7 @@ describe("HTTP session cookies", () => {
     expect(body).not.toHaveProperty("expiresAt");
     const setCookie = login.headers.get("Set-Cookie");
     expect(setCookie).toMatch(
-      new RegExp(`^${cookie}; HttpOnly; SameSite=Strict; Path=/; Expires=`),
+      new RegExp(`^${cookie}; HttpOnly; SameSite=Strict; Path=/; Secure; Expires=`),
     );
   });
 
@@ -118,7 +118,7 @@ describe("HTTP session cookies", () => {
     expect(me.status).toBe(401);
     expect(await me.json()).toEqual({ error: "UNAUTHORIZED" });
     expect(me.headers.get("Set-Cookie")).toBe(
-      "session=; HttpOnly; SameSite=Strict; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0",
+      "__Host-commons-session=; HttpOnly; SameSite=Strict; Path=/; Secure; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0",
     );
   });
 
@@ -129,7 +129,7 @@ describe("HTTP session cookies", () => {
     expect(out.status).toBe(200);
     expect(await out.json()).toEqual({ ok: true });
     expect(out.headers.get("Set-Cookie")).toBe(
-      "session=; HttpOnly; SameSite=Strict; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0",
+      "__Host-commons-session=; HttpOnly; SameSite=Strict; Path=/; Secure; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0",
     );
   });
 
@@ -156,13 +156,13 @@ describe("HTTP session cookies", () => {
     expect(me.status).toBe(401);
     expect(await me.json()).toEqual({ error: "UNAUTHORIZED" });
     expect(me.headers.get("Set-Cookie")).toBe(
-      "session=; HttpOnly; SameSite=Strict; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0",
+      "__Host-commons-session=; HttpOnly; SameSite=Strict; Path=/; Secure; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0",
     );
   });
 });
 
 describe("HTTP paths and failures", () => {
-  test("the edge accepts proxied /api paths and bare paths", async () => {
+  test("the edge serves only the configured /api base path", async () => {
     const edge = createEdge();
     await post(edge, "/api/auth/register", ALICE);
     const viaPrefix = await post(edge, "/api/auth/login", {
@@ -170,8 +170,10 @@ describe("HTTP paths and failures", () => {
       password: ALICE.password,
     });
     expect(viaPrefix.status).toBe(200);
-    const bare = await post(edge, "/auth/me", { session: "" });
-    expect(bare.status).toBe(401); // served (UNAUTHORIZED), not 404
+    const bare = await edge.fetch(
+      new Request("http://edge/auth/me", { method: "POST", body: "{}" }),
+    );
+    expect(bare.status).toBe(404);
   });
 
   test("an unknown path returns 404 NOT_FOUND", async () => {
@@ -198,7 +200,7 @@ describe("HTTP paths and failures", () => {
   test("a malformed JSON body returns 400 INVALID_REQUEST", async () => {
     const edge = createEdge();
     const bad = await edge.fetch(
-      new Request("http://edge/auth/login", { method: "POST", body: "{not json" }),
+      new Request("http://edge/api/auth/login", { method: "POST", body: "{not json" }),
     );
     expect(bad.status).toBe(400);
     expect(((await bad.json()) as { error: string }).error).toBe("INVALID_REQUEST");

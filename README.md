@@ -1,48 +1,57 @@
 # Commons
 
-Commons is a learning-management application written as concepts, reactions,
-views, and formers. Its behavior is data that people can read and the
-[sync engine](https://github.com/mit-sdg/sync-engine) can run. The web frontend,
-command-line tools, and other clients use the same application contract.
-
-**New here? Start with
-[`src/composition/README.md`](src/composition/README.md).** It follows one piece
-of behavior from a reaction through a view, a former, and the application
-boundary.
-
-- **Concepts** describe independent behaviors such as posting and grading.
-- **Reactions** join behaviors by asking for a consequence when something
-  happens.
-- **Views** answer named questions about how things stand.
-- **Formers** shape complete answers for screens and other callers.
+Commons is a learning-management application composed from independent concepts,
+cross-concept reactions, current-state views, and response formers. The HTTP edge,
+web frontend, command-line scenario, and generated client contract all run the same
+sync-engine assembly.
 
 ## Run Commons locally
 
-Commons depends on a sibling checkout of the sync engine through
-`file:../sync-engine`. Build that checkout, install both Commons packages, and
-start the stack:
+Commons requires Bun 1.3 and installs the published sync-engine core and HTTP
+packages at `1.0.0-beta.9`. Install both application packages, then start the
+MongoDB-backed stack:
 
 ```sh
-cd ../sync-engine && bun install && bun run build
-cd ../learning && bun install && bun install --cwd frontend
+bun install
+bun install --cwd frontend
 bun run stack:mongo
 ```
 
 The application opens at `http://127.0.0.1:3000`. Press Ctrl-C once to stop the
-stack. The first run may download the temporary MongoDB binary.
+frontend, edge, and temporary MongoDB cleanly. The first run may download the
+MongoDB binary. Use `bun run stack` instead when `MONGODB_URL` names an
+operator-owned database; [`.env.example`](.env.example) lists runtime settings.
 
-For a different state floor or browser origin, use [`.env.example`](.env.example)
-and the [`src/assembly/` guide](src/assembly/README.md). [`package.json`](package.json)
-lists the repository commands.
+## Read and change the design
 
-## Choose a path
+Authored behavior and executable behavior have separate application-owned homes:
 
-- To understand the application, follow the
-  [composition guide](src/composition/README.md), then read one behavior through
-  the [concept guide](src/concepts/README.md).
-- To run or change its boundaries, use the
-  [assembly guide](src/assembly/README.md) and the
-  [frontend guide](frontend/README.md).
-- To verify a change, use the [test guide](tests/README.md) and inspect the
-  [derived assembled read-back](generated/README.md).
-- To review product and deployment work, use the [issue source](content/README.md).
+- [`design/concepts/`](design/concepts/) contains each independent concept
+  specification; matching implementations live under [`src/concepts/`](src/concepts/).
+- [`design/compositions/`](design/compositions/) explains the Access, Course, and
+  Forum groups; matching declarations live under
+  [`src/compositions/`](src/compositions/).
+- [`design/vocabulary.md`](design/vocabulary.md) records cross-concept type roles;
+  [`src/vocabulary.ts`](src/vocabulary.ts) owns executable registrations.
+- [`src/assembly/`](src/assembly/) selects implementations and deployment policy.
+- [`frontend/`](frontend/) consumes only the generated browser contract.
+
+Start with the [Forum composition explanation](design/compositions/Forum.md) and
+one concept specification such as [Posting](design/concepts/Posting.md). The
+[generated artifact guide](generated/README.md) explains the derived read-back and
+wire contract.
+
+## Verify changes
+
+```sh
+bun run check
+bun run test
+bun run build
+```
+
+`check` runs the registration-driven
+`sync-engine check --config generated.config.ts`, verifies generated artifacts
+and issue records, and then
+runs root and frontend static checks. Use `bun run artifacts pin` after changing
+registered design or composition, and review the resulting files under
+[`generated/`](generated/).

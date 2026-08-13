@@ -100,12 +100,12 @@ export function validateIssueText(
 
 export async function validateIssueDirectory(root: string): Promise<string[]> {
   const issues = join(root, "content", "issues");
-  const conceptsRoot = join(root, "src", "concepts");
+  const conceptsRoot = join(root, "design", "concepts");
   const conceptEntries = await readdir(conceptsRoot, { withFileTypes: true });
   const knownConcepts = new Set<string>();
   for (const entry of conceptEntries) {
-    if (!entry.isDirectory()) continue;
-    const spec = await readFile(join(conceptsRoot, entry.name, "spec.md"), "utf8");
+    if (!entry.isFile() || !entry.name.endsWith(".md")) continue;
+    const spec = await readFile(join(conceptsRoot, entry.name), "utf8");
     const title = spec.match(/^# (.+)$/m)?.[1];
     if (title) knownConcepts.add(title);
   }

@@ -20,7 +20,7 @@ const post = async (
   cookie?: string,
 ): Promise<PublicResponse> => {
   const response = await edge.fetch(
-    new Request(`http://commons.test${path}`, {
+    new Request(`http://commons.test/api${path}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

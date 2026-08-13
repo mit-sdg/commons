@@ -235,7 +235,7 @@
     @apply border-l-2 border-primary/40 pl-4 italic text-muted-foreground;
   }
   .prose-forum blockquote em {
-    @apply normal;
+    @apply not-italic;
   }
   .prose-forum code {
     @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground;

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
-import { theStaffDashboardCounts } from "../../src/composition/course/calendar.ts";
+import { theStaffDashboardCounts } from "../../src/compositions/course/calendar.ts";
 
 async function actor(
   app: ReturnType<typeof assembleCommons>,
@@ -146,18 +146,20 @@ describe("consolidated reaction groups", () => {
     const asks = inspectAssembly(app)
       .occurrences.slice(before)
       .map((event) => event.by)
-      .filter((by): by is string => by?.startsWith("posts.DeletedPostClearsSatellites:") ?? false)
+      .filter(
+        (by): by is string => by?.startsWith("Forum.posts.DeletedPostClearsSatellites:") ?? false,
+      )
       .sort((left, right) => left.localeCompare(right));
     expect(asks).toEqual([
-      "posts.DeletedPostClearsSatellites:backlinks",
-      "posts.DeletedPostClearsSatellites:bookmarks",
-      "posts.DeletedPostClearsSatellites:formatting",
-      "posts.DeletedPostClearsSatellites:leaf-node",
-      "posts.DeletedPostClearsSatellites:links",
-      "posts.DeletedPostClearsSatellites:pins",
-      "posts.DeletedPostClearsSatellites:reactions",
-      "posts.DeletedPostClearsSatellites:tags",
-      "posts.DeletedPostClearsSatellites:tracking",
+      "Forum.posts.DeletedPostClearsSatellites:backlinks",
+      "Forum.posts.DeletedPostClearsSatellites:bookmarks",
+      "Forum.posts.DeletedPostClearsSatellites:formatting",
+      "Forum.posts.DeletedPostClearsSatellites:leaf-node",
+      "Forum.posts.DeletedPostClearsSatellites:links",
+      "Forum.posts.DeletedPostClearsSatellites:pins",
+      "Forum.posts.DeletedPostClearsSatellites:reactions",
+      "Forum.posts.DeletedPostClearsSatellites:tags",
+      "Forum.posts.DeletedPostClearsSatellites:tracking",
     ]);
   });
 
@@ -176,8 +178,8 @@ describe("consolidated reaction groups", () => {
       .map((event) => event.by)
       .sort((left, right) => left!.localeCompare(right!));
     expect(formattingClears).toEqual([
-      "moderation.PurgedItemClearsModerationState:formatting",
-      "posts.DeletedPostClearsSatellites:formatting",
+      "Forum.moderation.PurgedItemClearsModerationState:formatting",
+      "Forum.posts.DeletedPostClearsSatellites:formatting",
     ]);
   });
 
@@ -207,8 +209,8 @@ describe("consolidated reaction groups", () => {
       .map((event) => event.by)
       .sort((left, right) => left!.localeCompare(right!));
     expect(clears).toEqual([
-      "resolutions.PurgedPostClearsResolutions:answer",
-      "resolutions.PurgedPostClearsResolutions:question",
+      "Forum.resolutions.PurgedPostClearsResolutions:answer",
+      "Forum.resolutions.PurgedPostClearsResolutions:question",
     ]);
   });
 });

@@ -1,56 +1,43 @@
 # Assembly
 
-This directory selects Commons' concept implementations, HTTP credentials,
-and process lifetime. The installed sync-engine package's
-[`docs/guide/application-boundary.md`](https://github.com/mit-sdg/sync-engine/blob/HEAD/docs/guide/application-boundary.md)
-teaches the framework's application boundary.
+This directory turns Commons' registered design into a running process. Its files
+have distinct responsibilities:
 
-The five files have separate jobs:
-
-- `application.ts` joins the concept set to the explicit composition manifest.
-  Ordinary feature work does not edit it.
-- `concept-floor.ts` selects the memory or MongoDB implementations and owns the
-  MongoDB client.
-- `http-floor.ts` declares Commons' credential binding.
-- `process.ts` starts the edge and closes the selected concept floor.
-- this page routes configuration and states the boundary.
+- `application.ts` joins `src/vocabulary.ts` to the Access, Course, and Forum
+  composition groups and supplies default concept implementations;
+- `concept-floor.ts` selects memory or MongoDB implementations and owns the
+  MongoDB client lifecycle;
+- `http-policy.ts` defines the `/api` base path, public error categories, and
+  session-cookie binding; and
+- `process.ts` starts the edge listener and closes its selected resources.
 
 ## Concept state
 
-The process uses the in-memory implementations unless the environment selects
-MongoDB. With MongoDB selected, Commons opens the configured database, closes
-the client when the process stops, and never drops the supplied database. The
-exact variables and accepted forms live in [`.env.example`](../../.env.example).
+The process uses in-memory implementations unless `MONGODB_URL` selects MongoDB.
+With MongoDB selected, Commons opens the configured database, closes the client
+when the process stops, and never drops an operator-supplied database. Use one
+Commons process per database; the open
+[`mongo-multiprocess-integrity`](../../content/issues/open/mongo-multiprocess-integrity.md)
+work records the remaining multi-process constraint.
 
-Use one Commons process per MongoDB database. If a deployment needs concurrent
-processes, follow the work recorded in
-[`../../content/issues/open/mongo-multiprocess-integrity.md`](../../content/issues/open/mongo-multiprocess-integrity.md).
+Tests may pass implementation overrides to `assembleCommons`. An override
+replaces an application default; it does not define another deployment floor.
 
-Tests may pass an override to `assembleCommons`. An override replaces an
-implementation already selected by the application; it is not another
-production floor.
+## HTTP policy
 
-## HTTP credential
+Commons exposes logical endpoint paths below `/api`. The HTTP package binds the
+logical `session` input to the secure `__Host-commons-session` cookie. A
+successful `/auth/login` supplies the session value and expiry; the HTTP handler
+removes both from the browser response and issues the cookie. Successful
+`/auth/logout` and `/auth/changePassword` calls clear it. An unauthorized result
+on a protected route clears that route's cookie binding.
 
-Commons declares one logical credential named `session`. A successful
-`/auth/login` returns the credential and its `expiresAt` value to the HTTP
-floor, which consumes both fields when it issues the cookie. Successful
-`/auth/logout` and `/auth/changePassword` calls clear it. Any endpoint whose
-declared input includes `session` is protected automatically, so adding a
-protected endpoint does not change `http-floor.ts`.
+`http-policy.ts` explicitly maps the domain refusal codes that may cross HTTP.
+Unmapped refusals and unexpected failures remain opaque `INTERNAL_ERROR`
+responses. The same immutable policy is passed to the runtime handler and the
+`httpWire(...)` projection in `generated.config.ts`, so cookie-owned fields and
+HTTP error unions agree.
 
-The browser contract omits the cookie-bound `session` input and the consumed
-login outputs. The transport-independent application interface retains those
-fields. Commons also supplies the public browser origin. [`.env.example`](../../.env.example)
-contains the exact setting.
-
-The engine's [boundary semantics](https://github.com/mit-sdg/sync-engine/blob/HEAD/docs/semantics.md#boundary-gateway-and-client)
-owns the HTTP, cookie, serialization, and transport guarantees. Its
-[operations guide](https://github.com/mit-sdg/sync-engine/blob/HEAD/docs/consistency-and-operations.md)
-states the deployment limits.
-
-Use the sync-engine package's
-[`floorReadBack`](https://github.com/mit-sdg/sync-engine/blob/HEAD/docs/public-surface.md#tooling)
-tooling to inspect the selected concept implementations, shared resources, and
-credential binding without adding HTTP details to the assembled application
-read-back.
+[`.env.example`](../../.env.example) defines process and origin settings. The
+sync-engine HTTP package documents cookie, origin, and handler guarantees; the
+host remains responsible for the listener, proxy, TLS, and shutdown.

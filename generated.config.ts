@@ -1,5 +1,8 @@
+import { httpWire } from "@mit-sdg/sync-engine-http/tooling";
 import { assembleCommons } from "./src/assembly/application.ts";
-import { commonsHttpFloor } from "./src/assembly/http-floor.ts";
+import { commonsHttpPolicy } from "./src/assembly/http-policy.ts";
+
+const policy = commonsHttpPolicy("http://127.0.0.1:3000");
 
 export default {
   assemble: assembleCommons,
@@ -8,6 +11,6 @@ export default {
   title: "Commons",
   wire: "wire.ts",
   wireName: "CommonsWire",
-  wireVocabulary: { from: "../src/concepts/index.ts", export: "vocabulary" },
-  httpFloor: commonsHttpFloor("http://127.0.0.1:3000"),
+  vocabulary: { module: new URL("./src/vocabulary.ts", import.meta.url) },
+  projections: [httpWire({ policy, name: "CommonsWireHttp" })],
 };

@@ -16,23 +16,23 @@ goldens; neither is ever edited by hand.
 The test and check commands compare both files byte-for-byte with fresh output.
 Regenerate a file when its source changes and review the resulting diff.
 
-The wire generator uses a type-only import of `src/concepts/index.ts` to reach
-the concept signatures. `CommonsWire` keeps the logical application contract
+The generated descriptor names `src/vocabulary.ts`; the wire generator emits a
+type-only import of that module to reach the registered concept signatures. `CommonsWire` keeps the logical application contract
 for local clients. `CommonsWireHttp` applies the HTTP floor for browser calls,
 omitting its cookie-bound session input. Both project values through JSON, so a
 `Date` leaf is emitted as `string`. Strict leaf checking stops generation when
 any input or output leaf has no known source. The generated module is a
 compile-time contract; it does not validate response values at runtime.
 
-Change the authored sources, not these files. Each concept's `spec.md` owns its
-behavioral contract, including the human explanation for each refusal. The
-files under [`src/composition/`](../src/composition/) own Commons' reactions,
-views, and formers. Start with the composition guide to learn how those sources
-fit together.
+Change the authored sources, not these files. Files under
+[`design/concepts/`](../design/concepts/) own concept contracts, including query
+cardinalities and refusal explanations. Files under
+[`design/compositions/`](../design/compositions/) explain the executable
+reactions, views, and formers in [`src/compositions/`](../src/compositions/).
 
-The read-back omits each concept's full State, Actions, and Questions sections.
-Those sections remain in its `spec.md`; the read-back shows only what the
-running assembly can derive and register from the authored sources.
+The read-back omits each concept's full State, Actions, and Queries prose. Those
+sections remain in its design specification; the read-back shows what the
+running registered assembly can derive.
 
 Reaction headings sometimes carry a stable path label and a generated step
 suffix. `Name:found` is the sibling path labeled `found`. `Name:found#2` is its

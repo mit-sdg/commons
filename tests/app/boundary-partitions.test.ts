@@ -109,28 +109,28 @@ describe("boundary partitions", () => {
       "/resolutions/accept",
       { session: otherSession, question: question.post, answer: answer.post },
       { error: "FORBIDDEN" },
-      "resolutions.AcceptAnswer:not-author",
+      "Forum.resolutions.AcceptAnswer:not-author",
     );
     await expectOneAnswer(
       app,
       "/resolutions/accept",
       { session: authorSession, question: "missing-question", answer: "missing-answer" },
       { error: "NOT_FOUND" },
-      "resolutions.AcceptAnswer:hidden-question",
+      "Forum.resolutions.AcceptAnswer:hidden-question",
     );
     await expectOneAnswer(
       app,
       "/resolutions/accept",
       { session: authorSession, question: question.post, answer: "missing-answer" },
       { error: "NOT_FOUND" },
-      "resolutions.AcceptAnswer:hidden-answer",
+      "Forum.resolutions.AcceptAnswer:hidden-answer",
     );
     await expectOneAnswer(
       app,
       "/resolutions/accept",
       { session: authorSession, question: question.post, answer: answer.post },
       expect.objectContaining({ resolution: expect.any(String) }),
-      "resolutions.AcceptAnswer:accepted#2",
+      "Forum.resolutions.AcceptAnswer:accepted#2",
     );
   });
 
@@ -152,6 +152,6 @@ describe("boundary partitions", () => {
     expect(responses.filter((event) => event.outcome?.kind === "error")).toHaveLength(1);
     expect(
       responses.map((event) => event.by).sort((left, right) => left!.localeCompare(right!)),
-    ).toEqual(["profiles.GetProfile:hidden", "profiles.GetProfile:missing"]);
+    ).toEqual(["Forum.profiles.GetProfile:hidden", "Forum.profiles.GetProfile:missing"]);
   });
 });

@@ -1,6 +1,6 @@
-import { PublicError, registerConcept } from "@mit-sdg/sync-engine/assembly";
+import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
-import spec from "./spec.md" with { type: "text" };
+import spec from "@design/concepts/Noting.md" with { type: "text" };
 import { NotingConcept } from "./noting.ts";
 import { MongoNotingConcept } from "./noting.mongo.ts";
 import {
@@ -16,49 +16,14 @@ import {
 export const noting = registerConcept({
   class: NotingConcept,
   spec,
-  queries: {
-    _getNote: "optional",
-    _getActiveNotesFor: "many",
-    _getShownTo: "many",
-    _getByAuthor: "many",
-    _getOpenFollowUpsBefore: "many",
-  },
   refusals: {
-    INVALID_VISIBILITY: {
-      error: InvalidVisibility,
-      on: ["write", "revise"],
-      public: PublicError.INVALID_REQUEST,
-    },
-    NOTE_NOT_FOUND: {
-      error: NoteNotFound,
-      on: ["revise", "resolve", "archive", "restore", "acknowledge"],
-      public: PublicError.NOT_FOUND,
-    },
-    NOTE_NOT_OPEN: {
-      error: NoteNotOpen,
-      on: ["revise", "resolve"],
-      public: PublicError.CONFLICT,
-    },
-    NOTE_NOT_RESOLVED: {
-      error: NoteNotResolved,
-      on: ["archive"],
-      public: PublicError.CONFLICT,
-    },
-    NOTE_NOT_RESTORABLE: {
-      error: NoteNotRestorable,
-      on: ["restore"],
-      public: PublicError.CONFLICT,
-    },
-    NOTE_NOT_LEARNER_VISIBLE: {
-      error: NoteNotLearnerVisible,
-      on: ["acknowledge"],
-      public: PublicError.NOT_FOUND,
-    },
-    NOTE_NOT_OWNER: {
-      error: NoteNotOwner,
-      on: ["acknowledge"],
-      public: PublicError.NOT_FOUND,
-    },
+    INVALID_VISIBILITY: InvalidVisibility,
+    NOTE_NOT_FOUND: NoteNotFound,
+    NOTE_NOT_OPEN: NoteNotOpen,
+    NOTE_NOT_RESOLVED: NoteNotResolved,
+    NOTE_NOT_RESTORABLE: NoteNotRestorable,
+    NOTE_NOT_LEARNER_VISIBLE: NoteNotLearnerVisible,
+    NOTE_NOT_OWNER: NoteNotOwner,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoNotingConcept(database) },
 });

@@ -271,7 +271,7 @@ describe("the Commons process with MongoDB", () => {
         password: "password123",
       });
       const operatorCookie = sessionCookie(operatorLogin.response);
-      expect(operatorCookie).toMatch(/^session=/);
+      expect(operatorCookie).toMatch(/^__Host-commons-session=/);
 
       const learnerRegistration = await post(edge.origin, "/api/auth/register", {
         username: "learner",
@@ -285,7 +285,7 @@ describe("the Commons process with MongoDB", () => {
         password: "password123",
       });
       const learnerCookie = sessionCookie(learnerLogin.response);
-      expect(learnerCookie).toMatch(/^session=/);
+      expect(learnerCookie).toMatch(/^__Host-commons-session=/);
 
       const operatorMe = await post(edge.origin, "/api/auth/me", {}, operatorCookie);
       expect(operatorMe.body.username).toBe("operator");
@@ -633,15 +633,18 @@ describe("the Commons process with MongoDB", () => {
         body: "{}",
       });
       expect(fromFrontendOrigin.status).toBe(200);
-      const fromDefaultOrigin = await fetch(`http://127.0.0.1:${port}/api/threads/activity`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Origin: "http://127.0.0.1:3000",
+      const publicReadFromAnotherOrigin = await fetch(
+        `http://127.0.0.1:${port}/api/threads/activity`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "http://127.0.0.1:3000",
+          },
+          body: "{}",
         },
-        body: "{}",
-      });
-      expect(fromDefaultOrigin.status).toBe(403);
+      );
+      expect(publicReadFromAnotherOrigin.status).toBe(200);
       expect(await stopChild(running)).toBe(0);
       expect(running.output.join("")).toContain("commons: temporary MongoDB stopped");
     } finally {

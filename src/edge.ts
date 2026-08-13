@@ -1,7 +1,8 @@
-import { createGateway, createHttpHandler } from "@mit-sdg/sync-engine/boundary";
+import { createGateway } from "@mit-sdg/sync-engine/boundary";
+import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
 import type { CommonsOverrides } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
-import { commonsHttpFloor } from "./assembly/http-floor.ts";
+import { commonsHttpPolicy } from "./assembly/http-policy.ts";
 
 function configuredOrigin(): string {
   const origin = process.env.PUBLIC_ORIGIN;
@@ -14,14 +15,14 @@ function configuredOrigin(): string {
 export function createEdge(overrides: CommonsOverrides = {}, origin: string = configuredOrigin()) {
   const application = assembleCommons(overrides);
   const gateway = createGateway({ application });
-  const floor = commonsHttpFloor(origin);
-  const fetch = createHttpHandler({ application, gateway, floor });
+  const policy = commonsHttpPolicy(origin);
+  const fetch = createHttpHandler({ application, gateway, policy });
   const servedPaths = new Set(Object.keys(application.publicInterface.routes));
   const sessionPaths = new Set(
     Object.entries(application.publicInterface.routes)
-      .filter(([, contract]) => contract.required?.includes(floor.credential.input))
+      .filter(([, contract]) => contract.required?.includes("session"))
       .map(([path]) => path),
   );
 
-  return { application, gateway, floor, fetch, servedPaths, sessionPaths };
+  return { application, gateway, policy, fetch, servedPaths, sessionPaths };
 }

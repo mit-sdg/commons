@@ -192,7 +192,7 @@ function Notifications() {
                 <div className="flex items-start gap-3">
                   <UserAvatar
                     user={String(actor.user)}
-                    name={actor.displayName || actor.username}
+                    name={actor.displayName || actor.username || undefined}
                     avatar={actor.avatar || undefined}
                     className="mt-0.5 size-7 shrink-0"
                   />
@@ -209,7 +209,7 @@ function Notifications() {
                       </span>
                     </p>
                     <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground/80">
-                      {renderExcerptWithMentions(post.content)}
+                      {renderExcerptWithMentions(post.content ?? "")}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {relativeTime(n.createdAt)}
@@ -229,7 +229,7 @@ function Notifications() {
                       </span>
                     </p>
                     <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground/80">
-                      {renderExcerptWithMentions(post.content)}
+                      {renderExcerptWithMentions(post.content ?? "")}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {relativeTime(n.createdAt)}

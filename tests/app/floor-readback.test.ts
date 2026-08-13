@@ -1,27 +1,19 @@
 import { describe, expect, test } from "vite-plus/test";
-import { floorReadBack } from "@mit-sdg/sync-engine/tooling";
-import { assembleCommons } from "../../src/assembly/application.ts";
 import { memoryImplementations } from "../../src/assembly/concept-floor.ts";
-import { commonsHttpFloor } from "../../src/assembly/http-floor.ts";
+import { commonsHttpPolicy } from "../../src/assembly/http-policy.ts";
 
-describe("Commons floor read-back", () => {
-  test("names implementations, resources, and the HTTP credential binding", () => {
-    const application = assembleCommons();
-    const readBack = floorReadBack({
-      application,
-      conceptFloor: {
-        name: "memory",
-        instances: memoryImplementations(),
-        resources: [],
-      },
-      httpFloor: commonsHttpFloor("http://127.0.0.1:3000"),
-    });
+describe("Commons deployment policy", () => {
+  test("names implementations and owns the HTTP session-cookie binding", () => {
+    const implementations = memoryImplementations();
+    const policy = commonsHttpPolicy("http://127.0.0.1:3000");
+    const session = policy.cookies?.session;
 
-    expect(readBack).toContain('Concept floor "memory".');
-    expect(readBack).toContain("Sessioning: SessioningConcept");
-    expect(readBack).toContain("Resources: none.");
-    expect(readBack).toContain('Credential "session" binds cookie-only input "session"');
-    expect(readBack).toContain("/auth/login");
-    expect(readBack).toContain("/auth/logout, /auth/changePassword");
+    expect(implementations.Sessioning.constructor.name).toBe("SessioningConcept");
+    expect(policy.basePath).toBe("/api");
+    expect(session?.input).toBe("session");
+    expect(session?.issue).toEqual([
+      { path: "/auth/login", value: "session", expires: "expiresAt" },
+    ]);
+    expect(session?.clear).toEqual(["/auth/logout", "/auth/changePassword"]);
   });
 });
