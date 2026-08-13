@@ -250,6 +250,23 @@ export class MongoRosteringConcept {
     return { seat: this.#row(updated) };
   }
 
+  async _getClass(_: Record<string, never>) {
+    const doc = await this.classes.findOne({});
+    return doc === null
+      ? []
+      : [
+          {
+            detail: {
+              code: doc.code,
+              title: doc.title,
+              term: doc.term,
+              timezone: doc.timezone,
+              status: doc.status,
+            },
+          },
+        ];
+  }
+
   async _getSections(_: Record<string, never>) {
     const docs = await this.sections.find({}).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({
@@ -345,6 +362,18 @@ export class MongoRosteringConcept {
       rosterName: doc.rosterName,
       kind: doc.kind,
       section: doc.section,
+    }));
+  }
+
+  async _getDroppedSeats(_: Record<string, never>) {
+    const docs = await this.seats.find({ status: "DROPPED" }).sort({ seq: 1 }).toArray();
+    return docs.map((doc) => ({
+      user: doc.user,
+      seat: doc._id,
+      kind: doc.kind,
+      section: doc.section,
+      rosterName: doc.rosterName,
+      email: doc.email,
     }));
   }
 

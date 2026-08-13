@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  Bell,
   Bookmark,
+  GraduationCap,
   LayoutGrid,
   LogOut,
   Menu,
@@ -10,7 +12,9 @@ import {
   Shield,
   Sparkles,
   User,
+  UsersRound,
   Wrench,
+  X,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -33,9 +37,17 @@ import { loadRosterMe } from "@/lib/lms";
 import { lmsAccess, lmsNavigation } from "@/lib/lms-navigation";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/", label: "Latest", icon: Sparkles },
+const DISCUSSION_NAV = [
+  { href: "/", label: "Discussions", icon: Sparkles },
   { href: "/categories", label: "Categories", icon: LayoutGrid },
+];
+
+const COURSE_PATHS = [
+  "/assignments",
+  "/grades",
+  "/calendar",
+  "/notes",
+  "/staff",
 ];
 
 export function SiteHeader() {
@@ -78,13 +90,23 @@ export function SiteHeader() {
   const effectiveHasRosterSeat =
     accessIsCurrent && resolvedLmsAccess.hasRosterSeat;
   const effectiveIsStaff = accessIsCurrent && resolvedLmsAccess.isStaff;
-  const lmsNav = lmsNavigation(effectiveIsStaff);
+  const courseNav = lmsNavigation(effectiveIsStaff);
+  const courseHome = effectiveIsStaff ? "/staff" : "/assignments";
+  const isCourseArea = COURSE_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
 
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+    href === "/" || href === "/staff"
+      ? pathname === href
+      : pathname.startsWith(href);
+
+  function closeMobile() {
+    setMobileOpen(false);
+  }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/65">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-md bg-primary font-display text-lg font-semibold text-primary-foreground shadow-sm">
@@ -95,11 +117,15 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="ml-2 hidden items-center gap-1 md:flex">
-          {NAV.map((item) => (
+        <nav
+          aria-label="Primary"
+          className="ml-2 hidden items-center gap-1 lg:flex"
+        >
+          {DISCUSSION_NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive(item.href) ? "page" : undefined}
               className={cn(
                 "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
                 isActive(item.href) && "bg-muted text-foreground",
@@ -108,40 +134,29 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          {effectiveHasRosterSeat && effectiveIsStaff && (
+          {effectiveHasRosterSeat ? (
             <Link
-              href="/staff"
+              href={courseHome}
+              aria-current={isCourseArea ? "page" : undefined}
               className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium text-primary/80 transition-colors hover:bg-primary/10 hover:text-primary",
-                pathname.startsWith("/staff") && "bg-primary/10 text-primary",
+                "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                isCourseArea && "bg-primary/10 text-primary",
               )}
             >
-              Staff
+              Course
             </Link>
-          )}
-          {effectiveHasRosterSeat &&
-            !effectiveIsStaff &&
-            lmsNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                  isActive(item.href) && "bg-muted text-foreground",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+          ) : null}
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
-          <Button asChild size="sm" className="hidden gap-1.5 sm:inline-flex">
-            <Link href="/new">
-              <PenLine className="size-4" />
-              New topic
-            </Link>
-          </Button>
+          {me ? (
+            <Button asChild size="sm" className="hidden gap-1.5 sm:inline-flex">
+              <Link href="/new">
+                <PenLine className="size-4" />
+                New discussion
+              </Link>
+            </Button>
+          ) : null}
 
           {me ? <NotificationBell /> : null}
           <ModeToggle />
@@ -161,7 +176,7 @@ export function SiteHeader() {
                   />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel className="flex flex-col">
                   <span className="font-semibold">
                     {me.profile.displayName}
@@ -177,8 +192,18 @@ export function SiteHeader() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link href="/notifications">
+                    <Bell className="size-4" /> Notifications
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/bookmarks">
                     <Bookmark className="size-4" /> Bookmarks
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/subscriptions">
+                    <UsersRound className="size-4" /> Following
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -196,31 +221,17 @@ export function SiteHeader() {
                 {can.administer ? (
                   <DropdownMenuItem asChild>
                     <Link href="/admin">
-                      <Shield className="size-4" /> Admin
+                      <Shield className="size-4" /> Administration
                     </Link>
                   </DropdownMenuItem>
                 ) : null}
-                {effectiveHasRosterSeat && effectiveIsStaff ? (
+                {effectiveHasRosterSeat ? (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                      Course staff
+                      Course {effectiveIsStaff ? "staff" : ""}
                     </DropdownMenuLabel>
-                    {lmsNav.map((item) => (
-                      <DropdownMenuItem key={item.href} asChild>
-                        <Link href={item.href}>
-                          <item.icon className="size-4" /> {item.label}
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </>
-                ) : effectiveHasRosterSeat && !effectiveIsStaff ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                      Commons
-                    </DropdownMenuLabel>
-                    {lmsNav.map((item) => (
+                    {courseNav.map((item) => (
                       <DropdownMenuItem key={item.href} asChild>
                         <Link href={item.href}>
                           <item.icon className="size-4" /> {item.label}
@@ -236,84 +247,149 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="hidden items-center gap-1.5 sm:flex">
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/login">Sign in</Link>
-              </Button>
-            </div>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex"
+            >
+              <Link href="/login">Sign in</Link>
+            </Button>
           )}
 
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
-            aria-label="Menu"
-            onClick={() => setMobileOpen((v) => !v)}
+            className="lg:hidden"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setMobileOpen((value) => !value)}
           >
-            <Menu className="size-5" />
+            {mobileOpen ? (
+              <X className="size-5" />
+            ) : (
+              <Menu className="size-5" />
+            )}
           </Button>
         </div>
       </div>
 
-      {mobileOpen ? (
-        <nav className="border-t border-border bg-background px-4 py-3 md:hidden">
-          <div className="flex flex-col gap-1">
-            {NAV.map((item) => (
+      {effectiveHasRosterSeat && isCourseArea ? (
+        <nav
+          aria-label="Course"
+          className="hidden border-t border-border/70 bg-muted/30 lg:block"
+        >
+          <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-4 py-2 sm:px-6">
+            <span className="mr-2 flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <GraduationCap className="size-4" /> Course
+            </span>
+            {courseNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={cn(
+                  "flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-background hover:text-foreground",
+                  isActive(item.href) &&
+                    "bg-background text-foreground shadow-xs",
+                )}
               >
                 <item.icon className="size-4" /> {item.label}
               </Link>
             ))}
-            {effectiveHasRosterSeat && (
-              <>
-                <div className="mt-2 mb-1 px-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Commons
-                  </p>
-                </div>
-                {effectiveIsStaff && (
-                  <Link
-                    href="/staff"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-primary/80 hover:bg-primary/10"
-                  >
-                    <Sparkles className="size-4" /> Staff Dashboard
-                  </Link>
+          </div>
+        </nav>
+      ) : null}
+
+      {mobileOpen ? (
+        <nav
+          id="mobile-navigation"
+          aria-label="Mobile"
+          className="border-t border-border bg-background px-4 py-3 lg:hidden"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") closeMobile();
+          }}
+        >
+          <div className="mx-auto flex max-w-6xl flex-col gap-1">
+            {DISCUSSION_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={closeMobile}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium hover:bg-muted",
+                  isActive(item.href) && "bg-muted text-foreground",
                 )}
-                {lmsNav.map((item) => (
+              >
+                <item.icon className="size-4" /> {item.label}
+              </Link>
+            ))}
+            {effectiveHasRosterSeat ? (
+              <>
+                <p className="mt-3 mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Course {effectiveIsStaff ? "staff" : ""}
+                </p>
+                {courseNav.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+                    onClick={closeMobile}
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium hover:bg-muted",
+                      isActive(item.href) && "bg-primary/10 text-primary",
+                    )}
                   >
                     <item.icon className="size-4" /> {item.label}
                   </Link>
                 ))}
               </>
-            )}
-            <Link
-              href="/new"
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-            >
-              <PenLine className="size-4" /> New topic
-            </Link>
-            {!me ? (
+            ) : null}
+            {me ? (
               <>
+                <p className="mt-3 mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Account
+                </p>
                 <Link
-                  href="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+                  href="/new"
+                  onClick={closeMobile}
+                  className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium hover:bg-muted"
                 >
-                  <User className="size-4" /> Sign in
+                  <PenLine className="size-4" /> New discussion
+                </Link>
+                <Link
+                  href="/bookmarks"
+                  onClick={closeMobile}
+                  className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium hover:bg-muted"
+                >
+                  <Bookmark className="size-4" /> Bookmarks
+                </Link>
+                <Link
+                  href="/subscriptions"
+                  onClick={closeMobile}
+                  className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium hover:bg-muted"
+                >
+                  <UsersRound className="size-4" /> Following
+                </Link>
+                <Link
+                  href="/settings"
+                  onClick={closeMobile}
+                  className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium hover:bg-muted"
+                >
+                  <Settings className="size-4" /> Settings
                 </Link>
               </>
-            ) : null}
+            ) : (
+              <Link
+                href="/login"
+                onClick={closeMobile}
+                className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium hover:bg-muted"
+              >
+                <User className="size-4" /> Sign in
+              </Link>
+            )}
           </div>
         </nav>
       ) : null}

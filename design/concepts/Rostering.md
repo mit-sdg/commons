@@ -139,6 +139,8 @@ moveSection(seat: Seat, section: Section) : return ()
 ## Queries
 
 ```queries
+_getClass () : optional (detail: Class)
+
 _getSections () : many (section: String, name: String, location: String, meetingPattern: String, status: String)
 
 _getSeatByExternalKey (externalKey: String) : optional (seat: String, email: String)
@@ -154,10 +156,13 @@ _isActiveStudent (user: String) : one (active: Boolean)
 _getActiveStudents () : many (user: String, seat: String, section: String|Null, rosterName: String, email: String)
 
 _getUnclaimedSeats () : many (seat: String, externalKey: String, email: String, rosterName: String, kind: String, section: String|Null)
+
+_getDroppedSeats () : many (user: String|Null, seat: String, kind: String, section: String|Null, rosterName: String, email: String)
 ```
 
 ### Notes
 
+- `_getClass ()` answers the one configured class, when it exists.
 - `_getSections ()` answers every section in creation order.
 - `_getSeatByExternalKey (externalKey)` answers at most one seat and its roster
   email. `_getSeatByUser (user)` and `_getSeatDetail (user)` each answer at
@@ -167,3 +172,4 @@ _getUnclaimedSeats () : many (seat: String, externalKey: String, email: String, 
 - `_getActiveStudents ()` answers linked active student seats in creation
   order.
 - `_getUnclaimedSeats ()` answers pending unclaimed seats in creation order.
+- `_getDroppedSeats ()` answers dropped seats in creation order.

@@ -47,6 +47,31 @@ export const theGradesOf = former(
       .form({ item, grade, score, maxPoints: outOf, status, feedback, label }),
 );
 
+/** Which criteria assess this item? */
+export const theCriteriaOf = former(
+  "the criteria of (item)",
+  ({ item }, { criterion, name, maxPoints, position }) =>
+    each(Itemizing._getCriteria({ item }).is({ criterion, name, maxPoints, position })).form({
+      criterion,
+      name,
+      maxPoints,
+      position,
+    }),
+);
+/** Which criterion scores belong to this learner's grade? */
+export const theCriterionScoresOf = former(
+  "the criterion scores of (learner) on (item)",
+  ({ learner, item }, { criterion, points, maxPoints, feedback }) =>
+    each(
+      Grading._getCriterionScores({ learner, item }).is({
+        criterion,
+        points,
+        feedback,
+      }),
+    )
+      .where(Itemizing._getCriterion({ criterion }).is({ maxPoints }))
+      .form({ criterion, points, maxPoints, feedback }),
+);
 /** Which grades are on this item? */
 export const theGradesOn = former(
   "the grades on (item)",
@@ -133,6 +158,38 @@ export const GradesConfigureItem = endpoint(
     ),
 );
 
+export const GradesItem = endpoint(
+  "/grades/item",
+  ({ session, item, user, label, maxPoints, status }) =>
+    receive({ session, item }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayViewAllGrades({ user }),
+        Itemizing._getItem({ item }).is({ label, maxPoints, status }),
+      )
+        .then(
+          respond({
+            item,
+            label,
+            maxPoints,
+            status,
+            criteria: theCriteriaOf({ item }),
+          }),
+        )
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayViewAllGrades({ user }),
+        no(Itemizing._getItem({ item })),
+      )
+        .then(respond({ error: "GRADE_ITEM_NOT_FOUND" }))
+        .named("missing"),
+    ),
+);
+
 export const GradesAddCriterion = endpoint(
   "/grades/add-criterion",
   ({ session, item, name, maxPoints, position, user, criterion }) =>
@@ -174,6 +231,23 @@ export const GradesRemoveCriterion = endpoint(
         .then(respond({ criterion: removed }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotManageGrades({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+
+export const GradesCriterionScores = endpoint(
+  "/grades/criterion-scores",
+  ({ session, learner, item, user }) =>
+    receive({ session, learner, item }).then(
+      where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
+        .then(
+          respond({
+            scores: theCriterionScoresOf({ learner, item }),
+          }),
+        )
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -371,7 +445,7 @@ export const GradesForItem = endpoint("/grades/for-item", ({ session, item, user
 export const GradesGradebook = endpoint("/grades/gradebook", ({ session, user }) =>
   receive({ session }).then(
     where(activeUser({ session }).is({ user }), mayViewAllGrades({ user }))
-      .then(respond({ learners: theGradebookLearners({}) }))
+      .then(respond({ gradebook: theGradebook({}) }))
       .named("success"),
     where(activeUser({ session }).is({ user }), mayNotViewAllGrades({ user }))
       .then(respond({ error: "FORBIDDEN" }))

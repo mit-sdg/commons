@@ -41,8 +41,14 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Providers>
+          <a
+            href="#main-content"
+            className="sr-only fixed top-3 left-3 z-50 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground shadow-lg focus:not-sr-only"
+          >
+            Skip to main content
+          </a>
           <SiteHeader />
-          <main className="flex-1">
+          <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
             <AuthGate>{children}</AuthGate>
           </main>
         </Providers>

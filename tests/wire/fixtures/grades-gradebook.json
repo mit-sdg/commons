@@ -1103,22 +1103,96 @@
         "session": "$loginAdmin.session"
       },
       "response": {
-        "learners": [
-          {
-            "user": "uuid#9",
-            "seat": "uuid#7",
-            "section": "uuid#6",
-            "rosterName": "Alice",
-            "email": "gb_alice@example.com"
-          },
-          {
-            "user": "uuid#11",
-            "seat": "uuid#8",
-            "section": "uuid#6",
-            "rosterName": "Bob",
-            "email": "gb_bob@example.com"
-          }
-        ]
+        "gradebook": {
+          "items": [
+            {
+              "item": "uuid#13",
+              "label": "Homework 1",
+              "maxPoints": 50
+            },
+            {
+              "item": "uuid#14",
+              "label": "Homework 2",
+              "maxPoints": 100
+            },
+            {
+              "item": "midterm-x",
+              "label": "Midterm",
+              "maxPoints": 100
+            },
+            {
+              "item": "quiz-x",
+              "label": "Quiz",
+              "maxPoints": 10
+            }
+          ],
+          "learners": [
+            {
+              "learner": "uuid#9",
+              "rosterName": "Alice",
+              "email": "gb_alice@example.com",
+              "section": "uuid#6",
+              "cells": [
+                {
+                  "item": "uuid#13",
+                  "grade": "uuid#19",
+                  "score": 42,
+                  "status": "RELEASED"
+                },
+                {
+                  "item": "uuid#14",
+                  "grade": "uuid#15",
+                  "score": 10,
+                  "status": "DRAFT"
+                },
+                {
+                  "item": "midterm-x",
+                  "grade": null,
+                  "score": null,
+                  "status": null
+                },
+                {
+                  "item": "quiz-x",
+                  "grade": "uuid#26",
+                  "score": 9,
+                  "status": "RELEASED"
+                }
+              ]
+            },
+            {
+              "learner": "uuid#11",
+              "rosterName": "Bob",
+              "email": "gb_bob@example.com",
+              "section": "uuid#6",
+              "cells": [
+                {
+                  "item": "uuid#13",
+                  "grade": "uuid#20",
+                  "score": 0,
+                  "status": "EXCUSED"
+                },
+                {
+                  "item": "uuid#14",
+                  "grade": null,
+                  "score": null,
+                  "status": null
+                },
+                {
+                  "item": "midterm-x",
+                  "grade": null,
+                  "score": null,
+                  "status": null
+                },
+                {
+                  "item": "quiz-x",
+                  "grade": "uuid#27",
+                  "score": 7,
+                  "status": "RELEASED"
+                }
+              ]
+            }
+          ]
+        }
       }
     },
     {

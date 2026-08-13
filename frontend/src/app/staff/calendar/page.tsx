@@ -6,17 +6,10 @@ import { CalendarView } from "@/components/lms/calendar-view";
 import { PageContainer, PageHeader } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { loadCalendarStaff, loadSections } from "@/lib/lms";
+import { loadCalendarStaff } from "@/lib/lms";
 
 function getWeekRange(offset: number) {
   const now = new Date();
@@ -37,18 +30,7 @@ function getWeekRange(offset: number) {
 export default function StaffCalendarPage() {
   const { session } = useAuth();
   const [weekOffset, setWeekOffset] = useState(0);
-  const [sectionFilter, setSectionFilter] = useState<string>("all");
   const { start, end, label } = getWeekRange(weekOffset);
-
-  const { data: sectionsData } = useQuery<{
-    sections: {
-      section: string;
-      name: string;
-      location?: string;
-      meetingPattern?: string;
-      status: string;
-    }[];
-  }>(() => loadSections(), []);
 
   const {
     data: calendarData,
@@ -61,7 +43,6 @@ export default function StaffCalendarPage() {
     session,
     start,
     end,
-    sectionFilter,
   ]);
 
   const { data: detailsData } = useQuery<Record<string, unknown>>(
@@ -72,11 +53,10 @@ export default function StaffCalendarPage() {
             calendarData.events.map(async (e) => {
               const key = e.assignment;
               if (!map[key]) {
-                const res = await api.assignments.get({
+                const res = await api.assignments["staff-summary"]({
                   assignment: key,
                 });
-                if (!("error" in res) && res.assignment)
-                  map[key] = res.assignment;
+                if (!("error" in res) && res.summary) map[key] = res.summary;
               }
             }),
           );
@@ -125,8 +105,6 @@ export default function StaffCalendarPage() {
     }[];
   });
 
-  const sections = sectionsData?.sections ?? [];
-
   return (
     <PageContainer>
       <PageHeader
@@ -140,7 +118,8 @@ export default function StaffCalendarPage() {
           <Button
             variant="outline"
             size="icon"
-            className="size-8"
+            className="size-9"
+            aria-label="Previous week"
             onClick={() => setWeekOffset((w) => w - 1)}
           >
             <ChevronLeft className="size-4" />
@@ -148,33 +127,17 @@ export default function StaffCalendarPage() {
           <Button
             variant="outline"
             size="icon"
-            className="size-8"
+            className="size-9"
+            aria-label="Next week"
             onClick={() => setWeekOffset((w) => w + 1)}
           >
             <ChevronRight className="size-4" />
           </Button>
         </div>
         <span className="text-sm font-medium">{label}</span>
-        <div className="flex items-center gap-2">
-          <Select value={sectionFilter} onValueChange={setSectionFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All sections" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All sections</SelectItem>
-              {sections
-                .filter((s) => s.status === "ACTIVE")
-                .map((s) => (
-                  <SelectItem key={s.section} value={s.section}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)}>
-            Today
-          </Button>
-        </div>
+        <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)}>
+          This week
+        </Button>
       </div>
 
       {loading ? (

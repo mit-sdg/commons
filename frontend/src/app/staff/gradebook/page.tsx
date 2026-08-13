@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -21,77 +22,28 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useQuery } from "@/hooks/use-query";
-import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { loadGradebook } from "@/lib/lms";
+import { cn } from "@/lib/utils";
 
 export default function GradebookPage() {
   const { session } = useAuth();
   const [grading, setGrading] = useState<{
     learner: string;
+    learnerName: string;
     item: string;
+    itemLabel: string;
   } | null>(null);
 
-  const {
-    data: gradebookData,
-    loading,
-    error,
-    refetch,
-  } = useQuery(session ? () => loadGradebook() : null, [session]);
-
-  const { data: gradesByStudent, refetch: refetchGrades } = useQuery<
-    Record<
-      string,
-      {
-        item: string;
-        grade: string;
-        score: number;
-        maxPoints: number;
-        status: string;
-        label: string | null;
-      }[]
-    >
-  >(
-    session && gradebookData && gradebookData.learners.length > 0
-      ? async () => {
-          const map: Record<
-            string,
-            {
-              item: string;
-              grade: string;
-              score: number;
-              maxPoints: number;
-              status: string;
-              label: string | null;
-            }[]
-          > = {};
-          await Promise.all(
-            gradebookData.learners.map(async (l) => {
-              const r = await api.grades["for-student"]({
-                learner: l.user,
-              });
-              if (!("error" in r)) map[l.user] = r.grades;
-            }),
-          );
-          return map;
-        }
-      : null,
-    [session, gradebookData],
+  const { data, loading, error, refetch } = useQuery(
+    session ? () => loadGradebook() : null,
+    [session],
   );
-
-  const learners = gradebookData?.learners ?? [];
-  const grades = gradesByStudent ?? {};
-
-  const allItems = new Set<string>();
-  for (const glist of Object.values(grades)) {
-    for (const g of glist) allItems.add(g.item);
-  }
-  const items = [...allItems];
 
   if (loading)
     return (
       <PageContainer>
-        <LoadingState label="Loading gradebook..." />
+        <LoadingState label="Loading gradebook…" />
       </PageContainer>
     );
   if (error)
@@ -101,115 +53,153 @@ export default function GradebookPage() {
       </PageContainer>
     );
 
+  const gradebook = data?.gradebook;
+  const learners = gradebook?.learners ?? [];
+  const items = gradebook?.items ?? [];
+  const selectedCell = grading
+    ? learners
+        .find((learner) => String(learner.learner) === grading.learner)
+        ?.cells.find((cell) => String(cell.item) === grading.item)
+    : null;
+
   return (
-    <PageContainer>
+    <PageContainer width="wide">
       <PageHeader
-        eyebrow="Staff"
+        eyebrow="Course staff"
         title="Gradebook"
-        description="Matrix view of all students and their grade items."
+        description="Enter, review, and release grades for every learner and assignment."
       />
 
       {learners.length === 0 ? (
         <EmptyState
           icon={FileText}
-          title="No students"
-          description="No students with grades to display."
+          title="No learners"
+          description="Active learners appear here after their roster seats are connected."
+        />
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="No grade items"
+          description="Publish an assignment that accepts submissions to create its grade item."
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="max-w-full overflow-x-auto rounded-xl border border-border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 bg-card">Student</TableHead>
+                <TableHead className="sticky left-0 z-10 min-w-48 bg-card">
+                  Learner
+                </TableHead>
                 {items.map((item) => (
-                  <TableHead key={item} className="text-xs text-center w-24">
-                    {item.slice(0, 6)}
+                  <TableHead
+                    key={String(item.item)}
+                    className="min-w-32 text-center"
+                  >
+                    <span className="block text-xs font-medium text-foreground">
+                      {item.label}
+                    </span>
+                    <span className="text-[0.7rem] font-normal text-muted-foreground">
+                      {item.maxPoints} points
+                    </span>
                   </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {learners.map((l) => {
-                const gList = grades[l.user] ?? [];
-                const gMap = new Map(gList.map((g) => [g.item, g]));
-                return (
-                  <TableRow key={l.user}>
-                    <TableCell className="sticky left-0 bg-card">
-                      <Link
-                        href={`/staff/students/${l.user}`}
-                        className="text-sm font-medium hover:text-primary"
+              {learners.map((learner) => (
+                <TableRow key={String(learner.learner)}>
+                  <TableCell className="sticky left-0 z-10 bg-card">
+                    <Link
+                      href={`/staff/students/${learner.learner}`}
+                      className="text-sm font-medium hover:text-primary"
+                    >
+                      {learner.rosterName}
+                    </Link>
+                    <span className="block text-xs text-muted-foreground">
+                      {learner.email}
+                    </span>
+                  </TableCell>
+                  {items.map((item) => {
+                    const cell = learner.cells.find(
+                      (candidate) =>
+                        String(candidate.item) === String(item.item),
+                    );
+                    const status = cell?.status;
+                    return (
+                      <TableCell
+                        key={String(item.item)}
+                        className="p-1 text-center"
                       >
-                        {l.rosterName}
-                      </Link>
-                    </TableCell>
-                    {items.map((item) => {
-                      const g = gMap.get(item);
-                      if (!g)
-                        return (
-                          <TableCell
-                            key={item}
-                            className="text-center text-xs text-muted-foreground"
-                          >
-                            —
-                          </TableCell>
-                        );
-                      return (
-                        <TableCell key={item} className="text-center">
-                          <button
-                            type="button"
-                            className="text-xs hover:underline"
-                            onClick={() =>
-                              setGrading({ learner: l.user, item })
-                            }
-                          >
-                            <span
-                              className={
-                                g.status === "RELEASED"
-                                  ? "text-emerald-600 font-medium"
-                                  : g.status === "DRAFT"
-                                    ? "text-yellow-600"
-                                    : g.status === "EXCUSED"
-                                      ? "text-purple-600"
-                                      : "text-muted-foreground"
-                              }
-                            >
-                              {g.status === "EXCUSED"
-                                ? "EX"
-                                : `${g.score}/${g.maxPoints}`}
+                        <button
+                          type="button"
+                          className={cn(
+                            "min-h-10 w-full rounded-md px-2 py-1 text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            status === "RELEASED" &&
+                              "font-medium text-emerald-700 dark:text-emerald-300",
+                            status === "DRAFT" &&
+                              "text-amber-700 dark:text-amber-300",
+                            status === "EXCUSED" &&
+                              "text-purple-700 dark:text-purple-300",
+                            !status && "text-muted-foreground",
+                          )}
+                          aria-label={`Grade ${learner.rosterName} for ${item.label}`}
+                          onClick={() =>
+                            setGrading({
+                              learner: String(learner.learner),
+                              learnerName: learner.rosterName,
+                              item: String(item.item),
+                              itemLabel: item.label,
+                            })
+                          }
+                        >
+                          {status === "EXCUSED"
+                            ? "Excused"
+                            : cell?.score !== null && cell?.score !== undefined
+                              ? `${cell.score} / ${item.maxPoints}`
+                              : "Add grade"}
+                          {status ? (
+                            <span className="block text-[0.65rem] uppercase opacity-70">
+                              {status.toLowerCase()}
                             </span>
-                          </button>
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                );
-              })}
+                          ) : null}
+                        </button>
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
       )}
 
-      <Dialog open={!!grading} onOpenChange={() => setGrading(null)}>
+      <Dialog
+        open={!!grading}
+        onOpenChange={(open) => !open && setGrading(null)}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              Grade: {grading?.learner} — {grading?.item}
-            </DialogTitle>
+            <DialogTitle>{grading?.itemLabel}</DialogTitle>
+            <DialogDescription>
+              Grade for {grading?.learnerName}
+            </DialogDescription>
           </DialogHeader>
-          {grading && (
+          {grading ? (
             <GradeInput
               learner={grading.learner}
               item={grading.item}
               currentScore={
-                grades[grading.learner]?.find((g) => g.item === grading.item)
-                  ?.score
+                typeof selectedCell?.score === "number"
+                  ? selectedCell.score
+                  : undefined
               }
+              currentStatus={selectedCell?.status ?? undefined}
               onSaved={() => {
                 setGrading(null);
-                refetchGrades();
+                refetch();
               }}
             />
-          )}
+          ) : null}
         </DialogContent>
       </Dialog>
     </PageContainer>

@@ -4,6 +4,7 @@ import { Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -65,8 +66,9 @@ export function CsvImport({ onComplete }: CsvImportProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <p className="text-sm font-medium">Paste CSV (with header row)</p>
+        <Label htmlFor="roster-csv">Paste CSV (with header row)</Label>
         <Textarea
+          id="roster-csv"
           value={csv}
           onChange={(e) => setCsv(e.target.value)}
           placeholder="externalKey,email,rosterName,kind,section&#10;jdoe,jdoe@school.edu,John Doe,STUDENT,sec01"

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { count } from "@/lib/format";
@@ -100,16 +101,22 @@ export function LateDayControls({
             </span>{" "}
             applied to this assignment
           </p>
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              min={1}
-              max={balance ? Math.min(balance.remaining + appliedDays, 7) : 7}
-              value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
-              className="w-20"
-              disabled={loading}
-            />
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="space-y-1">
+              <Label htmlFor={`late-days-${assignment}`} className="text-xs">
+                Days to apply
+              </Label>
+              <Input
+                id={`late-days-${assignment}`}
+                type="number"
+                min={1}
+                max={balance ? balance.remaining + appliedDays : undefined}
+                value={days}
+                onChange={(e) => setDays(Number(e.target.value))}
+                className="w-20"
+                disabled={loading}
+              />
+            </div>
             <Button
               size="sm"
               variant="outline"
@@ -130,16 +137,22 @@ export function LateDayControls({
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-2">
-          <Input
-            type="number"
-            min={1}
-            max={balance?.remaining ?? 5}
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="w-20"
-            disabled={loading}
-          />
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="space-y-1">
+            <Label htmlFor={`late-days-${assignment}`} className="text-xs">
+              Days to apply
+            </Label>
+            <Input
+              id={`late-days-${assignment}`}
+              type="number"
+              min={1}
+              max={balance?.remaining}
+              value={days}
+              onChange={(e) => setDays(Number(e.target.value))}
+              className="w-20"
+              disabled={loading}
+            />
+          </div>
           <Button
             size="sm"
             variant="outline"

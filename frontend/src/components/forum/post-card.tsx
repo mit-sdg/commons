@@ -203,7 +203,10 @@ export function PostCard({
           onCancel={() => setEditing(false)}
         />
       ) : (
-        <RenderedMarkdown html={node.rendered} />
+        <RenderedMarkdown
+          html={node.rendered}
+          className={isRoot ? "[&>h1:first-child]:hidden" : undefined}
+        />
       )}
 
       {!editing ? <PostLinks post={postId} /> : null}

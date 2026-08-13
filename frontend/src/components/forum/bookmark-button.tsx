@@ -42,6 +42,8 @@ export function BookmarkButton({
       variant="ghost"
       size="sm"
       onClick={toggle}
+      aria-label={saved ? "Remove bookmark" : "Bookmark post"}
+      aria-pressed={saved}
       className={cn("gap-1.5 text-muted-foreground", saved && "text-primary")}
     >
       <Bookmark className={cn("size-4", saved && "fill-current")} />

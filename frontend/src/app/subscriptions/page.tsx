@@ -14,7 +14,7 @@ import { relativeTime, shortId, titleFromContent } from "@/lib/format";
 import { loadFeed } from "@/lib/loaders";
 import type { ConversationSummary, Subscription } from "@/lib/models";
 
-function Subscriptions() {
+function Following() {
   const { session } = useAuth();
   const { data, error, loading, refetch } = useQuery<{
     subscriptions: Subscription[];
@@ -38,9 +38,9 @@ function Subscriptions() {
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Following"
-        title="Subscriptions"
-        description="Topics you're watching for new replies."
+        eyebrow="Discussions"
+        title="Following"
+        description="Discussions you're watching for new replies."
       />
       {loading && !data ? (
         <LoadingState />
@@ -50,7 +50,7 @@ function Subscriptions() {
         <EmptyState
           icon={Bell}
           title="Not following anything"
-          description="Follow a topic to keep tabs on the conversation."
+          description="Follow a discussion to keep up with new replies."
         />
       ) : (
         <div className="divide-y divide-border rounded-xl border border-border bg-card">
@@ -93,10 +93,10 @@ function Subscriptions() {
   );
 }
 
-export default function SubscriptionsPage() {
+export default function FollowingPage() {
   return (
     <RequireAuth>
-      <Subscriptions />
+      <Following />
     </RequireAuth>
   );
 }

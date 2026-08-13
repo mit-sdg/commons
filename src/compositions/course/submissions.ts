@@ -53,10 +53,18 @@ export const theSubmissionsForAssignment = former(
 /** Who was assigned this assignment? */
 export const theAssignedPopulationForAssignment = former(
   "the assigned population for (assignment)",
-  ({ assignment }, { assignee, rosterName }) =>
+  ({ assignment }, { assignee, rosterName, release, dueOverride, releaseStatus }) =>
     each(Assigning._getAssignees({ assignment }).is({ assignee }))
-      .where(Rostering._getSeatByUser({ user: assignee }).is({ rosterName }))
-      .form({ assignee, rosterName }),
+      .where(
+        Rostering._getSeatByUser({ user: assignee }).is({ rosterName }),
+        Assigning._getAssigned({ assignee }).is({
+          assignment,
+          release,
+          dueOverride,
+          status: releaseStatus,
+        }),
+      )
+      .form({ assignee, rosterName, release, dueOverride, status: releaseStatus }),
 );
 
 /** Which submissions belong to this learner? */

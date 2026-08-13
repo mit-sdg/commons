@@ -19,6 +19,11 @@ export const theSections = former(
       status,
     }),
 );
+/** What class has been configured? */
+export const theClassConfiguration = view(
+  "the class configuration ()",
+  (_inputs, { detail }, _bindings) => where(Rostering._getClass({}).is({ detail })),
+).optional();
 /** Who belongs on the active roster? */
 export const theRoster = former(
   "the roster ()",
@@ -33,6 +38,36 @@ export const theRoster = former(
         email,
       },
     ),
+);
+/** Which seats are waiting for an account link? */
+export const thePendingRoster = former(
+  "the pending roster ()",
+  (_inputs, { seat, externalKey, email, rosterName, kind, section }) =>
+    each(
+      Rostering._getUnclaimedSeats({}).is({
+        seat,
+        externalKey,
+        email,
+        rosterName,
+        kind,
+        section,
+      }),
+    ).form({ seat, externalKey, email, rosterName, kind, section }),
+);
+/** Which seats have been dropped? */
+export const theDroppedRoster = former(
+  "the dropped roster ()",
+  (_inputs, { user, seat, kind, section, rosterName, email }) =>
+    each(
+      Rostering._getDroppedSeats({}).is({
+        user,
+        seat,
+        kind,
+        section,
+        rosterName,
+        email,
+      }),
+    ).form({ user, seat, kind, section, rosterName, email }),
 );
 /** Which seat belongs to this user? */
 export const theSeatOf = view("the seat of (user)", ({ user }, { seat }, _bindings) =>
@@ -85,6 +120,28 @@ export const ConfigureClass = endpoint(
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
+);
+
+export const ClassConfiguration = endpoint("/roster/class", ({ session, user, detail }) =>
+  receive({ session }).then(
+    where(
+      activeUser({ session }).is({ user }),
+      mayManageRoster({ user }),
+      theClassConfiguration({}).is({ detail }),
+    )
+      .then(respond({ class: detail }))
+      .named("found"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayManageRoster({ user }),
+      no(theClassConfiguration({})),
+    )
+      .then(respond({ class: null }))
+      .named("absent"),
+    where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
 export const RosterMe = endpoint("/roster/me", ({ session, user, seat }) =>
@@ -191,6 +248,28 @@ export const RosterList = endpoint("/roster/list", ({ session, user }) =>
   receive({ session }).then(
     where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
       .then(respond({ members: theRoster({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
+export const PendingRoster = endpoint("/roster/pending", ({ session, user }) =>
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+      .then(respond({ members: thePendingRoster({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
+export const DroppedRoster = endpoint("/roster/dropped", ({ session, user }) =>
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+      .then(respond({ members: theDroppedRoster({}) }))
       .named("success"),
     where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
       .then(respond({ error: "FORBIDDEN" }))

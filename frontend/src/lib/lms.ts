@@ -19,6 +19,20 @@ export async function loadRosterList(): Promise<Output<"/roster/list">> {
   return unwrap(await api.roster.list({}));
 }
 
+export async function loadClassConfiguration(): Promise<
+  Output<"/roster/class">
+> {
+  return unwrap(await api.roster.class({}));
+}
+
+export async function loadPendingRoster(): Promise<Output<"/roster/pending">> {
+  return unwrap(await api.roster.pending({}));
+}
+
+export async function loadDroppedRoster(): Promise<Output<"/roster/dropped">> {
+  return unwrap(await api.roster.dropped({}));
+}
+
 export async function loadSections(): Promise<Output<"/roster/sections/list">> {
   return unwrap(await api.roster["sections/list"]({}));
 }

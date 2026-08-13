@@ -30,17 +30,22 @@ export function PostPreview({
   meta,
   action,
   showTitle = true,
+  moderator = false,
 }: {
   item: string;
   conversation?: string | null;
   meta?: React.ReactNode;
   action?: React.ReactNode;
   showTitle?: boolean;
+  moderator?: boolean;
 }) {
   const router = useRouter();
   const { data, loading } = useQuery<{ post: PostView }>(
-    () => api.posts.get({ post: item }),
-    [item],
+    () =>
+      moderator
+        ? api.moderation["posts/get"]({ item })
+        : api.posts.get({ post: item }),
+    [item, moderator],
   );
   const location = useQuery<{ conversation: string | null }>(
     conversation ? null : () => api.threads.forItem({ item }),
@@ -133,6 +138,7 @@ export function PostPreview({
         html={post.rendered}
         className={cn(
           "line-clamp-4 text-sm",
+          showTitle && "[&>h1:first-child]:hidden",
           !showTitle &&
             "[&>*+*]:mt-2 [&>h1:first-child]:mt-0 [&>h2:first-child]:mt-0 [&>h3:first-child]:mt-0 [&_h1]:mt-2 [&_h1]:text-base [&_h1]:leading-6 [&_h2]:mt-2 [&_h2]:text-base [&_h2]:leading-6 [&_h3]:mt-2 [&_h3]:text-base [&_h3]:leading-6 [&_p]:leading-6",
         )}

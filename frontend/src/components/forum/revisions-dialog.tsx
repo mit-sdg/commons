@@ -17,7 +17,13 @@ import { api, unwrap } from "@/lib/api";
 import { fullTime, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export function RevisionsDialog({ item }: { item: string }) {
+export function RevisionsDialog({
+  item,
+  moderator = false,
+}: {
+  item: string;
+  moderator?: boolean;
+}) {
   return (
     <Dialog>
       <DialogTrigger className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-2">
@@ -31,20 +37,34 @@ export function RevisionsDialog({ item }: { item: string }) {
             Browse every saved version of this post.
           </DialogDescription>
         </DialogHeader>
-        <RevisionsBody item={item} />
+        <RevisionsBody item={item} moderator={moderator} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function RevisionsBody({ item }: { item: string }) {
+function RevisionsBody({
+  item,
+  moderator,
+}: {
+  item: string;
+  moderator: boolean;
+}) {
   const list = useQuery(
-    () => api.revisions.list({ item }).then(unwrap),
-    [item],
+    () =>
+      (moderator
+        ? api.moderation["revisions/list"]({ item })
+        : api.revisions.list({ item })
+      ).then(unwrap),
+    [item, moderator],
   );
   const latest = useQuery(
-    () => api.revisions.latest({ item }).then(unwrap),
-    [item],
+    () =>
+      (moderator
+        ? api.moderation["revisions/latest"]({ item })
+        : api.revisions.latest({ item })
+      ).then(unwrap),
+    [item, moderator],
   );
   const [selected, setSelected] = useState<number | null>(null);
 
@@ -95,7 +115,7 @@ function RevisionsBody({ item }: { item: string }) {
       </ScrollArea>
       <div>
         {active != null ? (
-          <RevisionContent item={item} number={active} />
+          <RevisionContent item={item} number={active} moderator={moderator} />
         ) : null}
         {latest.data?.revision[0] ? (
           <p className="mt-3 text-xs text-muted-foreground">
@@ -107,10 +127,22 @@ function RevisionsBody({ item }: { item: string }) {
   );
 }
 
-function RevisionContent({ item, number }: { item: string; number: number }) {
+function RevisionContent({
+  item,
+  number,
+  moderator,
+}: {
+  item: string;
+  number: number;
+  moderator: boolean;
+}) {
   const { data, loading } = useQuery(
-    () => api.revisions.get({ item, number }).then(unwrap),
-    [item, number],
+    () =>
+      (moderator
+        ? api.moderation["revisions/get"]({ item, number })
+        : api.revisions.get({ item, number })
+      ).then(unwrap),
+    [item, number, moderator],
   );
 
   if (loading) return <LoadingState label="Loading version…" />;

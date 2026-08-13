@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -59,13 +60,17 @@ export function FlagDialog({
             moderators with the <code>moderate</code> capability.
           </DialogDescription>
         </DialogHeader>
-        <Textarea
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          placeholder="Why are you reporting this?"
-          rows={4}
-          autoFocus
-        />
+        <div className="space-y-2">
+          <Label htmlFor={`flag-reason-${target}`}>Reason</Label>
+          <Textarea
+            id={`flag-reason-${target}`}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Why are you reporting this?"
+            rows={4}
+            autoFocus
+          />
+        </div>
         <DialogFooter>
           <Button
             variant="ghost"
