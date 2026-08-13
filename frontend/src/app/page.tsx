@@ -67,30 +67,6 @@ function CategoriesCard() {
   );
 }
 
-function WelcomeCard() {
-  const { me } = useAuth();
-  if (me) return null;
-  return (
-    <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-      <h3 className="font-display text-lg font-semibold tracking-tight">
-        Welcome to Commons
-      </h3>
-      <p className="mt-1.5 text-sm text-muted-foreground">
-        Discuss course work, follow assignments, and keep up with course
-        updates. Sign in to post, reply, react, and follow conversations.
-      </p>
-      <div className="mt-4 flex gap-2">
-        <Button asChild size="sm">
-          <Link href="/register">Create account</Link>
-        </Button>
-        <Button asChild size="sm" variant="outline">
-          <Link href="/login">Sign in</Link>
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 function LmsDashboard({
   mayManageAssignments,
   permissionLoading,
@@ -418,7 +394,6 @@ export default function HomePage() {
       </section>
 
       <aside className="space-y-5 lg:sticky lg:top-20 lg:self-start">
-        <WelcomeCard />
         <CategoriesCard />
         {showLms && (
           <div className="rounded-xl border border-border bg-card p-4 space-y-2">

@@ -4,8 +4,8 @@
     {
       "id": "regAdmin",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "mod_admin",
         "password": "password123",
@@ -54,8 +54,8 @@
     {
       "id": "regMember",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "mod_member",
         "password": "password123",

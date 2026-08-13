@@ -18,10 +18,14 @@ async function mongoApp() {
 
 describe("Commons with Posting on MongoDB", () => {
   test("a thread is created, replied to, and read back with all posts", async () => {
-    const { send } = await mongoApp();
-    await send("/auth/register", {
+    const { app, send } = await mongoApp();
+    const registered = await app.concepts.Authenticating.register({
       username: "amara",
       password: "password123",
+      email: "amara@example.com",
+    });
+    await app.concepts.Profiling.createProfile({
+      user: registered.user,
       displayName: "Amara",
       email: "amara@example.com",
     });
@@ -51,11 +55,15 @@ describe("Commons with Posting on MongoDB", () => {
   });
 
   test("an edit re-renders while a stranger receives FORBIDDEN", async () => {
-    const { send } = await mongoApp();
+    const { app, send } = await mongoApp();
     for (const username of ["ada", "eve"]) {
-      await send("/auth/register", {
+      const registered = await app.concepts.Authenticating.register({
         username,
         password: "password123",
+        email: `${username}@example.com`,
+      });
+      await app.concepts.Profiling.createProfile({
+        user: registered.user,
         displayName: username,
         email: `${username}@example.com`,
       });

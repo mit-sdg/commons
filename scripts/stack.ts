@@ -31,12 +31,12 @@ async function waitForEdge(origin: string, exited: () => number | undefined) {
     const code = exited();
     if (code !== undefined) throw new Error(`commons: edge exited before readiness (code ${code})`);
     try {
-      const response = await fetch(`${origin}/api/threads/activity`, {
+      const response = await fetch(`${origin}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ username: "readiness", password: "not-a-real-password" }),
       });
-      if (response.status === 200) return;
+      if (response.status === 401) return;
     } catch {}
     await pause(100);
   }

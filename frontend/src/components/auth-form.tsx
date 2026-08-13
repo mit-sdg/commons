@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
@@ -19,16 +19,24 @@ import { Label } from "@/components/ui/label";
 import { CommonsError, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-export function AuthForm({ mode }: { mode: "login" | "register" }) {
+export function AuthForm({
+  mode,
+  invitation: invitationProp,
+}: {
+  mode: "login" | "register";
+  invitation?: string;
+}) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, register } = useAuth();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
+  const [temporaryPassword, setTemporaryPassword] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   const isRegister = mode === "register";
+  const invitation = invitationProp ?? searchParams.get("invitation") ?? "";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,10 +44,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     try {
       if (isRegister) {
         await register(
+          invitation,
+          temporaryPassword,
           username.trim(),
           password,
           displayName.trim(),
-          email.trim(),
         );
         toast.success("Account created.");
       } else {
@@ -72,7 +81,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             <CardTitle>Account details</CardTitle>
             <CardDescription>
               {isRegister
-                ? "Choose a username and the display name other people will see."
+                ? "Use the temporary password from your invitation email, then choose your account details."
                 : "Enter your username and password to continue."}
             </CardDescription>
           </CardHeader>
@@ -101,14 +110,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   />
                 </div>
                 <div className="flex flex-col gap-2.5">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="temporary-password">Temporary password</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ada@example.com"
+                    id="temporary-password"
+                    type="password"
+                    autoComplete="one-time-code"
+                    value={temporaryPassword}
+                    onChange={(e) => setTemporaryPassword(e.target.value)}
                     required
                   />
                 </div>
@@ -130,7 +138,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           <CardFooter className="flex flex-col gap-3">
             <Button type="submit" className="w-full" disabled={busy}>
               {busy ? <Spinner className="size-4" /> : null}
-              {isRegister ? "Create account" : "Sign in"}
+              {isRegister ? "Accept invitation" : "Sign in"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               {isRegister ? (
@@ -144,15 +152,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   </Link>
                 </>
               ) : (
-                <>
-                  New here?{" "}
-                  <Link
-                    href="/register"
-                    className="font-medium text-primary hover:underline"
-                  >
-                    Create an account
-                  </Link>
-                </>
+                "Registration is available by administrator invitation only."
               )}
             </p>
           </CardFooter>

@@ -8,8 +8,19 @@ a user identity supplied by the caller when a session can establish it.
 
 ### Authentication
 
-Registration and login create authenticated identities and sessions. Logout and
-password changes invalidate the applicable session state.
+Registration requires a durable, non-expiring invitation and its temporary
+password. The current access policy accepts invitations delivered by email.
+Login creates a session. Logout and password changes invalidate the applicable
+session state.
+
+### Invitations
+
+An administrator may issue or resend an invitation through an email-specific
+composition. That composition normalizes the email recipient, asks generic
+Inviting to issue an invitation on the `email` channel. A reaction renders the
+Commons-specific message and queues the completed envelope in Mailing. Resending
+preserves the credential. Invitation administration requires
+the same administrator capability as other access controls.
 
 ### Roles
 

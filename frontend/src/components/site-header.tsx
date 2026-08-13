@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Bell,
   Bookmark,
   LayoutGrid,
   LogOut,
@@ -241,9 +240,6 @@ export function SiteHeader() {
               <Button asChild variant="ghost" size="sm">
                 <Link href="/login">Sign in</Link>
               </Button>
-              <Button asChild size="sm" variant="outline">
-                <Link href="/register">Join</Link>
-              </Button>
             </div>
           )}
 
@@ -315,13 +311,6 @@ export function SiteHeader() {
                   className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
                 >
                   <User className="size-4" /> Sign in
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-                >
-                  <Bell className="size-4" /> Join
                 </Link>
               </>
             ) : null}

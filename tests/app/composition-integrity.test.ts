@@ -8,19 +8,23 @@ async function actor(
   username: string,
   email = `${username}@example.edu`,
 ) {
-  const registered = await app.invoker.invoke("/auth/register", {
+  const registered = await app.concepts.Authenticating.register({
     username,
     password: "password123",
+    email,
+  });
+  await app.concepts.Profiling.createProfile({
+    user: registered.user,
     displayName: username,
     email,
-  } as never);
+  });
   const login = await app.invoker.invoke("/auth/login", {
     username,
     password: "password123",
   } as never);
-  if (!registered.ok || !login.ok) throw new Error(`could not create ${username}`);
+  if (!login.ok) throw new Error(`could not create ${username}`);
   return {
-    user: (registered.value as { user: string }).user,
+    user: registered.user,
     session: (login.value as { session: string }).session,
   };
 }

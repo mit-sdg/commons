@@ -4,8 +4,8 @@
     {
       "id": "regAdmin",
       "phase": "assert",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "rb_admin",
         "password": "password123",
@@ -19,8 +19,8 @@
     {
       "id": "regDupUsername",
       "phase": "assert",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "rb_admin",
         "password": "password456",
@@ -34,8 +34,8 @@
     {
       "id": "regShortUsername",
       "phase": "assert",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "ab",
         "password": "password123",
@@ -220,8 +220,8 @@
     {
       "id": "regMember",
       "phase": "assert",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "rb_member",
         "password": "password123",
@@ -856,8 +856,8 @@
     {
       "id": "regLinked",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "rb_linked",
         "password": "password123",
@@ -1036,8 +1036,8 @@
     {
       "id": "regStaffer",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "rb_staffer",
         "password": "password123",

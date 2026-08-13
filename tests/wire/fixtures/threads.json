@@ -4,8 +4,8 @@
     {
       "id": "regAlice",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "alice",
         "password": "password123",
@@ -54,8 +54,8 @@
     {
       "id": "regBob",
       "phase": "setup",
-      "kind": "send",
-      "target": "/auth/register",
+      "kind": "setup",
+      "target": "register-user",
       "body": {
         "username": "bob",
         "password": "password123",

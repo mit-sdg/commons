@@ -23,7 +23,12 @@ const ALICE = {
 };
 
 async function registerAndLogin(edge: Edge) {
-  await post(edge, "/auth/register", ALICE);
+  const registered = await edge.application.concepts.Authenticating.register(ALICE);
+  await edge.application.concepts.Profiling.createProfile({
+    user: registered.user,
+    displayName: ALICE.displayName,
+    email: ALICE.email,
+  });
   const login = await post(edge, "/auth/login", {
     username: ALICE.username,
     password: ALICE.password,
@@ -75,9 +80,13 @@ describe("HTTP session cookies", () => {
   test("post mutations reject body tokens and authorize the cookie's user", async () => {
     const edge = createEdge();
     const { cookie: aliceCookie } = await registerAndLogin(edge);
-    await post(edge, "/auth/register", {
+    const bob = await edge.application.concepts.Authenticating.register({
       username: "bob",
       password: "pw-bob-123",
+      email: "bob@example.com",
+    });
+    await edge.application.concepts.Profiling.createProfile({
+      user: bob.user,
       displayName: "Bob",
       email: "bob@example.com",
     });
@@ -164,7 +173,12 @@ describe("HTTP session cookies", () => {
 describe("HTTP paths and failures", () => {
   test("the edge serves only the configured /api base path", async () => {
     const edge = createEdge();
-    await post(edge, "/api/auth/register", ALICE);
+    const registered = await edge.application.concepts.Authenticating.register(ALICE);
+    await edge.application.concepts.Profiling.createProfile({
+      user: registered.user,
+      displayName: ALICE.displayName,
+      email: ALICE.email,
+    });
     const viaPrefix = await post(edge, "/api/auth/login", {
       username: ALICE.username,
       password: ALICE.password,
@@ -183,11 +197,11 @@ describe("HTTP paths and failures", () => {
     expect(await gone.json()).toEqual({ error: "NOT_FOUND" });
   });
 
-  test("an application's missing-resource refusal uses the public 404", async () => {
+  test("an anonymous missing-resource read is rejected before resource lookup", async () => {
     const edge = createEdge();
     const gone = await post(edge, "/posts/get", { post: "missing" });
-    expect(gone.status).toBe(404);
-    expect(await gone.json()).toEqual({ error: "NOT_FOUND" });
+    expect(gone.status).toBe(401);
+    expect(await gone.json()).toEqual({ error: "UNAUTHORIZED" });
   });
 
   test("a scalar JSON body returns 400 INVALID_REQUEST", async () => {

@@ -15,11 +15,16 @@ describe("MongoDB authorization and privacy", () => {
         : { error: result.error.kind === "domain" ? result.error.value : result.error.code };
     };
     const actor = async (username: string) => {
-      const made = await send("/auth/register", {
+      const email = `${username}@example.edu`;
+      const made = await app.concepts.Authenticating.register({
         username,
         password: "password123",
-        email: `${username}@example.edu`,
+        email,
+      });
+      await app.concepts.Profiling.createProfile({
+        user: made.user,
         displayName: username,
+        email,
       });
       const login = await send("/auth/login", { username, password: "password123" });
       return { user: made.user as string, session: login.session as string };

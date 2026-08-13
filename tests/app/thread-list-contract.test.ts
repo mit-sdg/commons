@@ -11,12 +11,12 @@ const post = (edge: ReturnType<typeof createEdge>, path: string, body: unknown) 
   );
 
 describe("thread listing routes", () => {
-  test("latest and activity are separate routes with no sort dispatch", async () => {
+  test("latest and activity are separate protected routes with no sort dispatch", async () => {
     const edge = createEdge();
     for (const path of ["/threads/latest", "/threads/activity"]) {
       const response = await post(edge, path, {});
-      expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ conversations: [] });
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual({ error: "UNAUTHORIZED" });
     }
 
     const oldDispatch = await post(edge, "/threads/list", { sort: "latest" });
@@ -24,10 +24,10 @@ describe("thread listing routes", () => {
     expect(await oldDispatch.json()).toEqual({ error: "NOT_FOUND" });
   });
 
-  test("the thread route returns its rows and page context together", async () => {
+  test("the thread route requires authentication before returning context", async () => {
     const edge = createEdge();
     const response = await post(edge, "/threads/get", { conversation: "missing" });
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ thread: [], context: [] });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "UNAUTHORIZED" });
   });
 });

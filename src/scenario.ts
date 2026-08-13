@@ -3,13 +3,20 @@ import type { CommonsWire } from "./client.ts";
 import { createEdge } from "./edge.ts";
 
 export async function runScenario() {
-  const commons = createLocalClient<CommonsWire>({ invoker: createEdge().gateway });
+  const edge = createEdge();
+  const commons = createLocalClient<CommonsWire>({ invoker: edge.gateway });
+  const issued = await edge.application.concepts.Inviting.invite({
+    channel: "email",
+    address: "mara@example.test",
+    at: new Date(),
+  });
 
-  const registered = await commons.auth.register({
+  const registered = await commons.auth["accept-invitation"]({
+    invitation: issued.invitation,
+    temporaryPassword: issued.credential,
     username: "mara",
     password: "long-enough-password",
     displayName: "Mara",
-    email: "mara@example.test",
   });
   if ("error" in registered) throw new Error(String(registered.error));
 
