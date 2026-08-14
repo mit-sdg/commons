@@ -4,6 +4,7 @@ import { startMailWorker } from "../email/worker.ts";
 import { constructConceptFloor } from "./concept-floor.ts";
 
 export interface CommonsProcessConfiguration {
+  host?: string;
   port: number;
   mongodbUrl?: string;
   mail?: MailConfiguration;
@@ -18,7 +19,8 @@ export interface CommonsProcessConfiguration {
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export async function runCommonsProcess(configuration: CommonsProcessConfiguration) {
-  const { port, mongodbUrl, mail, bootstrap } = configuration;
+  const { host = "127.0.0.1", port, mongodbUrl, mail, bootstrap } = configuration;
+  if (host.trim() === "") throw new Error("commons: host must not be empty");
   if (!Number.isInteger(port) || port < 1 || port > 65_535) {
     throw new Error(`commons: port must be an integer from 1 to 65535; received "${port}"`);
   }
@@ -48,10 +50,10 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
 
   let server: ReturnType<typeof Bun.serve>;
   try {
-    server = Bun.serve({ hostname: "127.0.0.1", port, fetch: edge.fetch });
+    server = Bun.serve({ hostname: host, port, fetch: edge.fetch });
   } catch (error) {
     await floor.close().catch(() => undefined);
-    throw new Error(`commons: could not listen on http://127.0.0.1:${port}: ${messageOf(error)}`);
+    throw new Error(`commons: could not listen on http://${host}:${port}: ${messageOf(error)}`);
   }
 
   const mailWorker =
@@ -63,7 +65,7 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
       ? "commons: SMTP email is disabled."
       : "commons: SMTP email worker started.",
   );
-  console.log(`commons: serving ${edge.servedPaths.size} endpoints on http://127.0.0.1:${port}`);
+  console.log(`commons: serving ${edge.servedPaths.size} endpoints on http://${host}:${port}`);
 
   let stopped = false;
   return {

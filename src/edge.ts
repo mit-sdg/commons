@@ -1,9 +1,10 @@
 import { createGateway } from "@mit-sdg/sync-engine/boundary";
 import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
+import { createAdminSetupHandler } from "./admin-setup.ts";
 import type { CommonsImplementations } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
 import { commonsHttpPolicy } from "./assembly/http-policy.ts";
-import { configuredPublicOrigin } from "./deployment.ts";
+import { configuredAdminSetupSecretVerifier, configuredPublicOrigin } from "./deployment.ts";
 
 const PUBLIC_PATHS = new Set(["/auth/login", "/auth/accept-invitation"]);
 
@@ -16,14 +17,25 @@ function sessionFrom(request: Request): string | undefined {
   return sessions.length === 1 && sessions[0] !== "" ? sessions[0] : undefined;
 }
 
+export interface CommonsEdgeConfiguration {
+  adminSetupSecretVerifier?: string;
+}
+
 export function createEdge(
   instances: CommonsImplementations,
   origin: string = configuredPublicOrigin(),
+  configuration?: CommonsEdgeConfiguration,
 ) {
   const application = assembleCommons(instances);
   const gateway = createGateway({ application });
   const policy = commonsHttpPolicy(origin);
   const handler = createHttpHandler({ application, gateway, policy });
+  const adminSetup = createAdminSetupHandler(
+    application,
+    configuration === undefined
+      ? configuredAdminSetupSecretVerifier()
+      : configuration.adminSetupSecretVerifier,
+  );
   const servedPaths = new Set(Object.keys(application.publicInterface.routes));
   const sessionPaths = new Set(
     Object.entries(application.publicInterface.routes)
@@ -32,6 +44,23 @@ export function createEdge(
   );
   const fetch = async (request: Request): Promise<Response> => {
     const path = new URL(request.url).pathname;
+    if (request.method === "GET" && path === "/health/live") {
+      return Response.json({ status: "ok" }, { headers: { "Cache-Control": "no-store" } });
+    }
+    if (request.method === "GET" && path === "/health/ready") {
+      try {
+        await application.concepts.Authenticating._getUserCount({});
+        return Response.json({ status: "ok" }, { headers: { "Cache-Control": "no-store" } });
+      } catch {
+        return Response.json(
+          { status: "unavailable" },
+          { status: 503, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+    }
+    const setupResponse = adminSetup(request);
+    if (setupResponse !== undefined) return setupResponse;
+
     const logicalPath = path.startsWith("/api/") ? path.slice(4) : undefined;
     if (
       request.method === "POST" &&

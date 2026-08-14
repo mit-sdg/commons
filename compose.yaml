@@ -1,0 +1,71 @@
+services:
+  mongodb:
+    image: "${MONGODB_IMAGE:-mongo:8.0}"
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "${MONGODB_USERNAME:-commons}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_PASSWORD:?Set MONGODB_PASSWORD to a URL-safe random value}"
+      MONGO_INITDB_DATABASE: "${MONGODB_DATABASE:-commons}"
+    volumes:
+      - mongodb_data:/data/db
+    expose:
+      - "27017"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --host 127.0.0.1 --quiet
+          --username "$${MONGO_INITDB_ROOT_USERNAME}"
+          --password "$${MONGO_INITDB_ROOT_PASSWORD}"
+          --authenticationDatabase admin
+          --eval "quit(db.adminCommand('ping').ok ? 0 : 2)"
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "${COMMONS_BACKEND_PORT:-4000}"
+      MONGODB_URL: "mongodb://${MONGODB_USERNAME:-commons}:${MONGODB_PASSWORD:?Set MONGODB_PASSWORD to a URL-safe random value}@mongodb:27017/${MONGODB_DATABASE:-commons}?authSource=admin"
+      PUBLIC_ORIGIN: "${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN to the public HTTPS frontend origin}"
+      INVITATION_SECRET: "${INVITATION_SECRET:?Set INVITATION_SECRET to a strong random value}"
+      ADMIN_SETUP_SECRET_HASH: "${ADMIN_SETUP_SECRET_HASH:-}"
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-}"
+      SMTP_SECURE: "${SMTP_SECURE:-}"
+      SMTP_USERNAME: "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      SMTP_FROM: "${SMTP_FROM:-}"
+    expose:
+      - "${COMMONS_BACKEND_PORT:-4000}"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        BACKEND_ORIGIN: "http://backend:${COMMONS_BACKEND_PORT:-4000}"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "${COMMONS_FRONTEND_PORT:-3000}"
+      BACKEND_ORIGIN: "http://backend:${COMMONS_BACKEND_PORT:-4000}"
+    expose:
+      - "${COMMONS_FRONTEND_PORT:-3000}"
+
+volumes:
+  mongodb_data:

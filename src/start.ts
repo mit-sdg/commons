@@ -3,6 +3,7 @@ import { validateDeploymentConfiguration } from "./deployment.ts";
 import { mailConfigurationFromEnv } from "./email/configuration.ts";
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const host = process.env.HOST ?? "127.0.0.1";
 const sourcePort = process.env.PORT ?? "4000";
 const port = Number(sourcePort);
 
@@ -13,6 +14,7 @@ try {
   validateDeploymentConfiguration();
   const mail = mailConfigurationFromEnv();
   const running = await runCommonsProcess({
+    host,
     port,
     ...(process.env.MONGODB_URL === undefined ? {} : { mongodbUrl: process.env.MONGODB_URL }),
     ...(mail === undefined ? {} : { mail }),

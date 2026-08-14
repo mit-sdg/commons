@@ -1,6 +1,7 @@
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { mongoImplementations } from "../../src/vocabulary.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
+import { derivePasswordVerifier } from "../../src/concepts/authenticating/password-verifier.ts";
 import { createEdge } from "../../src/edge.ts";
 
 type Edge = ReturnType<typeof createEdge>;
@@ -52,6 +53,73 @@ describe("HTTP route derivation", () => {
     expect(edge.sessionPaths.has("/auth/login")).toBe(false);
     expect(edge.sessionPaths.has("/auth/register")).toBe(false);
     for (const path of edge.sessionPaths) expect(edge.servedPaths.has(path)).toBe(true);
+  });
+});
+
+describe("deployment routes", () => {
+  test("reports process liveness and database readiness", async () => {
+    const edge = createEdge(mongoImplementations(await testDb()));
+    const live = await edge.fetch(new Request("http://edge/health/live"));
+    expect(live.status).toBe(200);
+    expect(await live.json()).toEqual({ status: "ok" });
+
+    const ready = await edge.fetch(new Request("http://edge/health/ready"));
+    expect(ready.status).toBe(200);
+    expect(await ready.json()).toEqual({ status: "ok" });
+  });
+
+  test("registers exactly one initial administrator with the setup secret", async () => {
+    const secret = "a-setup-secret-that-is-at-least-32-characters";
+    const verifier = await derivePasswordVerifier(secret);
+    const edge = createEdge(mongoImplementations(await testDb()), undefined, {
+      adminSetupSecretVerifier: verifier,
+    });
+    const request = (authorization: string) =>
+      edge.fetch(
+        new Request("http://edge/api/setup/register-admin", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authorization}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(ALICE),
+        }),
+      );
+
+    const unauthorized = await request("not-the-secret");
+    expect(unauthorized.status).toBe(401);
+    expect(await unauthorized.json()).toEqual({ error: "UNAUTHORIZED" });
+
+    const registered = await request(secret);
+    expect(registered.status).toBe(201);
+    const { user } = (await registered.json()) as { user: string };
+    expect(
+      await edge.application.concepts.Roling._hasCapability({
+        user,
+        context: "forum",
+        capability: "administer",
+      }),
+    ).toEqual({ allowed: true });
+    expect(await edge.application.concepts.Profiling._getProfile({ user })).toMatchObject([
+      { profile: { displayName: ALICE.displayName, email: ALICE.email } },
+    ]);
+
+    const closed = await request(secret);
+    expect(closed.status).toBe(409);
+    expect(await closed.json()).toEqual({ error: "CONFLICT" });
+  });
+
+  test("hides admin setup when no verifier is configured", async () => {
+    const edge = createEdge(mongoImplementations(await testDb()), undefined, {});
+    const hidden = await edge.fetch(
+      new Request("http://edge/api/setup/register-admin", {
+        method: "POST",
+        headers: { Authorization: "Bearer any-secret" },
+        body: "{}",
+      }),
+    );
+    expect(hidden.status).toBe(404);
+    expect(await hidden.json()).toEqual({ error: "NOT_FOUND" });
   });
 });
 

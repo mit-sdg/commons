@@ -16,16 +16,35 @@ export async function derivePasswordVerifier(password: string): Promise<string> 
   return `$scrypt$N=16384,r=8,p=1$${salt.toString("base64")}$${key.toString("base64")}`;
 }
 
+export function isPasswordVerifier(value: string): boolean {
+  const [, algorithm, encodedParameters, saltText, keyText, extra] = value.split("$");
+  if (
+    algorithm !== "scrypt" ||
+    encodedParameters !== "N=16384,r=8,p=1" ||
+    saltText === undefined ||
+    keyText === undefined ||
+    extra !== undefined
+  ) {
+    return false;
+  }
+  return (
+    Buffer.from(saltText, "base64").length === 16 && Buffer.from(keyText, "base64").length === 32
+  );
+}
+
 export async function passwordMatchesVerifier(
   password: string,
   verifier: string | undefined,
 ): Promise<boolean> {
-  const candidate = verifier ?? dummyVerifier;
-  const [, algorithm, , saltText, keyText] = candidate.split("$");
-  if (algorithm !== "scrypt" || saltText === undefined || keyText === undefined) return false;
+  const candidate =
+    verifier !== undefined && isPasswordVerifier(verifier) ? verifier : dummyVerifier;
+  const [, , , saltText, keyText] = candidate.split("$");
   const expected = Buffer.from(keyText, "base64");
   const actual = await scrypt(password, Buffer.from(saltText, "base64"), expected.length);
   return (
-    verifier !== undefined && actual.length === expected.length && timingSafeEqual(actual, expected)
+    verifier !== undefined &&
+    candidate === verifier &&
+    actual.length === expected.length &&
+    timingSafeEqual(actual, expected)
   );
 }

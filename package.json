@@ -19,6 +19,7 @@
     "wire": "bun run artifacts wire",
     "wire:pin": "bun run artifacts pin-wire",
     "serve": "bun src/start.ts",
+    "setup:hash": "bun scripts/hash-setup-secret.ts",
     "scenario": "bun src/scenario.ts",
     "stack": "bun scripts/stack.ts",
     "stack:mongo": "bun scripts/stack-mongo.ts"
