@@ -1,9 +1,11 @@
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/vocabulary.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { theStaffDashboardCounts } from "../../src/compositions/course/calendar.ts";
+import { theHomeFeedByCreation, theThreadContext } from "../../src/compositions/forum/feed.ts";
+import { theThread } from "../../src/compositions/forum/threads.ts";
 
 async function actor(
   app: ReturnType<typeof assembleCommons>,
@@ -173,6 +175,7 @@ describe("consolidated reaction groups", () => {
     const app = assembleCommons(mongoImplementations(await testDb()));
     const at = new Date("2026-07-20T12:00:00.000Z");
     const { post } = await app.concepts.Posting.create({ author: "author", content: "Body", at });
+    await app.concepts.Conversing.start({ item: post, at });
     await app.concepts.Trashing.trash({ item: post, by: "moderator", at });
     const before = inspectAssembly(app).occurrences.length;
 
@@ -184,9 +187,57 @@ describe("consolidated reaction groups", () => {
       .map((event) => event.by)
       .sort((left, right) => left!.localeCompare(right!));
     expect(formattingClears).toEqual([
-      "Forum.moderation.PurgedItemClearsModerationState:formatting",
       "Forum.posts.DeletedPostClearsSatellites:formatting",
+      "Forum.purge.PurgeClearsCoreForumState:formatting",
     ]);
+
+    const nodeRemovals = inspectAssembly(app)
+      .occurrences.slice(before)
+      .filter((event) => event.concept === "Conversing" && event.action === "remove");
+    expect(nodeRemovals).toHaveLength(1);
+    expect(nodeRemovals[0].by).toBe("Forum.posts.DeletedPostClearsSatellites:leaf-node");
+    expect(nodeRemovals[0].outcome?.kind).toBe("result");
+  });
+
+  test("reply purge preserves conversation state and root purge clears it", async () => {
+    const app = assembleCommons(mongoImplementations(await testDb()));
+    const at = new Date("2026-07-20T12:00:00.000Z");
+    const { post: root } = await app.concepts.Posting.create({
+      author: "author",
+      content: "Root",
+      at,
+    });
+    const { conversation, node } = await app.concepts.Conversing.start({ item: root, at });
+    const { post: reply } = await app.concepts.Posting.create({
+      author: "reader",
+      content: "Reply",
+      at,
+    });
+    await app.concepts.Conversing.reply({ item: reply, parent: node, at });
+    await app.concepts.Subscribing.subscribe({ user: "reader", target: conversation, at });
+    await app.concepts.Locking.lock({ target: conversation, at });
+
+    await app.concepts.Trashing.trash({ item: reply, by: "moderator", at });
+    await app.concepts.Trashing.purge({ item: reply });
+    expect(
+      await app.concepts.Subscribing._isSubscribed({ user: "reader", target: conversation }),
+    ).toEqual({ subscribed: true });
+    expect(await app.concepts.Locking._isLocked({ target: conversation })).toEqual({
+      locked: true,
+    });
+
+    expect(await app.form(theHomeFeedByCreation({}))).toHaveLength(1);
+    await app.concepts.Trashing.trash({ item: root, by: "moderator", at });
+    await app.concepts.Trashing.purge({ item: root });
+    expect(
+      await app.concepts.Subscribing._isSubscribed({ user: "reader", target: conversation }),
+    ).toEqual({ subscribed: false });
+    expect(await app.concepts.Locking._isLocked({ target: conversation })).toEqual({
+      locked: false,
+    });
+    expect(await app.form(theHomeFeedByCreation({}))).toEqual([]);
+    expect(await app.form(theThread({ conversation }))).toEqual([]);
+    expect(await app.form(theThreadContext({ conversation }))).toEqual([]);
   });
 
   test("purging a resolved answer clears both resolution roles", async () => {

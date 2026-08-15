@@ -13,6 +13,25 @@ and releases it. Further recording is refused until she retracts it. She then
 records 44 and releases every draft for the essay. Ben is excused, so recording
 a score for him is refused. A score of 60 out of 50 is also refused.
 
+## Types
+
+```types
+external Grader
+  An application-owned identity used in the grader role.
+
+external Learner
+  An application-owned identity used in the learner role.
+
+external Item
+  An application-owned identity used in the item role.
+
+external Criterion
+  An application-owned identity used in the criterion role.
+
+external Evidence
+  An application-owned identity used in the evidence role.
+```
+
 ## State
 
 ```state
@@ -43,11 +62,13 @@ A learner has at most one grade per item, and a grade has at most one score for
 each criterion. Each grade and criterion score keeps the maximum used when it
 was recorded. Whether a score fits its maximum is calculated from the inputs:
 
-```computation
-(score: Number) is within (outOf: Number) : Bool
-```
-
 A score is within outOf when it is at least zero and at most outOf.
+
+Releasing an item returns every grade released by that action, or an empty set
+when no drafts remain. Clearing a criterion's scores succeeds when none remain.
+
+Releasing an item returns every grade released by that action, or an empty set
+when no drafts remain. Clearing a criterion's scores succeeds when none remain.
 
 ## Actions
 
@@ -108,10 +129,11 @@ release(learner: Learner, item: Item, at: Date) : return (grade: Grade)
     refuse GRADE_DRAFT_NOT_FOUND "There is no draft grade for this learner and item."
 
 releaseItem(item: Item, at: Date) : return (released: Grades)
+  where true
   then
     remove every draft grade of item from draft and add each to released
     set each one's releasedAt to at and updatedAt to at
-    return released, the grades so released, each with its learner
+    return released
 
 retract(learner: Learner, item: Item, at: Date) : return (grade: Grade)
   where the grade of learner and item is in released
@@ -135,33 +157,29 @@ excuse(learner: Learner, item: Item, grader: Grader, feedback: String, at: Date)
   then
     refuse GRADE_NOT_FOUND "There is no grade for this learner and item."
 
-clearCriterionScores(criterion: Criterion) : return ()
+clearCriterionScores(criterion: Criterion) : return (criterion: Criterion)
+  where true
   then
     delete every criterionScore for criterion
-    return
+    return criterion
 ```
-
-Releasing an item returns every grade released by that action, or an empty set
-when no drafts remain. Clearing a criterion's scores succeeds when none remain.
 
 ## Queries
 
 ```queries
 _getGrade (learner: String, item: String) : optional (grade: String, score: Number, outOf: Number, status: String, feedback: String)
+  answers the Learner's Grade for the Item with its score, maximum, status, and feedback
+  answers no row when no Grade exists
 
 _getGradesForLearner (learner: String) : many (item: String, grade: String, score: Number, outOf: Number, status: String, feedback: String)
+  answers all of the learner's grades in creation order, including each recorded maximum and feedback
+  answers no rows when none match
 
 _getGradesForItem (item: String) : many (learner: String, grade: String, score: Number, status: String)
+  answers all grades for the item in creation order
+  answers no rows when none match
 
 _getCriterionScores (learner: String, item: String) : many (criterion: String, points: Number, feedback: String)
+  answers the grade's criterion scores in creation order
+  answers no rows when none match
 ```
-
-### Notes
-
-- `_getGrade (learner, item)` answers at most one grade with its score,
-  maximum, status, and feedback.
-- `_getGradesForLearner (learner)` answers all of the learner's grades in
-  creation order, including each recorded maximum and feedback.
-- `_getGradesForItem (item)` answers all grades for the item in creation order.
-- `_getCriterionScores (learner, item)` answers the grade's criterion scores
-  in creation order.

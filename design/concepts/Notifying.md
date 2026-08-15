@@ -13,14 +13,27 @@ without removing it. She later marks every notification read and dismisses one.
 Dismissing it again is refused. Noah cannot read or dismiss Mara's
 notifications.
 
+## Types
+
+```types
+external Person
+  An application-owned identity used in the person role.
+
+external Subject
+  An application-owned identity used in the subject role.
+
+external Link
+  An application-owned identity used in the link role.
+```
+
 ## State
 
 ```state
 a set of Notifications with
   a recipient Person
   a kind      String
-  a subject   String
-  an optional link String
+  a subject   Subject
+  an optional link Link
   a createdAt Date
 
 an Unread set of Notifications
@@ -29,10 +42,15 @@ an Unread set of Notifications
 A notification remains until its recipient dismisses it or `clearSubject`
 removes every notification about its subject.
 
+Actions that name a recipient operate only on that person's notifications.
+Another person's notification is refused as not found. `markAllRead` and
+marking an already-read notification succeed without changing anything.
+
 ## Actions
 
 ```actions
-notify(recipient: Person, kind: String, subject: String, link: String, at: Date) : return (notification: Notification)
+notify(recipient: Person, kind: String, subject: Subject, link: Link, at: Date) : return (notification: Notification)
+  where true
   then
     add a new notification with recipient, kind, subject, link, and createdAt at
     add notification to unread
@@ -48,6 +66,7 @@ markRead(notification: Notification, recipient: Person) : return (notification: 
     refuse NOTIFICATION_NOT_FOUND "There is no such notification."
 
 markAllRead(recipient: Person) : return (recipient: Person)
+  where true
   then
     remove every notification of recipient from unread
     return recipient
@@ -61,29 +80,23 @@ dismiss(notification: Notification, recipient: Person) : return (notification: N
   then
     refuse NOTIFICATION_NOT_FOUND "There is no such notification."
 
-clearSubject(subject: Target) : return (subject: Target)
+clearSubject(subject: Subject) : return (subject: Subject)
+  where true
   then
     delete every notification about subject
     return subject
 ```
 
-Actions that name a recipient operate only on that person's notifications.
-Another person's notification is refused as not found. `markAllRead` and
-marking an already-read notification succeed without changing anything.
-
 ## Queries
 
 ```queries
-_getInbox (recipient: String) : many (notification: String, kind: String, subject: String, link: String|Null, createdAt: Date, read: Boolean)
+_getInbox (recipient: String) : many (notification: String, kind: String, subject: Subject, link: Link|Null, createdAt: Date, read: Boolean)
+  answers the recipient's notifications newest first, with later arrivals breaking equal-time ties
+  answers no rows when none match
 
-_hasFor (user: String, subject: String) : one (notified: Boolean)
+_hasFor (user: String, subject: Subject) : one (notified: Boolean)
+  answers whether the User has a Notification with this subject
 
 _getUnreadCount (recipient: String) : one (count: Number)
+  answers the number of the Recipient's unread Notifications
 ```
-
-### Notes
-
-- `_getInbox (recipient)` answers the recipient's notifications newest first,
-  with later arrivals breaking equal-time ties.
-- `_hasFor (user, subject)` answers exactly one row with `notified`.
-- `_getUnreadCount (recipient)` answers exactly one row with `count`.

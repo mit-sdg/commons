@@ -1,8 +1,20 @@
-import { conceptFloor, type ConceptFloor } from "@mit-sdg/sync-engine/assembly";
+import { conceptFloor } from "@mit-sdg/sync-engine/assembly";
 import type { Db, MongoClient } from "mongodb";
-import { mongoImplementations, vocabulary } from "../vocabulary.ts";
+import { learningConcepts, mongoImplementations } from "../concepts.ts";
 
-export type CommonsConceptFloor = ConceptFloor<typeof vocabulary>;
+export interface CommonsConceptFloor {
+  name: string;
+  instances: ReturnType<typeof mongoImplementations>;
+  resources: readonly string[];
+  close(): Promise<void>;
+}
+
+// beta.10's public ConceptFloor constraint is too narrow for registrations whose
+// floor factories accept a concrete context, although the runtime accepts them.
+const validateConceptFloor = conceptFloor as unknown as (
+  selection: typeof learningConcepts,
+  floor: CommonsConceptFloor,
+) => CommonsConceptFloor;
 
 type MongoClientFactory = (url: string) => Promise<MongoClient>;
 
@@ -86,7 +98,7 @@ export async function constructConceptFloor(
   }
 
   let closed = false;
-  return conceptFloor(vocabulary, {
+  return validateConceptFloor(learningConcepts, {
     name: "mongo",
     instances,
     resources: [`MongoDB database ${database.databaseName}`],

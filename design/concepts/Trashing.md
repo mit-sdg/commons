@@ -10,6 +10,16 @@ Maya trashes a draft, recording who did it and when. She restores it, trashes
 it again, and then purges it. Restoring or purging an item outside the trash is
 refused, as is trashing an item already there.
 
+## Types
+
+```types
+external User
+  An application-owned identity used in the user role.
+
+external Item
+  An application-owned identity used in the item role.
+```
+
 ## State
 
 ```state
@@ -21,29 +31,27 @@ a Trashed set of Items with
 ## Actions
 
 ```actions
-trash(item: Item, by: User, at: Date) : return ()
+trash(item: Item, by: User, at: Date) : return (item: Item)
   where item not in trashed
   then
     add item to trashed with trashedBy by and trashedAt at
-    return
+    return item
   where item in trashed
   then
     refuse ITEM_ALREADY_TRASHED "This item is already in the trash."
-
-restore(item: Item) : return ()
+restore(item: Item) : return (item: Item)
   where item in trashed
   then
     remove item from trashed
-    return
+    return item
   where item not in trashed
   then
     refuse ITEM_NOT_TRASHED "This item is not in the trash."
-
-purge(item: Item) : return ()
+purge(item: Item) : return (item: Item)
   where item in trashed
   then
     remove item from trashed
-    return
+    return item
   where item not in trashed
   then
     refuse ITEM_NOT_TRASHED "This item is not in the trash."
@@ -53,12 +61,9 @@ purge(item: Item) : return ()
 
 ```queries
 _isTrashed (item: String) : one (trashed: Boolean)
+  answers whether the Item is in trash
 
 _getTrashed () : many (item: String, trashedBy: String, trashedAt: Date)
+  answers every trashed item in trash order with who trashed it and when
+  answers no rows when none match
 ```
-
-### Notes
-
-- `_isTrashed (item)` answers exactly one row with `trashed`.
-- `_getTrashed ()` answers every trashed item in trash order with who trashed it
-  and when.

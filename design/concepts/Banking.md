@@ -13,6 +13,16 @@ only one remains. Her advisor grants two extra days for conference travel, so
 the second use succeeds. Ana later cancels that use. Its days return to her
 balance, while the canceled use remains recorded.
 
+## Types
+
+```types
+external Learner
+  An application-owned identity used in the learner role.
+
+external Item
+  An application-owned identity used in the item role.
+```
+
 ## State
 
 ```state
@@ -48,14 +58,20 @@ A learner's balance is:
 Canceled uses are retained but excluded from the equation. A learner has at
 most one applied use per item.
 
+A use may be changed to zero days. It remains applied but spends nothing.
+Canceling retains the use with a canceled status.
+
+Items are opaque identities. Banking neither creates nor validates them; it
+records only the learner's standing late-day use of each identity.
+
 ## Actions
 
 ```actions
-setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : return ()
+setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : return (allowance: Number, perItemLimit: Number, unitHours: Number)
+  where true
   then
     set the terms' allowance, perItemLimit, and unitHours from the inputs
-    return
-
+    return allowance, perItemLimit, unitHours
 grant(learner: Learner, days: Number, reason: String, at: Date) : return (grant: Grant)
   where days is greater than zero
   then
@@ -115,37 +131,28 @@ cancel(learner: Learner, item: Item) : return (use: Use)
     refuse LATE_USE_NOT_FOUND "No late days stand applied to this item."
 ```
 
-A use may be changed to zero days. It remains applied but spends nothing.
-Canceling retains the use with a canceled status.
-
-Items are opaque identities. Banking neither creates nor validates them; it
-records only the learner's standing late-day use of each identity.
-
 ## Queries
 
 ```queries
 _getTerms () : one (allowance: Number, perItemLimit: Number, unitHours: Number)
+  answers exactly one row with the stated or default terms
 
 _getBalance (learner: String) : one (granted: Number, used: Number, remaining: Number)
+  answers exactly one row. `granted` is the allowance plus grant days, `used` is the sum of applied uses, and `remaining` is `granted - used`
 
 _getApplied (learner: String, item: String) : optional (use: String, days: Number, appliedAt: Date)
+  answers the Learner's standing Use for the Item
+  answers no row when no standing Use exists
 
 _getUses (learner: String) : many (use: String, item: String, days: Number, status: String, appliedAt: Date)
+  answers all of the learner's uses in creation order, including canceled uses
+  answers no rows when none match
 
 _getUsesForItem (item: String) : many (learner: String, days: Number)
+  answers the standing uses on the item in creation order
+  answers no rows when none match
 
 _getGrants (learner: String) : many (grant: String, days: Number, reason: String, grantedAt: Date)
+  answers the learner's grants in creation order
+  answers no rows when none match
 ```
-
-### Notes
-
-- `_getTerms ()` answers exactly one row with the stated or default terms.
-- `_getBalance (learner)` answers exactly one row. `granted` is the allowance
-  plus grant days, `used` is the sum of applied uses, and `remaining` is
-  `granted - used`.
-- `_getApplied (learner, item)` answers at most one standing use.
-- `_getUses (learner)` answers all of the learner's uses in creation order,
-  including canceled uses.
-- `_getUsesForItem (item)` answers the standing uses on the item in creation
-  order.
-- `_getGrants (learner)` answers the learner's grants in creation order.

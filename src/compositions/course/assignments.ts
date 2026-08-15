@@ -7,9 +7,9 @@ import {
   mayManageAssignments,
   mayNotManageAssignments,
 } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
-const { Assigning, Itemizing, Posting, Rostering, Submitting, Timing } = concepts;
+const { Assigning, Posting, Rostering, Submitting, Timing } = concepts;
 /** Which assignments belong to this learner? */
 export const theAssignmentsOf = former(
   "the assignments of (student)",
@@ -146,12 +146,6 @@ export const ReinstatedStudentSeatReceivesPublished = reaction(
       )
       .then(Assigning.assign({ assignment, assignee: user, at })),
 );
-export const PublishedAcceptingAssignmentGetsGradeItem = reaction(({ assignment, title }) =>
-  when(Assigning.publish({}).responds({ assignment, acceptsSubmissions: true }))
-    .where(Assigning._getAssignments({}).is({ assignment, title }))
-    .then(Itemizing.ensureItem({ item: assignment, label: title, maxPoints: 100 })),
-);
-
 export const CreateDraft = endpoint(
   "/assignments/create-draft",
   ({

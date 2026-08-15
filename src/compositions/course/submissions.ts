@@ -7,7 +7,7 @@ import {
   mayNotViewAllSubmissions,
   mayViewAllSubmissions,
 } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
 const { Assigning, Rostering, Submitting } = concepts;
 

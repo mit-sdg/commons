@@ -1,22 +1,12 @@
 import { activeUser } from "../access/session.ts";
-import {
-  each,
-  form,
-  former,
-  no,
-  reaction,
-  when,
-  whether,
-  where,
-} from "@mit-sdg/sync-engine/language";
+import { each, form, former, no, whether, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { notReadable, readable, thePost } from "./posts.ts";
 import { publicTarget } from "./threads.ts";
 
-const { Conversing, Flagging, Formatting, Linking, Locking, Posting, Tracking, Trashing, Timing } =
-  concepts;
+const { Conversing, Flagging, Formatting, Locking, Posting, Trashing, Timing } = concepts;
 
 /** Which items are in the trash? */
 export const theTrashBin = former("the trash bin ()", (_inputs, { item, trashedBy, trashedAt }) =>
@@ -100,35 +90,6 @@ export const theModerationQueue = former(
           .where(Flagging._getFlags({ target }).is({ flag, status: "open" }))
           .form({ flag, reporter, reason, createdAt: flaggedAt }),
       }),
-);
-
-export const PurgedItemClearsModerationState = reaction(({ item, node, conversation }) =>
-  when(Trashing.purge({ item }).responds()).then(
-    where(Posting._getPost({ post: item }))
-      .then(Posting.delete({ post: item }))
-      .named("post"),
-    Formatting.clear({ target: item }).named("formatting"),
-    Linking.clearLinks({ source: item }).named("links"),
-    Linking.clearBacklinks({ target: item }).named("backlinks"),
-    Flagging.clearTarget({ target: item }).named("flags"),
-    where(Locking._isLocked({ target: item }).is({ locked: true }))
-      .then(Locking.unlock({ target: item }))
-      .named("item-lock"),
-    where(
-      Conversing._getNodeByItem({ item }).is({ node }),
-      Conversing._getConversation({ node }).is({ conversation }),
-      Locking._isLocked({ target: conversation }).is({ locked: true }),
-    )
-      .then(Locking.unlock({ target: conversation }))
-      .named("conversation-lock"),
-    Tracking.unregister({ item }).named("tracking"),
-    where(
-      Conversing._getNodeByItem({ item }).is({ node }),
-      Conversing._hasChildren({ node }).is({ present: false }),
-    )
-      .then(Conversing.remove({ node }))
-      .named("leaf-node"),
-  ),
 );
 
 export const TrashItem = endpoint("/trash/trash", ({ session, item, user, at }) =>

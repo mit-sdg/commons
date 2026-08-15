@@ -12,6 +12,16 @@ Following the first thread again is refused. Unfollowing it succeeds once and
 is refused the second time. Asking whether she follows a target always answers
 yes or no.
 
+## Types
+
+```types
+external Person
+  An application-owned identity used in the person role.
+
+external Target
+  An application-owned identity used in the target role.
+```
+
 ## State
 
 ```state
@@ -22,6 +32,9 @@ a set of Subscriptions with
 ```
 
 A person has at most one subscription to a given target.
+
+`subscribe` records the supplied `at` as the moment the subscription began.
+Targets are opaque identities: Subscribing neither creates nor validates them.
 
 ## Actions
 
@@ -45,26 +58,23 @@ unsubscribe(user: Person, target: Target) : return (subscription: Subscription)
     refuse NOT_SUBSCRIBED "There is no such subscription to drop."
 
 clearTarget(target: Target) : return (target: Target)
+  where true
   then
     delete every subscription to target
     return target
 ```
 
-`subscribe` records the supplied `at` as the moment the subscription began.
-Targets are opaque identities: Subscribing neither creates nor validates them.
-
 ## Queries
 
 ```queries
 _getSubscribers (target: String) : many (user: String)
+  answers its subscribers in subscription order
+  answers no rows when none match
 
 _getSubscriptions (user: String) : many (target: String, subscribedAt: Date)
+  answers the person's targets newest first
+  answers no rows when none match
 
 _isSubscribed (user: String, target: String) : one (subscribed: Boolean)
+  answers whether the Person follows the Target
 ```
-
-### Notes
-
-- `_getSubscribers (target)` answers its subscribers in subscription order.
-- `_getSubscriptions (user)` answers the person's targets newest first.
-- `_isSubscribed (user, target)` answers exactly one row with `subscribed`.

@@ -127,9 +127,9 @@ export class MongoAuthenticatingConcept {
 
   async _denotedUser({ ref }: { ref: string }) {
     const byId = await this.users.findOne({ _id: ref });
-    if (byId !== null) return [{ user: ref }];
+    if (byId !== null) return { user: ref };
     const byName = await this.users.findOne({ username: ref });
-    if (byName !== null) return [{ user: byName._id }];
-    return [{ user: ref }];
+    if (byName !== null) return { user: byName._id };
+    return { user: ref };
   }
 }

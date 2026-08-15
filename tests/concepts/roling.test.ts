@@ -47,6 +47,15 @@ for (const [floor, make] of floors) {
       ]);
     });
 
+    test("denoted roles always resolve to one identity", async () => {
+      const roling = await make();
+      const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
+
+      expect(await roling._denotedRole({ ref: role })).toEqual({ role });
+      expect(await roling._denotedRole({ ref: "instructor" })).toEqual({ role });
+      expect(await roling._denotedRole({ ref: "opaque-role" })).toEqual({ role: "opaque-role" });
+    });
+
     test("grant records a holding; unknown role and duplicate grant are refused", async () => {
       const roling = await make();
       const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });

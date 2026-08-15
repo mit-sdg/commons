@@ -17,6 +17,13 @@ Inviting does not interpret channels or addresses. A composition chooses the
 channel and delegates validation, normalization, and delivery to the concept
 that owns that channel.
 
+## Types
+
+```types
+external User
+  An application-owned identity used in the user role.
+```
+
 ## State
 
 ```state
@@ -26,7 +33,7 @@ a set of Invitations with
   a createdAt          Date
   a lastInvitedAt      Date
   an inviteCount       Number
-  an optional user     String
+  an optional user     User
 ```
 
 An invitation has no expiry. A credential is derived from the
@@ -40,11 +47,11 @@ invite(channel: String, address: String, at: Date) : return (invitation: Invitat
   where no invitation has channel and address
   then
     add a new invitation with createdAt and lastInvitedAt at, inviteCount 1, and no user
-    return invitation, channel, address, its derived credential, and true
+    return invitation, channel, address, credential, created
   where an unclaimed invitation has channel and address
   then
     set its lastInvitedAt to at and increment its inviteCount
-    return that invitation, channel, address, its unchanged derived credential, and false
+    return invitation, channel, address, credential, created
   where a claimed invitation has channel and address
   then
     refuse INVITATION_ALREADY_CLAIMED "That invitation has already been used."
@@ -52,16 +59,16 @@ invite(channel: String, address: String, at: Date) : return (invitation: Invitat
 verify(invitation: Invitation, credential: String, channel: String) : return (invitation: Invitation, address: String)
   where invitation exists on channel, has no user, and credential matches
   then
-    return invitation and its address
+    return invitation, address
   where no such unclaimed invitation matches
   then
     refuse INVITATION_INVALID "That invitation is not valid."
 
-claim(invitation: Invitation, credential: String, user: String) : return (invitation: Invitation, channel: String, address: String)
+claim(invitation: Invitation, credential: String, user: User) : return (invitation: Invitation, channel: String, address: String)
   where invitation exists, has no user, and credential matches
   then
     set its user to user
-    return invitation, channel, and address
+    return invitation, channel, address
   where no such unclaimed invitation matches
   then
     refuse INVITATION_INVALID "That invitation is not valid."
@@ -71,11 +78,11 @@ claim(invitation: Invitation, credential: String, user: String) : return (invita
 
 ```queries
 _getAvailable (invitation: String, credential: String) : optional (channel: String, address: String)
-_getInvitations () : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: String|Null)
+  answers the channel and address only while the Invitation is unclaimed and credential matches
+  answers no row otherwise
+
+_getInvitations () : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: User|Null)
+  answers every Invitation without its credential
+  orders rows by creation from newest to oldest
+  answers no rows when none match
 ```
-
-### Notes
-
-- `_getAvailable` returns the channel and address only for an unclaimed
-  invitation whose credential matches.
-- `_getInvitations` never returns a credential.

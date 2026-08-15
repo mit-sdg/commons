@@ -16,7 +16,7 @@ goldens; neither is ever edited by hand.
 The test and check commands compare both files byte-for-byte with fresh output.
 Regenerate a file when its source changes and review the resulting diff.
 
-The generated descriptor names `src/vocabulary.ts`; the wire generator emits a
+The generated descriptor names `src/concepts.ts`; the wire generator emits a
 type-only import of that module to reach the registered concept signatures. `CommonsWire` keeps the logical application contract
 for local clients. `CommonsWireHttp` applies the HTTP floor for browser calls,
 omitting its cookie-bound session input. Both project values through JSON, so a
@@ -27,8 +27,10 @@ compile-time contract; it does not validate response values at runtime.
 Change the authored sources, not these files. Files under
 [`design/concepts/`](../design/concepts/) own concept contracts, including query
 cardinalities and refusal explanations. Files under
-[`design/compositions/`](../design/compositions/) explain the executable
-reactions, views, and formers in [`src/compositions/`](../src/compositions/).
+[`design/compositions/`](../design/compositions/) correspond to registered
+behavior modules in [`src/compositions/`](../src/compositions/) and explain each
+executable reaction in causal prose. Helper-only source modules have no separate
+design page.
 
 The read-back omits each concept's full State, Actions, and Queries prose. Those
 sections remain in its design specification; the read-back shows what the

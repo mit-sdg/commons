@@ -12,6 +12,16 @@ person may add one reaction of each kind to the target. Noah's second "up" is
 refused. Removing it succeeds once and is refused the second time. Clearing a
 target removes every reaction and succeeds when none exist.
 
+## Types
+
+```types
+external Person
+  An application-owned identity used in the person role.
+
+external Target
+  An application-owned identity used in the target role.
+```
+
 ## State
 
 ```state
@@ -23,6 +33,14 @@ a set of Reactions with
 ```
 
 A person has at most one reaction of a given kind on a target.
+
+`clearTarget` removes every reaction on the target. It is idempotent: clearing
+a target with no reactions changes nothing and is not refused. Targets are
+opaque identities; Reacting neither creates nor validates them.
+
+`clearTarget` removes every reaction on the target. It is idempotent: clearing
+a target with no reactions changes nothing and is not refused. Targets are
+opaque identities; Reacting neither creates nor validates them.
 
 ## Actions
 
@@ -45,32 +63,28 @@ unreact(reactor: Person, target: Target, kind: String) : return (reaction: React
   then
     refuse REACTION_NOT_FOUND "There is no such reaction to take back."
 
-clearTarget(target: Target) : return ()
+clearTarget(target: Target) : return (target: Target)
+  where true
   then
     remove every reaction on target
-    return
+    return target
 ```
-
-`clearTarget` removes every reaction on the target. It is idempotent: clearing
-a target with no reactions changes nothing and is not refused. Targets are
-opaque identities; Reacting neither creates nor validates them.
 
 ## Queries
 
 ```queries
 _getReactionsForTarget (target: String) : many (reaction: String, reactor: String, kind: String)
+  answers its reactions in creation order
+  answers no rows when none match
 
 _getReactionsByUser (reactor: String) : many (reaction: String, target: String, kind: String)
+  answers the person's reactions in creation order
+  answers no rows when none match
 
 _countByKind (target: String) : many (kind: String, count: Number)
+  answers one row per reaction kind with its count
+  answers no rows when none match
 
 _hasReacted (reactor: String, target: String, kind: String) : one (hasReacted: Boolean)
+  answers whether the Person has this kind of Reaction on the Target
 ```
-
-### Notes
-
-- `_getReactionsForTarget (target)` answers its reactions in creation order.
-- `_getReactionsByUser (reactor)` answers the person's reactions in creation
-  order.
-- `_countByKind (target)` answers one row per reaction kind with its count.
-- `_hasReacted (reactor, target, kind)` answers exactly one row with `reacted`.

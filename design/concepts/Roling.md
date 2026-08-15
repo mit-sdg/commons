@@ -12,6 +12,16 @@ second role with the same name is refused. Maya receives the role in the
 course; granting it there again is refused. Revoking the role succeeds once and
 is refused when she no longer holds it.
 
+## Types
+
+```types
+external User
+  An application-owned identity used in the user role.
+
+external Context
+  An application-owned identity used in the context role.
+```
+
 ## State
 
 ```state
@@ -40,7 +50,7 @@ defineRole(name: String, capabilities: Strings) : return (role: Role)
 ensureRole(name: String, capabilities: Strings) : return (role: Role)
   where some role has name name
   then
-    return that role
+    return role
   where no role has name name
   then
     add a new role with name and capabilities
@@ -70,8 +80,9 @@ revoke(user: User, context: Context, role: Role) : return (grant: Grant)
 requireCapability(user: User, context: Context, capability: String) : return (allowed: Boolean)
   where the user holds a granted role in the context that includes capability
   then
-    return allowed true
-  otherwise
+    return allowed
+  where the user holds no granted role in the context that includes capability
+  then
     refuse FORBIDDEN "The user does not hold the required capability in this context."
 ```
 
@@ -79,30 +90,31 @@ requireCapability(user: User, context: Context, capability: String) : return (al
 
 ```queries
 _hasCapability (user: String, context: String, capability: String) : one (allowed: Boolean)
+  answers whether a Role granted to the User in the Context contains the capability
 
 _hasCapabilityHolder (context: String, capability: String) : one (present: Boolean)
+  answers whether any User in the Context holds a Role containing the capability
 
 _holdsRoleNamed (user: String, context: String, name: String) : one (held: Boolean)
+  answers whether the User holds the named Role in the Context
 
 _getRoles (user: String, context: String) : many (role: String)
+  answers the user's granted roles in grant order
+  answers no rows when none match
 
 _getRoleByName (name: String) : optional (role: String)
+  answers the Role with the exact name
+  answers no row when the Role does not exist
 
 _getRoleDetail (role: String) : optional (name: String, capabilities: Strings)
+  answers the Role's name and capabilities
+  answers no row when the Role does not exist
 
 _listRoles () : many (role: String, name: String, capabilities: Strings)
+  answers every role in definition order
+  answers no rows when none match
 
-_denotedRole (ref: String) : optional (role: String)
+_denotedRole (ref: String) : one (role: String)
+  answers the existing Role denoted by an identifier or exact name
+  answers ref itself as the Role when neither matches
 ```
-
-### Notes
-
-- `_hasCapability (user, context, capability)` answers exactly one row with
-  `allowed`.
-- `_hasCapabilityHolder (context, capability)` answers exactly one row with
-  `present`.
-- `_holdsRoleNamed (user, context, name)` answers exactly one row with `held`.
-- `_getRoles (user, context)` answers the user's granted roles in grant order.
-- `_getRoleByName (name)`, `_getRoleDetail (role)`, and `_denotedRole (ref)`
-  each answer at most one role.
-- `_listRoles ()` answers every role in definition order.

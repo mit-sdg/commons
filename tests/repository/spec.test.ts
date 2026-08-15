@@ -1,15 +1,15 @@
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/vocabulary.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly, renderApp } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import generated from "../../generated.config.ts";
 
 describe("the rendered application specification", () => {
-  test("renders every declared construction and its mail-content computations", async () => {
+  test("renders every declared construction and computation", async () => {
     const ir = inspectAssembly(assembleCommons(mongoImplementations(await testDb()))).app;
     expect(ir.unlowered ?? []).toEqual([]);
-    expect(JSON.stringify(ir).match(/"op":"compute"/g)).toHaveLength(4);
+    expect(JSON.stringify(ir).match(/"op":"compute"/g)).toHaveLength(7);
     expect(ir.views).toHaveLength(50);
     expect(ir.formers).toHaveLength(71);
   });

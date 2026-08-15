@@ -15,6 +15,12 @@ When Omar tries to register the username nadia, it is refused as taken. When
 he tries to authenticate with a guessed password, he is turned away without
 learning whether the username or the password was wrong.
 
+## Types
+
+```types
+
+```
+
 ## State
 
 ```state
@@ -26,22 +32,17 @@ a set of Users with
 
 Registration checks its inputs with these computations:
 
-```computation
-(email: String) looks like an address : Bool
-(username: String) is within name length : Bool
-(username: String) is well-formed : Bool
-(password: String) is within password length : Bool
-(password: String) matches (passwordVerifier: String) : Bool
-```
-
 A username is within name length when it is 3 to 32 characters long; it is well-formed when it starts with a letter and contains only letters, digits, hyphens, and underscores. A password is within password length when it is 8 to 128 characters long. Authenticating derives each verifier with scrypt using N=16384, r=8, p=1, and maxmem 32 MiB, a random 16-byte salt, and a 32-byte derived key. A password matches when the same derivation and a constant-time key comparison succeed. An email looks like an address when it contains an @. The password itself is never retained.
+
+Changing a password requires the current password. A failed check does not say
+whether the account or password was wrong. The new password follows the same
+length rule as registration.
 
 ## Actions
 
 ```actions
 register(username: String, password: String, email: String) : return (user: User)
-  where email looks like an address, username is within name length, username is well-formed,
-        password is within password length, and no user has username username
+  where email looks like an address, username is within name length, username is well-formed, password is within password length, and no user has username username
   then
     add a new user with username, a passwordVerifier derived from password, and email
     return user
@@ -64,7 +65,7 @@ register(username: String, password: String, email: String) : return (user: User
 authenticate(username: String, password: String) : return (user: User)
   where some user has username username and password matches its passwordVerifier
   then
-    return that user
+    return user
   where no user has username username whose passwordVerifier matches password
   then
     refuse INVALID_CREDENTIALS "Unknown username or wrong password."
@@ -82,43 +83,30 @@ changePassword(user: User, oldPassword: String, newPassword: String) : return (u
     refuse PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
 ```
 
-Changing a password requires the current password. A failed check does not say
-whether the account or password was wrong. The new password follows the same
-length rule as registration.
-
 ## Queries
 
 ```queries
 _getById (user: String) : optional (username: String, email: String)
+  answers the username and email of the User
+  answers no row when the User does not exist
 
 _getByUsername (username: String) : optional (user: String)
+  answers the User with the exact username
+  answers no row when no User matches
 
 _getUserCount () : one (count: Number)
+  answers the number of Users
 
 _search (query: String) : many (user: String, username: String)
+  answers Users whose usernames start with query, ignoring case
+  orders rows alphabetically by username and returns at most ten
+  answers no rows when none match
 
 _resolveIdentity (ref: String) : one (user: String|Null, username: String|Null)
+  answers the User denoted by an existing identifier, then an exact username, then a sole case-blind username match
+  answers both fields as null when no User matches or several usernames match only by case
 
-_denotedUser (ref: String) : optional (user: String)
-```
-
-### Notes
-
-`_getById (user)` and `_getByUsername (username)` each answer at most one row.
-`_getUserCount ()` answers exactly one row with the number of users.
-
-```questions
-_search(query: String) : many { user: User, username: String }
-  every user whose username starts with query, ignoring case; alphabetical by
-  username, at most ten.
-
-_resolveIdentity(ref: String) : one { user: User or nothing, username: String or nothing }
-  the existing user denoted by ref and that user's registered username: an
-  existing user identifier first, then an exact username, then the sole
-  case-blind username match. If no user matches, or several usernames match
-  only by case, both answers are nothing.
-
-_denotedUser(ref: String) : zero-or-one { user: User }
-  the existing user denoted by an identifier or exact username. If neither
-  matches, the reference itself is returned as the user.
+_denotedUser (ref: String) : one (user: String)
+  answers the existing User denoted by an identifier or exact username
+  answers ref itself as the User when neither matches
 ```

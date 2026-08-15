@@ -27,6 +27,18 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  async headers() {
+    return [
+      {
+        source: "/setup",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       { source: "/api/:path*", destination: `${BACKEND_ORIGIN}/api/:path*` },

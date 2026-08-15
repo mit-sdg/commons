@@ -1,5 +1,5 @@
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/vocabulary.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { deliverPendingMail, type MailSender } from "../../src/email/worker.ts";
@@ -96,7 +96,11 @@ describe("invitations and email", () => {
 
   test("the HTTP boundary denies every data route without a session", async () => {
     const edge = createEdge(mongoImplementations(await testDb()));
-    expect([...edge.publicPaths].sort()).toEqual(["/auth/accept-invitation", "/auth/login"]);
+    expect([...edge.publicPaths].sort()).toEqual([
+      "/auth/accept-invitation",
+      "/auth/login",
+      "/setup/register-admin",
+    ]);
     const response = await edge.fetch(
       new Request("http://edge/api/threads/latest", {
         method: "POST",

@@ -1,6 +1,6 @@
 import { each, former, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { notReadable, readable } from "./posts.ts";
 
 const { Linking } = concepts;

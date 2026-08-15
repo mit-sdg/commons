@@ -13,6 +13,16 @@ a follow-up date. After the meeting, Ms. Okafor revises, resolves, and archives
 that note. Revising a resolved note is refused; restoring it makes it open
 again. Hiding an acknowledged note does not erase Ana's acknowledgment.
 
+## Types
+
+```types
+external Author
+  An application-owned identity used in the author role.
+
+external Learner
+  An application-owned identity used in the learner role.
+```
+
 ## State
 
 ```state
@@ -39,11 +49,15 @@ the note later becomes staff-only.
 
 Whether a stated visibility is one of the two this concept knows is a calculation over the input alone:
 
-```computation
-(visibility: String) names a visibility : Bool
-```
-
 A visibility names a visibility when it is "STAFF_ONLY" or "LEARNER_VISIBLE".
+
+Acknowledgment checks disclosure and the learner, not working status. A learner
+may therefore acknowledge a disclosed resolved or archived note. A later
+acknowledgment replaces the earlier time. `followUpAt` may be absent, and an
+empty tags list means the note has no tags.
+
+Noting keeps notes and receipts. It does not decide who may call its actions or
+queries.
 
 ## Actions
 
@@ -135,35 +149,26 @@ acknowledge(note: Note, learner: Learner, at: Date) : return (note: Note)
     refuse NOTE_NOT_OWNER "Only the learner a note concerns may acknowledge it."
 ```
 
-Acknowledgment checks disclosure and the learner, not working status. A learner
-may therefore acknowledge a disclosed resolved or archived note. A later
-acknowledgment replaces the earlier time. `followUpAt` may be absent, and an
-empty tags list means the note has no tags.
-
-Noting keeps notes and receipts. It does not decide who may call its actions or
-queries.
-
 ## Queries
 
 ```queries
 _getNote (note: String) : optional (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date|Null, followUpAt: Date|Null, acknowledgedAt: Date|Null, tags: Strings)
+  answers the complete Note
+  answers no row when the Note does not exist
 
 _getActiveNotesFor (learner: String) : many (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date|Null, followUpAt: Date|Null, acknowledgedAt: Date|Null, tags: Strings)
+  answers open and resolved notes in creation order, regardless of disclosure
+  answers no rows when none match
 
 _getShownTo (learner: String) : many (note: String, author: String, learner: String, body: String, status: String, createdAt: Date, updatedAt: Date|Null, followUpAt: Date|Null, acknowledgedAt: Date|Null, tags: Strings)
+  answers disclosed open and resolved notes in creation order
+  answers no rows when none match
 
 _getByAuthor (author: String) : many (note: String, learner: String, status: String, visibility: String, createdAt: Date)
+  answers the author's notes in creation order
+  answers no rows when none match
 
 _getOpenFollowUpsBefore (before: Date) : many (note: String, author: String, learner: String, body: String, followUpAt: Date, createdAt: Date)
+  answers open notes due for follow-up on or before the given moment, in creation order
+  answers no rows when none match
 ```
-
-### Notes
-
-- `_getNote (note)` answers at most one complete note.
-- `_getActiveNotesFor (learner)` answers open and resolved notes in creation
-  order, regardless of disclosure.
-- `_getShownTo (learner)` answers disclosed open and resolved notes in creation
-  order.
-- `_getByAuthor (author)` answers the author's notes in creation order.
-- `_getOpenFollowUpsBefore (before)` answers open notes due for follow-up on or
-  before the given moment, in creation order.

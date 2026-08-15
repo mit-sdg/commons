@@ -1,5 +1,5 @@
 import { testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/vocabulary.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vite-plus/test";
 import { assembleCommons } from "../../src/assembly/application.ts";

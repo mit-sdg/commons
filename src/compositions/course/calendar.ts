@@ -9,7 +9,7 @@ import {
   mayNotViewStaffCalendar,
   mayViewStaffCalendar,
 } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
 const { Assigning, Banking, Itemizing, Rostering } = concepts;
 /** Which calendar entries fall between these moments? */

@@ -7,7 +7,7 @@ concepts: []
 
 ## Resolution at completion
 
-The edge maps internal failure detail to the public failure vocabulary. The
+The edge maps internal failure detail to the public failure contract. The
 engine's ordinary logger records only the exception class and safe correlation
 fields. Retained authentication action records and observer events contain
 `[redacted]` for password fields. Runtime fault records contain a recognized
@@ -16,7 +16,7 @@ attached fields.
 
 ## Decision at completion
 
-The HTTP vocabulary is 400 `{"error":"INVALID_REQUEST"}`, 401
+The HTTP contract is 400 `{"error":"INVALID_REQUEST"}`, 401
 `{"error":"UNAUTHORIZED"}`, 403 `{"error":"FORBIDDEN"}`, 404
 `{"error":"NOT_FOUND"}`, 409 `{"error":"CONFLICT"}`, and 500
 `{"error":"INTERNAL_ERROR"}`. Bodies contain only `error`. Malformed or

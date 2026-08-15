@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { concepts, mongoImplementations } from "../../src/vocabulary.ts";
+import { concepts, mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 
 afterAll(stopTestDb);

@@ -162,6 +162,15 @@ for (const [floor, make] of floors) {
       });
     });
 
+    test("denoted users always resolve to one identity", async () => {
+      const auth = await make();
+      const { user } = await auth.register(good);
+
+      expect(await auth._denotedUser({ ref: user })).toEqual({ user });
+      expect(await auth._denotedUser({ ref: good.username })).toEqual({ user });
+      expect(await auth._denotedUser({ ref: "opaque-user" })).toEqual({ user: "opaque-user" });
+    });
+
     test("authenticate recognizes the registered pair and refuses anything else", async () => {
       const auth = await make();
       const { user } = await auth.register(good);

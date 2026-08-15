@@ -158,9 +158,9 @@ export class MongoRolingConcept {
 
   async _denotedRole({ ref }: { ref: string }) {
     const byId = await this.roles.findOne({ _id: ref });
-    if (byId !== null) return [{ role: ref }];
+    if (byId !== null) return { role: ref };
     const byName = await this.roles.findOne({ name: ref });
-    if (byName !== null) return [{ role: byName._id }];
-    return [{ role: ref }];
+    if (byName !== null) return { role: byName._id };
+    return { role: ref };
   }
 }

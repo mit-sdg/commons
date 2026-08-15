@@ -11,6 +11,16 @@ Saving the first post again is refused. Removing it succeeds once and is refused
 the second time. Bob's bookmarks are independent of Ada's. Clearing an item
 removes its bookmarks from every user's list and succeeds when none exist.
 
+## Types
+
+```types
+external User
+  An application-owned identity used in the user role.
+
+external Item
+  An application-owned identity used in the item role.
+```
+
 ## State
 
 ```state
@@ -21,6 +31,14 @@ a set of Bookmarks with
 ```
 
 A user has at most one bookmark for a given item.
+
+`clearItem` removes every bookmark of the item. It is idempotent: clearing an
+item with no bookmarks changes nothing and is not refused. Items are opaque
+identities; Bookmarking neither creates nor validates them.
+
+`clearItem` removes every bookmark of the item. It is idempotent: clearing an
+item with no bookmarks changes nothing and is not refused. Items are opaque
+identities; Bookmarking neither creates nor validates them.
 
 ## Actions
 
@@ -43,25 +61,20 @@ unsave(user: User, item: Item) : return (bookmark: Bookmark)
   then
     refuse BOOKMARK_NOT_FOUND "There is no such bookmark to remove."
 
-clearItem(item: Item) : return ()
+clearItem(item: Item) : return (item: Item)
+  where true
   then
     remove every bookmark of item
-    return
+    return item
 ```
-
-`clearItem` removes every bookmark of the item. It is idempotent: clearing an
-item with no bookmarks changes nothing and is not refused. Items are opaque
-identities; Bookmarking neither creates nor validates them.
 
 ## Queries
 
 ```queries
 _getSaved (user: String) : many (item: String, savedAt: Date)
+  answers the user's bookmarks newest first
+  answers no rows when none match
 
 _isSaved (user: String, item: String) : one (saved: Boolean)
+  answers whether the User has bookmarked the Item
 ```
-
-### Notes
-
-- `_getSaved (user)` answers the user's bookmarks newest first.
-- `_isSaved (user, item)` answers exactly one row with `saved`.

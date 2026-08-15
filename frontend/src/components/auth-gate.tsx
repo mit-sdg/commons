@@ -4,14 +4,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { LoadingState } from "@/components/states";
 import { useAuth } from "@/lib/auth";
-
-const PUBLIC_PATHS = new Set(["/login", "/register"]);
+import { isPublicPath } from "@/lib/public-paths";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { me, loading } = useAuth();
-  const isPublic = PUBLIC_PATHS.has(pathname);
+  const isPublic = isPublicPath(pathname);
 
   useEffect(() => {
     if (!loading && !me && !isPublic) router.replace("/login");
