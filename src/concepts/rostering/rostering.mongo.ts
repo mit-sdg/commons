@@ -284,7 +284,7 @@ export class MongoRosteringConcept {
   }
 
   async _getSeatByUser({ user }: { user: string }) {
-    const doc = await this.seats.findOne({ user }, { sort: { seq: 1 } });
+    const doc = await this.#preferredSeatFor(user);
     if (doc === null) return [];
     return [
       {
@@ -301,7 +301,7 @@ export class MongoRosteringConcept {
   }
 
   async _getSeatDetail({ user }: { user: string }) {
-    const doc = await this.seats.findOne({ user }, { sort: { seq: 1 } });
+    const doc = await this.#preferredSeatFor(user);
     if (doc === null) return [];
     return [
       {
@@ -375,6 +375,11 @@ export class MongoRosteringConcept {
       rosterName: doc.rosterName,
       email: doc.email,
     }));
+  }
+
+  async #preferredSeatFor(user: string): Promise<SeatDoc | null> {
+    const active = await this.seats.findOne({ user, status: "ACTIVE" }, { sort: { seq: -1 } });
+    return active ?? this.seats.findOne({ user }, { sort: { seq: -1 } });
   }
 
   #row(doc: SeatDoc): SeatRow {

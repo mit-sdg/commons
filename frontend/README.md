@@ -34,7 +34,9 @@ typecheck points to the page that misuses a response.
 Only the root application client imports `@mit-sdg/sync-engine-http/client`;
 its shared client type comes from `@mit-sdg/sync-engine/client`.
 `next.config.ts` admits that client and the generated contract from the
-repository root and rewrites `/api/*` to the edge.
+repository root and rewrites `/api/*` to the edge. The unlinked `/setup` page
+uses the generated `/setup/register-admin` endpoint like every other browser
+surface.
 
 ## Running
 

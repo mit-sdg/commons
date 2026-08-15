@@ -13,9 +13,14 @@ and avatar. Updating a profile that was never created is refused.
 
 A field never set reads as the empty string.
 
-## State
+## Types
 
-Each user has at most one profile.
+```types
+external User
+  An application-owned identity used in the user role.
+```
+
+## State
 
 ```state
 a set of Profiles with
@@ -25,6 +30,8 @@ a set of Profiles with
   an avatar     String
   an email      String
 ```
+
+Each user has at most one profile.
 
 ## Actions
 
@@ -70,16 +77,10 @@ setAvatar(user: User, avatar: String) : return (user: User)
 
 ```queries
 _getProfile (user: String) : optional (profile: Profile)
+  answers the User's complete Profile nested under profile
+  answers no row when the User has no Profile
 
 _getProfileFields (user: String) : optional (displayName: String, bio: String, avatar: String, email: String)
-```
-
-### Notes
-
-```questions
-_getProfile(user: User) : zero-or-one { profile: { displayName, bio, avatar, email } }
-  the user's complete profile nested under a `profile` key.
-
-_getProfileFields(user: User) : zero-or-one { displayName, bio, avatar, email }
-  the same fields as a flat row.
+  answers the User's display name, bio, avatar, and email
+  answers no row when the User has no Profile
 ```

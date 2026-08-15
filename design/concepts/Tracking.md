@@ -12,6 +12,19 @@ refused. Marking the whole scope seen records every remaining item and succeeds
 when none remain. Unregistering the discussion removes it and all of its seen
 marks; unregistering it again succeeds. Registering it twice is refused.
 
+## Types
+
+```types
+external User
+  An application-owned identity used in the user role.
+
+external Item
+  An application-owned identity used in the item role.
+
+external Scope
+  An application-owned identity used in the scope role.
+```
+
 ## State
 
 ```state
@@ -26,6 +39,9 @@ a set of SeenMarks with
 Each registered item has one scope. At most one SeenMark exists per user and
 item. Unread items follow registration order; Tracking records no timestamps.
 
+`unregister` removes the item and all its seen marks and succeeds when the item
+is absent. There is no action that makes a seen item unread.
+
 ## Actions
 
 ```actions
@@ -39,6 +55,7 @@ register(item: Item, scope: Scope) : return (item: Item)
     refuse ITEM_ALREADY_REGISTERED "This item is already being tracked."
 
 unregister(item: Item) : return (item: Item)
+  where true
   then
     remove item from registered
     remove every seen-mark of item
@@ -57,27 +74,24 @@ markSeen(user: User, item: Item) : return (item: Item)
     refuse ITEM_ALREADY_SEEN "This user has already seen this item."
 
 markAllSeen(user: User, scope: Scope) : return (user: User)
+  where true
   then
     for every registered item in scope the user has not seen,
       add a seen-mark with user and that item
     return user
 ```
 
-`unregister` removes the item and all its seen marks and succeeds when the item
-is absent. There is no action that makes a seen item unread.
-
 ## Queries
 
 ```queries
 _inScope (scope: String) : many (item: String)
+  answers every registered item in registration order
+  answers no rows when none match
 
 _getUnread (user: String, scope: String) : many (item: String)
+  answers unseen items in registration order
+  answers no rows when none match
 
 _getUnreadCount (user: String, scope: String) : one (count: Number)
+  answers the number of registered Items in the Scope that the User has not seen
 ```
-
-### Notes
-
-- `_getUnread (user, scope)` answers unseen items in registration order.
-- `_getUnreadCount (user, scope)` answers exactly one row with `count`.
-- `_inScope (scope)` answers every registered item in registration order.

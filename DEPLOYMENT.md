@@ -56,10 +56,10 @@ mail, configure `SMTP_HOST` and `SMTP_FROM`; optionally set `SMTP_PORT`,
 
 ## Register the initial administrator
 
-The setup endpoint accepts a raw secret only over an authenticated request and
-stores neither that secret nor its verifier in MongoDB. Coolify receives only a
-scrypt verifier. The endpoint works only while the database contains no
-accounts and is disabled when `ADMIN_SETUP_SECRET_HASH` is absent.
+The setup endpoint compares a raw secret with the configured verifier and stores
+neither value in MongoDB. Coolify receives only the scrypt verifier. The endpoint
+creates an account only while the database has none; a missing
+`ADMIN_SETUP_SECRET_HASH` disables it.
 
 Generate a secret locally, retain the raw value temporarily, and put only the
 printed verifier in Coolify:
@@ -69,32 +69,39 @@ secret="$(openssl rand -base64 36)"
 printf %s "$secret" | bun run setup:hash
 ```
 
-Set the output as `ADMIN_SETUP_SECRET_HASH`, deploy the stack, and register the
-first administrator:
+Set the output as `ADMIN_SETUP_SECRET_HASH`, deploy the stack, and open
+`https://commons.example.edu/setup`. Enter the raw setup secret and the initial
+account details. The unlinked setup page calls the generated application
+endpoint, creates the administrator, and signs in with the new account password.
+Commons exposes no general account-registration endpoint;
+the ordinary `/register` page still requires an administrator-issued invitation.
+
+The equivalent command-line request is:
 
 ```sh
 curl --fail-with-body \
   --request POST \
-  --header "Authorization: Bearer $secret" \
   --header "Content-Type: application/json" \
-  --data '{
-    "username": "operator",
-    "password": "replace-with-the-account-password",
-    "displayName": "Course Operator",
-    "email": "operator@example.edu"
-  }' \
-  https://commons.example.edu/api/setup/register-admin
+  --data @- \
+  https://commons.example.edu/api/setup/register-admin <<JSON
+{
+  "setupSecret": "$secret",
+  "username": "operator",
+  "password": "replace-with-the-account-password",
+  "displayName": "Course Operator",
+  "email": "operator@example.edu"
+}
+JSON
 ```
 
-A successful request returns HTTP `201` and the new user identifier. Repeated
-requests return HTTP `409`. Remove `ADMIN_SETUP_SECRET_HASH` from Coolify and
-redeploy after success; the endpoint will then return HTTP `404`. The operator
-can sign in through `/login` with the account password.
+A new account returns HTTP `200`. A wrong or disabled setup secret returns HTTP
+`401`, and an initialized installation returns HTTP `409`. Remove
+`ADMIN_SETUP_SECRET_HASH` from Coolify and redeploy after success. Rate-limit the
+setup path at the reverse proxy.
 
 This creates the initial forum administrator. Establishing that account as a
 course owner and linking it to a roster seat still requires the existing course
-configuration operations; the one-browser course setup workflow is not yet
-implemented.
+configuration operations; the browser does not perform course setup.
 
 ## Verify the deployment
 

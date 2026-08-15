@@ -21,7 +21,7 @@ import {
 } from "../access/policy.ts";
 import { concepts } from "../../vocabulary.ts";
 
-const { Assigning, Grading, Itemizing, Rostering, Timing } = concepts;
+const { Grading, Itemizing, Rostering, Timing } = concepts;
 
 /** Which released grades belong to this learner? */
 export const theReleasedGradesOf = former(
@@ -128,15 +128,6 @@ export const theGradebook = former(
             .form({ item: cellItem, grade, score, status }),
         }),
     }),
-);
-export const RevisedAcceptingAssignmentEnsuresGradeItem = reaction(({ assignment, title }) =>
-  when(
-    Assigning.revise({ title }).responds({
-      assignment,
-      status: "PUBLISHED",
-      acceptsSubmissions: true,
-    }),
-  ).then(Itemizing.ensureItem({ item: assignment, label: title, maxPoints: 100 })),
 );
 export const RemovedCriterionClearsScores = reaction(({ criterion }) =>
   when(Itemizing.removeCriterion({}).responds({ criterion })).then(

@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { describe, expect, test } from "vite-plus/test";
+import generated from "../../generated.config.ts";
 
 const root = join(import.meta.dirname, "../..");
 const designConcepts = join(root, "design/concepts");
@@ -9,9 +11,21 @@ const compositionsRoot = join(root, "src/compositions");
 
 const lowerFirst = (value: string) => `${value[0]?.toLowerCase()}${value.slice(1)}`;
 
+const compositionDesigns = () => {
+  const designRoot = join(root, "design/compositions");
+  return readdirSync(designRoot, { recursive: true, encoding: "utf8" })
+    .filter((name) => name.endsWith(".md"))
+    .sort();
+};
+
+const typedLinks = (source: string) =>
+  [
+    ...source.matchAll(/\]\((reaction|view|former):((?:Access|Course|Forum)\.[A-Za-z0-9.]+)\)/g),
+  ].map(([, kind, name]) => ({ kind, name }));
+
 describe("application-owned design integration", () => {
-  test("every authored concept is registered through the vocabulary module", () => {
-    const vocabulary = readFileSync(join(root, "src/vocabulary.ts"), "utf8");
+  test("every authored concept is registered through the concept-set module", () => {
+    const conceptSet = readFileSync(join(root, "src/vocabulary.ts"), "utf8");
     const designs = readdirSync(designConcepts)
       .filter((name) => name.endsWith(".md"))
       .map((name) => name.slice(0, -3))
@@ -24,8 +38,8 @@ describe("application-owned design integration", () => {
       expect(readFileSync(registry, "utf8"), concept).toContain(
         `from "@design/concepts/${concept}.md"`,
       );
-      expect(vocabulary, concept).toContain(`from "./concepts/${directory}/registry.ts"`);
-      expect(vocabulary, concept).toMatch(new RegExp(`^  ${concept}: \\w+,$`, "m"));
+      expect(conceptSet, concept).toContain(`from "./concepts/${directory}/registry.ts"`);
+      expect(conceptSet, concept).toMatch(new RegExp(`^  ${concept}: \\w+,$`, "m"));
       expect(existsSync(join(root, `tests/concepts/${directory}.test.ts`)), concept).toBe(true);
       if (concept === "Timing") {
         expect(existsSync(join(conceptsRoot, directory, `${directory}.ts`)), concept).toBe(true);
@@ -36,29 +50,189 @@ describe("application-owned design integration", () => {
         expect(existsSync(join(conceptsRoot, directory, `${directory}.ts`)), concept).toBe(false);
       }
     }
-    expect(vocabulary).toContain('from "@design/vocabulary.md"');
+    expect(conceptSet).not.toContain("@design/vocabulary.md");
+    expect(conceptSet).toContain("export const learningConcepts = conceptSet(");
     expect(existsSync(join(conceptsRoot, "index.ts"))).toBe(false);
   });
 
-  test("composition explanations have matching executable groups", () => {
+  test("every concept query keeps its contract in the declaration body", () => {
+    for (const name of readdirSync(designConcepts).filter((entry) => entry.endsWith(".md"))) {
+      const source = readFileSync(join(designConcepts, name), "utf8");
+      const queries = source.match(/## Queries\n\n```queries\n([\s\S]*?)\n```/);
+      expect(queries, name).not.toBeNull();
+      expect(source, name).not.toMatch(/^### Notes$/m);
+
+      for (const declaration of queries![1].split(/\n\n+/)) {
+        const [signature, ...body] = declaration.split("\n");
+        expect(signature, name).toMatch(/^_[A-Za-z0-9_]+ \(/);
+        expect(
+          body.some((line) => /^  \S/.test(line)),
+          `${name}: ${signature}`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  test("the vocabulary records the manually audited external-role bindings", () => {
+    const expectedBindings = [
+      "Assigning.Author is Authenticating.User",
+      "Assigning.Assignee is Authenticating.User",
+      "Banking.Learner is Authenticating.User",
+      "Bookmarking.User is Authenticating.User",
+      "Flagging.User is Authenticating.User",
+      "Grading.Grader is Authenticating.User",
+      "Grading.Learner is Authenticating.User",
+      "Inviting.User is Authenticating.User",
+      "Notifying.Person is Authenticating.User",
+      "Noting.Author is Authenticating.User",
+      "Noting.Learner is Authenticating.User",
+      "Posting.Author is Authenticating.User",
+      "Profiling.User is Authenticating.User",
+      "Reacting.Person is Authenticating.User",
+      "Resolving.User is Authenticating.User",
+      "Roling.User is Authenticating.User",
+      "Rostering.User is Authenticating.User",
+      "Sessioning.User is Authenticating.User",
+      "Submitting.Submitter is Authenticating.User",
+      "Subscribing.Person is Authenticating.User",
+      "Tracking.User is Authenticating.User",
+      "Trashing.User is Authenticating.User",
+      "Assigning.Sections is Rostering.Section",
+      "Banking.Item is Assigning.Assignment",
+      "Grading.Item is Assigning.Assignment",
+      "Itemizing.Item is Assigning.Assignment",
+      "Submitting.Assignment is Assigning.Assignment",
+      "Grading.Criterion is Itemizing.Criterion",
+      "Grading.Evidence is Submitting.Submission",
+      "Mailing.Key is MailKey",
+      "Submitting.Artifact is Posting.Post",
+      "Bookmarking.Item is Posting.Post",
+      "Categorizing.Item is Posting.Post",
+      "Conversing.Item is Posting.Post",
+      "Flagging.Target is Posting.Post",
+      "Formatting.Target is Posting.Post",
+      "Linking.Source is Posting.Post",
+      "Linking.Target is Posting.Post",
+      "Locking.Target is Lockable",
+      "Notifying.Link is Posting.Post",
+      "Notifying.Subject is Posting.Post",
+      "Pinning.Item is Posting.Post",
+      "Reacting.Target is Posting.Post",
+      "Resolving.Answer is Posting.Post",
+      "Resolving.Question is Posting.Post",
+      "Revising.Item is Posting.Post",
+      "Tagging.Target is Posting.Post",
+      "Tracking.Item is Posting.Post",
+      "Trashing.Item is Posting.Post",
+      "Pinning.Scope is Conversing.Conversation",
+      "Roling.Context is Conversing.Conversation",
+      "Subscribing.Target is Conversing.Conversation",
+      "Tracking.Scope is Conversing.Conversation",
+      "Sessioning.Moment is Timing.Moment",
+    ].sort();
+    const source = readFileSync(join(root, "design/vocabulary.md"), "utf8");
+    const bindings = [
+      ...source.matchAll(/^([A-Z]\w*\.[A-Z]\w*) is ([A-Z]\w*(?:\.[A-Z]\w*)?)$/gm),
+    ].map(([, external, owner]) => ({ external, owner }));
+    const rendered = bindings.map(({ external, owner }) => `${external} is ${owner}`).sort();
+
+    expect(rendered).toEqual([...new Set(rendered)]);
+    expect(rendered).toEqual(expectedBindings);
+    expect(bindings.some(({ external }) => external === "Authenticating.User")).toBe(false);
+    expect(source).toContain("concrete MailKey");
+    expect(source).toContain("concrete Lockable");
+    expect(source).toContain("Authenticating owns the application's person identity.");
+
+    for (const { external, owner } of bindings) {
+      const [concept, type] = external.split(".");
+      const conceptSource = readFileSync(join(designConcepts, `${concept}.md`), "utf8");
+      expect(conceptSource, external).toMatch(new RegExp(`^external ${type}$`, "m"));
+      if (!owner.includes(".")) continue;
+      const [ownerConcept, ownerType] = owner.split(".");
+      const ownerSource = readFileSync(join(designConcepts, `${ownerConcept}.md`), "utf8");
+      expect(ownerSource, owner).toMatch(new RegExp(`\\b${ownerType}\\b`));
+    }
+  });
+
+  test("authored composition explanations register only genuine behavior modules", () => {
+    const designRoot = join(root, "design/compositions");
+    const designs = compositionDesigns();
+    const config = readFileSync(join(root, "generated.config.ts"), "utf8");
+    const configured = [...config.matchAll(/new URL\("\.\/design\/compositions\/([^"\n]+\.md)"/g)]
+      .map(([, name]) => name)
+      .sort();
+
+    expect(configured).toEqual(designs);
+    for (const design of designs) {
+      const sourcePath = join(compositionsRoot, design.replace(/\.md$/, ".ts"));
+      const prose = readFileSync(join(designRoot, design), "utf8");
+      const behavior = readFileSync(sourcePath, "utf8");
+      const [group, module] = design.replace(/\.md$/, "").split("/");
+      const namespace = `${group[0]?.toUpperCase()}${group.slice(1)}.${module.replace(
+        /-([a-z])/g,
+        (_, letter: string) => letter.toUpperCase(),
+      )}.`;
+      const links = typedLinks(prose);
+
+      expect(existsSync(sourcePath), design).toBe(true);
+      expect(behavior, design).not.toMatch(/@design\/compositions/);
+      expect(links.length, design).toBeGreaterThan(0);
+      expect(
+        links.every(({ name }) => name.startsWith(namespace)),
+        design,
+      ).toBe(true);
+      for (const { kind, name } of links) {
+        const exportName = name.split(".").at(-1)!;
+        const declaration = kind === "reaction" ? "(?:endpoint|reaction)" : kind;
+        expect(behavior, `${design}: ${kind}:${name}`).toMatch(
+          new RegExp(`export const ${exportName} = ${declaration}\\s*\\(`),
+        );
+      }
+    }
+
     for (const group of ["Access", "Course", "Forum"]) {
-      const design = join(root, `design/compositions/${group}.md`);
-      const source = join(compositionsRoot, `${group}.ts`);
-      expect(existsSync(design), group).toBe(true);
-      expect(readFileSync(source, "utf8"), group).toContain(
-        `from "@design/compositions/${group}.md"`,
-      );
       expect(readFileSync(join(compositionsRoot, "index.ts"), "utf8"), group).toContain(
         `import * as ${group} from "./${group}.ts"`,
       );
+      const manifest = readFileSync(join(compositionsRoot, `${group}.ts`), "utf8");
+      expect(manifest, group).not.toMatch(/@design\/compositions|@mit-sdg\/sync-engine/);
+      expect(manifest, group).not.toMatch(/\b(?:reaction|endpoint)\s*\(/);
     }
+    expect(readFileSync(join(compositionsRoot, "Forum.ts"), "utf8")).toContain("  feed,\n");
     expect(existsSync(join(root, "src/composition"))).toBe(false);
+  });
+
+  test("composition prose covers every selected declaration exactly once", () => {
+    const inspected = inspectAssembly(generated.assemble()).app;
+    const selected = [
+      ...new Set(
+        inspected.reactions
+          .map(({ name }) => name.replace(/[:#].*$/, ""))
+          .filter((name) => /^(Access|Course|Forum)\./.test(name))
+          .map((name) => `reaction:${name}`),
+      ),
+      ...inspected.views.flatMap(({ authored }) =>
+        authored === undefined ? [] : [`view:${authored.identity}`],
+      ),
+      ...inspected.formers.flatMap(({ authored }) =>
+        authored === undefined ? [] : [`former:${authored.identity}`],
+      ),
+    ].sort();
+    const designRoot = join(root, "design/compositions");
+    const documented = compositionDesigns()
+      .flatMap((design) => typedLinks(readFileSync(join(designRoot, design), "utf8")))
+      .map(({ kind, name }) => `${kind}:${name}`)
+      .sort();
+
+    expect(documented).toEqual([...new Set(documented)]);
+    expect(documented).toEqual(selected);
   });
 
   test("generated artifacts and registration-driven check select src/vocabulary.ts", () => {
     const config = readFileSync(join(root, "generated.config.ts"), "utf8");
     const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-    expect(config).toContain('vocabulary: { module: new URL("./src/vocabulary.ts"');
+    expect(config).toContain('module: new URL("./src/vocabulary.ts"');
+    expect(config).toContain('export: "learningConcepts"');
     expect(config).toContain('httpWire({ policy, name: "CommonsWireHttp" })');
     expect(manifest.scripts["design:check"]).toBe("sync-engine check --config generated.config.ts");
   });
@@ -75,9 +249,10 @@ describe("application-owned design integration", () => {
     }
   });
 
-  test("the assembly joins only the vocabulary and composition manifest", () => {
+  test("the assembly joins only the concept set and composition manifest", () => {
     const source = readFileSync(join(root, "src/assembly/application.ts"), "utf8");
     expect(source).toContain('from "../vocabulary.ts"');
+    expect(source).toContain("conceptSet: learningConcepts");
     expect(source).toContain('from "../compositions/index.ts"');
     expect(source).not.toMatch(/compositions\/(?:access|course|forum)\//);
   });

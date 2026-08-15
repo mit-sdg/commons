@@ -11,11 +11,18 @@ An application queues an email it has already rendered. A host worker reads
 queued messages, sends them through SMTP, and marks successful deliveries sent.
 Failed messages remain queued for a later attempt.
 
+## Types
+
+```types
+external Key
+  An application-owned identity used in the key role.
+```
+
 ## State
 
 ```state
 a set of Messages with
-  a key       String
+  a key       Key
   a recipient String
   a subject   String
   a text      String
@@ -36,12 +43,12 @@ Email recipients are compared after trimming and lower-casing.
 normalizeRecipient(recipient: String) : return (recipient: String)
   where recipient looks like an email address
   then
-    return the trimmed, lower-cased recipient
+    return recipient
   where recipient does not look like an email address
   then
     refuse MAIL_RECIPIENT_INVALID "The mail recipient is not well formed."
 
-enqueue(key: String, recipient: String, subject: String, text: String, html: String, at: Date) : return (message: Message)
+enqueue(key: Key, recipient: String, subject: String, text: String, html: String, at: Date) : return (message: Message)
   where recipient looks like an email address and no message has key
   then
     add the message with its normalized recipient and no sentAt
@@ -49,7 +56,7 @@ enqueue(key: String, recipient: String, subject: String, text: String, html: Str
   where recipient looks like an email address and a message already has key
   then
     clear its sentAt and replace its delivery content using the normalized recipient
-    return that message
+    return message
   where recipient does not look like an email address
   then
     refuse MAIL_RECIPIENT_INVALID "The mail recipient is not well formed."
@@ -67,6 +74,12 @@ markSent(message: Message, at: Date) : return (message: Message)
 ## Queries
 
 ```queries
-_getPending () : many (message: String, key: String, recipient: String, subject: String, text: String, html: String, createdAt: Date)
+_getPending () : many (message: String, key: Key, recipient: String, subject: String, text: String, html: String, createdAt: Date)
+  answers every Message not marked sent
+  orders rows by creation
+  answers no rows when none match
+
 _getStatus (message: String) : optional (sentAt: Date|Null)
+  answers the Message's sent time, or null while it is pending
+  answers no row when the Message does not exist
 ```

@@ -1,26 +1,10 @@
 import { activeUser } from "./session.ts";
-import { no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
+import { compute, is, no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../vocabulary.ts";
+import { computations, concepts } from "../../vocabulary.ts";
 import { ADMIN_ROLE, FORUM, INITIAL_ADMIN_CAPABILITIES } from "./capabilities.ts";
 
 const { Authenticating, Inviting, Profiling, Roling, Sessioning, Timing } = concepts;
-export const InvalidSessionIsRejected = reaction(({ session, at }) =>
-  receive({ session })
-    .where(Timing._now({}).is({ at }))
-    .then(
-      where(
-        Sessioning._isExpired({ session, at }).is({ expired: false }),
-        no(activeUser({ session })),
-      )
-        .then(respond({ error: "UNAUTHORIZED" }))
-        .named("unknown-session"),
-      where(Sessioning._isExpired({ session, at }).is({ expired: true }))
-        .then(Sessioning.end({ session }))
-        .then(respond({ error: "UNAUTHORIZED" }))
-        .named("expired-session"),
-    ),
-);
 export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
   when(Authenticating.register({}).responds({ user }))
     .where(
@@ -52,6 +36,27 @@ export const BootstrapAdminOnLogin = reaction(({ user, role }) =>
     )
     .then(Roling.grant({ user, context: FORUM, role })),
 );
+
+export const RegisterInitialAdmin = endpoint(
+  "/setup/register-admin",
+  ({ setupSecret, username, password, displayName, email, valid, user }) =>
+    receive({ setupSecret, username, password, displayName, email })
+      .where(compute(computations.setupSecretMatches, { secret: setupSecret }, valid))
+      .then(
+        where(is.among(valid, [true]), Authenticating._getUserCount({}).is({ count: 0 }))
+          .then(Authenticating.register({ username, password, email }).responds({ user }))
+          .then(Profiling.createProfile({ user, displayName, email }))
+          .then(respond({ user }))
+          .named("success"),
+        where(is.among(valid, [false]))
+          .then(respond({ error: "UNAUTHORIZED" }))
+          .named("unauthorized"),
+        where(is.among(valid, [true]), no(Authenticating._getUserCount({}).is({ count: 0 })))
+          .then(respond({ error: "CONFLICT" }))
+          .named("initialized"),
+      ),
+);
+
 export const theUserNamed = view("the user named (username)", ({ username }, { user }, _bindings) =>
   where(Authenticating._getByUsername({ username }).is({ user })),
 ).optional();

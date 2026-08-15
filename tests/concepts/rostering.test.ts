@@ -226,6 +226,29 @@ for (const [floor, make] of floors) {
       expect(await rostering._getSeatDetail({ user: "nobody" })).toEqual([]);
     });
 
+    test("seat queries prefer the active seat, then the newest held seat", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({ rows: [anaRow, benRow] });
+      const first = created[0]._id;
+      const second = created[1]._id;
+
+      await rostering.claimSeat({ seat: first, user: "ana" });
+      await rostering.dropSeat({ seat: first });
+      await rostering.claimSeat({ seat: second, user: "ana" });
+
+      expect(await rostering._getSeatByUser({ user: "ana" })).toEqual([
+        expect.objectContaining({ seat: second, status: "ACTIVE" }),
+      ]);
+      expect(await rostering._getSeatDetail({ user: "ana" })).toEqual([
+        { detail: expect.objectContaining({ seat: second, status: "ACTIVE" }) },
+      ]);
+
+      await rostering.dropSeat({ seat: second });
+      expect(await rostering._getSeatByUser({ user: "ana" })).toEqual([
+        expect.objectContaining({ seat: second, status: "DROPPED" }),
+      ]);
+    });
+
     test("moveSection reassigns a seat's section and refuses an unknown seat", async () => {
       const rostering = await make();
       const { section } = await rostering.createSection({

@@ -27,8 +27,10 @@ compile-time contract; it does not validate response values at runtime.
 Change the authored sources, not these files. Files under
 [`design/concepts/`](../design/concepts/) own concept contracts, including query
 cardinalities and refusal explanations. Files under
-[`design/compositions/`](../design/compositions/) explain the executable
-reactions, views, and formers in [`src/compositions/`](../src/compositions/).
+[`design/compositions/`](../design/compositions/) correspond to registered
+behavior modules in [`src/compositions/`](../src/compositions/) and explain each
+executable reaction in causal prose. Helper-only source modules have no separate
+design page.
 
 The read-back omits each concept's full State, Actions, and Queries prose. Those
 sections remain in its design specification; the read-back shows what the

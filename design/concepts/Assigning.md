@@ -12,6 +12,19 @@ each receive a release. Dana gives Omar a later due date, then clears that
 override. Assigning the problem set to Omar again is refused because he already
 has a release. After Dana archives the problem set, it can no longer be revised.
 
+## Types
+
+```types
+external Author
+  An application-owned identity used in the author role.
+
+external Assignee
+  An application-owned identity used in the assignee role.
+
+external Sections
+  An application-owned identity used in the sections role.
+```
+
 ## State
 
 ```state
@@ -42,10 +55,6 @@ a set of Releases with
 
 An assignment's audience is either everyone or targets; when it is targets, the targets say which sections are addressed, and an assignment addressed to everyone lists none. Whether a given audience and targets agree is a calculation over the inputs alone:
 
-```computation
-(audience: String) suits (targets: Sections) : Bool
-```
-
 Everyone suits an empty set of targets; targets suits a set holding at least one.
 No other audience value suits a set of targets.
 
@@ -74,7 +83,7 @@ revise(assignment: Assignment, title: String, instructions: String, kind: String
   then
     set assignment's title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, and targets from the inputs
     set assignment's updatedAt to at
-    return assignment, its status, audience, targets, and acceptsSubmissions
+    return assignment, status, audience, targets, acceptsSubmissions
   where assignment not in assignments
   then
     refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
@@ -97,7 +106,7 @@ publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audi
     remove assignment from draft
     add assignment to published
     set assignment's updatedAt to at
-    return assignment, its audience, targets, and acceptsSubmissions
+    return assignment, audience, targets, acceptsSubmissions
   where assignment not in assignments
   then
     refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
@@ -105,17 +114,16 @@ publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audi
   then
     refuse ASSIGNMENT_NOT_DRAFT "Only a draft can be published."
 
-archive(assignment: Assignment, at: Date) : return ()
+archive(assignment: Assignment, at: Date) : return (assignment: Assignment)
   where assignment in assignments
   then
     remove assignment from draft and from published
     add assignment to archived
     set assignment's updatedAt to at
-    return
+    return assignment
   where assignment not in assignments
   then
     refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
-
 assign(assignment: Assignment, assignee: Assignee, at: Date) : return (release: Release)
   where assignment in published and no release has this assignment and assignee
   then
@@ -155,32 +163,29 @@ clearDueOverride(assignment: Assignment, assignee: Assignee) : return (release: 
 
 ```queries
 _getDetail (assignment: String) : optional (detail: Assignment)
+  answers the Assignment's authored fields, audience, status, and dates
+  answers no row when the Assignment does not exist
 
 _getAssignments () : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String|Null, acceptsSubmissions: Boolean, audience: Audience, targets: Strings, status: String, createdAt: Date, updatedAt: Date|Null)
+  answers every assignment in creation order, including drafts, published assignments, and archived assignments
+  answers no rows when none match
 
 _getAssigned (assignee: String) : many (assignment: String, release: String, dueOverride: String|Null, status: ASSIGNED)
+  answers the assignee's releases in creation order
+  answers no rows when none match
 
 _getAssignees (assignment: String) : many (assignee: String)
+  answers the assignment's assignees in release order
+  answers no rows when none match
 
 _isAssigned (assignment: String, assignee: String) : one (assigned: Boolean)
+  answers whether the Assignee holds a release of the Assignment
 
 _getPublishedForAudience (audience: String|Null) : many (assignment: String)
+  answers published assignments addressed to everyone or to the named section, in creation order
+  answers no rows when none match
 
 _getPublishedInWindow (start: String|Date, end: String|Date) : many (assignment: String)
+  answers published assignments whose availability or due date falls within the inclusive window, in creation order
+  answers no rows when none match
 ```
-
-### Notes
-
-- `_getDetail (assignment)` answers at most one row containing the assignment's
-  authored fields, audience, status, and dates.
-- `_getAssignments ()` answers every assignment in creation order, including
-  drafts, published assignments, and archived assignments.
-- `_getAssigned (assignee)` answers the assignee's releases in creation order.
-- `_getAssignees (assignment)` answers the assignment's assignees in release
-  order.
-- `_isAssigned (assignment, assignee)` answers exactly one row with `assigned`.
-- `_getPublishedForAudience (audience)` answers published assignments addressed
-  to everyone or to the named section, in creation order.
-- `_getPublishedInWindow (start, end)` answers published assignments whose
-  availability or due date falls within the inclusive window, in creation
-  order.

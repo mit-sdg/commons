@@ -51,6 +51,7 @@ export const PurgeClearsConversationSubscriptions = reaction(({ item, node, conv
   when(Trashing.purge({}).responds({ item }))
     .where(
       Conversing._getNodeByItem({ item }).is({ node }),
+      no(Conversing._parentOf({ node })),
       Conversing._getConversation({ node }).is({ conversation }),
     )
     .then(Subscribing.clearTarget({ target: conversation })),

@@ -12,6 +12,13 @@ replies to Omar. An item can appear in only one conversation, so placing Omar's
 answer again is refused. Omar's reply cannot be removed while Priya's reply is
 beneath it. Removing the last node also removes the conversation.
 
+## Types
+
+```types
+external Item
+  An application-owned identity used in the item role.
+```
+
 ## State
 
 ```state
@@ -37,7 +44,7 @@ start(item: Item, at: Date) : return (conversation: Conversation, node: Node)
   then
     add a new conversation with root node and createdAt at
     add a new node with conversation, item, depth 0, and createdAt at
-    return conversation and node
+    return conversation, node
   where a node has this item
   then
     refuse ITEM_ALREADY_IN_CONVERSATION "This item is already in a conversation."
@@ -55,7 +62,7 @@ reply(item: Item, parent: Node, at: Date) : return (node: Node)
       depth one more than the parent's depth, and createdAt at
     return node
 
-remove(node: Node) : return ()
+remove(node: Node) : return (node: Node)
   where node not in nodes
   then
     refuse NODE_NOT_FOUND "There is no such node."
@@ -65,40 +72,46 @@ remove(node: Node) : return ()
   where node in nodes, no node has node as its parent, and another node shares its conversation
   then
     delete node
-    return
+    return node
   where node in nodes, no node has node as its parent, and no other node shares its conversation
   then
     delete node
     delete its conversation
-    return
+    return node
 ```
 
 ## Queries
 
 ```queries
 _getThread (conversation: String) : many (node: String, item: String, parent: String|Null, depth: Number)
+  answers the Conversation's Nodes in creation order
+  answers no rows when the Conversation has no Nodes or does not exist
 
 _getConversation (node: String) : optional (conversation: String)
+  answers the Conversation containing the Node
+  answers no row when the Node does not exist
 
 _getNodeByItem (item: String) : optional (node: String)
+  answers the Node placing the Item
+  answers no row when no Node places the Item
 
 _parentOf (node: String) : optional (parent: String)
+  answers the parent of the Node
+  answers no row for a root or unknown Node
 
 _getItem (node: String) : optional (item: String)
+  answers the Item placed by the Node
+  answers no row when the Node does not exist
 
 _hasChildren (node: String) : one (present: Boolean)
+  answers whether another Node has this Node as its parent
+  answers false for an unknown Node
 
 _getConversations () : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)
+  answers conversations newest-created first
+  answers no rows when none match
 
 _getConversationsByLastActivity () : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)
+  answers conversations with the most recently active first
+  answers no rows when none match
 ```
-
-### Notes
-
-- `_getThread (conversation)` answers its nodes in creation order.
-- `_getConversation (node)`, `_getNodeByItem (item)`, `_parentOf (node)`, and
-  `_getItem (node)` each answer at most one row.
-- `_hasChildren (node)` answers exactly one row with `present`.
-- `_getConversations ()` answers conversations newest-created first.
-- `_getConversationsByLastActivity ()` answers conversations with the most
-  recently active first.

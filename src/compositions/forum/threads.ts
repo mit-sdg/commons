@@ -3,7 +3,7 @@ import { each, form, former, no, reaction, view, when, where } from "@mit-sdg/sy
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../vocabulary.ts";
 
-const { Conversing, Formatting, Linking, Locking, Posting, Tracking, Trashing, Timing } = concepts;
+const { Conversing, Formatting, Locking, Posting, Tracking, Trashing, Timing } = concepts;
 
 export const intact = view("(item) is intact", ({ item }, _outputs, _bindings) =>
   where(Trashing._isTrashed({ item }).is({ trashed: false })),
@@ -56,13 +56,6 @@ export const placementOf = view(
       Conversing._getConversation({ node }).is({ conversation }),
     ),
 ).optional();
-
-export const CreatedPostRefreshesDerivedContent = reaction(({ content, post }) =>
-  when(Posting.create({ content }).responds({ post })).then(
-    Formatting.setSource({ target: post, source: content }).named("render"),
-    Linking.setLinksFrom({ source: post, content }).named("links"),
-  ),
-);
 
 export const TrackRootUnread = reaction(({ item, conversation }) =>
   when(Conversing.start({ item }).responds({ conversation })).then(

@@ -52,6 +52,7 @@ describe("HTTP route derivation", () => {
     expect(edge.sessionPaths.has("/auth/logout")).toBe(true);
     expect(edge.sessionPaths.has("/auth/login")).toBe(false);
     expect(edge.sessionPaths.has("/auth/register")).toBe(false);
+    expect(edge.publicPaths.has("/setup/register-admin")).toBe(true);
     for (const path of edge.sessionPaths) expect(edge.servedPaths.has(path)).toBe(true);
   });
 });
@@ -68,58 +69,57 @@ describe("deployment routes", () => {
     expect(await ready.json()).toEqual({ status: "ok" });
   });
 
-  test("registers exactly one initial administrator with the setup secret", async () => {
+  test("registers exactly one initial administrator through the application endpoint", async () => {
+    const previousVerifier = process.env.ADMIN_SETUP_SECRET_HASH;
     const secret = "a-setup-secret-that-is-at-least-32-characters";
-    const verifier = await derivePasswordVerifier(secret);
-    const edge = createEdge(mongoImplementations(await testDb()), undefined, {
-      adminSetupSecretVerifier: verifier,
-    });
-    const request = (authorization: string) =>
-      edge.fetch(
-        new Request("http://edge/api/setup/register-admin", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${authorization}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(ALICE),
+    process.env.ADMIN_SETUP_SECRET_HASH = await derivePasswordVerifier(secret);
+    try {
+      const edge = createEdge(mongoImplementations(await testDb()));
+      const request = (setupSecret: string) =>
+        post(edge, "/setup/register-admin", { setupSecret, ...ALICE });
+
+      const unauthorized = await request("not-the-secret");
+      expect(unauthorized.status).toBe(401);
+      expect(await unauthorized.json()).toEqual({ error: "UNAUTHORIZED" });
+
+      const registered = await request(secret);
+      expect(registered.status).toBe(200);
+      const { user } = (await registered.json()) as { user: string };
+      expect(
+        await edge.application.concepts.Roling._hasCapability({
+          user,
+          context: "forum",
+          capability: "administer",
         }),
-      );
+      ).toEqual({ allowed: true });
+      expect(await edge.application.concepts.Profiling._getProfile({ user })).toMatchObject([
+        { profile: { displayName: ALICE.displayName, email: ALICE.email } },
+      ]);
 
-    const unauthorized = await request("not-the-secret");
-    expect(unauthorized.status).toBe(401);
-    expect(await unauthorized.json()).toEqual({ error: "UNAUTHORIZED" });
-
-    const registered = await request(secret);
-    expect(registered.status).toBe(201);
-    const { user } = (await registered.json()) as { user: string };
-    expect(
-      await edge.application.concepts.Roling._hasCapability({
-        user,
-        context: "forum",
-        capability: "administer",
-      }),
-    ).toEqual({ allowed: true });
-    expect(await edge.application.concepts.Profiling._getProfile({ user })).toMatchObject([
-      { profile: { displayName: ALICE.displayName, email: ALICE.email } },
-    ]);
-
-    const closed = await request(secret);
-    expect(closed.status).toBe(409);
-    expect(await closed.json()).toEqual({ error: "CONFLICT" });
+      const initialized = await request(secret);
+      expect(initialized.status).toBe(409);
+      expect(await initialized.json()).toEqual({ error: "CONFLICT" });
+    } finally {
+      if (previousVerifier === undefined) delete process.env.ADMIN_SETUP_SECRET_HASH;
+      else process.env.ADMIN_SETUP_SECRET_HASH = previousVerifier;
+    }
   });
 
-  test("hides admin setup when no verifier is configured", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()), undefined, {});
-    const hidden = await edge.fetch(
-      new Request("http://edge/api/setup/register-admin", {
-        method: "POST",
-        headers: { Authorization: "Bearer any-secret" },
-        body: "{}",
-      }),
-    );
-    expect(hidden.status).toBe(404);
-    expect(await hidden.json()).toEqual({ error: "NOT_FOUND" });
+  test("rejects setup when no verifier is configured", async () => {
+    const previousVerifier = process.env.ADMIN_SETUP_SECRET_HASH;
+    delete process.env.ADMIN_SETUP_SECRET_HASH;
+    try {
+      const edge = createEdge(mongoImplementations(await testDb()));
+      const disabled = await post(edge, "/setup/register-admin", {
+        setupSecret: "unused",
+        ...ALICE,
+      });
+      expect(disabled.status).toBe(401);
+      expect(await disabled.json()).toEqual({ error: "UNAUTHORIZED" });
+    } finally {
+      if (previousVerifier === undefined) delete process.env.ADMIN_SETUP_SECRET_HASH;
+      else process.env.ADMIN_SETUP_SECRET_HASH = previousVerifier;
+    }
   });
 });
 

@@ -45,6 +45,13 @@ export const thePublicPostsOf = former("the public posts of (author)", ({ author
   each(publicPostsBy({ author }).is({ post })).form({ post }),
 );
 
+export const CreatedPostRefreshesDerivedContent = reaction(({ content, post }) =>
+  when(Posting.create({ content }).responds({ post })).then(
+    Formatting.setSource({ target: post, source: content }).named("render"),
+    Linking.setLinksFrom({ source: post, content }).named("links"),
+  ),
+);
+
 export const EditedPostRefreshesDerivedContent = reaction(({ content, post }) =>
   when(Posting.edit({ content }).responds({ post })).then(
     Formatting.setSource({ target: post, source: content }).named("render"),
