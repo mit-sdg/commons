@@ -8,8 +8,8 @@ sync-engine assembly.
 ## Run Commons locally
 
 Commons requires Bun 1.3 and installs the published sync-engine core and HTTP
-packages at `1.0.0-beta.9`. Install both application packages, then start the
-MongoDB-backed stack:
+packages at the versions pinned in [`package.json`](package.json). Install both
+application packages, then start the MongoDB-backed stack:
 
 ```sh
 bun install
