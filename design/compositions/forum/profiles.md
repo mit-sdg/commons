@@ -1,7 +1,7 @@
 # Profiles and public identity
 
 [Forum.profiles.GetProfile](reaction:Forum.profiles.GetProfile) resolves the caller from the session before
-choosing fields. An active course member sees their own private profile;
+using [theProfileOf view](view:Forum.profiles.theProfileOf) to choose fields. An active course member sees their own private profile;
 roster managers can see another user's private fields; other active members see
 only display name, bio, and avatar. Missing profiles, callers outside the course,
 and unauthorized cross-user reads are hidden as `NOT_FOUND`.
@@ -13,19 +13,12 @@ operations do not accept a target account and cannot change the email saved when
 the profile was created.
 
 [Forum.profiles.SearchUsers](reaction:Forum.profiles.SearchUsers) accepts username-prefix searches only from active
-course members. It searches
-account usernames by case-insensitive prefix, returns at most ten, and combines
-each result with any current public profile face. [Forum.profiles.ResolvePublicUser](reaction:Forum.profiles.ResolvePublicUser)
+course members. It forms [the user search](former:Forum.profiles.theUserSearch) from at most ten
+case-insensitive username-prefix matches, combining each result with any current public profile face. [Forum.profiles.ResolvePublicUser](reaction:Forum.profiles.ResolvePublicUser)
 needs no session and resolves an account identifier, exact username, or sole
 case-insensitive username match; ambiguous or absent identities return both the
 user and username as `null` rather than exposing candidates.
 
-Profile, post, and thread presentation reads their owners' current state. A
-missing optional profile face does not create a replacement identity or grant
-access.
-
-## Supporting declarations
-
-Views [theProfileOf](view:Forum.profiles.theProfileOf) support the behavior and result shapes described above.
-
-Formers [theUserPage](former:Forum.profiles.theUserPage), [theUserSearch](former:Forum.profiles.theUserSearch) support the behavior and result shapes described above.
+The [user-page former](former:Forum.profiles.theUserPage) combines current account, profile, post, and thread
+state without copying it into another owner. A missing optional profile face
+does not create a replacement identity or grant access.

@@ -7,12 +7,14 @@ administrator or moderator capability is required. Tagging retains its own
 unknown-tag, duplicate-application, and missing-application refusals, while a
 missing or trashed post is hidden as `NOT_FOUND`.
 
-[Forum.tags.ListTags](reaction:Forum.tags.ListTags) makes every current tag identity and name public.
-[Forum.tags.TagsForTarget](reaction:Forum.tags.TagsForTarget) returns a readable post's applied tags in order.
-[Forum.tags.TagTargets](reaction:Forum.tags.TagTargets) returns every readable post carrying a supplied tag
-identity.
-[Forum.tags.TagTargetsByName](reaction:Forum.tags.TagTargetsByName) performs the target lookup from an exact tag
-name.
+[Forum.tags.ListTags](reaction:Forum.tags.ListTags) forms
+[the public tag catalog](former:Forum.tags.theTags) from every current tag identity and name.
+[Forum.tags.TagsForTarget](reaction:Forum.tags.TagsForTarget) forms
+[a readable post's applied tags](former:Forum.tags.theTagsOn) in order.
+[Forum.tags.TagTargets](reaction:Forum.tags.TagTargets) forms
+[the readable targets carrying a supplied tag](former:Forum.tags.theTargetsTagged).
+[Forum.tags.TagTargetsByName](reaction:Forum.tags.TagTargetsByName) forms
+[the same readable targets from an exact tag name](former:Forum.tags.theTargetsTaggedWithName).
 Trash filters those post results but keeps the applications, so restore reveals
 them again.
 
@@ -20,7 +22,3 @@ After permanent post purge, [Forum.tags.PurgeClearsTags](reaction:Forum.tags.Pur
 application on that post. Ordinary
 Posting deletion asks Tagging for the same idempotent clear through post cleanup.
 Commons offers no operation that deletes an entire tag definition.
-
-## Supporting declarations
-
-Formers [theTags](former:Forum.tags.theTags), [theTagsOn](former:Forum.tags.theTagsOn), [theTargetsTagged](former:Forum.tags.theTargetsTagged), [theTargetsTaggedWithName](former:Forum.tags.theTargetsTaggedWithName) support the behavior and result shapes described above.

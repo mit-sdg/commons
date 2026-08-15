@@ -885,7 +885,7 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
 ### (item) is intact
 
 Authored path: `Forum.threads.intact`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 31.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 28.
 
 ```view
 (item) is intact — inputs (item); outputs (); bindings ()
@@ -895,7 +895,7 @@ Authored path: `Forum.threads.intact`.
 ### (conversation) is readable
 
 Authored path: `Forum.threads.readableConversation`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 31.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 7.
 
 ```view
 (conversation) is readable — inputs (conversation); outputs (); bindings (node, item)
@@ -909,7 +909,7 @@ Authored path: `Forum.threads.readableConversation`.
 ### (post) is not readable
 
 Authored path: `Forum.posts.notReadable`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 35.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 18.
 
 ```view
 (post) is not readable — inputs (post); outputs (); bindings ()
@@ -920,7 +920,7 @@ Authored path: `Forum.posts.notReadable`.
 ### (post) is readable
 
 Authored path: `Forum.posts.readable`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 35.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 17.
 
 ```view
 (post) is readable — inputs (post); outputs (); bindings ()
@@ -932,7 +932,7 @@ Authored path: `Forum.posts.readable`.
 ### (target) is public
 
 Authored path: `Forum.threads.publicTarget`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 31.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 26.
 
 ```view
 (target) is public — inputs (target); outputs (); bindings ()
@@ -980,7 +980,7 @@ Authored path: `Forum.threads.publicTarget`.
 ### (user) is not mentioned in (post)
 
 Authored path: `Forum.notifications.isNotMentionedIn`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 48.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 15.
 
 ```view
 (user) is not mentioned in (post) — inputs (user, post); outputs (); bindings (username)
@@ -992,7 +992,7 @@ Authored path: `Forum.notifications.isNotMentionedIn`.
 ### (user) is not yet notified about (subject)
 
 Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 48.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 17.
 
 ```view
 (user) is not yet notified about (subject) — inputs (user, subject); outputs (); bindings ()
@@ -1195,7 +1195,7 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 ### the active user of (session)
 
 Authored path: `Access.session.activeUser`.
-- Covered by [Session boundary](../design/compositions/access/session.md), line 18.
+- Covered by [Session boundary](../design/compositions/access/session.md), line 13.
 
 ```view
 the active user of (session) — inputs (session); outputs (user); bindings (at) — answers at most one (user)
@@ -1207,7 +1207,7 @@ the active user of (session) — inputs (session); outputs (user); bindings (at)
 ### the assignment (assignment)
 
 Authored path: `Course.assignments.theAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 36.
 
 ```view
 the assignment (assignment) — inputs (assignment); outputs (detail); bindings () — answers at most one (detail)
@@ -1217,7 +1217,7 @@ the assignment (assignment) — inputs (assignment); outputs (detail); bindings 
 ### the class configuration ()
 
 Authored path: `Course.roster.theClassConfiguration`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 48.
+- Covered by [Roster](../design/compositions/course/roster.md), line 5.
 
 ```view
 the class configuration () — inputs (); outputs (detail); bindings () — answers at most one (detail)
@@ -1227,7 +1227,7 @@ the class configuration () — inputs (); outputs (detail); bindings () — answ
 ### the conversation placing (item)
 
 Authored path: `Forum.threads.placementOf`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 31.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 6.
 
 ```view
 the conversation placing (item) — inputs (item); outputs (conversation); bindings (node) — answers at most one (conversation)
@@ -1241,7 +1241,7 @@ the conversation placing (item) — inputs (item); outputs (conversation); bindi
 ### the latest submission for (assignment) by (submitter)
 
 Authored path: `Course.submissions.theLatestSubmission`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 23.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 3.
 
 ```view
 the latest submission for (assignment) by (submitter) — inputs (assignment, submitter); outputs (latest); bindings () — answers at most one (latest)
@@ -1251,7 +1251,7 @@ the latest submission for (assignment) by (submitter) — inputs (assignment, su
 ### the other users mentioned in (post)
 
 Authored path: `Forum.notifications.otherUsersMentionedIn`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 48.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 11.
 
 ```view
 the other users mentioned in (post) — inputs (post); outputs (user); bindings (handle) — answers any number of (user)
@@ -1264,7 +1264,7 @@ the other users mentioned in (post) — inputs (post); outputs (user); bindings 
 ### the profile of (user)
 
 Authored path: `Forum.profiles.theProfileOf`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 29.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 4.
 
 ```view
 the profile of (user) — inputs (user); outputs (profile); bindings () — answers at most one (profile)
@@ -1274,7 +1274,7 @@ the profile of (user) — inputs (user); outputs (profile); bindings () — answ
 ### the public posts by (author)
 
 Authored path: `Forum.posts.publicPostsBy`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 35.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 21.
 
 ```view
 the public posts by (author) — inputs (author); outputs (post); bindings () — answers any number of (post)
@@ -1296,7 +1296,7 @@ the public posts in (conversation) — inputs (conversation); outputs (node, ite
 ### the readable bookmarks of (user)
 
 Authored path: `Forum.bookmarks.readableBookmarksOf`.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 20.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 9.
 
 ```view
 the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bindings () — answers any number of (item, savedAt)
@@ -1308,7 +1308,7 @@ the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bin
 ### the seat detail of (user)
 
 Authored path: `Course.notes.theSeatDetailOf`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 27.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 12.
 
 ```view
 the seat detail of (user) — inputs (user); outputs (detail); bindings () — answers at most one (detail)
@@ -1318,7 +1318,7 @@ the seat detail of (user) — inputs (user); outputs (detail); bindings () — a
 ### the seat matching (user) and (externalKey)
 
 Authored path: `Course.roster.identityMatchedSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 48.
+- Covered by [Roster](../design/compositions/course/roster.md), line 19.
 
 ```view
 the seat matching (user) and (externalKey) — inputs (user, externalKey); outputs (seat); bindings (email) — answers at most one (seat)
@@ -1330,7 +1330,7 @@ the seat matching (user) and (externalKey) — inputs (user, externalKey); outpu
 ### the seat of (user)
 
 Authored path: `Course.roster.theSeatOf`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 48.
+- Covered by [Roster](../design/compositions/course/roster.md), line 27.
 
 ```view
 the seat of (user) — inputs (user); outputs (seat); bindings () — answers at most one (seat)
@@ -1340,7 +1340,7 @@ the seat of (user) — inputs (user); outputs (seat); bindings () — answers at
 ### the user named (username)
 
 Authored path: `Access.auth.theUserNamed`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 44.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 17.
 
 ```view
 the user named (username) — inputs (username); outputs (user); bindings () — answers at most one (user)
@@ -1355,7 +1355,7 @@ _the authored explanation; this section records the generated shape._
 ### the assigned population for (assignment)
 
 Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 25.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
 
 ```former
 Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, rosterName, release, dueOverride, releaseStatus); promises exactly one record — forms:
@@ -1373,7 +1373,7 @@ Former "the assigned population for (assignment)" — inputs (assignment); bindi
 ### the assignments of (student)
 
 Authored path: `Course.assignments.theAssignmentsOf`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
 
 ```former
 Former "the assignments of (student)" — inputs (student); bindings (assignment, release, dueOverride, releaseStatus); promises exactly one record — forms:
@@ -1389,7 +1389,7 @@ Former "the assignments of (student)" — inputs (student); bindings (assignment
 ### the attempts for (assignment) by (submitter)
 
 Authored path: `Course.submissions.theAttempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 25.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 7.
 
 ```former
 Former "the attempts for (assignment) by (submitter)" — inputs (assignment, submitter); bindings (submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
@@ -1405,7 +1405,7 @@ Former "the attempts for (assignment) by (submitter)" — inputs (assignment, su
 ### the backlinks of (target)
 
 Authored path: `Forum.links.theBacklinksOf`.
-- Covered by [Post links](../design/compositions/forum/links.md), line 20.
+- Covered by [Post links](../design/compositions/forum/links.md), line 10.
 
 ```former
 Former "the backlinks of (target)" — inputs (target); bindings (source); promises exactly one record — forms:
@@ -1430,7 +1430,7 @@ Former "the post summary of (item)" — inputs (item); bindings (author, content
 ### the bookmarked posts of (user)
 
 Authored path: `Forum.bookmarks.theBookmarkedPostsOf`.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 22.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 13.
 
 ```former
 Former "the bookmarked posts of (user)" — inputs (user); bindings (item, savedAt); promises exactly one record — forms:
@@ -1444,7 +1444,7 @@ Former "the bookmarked posts of (user)" — inputs (user); bindings (item, saved
 ### the bookmarks of (user)
 
 Authored path: `Forum.bookmarks.theBookmarksOf`.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 22.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 11.
 
 ```former
 Former "the bookmarks of (user)" — inputs (user); bindings (item, savedAt); promises exactly one record — forms:
@@ -1457,7 +1457,7 @@ Former "the bookmarks of (user)" — inputs (user); bindings (item, savedAt); pr
 ### the calendar between (start) and (end)
 
 Authored path: `Course.calendar.theCalendarBetween`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 20.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 3.
 
 ```former
 Former "the calendar between (start) and (end)" — inputs (start, end); bindings (assignment, title, kind, availableAt, dueAt, closeAt, status); promises exactly one record — forms:
@@ -1476,7 +1476,7 @@ Former "the calendar between (start) and (end)" — inputs (start, end); binding
 ### the categories ()
 
 Authored path: `Forum.categories.theCategories`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 24.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 12.
 
 ```former
 Former "the categories ()" — inputs (); bindings (category, name, description); promises exactly one record — forms:
@@ -1490,7 +1490,7 @@ Former "the categories ()" — inputs (); bindings (category, name, description)
 ### the category of (item)
 
 Authored path: `Forum.categories.theCategoryOf`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 24.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 16.
 
 ```former
 Former "the category of (item)" — inputs (item); bindings (category, name, description); promises exactly one record — forms:
@@ -1504,7 +1504,7 @@ Former "the category of (item)" — inputs (item); bindings (category, name, des
 ### the criteria of (item)
 
 Authored path: `Course.grades.theCriteriaOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
+- Covered by [Grades](../design/compositions/course/grades.md), line 6.
 
 ```former
 Former "the criteria of (item)" — inputs (item); bindings (criterion, name, maxPoints, position); promises exactly one record — forms:
@@ -1519,7 +1519,7 @@ Former "the criteria of (item)" — inputs (item); bindings (criterion, name, ma
 ### the criterion scores of (learner) on (item)
 
 Authored path: `Course.grades.theCriterionScoresOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
+- Covered by [Grades](../design/compositions/course/grades.md), line 18.
 
 ```former
 Former "the criterion scores of (learner) on (item)" — inputs (learner, item); bindings (criterion, points, maxPoints, feedback); promises exactly one record — forms:
@@ -1535,7 +1535,7 @@ Former "the criterion scores of (learner) on (item)" — inputs (learner, item);
 ### the dashboard seat of (user)
 
 Authored path: `Course.calendar.theDashboardSeatOf`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 20.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
 
 ```former
 Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder, externalKey, email, rosterName, kind, section, status); promises exactly one record — forms:
@@ -1554,7 +1554,7 @@ Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder,
 ### the defined roles ()
 
 Authored path: `Access.roles.theDefinedRoles`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
+- Covered by [Roles](../design/compositions/access/roles.md), line 25.
 
 ```former
 Former "the defined roles ()" — inputs (); bindings (role, name, capabilities); promises exactly one record — forms:
@@ -1568,7 +1568,7 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
 ### the dropped roster ()
 
 Authored path: `Course.roster.theDroppedRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 50.
+- Covered by [Roster](../design/compositions/course/roster.md), line 34.
 
 ```former
 Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
@@ -1585,7 +1585,7 @@ Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, sectio
 ### the flags on (target)
 
 Authored path: `Forum.moderation.theFlagsOn`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 37.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 35.
 
 ```former
 Former "the flags on (target)" — inputs (target); bindings (flag, reporter, reason, status, createdAt); promises exactly one record — forms:
@@ -1601,7 +1601,7 @@ Former "the flags on (target)" — inputs (target); bindings (flag, reporter, re
 ### the forward links of (source)
 
 Authored path: `Forum.links.theForwardLinksOf`.
-- Covered by [Post links](../design/compositions/forum/links.md), line 20.
+- Covered by [Post links](../design/compositions/forum/links.md), line 8.
 
 ```former
 Former "the forward links of (source)" — inputs (source); bindings (target); promises exactly one record — forms:
@@ -1614,7 +1614,7 @@ Former "the forward links of (source)" — inputs (source); bindings (target); p
 ### the gradebook ()
 
 Authored path: `Course.grades.theGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
+- Covered by [Grades](../design/compositions/course/grades.md), line 43.
 
 ```former
 Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, rosterName, email, cellItem, grade, score, status); promises exactly one record — forms:
@@ -1659,7 +1659,7 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
 ### the grades of (learner)
 
 Authored path: `Course.grades.theGradesOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
+- Covered by [Grades](../design/compositions/course/grades.md), line 39.
 
 ```former
 Former "the grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -1678,7 +1678,7 @@ Former "the grades of (learner)" — inputs (learner); bindings (item, grade, sc
 ### the grades on (item)
 
 Authored path: `Course.grades.theGradesOn`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
+- Covered by [Grades](../design/compositions/course/grades.md), line 41.
 
 ```former
 Former "the grades on (item)" — inputs (item); bindings (learner, grade, score, status); promises exactly one record — forms:
@@ -1705,7 +1705,7 @@ Former "the thread stats of (conversation)" — inputs (conversation); bindings 
 ### the home feed by activity ()
 
 Authored path: `Forum.feed.theHomeFeedByActivity`.
-- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 24.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 6.
 
 ```former
 Former "the home feed by activity ()" — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName); promises exactly one record — forms:
@@ -1733,7 +1733,7 @@ Former "the home feed by activity ()" — inputs (); bindings (conversation, roo
 ### the home feed by creation ()
 
 Authored path: `Forum.feed.theHomeFeedByCreation`.
-- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 24.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 4.
 
 ```former
 Former "the home feed by creation ()" — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName); promises exactly one record — forms:
@@ -1761,7 +1761,7 @@ Former "the home feed by creation ()" — inputs (); bindings (conversation, roo
 ### the notification presentation of (item)
 
 Authored path: `Forum.notifications.theNotificationPresentationOf`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 33.
 
 ```former
 Former "the notification presentation of (item)" — inputs (item); bindings (author, content, createdAt, editedAt, username, displayName, avatar); promises exactly one record — forms:
@@ -1784,7 +1784,7 @@ Former "the notification presentation of (item)" — inputs (item); bindings (au
 ### the inbox of (user)
 
 Authored path: `Forum.notifications.theInboxOf`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 32.
 
 ```former
 Former "the inbox of (user)" — inputs (user); bindings (notification, kind, link, createdAt, read); promises exactly one record — forms:
@@ -1801,7 +1801,7 @@ Former "the inbox of (user)" — inputs (user); bindings (notification, kind, li
 ### the invitations ()
 
 Authored path: `Access.invitations.theInvitations`.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 18.
 
 ```former
 Former "the invitations ()" — inputs (); bindings (invitation, channel, address, createdAt, lastInvitedAt, inviteCount, user); promises exactly one record — forms:
@@ -1819,7 +1819,7 @@ Former "the invitations ()" — inputs (); bindings (invitation, channel, addres
 ### the items in (category)
 
 Authored path: `Forum.categories.theItemsIn`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 24.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 14.
 
 ```former
 Former "the items in (category)" — inputs (category); bindings (item); promises exactly one record — forms:
@@ -1832,7 +1832,7 @@ Former "the items in (category)" — inputs (category); bindings (item); promise
 ### the late-day balance of (learner)
 
 Authored path: `Course.lateDays.theLateDayBalanceOf`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 15.
 
 ```former
 Former "the late-day balance of (learner)" — inputs (learner); bindings (granted, used, remaining); promises exactly one record — forms:
@@ -1846,7 +1846,7 @@ Former "the late-day balance of (learner)" — inputs (learner); bindings (grant
 ### the late-day uses of (learner)
 
 Authored path: `Course.lateDays.theLateDayUsesOf`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 13.
 
 ```former
 Former "the late-day uses of (learner)" — inputs (learner); bindings (use, item, days, status, appliedAt); promises exactly one record — forms:
@@ -1862,7 +1862,7 @@ Former "the late-day uses of (learner)" — inputs (learner); bindings (use, ite
 ### the late-day uses on (assignment)
 
 Authored path: `Course.lateDays.theLateDayUsesOn`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 22.
 
 ```former
 Former "the late-day uses on (assignment)" — inputs (assignment); bindings (learner, days); promises exactly one record — forms:
@@ -1875,7 +1875,7 @@ Former "the late-day uses on (assignment)" — inputs (assignment); bindings (le
 ### the latest revision of (item)
 
 Authored path: `Forum.revisions.theLatestRevisionOf`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 32.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 16.
 
 ```former
 Former "the latest revision of (item)" — inputs (item); bindings (revision, number, content, savedAt); promises exactly one record — forms:
@@ -1890,7 +1890,7 @@ Former "the latest revision of (item)" — inputs (item); bindings (revision, nu
 ### the locked list ()
 
 Authored path: `Forum.moderation.theLockedList`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 37.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
 
 ```former
 Former "the locked list ()" — inputs (); bindings (target, lockedAt); promises exactly one record — forms:
@@ -1904,7 +1904,7 @@ Former "the locked list ()" — inputs (); bindings (target, lockedAt); promises
 ### the moderation queue ()
 
 Authored path: `Forum.moderation.theModerationQueue`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 37.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 32.
 
 ```former
 Former "the moderation queue ()" — inputs (); bindings (target, count, node, conversation, author, content, createdAt, editedAt, rendered, flag, reporter, reason, status, flaggedAt); promises exactly one record — forms:
@@ -1935,7 +1935,7 @@ Former "the moderation queue ()" — inputs (); bindings (target, count, node, c
 ### the notes shown to (learner)
 
 Authored path: `Course.notes.theNotesShownTo`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
 
 ```former
 Former "the notes shown to (learner)" — inputs (learner); bindings (note, author, body, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags); promises exactly one record — forms:
@@ -1956,7 +1956,7 @@ Former "the notes shown to (learner)" — inputs (learner); bindings (note, auth
 ### the notifications of (user)
 
 Authored path: `Forum.notifications.theNotificationsOf`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 30.
 
 ```former
 Former "the notifications of (user)" — inputs (user); bindings (notification, kind, subject, link, createdAt, read); promises exactly one record — forms:
@@ -1973,7 +1973,7 @@ Former "the notifications of (user)" — inputs (user); bindings (notification, 
 ### the open flags ()
 
 Authored path: `Forum.moderation.theOpenFlags`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 37.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 31.
 
 ```former
 Former "the open flags ()" — inputs (); bindings (target, count); promises exactly one record — forms:
@@ -1987,7 +1987,7 @@ Former "the open flags ()" — inputs (); bindings (target, count); promises exa
 ### the pending roster ()
 
 Authored path: `Course.roster.thePendingRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 50.
+- Covered by [Roster](../design/compositions/course/roster.md), line 32.
 
 ```former
 Former "the pending roster ()" — inputs (); bindings (seat, externalKey, email, rosterName, kind, section); promises exactly one record — forms:
@@ -2004,7 +2004,7 @@ Former "the pending roster ()" — inputs (); bindings (seat, externalKey, email
 ### the pins of (scope)
 
 Authored path: `Forum.pins.thePinsOf`.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 21.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 9.
 
 ```former
 Former "the pins of (scope)" — inputs (scope); bindings (item, priority); promises exactly one record — forms:
@@ -2018,7 +2018,7 @@ Former "the pins of (scope)" — inputs (scope); bindings (item, priority); prom
 ### the post (post)
 
 Authored path: `Forum.posts.thePost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 37.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 20.
 
 ```former
 Former "the post (post)" — inputs (post); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
@@ -2058,7 +2058,7 @@ Former "the profile face of (user)" — inputs (user); bindings (displayName, bi
 ### the public posts of (author)
 
 Authored path: `Forum.posts.thePublicPostsOf`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 37.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 23.
 
 ```former
 Former "the public posts of (author)" — inputs (author); bindings (post); promises exactly one record — forms:
@@ -2070,7 +2070,7 @@ Former "the public posts of (author)" — inputs (author); bindings (post); prom
 ### the reaction counts on (target)
 
 Authored path: `Forum.reactions.theReactionCountsOn`.
-- Covered by [Post reactions](../design/compositions/forum/reactions.md), line 20.
+- Covered by [Post reactions](../design/compositions/forum/reactions.md), line 11.
 
 ```former
 Former "the reaction counts on (target)" — inputs (target); bindings (kind, count); promises exactly one record — forms:
@@ -2083,7 +2083,7 @@ Former "the reaction counts on (target)" — inputs (target); bindings (kind, co
 ### the reactions on (target)
 
 Authored path: `Forum.reactions.theReactionsOn`.
-- Covered by [Post reactions](../design/compositions/forum/reactions.md), line 20.
+- Covered by [Post reactions](../design/compositions/forum/reactions.md), line 10.
 
 ```former
 Former "the reactions on (target)" — inputs (target); bindings (reaction, reactor, kind); promises exactly one record — forms:
@@ -2097,7 +2097,7 @@ Former "the reactions on (target)" — inputs (target); bindings (reaction, reac
 ### the released grades of (learner)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
+- Covered by [Grades](../design/compositions/course/grades.md), line 36.
 
 ```former
 Former "the released grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -2117,7 +2117,7 @@ Former "the released grades of (learner)" — inputs (learner); bindings (item, 
 ### the resolution of (question)
 
 Authored path: `Forum.resolutions.theResolutionOf`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 24.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 12.
 
 ```former
 Former "the resolution of (question)" — inputs (question); bindings (answer, resolvedBy, resolvedAt); promises exactly one record — forms:
@@ -2132,7 +2132,7 @@ Former "the resolution of (question)" — inputs (question); bindings (answer, r
 ### the revision history of (item)
 
 Authored path: `Forum.revisions.theRevisionHistoryOf`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 32.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 12.
 
 ```former
 Former "the revision history of (item)" — inputs (item); bindings (revision, number, content, savedAt); promises exactly one record — forms:
@@ -2147,7 +2147,7 @@ Former "the revision history of (item)" — inputs (item); bindings (revision, n
 ### the revision numbered (number) of (item)
 
 Authored path: `Forum.revisions.theRevisionNumberedOf`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 32.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 14.
 
 ```former
 Former "the revision numbered (number) of (item)" — inputs (number, item); bindings (content, savedAt); promises exactly one record — forms:
@@ -2160,7 +2160,7 @@ Former "the revision numbered (number) of (item)" — inputs (number, item); bin
 ### the roles held by (user) in (context)
 
 Authored path: `Access.roles.theRolesHeldBy`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
+- Covered by [Roles](../design/compositions/access/roles.md), line 21.
 
 ```former
 Former "the roles held by (user) in (context)" — inputs (user, context); bindings (role); promises exactly one record — forms:
@@ -2172,7 +2172,7 @@ Former "the roles held by (user) in (context)" — inputs (user, context); bindi
 ### the roster ()
 
 Authored path: `Course.roster.theRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 50.
+- Covered by [Roster](../design/compositions/course/roster.md), line 30.
 
 ```former
 Former "the roster ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
@@ -2189,7 +2189,7 @@ Former "the roster ()" — inputs (); bindings (user, seat, kind, section, roste
 ### the sections ()
 
 Authored path: `Course.roster.theSections`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 50.
+- Covered by [Roster](../design/compositions/course/roster.md), line 8.
 
 ```former
 Former "the sections ()" — inputs (); bindings (section, name, location, meetingPattern, status); promises exactly one record — forms:
@@ -2205,7 +2205,7 @@ Former "the sections ()" — inputs (); bindings (section, name, location, meeti
 ### the staff assignments ()
 
 Authored path: `Course.assignments.theStaffAssignments`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 41.
 
 ```former
 Former "the staff assignments ()" — inputs (); bindings (assignment, author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, status, createdAt, updatedAt); promises exactly one record — forms:
@@ -2230,7 +2230,7 @@ Former "the staff assignments ()" — inputs (); bindings (assignment, author, t
 ### the staff dashboard ()
 
 Authored path: `Course.calendar.theStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 20.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 13.
 
 ```former
 Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
@@ -2247,7 +2247,7 @@ Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, secti
 ### the staff dashboard counts ()
 
 Authored path: `Course.calendar.theStaffDashboardCounts`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 20.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 14.
 
 ```former
 Former "the staff dashboard counts ()" — inputs (); bindings (assignment, item, learner, use); promises exactly one record — forms:
@@ -2261,7 +2261,7 @@ Former "the staff dashboard counts ()" — inputs (); bindings (assignment, item
 ### the staff notes on (learner)
 
 Authored path: `Course.notes.theStaffNotesOn`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 11.
 
 ```former
 Former "the staff notes on (learner)" — inputs (learner); bindings (note, author, body, visibility, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags); promises exactly one record — forms:
@@ -2283,7 +2283,7 @@ Former "the staff notes on (learner)" — inputs (learner); bindings (note, auth
 ### the submissions by (submitter)
 
 Authored path: `Course.submissions.theSubmissionsBy`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 25.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 13.
 
 ```former
 Former "the submissions by (submitter)" — inputs (submitter); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
@@ -2299,7 +2299,7 @@ Former "the submissions by (submitter)" — inputs (submitter); bindings (assign
 ### the submissions for (assignment)
 
 Authored path: `Course.submissions.theSubmissionsForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 25.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
 
 ```former
 Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, submittedAt, number, status); promises exactly one record — forms:
@@ -2317,7 +2317,7 @@ Former "the submissions for (assignment)" — inputs (assignment); bindings (sub
 ### the subscribers of (target)
 
 Authored path: `Forum.subscriptions.theSubscribersOf`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 14.
 
 ```former
 Former "the subscribers of (target)" — inputs (target); bindings (user); promises exactly one record — forms:
@@ -2330,7 +2330,7 @@ Former "the subscribers of (target)" — inputs (target); bindings (user); promi
 ### the subscriptions of (user)
 
 Authored path: `Forum.subscriptions.theSubscriptionsOf`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 7.
 
 ```former
 Former "the subscriptions of (user)" — inputs (user); bindings (target, subscribedAt); promises exactly one record — forms:
@@ -2344,7 +2344,7 @@ Former "the subscriptions of (user)" — inputs (user); bindings (target, subscr
 ### the tags ()
 
 Authored path: `Forum.tags.theTags`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 26.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 11.
 
 ```former
 Former "the tags ()" — inputs (); bindings (tag, name); promises exactly one record — forms:
@@ -2357,7 +2357,7 @@ Former "the tags ()" — inputs (); bindings (tag, name); promises exactly one r
 ### the tags on (target)
 
 Authored path: `Forum.tags.theTagsOn`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 26.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 13.
 
 ```former
 Former "the tags on (target)" — inputs (target); bindings (tag, name); promises exactly one record — forms:
@@ -2371,7 +2371,7 @@ Former "the tags on (target)" — inputs (target); bindings (tag, name); promise
 ### the targets tagged (tag)
 
 Authored path: `Forum.tags.theTargetsTagged`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 26.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 15.
 
 ```former
 Former "the targets tagged (tag)" — inputs (tag); bindings (target); promises exactly one record — forms:
@@ -2384,7 +2384,7 @@ Former "the targets tagged (tag)" — inputs (tag); bindings (target); promises 
 ### the targets tagged with (name)
 
 Authored path: `Forum.tags.theTargetsTaggedWithName`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 26.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 17.
 
 ```former
 Former "the targets tagged with (name)" — inputs (name); bindings (tag, target); promises exactly one record — forms:
@@ -2398,7 +2398,7 @@ Former "the targets tagged with (name)" — inputs (name); bindings (tag, target
 ### the thread (conversation)
 
 Authored path: `Forum.threads.theThread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 33.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 28.
 
 ```former
 Former "the thread (conversation)" — inputs (conversation); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
@@ -2422,7 +2422,7 @@ Former "the thread (conversation)" — inputs (conversation); bindings (node, it
 ### the thread context (conversation)
 
 Authored path: `Forum.feed.theThreadContext`.
-- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 24.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 13.
 
 ```former
 Former "the thread context (conversation)" — inputs (conversation); bindings (node, item, category, tag, tagName, locked, answer); promises exactly one record — forms:
@@ -2447,7 +2447,7 @@ Former "the thread context (conversation)" — inputs (conversation); bindings (
 ### the trash bin ()
 
 Authored path: `Forum.moderation.theTrashBin`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 37.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 11.
 
 ```former
 Former "the trash bin ()" — inputs (); bindings (item, trashedBy, trashedAt); promises exactly one record — forms:
@@ -2461,7 +2461,7 @@ Former "the trash bin ()" — inputs (); bindings (item, trashedBy, trashedAt); 
 ### the unread of (user) in (scope)
 
 Authored path: `Forum.unread.theUnreadOf`.
-- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 22.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 4.
 
 ```former
 Former "the unread of (user) in (scope)" — inputs (user, scope); bindings (item); promises exactly one record — forms:
@@ -2473,7 +2473,7 @@ Former "the unread of (user) in (scope)" — inputs (user, scope); bindings (ite
 ### the user page of (user)
 
 Authored path: `Forum.profiles.theUserPage`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 31.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 22.
 
 ```former
 Former "the user page of (user)" — inputs (user); bindings (role, name, post, node, conversation); promises exactly one record — forms:
@@ -2497,7 +2497,7 @@ Former "the user page of (user)" — inputs (user); bindings (role, name, post, 
 ### the user search (query)
 
 Authored path: `Forum.profiles.theUserSearch`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 31.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 16.
 
 ```former
 Former "the user search (query)" — inputs (query); bindings (user, username); promises exactly one record — forms:
@@ -2511,7 +2511,7 @@ Former "the user search (query)" — inputs (query); bindings (user, username); 
 ### the watched threads of (user)
 
 Authored path: `Forum.subscriptions.theWatchedThreadsOf`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 8.
 
 ```former
 Former "the watched threads of (user)" — inputs (user); bindings (target, subscribedAt, rootItem, rootNode); promises exactly one record — forms:
@@ -2594,7 +2594,7 @@ then
 ### Access.auth.BootstrapAdminOnLogin
 
 Authored path: `Access.auth.BootstrapAdminOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 28.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 29.
 
 ```reaction
 when Authenticating.authenticate (user)
@@ -2608,7 +2608,7 @@ then
 ### Access.auth.BootstrapAdminOnLogin#2
 
 Authored path: `Access.auth.BootstrapAdminOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 28.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 29.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnLogin
@@ -2621,7 +2621,7 @@ then
 ### Access.auth.BootstrapAdminOnRegister
 
 Authored path: `Access.auth.BootstrapAdminOnRegister`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 26.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 27.
 
 ```reaction
 when Authenticating.register (user)
@@ -2635,7 +2635,7 @@ then
 ### Access.auth.BootstrapAdminOnRegister#2
 
 Authored path: `Access.auth.BootstrapAdminOnRegister`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 26.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 27.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnRegister
@@ -2648,7 +2648,7 @@ then
 ### Access.auth.ChangePassword
 
 Authored path: `Access.auth.ChangePassword`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 20.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
 
 ```reaction
 when RequestBoundary.request (newPassword, oldPassword, path: "/auth/changePassword", requestId, session)
@@ -2661,7 +2661,7 @@ then
 ### Access.auth.ChangePassword#2
 
 Authored path: `Access.auth.ChangePassword`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 20.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
 
 ```reaction
 when Authenticating.changePassword (newPassword, oldPassword, user), asked by Access.auth.ChangePassword
@@ -2672,7 +2672,7 @@ then
 ### Access.auth.ChangePassword#3
 
 Authored path: `Access.auth.ChangePassword`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 20.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ChangePassword#2
@@ -2774,7 +2774,7 @@ then
 ### Access.auth.RegisterInitialAdmin:initialized
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -2789,7 +2789,7 @@ then
 ### Access.auth.RegisterInitialAdmin:success
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -2804,7 +2804,7 @@ then
 ### Access.auth.RegisterInitialAdmin:success#2
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.RegisterInitialAdmin:success
@@ -2817,7 +2817,7 @@ then
 ### Access.auth.RegisterInitialAdmin:success#3
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
 
 ```reaction
 when Profiling.createProfile (displayName, email, user), asked by Access.auth.RegisterInitialAdmin:success#2
@@ -2830,7 +2830,7 @@ then
 ### Access.auth.RegisterInitialAdmin:unauthorized
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -2844,7 +2844,7 @@ then
 ### Access.auth.Resolve:absent
 
 Authored path: `Access.auth.Resolve`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 17.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 18.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -2857,7 +2857,7 @@ then
 ### Access.auth.Resolve:found
 
 Authored path: `Access.auth.Resolve`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 17.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 18.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -3104,7 +3104,7 @@ then
 ### Access.roles.RoleCan
 
 Authored path: `Access.roles.RoleCan`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 21.
+- Covered by [Roles](../design/compositions/access/roles.md), line 22.
 
 ```reaction
 when RequestBoundary.request (capability, context, path: "/roles/can", requestId, user)
@@ -3117,7 +3117,7 @@ then
 ### Access.roles.RoleGet
 
 Authored path: `Access.roles.RoleGet`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 22.
+- Covered by [Roles](../design/compositions/access/roles.md), line 23.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/get", requestId, role)
@@ -3130,7 +3130,7 @@ then
 ### Access.roles.RoleList
 
 Authored path: `Access.roles.RoleList`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 23.
+- Covered by [Roles](../design/compositions/access/roles.md), line 24.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/list", requestId)
@@ -3336,7 +3336,7 @@ then
 ### Course.assignments.ForMe:forbidden
 
 Authored path: `Course.assignments.ForMe`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
@@ -3350,7 +3350,7 @@ then
 ### Course.assignments.ForMe:success
 
 Authored path: `Course.assignments.ForMe`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
@@ -3364,7 +3364,7 @@ then
 ### Course.assignments.GetAssignment:forbidden
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -3378,7 +3378,7 @@ then
 ### Course.assignments.GetAssignment:found
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -3395,7 +3395,7 @@ then
 ### Course.assignments.GetAssignment:not-assigned
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -3410,7 +3410,7 @@ then
 ### Course.assignments.GetAssignment:not-published
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -3628,7 +3628,7 @@ then
 ### Course.assignments.StaffList:forbidden
 
 Authored path: `Course.assignments.StaffList`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
@@ -3642,7 +3642,7 @@ then
 ### Course.assignments.StaffList:success
 
 Authored path: `Course.assignments.StaffList`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
@@ -3656,7 +3656,7 @@ then
 ### Course.assignments.StaffSummary:forbidden
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 36.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -3670,7 +3670,7 @@ then
 ### Course.assignments.StaffSummary:found
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 36.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -3685,7 +3685,7 @@ then
 ### Course.assignments.StaffSummary:missing
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 36.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -3700,7 +3700,7 @@ then
 ### Course.assignments.Submit:forbidden
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
 
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
@@ -3714,7 +3714,7 @@ then
 ### Course.assignments.Submit:success
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
 
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
@@ -3729,7 +3729,7 @@ then
 ### Course.assignments.Submit:success#2
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Course.assignments.Submit:success
@@ -3742,7 +3742,7 @@ then
 ### Course.assignments.Submit:success#3
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
 
 ```reaction
 when Submitting.submit (artifact: post, assignment, at, submitter: user, submission), asked by Course.assignments.Submit:success#2
@@ -3755,7 +3755,7 @@ then
 ### Course.calendar.CalendarMe:forbidden
 
 Authored path: `Course.calendar.CalendarMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 3.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
@@ -3769,7 +3769,7 @@ then
 ### Course.calendar.CalendarMe:success
 
 Authored path: `Course.calendar.CalendarMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 3.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
@@ -3783,7 +3783,7 @@ then
 ### Course.calendar.CalendarStaff:forbidden
 
 Authored path: `Course.calendar.CalendarStaff`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 6.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
@@ -3797,7 +3797,7 @@ then
 ### Course.calendar.CalendarStaff:success
 
 Authored path: `Course.calendar.CalendarStaff`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 6.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
@@ -3811,7 +3811,7 @@ then
 ### Course.calendar.LmsMe:forbidden
 
 Authored path: `Course.calendar.LmsMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 9.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 10.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
@@ -3825,7 +3825,7 @@ then
 ### Course.calendar.LmsMe:success
 
 Authored path: `Course.calendar.LmsMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 9.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 10.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
@@ -3839,7 +3839,7 @@ then
 ### Course.calendar.LmsStaffDashboard:forbidden
 
 Authored path: `Course.calendar.LmsStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 10.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 12.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)
@@ -3853,7 +3853,7 @@ then
 ### Course.calendar.LmsStaffDashboard:success
 
 Authored path: `Course.calendar.LmsStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 10.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 12.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)
@@ -3891,7 +3891,7 @@ then
 ### Course.grades.GradesAddCriterion:forbidden
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 9.
+- Covered by [Grades](../design/compositions/course/grades.md), line 10.
 
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
@@ -3905,7 +3905,7 @@ then
 ### Course.grades.GradesAddCriterion:success
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 9.
+- Covered by [Grades](../design/compositions/course/grades.md), line 10.
 
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
@@ -3919,7 +3919,7 @@ then
 ### Course.grades.GradesAddCriterion:success#2
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 9.
+- Covered by [Grades](../design/compositions/course/grades.md), line 10.
 
 ```reaction
 when Itemizing.addCriterion (item, maxPoints, name, position, criterion), asked by Course.grades.GradesAddCriterion:success
@@ -3973,7 +3973,7 @@ then
 ### Course.grades.GradesCriterionScores:forbidden
 
 Authored path: `Course.grades.GradesCriterionScores`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 16.
+- Covered by [Grades](../design/compositions/course/grades.md), line 17.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
@@ -3987,7 +3987,7 @@ then
 ### Course.grades.GradesCriterionScores:success
 
 Authored path: `Course.grades.GradesCriterionScores`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 16.
+- Covered by [Grades](../design/compositions/course/grades.md), line 17.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
@@ -4001,7 +4001,7 @@ then
 ### Course.grades.GradesExcuse:forbidden
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 30.
+- Covered by [Grades](../design/compositions/course/grades.md), line 31.
 
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
@@ -4015,7 +4015,7 @@ then
 ### Course.grades.GradesExcuse:success
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 30.
+- Covered by [Grades](../design/compositions/course/grades.md), line 31.
 
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
@@ -4030,7 +4030,7 @@ then
 ### Course.grades.GradesExcuse:success#2
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 30.
+- Covered by [Grades](../design/compositions/course/grades.md), line 31.
 
 ```reaction
 when Grading.excuse (at, feedback, grader: user, item, learner, grade), asked by Course.grades.GradesExcuse:success
@@ -4043,7 +4043,7 @@ then
 ### Course.grades.GradesExport:forbidden
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 40.
+- Covered by [Grades](../design/compositions/course/grades.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -4057,7 +4057,7 @@ then
 ### Course.grades.GradesExport:success
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 40.
+- Covered by [Grades](../design/compositions/course/grades.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -4071,7 +4071,7 @@ then
 ### Course.grades.GradesForItem:forbidden
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 36.
+- Covered by [Grades](../design/compositions/course/grades.md), line 40.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -4085,7 +4085,7 @@ then
 ### Course.grades.GradesForItem:success
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 36.
+- Covered by [Grades](../design/compositions/course/grades.md), line 40.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -4099,7 +4099,7 @@ then
 ### Course.grades.GradesForMe:not-student
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 35.
+- Covered by [Grades](../design/compositions/course/grades.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -4113,7 +4113,7 @@ then
 ### Course.grades.GradesForMe:success
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 35.
+- Covered by [Grades](../design/compositions/course/grades.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -4127,7 +4127,7 @@ then
 ### Course.grades.GradesForStudent:forbidden
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 35.
+- Covered by [Grades](../design/compositions/course/grades.md), line 38.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -4141,7 +4141,7 @@ then
 ### Course.grades.GradesForStudent:success
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 35.
+- Covered by [Grades](../design/compositions/course/grades.md), line 38.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -4155,7 +4155,7 @@ then
 ### Course.grades.GradesGradebook:forbidden
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 38.
+- Covered by [Grades](../design/compositions/course/grades.md), line 42.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -4169,7 +4169,7 @@ then
 ### Course.grades.GradesGradebook:success
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 38.
+- Covered by [Grades](../design/compositions/course/grades.md), line 42.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -4183,7 +4183,7 @@ then
 ### Course.grades.GradesItem:forbidden
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 6.
+- Covered by [Grades](../design/compositions/course/grades.md), line 7.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -4197,7 +4197,7 @@ then
 ### Course.grades.GradesItem:missing
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 6.
+- Covered by [Grades](../design/compositions/course/grades.md), line 7.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -4212,7 +4212,7 @@ then
 ### Course.grades.GradesItem:success
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 6.
+- Covered by [Grades](../design/compositions/course/grades.md), line 7.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -4227,7 +4227,7 @@ then
 ### Course.grades.GradesRecord:forbidden
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 20.
+- Covered by [Grades](../design/compositions/course/grades.md), line 21.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -4241,7 +4241,7 @@ then
 ### Course.grades.GradesRecord:missing-item
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 20.
+- Covered by [Grades](../design/compositions/course/grades.md), line 21.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -4256,7 +4256,7 @@ then
 ### Course.grades.GradesRecord:success
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 20.
+- Covered by [Grades](../design/compositions/course/grades.md), line 21.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -4272,7 +4272,7 @@ then
 ### Course.grades.GradesRecord:success#2
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 20.
+- Covered by [Grades](../design/compositions/course/grades.md), line 21.
 
 ```reaction
 when Grading.record (at, evidence, feedback, grader: user, item, learner, outOf: maxPoints, score, grade), asked by Course.grades.GradesRecord:success
@@ -4285,7 +4285,7 @@ then
 ### Course.grades.GradesRelease:forbidden
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 26.
+- Covered by [Grades](../design/compositions/course/grades.md), line 27.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
@@ -4299,7 +4299,7 @@ then
 ### Course.grades.GradesRelease:success
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 26.
+- Covered by [Grades](../design/compositions/course/grades.md), line 27.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
@@ -4314,7 +4314,7 @@ then
 ### Course.grades.GradesRelease:success#2
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 26.
+- Covered by [Grades](../design/compositions/course/grades.md), line 27.
 
 ```reaction
 when Grading.release (at, item, learner, grade), asked by Course.grades.GradesRelease:success
@@ -4327,7 +4327,7 @@ then
 ### Course.grades.GradesReleaseItem:forbidden
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 27.
+- Covered by [Grades](../design/compositions/course/grades.md), line 28.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -4341,7 +4341,7 @@ then
 ### Course.grades.GradesReleaseItem:success
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 27.
+- Covered by [Grades](../design/compositions/course/grades.md), line 28.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -4356,7 +4356,7 @@ then
 ### Course.grades.GradesReleaseItem:success#2
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 27.
+- Covered by [Grades](../design/compositions/course/grades.md), line 28.
 
 ```reaction
 when Grading.releaseItem (at, item, released), asked by Course.grades.GradesReleaseItem:success
@@ -4369,7 +4369,7 @@ then
 ### Course.grades.GradesRemoveCriterion:forbidden
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 11.
+- Covered by [Grades](../design/compositions/course/grades.md), line 12.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
@@ -4383,7 +4383,7 @@ then
 ### Course.grades.GradesRemoveCriterion:success
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 11.
+- Covered by [Grades](../design/compositions/course/grades.md), line 12.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
@@ -4397,7 +4397,7 @@ then
 ### Course.grades.GradesRemoveCriterion:success#2
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 11.
+- Covered by [Grades](../design/compositions/course/grades.md), line 12.
 
 ```reaction
 when Itemizing.removeCriterion (criterion, result.criterion: removed), asked by Course.grades.GradesRemoveCriterion:success
@@ -4410,7 +4410,7 @@ then
 ### Course.grades.GradesRetract:forbidden
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 28.
+- Covered by [Grades](../design/compositions/course/grades.md), line 29.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
@@ -4424,7 +4424,7 @@ then
 ### Course.grades.GradesRetract:success
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 28.
+- Covered by [Grades](../design/compositions/course/grades.md), line 29.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
@@ -4439,7 +4439,7 @@ then
 ### Course.grades.GradesRetract:success#2
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 28.
+- Covered by [Grades](../design/compositions/course/grades.md), line 29.
 
 ```reaction
 when Grading.retract (at, item, learner, grade), asked by Course.grades.GradesRetract:success
@@ -4452,7 +4452,7 @@ then
 ### Course.grades.GradesReviseCriterion:forbidden
 
 Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 10.
+- Covered by [Grades](../design/compositions/course/grades.md), line 11.
 
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
@@ -4466,7 +4466,7 @@ then
 ### Course.grades.GradesReviseCriterion:success
 
 Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 10.
+- Covered by [Grades](../design/compositions/course/grades.md), line 11.
 
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
@@ -4480,7 +4480,7 @@ then
 ### Course.grades.GradesReviseCriterion:success#2
 
 Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 10.
+- Covered by [Grades](../design/compositions/course/grades.md), line 11.
 
 ```reaction
 when Itemizing.reviseCriterion (criterion, maxPoints, name, position, result.criterion: revised), asked by Course.grades.GradesReviseCriterion:success
@@ -4493,7 +4493,7 @@ then
 ### Course.grades.GradesScoreCriterion:cross-item
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 22.
+- Covered by [Grades](../design/compositions/course/grades.md), line 23.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -4508,7 +4508,7 @@ then
 ### Course.grades.GradesScoreCriterion:forbidden
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 22.
+- Covered by [Grades](../design/compositions/course/grades.md), line 23.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -4522,7 +4522,7 @@ then
 ### Course.grades.GradesScoreCriterion:missing
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 22.
+- Covered by [Grades](../design/compositions/course/grades.md), line 23.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -4537,7 +4537,7 @@ then
 ### Course.grades.GradesScoreCriterion:success
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 22.
+- Covered by [Grades](../design/compositions/course/grades.md), line 23.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -4552,7 +4552,7 @@ then
 ### Course.grades.GradesScoreCriterion:success#2
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 22.
+- Covered by [Grades](../design/compositions/course/grades.md), line 23.
 
 ```reaction
 when Grading.scoreCriterion (criterion, feedback, item, learner, outOf: critMax, points, criterionScore), asked by Course.grades.GradesScoreCriterion:success
@@ -4565,7 +4565,7 @@ then
 ### Course.grades.RemovedCriterionClearsScores
 
 Authored path: `Course.grades.RemovedCriterionClearsScores`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 13.
+- Covered by [Grades](../design/compositions/course/grades.md), line 14.
 
 ```reaction
 when Itemizing.removeCriterion (criterion)
@@ -4799,7 +4799,7 @@ then
 ### Course.lateDays.ForAssignment:forbidden
 
 Authored path: `Course.lateDays.ForAssignment`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 20.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 21.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
@@ -4813,7 +4813,7 @@ then
 ### Course.lateDays.ForAssignment:success
 
 Authored path: `Course.lateDays.ForAssignment`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 20.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 21.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
@@ -4926,7 +4926,7 @@ then
 ### Course.lateDays.StaffCancel:hidden
 
 Authored path: `Course.lateDays.StaffCancel`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 19.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 20.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -4940,7 +4940,7 @@ then
 ### Course.lateDays.StaffCancel:success
 
 Authored path: `Course.lateDays.StaffCancel`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 19.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 20.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -4955,7 +4955,7 @@ then
 ### Course.lateDays.StaffCancel:success#2
 
 Authored path: `Course.lateDays.StaffCancel`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 19.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 20.
 
 ```reaction
 when Banking.cancel (item: assignment, learner, use), asked by Course.lateDays.StaffCancel:success
@@ -4968,7 +4968,7 @@ then
 ### Course.lateDays.StaffCancel:unauthorized
 
 Authored path: `Course.lateDays.StaffCancel`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 19.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 20.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -4983,7 +4983,7 @@ then
 ### Course.lateDays.StaffChange:hidden
 
 Authored path: `Course.lateDays.StaffChange`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 18.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 19.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -4997,7 +4997,7 @@ then
 ### Course.lateDays.StaffChange:success
 
 Authored path: `Course.lateDays.StaffChange`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 18.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 19.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -5012,7 +5012,7 @@ then
 ### Course.lateDays.StaffChange:success#2
 
 Authored path: `Course.lateDays.StaffChange`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 18.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 19.
 
 ```reaction
 when Banking.change (days, item: assignment, learner, use), asked by Course.lateDays.StaffChange:success
@@ -5025,7 +5025,7 @@ then
 ### Course.lateDays.StaffChange:unauthorized
 
 Authored path: `Course.lateDays.StaffChange`.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 18.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 19.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -5040,7 +5040,7 @@ then
 ### Course.notes.Acknowledge:forbidden
 
 Authored path: `Course.notes.Acknowledge`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 16.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/acknowledge", requestId, session)
@@ -5054,7 +5054,7 @@ then
 ### Course.notes.Acknowledge:success
 
 Authored path: `Course.notes.Acknowledge`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 16.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/acknowledge", requestId, session)
@@ -5069,7 +5069,7 @@ then
 ### Course.notes.Acknowledge:success#2
 
 Authored path: `Course.notes.Acknowledge`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 16.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
 
 ```reaction
 when Noting.acknowledge (at, learner: user, note), asked by Course.notes.Acknowledge:success
@@ -5152,7 +5152,7 @@ then
 ### Course.notes.NotesVisible:forbidden
 
 Authored path: `Course.notes.NotesVisible`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 16.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
 
 ```reaction
 when RequestBoundary.request (path: "/students/notes/visible", requestId, session)
@@ -5166,7 +5166,7 @@ then
 ### Course.notes.NotesVisible:success
 
 Authored path: `Course.notes.NotesVisible`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 16.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
 
 ```reaction
 when RequestBoundary.request (path: "/students/notes/visible", requestId, session)
@@ -5306,7 +5306,7 @@ then
 ### Course.notes.StudentsDetail:forbidden
 
 Authored path: `Course.notes.StudentsDetail`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 11.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 13.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -5320,7 +5320,7 @@ then
 ### Course.notes.StudentsDetail:found
 
 Authored path: `Course.notes.StudentsDetail`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 11.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 13.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -5335,7 +5335,7 @@ then
 ### Course.notes.StudentsDetail:missing
 
 Authored path: `Course.notes.StudentsDetail`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 11.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 13.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -5392,7 +5392,7 @@ then
 ### Course.roster.ClaimSeat:matched-seat
 
 Authored path: `Course.roster.ClaimSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 16.
+- Covered by [Roster](../design/compositions/course/roster.md), line 18.
 
 ```reaction
 when RequestBoundary.request (externalKey, path: "/roster/claim-seat", requestId, session)
@@ -5406,7 +5406,7 @@ then
 ### Course.roster.ClaimSeat:matched-seat#2
 
 Authored path: `Course.roster.ClaimSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 16.
+- Covered by [Roster](../design/compositions/course/roster.md), line 18.
 
 ```reaction
 when Rostering.claimSeat (seat, user, result.seat: claimed), asked by Course.roster.ClaimSeat:matched-seat
@@ -5419,7 +5419,7 @@ then
 ### Course.roster.ClaimSeat:missing-seat
 
 Authored path: `Course.roster.ClaimSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 16.
+- Covered by [Roster](../design/compositions/course/roster.md), line 18.
 
 ```reaction
 when RequestBoundary.request (externalKey, path: "/roster/claim-seat", requestId, session)
@@ -5433,7 +5433,7 @@ then
 ### Course.roster.ClassConfiguration:absent
 
 Authored path: `Course.roster.ClassConfiguration`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 4.
+- Covered by [Roster](../design/compositions/course/roster.md), line 6.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
@@ -5448,7 +5448,7 @@ then
 ### Course.roster.ClassConfiguration:forbidden
 
 Authored path: `Course.roster.ClassConfiguration`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 4.
+- Covered by [Roster](../design/compositions/course/roster.md), line 6.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
@@ -5462,7 +5462,7 @@ then
 ### Course.roster.ClassConfiguration:found
 
 Authored path: `Course.roster.ClassConfiguration`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 4.
+- Covered by [Roster](../design/compositions/course/roster.md), line 6.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
@@ -5518,7 +5518,7 @@ then
 ### Course.roster.DropSeat
 
 Authored path: `Course.roster.DropSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 33.
+- Covered by [Roster](../design/compositions/course/roster.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/drop", requestId, seat, session)
@@ -5531,7 +5531,7 @@ then
 ### Course.roster.DropSeat#2
 
 Authored path: `Course.roster.DropSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 33.
+- Covered by [Roster](../design/compositions/course/roster.md), line 37.
 
 ```reaction
 when Roling.requireCapability (capability: "roster:manage", context: "forum", user), asked by Course.roster.DropSeat
@@ -5544,7 +5544,7 @@ then
 ### Course.roster.DropSeat#3
 
 Authored path: `Course.roster.DropSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 33.
+- Covered by [Roster](../design/compositions/course/roster.md), line 37.
 
 ```reaction
 when Rostering.dropSeat (seat, result.seat: dropped), asked by Course.roster.DropSeat#2
@@ -5557,7 +5557,7 @@ then
 ### Course.roster.DroppedRoster:forbidden
 
 Authored path: `Course.roster.DroppedRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 29.
+- Covered by [Roster](../design/compositions/course/roster.md), line 33.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/dropped", requestId, session)
@@ -5571,7 +5571,7 @@ then
 ### Course.roster.DroppedRoster:success
 
 Authored path: `Course.roster.DroppedRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 29.
+- Covered by [Roster](../design/compositions/course/roster.md), line 33.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/dropped", requestId, session)
@@ -5585,7 +5585,7 @@ then
 ### Course.roster.DroppedStaffSeatRevokesCourseStaff
 
 Authored path: `Course.roster.DroppedStaffSeatRevokesCourseStaff`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 35.
+- Covered by [Roster](../design/compositions/course/roster.md), line 39.
 
 ```reaction
 when Rostering.dropSeat (kind: "STAFF", user: holder)
@@ -5599,7 +5599,7 @@ then
 ### Course.roster.ImportPreview
 
 Authored path: `Course.roster.ImportPreview`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 11.
+- Covered by [Roster](../design/compositions/course/roster.md), line 13.
 
 ```reaction
 when RequestBoundary.request (csv, path: "/roster/import-preview", requestId)
@@ -5610,7 +5610,7 @@ then
 ### Course.roster.ImportPreview#2
 
 Authored path: `Course.roster.ImportPreview`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 11.
+- Covered by [Roster](../design/compositions/course/roster.md), line 13.
 
 ```reaction
 when Rostering.previewImport (csv, rows), asked by Course.roster.ImportPreview
@@ -5623,7 +5623,7 @@ then
 ### Course.roster.ImportSeats:forbidden
 
 Authored path: `Course.roster.ImportSeats`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 13.
+- Covered by [Roster](../design/compositions/course/roster.md), line 15.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/import", requestId, rows, session)
@@ -5637,7 +5637,7 @@ then
 ### Course.roster.ImportSeats:success
 
 Authored path: `Course.roster.ImportSeats`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 13.
+- Covered by [Roster](../design/compositions/course/roster.md), line 15.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/import", requestId, rows, session)
@@ -5651,7 +5651,7 @@ then
 ### Course.roster.ImportSeats:success#2
 
 Authored path: `Course.roster.ImportSeats`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 13.
+- Covered by [Roster](../design/compositions/course/roster.md), line 15.
 
 ```reaction
 when Rostering.importSeats (rows, created, skipped), asked by Course.roster.ImportSeats:success
@@ -5664,7 +5664,7 @@ then
 ### Course.roster.LinkUser:forbidden
 
 Authored path: `Course.roster.LinkUser`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 18.
+- Covered by [Roster](../design/compositions/course/roster.md), line 20.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/link-user", requestId, seat, session, user)
@@ -5678,7 +5678,7 @@ then
 ### Course.roster.LinkUser:success
 
 Authored path: `Course.roster.LinkUser`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 18.
+- Covered by [Roster](../design/compositions/course/roster.md), line 20.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/link-user", requestId, seat, session, user)
@@ -5692,7 +5692,7 @@ then
 ### Course.roster.LinkUser:success#2
 
 Authored path: `Course.roster.LinkUser`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 18.
+- Covered by [Roster](../design/compositions/course/roster.md), line 20.
 
 ```reaction
 when Rostering.claimSeat (seat, user, result.seat: linked), asked by Course.roster.LinkUser:success
@@ -5705,7 +5705,7 @@ then
 ### Course.roster.MoveSection:forbidden
 
 Authored path: `Course.roster.MoveSection`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 37.
+- Covered by [Roster](../design/compositions/course/roster.md), line 41.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/move-section", requestId, seat, section, session)
@@ -5719,7 +5719,7 @@ then
 ### Course.roster.MoveSection:success
 
 Authored path: `Course.roster.MoveSection`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 37.
+- Covered by [Roster](../design/compositions/course/roster.md), line 41.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/move-section", requestId, seat, section, session)
@@ -5733,7 +5733,7 @@ then
 ### Course.roster.MoveSection:success#2
 
 Authored path: `Course.roster.MoveSection`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 37.
+- Covered by [Roster](../design/compositions/course/roster.md), line 41.
 
 ```reaction
 when Rostering.moveSection (seat, section, result.seat: moved), asked by Course.roster.MoveSection:success
@@ -5746,7 +5746,7 @@ then
 ### Course.roster.PendingRoster:forbidden
 
 Authored path: `Course.roster.PendingRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 28.
+- Covered by [Roster](../design/compositions/course/roster.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/pending", requestId, session)
@@ -5760,7 +5760,7 @@ then
 ### Course.roster.PendingRoster:success
 
 Authored path: `Course.roster.PendingRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 28.
+- Covered by [Roster](../design/compositions/course/roster.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/pending", requestId, session)
@@ -5774,7 +5774,7 @@ then
 ### Course.roster.ReinstateSeat:forbidden
 
 Authored path: `Course.roster.ReinstateSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 36.
+- Covered by [Roster](../design/compositions/course/roster.md), line 40.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/reinstate", requestId, seat, session)
@@ -5788,7 +5788,7 @@ then
 ### Course.roster.ReinstateSeat:success
 
 Authored path: `Course.roster.ReinstateSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 36.
+- Covered by [Roster](../design/compositions/course/roster.md), line 40.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/reinstate", requestId, seat, session)
@@ -5802,7 +5802,7 @@ then
 ### Course.roster.ReinstateSeat:success#2
 
 Authored path: `Course.roster.ReinstateSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 36.
+- Covered by [Roster](../design/compositions/course/roster.md), line 40.
 
 ```reaction
 when Rostering.reinstateSeat (seat, result.seat: reinstated), asked by Course.roster.ReinstateSeat:success
@@ -5815,7 +5815,7 @@ then
 ### Course.roster.RosterList:forbidden
 
 Authored path: `Course.roster.RosterList`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 26.
+- Covered by [Roster](../design/compositions/course/roster.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/list", requestId, session)
@@ -5829,7 +5829,7 @@ then
 ### Course.roster.RosterList:success
 
 Authored path: `Course.roster.RosterList`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 26.
+- Covered by [Roster](../design/compositions/course/roster.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/list", requestId, session)
@@ -5843,7 +5843,7 @@ then
 ### Course.roster.RosterMe:absent
 
 Authored path: `Course.roster.RosterMe`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 25.
+- Covered by [Roster](../design/compositions/course/roster.md), line 28.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/me", requestId, session)
@@ -5857,7 +5857,7 @@ then
 ### Course.roster.RosterMe:found
 
 Authored path: `Course.roster.RosterMe`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 25.
+- Covered by [Roster](../design/compositions/course/roster.md), line 28.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/me", requestId, session)
@@ -5871,7 +5871,7 @@ then
 ### Course.roster.SectionsCreate:forbidden
 
 Authored path: `Course.roster.SectionsCreate`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 7.
+- Covered by [Roster](../design/compositions/course/roster.md), line 9.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/create", requestId, session)
@@ -5885,7 +5885,7 @@ then
 ### Course.roster.SectionsCreate:success
 
 Authored path: `Course.roster.SectionsCreate`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 7.
+- Covered by [Roster](../design/compositions/course/roster.md), line 9.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/create", requestId, session)
@@ -5899,7 +5899,7 @@ then
 ### Course.roster.SectionsCreate:success#2
 
 Authored path: `Course.roster.SectionsCreate`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 7.
+- Covered by [Roster](../design/compositions/course/roster.md), line 9.
 
 ```reaction
 when Rostering.createSection (location, meetingPattern, name, section), asked by Course.roster.SectionsCreate:success
@@ -5912,7 +5912,7 @@ then
 ### Course.roster.SectionsList
 
 Authored path: `Course.roster.SectionsList`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 6.
+- Covered by [Roster](../design/compositions/course/roster.md), line 7.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/sections/list", requestId)
@@ -5923,7 +5923,7 @@ then
 ### Course.roster.SectionsUpdate:forbidden
 
 Authored path: `Course.roster.SectionsUpdate`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 8.
+- Covered by [Roster](../design/compositions/course/roster.md), line 10.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/update", requestId, section, session)
@@ -5937,7 +5937,7 @@ then
 ### Course.roster.SectionsUpdate:success
 
 Authored path: `Course.roster.SectionsUpdate`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 8.
+- Covered by [Roster](../design/compositions/course/roster.md), line 10.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/update", requestId, section, session)
@@ -5951,7 +5951,7 @@ then
 ### Course.roster.SectionsUpdate:success#2
 
 Authored path: `Course.roster.SectionsUpdate`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 8.
+- Covered by [Roster](../design/compositions/course/roster.md), line 10.
 
 ```reaction
 when Rostering.updateSection (location, meetingPattern, name, section, result.section: updated), asked by Course.roster.SectionsUpdate:success
@@ -5964,7 +5964,7 @@ then
 ### Course.roster.StaffSeatGrantsCourseStaff
 
 Authored path: `Course.roster.StaffSeatGrantsCourseStaff`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 22.
+- Covered by [Roster](../design/compositions/course/roster.md), line 24.
 
 ```reaction
 when Rostering.claimSeat (user: claimer, kind: "STAFF")
@@ -5977,7 +5977,7 @@ then
 ### Course.roster.StaffSeatGrantsCourseStaff#2
 
 Authored path: `Course.roster.StaffSeatGrantsCourseStaff`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 22.
+- Covered by [Roster](../design/compositions/course/roster.md), line 24.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["roster:manage", "assignments:manage", "submissions:view-all", "grades:manage", "grades:view-all", "late-days:manage", "student-notes:manage", "calendar:view-staff"], name: "course-staff", role), asked by Course.roster.StaffSeatGrantsCourseStaff
@@ -5990,7 +5990,7 @@ then
 ### Course.submissions.Attempts:attempts
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -6004,7 +6004,7 @@ then
 ### Course.submissions.Attempts:attempts-hidden
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -6018,7 +6018,7 @@ then
 ### Course.submissions.Attempts:attempts-missing
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -6032,7 +6032,7 @@ then
 ### Course.submissions.Attempts:staff-attempts
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -6047,7 +6047,7 @@ then
 ### Course.submissions.ForAssignment:forbidden
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 11.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -6061,7 +6061,7 @@ then
 ### Course.submissions.ForAssignment:success
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 11.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -6075,7 +6075,7 @@ then
 ### Course.submissions.ForStudent:for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 10.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -6089,7 +6089,7 @@ then
 ### Course.submissions.ForStudent:for-student-hidden
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 10.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -6103,7 +6103,7 @@ then
 ### Course.submissions.ForStudent:for-student-missing
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 10.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -6117,7 +6117,7 @@ then
 ### Course.submissions.ForStudent:staff-for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 10.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -6132,7 +6132,7 @@ then
 ### Course.submissions.Latest:latest-hidden
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 3.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -6146,7 +6146,7 @@ then
 ### Course.submissions.Latest:latest-missing
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 3.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -6160,7 +6160,7 @@ then
 ### Course.submissions.Latest:self-found
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 3.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -6175,7 +6175,7 @@ then
 ### Course.submissions.Latest:self-missing
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 3.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -6190,7 +6190,7 @@ then
 ### Course.submissions.Latest:staff-found
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 3.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -6206,7 +6206,7 @@ then
 ### Course.submissions.Latest:staff-missing
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 3.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -6242,7 +6242,7 @@ then
 ### Forum.bookmarks.IsSaved:hidden
 
 Authored path: `Forum.bookmarks.IsSaved`.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 10.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 14.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/isSaved", requestId, session)
@@ -6256,7 +6256,7 @@ then
 ### Forum.bookmarks.IsSaved:success
 
 Authored path: `Forum.bookmarks.IsSaved`.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 10.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 14.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/isSaved", requestId, session)
@@ -6271,7 +6271,7 @@ then
 ### Forum.bookmarks.ListBookmarks
 
 Authored path: `Forum.bookmarks.ListBookmarks`.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 9.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 10.
 
 ```reaction
 when RequestBoundary.request (path: "/bookmarks/list", requestId, session)
@@ -6284,7 +6284,7 @@ then
 ### Forum.bookmarks.PurgeClearsBookmarks
 
 Authored path: `Forum.bookmarks.PurgeClearsBookmarks`.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 14.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 18.
 
 ```reaction
 when Trashing.purge (item)
@@ -6435,7 +6435,7 @@ then
 ### Forum.categories.CategoryForItem:hidden
 
 Authored path: `Forum.categories.CategoryForItem`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 13.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 15.
 
 ```reaction
 when RequestBoundary.request (item, path: "/categories/forItem", requestId)
@@ -6448,7 +6448,7 @@ then
 ### Forum.categories.CategoryForItem:success
 
 Authored path: `Forum.categories.CategoryForItem`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 13.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 15.
 
 ```reaction
 when RequestBoundary.request (item, path: "/categories/forItem", requestId)
@@ -6461,7 +6461,7 @@ then
 ### Forum.categories.CategoryItems
 
 Authored path: `Forum.categories.CategoryItems`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 12.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 13.
 
 ```reaction
 when RequestBoundary.request (category, path: "/categories/items", requestId)
@@ -6565,7 +6565,7 @@ then
 ### Forum.categories.PurgeUnassignsCategory
 
 Authored path: `Forum.categories.PurgeUnassignsCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 17.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 19.
 
 ```reaction
 when Trashing.purge (item)
@@ -6635,7 +6635,7 @@ then
 ### Forum.feed.GetThread
 
 Authored path: `Forum.feed.GetThread`.
-- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 9.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 11.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/threads/get", requestId)
@@ -6646,7 +6646,7 @@ then
 ### Forum.feed.ListActivity
 
 Authored path: `Forum.feed.ListActivity`.
-- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 4.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 5.
 
 ```reaction
 when RequestBoundary.request (path: "/threads/activity", requestId)
@@ -6819,7 +6819,7 @@ then
 ### Forum.moderation.FlagsForTarget:missing-target
 
 Authored path: `Forum.moderation.FlagsForTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 31.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/forTarget", requestId, session, target)
@@ -6834,7 +6834,7 @@ then
 ### Forum.moderation.FlagsForTarget:target
 
 Authored path: `Forum.moderation.FlagsForTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 31.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/forTarget", requestId, session, target)
@@ -6849,7 +6849,7 @@ then
 ### Forum.moderation.FlagsForTarget:target-hidden
 
 Authored path: `Forum.moderation.FlagsForTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 31.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/forTarget", requestId, session, target)
@@ -7302,7 +7302,7 @@ then
 ### Forum.notifications.AcceptNotifiesAnswerAuthor
 
 Authored path: `Forum.notifications.AcceptNotifiesAnswerAuthor`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 21.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 22.
 
 ```reaction
 when Resolving.accept (answer, at, by)
@@ -7316,7 +7316,7 @@ then
 ### Forum.notifications.Dismiss
 
 Authored path: `Forum.notifications.Dismiss`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 36.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 39.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
@@ -7329,7 +7329,7 @@ then
 ### Forum.notifications.Dismiss#2
 
 Authored path: `Forum.notifications.Dismiss`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 36.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 39.
 
 ```reaction
 when Notifying.dismiss (notification, recipient: user, result.notification: dismissed), asked by Forum.notifications.Dismiss
@@ -7342,7 +7342,7 @@ then
 ### Forum.notifications.EditMentionsNotify
 
 Authored path: `Forum.notifications.EditMentionsNotify`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 15.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 16.
 
 ```reaction
 when Posting.edit (at, post)
@@ -7356,7 +7356,7 @@ then
 ### Forum.notifications.ListNotifications
 
 Authored path: `Forum.notifications.ListNotifications`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 28.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/list", requestId, session)
@@ -7369,7 +7369,7 @@ then
 ### Forum.notifications.MarkAllRead
 
 Authored path: `Forum.notifications.MarkAllRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 35.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
@@ -7382,7 +7382,7 @@ then
 ### Forum.notifications.MarkAllRead#2
 
 Authored path: `Forum.notifications.MarkAllRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 35.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
 
 ```reaction
 when Notifying.markAllRead (recipient: user, result.recipient), asked by Forum.notifications.MarkAllRead
@@ -7395,7 +7395,7 @@ then
 ### Forum.notifications.MarkRead
 
 Authored path: `Forum.notifications.MarkRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 35.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/markRead", requestId, session)
@@ -7408,7 +7408,7 @@ then
 ### Forum.notifications.MarkRead#2
 
 Authored path: `Forum.notifications.MarkRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 35.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
 
 ```reaction
 when Notifying.markRead (notification, recipient: user, result.notification: marked), asked by Forum.notifications.MarkRead
@@ -7421,7 +7421,7 @@ then
 ### Forum.notifications.NotificationQueuesEmail
 
 Authored path: `Forum.notifications.NotificationQueuesEmail`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 23.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 24.
 
 ```reaction
 when Notifying.notify (at, kind, recipient, notification)
@@ -7436,7 +7436,7 @@ then
 ### Forum.notifications.PurgeClearsNotifications
 
 Authored path: `Forum.notifications.PurgeClearsNotifications`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 42.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 45.
 
 ```reaction
 when Trashing.purge (item)
@@ -7447,7 +7447,7 @@ then
 ### Forum.notifications.ReadInbox
 
 Authored path: `Forum.notifications.ReadInbox`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 29.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/inbox", requestId, session)
@@ -7460,7 +7460,7 @@ then
 ### Forum.notifications.ReplyMentionsNotify
 
 Authored path: `Forum.notifications.ReplyMentionsNotify`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 13.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 14.
 
 ```reaction
 when Conversing.reply (at, item, parent)
@@ -7508,7 +7508,7 @@ then
 ### Forum.notifications.RootMentionsNotify
 
 Authored path: `Forum.notifications.RootMentionsNotify`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 10.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 12.
 
 ```reaction
 when Conversing.start (at, item)
@@ -7521,7 +7521,7 @@ then
 ### Forum.notifications.UnreadCount
 
 Authored path: `Forum.notifications.UnreadCount`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 31.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/unreadCount", requestId, session)
@@ -7535,7 +7535,7 @@ then
 ### Forum.pins.IsPinned:hidden
 
 Authored path: `Forum.pins.IsPinned`.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 9.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 10.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope)
@@ -7548,7 +7548,7 @@ then
 ### Forum.pins.IsPinned:success
 
 Authored path: `Forum.pins.IsPinned`.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 9.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 10.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope)
@@ -7631,7 +7631,7 @@ then
 ### Forum.pins.PurgeClearsPins
 
 Authored path: `Forum.pins.PurgeClearsPins`.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 14.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 15.
 
 ```reaction
 when Trashing.purge (item)
@@ -7778,7 +7778,7 @@ then
 ### Forum.posts.DeletePost:delete
 
 Authored path: `Forum.posts.DeletePost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 22.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 25.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
@@ -7796,7 +7796,7 @@ then
 ### Forum.posts.DeletePost:delete#2
 
 Authored path: `Forum.posts.DeletePost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 22.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 25.
 
 ```reaction
 when Posting.delete (post), asked by Forum.posts.DeletePost:delete
@@ -7809,7 +7809,7 @@ then
 ### Forum.posts.DeletePost:forbidden
 
 Authored path: `Forum.posts.DeletePost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 22.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 25.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
@@ -7825,7 +7825,7 @@ then
 ### Forum.posts.DeletePost:has-replies
 
 Authored path: `Forum.posts.DeletePost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 22.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 25.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
@@ -7843,7 +7843,7 @@ then
 ### Forum.posts.DeletePost:missing
 
 Authored path: `Forum.posts.DeletePost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 22.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 25.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
@@ -7857,7 +7857,7 @@ then
 ### Forum.posts.DeletePost:trashed
 
 Authored path: `Forum.posts.DeletePost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 22.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 25.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
@@ -7872,7 +7872,7 @@ then
 ### Forum.posts.DeletedPostClearsSatellites:backlinks
 
 Authored path: `Forum.posts.DeletedPostClearsSatellites`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 26.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 29.
 
 ```reaction
 when Posting.delete (post)
@@ -7883,7 +7883,7 @@ then
 ### Forum.posts.DeletedPostClearsSatellites:bookmarks
 
 Authored path: `Forum.posts.DeletedPostClearsSatellites`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 26.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 29.
 
 ```reaction
 when Posting.delete (post)
@@ -7894,7 +7894,7 @@ then
 ### Forum.posts.DeletedPostClearsSatellites:formatting
 
 Authored path: `Forum.posts.DeletedPostClearsSatellites`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 26.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 29.
 
 ```reaction
 when Posting.delete (post)
@@ -7905,7 +7905,7 @@ then
 ### Forum.posts.DeletedPostClearsSatellites:leaf-node
 
 Authored path: `Forum.posts.DeletedPostClearsSatellites`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 26.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 29.
 
 ```reaction
 when Posting.delete (post)
@@ -7919,7 +7919,7 @@ then
 ### Forum.posts.DeletedPostClearsSatellites:links
 
 Authored path: `Forum.posts.DeletedPostClearsSatellites`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 26.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 29.
 
 ```reaction
 when Posting.delete (post)
@@ -7930,7 +7930,7 @@ then
 ### Forum.posts.DeletedPostClearsSatellites:pins
 
 Authored path: `Forum.posts.DeletedPostClearsSatellites`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 26.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 29.
 
 ```reaction
 when Posting.delete (post)
@@ -7941,7 +7941,7 @@ then
 ### Forum.posts.DeletedPostClearsSatellites:reactions
 
 Authored path: `Forum.posts.DeletedPostClearsSatellites`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 26.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 29.
 
 ```reaction
 when Posting.delete (post)
@@ -7952,7 +7952,7 @@ then
 ### Forum.posts.DeletedPostClearsSatellites:tags
 
 Authored path: `Forum.posts.DeletedPostClearsSatellites`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 26.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 29.
 
 ```reaction
 when Posting.delete (post)
@@ -7963,7 +7963,7 @@ then
 ### Forum.posts.DeletedPostClearsSatellites:tracking
 
 Authored path: `Forum.posts.DeletedPostClearsSatellites`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 26.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 29.
 
 ```reaction
 when Posting.delete (post)
@@ -8066,7 +8066,7 @@ then
 ### Forum.posts.GetPost:not-found
 
 Authored path: `Forum.posts.GetPost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 17.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 19.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/get", post, requestId)
@@ -8079,7 +8079,7 @@ then
 ### Forum.posts.GetPost:success
 
 Authored path: `Forum.posts.GetPost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 17.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 19.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/get", post, requestId)
@@ -8092,7 +8092,7 @@ then
 ### Forum.posts.PostsByAuthor
 
 Authored path: `Forum.posts.PostsByAuthor`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 19.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 22.
 
 ```reaction
 when RequestBoundary.request (author, path: "/posts/byAuthor", requestId)
@@ -8178,7 +8178,7 @@ then
 ### Forum.profiles.ResolvePublicUser
 
 Authored path: `Forum.profiles.ResolvePublicUser`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 18.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 17.
 
 ```reaction
 when RequestBoundary.request (path: "/users/resolve", ref, requestId)
@@ -8451,7 +8451,7 @@ then
 ### Forum.reactions.PurgeClearsReactions
 
 Authored path: `Forum.reactions.PurgeClearsReactions`.
-- Covered by [Post reactions](../design/compositions/forum/reactions.md), line 14.
+- Covered by [Post reactions](../design/compositions/forum/reactions.md), line 15.
 
 ```reaction
 when Trashing.purge (item)
@@ -8687,7 +8687,7 @@ then
 ### Forum.resolutions.IsResolved:hidden
 
 Authored path: `Forum.resolutions.IsResolved`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 13.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 14.
 
 ```reaction
 when RequestBoundary.request (path: "/resolutions/isResolved", question, requestId)
@@ -8700,7 +8700,7 @@ then
 ### Forum.resolutions.IsResolved:success
 
 Authored path: `Forum.resolutions.IsResolved`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 13.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 14.
 
 ```reaction
 when RequestBoundary.request (path: "/resolutions/isResolved", question, requestId)
@@ -8714,7 +8714,7 @@ then
 ### Forum.resolutions.PurgedPostClearsResolutions:answer
 
 Authored path: `Forum.resolutions.PurgedPostClearsResolutions`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 18.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 19.
 
 ```reaction
 when Trashing.purge (item)
@@ -8727,7 +8727,7 @@ then
 ### Forum.resolutions.PurgedPostClearsResolutions:question
 
 Authored path: `Forum.resolutions.PurgedPostClearsResolutions`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 18.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 19.
 
 ```reaction
 when Trashing.purge (item)
@@ -8740,7 +8740,7 @@ then
 ### Forum.revisions.GetRevision:hidden
 
 Authored path: `Forum.revisions.GetRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 12.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 13.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
@@ -8753,7 +8753,7 @@ then
 ### Forum.revisions.GetRevision:missing
 
 Authored path: `Forum.revisions.GetRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 12.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 13.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
@@ -8766,7 +8766,7 @@ then
 ### Forum.revisions.GetRevision:success
 
 Authored path: `Forum.revisions.GetRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 12.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 13.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
@@ -8780,7 +8780,7 @@ then
 ### Forum.revisions.LatestRevision:hidden
 
 Authored path: `Forum.revisions.LatestRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 13.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 15.
 
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
@@ -8793,7 +8793,7 @@ then
 ### Forum.revisions.LatestRevision:missing
 
 Authored path: `Forum.revisions.LatestRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 13.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 15.
 
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
@@ -8806,7 +8806,7 @@ then
 ### Forum.revisions.LatestRevision:success
 
 Authored path: `Forum.revisions.LatestRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 13.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 15.
 
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
@@ -8860,7 +8860,7 @@ then
 ### Forum.revisions.ModeratorGetRevision:hidden
 
 Authored path: `Forum.revisions.ModeratorGetRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 19.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/moderation/revisions/get", requestId, session)
@@ -8874,7 +8874,7 @@ then
 ### Forum.revisions.ModeratorGetRevision:live
 
 Authored path: `Forum.revisions.ModeratorGetRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 19.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/moderation/revisions/get", requestId, session)
@@ -8890,7 +8890,7 @@ then
 ### Forum.revisions.ModeratorGetRevision:missing
 
 Authored path: `Forum.revisions.ModeratorGetRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 19.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/moderation/revisions/get", requestId, session)
@@ -8905,7 +8905,7 @@ then
 ### Forum.revisions.ModeratorGetRevision:revision
 
 Authored path: `Forum.revisions.ModeratorGetRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 19.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/moderation/revisions/get", requestId, session)
@@ -8921,7 +8921,7 @@ then
 ### Forum.revisions.ModeratorLatestRevision:hidden
 
 Authored path: `Forum.revisions.ModeratorLatestRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 21.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 24.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/latest", requestId, session)
@@ -8935,7 +8935,7 @@ then
 ### Forum.revisions.ModeratorLatestRevision:live
 
 Authored path: `Forum.revisions.ModeratorLatestRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 21.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 24.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/latest", requestId, session)
@@ -8951,7 +8951,7 @@ then
 ### Forum.revisions.ModeratorLatestRevision:missing
 
 Authored path: `Forum.revisions.ModeratorLatestRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 21.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 24.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/latest", requestId, session)
@@ -8966,7 +8966,7 @@ then
 ### Forum.revisions.ModeratorLatestRevision:revision
 
 Authored path: `Forum.revisions.ModeratorLatestRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 21.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 24.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/latest", requestId, session)
@@ -8982,7 +8982,7 @@ then
 ### Forum.revisions.ModeratorListRevisions:hidden
 
 Authored path: `Forum.revisions.ModeratorListRevisions`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 18.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 21.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/list", requestId, session)
@@ -8996,7 +8996,7 @@ then
 ### Forum.revisions.ModeratorListRevisions:live
 
 Authored path: `Forum.revisions.ModeratorListRevisions`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 18.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 21.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/list", requestId, session)
@@ -9012,7 +9012,7 @@ then
 ### Forum.revisions.ModeratorListRevisions:missing
 
 Authored path: `Forum.revisions.ModeratorListRevisions`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 18.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 21.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/list", requestId, session)
@@ -9027,7 +9027,7 @@ then
 ### Forum.revisions.ModeratorListRevisions:revisions
 
 Authored path: `Forum.revisions.ModeratorListRevisions`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 18.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 21.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/list", requestId, session)
@@ -9043,7 +9043,7 @@ then
 ### Forum.revisions.PurgeClearsRevisions
 
 Authored path: `Forum.revisions.PurgeClearsRevisions`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 26.
+- Covered by [Revision history](../design/compositions/forum/revisions.md), line 29.
 
 ```reaction
 when Trashing.purge (item)
@@ -9076,7 +9076,7 @@ then
 ### Forum.subscriptions.IsSubscribed:hidden
 
 Authored path: `Forum.subscriptions.IsSubscribed`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 7.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 10.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/isSubscribed", requestId, session, target)
@@ -9090,7 +9090,7 @@ then
 ### Forum.subscriptions.IsSubscribed:success
 
 Authored path: `Forum.subscriptions.IsSubscribed`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 7.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 10.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/isSubscribed", requestId, session, target)
@@ -9118,7 +9118,7 @@ then
 ### Forum.subscriptions.PurgeClearsConversationSubscriptions
 
 Authored path: `Forum.subscriptions.PurgeClearsConversationSubscriptions`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 18.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 21.
 
 ```reaction
 when Trashing.purge (item)
@@ -9175,7 +9175,7 @@ then
 ### Forum.subscriptions.Subscribers:hidden
 
 Authored path: `Forum.subscriptions.Subscribers`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 10.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 13.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, target)
@@ -9188,7 +9188,7 @@ then
 ### Forum.subscriptions.Subscribers:success
 
 Authored path: `Forum.subscriptions.Subscribers`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 10.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 13.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, target)
@@ -9320,7 +9320,7 @@ then
 ### Forum.tags.PurgeClearsTags
 
 Authored path: `Forum.tags.PurgeClearsTags`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 19.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 21.
 
 ```reaction
 when Trashing.purge (item)
@@ -9372,7 +9372,7 @@ then
 ### Forum.tags.TagTargets
 
 Authored path: `Forum.tags.TagTargets`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 12.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 14.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/targets", requestId, tag)
@@ -9383,7 +9383,7 @@ then
 ### Forum.tags.TagTargetsByName
 
 Authored path: `Forum.tags.TagTargetsByName`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 14.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 16.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/targetsByName", requestId)
@@ -9394,7 +9394,7 @@ then
 ### Forum.tags.TagsForTarget:hidden
 
 Authored path: `Forum.tags.TagsForTarget`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 11.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 12.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/forTarget", requestId, target)
@@ -9407,7 +9407,7 @@ then
 ### Forum.tags.TagsForTarget:success
 
 Authored path: `Forum.tags.TagsForTarget`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 11.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 12.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/forTarget", requestId, target)
@@ -9458,7 +9458,7 @@ then
 ### Forum.threads.ForItem:absent
 
 Authored path: `Forum.threads.ForItem`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 23.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
 
 ```reaction
 when RequestBoundary.request (item, path: "/threads/forItem", requestId)
@@ -9471,7 +9471,7 @@ then
 ### Forum.threads.ForItem:found
 
 Authored path: `Forum.threads.ForItem`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 23.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
 
 ```reaction
 when RequestBoundary.request (item, path: "/threads/forItem", requestId)
@@ -9555,7 +9555,7 @@ then
 ### Forum.threads.TrackReplyUnread
 
 Authored path: `Forum.threads.TrackReplyUnread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 16.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 18.
 
 ```reaction
 when Conversing.reply (item, node)
@@ -9568,7 +9568,7 @@ then
 ### Forum.threads.TrackRootUnread
 
 Authored path: `Forum.threads.TrackRootUnread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 14.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 16.
 
 ```reaction
 when Conversing.start (item, conversation)

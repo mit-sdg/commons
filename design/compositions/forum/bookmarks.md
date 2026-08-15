@@ -6,17 +6,15 @@ record. Bookmarking refuses duplicate saves and repeated
 removals. A missing or
 trashed post is hidden as `NOT_FOUND` before either change.
 
-[Forum.bookmarks.ListBookmarks](reaction:Forum.bookmarks.ListBookmarks) returns only the session account's readable
-bookmarks, newest first. [Forum.bookmarks.IsSaved](reaction:Forum.bookmarks.IsSaved) reports that account's
-status for one readable post; it never exposes another user's private state.
+The [readableBookmarksOf view](view:Forum.bookmarks.readableBookmarksOf) filters one account's retained bookmarks
+through current post readability. [Forum.bookmarks.ListBookmarks](reaction:Forum.bookmarks.ListBookmarks) uses it to form
+[the session account's readable bookmarks](former:Forum.bookmarks.theBookmarksOf), newest first.
+For a read that needs post details rather than identities alone,
+[theBookmarkedPostsOf](former:Forum.bookmarks.theBookmarkedPostsOf) adds each post's current summary without
+copying that presentation into Bookmarking. [Forum.bookmarks.IsSaved](reaction:Forum.bookmarks.IsSaved) reports that account's status for one readable post;
+it never exposes another user's private state.
 
 Trash filters a bookmark without removing it, so restore makes it visible again.
 After permanent purge, [Forum.bookmarks.PurgeClearsBookmarks](reaction:Forum.bookmarks.PurgeClearsBookmarks) removes the post
 from every user's list. Ordinary Posting deletion requests the same idempotent
 clear through post cleanup, and neither path can restore the bookmarks later.
-
-## Supporting declarations
-
-Views [readableBookmarksOf](view:Forum.bookmarks.readableBookmarksOf) support the behavior and result shapes described above.
-
-Formers [theBookmarkedPostsOf](former:Forum.bookmarks.theBookmarkedPostsOf), [theBookmarksOf](former:Forum.bookmarks.theBookmarksOf) support the behavior and result shapes described above.

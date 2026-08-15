@@ -10,9 +10,6 @@ request. Session cleanup is a separate action, so a cleanup fault can replace
 the explicit response with `INTERNAL_ERROR`, but it cannot make the session
 valid or admit the protected operation.
 
-Session resolution reads the current time and Sessioning state whenever a
-request runs. It does not copy account identity into another access model.
-
-## Supporting declarations
-
-Views [activeUser](view:Access.session.activeUser) support the behavior and result shapes described above.
+The [activeUser view](view:Access.session.activeUser) reads the current time and Sessioning state whenever a
+request runs, relating only a live session to its account. It does not copy
+account identity into another access model.

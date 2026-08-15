@@ -17,17 +17,14 @@ the reserved `forum` context and conversation identities; grants in other
 contexts remain stored but do not affect those checks.
 
 Public role reads expose authorization structure but do not authorize a caller.
-[Access.roles.RolesForUser](reaction:Access.roles.RolesForUser) resolves an account and returns its roles in one
-context. [Access.roles.RoleCan](reaction:Access.roles.RoleCan) reports whether that account's current grants
+[Access.roles.RolesForUser](reaction:Access.roles.RolesForUser) resolves an account and forms
+[the roles it holds](former:Access.roles.theRolesHeldBy) in one context.
+[Access.roles.RoleCan](reaction:Access.roles.RoleCan) reports whether that account's current grants
 contain one capability. [Access.roles.RoleGet](reaction:Access.roles.RoleGet) returns the name and capabilities of one known role.
-[Access.roles.RoleList](reaction:Access.roles.RoleList) returns every currently defined role and its
-capabilities. None of
+[Access.roles.RoleList](reaction:Access.roles.RoleList) forms
+[the complete role catalog](former:Access.roles.theDefinedRoles) with each role's capabilities. None of
 these reads creates a role or grant.
 
 Roster behavior can also change the built-in course-staff grant. Because those
 changes go through Roling, they immediately affect the same policy decisions as
 administrator-managed grants and leave unrelated roles untouched.
-
-## Supporting declarations
-
-Formers [theDefinedRoles](former:Access.roles.theDefinedRoles), [theRolesHeldBy](former:Access.roles.theRolesHeldBy) support the behavior and result shapes described above.

@@ -30,12 +30,15 @@ Each assignment is a separate follow-up action: the publish, revision, claim, or
 reinstatement remains committed if part of the fan-out refuses or faults, and a
 later roster or assignment change is the only automatic retry opportunity.
 
-An active student reads their published releases with
-[Course.assignments.ForMe](reaction:Course.assignments.ForMe). [Course.assignments.GetAssignment](reaction:Course.assignments.GetAssignment) returns detail
+An active student reads
+[their published releases](former:Course.assignments.theAssignmentsOf) with
+[Course.assignments.ForMe](reaction:Course.assignments.ForMe). The
+[theAssignment view](view:Course.assignments.theAssignment) relates one release to its current
+published assignment, so [Course.assignments.GetAssignment](reaction:Course.assignments.GetAssignment) returns detail
 only when that student has a release and the assignment is still published;
 unassigned and unpublished work appears as `null`. [Course.assignments.StaffSummary](reaction:Course.assignments.StaffSummary) gives assignment managers the detail for
-one assignment. [Course.assignments.StaffList](reaction:Course.assignments.StaffList) gives assignment managers all assignments,
-including drafts and archived work.
+one assignment. [Course.assignments.StaffList](reaction:Course.assignments.StaffList) gives assignment managers
+[all assignments](former:Course.assignments.theStaffAssignments), including drafts and archived work.
 
 [Course.assignments.Submit](reaction:Course.assignments.Submit) creates a Posting post as the artifact and then
 records a numbered Submitting attempt. If recording the attempt faults after
@@ -43,9 +46,3 @@ post creation, the post remains because the two owners are not transactional.
 Submission checks only that the caller has an active student seat. The supplied
 assignment need not exist, be published, be released to that student, be open by
 date, or accept submissions.
-
-## Supporting declarations
-
-Views [theAssignment](view:Course.assignments.theAssignment) support the behavior and result shapes described above.
-
-Formers [theAssignmentsOf](former:Course.assignments.theAssignmentsOf), [theStaffAssignments](former:Course.assignments.theStaffAssignments) support the behavior and result shapes described above.

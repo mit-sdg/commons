@@ -28,10 +28,6 @@ a set of Posts with
   an optional editedAt Date
 ```
 
-A post's content can name handles such as `@amara`. `_getMentions` answers each
-distinct handle in first-appearance order. Handles are opaque strings; Posting
-does not assign them to people.
-
 ## Actions
 
 ```actions
@@ -72,7 +68,8 @@ _getByAuthor (author: String) : many (post: String)
   answers no rows when none match
 
 _getMentions (post: String) : many (handle: String)
-  answers distinct handles in first-appearance order
+  answers each distinct handle such as `@amara` in first-appearance order
+  treats handles as opaque strings without assigning them to people
   answers no rows when none match
 
 _isMentioned (post: String, handle: String) : one (mentioned: Boolean)

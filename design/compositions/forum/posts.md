@@ -14,10 +14,13 @@ rendered HTML and links, while revision and mention rules independently append
 history and notify newly mentioned users. Posting's edit remains committed if a
 follow-up fails.
 
-[Forum.posts.GetPost](reaction:Forum.posts.GetPost) publicly returns one readable post with its rendered
-content and reports a missing or trashed post as `NOT_FOUND`.
-[Forum.posts.PostsByAuthor](reaction:Forum.posts.PostsByAuthor) returns the author's current untrashed post
-identities without requiring a session.
+The [readable view](view:Forum.posts.readable) recognizes posts with retained Posting state and no trash marker;
+its complement is [notReadable](view:Forum.posts.notReadable).
+[Forum.posts.GetPost](reaction:Forum.posts.GetPost) uses that decision to form
+[one post with its rendered content](former:Forum.posts.thePost), reporting a missing or trashed post as `NOT_FOUND`.
+The [publicPostsBy view](view:Forum.posts.publicPostsBy) selects an author's readable posts, and
+[Forum.posts.PostsByAuthor](reaction:Forum.posts.PostsByAuthor) returns
+[those current post identities](former:Forum.posts.thePublicPostsOf) without requiring a session.
 
 [Forum.posts.DeletePost](reaction:Forum.posts.DeletePost) permits only the author of a live post whose
 conversation node has no replies. A parent returns `POST_HAS_REPLIES`. When the author requests deletion of an
@@ -29,9 +32,3 @@ leaf node. That cleanup does not include revision history, notifications,
 categories, or accepted-answer state; moderation purge has separate rules for
 those owners. The delete and cleanup are not transactional, so a failed cleanup
 can leave state that public post reads no longer expose.
-
-## Supporting declarations
-
-Views [notReadable](view:Forum.posts.notReadable), [publicPostsBy](view:Forum.posts.publicPostsBy), [readable](view:Forum.posts.readable) support the behavior and result shapes described above.
-
-Formers [thePost](former:Forum.posts.thePost), [thePublicPostsOf](former:Forum.posts.thePublicPostsOf) support the behavior and result shapes described above.

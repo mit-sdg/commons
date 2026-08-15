@@ -13,8 +13,9 @@ new account remains and Commons does not roll it back.
 time, and starts a timed session. [Access.auth.Logout](reaction:Access.auth.Logout) resolves the caller
 from a live session before ending that session. [Access.auth.Me](reaction:Access.auth.Me) uses the same
 resolved caller to return account and profile data, so a body parameter cannot
-select another account. For a public exact-username lookup,
-[Access.auth.Resolve](reaction:Access.auth.Resolve) returns the account identity or `null` without exposing
+select another account. For a public exact-username lookup, the
+[theUserNamed view](view:Access.auth.theUserNamed) relates an exact username to its account.
+[Access.auth.Resolve](reaction:Access.auth.Resolve) returns that identity or `null` without exposing
 credentials or profile fields.
 
 [Access.auth.ChangePassword](reaction:Access.auth.ChangePassword) first verifies the current password and changes
@@ -38,7 +39,3 @@ installation returns `CONFLICT`. Successful
 registration creates the profile and triggers the same administrator-bootstrap
 reaction described above; these owner actions are not one transaction, so a
 later failure does not remove the account.
-
-## Supporting declarations
-
-Views [theUserNamed](view:Access.auth.theUserNamed) support the behavior and result shapes described above.

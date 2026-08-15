@@ -1,7 +1,7 @@
 # Unread tracking
 
-[Forum.unread.UnreadList](reaction:Forum.unread.UnreadList) returns the session account's unseen registered
-items in one scope. [Forum.unread.UnreadCount](reaction:Forum.unread.UnreadCount) returns their count for that
+[Forum.unread.UnreadList](reaction:Forum.unread.UnreadList) forms
+[the session account's unseen registered items](former:Forum.unread.theUnreadOf) in one scope. [Forum.unread.UnreadCount](reaction:Forum.unread.UnreadCount) returns their count for that
 same account and scope. Both
 use the account resolved from the session; a request cannot inspect another
 user's seen marks.
@@ -16,7 +16,3 @@ Thread placement registers roots and replies; ordinary deletion and permanent
 purge unregister a post and remove all of its seen marks. Trash alone does not
 unregister it. These reads do not apply post readability, so they can continue
 to return the identity of a trashed post until it is restored or purged.
-
-## Supporting declarations
-
-Formers [theUnreadOf](former:Forum.unread.theUnreadOf) support the behavior and result shapes described above.

@@ -5,7 +5,8 @@ readable post through [Forum.pins.PinItem](reaction:Forum.pins.PinItem). [Forum.
 [Forum.pins.SetPinPriority](reaction:Forum.pins.SetPinPriority) changes the numeric priority of an existing pin. Pinning owns duplicate, missing-pin, and ordering refusals; higher
 priority appears first.
 
-[Forum.pins.PinsForScope](reaction:Forum.pins.PinsForScope) publicly lists every readable pin in one scope.
+[Forum.pins.PinsForScope](reaction:Forum.pins.PinsForScope) forms
+[the priority-ordered readable pins](former:Forum.pins.thePinsOf) in one scope.
 [Forum.pins.IsPinned](reaction:Forum.pins.IsPinned) reports one readable post's status in that scope. The
 scope is treated as an opaque conversation identity: policy checks its role
 context, but pinning does not separately verify that the conversation exists.
@@ -15,7 +16,3 @@ After permanent post purge, [Forum.pins.PurgeClearsPins](reaction:Forum.pins.Pur
 every scope.
 Ordinary Posting deletion requests the same idempotent clear through post
 cleanup.
-
-## Supporting declarations
-
-Formers [thePinsOf](former:Forum.pins.thePinsOf) support the behavior and result shapes described above.

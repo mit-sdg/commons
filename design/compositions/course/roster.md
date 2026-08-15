@@ -1,9 +1,11 @@
 # Roster
 
 A roster manager establishes the one class record with
-[Course.roster.ConfigureClass](reaction:Course.roster.ConfigureClass). [Course.roster.ClassConfiguration](reaction:Course.roster.ClassConfiguration) returns
-that record to roster managers, or `null` before configuration.
-[Course.roster.SectionsList](reaction:Course.roster.SectionsList) makes every section's name and meeting details
+[Course.roster.ConfigureClass](reaction:Course.roster.ConfigureClass). The
+[theClassConfiguration view](view:Course.roster.theClassConfiguration) reads that optional record, which
+[Course.roster.ClassConfiguration](reaction:Course.roster.ClassConfiguration) returns to roster managers as `null` before configuration.
+[Course.roster.SectionsList](reaction:Course.roster.SectionsList) forms
+[every section's name and meeting details](former:Course.roster.theSections)
 public. [Course.roster.SectionsCreate](reaction:Course.roster.SectionsCreate) requires roster-management capability
 to add a section. [Course.roster.SectionsUpdate](reaction:Course.roster.SectionsUpdate) requires the same capability
 to change a section's name or meeting details.
@@ -14,20 +16,22 @@ changing state. It does not support CSV quoting or escaping.
 reporting rows skipped because their external key already exists.
 
 A logged-in person uses [Course.roster.ClaimSeat](reaction:Course.roster.ClaimSeat) to claim a pending seat only
-when their profile email exactly matches the imported email and they provide its
-external key. [Course.roster.LinkUser](reaction:Course.roster.LinkUser) lets roster staff link a seat directly
+when the [identityMatchedSeat view](view:Course.roster.identityMatchedSeat) finds a seat whose imported email
+exactly matches their profile email and whose external key they provide. [Course.roster.LinkUser](reaction:Course.roster.LinkUser) lets roster staff link a seat directly
 to a supplied user identity without that match or a separate Authenticating
 existence check. Either operation can trigger
 student assignment-release rules. When the claimed seat is staff,
 [Course.roster.StaffSeatGrantsCourseStaff](reaction:Course.roster.StaffSeatGrantsCourseStaff) ensures and grants the built-in
 course-staff role unless that account already holds it.
 
-[Course.roster.RosterMe](reaction:Course.roster.RosterMe) lets any logged-in account inspect its own seat or
-receive `null`. [Course.roster.RosterList](reaction:Course.roster.RosterList) gives roster staff every active member linked to an
-account.
-[Course.roster.PendingRoster](reaction:Course.roster.PendingRoster) gives roster staff the seats awaiting an account
-link. [Course.roster.DroppedRoster](reaction:Course.roster.DroppedRoster) gives roster staff the seats removed from
-the active roster. Callers without roster
+The [theSeatOf view](view:Course.roster.theSeatOf) relates an account to its active seat, so
+[Course.roster.RosterMe](reaction:Course.roster.RosterMe) can return the caller's seat or `null`.
+[Course.roster.RosterList](reaction:Course.roster.RosterList) gives roster staff
+[the active roster](former:Course.roster.theRoster).
+[Course.roster.PendingRoster](reaction:Course.roster.PendingRoster) gives roster staff
+[the seats awaiting an account link](former:Course.roster.thePendingRoster), while
+[Course.roster.DroppedRoster](reaction:Course.roster.DroppedRoster) gives them
+[the seats removed from the active roster](former:Course.roster.theDroppedRoster). Callers without roster
 capability receive `FORBIDDEN`.
 
 [Course.roster.DropSeat](reaction:Course.roster.DropSeat) requires the session account to hold
@@ -42,9 +46,3 @@ Seat changes commit before role and assignment follow-ups. If a grant,
 revocation, or release fan-out refuses or faults, the roster transition remains
 and there is no shared transaction; a later qualifying transition is needed to
 trigger the rule again.
-
-## Supporting declarations
-
-Views [identityMatchedSeat](view:Course.roster.identityMatchedSeat), [theClassConfiguration](view:Course.roster.theClassConfiguration), [theSeatOf](view:Course.roster.theSeatOf) support the behavior and result shapes described above.
-
-Formers [theDroppedRoster](former:Course.roster.theDroppedRoster), [thePendingRoster](former:Course.roster.thePendingRoster), [theRoster](former:Course.roster.theRoster), [theSections](former:Course.roster.theSections) support the behavior and result shapes described above.

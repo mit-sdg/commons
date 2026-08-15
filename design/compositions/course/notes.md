@@ -7,12 +7,14 @@ visibility, tags, and follow-up time. [Course.notes.Resolve](reaction:Course.not
 [Course.notes.Restore](reaction:Course.notes.Restore) returns a resolved or archived note to open. Each action
 uses current application time and leaves Noting's lifecycle refusals in force.
 
-[Course.notes.NotesList](reaction:Course.notes.NotesList) gives authorized staff the learner's open and
-resolved notes, whether staff-only or disclosed. [Course.notes.StudentsDetail](reaction:Course.notes.StudentsDetail)
-returns that learner's roster-seat detail to the same staff; an absent seat is
+[Course.notes.NotesList](reaction:Course.notes.NotesList) gives authorized staff
+[the learner's open and resolved notes](former:Course.notes.theStaffNotesOn), whether staff-only or disclosed.
+The [theSeatDetailOf view](view:Course.notes.theSeatDetailOf) relates an account to its roster detail, which
+[Course.notes.StudentsDetail](reaction:Course.notes.StudentsDetail) returns to the same staff; an absent seat is
 `null`, while a caller without capability receives `FORBIDDEN`.
 
-An active student sees only their own disclosed open and resolved notes through
+An active student sees only
+[their own disclosed open and resolved notes](former:Course.notes.theNotesShownTo) through
 [Course.notes.NotesVisible](reaction:Course.notes.NotesVisible). [Course.notes.Acknowledge](reaction:Course.notes.Acknowledge) records that learner's
 acknowledgement only when Noting confirms both ownership and disclosure. An
 archived note is absent from both lists until restored, although Noting retains
@@ -21,9 +23,3 @@ its acknowledgement and disclosure state.
 Writing or disclosing a note, and reaching its follow-up time, sends no
 notification or email. The follow-up timestamp is retained for readers rather
 than used as a scheduler.
-
-## Supporting declarations
-
-Views [theSeatDetailOf](view:Course.notes.theSeatDetailOf) support the behavior and result shapes described above.
-
-Formers [theNotesShownTo](former:Course.notes.theNotesShownTo), [theStaffNotesOn](former:Course.notes.theStaffNotesOn) support the behavior and result shapes described above.

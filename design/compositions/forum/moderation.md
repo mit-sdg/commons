@@ -7,8 +7,8 @@ removes the trash record permanently and thereby triggers Forum-wide cleanup.
 Trash and restore retain Posting and attached state; purge cleanup is
 cross-concept and can be only partially complete if a later effect faults.
 
-[Forum.moderation.TrashList](reaction:Forum.moderation.TrashList) lets moderators inspect every retained trash
-record and its timestamp. [Forum.moderation.IsTrashed](reaction:Forum.moderation.IsTrashed) lets moderators test one identity without
+[Forum.moderation.TrashList](reaction:Forum.moderation.TrashList) gives moderators
+[the retained trash bin](former:Forum.moderation.theTrashBin), including each record's timestamp. [Forum.moderation.IsTrashed](reaction:Forum.moderation.IsTrashed) lets moderators test one identity without
 reading its content.
 [Forum.moderation.GetTrashedPost](reaction:Forum.moderation.GetTrashedPost) returns retained post content only while the
 post is trashed. These operations return `NOT_FOUND` to non-moderators so hidden
@@ -19,19 +19,18 @@ live and missing posts.
 conversation. [Forum.moderation.UnlockTarget](reaction:Forum.moderation.UnlockTarget) removes that lock only while the
 target remains public. Only a conversation lock is consulted by reply and edit
 policy; a direct post lock is recorded but does not currently block either.
-[Forum.moderation.LockList](reaction:Forum.moderation.LockList) publicly lists locks whose targets are still
-public. [Forum.moderation.IsLocked](reaction:Forum.moderation.IsLocked) reports one public target's status while
+[Forum.moderation.LockList](reaction:Forum.moderation.LockList) forms
+[the public lock list](former:Forum.moderation.theLockedList) from locks whose targets are still public. [Forum.moderation.IsLocked](reaction:Forum.moderation.IsLocked) reports one public target's status while
 hiding a missing or trashed target.
 
 Any logged-in account raises one open concern on a live post through
 [Forum.moderation.FlagRaise](reaction:Forum.moderation.FlagRaise); Flagging refuses a second open concern from the
 same account and target. A moderator closes all open flags on a readable target
 as upheld or dismissed through [Forum.moderation.FlagResolve](reaction:Forum.moderation.FlagResolve).
-[Forum.moderation.FlagsOpen](reaction:Forum.moderation.FlagsOpen) returns readable targets with their open-flag
-counts. [Forum.moderation.FlagsForTarget](reaction:Forum.moderation.FlagsForTarget) returns all flags retained for one
-readable post.
+[Forum.moderation.FlagsOpen](reaction:Forum.moderation.FlagsOpen) forms
+[the open-flag counts](former:Forum.moderation.theOpenFlags) for readable targets.
+For a richer moderation read, [theModerationQueue](former:Forum.moderation.theModerationQueue) joins those targets
+with current post, rendering, placement, and individual flag details without storing a queue snapshot.
+[Forum.moderation.FlagsForTarget](reaction:Forum.moderation.FlagsForTarget) forms
+[all flags retained for one readable post](former:Forum.moderation.theFlagsOn).
 Both reads hide their results from non-moderators as `NOT_FOUND`.
-
-## Supporting declarations
-
-Formers [theFlagsOn](former:Forum.moderation.theFlagsOn), [theLockedList](former:Forum.moderation.theLockedList), [theModerationQueue](former:Forum.moderation.theModerationQueue), [theOpenFlags](former:Forum.moderation.theOpenFlags), [theTrashBin](former:Forum.moderation.theTrashBin) support the behavior and result shapes described above.

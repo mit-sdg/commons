@@ -2,8 +2,10 @@
 
 [Forum.threads.CreateThread](reaction:Forum.threads.CreateThread) resolves the session account, creates a Posting
 post, and then places it as the root of a new conversation.
-[Forum.threads.ReplyToThread](reaction:Forum.threads.ReplyToThread) verifies only that Conversing places the parent
-in an unlocked conversation, then creates and places the reply. A locked
+[Forum.threads.ReplyToThread](reaction:Forum.threads.ReplyToThread) uses
+[placementOf](view:Forum.threads.placementOf) to find the parent's conversation and
+[readableConversation](view:Forum.threads.readableConversation) to require that it remain unlocked,
+then creates and places the reply. A locked
 conversation returns `FORBIDDEN`, and a missing parent returns
 `PARENT_NODE_NOT_FOUND` before post creation. The guard does not require a
 Posting record for the parent or root, so a retained node can still accept
@@ -21,13 +23,8 @@ or fault leaves earlier owner actions and successful sibling effects intact.
 The author is not automatically marked as having seen the post.
 
 [Forum.threads.ForItem](reaction:Forum.threads.ForItem) publicly returns the conversation containing a post or
-`null`. It resolves placement only while that post's Posting record exists and
-is not trashed. Thread presentation applies the same test to each node
+`null`. It uses [publicTarget](view:Forum.threads.publicTarget) to resolve placement only while that post's Posting
+record exists and is not trashed. Thread presentation forms
+[the current thread](former:Forum.threads.theThread) by applying [intact](view:Forum.threads.intact) to each node
 independently: a missing or trashed root is omitted without automatically hiding
 intact replies.
-
-## Supporting declarations
-
-Views [intact](view:Forum.threads.intact), [placementOf](view:Forum.threads.placementOf), [publicTarget](view:Forum.threads.publicTarget), [readableConversation](view:Forum.threads.readableConversation) support the behavior and result shapes described above.
-
-Formers [theThread](former:Forum.threads.theThread) support the behavior and result shapes described above.

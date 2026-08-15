@@ -14,10 +14,7 @@ identity. Invitation state is already durable before this consequence runs, so a
 rendering or queueing failure does not retract it. Once enqueue succeeds, an
 SMTP failure leaves Mailing's message pending for a later attempt.
 
-[Access.invitations.List](reaction:Access.invitations.List) gives administrators the current addresses,
+[Access.invitations.List](reaction:Access.invitations.List) gives administrators
+[the current invitations](former:Access.invitations.theInvitations), including addresses,
 timestamps, send counts, and claiming accounts. It never returns the temporary
 credentials, and a non-administrator receives `FORBIDDEN` rather than the list.
-
-## Supporting declarations
-
-Formers [theInvitations](former:Access.invitations.theInvitations) support the behavior and result shapes described above.
