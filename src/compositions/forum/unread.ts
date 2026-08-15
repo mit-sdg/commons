@@ -1,7 +1,7 @@
 import { activeUser } from "../access/session.ts";
 import { each, former } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
 const { Tracking } = concepts;
 

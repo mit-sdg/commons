@@ -13,7 +13,7 @@ const refusalOf = caughtError;
 
 for (const [floor, make] of floors) {
   describe(`Tagging ${floor}`, () => {
-    test("createTag adds to the vocabulary; duplicate names are refused", async () => {
+    test("createTag adds to the tag catalog; duplicate names are refused", async () => {
       const tagging = await make();
       const { tag } = await tagging.createTag({ name: "urgent" });
       expect(await tagging._getAllTags({})).toEqual([{ tag, name: "urgent" }]);

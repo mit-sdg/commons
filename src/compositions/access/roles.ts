@@ -1,7 +1,7 @@
 import { activeUser } from "./session.ts";
 import { each, former, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { mayAdminister, mayNotAdminister } from "./policy.ts";
 
 const { Authenticating, Roling } = concepts;

@@ -1,12 +1,12 @@
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/vocabulary.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { createEngine, type LogEvent } from "@mit-sdg/sync-engine/advanced";
 import { commonsPublicErrors } from "../../src/assembly/http-policy.ts";
 import { createEdge } from "../../src/edge.ts";
 import { MongoAuthenticatingConcept } from "../../src/concepts/authenticating/authenticating.mongo.ts";
 
-describe("public failure vocabulary", () => {
+describe("public failure contract", () => {
   test("representative refusals declare their public categories", () => {
     expect(commonsPublicErrors.INVALID_CREDENTIALS).toBe("UNAUTHORIZED");
     expect(commonsPublicErrors.NOTE_NOT_FOUND).toBe("NOT_FOUND");

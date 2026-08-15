@@ -2,7 +2,7 @@ import { httpWire } from "@mit-sdg/sync-engine-http/tooling";
 import type { Db } from "mongodb";
 import { assembleCommons } from "./src/assembly/application.ts";
 import { commonsHttpPolicy } from "./src/assembly/http-policy.ts";
-import { mongoImplementations } from "./src/vocabulary.ts";
+import { mongoImplementations } from "./src/concepts.ts";
 
 const policy = commonsHttpPolicy("http://127.0.0.1:3000");
 // Assembly inspects protocols without executing concept methods; no connection is opened.
@@ -16,13 +16,13 @@ export default {
   wire: "wire.ts",
   wireName: "CommonsWire",
   conceptSet: {
-    module: new URL("./src/vocabulary.ts", import.meta.url),
+    module: new URL("./src/concepts.ts", import.meta.url),
     export: "learningConcepts",
   },
   design: {
     version: 1,
     documents: [
-      new URL("./design/vocabulary.md", import.meta.url),
+      new URL("./design/application.md", import.meta.url),
       new URL("./design/compositions/access/auth.md", import.meta.url),
       new URL("./design/compositions/access/invitations.md", import.meta.url),
       new URL("./design/compositions/access/roles.md", import.meta.url),

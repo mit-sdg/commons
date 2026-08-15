@@ -11,7 +11,7 @@ import {
   whether,
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { computations, concepts } from "../../vocabulary.ts";
+import { computations, concepts } from "../../concepts.ts";
 
 const {
   Authenticating,

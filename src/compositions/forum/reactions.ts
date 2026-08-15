@@ -1,7 +1,7 @@
 import { activeUser } from "../access/session.ts";
 import { each, former, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { notReadable, readable } from "./posts.ts";
 
 const { Reacting, Trashing, Timing } = concepts;

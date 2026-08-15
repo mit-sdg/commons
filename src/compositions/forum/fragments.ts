@@ -1,5 +1,5 @@
 import { each, form, former, view, where } from "@mit-sdg/sync-engine/language";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { intact } from "./threads.ts";
 
 const { Conversing, Posting, Profiling } = concepts;

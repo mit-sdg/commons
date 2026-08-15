@@ -3,7 +3,7 @@ import { each, former, no, reaction, view, when, where } from "@mit-sdg/sync-eng
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { COURSE_STAFF_ROLE, FORUM, STAFF_CAPABILITIES } from "../access/capabilities.ts";
 import { mayManageRoster, mayNotManageRoster } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
 const { Profiling, Roling, Rostering } = concepts;
 

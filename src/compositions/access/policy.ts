@@ -1,5 +1,5 @@
 import { view, where } from "@mit-sdg/sync-engine/language";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { FORUM } from "./capabilities.ts";
 
 const { Conversing, Locking, Posting, Roling, Rostering, Trashing } = concepts;

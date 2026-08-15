@@ -7,7 +7,7 @@ import {
   mayManageStudentNotes,
   mayNotManageStudentNotes,
 } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
 const { Noting, Rostering, Timing } = concepts;
 /** Which staff notes are about this learner? */

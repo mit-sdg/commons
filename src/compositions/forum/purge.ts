@@ -1,5 +1,5 @@
 import { no, reaction, when, where } from "@mit-sdg/sync-engine/language";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
 const { Conversing, Flagging, Formatting, Linking, Locking, Posting, Tracking, Trashing } =
   concepts;

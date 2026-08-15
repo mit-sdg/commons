@@ -7,7 +7,7 @@ import {
   mayManageAssignments,
   mayNotManageAssignments,
 } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
 const { Assigning, Posting, Rostering, Submitting, Timing } = concepts;
 /** Which assignments belong to this learner? */

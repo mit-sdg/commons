@@ -33,15 +33,16 @@ Authored behavior and executable behavior have separate application-owned homes:
 - [`design/compositions/`](design/compositions/) gives each registered Access,
   Course, and Forum behavior module one focused explanation; helper-only views
   and constants remain implementation details under [`src/compositions/`](src/compositions/).
-- [`design/vocabulary.md`](design/vocabulary.md) records cross-concept type roles;
-  [`src/vocabulary.ts`](src/vocabulary.ts) owns executable registrations.
+- [`design/application.md`](design/application.md) records application types and computations;
+  [`src/concepts.ts`](src/concepts.ts) owns executable registrations.
 - [`src/assembly/`](src/assembly/) selects implementations and deployment policy.
 - [`frontend/`](frontend/) consumes only the generated browser contract.
 
 Start with the [forum thread explanation](design/compositions/forum/threads.md)
 and one concept specification such as [Posting](design/concepts/Posting.md).
-Composition pages use `[[Group.part.Name]]` to identify an exact registered
-reaction. The [generated artifact guide](generated/README.md) explains the
+Composition pages use typed links such as
+`[CreateThread](reaction:Forum.threads.CreateThread)` to identify exact
+registered declarations. The [generated artifact guide](generated/README.md) explains the
 derived read-back and wire contract.
 
 ## Verify changes

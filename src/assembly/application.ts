@@ -1,5 +1,5 @@
 import { assemble } from "@mit-sdg/sync-engine/assembly";
-import { learningConcepts, mongoImplementations } from "../vocabulary.ts";
+import { learningConcepts, mongoImplementations } from "../concepts.ts";
 import { composition } from "../compositions/index.ts";
 
 export type CommonsImplementations = ReturnType<typeof mongoImplementations>;

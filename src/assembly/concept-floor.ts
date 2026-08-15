@@ -1,6 +1,6 @@
 import { conceptFloor } from "@mit-sdg/sync-engine/assembly";
 import type { Db, MongoClient } from "mongodb";
-import { learningConcepts, mongoImplementations } from "../vocabulary.ts";
+import { learningConcepts, mongoImplementations } from "../concepts.ts";
 
 export interface CommonsConceptFloor {
   name: string;

@@ -51,9 +51,9 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 #### Selected instances and bindings
 
 - `Assigning`
-  - `Assigning.Author` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 21.
-  - `Assigning.Assignee` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 22.
-  - `Assigning.Sections` is `Rostering.Section` — [Commons vocabulary](../design/vocabulary.md), line 43.
+  - `Assigning.Author` is `Authenticating.User` — [Commons application](../design/application.md), line 21.
+  - `Assigning.Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 22.
+  - `Assigning.Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 43.
 
 ### Authenticating
 
@@ -120,8 +120,8 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 #### Selected instances and bindings
 
 - `Banking`
-  - `Banking.Learner` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 23.
-  - `Banking.Item` is `Assigning.Assignment` — [Commons vocabulary](../design/vocabulary.md), line 44.
+  - `Banking.Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 23.
+  - `Banking.Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 44.
 
 ### Bookmarking
 
@@ -143,8 +143,8 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 #### Selected instances and bindings
 
 - `Bookmarking`
-  - `Bookmarking.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 24.
-  - `Bookmarking.Item` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 52.
+  - `Bookmarking.User` is `Authenticating.User` — [Commons application](../design/application.md), line 24.
+  - `Bookmarking.Item` is `Posting.Post` — [Commons application](../design/application.md), line 52.
 
 ### Categorizing
 
@@ -171,7 +171,7 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 #### Selected instances and bindings
 
 - `Categorizing`
-  - `Categorizing.Item` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 53.
+  - `Categorizing.Item` is `Posting.Post` — [Commons application](../design/application.md), line 53.
 
 ### Conversing
 
@@ -202,7 +202,7 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 #### Selected instances and bindings
 
 - `Conversing`
-  - `Conversing.Item` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 54.
+  - `Conversing.Item` is `Posting.Post` — [Commons application](../design/application.md), line 54.
 
 ### Flagging
 
@@ -225,8 +225,8 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 #### Selected instances and bindings
 
 - `Flagging`
-  - `Flagging.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 25.
-  - `Flagging.Target` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 55.
+  - `Flagging.User` is `Authenticating.User` — [Commons application](../design/application.md), line 25.
+  - `Flagging.Target` is `Posting.Post` — [Commons application](../design/application.md), line 55.
 
 ### Formatting
 
@@ -244,7 +244,7 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 #### Selected instances and bindings
 
 - `Formatting`
-  - `Formatting.Target` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 56.
+  - `Formatting.Target` is `Posting.Post` — [Commons application](../design/application.md), line 56.
 
 ### Grading
 
@@ -280,11 +280,11 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 #### Selected instances and bindings
 
 - `Grading`
-  - `Grading.Grader` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 26.
-  - `Grading.Learner` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 27.
-  - `Grading.Item` is `Assigning.Assignment` — [Commons vocabulary](../design/vocabulary.md), line 45.
-  - `Grading.Criterion` is `Itemizing.Criterion` — [Commons vocabulary](../design/vocabulary.md), line 48.
-  - `Grading.Evidence` is `Submitting.Submission` — [Commons vocabulary](../design/vocabulary.md), line 49.
+  - `Grading.Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 26.
+  - `Grading.Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 27.
+  - `Grading.Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 45.
+  - `Grading.Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 48.
+  - `Grading.Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 49.
 
 ### Inviting
 
@@ -307,7 +307,7 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 #### Selected instances and bindings
 
 - `Inviting`
-  - `Inviting.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 28.
+  - `Inviting.User` is `Authenticating.User` — [Commons application](../design/application.md), line 28.
 
 ### Itemizing
 
@@ -337,7 +337,7 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 #### Selected instances and bindings
 
 - `Itemizing`
-  - `Itemizing.Item` is `Assigning.Assignment` — [Commons vocabulary](../design/vocabulary.md), line 46.
+  - `Itemizing.Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 46.
 
 ### Linking
 
@@ -358,8 +358,8 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 #### Selected instances and bindings
 
 - `Linking`
-  - `Linking.Source` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 57.
-  - `Linking.Target` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 58.
+  - `Linking.Source` is `Posting.Post` — [Commons application](../design/application.md), line 57.
+  - `Linking.Target` is `Posting.Post` — [Commons application](../design/application.md), line 58.
 
 ### Locking
 
@@ -380,7 +380,7 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 #### Selected instances and bindings
 
 - `Locking`
-  - `Locking.Target` is `Lockable` — [Commons vocabulary](../design/vocabulary.md), line 59.
+  - `Locking.Target` is `Lockable` — [Commons application](../design/application.md), line 59.
 
 ### Mailing
 
@@ -403,7 +403,7 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 #### Selected instances and bindings
 
 - `Mailing`
-  - `Mailing.Key` is `MailKey` — [Commons vocabulary](../design/vocabulary.md), line 50.
+  - `Mailing.Key` is `MailKey` — [Commons application](../design/application.md), line 50.
 
 ### Notifying
 
@@ -428,9 +428,9 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 #### Selected instances and bindings
 
 - `Notifying`
-  - `Notifying.Person` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 29.
-  - `Notifying.Link` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 60.
-  - `Notifying.Subject` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 61.
+  - `Notifying.Person` is `Authenticating.User` — [Commons application](../design/application.md), line 29.
+  - `Notifying.Link` is `Posting.Post` — [Commons application](../design/application.md), line 60.
+  - `Notifying.Subject` is `Posting.Post` — [Commons application](../design/application.md), line 61.
 
 ### Noting
 
@@ -469,8 +469,8 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 #### Selected instances and bindings
 
 - `Noting`
-  - `Noting.Author` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 30.
-  - `Noting.Learner` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 31.
+  - `Noting.Author` is `Authenticating.User` — [Commons application](../design/application.md), line 30.
+  - `Noting.Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 31.
 
 ### Pinning
 
@@ -494,8 +494,8 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 #### Selected instances and bindings
 
 - `Pinning`
-  - `Pinning.Item` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 62.
-  - `Pinning.Scope` is `Conversing.Conversation` — [Commons vocabulary](../design/vocabulary.md), line 70.
+  - `Pinning.Item` is `Posting.Post` — [Commons application](../design/application.md), line 62.
+  - `Pinning.Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 70.
 
 ### Posting
 
@@ -519,7 +519,7 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 #### Selected instances and bindings
 
 - `Posting`
-  - `Posting.Author` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 32.
+  - `Posting.Author` is `Authenticating.User` — [Commons application](../design/application.md), line 32.
 
 ### Profiling
 
@@ -544,7 +544,7 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 #### Selected instances and bindings
 
 - `Profiling`
-  - `Profiling.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 33.
+  - `Profiling.User` is `Authenticating.User` — [Commons application](../design/application.md), line 33.
 
 ### Reacting
 
@@ -568,8 +568,8 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 #### Selected instances and bindings
 
 - `Reacting`
-  - `Reacting.Person` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 34.
-  - `Reacting.Target` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 63.
+  - `Reacting.Person` is `Authenticating.User` — [Commons application](../design/application.md), line 34.
+  - `Reacting.Target` is `Posting.Post` — [Commons application](../design/application.md), line 63.
 
 ### Resolving
 
@@ -590,9 +590,9 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 #### Selected instances and bindings
 
 - `Resolving`
-  - `Resolving.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 35.
-  - `Resolving.Answer` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 64.
-  - `Resolving.Question` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 65.
+  - `Resolving.User` is `Authenticating.User` — [Commons application](../design/application.md), line 35.
+  - `Resolving.Answer` is `Posting.Post` — [Commons application](../design/application.md), line 64.
+  - `Resolving.Question` is `Posting.Post` — [Commons application](../design/application.md), line 65.
 
 ### Revising
 
@@ -612,7 +612,7 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 #### Selected instances and bindings
 
 - `Revising`
-  - `Revising.Item` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 66.
+  - `Revising.Item` is `Posting.Post` — [Commons application](../design/application.md), line 66.
 
 ### Roling
 
@@ -645,8 +645,8 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 #### Selected instances and bindings
 
 - `Roling`
-  - `Roling.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 36.
-  - `Roling.Context` is `Conversing.Conversation` — [Commons vocabulary](../design/vocabulary.md), line 71.
+  - `Roling.User` is `Authenticating.User` — [Commons application](../design/application.md), line 36.
+  - `Roling.Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 71.
 
 ### Rostering
 
@@ -691,7 +691,7 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 #### Selected instances and bindings
 
 - `Rostering`
-  - `Rostering.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 37.
+  - `Rostering.User` is `Authenticating.User` — [Commons application](../design/application.md), line 37.
 
 ### Sessioning
 
@@ -712,8 +712,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 #### Selected instances and bindings
 
 - `Sessioning`
-  - `Sessioning.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 38.
-  - `Sessioning.Moment` is `Timing.Moment` — [Commons vocabulary](../design/vocabulary.md), line 74.
+  - `Sessioning.User` is `Authenticating.User` — [Commons application](../design/application.md), line 38.
+  - `Sessioning.Moment` is `Timing.Moment` — [Commons application](../design/application.md), line 74.
 
 ### Submitting
 
@@ -739,9 +739,9 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 #### Selected instances and bindings
 
 - `Submitting`
-  - `Submitting.Submitter` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 39.
-  - `Submitting.Assignment` is `Assigning.Assignment` — [Commons vocabulary](../design/vocabulary.md), line 47.
-  - `Submitting.Artifact` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 51.
+  - `Submitting.Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 39.
+  - `Submitting.Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 47.
+  - `Submitting.Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 51.
 
 ### Subscribing
 
@@ -764,8 +764,8 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 #### Selected instances and bindings
 
 - `Subscribing`
-  - `Subscribing.Person` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 40.
-  - `Subscribing.Target` is `Conversing.Conversation` — [Commons vocabulary](../design/vocabulary.md), line 72.
+  - `Subscribing.Person` is `Authenticating.User` — [Commons application](../design/application.md), line 40.
+  - `Subscribing.Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 72.
 
 ### Tagging
 
@@ -794,7 +794,7 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 #### Selected instances and bindings
 
 - `Tagging`
-  - `Tagging.Target` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 67.
+  - `Tagging.Target` is `Posting.Post` — [Commons application](../design/application.md), line 67.
 
 ### Timing
 
@@ -835,9 +835,9 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 #### Selected instances and bindings
 
 - `Tracking`
-  - `Tracking.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 41.
-  - `Tracking.Item` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 68.
-  - `Tracking.Scope` is `Conversing.Conversation` — [Commons vocabulary](../design/vocabulary.md), line 73.
+  - `Tracking.User` is `Authenticating.User` — [Commons application](../design/application.md), line 41.
+  - `Tracking.Item` is `Posting.Post` — [Commons application](../design/application.md), line 68.
+  - `Tracking.Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 73.
 
 ### Trashing
 
@@ -860,23 +860,23 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 #### Selected instances and bindings
 
 - `Trashing`
-  - `Trashing.User` is `Authenticating.User` — [Commons vocabulary](../design/vocabulary.md), line 42.
-  - `Trashing.Item` is `Posting.Post` — [Commons vocabulary](../design/vocabulary.md), line 69.
+  - `Trashing.User` is `Authenticating.User` — [Commons application](../design/application.md), line 42.
+  - `Trashing.Item` is `Posting.Post` — [Commons application](../design/application.md), line 69.
 
 ## Application types
 
 Concrete types:
 
-- `MailKey` — [Commons vocabulary](../design/vocabulary.md), line 15.
-- `Lockable` — [Commons vocabulary](../design/vocabulary.md), line 18.
+- `MailKey` — [Commons application](../design/application.md), line 15.
+- `Lockable` — [Commons application](../design/application.md), line 18.
 
 ## Computations
 
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons vocabulary](../design/vocabulary.md), line 107.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons vocabulary](../design/vocabulary.md), line 104.
-- `notificationMailHtml(notification: String) : String` — [Commons vocabulary](../design/vocabulary.md), line 113.
-- `notificationMailText(notification: String) : String` — [Commons vocabulary](../design/vocabulary.md), line 110.
-- `setupSecretMatches(secret: String) : Bool` — [Commons vocabulary](../design/vocabulary.md), line 116.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 107.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 104.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 113.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 110.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 116.
 
 ## Views
 

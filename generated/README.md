@@ -16,7 +16,7 @@ goldens; neither is ever edited by hand.
 The test and check commands compare both files byte-for-byte with fresh output.
 Regenerate a file when its source changes and review the resulting diff.
 
-The generated descriptor names `src/vocabulary.ts`; the wire generator emits a
+The generated descriptor names `src/concepts.ts`; the wire generator emits a
 type-only import of that module to reach the registered concept signatures. `CommonsWire` keeps the logical application contract
 for local clients. `CommonsWireHttp` applies the HTTP floor for browser calls,
 omitting its cookie-bound session input. Both project values through JSON, so a

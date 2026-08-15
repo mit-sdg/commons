@@ -2,7 +2,7 @@ import { activeUser } from "../access/session.ts";
 import { each, former, no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayEditPost, mayNotEditPost } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { intact } from "./threads.ts";
 
 const {

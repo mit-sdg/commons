@@ -25,7 +25,7 @@ const typedLinks = (source: string) =>
 
 describe("application-owned design integration", () => {
   test("every authored concept is registered through the concept-set module", () => {
-    const conceptSet = readFileSync(join(root, "src/vocabulary.ts"), "utf8");
+    const conceptSet = readFileSync(join(root, "src/concepts.ts"), "utf8");
     const designs = readdirSync(designConcepts)
       .filter((name) => name.endsWith(".md"))
       .map((name) => name.slice(0, -3))
@@ -50,7 +50,7 @@ describe("application-owned design integration", () => {
         expect(existsSync(join(conceptsRoot, directory, `${directory}.ts`)), concept).toBe(false);
       }
     }
-    expect(conceptSet).not.toContain("@design/vocabulary.md");
+    expect(conceptSet).not.toContain("@design/application.md");
     expect(conceptSet).toContain("export const learningConcepts = conceptSet(");
     expect(existsSync(join(conceptsRoot, "index.ts"))).toBe(false);
   });
@@ -73,7 +73,7 @@ describe("application-owned design integration", () => {
     }
   });
 
-  test("the vocabulary records the manually audited external-role bindings", () => {
+  test("the application design records the manually audited external-role bindings", () => {
     const expectedBindings = [
       "Assigning.Author is Authenticating.User",
       "Assigning.Assignee is Authenticating.User",
@@ -130,7 +130,7 @@ describe("application-owned design integration", () => {
       "Tracking.Scope is Conversing.Conversation",
       "Sessioning.Moment is Timing.Moment",
     ].sort();
-    const source = readFileSync(join(root, "design/vocabulary.md"), "utf8");
+    const source = readFileSync(join(root, "design/application.md"), "utf8");
     const bindings = [
       ...source.matchAll(/^([A-Z]\w*\.[A-Z]\w*) is ([A-Z]\w*(?:\.[A-Z]\w*)?)$/gm),
     ].map(([, external, owner]) => ({ external, owner }));
@@ -228,10 +228,10 @@ describe("application-owned design integration", () => {
     expect(documented).toEqual(selected);
   });
 
-  test("generated artifacts and registration-driven check select src/vocabulary.ts", () => {
+  test("generated artifacts and registration-driven check select src/concepts.ts", () => {
     const config = readFileSync(join(root, "generated.config.ts"), "utf8");
     const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-    expect(config).toContain('module: new URL("./src/vocabulary.ts"');
+    expect(config).toContain('module: new URL("./src/concepts.ts"');
     expect(config).toContain('export: "learningConcepts"');
     expect(config).toContain('httpWire({ policy, name: "CommonsWireHttp" })');
     expect(manifest.scripts["design:check"]).toBe("sync-engine check --config generated.config.ts");
@@ -251,7 +251,7 @@ describe("application-owned design integration", () => {
 
   test("the assembly joins only the concept set and composition manifest", () => {
     const source = readFileSync(join(root, "src/assembly/application.ts"), "utf8");
-    expect(source).toContain('from "../vocabulary.ts"');
+    expect(source).toContain('from "../concepts.ts"');
     expect(source).toContain("conceptSet: learningConcepts");
     expect(source).toContain('from "../compositions/index.ts"');
     expect(source).not.toMatch(/compositions\/(?:access|course|forum)\//);

@@ -1,4 +1,4 @@
-# Commons vocabulary
+# Commons application
 
 Commons passes identities between independent concepts. The concept on the right
 creates and owns the identity; the role on the left only stores or uses it. For
