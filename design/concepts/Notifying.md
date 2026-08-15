@@ -13,6 +13,25 @@ without removing it. She later marks every notification read and dismisses one.
 Dismissing it again is refused. Noah cannot read or dismiss Mara's
 notifications.
 
+Actions that name a recipient operate only on that person's notifications.
+Another person's notification is refused as not found. `markAllRead` and
+marking an already-read notification succeed without changing anything.
+
+- `_getInbox (recipient)` answers the recipient's notifications newest first,
+  with later arrivals breaking equal-time ties.
+- `_hasFor (user, subject)` answers exactly one row with `notified`.
+- `_getUnreadCount (recipient)` answers exactly one row with `count`.
+
+## Types
+
+```types
+external Person
+  The person identity affected by the behavior.
+
+external Target
+  The application object affected by the behavior.
+```
+
 ## State
 
 ```state
@@ -33,6 +52,7 @@ removes every notification about its subject.
 
 ```actions
 notify(recipient: Person, kind: String, subject: String, link: String, at: Date) : return (notification: Notification)
+  where true
   then
     add a new notification with recipient, kind, subject, link, and createdAt at
     add notification to unread
@@ -48,6 +68,7 @@ markRead(notification: Notification, recipient: Person) : return (notification: 
     refuse NOTIFICATION_NOT_FOUND "There is no such notification."
 
 markAllRead(recipient: Person) : return (recipient: Person)
+  where true
   then
     remove every notification of recipient from unread
     return recipient
@@ -62,14 +83,11 @@ dismiss(notification: Notification, recipient: Person) : return (notification: N
     refuse NOTIFICATION_NOT_FOUND "There is no such notification."
 
 clearSubject(subject: Target) : return (subject: Target)
+  where true
   then
     delete every notification about subject
     return subject
 ```
-
-Actions that name a recipient operate only on that person's notifications.
-Another person's notification is refused as not found. `markAllRead` and
-marking an already-read notification succeed without changing anything.
 
 ## Queries
 
@@ -80,10 +98,3 @@ _hasFor (user: String, subject: String) : one (notified: Boolean)
 
 _getUnreadCount (recipient: String) : one (count: Number)
 ```
-
-### Notes
-
-- `_getInbox (recipient)` answers the recipient's notifications newest first,
-  with later arrivals breaking equal-time ties.
-- `_hasFor (user, subject)` answers exactly one row with `notified`.
-- `_getUnreadCount (recipient)` answers exactly one row with `count`.

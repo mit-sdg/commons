@@ -1,6 +1,6 @@
 import { each, former, no, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { thePostSummaryOf, theThreadStatsOf } from "./fragments.ts";
 import { intact, theThread } from "./threads.ts";
 

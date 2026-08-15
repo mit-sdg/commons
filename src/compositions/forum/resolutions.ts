@@ -2,7 +2,7 @@ import { activeUser } from "../access/session.ts";
 import { each, former, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { authored, didNotAuthor } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { notReadable, readable } from "./posts.ts";
 
 const { Resolving, Trashing, Timing } = concepts;

@@ -1,4 +1,4 @@
-import { mongoImplementations } from "../../src/vocabulary.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { MongoPostingConcept } from "../../src/concepts/posting/posting.mongo.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";

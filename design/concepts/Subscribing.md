@@ -12,6 +12,23 @@ Following the first thread again is refused. Unfollowing it succeeds once and
 is refused the second time. Asking whether she follows a target always answers
 yes or no.
 
+`subscribe` records the supplied `at` as the moment the subscription began.
+Targets are opaque identities: Subscribing neither creates nor validates them.
+
+- `_getSubscribers (target)` answers its subscribers in subscription order.
+- `_getSubscriptions (user)` answers the person's targets newest first.
+- `_isSubscribed (user, target)` answers exactly one row with `subscribed`.
+
+## Types
+
+```types
+external Person
+  The person identity affected by the behavior.
+
+external Target
+  The application object affected by the behavior.
+```
+
 ## State
 
 ```state
@@ -45,13 +62,11 @@ unsubscribe(user: Person, target: Target) : return (subscription: Subscription)
     refuse NOT_SUBSCRIBED "There is no such subscription to drop."
 
 clearTarget(target: Target) : return (target: Target)
+  where true
   then
     delete every subscription to target
     return target
 ```
-
-`subscribe` records the supplied `at` as the moment the subscription began.
-Targets are opaque identities: Subscribing neither creates nor validates them.
 
 ## Queries
 
@@ -62,9 +77,3 @@ _getSubscriptions (user: String) : many (target: String, subscribedAt: Date)
 
 _isSubscribed (user: String, target: String) : one (subscribed: Boolean)
 ```
-
-### Notes
-
-- `_getSubscribers (target)` answers its subscribers in subscription order.
-- `_getSubscriptions (user)` answers the person's targets newest first.
-- `_isSubscribed (user, target)` answers exactly one row with `subscribed`.

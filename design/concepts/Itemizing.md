@@ -13,6 +13,22 @@ request finds the existing item and leaves it unchanged. Adding a criterion to
 an item that has not been configured is refused. Archiving the midterm removes
 it from the active items.
 
+Configuring updates the label and maximum of an existing active item.
+`ensureItem` returns an existing active item unchanged or creates one. Removing
+a criterion removes only Itemizing's record of it.
+
+- `_getItem (item)` answers at most one active grade item.
+- `_getItems ()` answers all active grade items in creation order.
+- `_getCriteria (item)` answers the item's criteria in position order.
+- `_getCriterion (criterion)` answers at most one criterion.
+
+## Types
+
+```types
+external Item
+  The application item affected by the behavior.
+```
+
 ## State
 
 ```state
@@ -33,9 +49,9 @@ a set of Criteria with
 
 At most one grade item is active for an item at a time. Criteria belong to the item and stand in position order. Whether a maximum is workable is a calculation over the input alone:
 
-```computation
-(maxPoints: Number) is a workable maximum : Bool
-```
+The concept uses the following calculations:
+
+- `(maxPoints: Number) is a workable maximum : Bool`
 
 A maximum is workable when it is at least zero.
 
@@ -85,28 +101,24 @@ addCriterion(item: Item, name: String, maxPoints: Number, position: Number) : re
   then
     refuse GRADE_ITEM_NOT_FOUND "There is no active grade item for this."
 
-reviseCriterion(criterion: Criterion, name: String, maxPoints: Number, position: Number) : return ()
+reviseCriterion(criterion: Criterion, name: String, maxPoints: Number, position: Number) : return (criterion: Criterion)
   where criterion in criteria
   then
     set criterion's name, maxPoints, and position from the inputs
-    return
+    return criterion
   where criterion not in criteria
   then
     refuse CRITERION_NOT_FOUND "There is no such criterion."
 
-removeCriterion(criterion: Criterion) : return ()
+removeCriterion(criterion: Criterion) : return (criterion: Criterion)
   where criterion in criteria
   then
     delete criterion
-    return
+    return criterion
   where criterion not in criteria
   then
     refuse CRITERION_NOT_FOUND "There is no such criterion."
 ```
-
-Configuring updates the label and maximum of an existing active item.
-`ensureItem` returns an existing active item unchanged or creates one. Removing
-a criterion removes only Itemizing's record of it.
 
 ## Queries
 
@@ -119,10 +131,3 @@ _getCriteria (item: String) : many (criterion: String, name: String, maxPoints: 
 
 _getCriterion (criterion: String) : optional (item: String, name: String, maxPoints: Number)
 ```
-
-### Notes
-
-- `_getItem (item)` answers at most one active grade item.
-- `_getItems ()` answers all active grade items in creation order.
-- `_getCriteria (item)` answers the item's criteria in position order.
-- `_getCriterion (criterion)` answers at most one criterion.

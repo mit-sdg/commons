@@ -11,7 +11,7 @@ import {
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { notReadable, readable, thePost } from "./posts.ts";
 import { publicTarget } from "./threads.ts";
 

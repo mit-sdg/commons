@@ -12,6 +12,19 @@ to Exams moves it there. Unassigning it leaves it with no category, and a
 second unassignment is refused. A second category named Homework is also
 refused. Deleting Exams leaves every item in it uncategorized.
 
+- `_getCategory (item)` answers at most one category with its name and
+  description.
+- `_getHome (item)` answers the same category nested under `home`, or nothing.
+- `_getItems (category)` answers its items in assignment order.
+- `_getAllCategories ()` answers every category in creation order.
+
+## Types
+
+```types
+external Item
+  The application item affected by the behavior.
+```
+
 ## State
 
 ```state
@@ -35,30 +48,30 @@ createCategory(name: String, description: String) : return (category: Category)
   then
     refuse CATEGORY_ALREADY_EXISTS "A category with this name already exists."
 
-assign(item: Item, category: Category) : return ()
+assign(item: Item, category: Category) : return (item: Item)
   where category in categories
   then
     set item's home to category, replacing any prior home
-    return
+    return item
   where category not in categories
   then
     refuse CATEGORY_NOT_FOUND "There is no such category."
 
-unassign(item: Item) : return ()
+unassign(item: Item) : return (item: Item)
   where item in categorized
   then
     remove item from categorized
-    return
+    return item
   where item not in categorized
   then
     refuse ITEM_NOT_CATEGORIZED "This item is not in any category."
 
-deleteCategory(category: Category) : return ()
+deleteCategory(category: Category) : return (category: Category)
   where category in categories
   then
     remove every item whose home is category from categorized
     delete category
-    return
+    return category
   where category not in categories
   then
     refuse CATEGORY_NOT_FOUND "There is no such category."
@@ -75,11 +88,3 @@ _getItems (category: String) : many (item: String)
 
 _getAllCategories () : many (category: String, name: String, description: String)
 ```
-
-### Notes
-
-- `_getCategory (item)` answers at most one category with its name and
-  description.
-- `_getHome (item)` answers the same category nested under `home`, or nothing.
-- `_getItems (category)` answers its items in assignment order.
-- `_getAllCategories ()` answers every category in creation order.

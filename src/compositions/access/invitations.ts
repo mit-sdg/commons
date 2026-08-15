@@ -2,7 +2,7 @@ import { activeUser } from "./session.ts";
 import { mayAdminister, mayNotAdminister } from "./policy.ts";
 import { compute, each, former, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { computations, concepts } from "../../vocabulary.ts";
+import { computations, concepts } from "../../concepts.ts";
 
 const { Inviting, Mailing, Timing } = concepts;
 

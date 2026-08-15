@@ -11,6 +11,27 @@ Maya submits an essay as attempt one, withdraws it, and submits a revision as
 attempt two. Withdrawal does not reuse the first number. Withdrawing the first
 attempt again is refused. Restoring it succeeds, so both attempts are submitted.
 
+- `_getLatest (assignment, submitter)` answers the highest-numbered submitted
+  attempt, or nothing.
+- `_getAttempts (assignment, submitter)` answers all attempts in number order.
+- `_getSubmissionsForAssignment (assignment)` answers its attempts in creation
+  order.
+- `_getSubmissionsForSubmitter (submitter)` answers the learner's attempts in
+  creation order.
+
+## Types
+
+```types
+external Assignment
+  The assignment receiving a submission.
+
+external Submitter
+  The identity making a submission.
+
+external Strings
+  A collection of string values.
+```
+
 ## State
 
 ```state
@@ -31,6 +52,7 @@ A submitter's attempts on an assignment are numbered from one, and a number, onc
 
 ```actions
 submit(assignment: Assignment, submitter: Submitter, artifact: Artifact, at: Date) : return (submission: Submission)
+  where true
   then
     add a new submission with assignment and submitter, its artifacts holding artifact
     set submission's number to one more than the highest number among this submitter's submissions for this assignment, or 1 when there are none
@@ -38,12 +60,12 @@ submit(assignment: Assignment, submitter: Submitter, artifact: Artifact, at: Dat
     add submission to submitted
     return submission
 
-withdraw(submission: Submission) : return ()
+withdraw(submission: Submission) : return (submission: Submission)
   where submission in submitted
   then
     remove submission from submitted
     add submission to withdrawn
-    return
+    return submission
   where submission not in submissions
   then
     refuse SUBMISSION_NOT_FOUND "There is no such submission."
@@ -51,12 +73,12 @@ withdraw(submission: Submission) : return ()
   then
     refuse SUBMISSION_NOT_SUBMITTED "Only a submitted attempt can be withdrawn."
 
-restore(submission: Submission) : return ()
+restore(submission: Submission) : return (submission: Submission)
   where submission in withdrawn
   then
     remove submission from withdrawn
     add submission to submitted
-    return
+    return submission
   where submission not in submissions
   then
     refuse SUBMISSION_NOT_FOUND "There is no such submission."
@@ -76,13 +98,3 @@ _getSubmissionsForAssignment (assignment: String) : many (submitter: String, sub
 
 _getSubmissionsForSubmitter (submitter: String) : many (assignment: String, submission: String, submittedAt: Date, number: Number, status: String)
 ```
-
-### Notes
-
-- `_getLatest (assignment, submitter)` answers the highest-numbered submitted
-  attempt, or nothing.
-- `_getAttempts (assignment, submitter)` answers all attempts in number order.
-- `_getSubmissionsForAssignment (assignment)` answers its attempts in creation
-  order.
-- `_getSubmissionsForSubmitter (submitter)` answers the learner's attempts in
-  creation order.

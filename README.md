@@ -7,8 +7,8 @@ sync-engine assembly.
 
 ## Run Commons locally
 
-Commons requires Bun 1.3 and installs the published sync-engine core and HTTP
-packages at `1.0.0-beta.9`. Install both application packages, then start the
+Commons requires Bun 1.3 and TypeScript 6, and installs the published sync-engine
+core and HTTP packages at `1.0.0-beta.10`. Install both application packages, then start the
 MongoDB-backed stack:
 
 ```sh
@@ -33,8 +33,9 @@ Authored behavior and executable behavior have separate application-owned homes:
 - [`design/compositions/`](design/compositions/) explains the Access, Course, and
   Forum groups; matching declarations live under
   [`src/compositions/`](src/compositions/).
-- [`design/vocabulary.md`](design/vocabulary.md) records cross-concept type roles;
-  [`src/vocabulary.ts`](src/vocabulary.ts) owns executable registrations.
+- [`design/types.md`](design/types.md) binds concept-external types and declares
+  computations; [`src/concepts.ts`](src/concepts.ts) exports the executable
+  `applicationConceptSet`.
 - [`src/assembly/`](src/assembly/) selects implementations and deployment policy.
 - [`frontend/`](frontend/) consumes only the generated browser contract.
 

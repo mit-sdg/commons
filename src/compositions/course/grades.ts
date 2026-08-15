@@ -19,7 +19,7 @@ import {
   mayNotViewAllGrades,
   mayViewAllGrades,
 } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
 const { Assigning, Grading, Itemizing, Rostering, Timing } = concepts;
 

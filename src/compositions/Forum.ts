@@ -1,4 +1,3 @@
-import spec from "@design/compositions/Forum.md" with { type: "text" };
 import * as bookmarks from "./forum/bookmarks.ts";
 import * as categories from "./forum/categories.ts";
 import * as feed from "./forum/feed.ts";
@@ -17,7 +16,6 @@ import * as tags from "./forum/tags.ts";
 import * as threads from "./forum/threads.ts";
 import * as unread from "./forum/unread.ts";
 
-export { spec };
 export const compositions = {
   threads: { ...threads, ...feed },
   fragments,

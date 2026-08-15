@@ -19,9 +19,9 @@ Timing has no durable state and therefore keeps its single implementation in
 production implementation against temporary MongoDB rather than maintaining a
 second in-memory behavior.
 
-[`../vocabulary.ts`](../vocabulary.ts) collects every registration in one
-`conceptSet(...)`, exports the executable `concepts` and `vocabulary`, and
-constructs the complete named MongoDB floor. Query cardinalities, action/query
+[`../concepts.ts`](../concepts.ts) collects every registration in one
+`conceptSet(...)`, exports `applicationConceptSet` and its executable `concepts`,
+and constructs the complete named MongoDB floor. Query cardinalities, action/query
 signatures, and refusal codes come from the registered specification.
 Cross-concept relationships belong in [`../compositions/`](../compositions/),
 never in a concept implementation.

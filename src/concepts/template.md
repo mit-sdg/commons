@@ -9,12 +9,20 @@ What this behavior is for, in one or two plain sentences.
 A short story with named people. Show the behavior changing over time and
 include its main refusal.
 
+## Types
+
+```types
+external Owner
+  The application identity that owns a thing.
+```
+
 ## State
 
 ```state
 a set of Things with
-  a requiredFact Type
-  an optional note Type
+  an owner Owner
+  a requiredFact String
+  an optional note String
 
 a Pending set of Things
 ```
@@ -22,28 +30,26 @@ a Pending set of Things
 ## Actions
 
 ```actions
-create (requiredFact: Type) : return (thing: Thing)
+create(owner: Owner, requiredFact: String) : return (thing: Thing)
+  where true
   then
-    add a new thing with requiredFact
+    add a new thing with owner and requiredFact
     add thing to pending
     return thing
 
-advance (thing: Thing) : return (), refuse (message: String)
+advance(thing: Thing) : return (thing: Thing)
   where thing in pending
   then
     remove thing from pending
-    return
+    return thing
   where thing not in pending
   then
-    refuse "This thing cannot advance."
+    refuse THING_NOT_PENDING "This thing cannot advance."
 ```
-
-Each `refuse` sentence is the normative human explanation. Keep any exposed
-implementation detail consistent with it. The concept registry assigns the
-refusal's stable code and public category.
 
 ## Queries
 
-Name each standing question the implementation exposes. State whether it
-answers exactly one row, at most one row, or any number of rows. State its row
-shape and any ordering promise here once.
+```queries
+_get(thing: Thing) : optional (owner: Owner, requiredFact: String, note: String)
+  Returns no row when the thing does not exist.
+```

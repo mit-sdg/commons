@@ -12,6 +12,21 @@ replies to Omar. An item can appear in only one conversation, so placing Omar's
 answer again is refused. Omar's reply cannot be removed while Priya's reply is
 beneath it. Removing the last node also removes the conversation.
 
+- `_getThread (conversation)` answers its nodes in creation order.
+- `_getConversation (node)`, `_getNodeByItem (item)`, `_parentOf (node)`, and
+  `_getItem (node)` each answer at most one row.
+- `_hasChildren (node)` answers exactly one row with `present`.
+- `_getConversations ()` answers conversations newest-created first.
+- `_getConversationsByLastActivity ()` answers conversations with the most
+  recently active first.
+
+## Types
+
+```types
+external Item
+  The application item affected by the behavior.
+```
+
 ## State
 
 ```state
@@ -37,7 +52,7 @@ start(item: Item, at: Date) : return (conversation: Conversation, node: Node)
   then
     add a new conversation with root node and createdAt at
     add a new node with conversation, item, depth 0, and createdAt at
-    return conversation and node
+    return conversation, node
   where a node has this item
   then
     refuse ITEM_ALREADY_IN_CONVERSATION "This item is already in a conversation."
@@ -55,7 +70,7 @@ reply(item: Item, parent: Node, at: Date) : return (node: Node)
       depth one more than the parent's depth, and createdAt at
     return node
 
-remove(node: Node) : return ()
+remove(node: Node) : return (node: Node)
   where node not in nodes
   then
     refuse NODE_NOT_FOUND "There is no such node."
@@ -65,12 +80,12 @@ remove(node: Node) : return ()
   where node in nodes, no node has node as its parent, and another node shares its conversation
   then
     delete node
-    return
+    return node
   where node in nodes, no node has node as its parent, and no other node shares its conversation
   then
     delete node
     delete its conversation
-    return
+    return node
 ```
 
 ## Queries
@@ -92,13 +107,3 @@ _getConversations () : many (conversation: String, root: String, item: String, c
 
 _getConversationsByLastActivity () : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)
 ```
-
-### Notes
-
-- `_getThread (conversation)` answers its nodes in creation order.
-- `_getConversation (node)`, `_getNodeByItem (item)`, `_parentOf (node)`, and
-  `_getItem (node)` each answer at most one row.
-- `_hasChildren (node)` answers exactly one row with `present`.
-- `_getConversations ()` answers conversations newest-created first.
-- `_getConversationsByLastActivity ()` answers conversations with the most
-  recently active first.

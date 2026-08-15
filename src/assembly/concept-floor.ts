@@ -1,8 +1,10 @@
-import { conceptFloor, type ConceptFloor } from "@mit-sdg/sync-engine/assembly";
+import { conceptFloor } from "@mit-sdg/sync-engine/assembly";
 import type { Db, MongoClient } from "mongodb";
-import { mongoImplementations, vocabulary } from "../vocabulary.ts";
+import { applicationConceptSet, mongoImplementations } from "../concepts.ts";
 
-export type CommonsConceptFloor = ConceptFloor<typeof vocabulary>;
+export type CommonsConceptFloor = Omit<ReturnType<typeof conceptFloor>, "instances"> & {
+  instances: ReturnType<typeof mongoImplementations>;
+};
 
 type MongoClientFactory = (url: string) => Promise<MongoClient>;
 
@@ -86,7 +88,9 @@ export async function constructConceptFloor(
   }
 
   let closed = false;
-  return conceptFloor(vocabulary, {
+  // beta.10's public generic constraint is wider than a set with required floors;
+  // retain the concrete instance type while calling the documented concept-set API.
+  return conceptFloor(applicationConceptSet as unknown as Parameters<typeof conceptFloor>[0], {
     name: "mongo",
     instances,
     resources: [`MongoDB database ${database.databaseName}`],
@@ -95,5 +99,5 @@ export async function constructConceptFloor(
       closed = true;
       await client.close();
     },
-  });
+  }) as CommonsConceptFloor;
 }

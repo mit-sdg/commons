@@ -3,7 +3,7 @@ import * as Course from "./Course.ts";
 import * as Forum from "./Forum.ts";
 
 export const composition = {
-  Access: { spec: Access.spec, ...Access.compositions },
-  Course: { spec: Course.spec, ...Course.compositions },
-  Forum: { spec: Forum.spec, ...Forum.compositions },
+  Access: Access.compositions,
+  Course: Course.compositions,
+  Forum: Forum.compositions,
 };

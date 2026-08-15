@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
-import { mongoImplementations } from "../../src/vocabulary.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
 import { assembleCommons, type CommonsImplementations } from "../../src/assembly/application.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";

@@ -1,5 +1,5 @@
 <!-- Generated from the Commons assembly. Do not edit. -->
-<!-- Manifest producer: @mit-sdg/sync-engine@1.0.0-beta.9; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.0.0-beta.9. -->
+<!-- Manifest producer: @mit-sdg/sync-engine@1.0.0-beta.10; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.0.0-beta.10. -->
 
 # Commons — assembled read-back
 
@@ -10,2481 +10,897 @@ _specifications and composition source, then regenerate this file._
 
 ### Assigning
 
-**Purpose.** Let an author draft an assignment, publish it to everyone or selected sections,
-and give each assignee a release with an optional individual due date.
-
-**Principle.** Dana drafts a problem set for two sections and publishes it. Priya and Omar
-each receive a release. Dana gives Omar a later due date, then clears that
-override. Assigning the problem set to Omar again is refused because he already
-has a release. After Dana archives the problem set, it can no longer be revised.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Actions
 
-##### `createDraft (author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Bool, audience: String, targets: Sections, at: Date) : return (assignment: Assignment)`
-
-**Authored behavior:**
-
-    where audience suits targets
-    then
-      add a new assignment with author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, and targets
-      set assignment's createdAt to at
-      add assignment to draft
-      return assignment
-    where audience is everyone and targets is not empty
-    then
-      refuse ASSIGNMENT_EVERYONE_NO_TARGETS "An assignment addressed to everyone cannot list targets."
-    where audience is targets and targets is empty
-    then
-      refuse ASSIGNMENT_TARGETS_REQUIRED "A targeted assignment needs at least one target."
-    where audience is not everyone and audience is not targets
-    then
-      refuse ASSIGNMENT_AUDIENCE_INVALID "The assignment audience must be EVERYONE or TARGETS."
-
-**Registered refusal codes:** `ASSIGNMENT_EVERYONE_NO_TARGETS`, `ASSIGNMENT_TARGETS_REQUIRED`, `ASSIGNMENT_AUDIENCE_INVALID`
-
-##### `revise (assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Bool, audience: String, targets: Sections, at: Date) : return (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Bool)`
-
-**Authored behavior:**
-
-    where assignment in assignments, assignment not in archived, and audience suits targets
-    then
-      set assignment's title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, and targets from the inputs
-      set assignment's updatedAt to at
-      return assignment, its status, audience, targets, and acceptsSubmissions
-    where assignment not in assignments
-    then
-      refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
-    where assignment in archived
-    then
-      refuse ASSIGNMENT_NOT_REVISABLE "An archived assignment can no longer be revised."
-    where audience is everyone and targets is not empty
-    then
-      refuse ASSIGNMENT_EVERYONE_NO_TARGETS "An assignment addressed to everyone cannot list targets."
-    where audience is targets and targets is empty
-    then
-      refuse ASSIGNMENT_TARGETS_REQUIRED "A targeted assignment needs at least one target."
-    where audience is not everyone and audience is not targets
-    then
-      refuse ASSIGNMENT_AUDIENCE_INVALID "The assignment audience must be EVERYONE or TARGETS."
-
-**Registered refusal codes:** `ASSIGNMENT_NOT_FOUND`, `ASSIGNMENT_NOT_REVISABLE`, `ASSIGNMENT_EVERYONE_NO_TARGETS`, `ASSIGNMENT_TARGETS_REQUIRED`, `ASSIGNMENT_AUDIENCE_INVALID`
-
-##### `publish (assignment: Assignment, at: Date) : return (assignment: Assignment, audience: String, targets: Sections, acceptsSubmissions: Bool)`
-
-**Authored behavior:**
-
-    where assignment in draft
-    then
-      remove assignment from draft
-      add assignment to published
-      set assignment's updatedAt to at
-      return assignment, its audience, targets, and acceptsSubmissions
-    where assignment not in assignments
-    then
-      refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
-    where assignment in assignments and assignment not in draft
-    then
-      refuse ASSIGNMENT_NOT_DRAFT "Only a draft can be published."
-
-**Registered refusal codes:** `ASSIGNMENT_NOT_FOUND`, `ASSIGNMENT_NOT_DRAFT`
-
-##### `archive (assignment: Assignment, at: Date) : return ()`
-
-**Authored behavior:**
-
-    where assignment in assignments
-    then
-      remove assignment from draft and from published
-      add assignment to archived
-      set assignment's updatedAt to at
-      return
-    where assignment not in assignments
-    then
-      refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
-
-**Registered refusal codes:** `ASSIGNMENT_NOT_FOUND`
-
-##### `assign (assignment: Assignment, assignee: Assignee, at: Date) : return (release: Release)`
-
-**Authored behavior:**
-
-    where assignment in published and no release has this assignment and assignee
-    then
-      add a new release with assignment and assignee
-      set release's assignedAt to at
-      return release
-    where assignment not in assignments
-    then
-      refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
-    where assignment in assignments and assignment not in published
-    then
-      refuse ASSIGNMENT_NOT_PUBLISHED "Only a published assignment can be assigned."
-    where a release has this assignment and assignee
-    then
-      refuse RELEASE_ALREADY_EXISTS "This assignee already holds a release of this assignment."
-
-**Registered refusal codes:** `ASSIGNMENT_NOT_FOUND`, `ASSIGNMENT_NOT_PUBLISHED`, `RELEASE_ALREADY_EXISTS`
-
-##### `setDueOverride (assignment: Assignment, assignee: Assignee, dueAt: Date) : return (release: Release)`
-
-**Authored behavior:**
-
-    where a release has this assignment and assignee
-    then
-      set release's dueOverride to dueAt
-      return release
-    where no release has this assignment and assignee
-    then
-      refuse RELEASE_NOT_FOUND "This assignee holds no release of this assignment."
-
-**Registered refusal codes:** `RELEASE_NOT_FOUND`
-
-##### `clearDueOverride (assignment: Assignment, assignee: Assignee) : return (release: Release)`
-
-**Authored behavior:**
-
-    where a release has this assignment and assignee
-    then
-      set release's dueOverride to none
-      return release
-    where no release has this assignment and assignee
-    then
-      refuse RELEASE_NOT_FOUND "This assignee holds no release of this assignment."
-
-**Registered refusal codes:** `RELEASE_NOT_FOUND`
+- `createDraft(author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Bool, audience: String, targets: Sections, at: Date) : return (assignment: Assignment)`
+  - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
+  - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
+  - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+- `revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Bool, audience: String, targets: Sections, at: Date) : return (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Bool)`
+  - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
+  - Refuses `ASSIGNMENT_NOT_REVISABLE`: An archived assignment can no longer be revised.
+  - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
+  - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
+  - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+- `publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audience: String, targets: Sections, acceptsSubmissions: Bool)`
+  - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
+  - Refuses `ASSIGNMENT_NOT_DRAFT`: Only a draft can be published.
+- `archive(assignment: Assignment, at: Date) : return (assignment: Assignment)`
+  - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
+- `assign(assignment: Assignment, assignee: Assignee, at: Date) : return (release: Release)`
+  - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
+  - Refuses `ASSIGNMENT_NOT_PUBLISHED`: Only a published assignment can be assigned.
+  - Refuses `RELEASE_ALREADY_EXISTS`: This assignee already holds a release of this assignment.
+- `setDueOverride(assignment: Assignment, assignee: Assignee, dueAt: Date) : return (release: Release)`
+  - Refuses `RELEASE_NOT_FOUND`: This assignee holds no release of this assignment.
+- `clearDueOverride(assignment: Assignment, assignee: Assignee) : return (release: Release)`
+  - Refuses `RELEASE_NOT_FOUND`: This assignee holds no release of this assignment.
 
 #### Queries
 
-##### `_getDetail (assignment: String) : optional (detail: Assignment)`
+- `_getDetail(assignment: String) : optional (detail: Assignment)`
+- `_getAssignments() : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String | Null, acceptsSubmissions: Boolean, audience: Audience, targets: Strings, status: String, createdAt: Date, updatedAt: Date | Null)`
+- `_getAssigned(assignee: String) : many (assignment: String, release: String, dueOverride: String | Null, status: ASSIGNED)`
+- `_getAssignees(assignment: String) : many (assignee: String)`
+- `_isAssigned(assignment: String, assignee: String) : one (assigned: Boolean)`
+- `_getPublishedForAudience(audience: String | Null) : many (assignment: String)`
+- `_getPublishedInWindow(start: String | Date, end: String | Date) : many (assignment: String)`
 
-##### `_getAssignments () : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String | Null, acceptsSubmissions: Boolean, audience: Audience, targets: Strings, status: String, createdAt: Date, updatedAt: Date | Null)`
+#### Selected instances and bindings
 
-##### `_getAssigned (assignee: String) : many (assignment: String, release: String, dueOverride: String | Null, status: ASSIGNED)`
-
-##### `_getAssignees (assignment: String) : many (assignee: String)`
-
-##### `_isAssigned (assignment: String, assignee: String) : one (assigned: Boolean)`
-
-##### `_getPublishedForAudience (audience: String | Null) : many (assignment: String)`
-
-##### `_getPublishedInWindow (start: String | Date, end: String | Date) : many (assignment: String)`
+- `Assigning`
+  - `Assigning.Author` is `Authenticating.User` — [Commons application types](../design/types.md), line 22.
+  - `Assigning.Assignee` is `Authenticating.User` — [Commons application types](../design/types.md), line 25.
+  - `Assigning.Sections` is `SectionList` — [Commons application types](../design/types.md), line 28.
 
 ### Authenticating
 
-**Purpose.** Let a person create an account with a username and password, then use those
-credentials to identify themselves later.
-
-**Principle.** Nadia registers with the username nadia, a password, and her email address. A
-user now exists for her. Later she authenticates with that username and
-password and is recognized as the same user.
-
-When Omar tries to register the username nadia, it is refused as taken. When
-he tries to authenticate with a guessed password, he is turned away without
-learning whether the username or the password was wrong.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Actions
 
-##### `register (username: String, password: String, email: String) : return (user: User)`
-
-**Authored behavior:**
-
-    where email looks like an address, username is within name length, username is well-formed,
-          password is within password length, and no user has username username
-    then
-      add a new user with username, a passwordVerifier derived from password, and email
-      return user
-    where email does not look like an address
-    then
-      refuse INVALID_BODY "The email address is not well formed."
-    where username is not within name length
-    then
-      refuse USERNAME_INVALID_LENGTH "The username must be 3 to 32 characters long."
-    where username is not well-formed
-    then
-      refuse USERNAME_INVALID_CHARS "The username must start with a letter and contain only letters, digits, hyphens, and underscores."
-    where password is not within password length
-    then
-      refuse PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
-    where some user has username username
-    then
-      refuse USERNAME_TAKEN "That username is already taken."
-
-**Registered refusal codes:** `INVALID_BODY`, `USERNAME_INVALID_LENGTH`, `USERNAME_INVALID_CHARS`, `PASSWORD_INVALID_LENGTH`, `USERNAME_TAKEN`
-
-##### `authenticate (username: String, password: String) : return (user: User)`
-
-**Authored behavior:**
-
-    where some user has username username and password matches its passwordVerifier
-    then
-      return that user
-    where no user has username username whose passwordVerifier matches password
-    then
-      refuse INVALID_CREDENTIALS "Unknown username or wrong password."
-
-**Registered refusal codes:** `INVALID_CREDENTIALS`
-
-##### `changePassword (user: User, oldPassword: String, newPassword: String) : return (user: User)`
-
-**Authored behavior:**
-
-    where the user exists and oldPassword matches its passwordVerifier, and newPassword is within password length
-    then
-      set the user's passwordVerifier to one derived from newPassword
-      return user
-    where the user does not exist or oldPassword does not match its passwordVerifier
-    then
-      refuse INVALID_CREDENTIALS "The current password is wrong."
-    where newPassword is not within password length
-    then
-      refuse PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
-
-**Registered refusal codes:** `INVALID_CREDENTIALS`, `PASSWORD_INVALID_LENGTH`
+- `register(username: String, password: String, email: String) : return (user: User)`
+  - Refuses `INVALID_BODY`: The email address is not well formed.
+  - Refuses `USERNAME_INVALID_LENGTH`: The username must be 3 to 32 characters long.
+  - Refuses `USERNAME_INVALID_CHARS`: The username must start with a letter and contain only letters, digits, hyphens, and underscores.
+  - Refuses `PASSWORD_INVALID_LENGTH`: The password must be 8 to 128 characters long.
+  - Refuses `USERNAME_TAKEN`: That username is already taken.
+- `authenticate(username: String, password: String) : return (user: User)`
+  - Refuses `INVALID_CREDENTIALS`: Unknown username or wrong password.
+- `changePassword(user: User, oldPassword: String, newPassword: String) : return (user: User)`
+  - Refuses `INVALID_CREDENTIALS`: The current password is wrong.
+  - Refuses `PASSWORD_INVALID_LENGTH`: The password must be 8 to 128 characters long.
 
 #### Queries
 
-##### `_getById (user: String) : optional (username: String, email: String)`
+- `_getById(user: String) : optional (username: String, email: String)`
+- `_getByUsername(username: String) : optional (user: String)`
+- `_getUserCount() : one (count: Number)`
+- `_search(query: String) : many (user: String, username: String)`
+- `_resolveIdentity(ref: String) : one (user: String | Null, username: String | Null)`
+- `_denotedUser(ref: String) : optional (user: String)`
 
-##### `_getByUsername (username: String) : optional (user: String)`
+#### Selected instances and bindings
 
-##### `_getUserCount () : one (count: Number)`
-
-##### `_search (query: String) : many (user: String, username: String)`
-
-##### `_resolveIdentity (ref: String) : one (user: String | Null, username: String | Null)`
-
-##### `_denotedUser (ref: String) : optional (user: String)`
+- `Authenticating`
 
 ### Banking
 
-**Purpose.** Give each learner a visible allowance of late days that staff can increase and
-the learner can apply to individual items of work.
-
-**Principle.** The course gives every learner three late days and limits each item to two. Ana
-applies two days to an essay. She cannot apply two more to a problem set because
-only one remains. Her advisor grants two extra days for conference travel, so
-the second use succeeds. Ana later cancels that use. Its days return to her
-balance, while the canceled use remains recorded.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Actions
 
-##### `setTerms (allowance: Number, perItemLimit: Number, unitHours: Number) : return ()`
-
-**Authored behavior:**
-
-    then
-      set the terms' allowance, perItemLimit, and unitHours from the inputs
-      return
-
-##### `grant (learner: Learner, days: Number, reason: String, at: Date) : return (grant: Grant)`
-
-**Authored behavior:**
-
-    where days is greater than zero
-    then
-      add a new grant with learner, days, and reason
-      set grant's grantedAt to at
-      return grant
-    where days is not greater than zero
-    then
-      refuse LATE_DAYS_MUST_BE_POSITIVE "A grant must be for a positive number of days."
-
-**Registered refusal codes:** `LATE_DAYS_MUST_BE_POSITIVE`
-
-##### `apply (learner: Learner, item: Item, days: Number, at: Date) : return (use: Use)`
-
-**Authored behavior:**
-
-    where days is greater than zero, days is at most the terms' perItemLimit, learner has no applied use for item, and days is at most the balance of learner
-    then
-      add a new use with learner, item, and days
-      set use's appliedAt to at
-      add use to applied
-      return use
-    where days is not greater than zero
-    then
-      refuse LATE_DAYS_MUST_BE_POSITIVE "Late days must be a positive number."
-    where days is greater than the terms' perItemLimit
-    then
-      refuse LATE_DAYS_EXCEED_MAX "That is more late days than any one item may absorb."
-    where learner has an applied use for item
-    then
-      refuse LATE_USE_ALREADY_EXISTS "Late days already stand applied to this item."
-    where days is greater than the balance of learner
-    then
-      refuse INSUFFICIENT_BALANCE "The learner's balance is short of the days requested."
-
-**Registered refusal codes:** `LATE_DAYS_MUST_BE_POSITIVE`, `LATE_DAYS_EXCEED_MAX`, `LATE_USE_ALREADY_EXISTS`, `INSUFFICIENT_BALANCE`
-
-##### `change (learner: Learner, item: Item, days: Number) : return (use: Use)`
-
-**Authored behavior:**
-
-    where the applied use of learner and item stands, days is at least zero, days is at most the terms' perItemLimit, and the increase over the use's days is at most the balance of learner
-    then
-      set use's days to days
-      return use
-    where learner has no applied use for item
-    then
-      refuse LATE_USE_NOT_FOUND "No late days stand applied to this item."
-    where days is less than zero
-    then
-      refuse LATE_DAYS_NEGATIVE "Late days cannot be negative."
-    where days is greater than the terms' perItemLimit
-    then
-      refuse LATE_DAYS_EXCEED_MAX "That is more late days than any one item may absorb."
-    where the increase over the use's days is greater than the balance of learner
-    then
-      refuse INSUFFICIENT_BALANCE "The learner's balance is short of the increase requested."
-
-**Registered refusal codes:** `LATE_USE_NOT_FOUND`, `LATE_DAYS_NEGATIVE`, `LATE_DAYS_EXCEED_MAX`, `INSUFFICIENT_BALANCE`
-
-##### `cancel (learner: Learner, item: Item) : return (use: Use)`
-
-**Authored behavior:**
-
-    where the applied use of learner and item stands
-    then
-      remove use from applied
-      add use to canceled
-      return use
-    where learner has no applied use for item
-    then
-      refuse LATE_USE_NOT_FOUND "No late days stand applied to this item."
-
-**Registered refusal codes:** `LATE_USE_NOT_FOUND`
+- `setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : return (allowance: Number, perItemLimit: Number, unitHours: Number)`
+- `grant(learner: Learner, days: Number, reason: String, at: Date) : return (grant: Grant)`
+  - Refuses `LATE_DAYS_MUST_BE_POSITIVE`: A grant must be for a positive number of days.
+- `apply(learner: Learner, item: Item, days: Number, at: Date) : return (use: Use)`
+  - Refuses `LATE_DAYS_MUST_BE_POSITIVE`: Late days must be a positive number.
+  - Refuses `LATE_DAYS_EXCEED_MAX`: That is more late days than any one item may absorb.
+  - Refuses `LATE_USE_ALREADY_EXISTS`: Late days already stand applied to this item.
+  - Refuses `INSUFFICIENT_BALANCE`: The learner's balance is short of the days requested.
+- `change(learner: Learner, item: Item, days: Number) : return (use: Use)`
+  - Refuses `LATE_USE_NOT_FOUND`: No late days stand applied to this item.
+  - Refuses `LATE_DAYS_NEGATIVE`: Late days cannot be negative.
+  - Refuses `LATE_DAYS_EXCEED_MAX`: That is more late days than any one item may absorb.
+  - Refuses `INSUFFICIENT_BALANCE`: The learner's balance is short of the increase requested.
+- `cancel(learner: Learner, item: Item) : return (use: Use)`
+  - Refuses `LATE_USE_NOT_FOUND`: No late days stand applied to this item.
 
 #### Queries
 
-##### `_getTerms () : one (allowance: Number, perItemLimit: Number, unitHours: Number)`
+- `_getTerms() : one (allowance: Number, perItemLimit: Number, unitHours: Number)`
+- `_getBalance(learner: String) : one (granted: Number, used: Number, remaining: Number)`
+- `_getApplied(learner: String, item: String) : optional (use: String, days: Number, appliedAt: Date)`
+- `_getUses(learner: String) : many (use: String, item: String, days: Number, status: String, appliedAt: Date)`
+- `_getUsesForItem(item: String) : many (learner: String, days: Number)`
+- `_getGrants(learner: String) : many (grant: String, days: Number, reason: String, grantedAt: Date)`
 
-##### `_getBalance (learner: String) : one (granted: Number, used: Number, remaining: Number)`
+#### Selected instances and bindings
 
-##### `_getApplied (learner: String, item: String) : optional (use: String, days: Number, appliedAt: Date)`
-
-##### `_getUses (learner: String) : many (use: String, item: String, days: Number, status: String, appliedAt: Date)`
-
-##### `_getUsesForItem (item: String) : many (learner: String, days: Number)`
-
-##### `_getGrants (learner: String) : many (grant: String, days: Number, reason: String, grantedAt: Date)`
+- `Banking`
+  - `Banking.Learner` is `Authenticating.User` — [Commons application types](../design/types.md), line 31.
+  - `Banking.Item` is `Assigning.Assignment` — [Commons application types](../design/types.md), line 34.
 
 ### Bookmarking
 
-**Purpose.** Let a user keep a private list of items they want to return to later.
-
-**Principle.** Ada saves a post, then saves another. Her list shows the newer bookmark first.
-Saving the first post again is refused. Removing it succeeds once and is refused
-the second time. Bob's bookmarks are independent of Ada's. Clearing an item
-removes its bookmarks from every user's list and succeeds when none exist.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Actions
 
-##### `save (user: User, item: Item, at: Date) : return (bookmark: Bookmark)`
-
-**Authored behavior:**
-
-    where no bookmark has this user and item
-    then
-      add a new bookmark with user, item, and savedAt at
-      return bookmark
-    where some bookmark has this user and item
-    then
-      refuse BOOKMARK_ALREADY_EXISTS "This user has already saved this item."
-
-**Registered refusal codes:** `BOOKMARK_ALREADY_EXISTS`
-
-##### `unsave (user: User, item: Item) : return (bookmark: Bookmark)`
-
-**Authored behavior:**
-
-    where some bookmark has this user and item
-    then
-      delete that bookmark
-      return bookmark
-    where no bookmark has this user and item
-    then
-      refuse BOOKMARK_NOT_FOUND "There is no such bookmark to remove."
-
-**Registered refusal codes:** `BOOKMARK_NOT_FOUND`
-
-##### `clearItem (item: Item) : return ()`
-
-**Authored behavior:**
-
-    then
-      remove every bookmark of item
-      return
+- `save(user: User, item: Item, at: Date) : return (bookmark: Bookmark)`
+  - Refuses `BOOKMARK_ALREADY_EXISTS`: This user has already saved this item.
+- `unsave(user: User, item: Item) : return (bookmark: Bookmark)`
+  - Refuses `BOOKMARK_NOT_FOUND`: There is no such bookmark to remove.
+- `clearItem(item: Item) : return (item: Item)`
 
 #### Queries
 
-##### `_getSaved (user: String) : many (item: String, savedAt: Date)`
+- `_getSaved(user: String) : many (item: String, savedAt: Date)`
+- `_isSaved(user: String, item: String) : one (saved: Boolean)`
 
-##### `_isSaved (user: String, item: String) : one (saved: Boolean)`
+#### Selected instances and bindings
+
+- `Bookmarking`
+  - `Bookmarking.User` is `Authenticating.User` — [Commons application types](../design/types.md), line 37.
+  - `Bookmarking.Item` is `Posting.Post` — [Commons application types](../design/types.md), line 40.
 
 ### Categorizing
 
-**Purpose.** Sort items into named categories. Each item belongs to at most one category, so
-its home and each category's contents can be read directly.
-
-**Principle.** Priya creates a Homework category and assigns a quiz to it. Assigning the quiz
-to Exams moves it there. Unassigning it leaves it with no category, and a
-second unassignment is refused. A second category named Homework is also
-refused. Deleting Exams leaves every item in it uncategorized.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 
 #### Actions
 
-##### `createCategory (name: String, description: String) : return (category: Category)`
-
-**Authored behavior:**
-
-    where no category has this name
-    then
-      add a new category with name and description
-      return category
-    where some category has this name
-    then
-      refuse CATEGORY_ALREADY_EXISTS "A category with this name already exists."
-
-**Registered refusal codes:** `CATEGORY_ALREADY_EXISTS`
-
-##### `assign (item: Item, category: Category) : return ()`
-
-**Authored behavior:**
-
-    where category in categories
-    then
-      set item's home to category, replacing any prior home
-      return
-    where category not in categories
-    then
-      refuse CATEGORY_NOT_FOUND "There is no such category."
-
-**Registered refusal codes:** `CATEGORY_NOT_FOUND`
-
-##### `unassign (item: Item) : return ()`
-
-**Authored behavior:**
-
-    where item in categorized
-    then
-      remove item from categorized
-      return
-    where item not in categorized
-    then
-      refuse ITEM_NOT_CATEGORIZED "This item is not in any category."
-
-**Registered refusal codes:** `ITEM_NOT_CATEGORIZED`
-
-##### `deleteCategory (category: Category) : return ()`
-
-**Authored behavior:**
-
-    where category in categories
-    then
-      remove every item whose home is category from categorized
-      delete category
-      return
-    where category not in categories
-    then
-      refuse CATEGORY_NOT_FOUND "There is no such category."
-
-**Registered refusal codes:** `CATEGORY_NOT_FOUND`
+- `createCategory(name: String, description: String) : return (category: Category)`
+  - Refuses `CATEGORY_ALREADY_EXISTS`: A category with this name already exists.
+- `assign(item: Item, category: Category) : return (item: Item)`
+  - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
+- `unassign(item: Item) : return (item: Item)`
+  - Refuses `ITEM_NOT_CATEGORIZED`: This item is not in any category.
+- `deleteCategory(category: Category) : return (category: Category)`
+  - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
 
 #### Queries
 
-##### `_getCategory (item: String) : optional (category: String, name: String, description: String)`
+- `_getCategory(item: String) : optional (category: String, name: String, description: String)`
+- `_getHome(item: String) : optional (home: Category)`
+- `_getItems(category: String) : many (item: String)`
+- `_getAllCategories() : many (category: String, name: String, description: String)`
 
-##### `_getHome (item: String) : optional (home: Category)`
+#### Selected instances and bindings
 
-##### `_getItems (category: String) : many (item: String)`
-
-##### `_getAllCategories () : many (category: String, name: String, description: String)`
+- `Categorizing`
+  - `Categorizing.Item` is `Posting.Post` — [Commons application types](../design/types.md), line 43.
 
 ### Conversing
 
-**Purpose.** Arrange items into conversations, with one root and replies that may have replies
-of their own.
-
-**Principle.** Noor starts a conversation with her question. Omar replies to it, and Priya
-replies to Omar. An item can appear in only one conversation, so placing Omar's
-answer again is refused. Omar's reply cannot be removed while Priya's reply is
-beneath it. Removing the last node also removes the conversation.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Actions
 
-##### `start (item: Item, at: Date) : return (conversation: Conversation, node: Node)`
-
-**Authored behavior:**
-
-    where no node has this item
-    then
-      add a new conversation with root node and createdAt at
-      add a new node with conversation, item, depth 0, and createdAt at
-      return conversation and node
-    where a node has this item
-    then
-      refuse ITEM_ALREADY_IN_CONVERSATION "This item is already in a conversation."
-
-**Registered refusal codes:** `ITEM_ALREADY_IN_CONVERSATION`
-
-##### `reply (item: Item, parent: Node, at: Date) : return (node: Node)`
-
-**Authored behavior:**
-
-    where parent not in nodes
-    then
-      refuse PARENT_NODE_NOT_FOUND "There is no such node to reply to."
-    where parent in nodes and a node has this item
-    then
-      refuse ITEM_ALREADY_IN_CONVERSATION "This item is already in a conversation."
-    where parent in nodes and no node has this item
-    then
-      add a new node with conversation the parent's conversation, item, parent,
-        depth one more than the parent's depth, and createdAt at
-      return node
-
-**Registered refusal codes:** `PARENT_NODE_NOT_FOUND`, `ITEM_ALREADY_IN_CONVERSATION`
-
-##### `remove (node: Node) : return ()`
-
-**Authored behavior:**
-
-    where node not in nodes
-    then
-      refuse NODE_NOT_FOUND "There is no such node."
-    where another node has node as its parent
-    then
-      refuse NODE_HAS_CHILDREN "This node has replies beneath it."
-    where node in nodes, no node has node as its parent, and another node shares its conversation
-    then
-      delete node
-      return
-    where node in nodes, no node has node as its parent, and no other node shares its conversation
-    then
-      delete node
-      delete its conversation
-      return
-
-**Registered refusal codes:** `NODE_NOT_FOUND`, `NODE_HAS_CHILDREN`
+- `start(item: Item, at: Date) : return (conversation: Conversation, node: Node)`
+  - Refuses `ITEM_ALREADY_IN_CONVERSATION`: This item is already in a conversation.
+- `reply(item: Item, parent: Node, at: Date) : return (node: Node)`
+  - Refuses `PARENT_NODE_NOT_FOUND`: There is no such node to reply to.
+  - Refuses `ITEM_ALREADY_IN_CONVERSATION`: This item is already in a conversation.
+- `remove(node: Node) : return (node: Node)`
+  - Refuses `NODE_NOT_FOUND`: There is no such node.
+  - Refuses `NODE_HAS_CHILDREN`: This node has replies beneath it.
 
 #### Queries
 
-##### `_getThread (conversation: String) : many (node: String, item: String, parent: String | Null, depth: Number)`
+- `_getThread(conversation: String) : many (node: String, item: String, parent: String | Null, depth: Number)`
+- `_getConversation(node: String) : optional (conversation: String)`
+- `_getNodeByItem(item: String) : optional (node: String)`
+- `_parentOf(node: String) : optional (parent: String)`
+- `_getItem(node: String) : optional (item: String)`
+- `_hasChildren(node: String) : one (present: Boolean)`
+- `_getConversations() : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)`
+- `_getConversationsByLastActivity() : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)`
 
-##### `_getConversation (node: String) : optional (conversation: String)`
+#### Selected instances and bindings
 
-##### `_getNodeByItem (item: String) : optional (node: String)`
-
-##### `_parentOf (node: String) : optional (parent: String)`
-
-##### `_getItem (node: String) : optional (item: String)`
-
-##### `_hasChildren (node: String) : one (present: Boolean)`
-
-##### `_getConversations () : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)`
-
-##### `_getConversationsByLastActivity () : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)`
+- `Conversing`
+  - `Conversing.Item` is `Posting.Post` — [Commons application types](../design/types.md), line 46.
 
 ### Flagging
 
-**Purpose.** Let a person report a concern about a target and let a moderator resolve all
-open concerns about that target as upheld or dismissed.
-
-**Principle.** Sam reports a post as spam, and Rita reports the same post for another reason.
-The post's open-flag count is now two. A moderator dismisses the reports, which
-closes both flags. Sam cannot open another flag on the post while his first is
-open. Unknown outcomes and targets without open flags are refused.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Actions
 
-##### `flag (reporter: User, target: Target, reason: String, at: Date) : return (flag: Flag)`
-
-**Authored behavior:**
-
-    where no flag in open has this reporter and this target
-    then
-      add a new flag with reporter, target, reason, and createdAt at
-      add flag to open
-      return flag
-    where some flag in open has this reporter and this target
-    then
-      refuse FLAG_ALREADY_EXISTS "You already have an open flag on this."
-
-**Registered refusal codes:** `FLAG_ALREADY_EXISTS`
-
-##### `resolve (target: Target, outcome: String) : return ()`
-
-**Authored behavior:**
-
-    where outcome is neither "upheld" nor "dismissed"
-    then
-      refuse VALIDATION_FAILED "An outcome must be upheld or dismissed."
-    where some flag in open has this target
-    then
-      remove every flag with this target from open
-      add each of them to upheld if outcome is "upheld", or to dismissed if outcome is "dismissed"
-      return
-    where no flag in open has this target
-    then
-      refuse FLAG_NOT_FOUND "There are no open flags on this."
-
-**Registered refusal codes:** `VALIDATION_FAILED`, `FLAG_NOT_FOUND`
-
-##### `clearTarget (target: Target) : return (target: Target)`
-
-**Authored behavior:**
-
-    then
-      delete every flag on target
-      return target
+- `flag(reporter: User, target: Target, reason: String, at: Date) : return (flag: Flag)`
+  - Refuses `FLAG_ALREADY_EXISTS`: You already have an open flag on this.
+- `resolve(target: Target, outcome: String) : return (target: Target)`
+  - Refuses `VALIDATION_FAILED`: An outcome must be upheld or dismissed.
+  - Refuses `FLAG_NOT_FOUND`: There are no open flags on this.
+- `clearTarget(target: Target) : return (target: Target)`
 
 #### Queries
 
-##### `_getOpenTargets () : many (target: String, count: Number)`
+- `_getOpenTargets() : many (target: String, count: Number)`
+- `_getFlags(target: String) : many (flag: String, reporter: String, reason: String, status: String, createdAt: Date)`
 
-##### `_getFlags (target: String) : many (flag: String, reporter: String, reason: String, status: String, createdAt: Date)`
+#### Selected instances and bindings
+
+- `Flagging`
+  - `Flagging.User` is `Authenticating.User` — [Commons application types](../design/types.md), line 49.
+  - `Flagging.Target` is `Posting.Post` — [Commons application types](../design/types.md), line 52.
 
 ### Formatting
 
-**Purpose.** Keep the rendered HTML for a target's source text and replace it when the source
-changes.
-
-**Principle.** Ben supplies a paragraph of source text and receives its rendered HTML. Editing
-the source replaces that rendering. Clearing the target removes the rendering;
-clearing it again still succeeds.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Actions
 
-##### `setSource (target: Target, source: String) : return (rendered: String)`
-
-**Authored behavior:**
-
-    then
-      delete any formatting for target
-      add a new formatting with target, source, and rendered source rendered
-      return rendered
-
-##### `clear (target: Target) : return ()`
-
-**Authored behavior:**
-
-    then
-      delete any formatting for target
-      return
+- `setSource(target: Target, source: String) : return (target: Target, rendered: String)`
+- `clear(target: Target) : return (target: Target)`
 
 #### Queries
 
-##### `_getRendered (target: String) : optional (rendered: String)`
+- `_getRendered(target: String) : optional (rendered: String)`
+
+#### Selected instances and bindings
+
+- `Formatting`
+  - `Formatting.Target` is `Posting.Post` — [Commons application types](../design/types.md), line 55.
 
 ### Grading
 
-**Purpose.** Give each learner one grade per item, with a score, maximum, feedback, and a
-clear draft, released, or excused status. Each grade keeps the maximum used
-when it was recorded.
-
-**Principle.** Ms. Okafor records Ana's essay grade as 42 out of 50, revises the draft to 45,
-and releases it. Further recording is refused until she retracts it. She then
-records 44 and releases every draft for the essay. Ben is excused, so recording
-a score for him is refused. A score of 60 out of 50 is also refused.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Actions
 
-##### `record (learner: Learner, item: Item, evidence: Evidence, grader: Grader, score: Number, outOf: Number, feedback: String, at: Date) : return (grade: Grade)`
-
-**Authored behavior:**
-
-    where score is within outOf and the grade of learner and item is in draft
-    then
-      set grade's evidence, grader, score, outOf, and feedback from the inputs
-      set grade's updatedAt to at
-      return grade
-    where score is within outOf and learner has no grade for item
-    then
-      add a new grade with learner, item, evidence, grader, score, outOf, and feedback
-      set grade's updatedAt to at
-      add grade to draft
-      return grade
-    where score is not within outOf
-    then
-      refuse SCORE_OUT_OF_RANGE "The score must be between zero and what the grade is out of."
-    where the grade of learner and item is in released
-    then
-      refuse GRADE_ALREADY_RELEASED "This grade has already been released."
-    where the grade of learner and item is in excused
-    then
-      refuse LEARNER_EXCUSED "This learner has been excused from this item."
-
-**Registered refusal codes:** `SCORE_OUT_OF_RANGE`, `GRADE_ALREADY_RELEASED`, `LEARNER_EXCUSED`
-
-##### `scoreCriterion (learner: Learner, item: Item, criterion: Criterion, points: Number, outOf: Number, feedback: String) : return (criterionScore: CriterionScore)`
-
-**Authored behavior:**
-
-    where the grade of learner and item is in draft, points is within outOf, and grade has a criterionScore for criterion
-    then
-      set criterionScore's points, outOf, and feedback from the inputs
-      return criterionScore
-    where the grade of learner and item is in draft, points is within outOf, and grade has no criterionScore for criterion
-    then
-      add a new criterionScore with grade, criterion, points, outOf, and feedback
-      return criterionScore
-    where learner has no grade for item
-    then
-      refuse GRADE_NOT_FOUND "There is no grade for this learner and item."
-    where the grade of learner and item is in released
-    then
-      refuse GRADE_ALREADY_RELEASED "This grade has already been released."
-    where the grade of learner and item is in excused
-    then
-      refuse LEARNER_EXCUSED "This learner has been excused from this item."
-    where points is not within outOf
-    then
-      refuse SCORE_OUT_OF_RANGE "The points must be between zero and what the criterion is out of."
-
-**Registered refusal codes:** `GRADE_NOT_FOUND`, `GRADE_ALREADY_RELEASED`, `LEARNER_EXCUSED`, `SCORE_OUT_OF_RANGE`
-
-##### `release (learner: Learner, item: Item, at: Date) : return (grade: Grade)`
-
-**Authored behavior:**
-
-    where the grade of learner and item is in draft
-    then
-      remove grade from draft
-      add grade to released
-      set grade's releasedAt to at and updatedAt to at
-      return grade
-    where learner has no grade in draft for item
-    then
-      refuse GRADE_DRAFT_NOT_FOUND "There is no draft grade for this learner and item."
-
-**Registered refusal codes:** `GRADE_DRAFT_NOT_FOUND`
-
-##### `releaseItem (item: Item, at: Date) : return (released: Grades)`
-
-**Authored behavior:**
-
-    then
-      remove every draft grade of item from draft and add each to released
-      set each one's releasedAt to at and updatedAt to at
-      return released, the grades so released, each with its learner
-
-##### `retract (learner: Learner, item: Item, at: Date) : return (grade: Grade)`
-
-**Authored behavior:**
-
-    where the grade of learner and item is in released
-    then
-      remove grade from released
-      add grade to draft
-      set grade's releasedAt to none and updatedAt to at
-      return grade
-    where learner has no released grade for item
-    then
-      refuse GRADE_RELEASED_NOT_FOUND "There is no released grade for this learner and item."
-
-**Registered refusal codes:** `GRADE_RELEASED_NOT_FOUND`
-
-##### `excuse (learner: Learner, item: Item, grader: Grader, feedback: String, at: Date) : return (grade: Grade)`
-
-**Authored behavior:**
-
-    where learner has a grade for item
-    then
-      remove grade from draft and from released
-      add grade to excused
-      set grade's score to 0, grader to grader, feedback to feedback, releasedAt to none, and updatedAt to at
-      return grade
-    where learner has no grade for item
-    then
-      refuse GRADE_NOT_FOUND "There is no grade for this learner and item."
-
-**Registered refusal codes:** `GRADE_NOT_FOUND`
-
-##### `clearCriterionScores (criterion: Criterion) : return ()`
-
-**Authored behavior:**
-
-    then
-      delete every criterionScore for criterion
-      return
+- `record(learner: Learner, item: Item, evidence: Evidence, grader: Grader, score: Number, outOf: Number, feedback: String, at: Date) : return (grade: Grade)`
+  - Refuses `SCORE_OUT_OF_RANGE`: The score must be between zero and what the grade is out of.
+  - Refuses `GRADE_ALREADY_RELEASED`: This grade has already been released.
+  - Refuses `LEARNER_EXCUSED`: This learner has been excused from this item.
+- `scoreCriterion(learner: Learner, item: Item, criterion: Criterion, points: Number, outOf: Number, feedback: String) : return (criterionScore: CriterionScore)`
+  - Refuses `GRADE_NOT_FOUND`: There is no grade for this learner and item.
+  - Refuses `GRADE_ALREADY_RELEASED`: This grade has already been released.
+  - Refuses `LEARNER_EXCUSED`: This learner has been excused from this item.
+  - Refuses `SCORE_OUT_OF_RANGE`: The points must be between zero and what the criterion is out of.
+- `release(learner: Learner, item: Item, at: Date) : return (grade: Grade)`
+  - Refuses `GRADE_DRAFT_NOT_FOUND`: There is no draft grade for this learner and item.
+- `releaseItem(item: Item, at: Date) : return (released: Grades)`
+- `retract(learner: Learner, item: Item, at: Date) : return (grade: Grade)`
+  - Refuses `GRADE_RELEASED_NOT_FOUND`: There is no released grade for this learner and item.
+- `excuse(learner: Learner, item: Item, grader: Grader, feedback: String, at: Date) : return (grade: Grade)`
+  - Refuses `GRADE_NOT_FOUND`: There is no grade for this learner and item.
+- `clearCriterionScores(criterion: Criterion) : return (criterion: Criterion)`
 
 #### Queries
 
-##### `_getGrade (learner: String, item: String) : optional (grade: String, score: Number, outOf: Number, status: String, feedback: String)`
+- `_getGrade(learner: String, item: String) : optional (grade: String, score: Number, outOf: Number, status: String, feedback: String)`
+- `_getGradesForLearner(learner: String) : many (item: String, grade: String, score: Number, outOf: Number, status: String, feedback: String)`
+- `_getGradesForItem(item: String) : many (learner: String, grade: String, score: Number, status: String)`
+- `_getCriterionScores(learner: String, item: String) : many (criterion: String, points: Number, feedback: String)`
 
-##### `_getGradesForLearner (learner: String) : many (item: String, grade: String, score: Number, outOf: Number, status: String, feedback: String)`
+#### Selected instances and bindings
 
-##### `_getGradesForItem (item: String) : many (learner: String, grade: String, score: Number, status: String)`
-
-##### `_getCriterionScores (learner: String, item: String) : many (criterion: String, points: Number, feedback: String)`
+- `Grading`
+  - `Grading.Learner` is `Authenticating.User` — [Commons application types](../design/types.md), line 58.
+  - `Grading.Item` is `Assigning.Assignment` — [Commons application types](../design/types.md), line 61.
+  - `Grading.Evidence` is `GradeEvidence` — [Commons application types](../design/types.md), line 64.
+  - `Grading.Grader` is `Authenticating.User` — [Commons application types](../design/types.md), line 67.
+  - `Grading.Criterion` is `Itemizing.Criterion` — [Commons application types](../design/types.md), line 70.
 
 ### Inviting
 
-**Purpose.** Issue durable, single-use invitations through an application-selected delivery
-channel.
-
-**Principle.** An administrator invites Nadia at an address on a delivery channel. The
-application creates one durable, non-expiring invitation with a temporary credential.
-Inviting the same channel and address again returns the same invitation and
-credential; it does not rotate them. Nadia uses both values to claim the
-invitation once.
-
-Inviting does not interpret channels or addresses. A composition chooses the
-channel and delegates validation, normalization, and delivery to the concept
-that owns that channel.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Actions
 
-##### `invite (channel: String, address: String, at: Date) : return (invitation: Invitation, channel: String, address: String, credential: String, created: Boolean)`
-
-**Authored behavior:**
-
-    where no invitation has channel and address
-    then
-      add a new invitation with createdAt and lastInvitedAt at, inviteCount 1, and no user
-      return invitation, channel, address, its derived credential, and true
-    where an unclaimed invitation has channel and address
-    then
-      set its lastInvitedAt to at and increment its inviteCount
-      return that invitation, channel, address, its unchanged derived credential, and false
-    where a claimed invitation has channel and address
-    then
-      refuse INVITATION_ALREADY_CLAIMED "That invitation has already been used."
-
-**Registered refusal codes:** `INVITATION_ALREADY_CLAIMED`
-
-##### `verify (invitation: Invitation, credential: String, channel: String) : return (invitation: Invitation, address: String)`
-
-**Authored behavior:**
-
-    where invitation exists on channel, has no user, and credential matches
-    then
-      return invitation and its address
-    where no such unclaimed invitation matches
-    then
-      refuse INVITATION_INVALID "That invitation is not valid."
-
-**Registered refusal codes:** `INVITATION_INVALID`
-
-##### `claim (invitation: Invitation, credential: String, user: String) : return (invitation: Invitation, channel: String, address: String)`
-
-**Authored behavior:**
-
-    where invitation exists, has no user, and credential matches
-    then
-      set its user to user
-      return invitation, channel, and address
-    where no such unclaimed invitation matches
-    then
-      refuse INVITATION_INVALID "That invitation is not valid."
-
-**Registered refusal codes:** `INVITATION_INVALID`
+- `invite(channel: String, address: String, at: Date) : return (invitation: Invitation, channel: String, address: String, credential: String, created: Boolean)`
+  - Refuses `INVITATION_ALREADY_CLAIMED`: That invitation has already been used.
+- `verify(invitation: Invitation, credential: String, channel: String) : return (invitation: Invitation, address: String)`
+  - Refuses `INVITATION_INVALID`: That invitation is not valid.
+- `claim(invitation: Invitation, credential: String, user: String) : return (invitation: Invitation, channel: String, address: String)`
+  - Refuses `INVITATION_INVALID`: That invitation is not valid.
 
 #### Queries
 
-##### `_getAvailable (invitation: String, credential: String) : optional (channel: String, address: String)`
+- `_getAvailable(invitation: String, credential: String) : optional (channel: String, address: String)`
+- `_getInvitations() : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: String | Null)`
 
-##### `_getInvitations () : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: String | Null)`
+#### Selected instances and bindings
+
+- `Inviting`
 
 ### Itemizing
 
-**Purpose.** Describe how an item is assessed with a label, a maximum score, and optional
-ordered criteria.
-
-**Principle.** Professor Lee configures the midterm as a grade item worth 100 points. She adds
-Argument, worth 60, and Style, worth 40, in that order. A later `ensureItem`
-request finds the existing item and leaves it unchanged. Adding a criterion to
-an item that has not been configured is refused. Archiving the midterm removes
-it from the active items.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Actions
 
-##### `configureItem (item: Item, label: String, maxPoints: Number) : return (gradeItem: GradeItem)`
-
-**Authored behavior:**
-
-    where maxPoints is a workable maximum and a gradeItem with item is in active
-    then
-      set gradeItem's label to label and maxPoints to maxPoints
-      return gradeItem
-    where maxPoints is a workable maximum and no gradeItem with item is in active
-    then
-      add a new gradeItem with item, label, and maxPoints
-      add gradeItem to active
-      return gradeItem
-    where maxPoints is not a workable maximum
-    then
-      refuse SCORE_OUT_OF_RANGE "The maximum must be at least zero."
-
-**Registered refusal codes:** `SCORE_OUT_OF_RANGE`
-
-##### `ensureItem (item: Item, label: String, maxPoints: Number) : return (gradeItem: GradeItem)`
-
-**Authored behavior:**
-
-    where a gradeItem with item is in active
-    then
-      return gradeItem
-    where no gradeItem with item is in active
-    then
-      add a new gradeItem with item, label, and maxPoints
-      add gradeItem to active
-      return gradeItem
-
-##### `archiveItem (item: Item) : return (gradeItem: GradeItem)`
-
-**Authored behavior:**
-
-    where a gradeItem with item is in active
-    then
-      remove gradeItem from active
-      add gradeItem to archived
-      return gradeItem
-    where no gradeItem with item is in active
-    then
-      refuse GRADE_ITEM_NOT_FOUND "There is no active grade item for this."
-
-**Registered refusal codes:** `GRADE_ITEM_NOT_FOUND`
-
-##### `addCriterion (item: Item, name: String, maxPoints: Number, position: Number) : return (criterion: Criterion)`
-
-**Authored behavior:**
-
-    where a gradeItem with item is in active
-    then
-      add a new criterion with item, name, maxPoints, and position
-      return criterion
-    where no gradeItem with item is in active
-    then
-      refuse GRADE_ITEM_NOT_FOUND "There is no active grade item for this."
-
-**Registered refusal codes:** `GRADE_ITEM_NOT_FOUND`
-
-##### `reviseCriterion (criterion: Criterion, name: String, maxPoints: Number, position: Number) : return ()`
-
-**Authored behavior:**
-
-    where criterion in criteria
-    then
-      set criterion's name, maxPoints, and position from the inputs
-      return
-    where criterion not in criteria
-    then
-      refuse CRITERION_NOT_FOUND "There is no such criterion."
-
-**Registered refusal codes:** `CRITERION_NOT_FOUND`
-
-##### `removeCriterion (criterion: Criterion) : return ()`
-
-**Authored behavior:**
-
-    where criterion in criteria
-    then
-      delete criterion
-      return
-    where criterion not in criteria
-    then
-      refuse CRITERION_NOT_FOUND "There is no such criterion."
-
-**Registered refusal codes:** `CRITERION_NOT_FOUND`
+- `configureItem(item: Item, label: String, maxPoints: Number) : return (gradeItem: GradeItem)`
+  - Refuses `SCORE_OUT_OF_RANGE`: The maximum must be at least zero.
+- `ensureItem(item: Item, label: String, maxPoints: Number) : return (gradeItem: GradeItem)`
+- `archiveItem(item: Item) : return (gradeItem: GradeItem)`
+  - Refuses `GRADE_ITEM_NOT_FOUND`: There is no active grade item for this.
+- `addCriterion(item: Item, name: String, maxPoints: Number, position: Number) : return (criterion: Criterion)`
+  - Refuses `GRADE_ITEM_NOT_FOUND`: There is no active grade item for this.
+- `reviseCriterion(criterion: Criterion, name: String, maxPoints: Number, position: Number) : return (criterion: Criterion)`
+  - Refuses `CRITERION_NOT_FOUND`: There is no such criterion.
+- `removeCriterion(criterion: Criterion) : return (criterion: Criterion)`
+  - Refuses `CRITERION_NOT_FOUND`: There is no such criterion.
 
 #### Queries
 
-##### `_getItem (item: String) : optional (item: String, label: String, maxPoints: Number, status: String)`
+- `_getItem(item: String) : optional (item: String, label: String, maxPoints: Number, status: String)`
+- `_getItems() : many (item: String, label: String, maxPoints: Number)`
+- `_getCriteria(item: String) : many (criterion: String, name: String, maxPoints: Number, position: Number)`
+- `_getCriterion(criterion: String) : optional (item: String, name: String, maxPoints: Number)`
 
-##### `_getItems () : many (item: String, label: String, maxPoints: Number)`
+#### Selected instances and bindings
 
-##### `_getCriteria (item: String) : many (criterion: String, name: String, maxPoints: Number, position: Number)`
-
-##### `_getCriterion (criterion: String) : optional (item: String, name: String, maxPoints: Number)`
+- `Itemizing`
+  - `Itemizing.Item` is `Assigning.Assignment` — [Commons application types](../design/types.md), line 73.
 
 ### Linking
 
-**Purpose.** Record the ordered targets that a source links to, and support reading or
-removing those links from either direction.
-
-**Principle.** Noor's guide links to two worksheets, which are returned in the order she named
-them. After she edits the guide to link to one worksheet, setting the links
-replaces the previous list. Clearing a discarded worksheet's backlinks removes
-it from every source. Clearing links that do not exist still succeeds.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Actions
 
-##### `setLinks (source: Source, targets: Targets) : return ()`
-
-**Authored behavior:**
-
-    then
-      set source's links to targets, replacing any prior links
-      return
-
-##### `setLinksFrom (source: Source, content: String) : return ()`
-
-**Authored behavior:**
-
-    then
-      read each nonempty target between [[ and ]] from left to right
-      set source's links to those targets in that order, preserving repeats
-      return
-
-##### `clearLinks (source: Source) : return ()`
-
-**Authored behavior:**
-
-    then
-      remove all of source's links
-      return
-
-##### `clearBacklinks (target: Target) : return ()`
-
-**Authored behavior:**
-
-    then
-      remove target from every source's links
-      return
+- `setLinks(source: Source, targets: Targets) : return (source: Source)`
+- `setLinksFrom(source: Source, content: String) : return (source: Source)`
+- `clearLinks(source: Source) : return (source: Source)`
+- `clearBacklinks(target: Target) : return (target: Target)`
 
 #### Queries
 
-##### `_getLinks (source: String) : many (target: String)`
+- `_getLinks(source: String) : many (target: String)`
+- `_getBacklinks(target: String) : many (source: String)`
 
-##### `_getBacklinks (target: String) : many (source: String)`
+#### Selected instances and bindings
+
+- `Linking`
+  - `Linking.Source` is `Posting.Post` — [Commons application types](../design/types.md), line 76.
+  - `Linking.Target` is `Posting.Post` — [Commons application types](../design/types.md), line 79.
+  - `Linking.Targets` is `StringList` — [Commons application types](../design/types.md), line 82.
 
 ### Locking
 
-**Purpose.** Record when a target is locked and allow that lock to be removed later.
-
-**Principle.** When the deadline passes, Dana locks a report and the action records the time.
-Locking it again is refused. After an extension, Dana unlocks it. Unlocking an
-unlocked report is also refused.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Actions
 
-##### `lock (target: Target, at: Date) : return ()`
-
-**Authored behavior:**
-
-    where no lock has this target
-    then
-      add a new lock with target and lockedAt at
-      return
-    where a lock has this target
-    then
-      refuse TARGET_ALREADY_LOCKED "This is already locked."
-
-**Registered refusal codes:** `TARGET_ALREADY_LOCKED`
-
-##### `unlock (target: Target) : return ()`
-
-**Authored behavior:**
-
-    where a lock has this target
-    then
-      delete the lock
-      return
-    where no lock has this target
-    then
-      refuse TARGET_NOT_LOCKED "This is not locked."
-
-**Registered refusal codes:** `TARGET_NOT_LOCKED`
+- `lock(target: Target, at: Date) : return (target: Target)`
+  - Refuses `TARGET_ALREADY_LOCKED`: This is already locked.
+- `unlock(target: Target) : return (target: Target)`
+  - Refuses `TARGET_NOT_LOCKED`: This is not locked.
 
 #### Queries
 
-##### `_isLocked (target: String) : one (locked: Boolean)`
+- `_isLocked(target: String) : one (locked: Boolean)`
+- `_getLocked() : many (target: String, lockedAt: Date)`
 
-##### `_getLocked () : many (target: String, lockedAt: Date)`
+#### Selected instances and bindings
+
+- `Locking`
+  - `Locking.Target` is `Posting.Post` — [Commons application types](../design/types.md), line 85.
 
 ### Mailing
 
-**Purpose.** Keep a durable outbox of email messages that the application has decided to
-send, independently of the SMTP transport that delivers them.
-
-**Principle.** An application queues an email it has already rendered. A host worker reads
-queued messages, sends them through SMTP, and marks successful deliveries sent.
-Failed messages remain queued for a later attempt.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Actions
 
-##### `normalizeRecipient (recipient: String) : return (recipient: String)`
-
-**Authored behavior:**
-
-    where recipient looks like an email address
-    then
-      return the trimmed, lower-cased recipient
-    where recipient does not look like an email address
-    then
-      refuse MAIL_RECIPIENT_INVALID "The mail recipient is not well formed."
-
-**Registered refusal codes:** `MAIL_RECIPIENT_INVALID`
-
-##### `enqueue (key: String, recipient: String, subject: String, text: String, html: String, at: Date) : return (message: Message)`
-
-**Authored behavior:**
-
-    where recipient looks like an email address and no message has key
-    then
-      add the message with its normalized recipient and no sentAt
-      return message
-    where recipient looks like an email address and a message already has key
-    then
-      clear its sentAt and replace its delivery content using the normalized recipient
-      return that message
-    where recipient does not look like an email address
-    then
-      refuse MAIL_RECIPIENT_INVALID "The mail recipient is not well formed."
-
-**Registered refusal codes:** `MAIL_RECIPIENT_INVALID`
-
-##### `markSent (message: Message, at: Date) : return (message: Message)`
-
-**Authored behavior:**
-
-    where message exists
-    then
-      set sentAt to at
-      return message
-    where message does not exist
-    then
-      refuse MAIL_NOT_FOUND "There is no such mail message."
-
-**Registered refusal codes:** `MAIL_NOT_FOUND`
+- `normalizeRecipient(recipient: String) : return (recipient: String)`
+  - Refuses `MAIL_RECIPIENT_INVALID`: The mail recipient is not well formed.
+- `enqueue(key: String, recipient: String, subject: String, text: String, html: String, at: Date) : return (message: Message)`
+  - Refuses `MAIL_RECIPIENT_INVALID`: The mail recipient is not well formed.
+- `markSent(message: Message, at: Date) : return (message: Message)`
+  - Refuses `MAIL_NOT_FOUND`: There is no such mail message.
 
 #### Queries
 
-##### `_getPending () : many (message: String, key: String, recipient: String, subject: String, text: String, html: String, createdAt: Date)`
+- `_getPending() : many (message: String, key: String, recipient: String, subject: String, text: String, html: String, createdAt: Date)`
+- `_getStatus(message: String) : optional (sentAt: Date | Null)`
 
-##### `_getStatus (message: String) : optional (sentAt: Date | Null)`
+#### Selected instances and bindings
+
+- `Mailing`
 
 ### Notifying
 
-**Purpose.** Give each person an inbox of events that concern them, with actions to mark,
-dismiss, or clear notifications.
-
-**Principle.** Someone replies to Mara's post, creating an unread notification that identifies
-the event and its subject. Mara marks it read, which lowers her unread count
-without removing it. She later marks every notification read and dismisses one.
-Dismissing it again is refused. Noah cannot read or dismiss Mara's
-notifications.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Actions
 
-##### `notify (recipient: Person, kind: String, subject: String, link: String, at: Date) : return (notification: Notification)`
-
-**Authored behavior:**
-
-    then
-      add a new notification with recipient, kind, subject, link, and createdAt at
-      add notification to unread
-      return notification
-
-##### `markRead (notification: Notification, recipient: Person) : return (notification: Notification)`
-
-**Authored behavior:**
-
-    where notification in notifications and its recipient is recipient
-    then
-      remove notification from unread
-      return notification
-    where no such notification of this recipient
-    then
-      refuse NOTIFICATION_NOT_FOUND "There is no such notification."
-
-**Registered refusal codes:** `NOTIFICATION_NOT_FOUND`
-
-##### `markAllRead (recipient: Person) : return (recipient: Person)`
-
-**Authored behavior:**
-
-    then
-      remove every notification of recipient from unread
-      return recipient
-
-##### `dismiss (notification: Notification, recipient: Person) : return (notification: Notification)`
-
-**Authored behavior:**
-
-    where notification in notifications and its recipient is recipient
-    then
-      delete notification
-      return notification
-    where no such notification of this recipient
-    then
-      refuse NOTIFICATION_NOT_FOUND "There is no such notification."
-
-**Registered refusal codes:** `NOTIFICATION_NOT_FOUND`
-
-##### `clearSubject (subject: Target) : return (subject: Target)`
-
-**Authored behavior:**
-
-    then
-      delete every notification about subject
-      return subject
+- `notify(recipient: Person, kind: String, subject: String, link: String, at: Date) : return (notification: Notification)`
+- `markRead(notification: Notification, recipient: Person) : return (notification: Notification)`
+  - Refuses `NOTIFICATION_NOT_FOUND`: There is no such notification.
+- `markAllRead(recipient: Person) : return (recipient: Person)`
+- `dismiss(notification: Notification, recipient: Person) : return (notification: Notification)`
+  - Refuses `NOTIFICATION_NOT_FOUND`: There is no such notification.
+- `clearSubject(subject: Target) : return (subject: Target)`
 
 #### Queries
 
-##### `_getInbox (recipient: String) : many (notification: String, kind: String, subject: String, link: String | Null, createdAt: Date, read: Boolean)`
+- `_getInbox(recipient: String) : many (notification: String, kind: String, subject: String, link: String | Null, createdAt: Date, read: Boolean)`
+- `_hasFor(user: String, subject: String) : one (notified: Boolean)`
+- `_getUnreadCount(recipient: String) : one (count: Number)`
 
-##### `_hasFor (user: String, subject: String) : one (notified: Boolean)`
+#### Selected instances and bindings
 
-##### `_getUnreadCount (recipient: String) : one (count: Number)`
+- `Notifying`
+  - `Notifying.Person` is `Authenticating.User` — [Commons application types](../design/types.md), line 88.
+  - `Notifying.Target` is `Posting.Post` — [Commons application types](../design/types.md), line 91.
 
 ### Noting
 
-**Purpose.** Let staff keep notes about a learner, choose whether to show each note to that
-learner, and move notes through open, resolved, and archived states.
-
-**Principle.** Ms. Okafor writes a note about Ana's project work, shows it to Ana, and Ana
-acknowledges it. A second note about a missed meeting remains staff-only and has
-a follow-up date. After the meeting, Ms. Okafor revises, resolves, and archives
-that note. Revising a resolved note is refused; restoring it makes it open
-again. Hiding an acknowledged note does not erase Ana's acknowledgment.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Actions
 
-##### `write (author: Author, learner: Learner, body: String, visibility: String, tags: Strings, followUpAt: Date, at: Date) : return (note: Note)`
-
-**Authored behavior:**
-
-    where visibility names a visibility
-    then
-      add a new note with author, learner, body, tags, and followUpAt
-      set note's createdAt to at
-      add note to open
-      add note to disclosed if visibility is "LEARNER_VISIBLE"
-      return note
-    where visibility does not name a visibility
-    then
-      refuse INVALID_VISIBILITY "Visibility must be staff-only or learner-visible."
-
-**Registered refusal codes:** `INVALID_VISIBILITY`
-
-##### `revise (note: Note, body: String, visibility: String, tags: Strings, followUpAt: Date, at: Date) : return (note: Note)`
-
-**Authored behavior:**
-
-    where note in open and visibility names a visibility
-    then
-      set note's body, tags, and followUpAt from the inputs
-      set note's updatedAt to at
-      add note to disclosed if visibility is "LEARNER_VISIBLE", remove it from disclosed otherwise
-      return note
-    where no note has this note
-    then
-      refuse NOTE_NOT_FOUND "There is no such note."
-    where note not in open
-    then
-      refuse NOTE_NOT_OPEN "This note is no longer open."
-    where visibility does not name a visibility
-    then
-      refuse INVALID_VISIBILITY "Visibility must be staff-only or learner-visible."
-
-**Registered refusal codes:** `NOTE_NOT_FOUND`, `NOTE_NOT_OPEN`, `INVALID_VISIBILITY`
-
-##### `resolve (note: Note, at: Date) : return (note: Note)`
-
-**Authored behavior:**
-
-    where note in open
-    then
-      remove note from open
-      add note to resolved
-      set note's updatedAt to at
-      return note
-    where no note has this note
-    then
-      refuse NOTE_NOT_FOUND "There is no such note."
-    where note not in open
-    then
-      refuse NOTE_NOT_OPEN "This note is no longer open."
-
-**Registered refusal codes:** `NOTE_NOT_FOUND`, `NOTE_NOT_OPEN`
-
-##### `archive (note: Note, at: Date) : return (note: Note)`
-
-**Authored behavior:**
-
-    where note in resolved
-    then
-      remove note from resolved
-      add note to archived
-      set note's updatedAt to at
-      return note
-    where no note has this note
-    then
-      refuse NOTE_NOT_FOUND "There is no such note."
-    where note not in resolved
-    then
-      refuse NOTE_NOT_RESOLVED "Only a resolved note can be archived."
-
-**Registered refusal codes:** `NOTE_NOT_FOUND`, `NOTE_NOT_RESOLVED`
-
-##### `restore (note: Note, at: Date) : return (note: Note)`
-
-**Authored behavior:**
-
-    where note in resolved or note in archived
-    then
-      remove note from resolved and from archived
-      add note to open
-      set note's updatedAt to at
-      return note
-    where no note has this note
-    then
-      refuse NOTE_NOT_FOUND "There is no such note."
-    where note in open
-    then
-      refuse NOTE_NOT_RESTORABLE "This note cannot be restored."
-
-**Registered refusal codes:** `NOTE_NOT_FOUND`, `NOTE_NOT_RESTORABLE`
-
-##### `acknowledge (note: Note, learner: Learner, at: Date) : return (note: Note)`
-
-**Authored behavior:**
-
-    where note in disclosed and the learner of note is learner
-    then
-      set note's acknowledgedAt to at
-      return note
-    where no note has this note
-    then
-      refuse NOTE_NOT_FOUND "There is no such note."
-    where note not in disclosed
-    then
-      refuse NOTE_NOT_LEARNER_VISIBLE "This note is not shown to its learner."
-    where the learner of note is not learner
-    then
-      refuse NOTE_NOT_OWNER "Only the learner a note concerns may acknowledge it."
-
-**Registered refusal codes:** `NOTE_NOT_FOUND`, `NOTE_NOT_LEARNER_VISIBLE`, `NOTE_NOT_OWNER`
+- `write(author: Author, learner: Learner, body: String, visibility: String, tags: Strings, followUpAt: Date, at: Date) : return (note: Note)`
+  - Refuses `INVALID_VISIBILITY`: Visibility must be staff-only or learner-visible.
+- `revise(note: Note, body: String, visibility: String, tags: Strings, followUpAt: Date, at: Date) : return (note: Note)`
+  - Refuses `NOTE_NOT_FOUND`: There is no such note.
+  - Refuses `NOTE_NOT_OPEN`: This note is no longer open.
+  - Refuses `INVALID_VISIBILITY`: Visibility must be staff-only or learner-visible.
+- `resolve(note: Note, at: Date) : return (note: Note)`
+  - Refuses `NOTE_NOT_FOUND`: There is no such note.
+  - Refuses `NOTE_NOT_OPEN`: This note is no longer open.
+- `archive(note: Note, at: Date) : return (note: Note)`
+  - Refuses `NOTE_NOT_FOUND`: There is no such note.
+  - Refuses `NOTE_NOT_RESOLVED`: Only a resolved note can be archived.
+- `restore(note: Note, at: Date) : return (note: Note)`
+  - Refuses `NOTE_NOT_FOUND`: There is no such note.
+  - Refuses `NOTE_NOT_RESTORABLE`: This note cannot be restored.
+- `acknowledge(note: Note, learner: Learner, at: Date) : return (note: Note)`
+  - Refuses `NOTE_NOT_FOUND`: There is no such note.
+  - Refuses `NOTE_NOT_LEARNER_VISIBLE`: This note is not shown to its learner.
+  - Refuses `NOTE_NOT_OWNER`: Only the learner a note concerns may acknowledge it.
 
 #### Queries
 
-##### `_getNote (note: String) : optional (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date | Null, followUpAt: Date | Null, acknowledgedAt: Date | Null, tags: Strings)`
+- `_getNote(note: String) : optional (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date | Null, followUpAt: Date | Null, acknowledgedAt: Date | Null, tags: Strings)`
+- `_getActiveNotesFor(learner: String) : many (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date | Null, followUpAt: Date | Null, acknowledgedAt: Date | Null, tags: Strings)`
+- `_getShownTo(learner: String) : many (note: String, author: String, learner: String, body: String, status: String, createdAt: Date, updatedAt: Date | Null, followUpAt: Date | Null, acknowledgedAt: Date | Null, tags: Strings)`
+- `_getByAuthor(author: String) : many (note: String, learner: String, status: String, visibility: String, createdAt: Date)`
+- `_getOpenFollowUpsBefore(before: Date) : many (note: String, author: String, learner: String, body: String, followUpAt: Date, createdAt: Date)`
 
-##### `_getActiveNotesFor (learner: String) : many (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date | Null, followUpAt: Date | Null, acknowledgedAt: Date | Null, tags: Strings)`
+#### Selected instances and bindings
 
-##### `_getShownTo (learner: String) : many (note: String, author: String, learner: String, body: String, status: String, createdAt: Date, updatedAt: Date | Null, followUpAt: Date | Null, acknowledgedAt: Date | Null, tags: Strings)`
-
-##### `_getByAuthor (author: String) : many (note: String, learner: String, status: String, visibility: String, createdAt: Date)`
-
-##### `_getOpenFollowUpsBefore (before: Date) : many (note: String, author: String, learner: String, body: String, followUpAt: Date, createdAt: Date)`
+- `Noting`
+  - `Noting.Author` is `Authenticating.User` — [Commons application types](../design/types.md), line 94.
+  - `Noting.Learner` is `Authenticating.User` — [Commons application types](../design/types.md), line 97.
+  - `Noting.Strings` is `StringList` — [Commons application types](../design/types.md), line 100.
 
 ### Pinning
 
-**Purpose.** Let a scope keep selected items above its ordinary listing, ordered by priority.
-
-**Principle.** An administrator pins an announcement in a discussion. A second item with a
-higher priority appears first, and changing a priority changes the order.
-Pinning the same item twice in one scope is refused. Unpinning it succeeds once;
-unpinning it again or changing the priority of an unpinned item is refused. The
-same item may be pinned independently in another scope. Clearing an item
-removes all of its pins and succeeds when none exist.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Actions
 
-##### `pin (item: Item, scope: Scope, priority: Number, at: Date) : return (pin: Pin)`
-
-**Authored behavior:**
-
-    where no pin has this item and scope
-    then
-      add a new pin with item, scope, priority, and pinnedAt at
-      return pin
-    where some pin has this item and scope
-    then
-      refuse ITEM_ALREADY_PINNED "This item is already pinned in this scope."
-
-**Registered refusal codes:** `ITEM_ALREADY_PINNED`
-
-##### `unpin (item: Item, scope: Scope) : return (pin: Pin)`
-
-**Authored behavior:**
-
-    where some pin has this item and scope
-    then
-      delete that pin
-      return pin
-    where no pin has this item and scope
-    then
-      refuse ITEM_NOT_PINNED "There is no such pin to remove."
-
-**Registered refusal codes:** `ITEM_NOT_PINNED`
-
-##### `setPriority (item: Item, scope: Scope, priority: Number) : return (pin: Pin)`
-
-**Authored behavior:**
-
-    where some pin has this item and scope
-    then
-      set that pin's priority to priority
-      return pin
-    where no pin has this item and scope
-    then
-      refuse ITEM_NOT_PINNED "There is no such pin to reprioritize."
-
-**Registered refusal codes:** `ITEM_NOT_PINNED`
-
-##### `clearItem (item: Item) : return ()`
-
-**Authored behavior:**
-
-    then
-      remove every pin of item
-      return
+- `pin(item: Item, scope: Scope, priority: Number, at: Date) : return (pin: Pin)`
+  - Refuses `ITEM_ALREADY_PINNED`: This item is already pinned in this scope.
+- `unpin(item: Item, scope: Scope) : return (pin: Pin)`
+  - Refuses `ITEM_NOT_PINNED`: There is no such pin to remove.
+- `setPriority(item: Item, scope: Scope, priority: Number) : return (pin: Pin)`
+  - Refuses `ITEM_NOT_PINNED`: There is no such pin to reprioritize.
+- `clearItem(item: Item) : return (item: Item)`
 
 #### Queries
 
-##### `_getPinned (scope: String) : many (item: String, priority: Number)`
+- `_getPinned(scope: String) : many (item: String, priority: Number)`
+- `_isPinned(item: String, scope: String) : one (pinned: Boolean)`
 
-##### `_isPinned (item: String, scope: String) : one (pinned: Boolean)`
+#### Selected instances and bindings
+
+- `Pinning`
+  - `Pinning.Item` is `Posting.Post` — [Commons application types](../design/types.md), line 103.
+  - `Pinning.Scope` is `Context` — [Commons application types](../design/types.md), line 106.
 
 ### Posting
 
-**Purpose.** Let an author create, edit, and delete a post while retaining its author and
-creation time.
-
-**Principle.** On Monday Amara creates an announcement. On Wednesday she edits its content,
-and the post records the edit time. On Friday she deletes it. Deleting it again
-is refused because the post no longer exists.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Actions
 
-##### `create (author: Author, content: String, at: Date) : return (post: Post)`
-
-**Authored behavior:**
-
-    then
-      add a new post with author, content, and createdAt at
-      return post
-
-##### `edit (post: Post, content: String, at: Date) : return (post: Post)`
-
-**Authored behavior:**
-
-    where post in posts
-    then
-      set the post's content to content, and its editedAt to at
-      return post
-    where post not in posts
-    then
-      refuse POST_NOT_FOUND "There is no such post."
-
-**Registered refusal codes:** `POST_NOT_FOUND`
-
-##### `delete (post: Post) : return ()`
-
-**Authored behavior:**
-
-    where post in posts
-    then
-      delete post
-      return
-    where post not in posts
-    then
-      refuse POST_NOT_FOUND "There is no such post."
-
-**Registered refusal codes:** `POST_NOT_FOUND`
+- `create(author: Author, content: String, at: Date) : return (post: Post)`
+- `edit(post: Post, content: String, at: Date) : return (post: Post)`
+  - Refuses `POST_NOT_FOUND`: There is no such post.
+- `delete(post: Post) : return (post: Post)`
+  - Refuses `POST_NOT_FOUND`: There is no such post.
 
 #### Queries
 
-##### `_getPost (post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date | Null)`
+- `_getPost(post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date | Null)`
+- `_getByAuthor(author: String) : many (post: String)`
+- `_getMentions(post: String) : many (handle: String)`
+- `_isMentioned(post: String, handle: String) : one (mentioned: Boolean)`
 
-##### `_getByAuthor (author: String) : many (post: String)`
+#### Selected instances and bindings
 
-##### `_getMentions (post: String) : many (handle: String)`
-
-##### `_isMentioned (post: String, handle: String) : one (mentioned: Boolean)`
+- `Posting`
+  - `Posting.Author` is `Authenticating.User` — [Commons application types](../design/types.md), line 109.
 
 ### Profiling
 
-**Purpose.** Keep a display name, bio, avatar, and contact email for each user, so the user
-can be presented by profile details rather than only an identifier.
-
-**Principle.** Priya's profile is created with her display name and email; her bio and avatar
-start empty. A second profile for Priya is refused. She later changes her bio
-and avatar. Updating a profile that was never created is refused.
-
-A field never set reads as the empty string.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Actions
 
-##### `createProfile (user: User, displayName: String, email: String) : return (user: User)`
-
-**Authored behavior:**
-
-    where no profile has user user
-    then
-      add a new profile with user, displayName, and email, and with an empty bio and avatar
-      return user
-    where some profile has user user
-    then
-      refuse PROFILE_ALREADY_EXISTS "This user already has a profile."
-
-**Registered refusal codes:** `PROFILE_ALREADY_EXISTS`
-
-##### `setDisplayName (user: User, displayName: String) : return (user: User)`
-
-**Authored behavior:**
-
-    where some profile has user user
-    then
-      set that profile's displayName to displayName
-      return user
-    where no profile has user user
-    then
-      refuse PROFILE_NOT_FOUND "There is no profile for this user."
-
-**Registered refusal codes:** `PROFILE_NOT_FOUND`
-
-##### `setBio (user: User, bio: String) : return (user: User)`
-
-**Authored behavior:**
-
-    where some profile has user user
-    then
-      set that profile's bio to bio
-      return user
-    where no profile has user user
-    then
-      refuse PROFILE_NOT_FOUND "There is no profile for this user."
-
-**Registered refusal codes:** `PROFILE_NOT_FOUND`
-
-##### `setAvatar (user: User, avatar: String) : return (user: User)`
-
-**Authored behavior:**
-
-    where some profile has user user
-    then
-      set that profile's avatar to avatar
-      return user
-    where no profile has user user
-    then
-      refuse PROFILE_NOT_FOUND "There is no profile for this user."
-
-**Registered refusal codes:** `PROFILE_NOT_FOUND`
+- `createProfile(user: User, displayName: String, email: String) : return (user: User)`
+  - Refuses `PROFILE_ALREADY_EXISTS`: This user already has a profile.
+- `setDisplayName(user: User, displayName: String) : return (user: User)`
+  - Refuses `PROFILE_NOT_FOUND`: There is no profile for this user.
+- `setBio(user: User, bio: String) : return (user: User)`
+  - Refuses `PROFILE_NOT_FOUND`: There is no profile for this user.
+- `setAvatar(user: User, avatar: String) : return (user: User)`
+  - Refuses `PROFILE_NOT_FOUND`: There is no profile for this user.
 
 #### Queries
 
-##### `_getProfile (user: String) : optional (profile: Profile)`
+- `_getProfile(user: String) : optional (profile: Profile)`
+- `_getProfileFields(user: String) : optional (displayName: String, bio: String, avatar: String, email: String)`
 
-##### `_getProfileFields (user: String) : optional (displayName: String, bio: String, avatar: String, email: String)`
+#### Selected instances and bindings
+
+- `Profiling`
+  - `Profiling.User` is `Authenticating.User` — [Commons application types](../design/types.md), line 112.
 
 ### Reacting
 
-**Purpose.** Let a person add or remove a named response, such as a thumbs-up or heart, on a
-target.
-
-**Principle.** Noah reacts to a post with "up." Mara adds her own "up" and a "heart." Each
-person may add one reaction of each kind to the target. Noah's second "up" is
-refused. Removing it succeeds once and is refused the second time. Clearing a
-target removes every reaction and succeeds when none exist.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Actions
 
-##### `react (reactor: Person, target: Target, kind: String, at: Date) : return (reaction: Reaction)`
-
-**Authored behavior:**
-
-    where no reaction has this reactor, target, and kind
-    then
-      add a new reaction with reactor, target, kind, and reactedAt at
-      return reaction
-    where some reaction has this reactor, target, and kind
-    then
-      refuse REACTION_ALREADY_EXISTS "This person has already reacted to the target with this kind."
-
-**Registered refusal codes:** `REACTION_ALREADY_EXISTS`
-
-##### `unreact (reactor: Person, target: Target, kind: String) : return (reaction: Reaction)`
-
-**Authored behavior:**
-
-    where some reaction has this reactor, target, and kind
-    then
-      delete that reaction
-      return reaction
-    where no reaction has this reactor, target, and kind
-    then
-      refuse REACTION_NOT_FOUND "There is no such reaction to take back."
-
-**Registered refusal codes:** `REACTION_NOT_FOUND`
-
-##### `clearTarget (target: Target) : return ()`
-
-**Authored behavior:**
-
-    then
-      remove every reaction on target
-      return
+- `react(reactor: Person, target: Target, kind: String, at: Date) : return (reaction: Reaction)`
+  - Refuses `REACTION_ALREADY_EXISTS`: This person has already reacted to the target with this kind.
+- `unreact(reactor: Person, target: Target, kind: String) : return (reaction: Reaction)`
+  - Refuses `REACTION_NOT_FOUND`: There is no such reaction to take back.
+- `clearTarget(target: Target) : return (target: Target)`
 
 #### Queries
 
-##### `_getReactionsForTarget (target: String) : many (reaction: String, reactor: String, kind: String)`
+- `_getReactionsForTarget(target: String) : many (reaction: String, reactor: String, kind: String)`
+- `_getReactionsByUser(reactor: String) : many (reaction: String, target: String, kind: String)`
+- `_countByKind(target: String) : many (kind: String, count: Number)`
+- `_hasReacted(reactor: String, target: String, kind: String) : one (hasReacted: Boolean)`
 
-##### `_getReactionsByUser (reactor: String) : many (reaction: String, target: String, kind: String)`
+#### Selected instances and bindings
 
-##### `_countByKind (target: String) : many (kind: String, count: Number)`
-
-##### `_hasReacted (reactor: String, target: String, kind: String) : one (hasReacted: Boolean)`
-
-### RequestBoundary
-
-**Purpose.** Let the outside world ask for things and receive answers, so each authored answer belongs to one pending call and failed waits settle without forging one.
-
-**Principle.** A call arrives and becomes pending. An answer travels back once; timeout or abort ends only the wait, while a quiescent interpreter failure returns an opaque internal error.
-
-Actions:
-
-- `request (…)`
-- `respond (…)` — may refuse `NOT_PENDING`
+- `Reacting`
+  - `Reacting.Person` is `Authenticating.User` — [Commons application types](../design/types.md), line 115.
+  - `Reacting.Target` is `Posting.Post` — [Commons application types](../design/types.md), line 118.
 
 ### Resolving
 
-**Purpose.** Mark at most one accepted answer for a question, including who accepted it and
-when.
-
-**Principle.** Lena accepts Bo's answer to her question. When she later accepts another
-answer, it replaces the first. Clearing the accepted answer succeeds once and
-is refused when the question has no resolution.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Actions
 
-##### `accept (question: Question, answer: Answer, by: User, at: Date) : return ()`
-
-**Authored behavior:**
-
-    then
-      add question to resolved with answer, resolvedBy by, and resolvedAt at, replacing any prior resolution
-      return
-
-##### `clear (question: Question) : return ()`
-
-**Authored behavior:**
-
-    where question in resolved
-    then
-      remove question from resolved
-      return
-    where question not in resolved
-    then
-      refuse RESOLUTION_NOT_FOUND "This question has no accepted answer."
-
-**Registered refusal codes:** `RESOLUTION_NOT_FOUND`
+- `accept(question: Question, answer: Answer, by: User, at: Date) : return (resolution: Question)`
+- `clear(question: Question) : return (question: Question)`
+  - Refuses `RESOLUTION_NOT_FOUND`: This question has no accepted answer.
 
 #### Queries
 
-##### `_isResolved (question: String) : one (resolved: Boolean)`
+- `_isResolved(question: String) : one (resolved: Boolean)`
+- `_getResolution(question: String) : optional (answer: String, resolvedBy: String, resolvedAt: Date)`
+- `_getQuestionsAnswered(answer: String) : many (question: String)`
 
-##### `_getResolution (question: String) : optional (answer: String, resolvedBy: String, resolvedAt: Date)`
+#### Selected instances and bindings
 
-##### `_getQuestionsAnswered (answer: String) : many (question: String)`
+- `Resolving`
+  - `Resolving.Question` is `Posting.Post` — [Commons application types](../design/types.md), line 121.
+  - `Resolving.Answer` is `Posting.Post` — [Commons application types](../design/types.md), line 124.
+  - `Resolving.User` is `Authenticating.User` — [Commons application types](../design/types.md), line 127.
 
 ### Revising
 
-**Purpose.** Keep numbered versions of an item's content so readers can compare its current
-and earlier text.
-
-**Principle.** Amara's first post content is revision 1. Two edits create revisions 2 and 3,
-each with its saved content and time. A reader can list the revisions, read the
-latest one, or select revision 2. Clearing the item removes every revision and
-succeeds when no history exists.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Actions
 
-##### `record (item: Item, content: String, at: Date) : return (revision: Revision, number: Number)`
-
-**Authored behavior:**
-
-    then
-      add a new revision with item, content, and savedAt at, numbered one past the item's highest standing revision (or 1)
-      return revision and number
-
-##### `clearItem (item: Item) : return ()`
-
-**Authored behavior:**
-
-    then
-      delete every revision with item item
-      return
+- `record(item: Item, content: String, at: Date) : return (revision: Revision, number: Number)`
+- `clearItem(item: Item) : return (item: Item)`
 
 #### Queries
 
-##### `_getRevisions (item: String) : many (revision: String, number: Number, content: String, savedAt: Date)`
+- `_getRevisions(item: String) : many (revision: String, number: Number, content: String, savedAt: Date)`
+- `_getRevision(item: String, number: Number) : optional (revision: String, number: Number, content: String, savedAt: Date)`
+- `_getLatest(item: String) : optional (revision: String, number: Number, content: String, savedAt: Date)`
 
-##### `_getRevision (item: String, number: Number) : optional (revision: String, number: Number, content: String, savedAt: Date)`
+#### Selected instances and bindings
 
-##### `_getLatest (item: String) : optional (revision: String, number: Number, content: String, savedAt: Date)`
+- `Revising`
+  - `Revising.Item` is `Posting.Post` — [Commons application types](../design/types.md), line 130.
 
 ### Roling
 
-**Purpose.** Define roles as named sets of capabilities, then grant or revoke those roles for
-individual users within a context.
-
-**Principle.** A course defines an instructor role with grade and publish capabilities. A
-second role with the same name is refused. Maya receives the role in the
-course; granting it there again is refused. Revoking the role succeeds once and
-is refused when she no longer holds it.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Actions
 
-##### `defineRole (name: String, capabilities: Strings) : return (role: Role)`
-
-**Authored behavior:**
-
-    where no role has name name
-    then
-      add a new role with name and capabilities
-      return role
-    where some role has name name
-    then
-      refuse ROLE_ALREADY_EXISTS "A role with this name already exists."
-
-**Registered refusal codes:** `ROLE_ALREADY_EXISTS`
-
-##### `ensureRole (name: String, capabilities: Strings) : return (role: Role)`
-
-**Authored behavior:**
-
-    where some role has name name
-    then
-      return that role
-    where no role has name name
-    then
-      add a new role with name and capabilities
-      return role
-
-##### `grant (user: User, context: Context, role: Role) : return (grant: Grant)`
-
-**Authored behavior:**
-
-    where role in roles and no grant has user, context, and role
-    then
-      add a new grant with user, context, and role
-      return grant
-    where role not in roles
-    then
-      refuse ROLE_NOT_FOUND "No such role exists."
-    where some grant has user, context, and role
-    then
-      refuse GRANT_ALREADY_EXISTS "The user already holds this role in this context."
-
-**Registered refusal codes:** `ROLE_NOT_FOUND`, `GRANT_ALREADY_EXISTS`
-
-##### `revoke (user: User, context: Context, role: Role) : return (grant: Grant)`
-
-**Authored behavior:**
-
-    where some grant has user, context, and role
-    then
-      delete that grant
-      return grant
-    where no grant has user, context, and role
-    then
-      refuse GRANT_NOT_FOUND "The user does not hold this role in this context."
-
-**Registered refusal codes:** `GRANT_NOT_FOUND`
-
-##### `requireCapability (user: User, context: Context, capability: String) : return (allowed: Boolean)`
-
-**Authored behavior:**
-
-    where the user holds a granted role in the context that includes capability
-    then
-      return allowed true
-    otherwise
-      refuse FORBIDDEN "The user does not hold the required capability in this context."
-
-**Registered refusal codes:** `FORBIDDEN`
+- `defineRole(name: String, capabilities: Strings) : return (role: Role)`
+  - Refuses `ROLE_ALREADY_EXISTS`: A role with this name already exists.
+- `ensureRole(name: String, capabilities: Strings) : return (role: Role)`
+- `grant(user: User, context: Context, role: Role) : return (grant: Grant)`
+  - Refuses `ROLE_NOT_FOUND`: No such role exists.
+  - Refuses `GRANT_ALREADY_EXISTS`: The user already holds this role in this context.
+- `revoke(user: User, context: Context, role: Role) : return (grant: Grant)`
+  - Refuses `GRANT_NOT_FOUND`: The user does not hold this role in this context.
+- `requireCapability(user: User, context: Context, capability: String) : return (allowed: Boolean)`
+  - Refuses `FORBIDDEN`: The user does not hold the required capability in this context.
 
 #### Queries
 
-##### `_hasCapability (user: String, context: String, capability: String) : one (allowed: Boolean)`
+- `_hasCapability(user: String, context: String, capability: String) : one (allowed: Boolean)`
+- `_hasCapabilityHolder(context: String, capability: String) : one (present: Boolean)`
+- `_holdsRoleNamed(user: String, context: String, name: String) : one (held: Boolean)`
+- `_getRoles(user: String, context: String) : many (role: String)`
+- `_getRoleByName(name: String) : optional (role: String)`
+- `_getRoleDetail(role: String) : optional (name: String, capabilities: Strings)`
+- `_listRoles() : many (role: String, name: String, capabilities: Strings)`
+- `_denotedRole(ref: String) : optional (role: String)`
 
-##### `_hasCapabilityHolder (context: String, capability: String) : one (present: Boolean)`
+#### Selected instances and bindings
 
-##### `_holdsRoleNamed (user: String, context: String, name: String) : one (held: Boolean)`
-
-##### `_getRoles (user: String, context: String) : many (role: String)`
-
-##### `_getRoleByName (name: String) : optional (role: String)`
-
-##### `_getRoleDetail (role: String) : optional (name: String, capabilities: Strings)`
-
-##### `_listRoles () : many (role: String, name: String, capabilities: Strings)`
-
-##### `_denotedRole (ref: String) : optional (role: String)`
+- `Roling`
+  - `Roling.User` is `Authenticating.User` — [Commons application types](../design/types.md), line 133.
+  - `Roling.Context` is `Context` — [Commons application types](../design/types.md), line 136.
+  - `Roling.Strings` is `StringList` — [Commons application types](../design/types.md), line 139.
 
 ### Rostering
 
-**Purpose.** Keep one class configuration, its sections, and the pending, active, or dropped
-seats held by its members.
-
-**Principle.** The class is configured once; a second configuration is refused. An import
-creates pending seats for Ana and Ben and skips a later row with Ana's existing
-external key. Ana claims her seat and becomes active. Ben cannot claim another
-seat while he already holds an active one. Ana's seat may be dropped,
-reinstated, or moved to another section.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Actions
 
-##### `configureClass (code: String, title: String, term: String, timezone: String) : return (class: Class)`
-
-**Authored behavior:**
-
-    where no class is configured
-    then
-      add a new class with code, title, term, and timezone
-      return class
-    where a class is already configured
-    then
-      refuse CLASS_ALREADY_CONFIGURED "The class has already been configured."
-
-**Registered refusal codes:** `CLASS_ALREADY_CONFIGURED`
-
-##### `createSection (name: String, location: String, meetingPattern: String) : return (section: Section)`
-
-**Authored behavior:**
-
-    then
-      add a new section with name, location, and meetingPattern
-      return section
-
-##### `updateSection (section: Section, name: String, location: String, meetingPattern: String) : return ()`
-
-**Authored behavior:**
-
-    where section in sections
-    then
-      set section's name, location, and meetingPattern
-      return
-    where section not in sections
-    then
-      refuse SECTION_NOT_FOUND "No such section exists."
-
-**Registered refusal codes:** `SECTION_NOT_FOUND`
-
-##### `previewImport (csv: String) : return (rows: Rows)`
-
-**Authored behavior:**
-
-    then
-      read the first newline-delimited line as comma-delimited headers
-      read each later newline-delimited line as comma-delimited values, without quoting or escaping
-      return rows
-
-##### `importSeats (rows: Rows) : return (created: Seats, skipped: Strings)`
-
-**Authored behavior:**
-
-    then
-      for each row whose externalKey no seat already carries:
-        add a new seat with the row's externalKey, email, rosterName, kind, and section, and no holder
-        add the seat to pending
-      return the seats created and the externalKeys skipped
-
-##### `claimSeat (seat: Seat, user: User) : return ()`
-
-**Authored behavior:**
-
-    where seat in pending and user holds no seat in active
-    then
-      set seat's holder to user
-      remove seat from pending, add seat to active
-      return
-    where seat not in seats
-    then
-      refuse SEAT_NOT_FOUND "No such seat exists."
-    where seat not in pending
-    then
-      refuse SEAT_NOT_PENDING "This seat is not open to claim."
-    where user holds a seat in active
-    then
-      refuse SEAT_ALREADY_ACTIVE "This user already holds an active seat."
-
-**Registered refusal codes:** `SEAT_NOT_FOUND`, `SEAT_NOT_PENDING`, `SEAT_ALREADY_ACTIVE`
-
-##### `dropSeat (seat: Seat) : return ()`
-
-**Authored behavior:**
-
-    where seat in active
-    then
-      remove seat from active, add seat to dropped
-      return
-    where seat not in seats
-    then
-      refuse SEAT_NOT_FOUND "No such seat exists."
-    where seat not in active
-    then
-      refuse SEAT_NOT_ACTIVE "This seat is not active."
-
-**Registered refusal codes:** `SEAT_NOT_FOUND`, `SEAT_NOT_ACTIVE`
-
-##### `reinstateSeat (seat: Seat) : return ()`
-
-**Authored behavior:**
-
-    where seat in dropped and its holder holds no other seat in active
-    then
-      remove seat from dropped, add seat to active
-      return
-    where seat not in seats
-    then
-      refuse SEAT_NOT_FOUND "No such seat exists."
-    where seat not in dropped
-    then
-      refuse SEAT_NOT_DROPPED "This seat is not dropped."
-    where seat in dropped and its holder holds another seat in active
-    then
-      refuse SEAT_ALREADY_ACTIVE "This user already holds an active seat."
-
-**Registered refusal codes:** `SEAT_NOT_FOUND`, `SEAT_NOT_DROPPED`, `SEAT_ALREADY_ACTIVE`
-
-##### `moveSection (seat: Seat, section: Section) : return ()`
-
-**Authored behavior:**
-
-    where seat in seats
-    then
-      set seat's section to section
-      return
-    where seat not in seats
-    then
-      refuse SEAT_NOT_FOUND "No such seat exists."
-
-**Registered refusal codes:** `SEAT_NOT_FOUND`
+- `configureClass(code: String, title: String, term: String, timezone: String) : return (class: Class)`
+  - Refuses `CLASS_ALREADY_CONFIGURED`: The class has already been configured.
+- `createSection(name: String, location: String, meetingPattern: String) : return (section: Section)`
+- `updateSection(section: Section, name: String, location: String, meetingPattern: String) : return (section: Section)`
+  - Refuses `SECTION_NOT_FOUND`: No such section exists.
+- `previewImport(csv: String) : return (rows: Rows)`
+- `importSeats(rows: Rows) : return (created: Seats, skipped: Strings)`
+- `claimSeat(seat: Seat, user: User) : return (seat: Seat, kind: String, user: User, section: Section)`
+  - Refuses `SEAT_NOT_FOUND`: No such seat exists.
+  - Refuses `SEAT_NOT_PENDING`: This seat is not open to claim.
+  - Refuses `SEAT_ALREADY_ACTIVE`: This user already holds an active seat.
+- `dropSeat(seat: Seat) : return (seat: Seat, kind: String, user: User)`
+  - Refuses `SEAT_NOT_FOUND`: No such seat exists.
+  - Refuses `SEAT_NOT_ACTIVE`: This seat is not active.
+- `reinstateSeat(seat: Seat) : return (seat: Seat, kind: String, user: User, section: Section)`
+  - Refuses `SEAT_NOT_FOUND`: No such seat exists.
+  - Refuses `SEAT_NOT_DROPPED`: This seat is not dropped.
+  - Refuses `SEAT_ALREADY_ACTIVE`: This user already holds an active seat.
+- `moveSection(seat: Seat, section: Section) : return (seat: Seat)`
+  - Refuses `SEAT_NOT_FOUND`: No such seat exists.
 
 #### Queries
 
-##### `_getClass () : optional (detail: Class)`
+- `_getClass() : optional (detail: Class)`
+- `_getSections() : many (section: String, name: String, location: String, meetingPattern: String, status: String)`
+- `_getSeatByExternalKey(externalKey: String) : optional (seat: String, email: String)`
+- `_getSeatByUser(user: String) : optional (seat: String, user: String | Null, externalKey: String, email: String, rosterName: String, kind: String, section: String | Null, status: String)`
+- `_getSeatDetail(user: String) : optional (detail: Seat)`
+- `_getActiveMembers() : many (user: String | Null, seat: String, kind: String, section: String | Null, rosterName: String, email: String)`
+- `_isActiveStudent(user: String) : one (active: Boolean)`
+- `_getActiveStudents() : many (user: String, seat: String, section: String | Null, rosterName: String, email: String)`
+- `_getUnclaimedSeats() : many (seat: String, externalKey: String, email: String, rosterName: String, kind: String, section: String | Null)`
+- `_getDroppedSeats() : many (user: String | Null, seat: String, kind: String, section: String | Null, rosterName: String, email: String)`
 
-##### `_getSections () : many (section: String, name: String, location: String, meetingPattern: String, status: String)`
+#### Selected instances and bindings
 
-##### `_getSeatByExternalKey (externalKey: String) : optional (seat: String, email: String)`
-
-##### `_getSeatByUser (user: String) : optional (seat: String, user: String | Null, externalKey: String, email: String, rosterName: String, kind: String, section: String | Null, status: String)`
-
-##### `_getSeatDetail (user: String) : optional (detail: Seat)`
-
-##### `_getActiveMembers () : many (user: String | Null, seat: String, kind: String, section: String | Null, rosterName: String, email: String)`
-
-##### `_isActiveStudent (user: String) : one (active: Boolean)`
-
-##### `_getActiveStudents () : many (user: String, seat: String, section: String | Null, rosterName: String, email: String)`
-
-##### `_getUnclaimedSeats () : many (seat: String, externalKey: String, email: String, rosterName: String, kind: String, section: String | Null)`
-
-##### `_getDroppedSeats () : many (user: String | Null, seat: String, kind: String, section: String | Null, rosterName: String, email: String)`
+- `Rostering`
+  - `Rostering.Class` is `Context` — [Commons application types](../design/types.md), line 142.
+  - `Rostering.User` is `Authenticating.User` — [Commons application types](../design/types.md), line 145.
+  - `Rostering.Strings` is `StringList` — [Commons application types](../design/types.md), line 148.
+  - `Rostering.Rows` is `RosterRows` — [Commons application types](../design/types.md), line 151.
 
 ### Sessioning
 
-**Purpose.** Give a user a session that identifies them until it ends or expires.
-
-**Principle.** Maya starts a session that expires one day later. Before expiry, it identifies
-her. Ending it removes the session. Ending the same session again is refused.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Actions
 
-##### `start (user: User, at: Moment) : return (session: Session, expiresAt: Moment)`
-
-**Authored behavior:**
-
-    then
-      add a new session with user and expiresAt one day after at
-      return session and expiresAt
-
-##### `end (session: Session) : return ()`
-
-**Authored behavior:**
-
-    where session in sessions
-    then
-      delete session
-      return
-    where session not in sessions
-    then
-      refuse SESSION_NOT_FOUND "There is no such session."
-
-**Registered refusal codes:** `SESSION_NOT_FOUND`
-
-##### `endAllForUser (user: User) : return (user: User)`
-
-**Authored behavior:**
-
-    then
-      delete every session standing for user
-      return user
+- `start(user: User, at?: Moment) : return (session: Session, expiresAt: Moment)`
+- `end(session: Session) : return (session: Session)`
+  - Refuses `SESSION_NOT_FOUND`: There is no such session.
+- `endAllForUser(user: User) : return (user: User)`
 
 #### Queries
 
-##### `_getUser (session: String, at: Date) : optional (user: String)`
+- `_getUser(session: String, at?: Date) : optional (user: String)`
+- `_isExpired(session: String, at: Date) : one (expired: Boolean)`
 
-##### `_isExpired (session: String, at: Date) : one (expired: Boolean)`
+#### Selected instances and bindings
+
+- `Sessioning`
+  - `Sessioning.User` is `Authenticating.User` — [Commons application types](../design/types.md), line 154.
+  - `Sessioning.Moment` is `Timing.Moment` — [Commons application types](../design/types.md), line 157.
 
 ### Submitting
 
-**Purpose.** Let a learner submit numbered attempts for an assignment and withdraw or
-restore each attempt.
-
-**Principle.** Maya submits an essay as attempt one, withdraws it, and submits a revision as
-attempt two. Withdrawal does not reuse the first number. Withdrawing the first
-attempt again is refused. Restoring it succeeds, so both attempts are submitted.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Actions
 
-##### `submit (assignment: Assignment, submitter: Submitter, artifact: Artifact, at: Date) : return (submission: Submission)`
-
-**Authored behavior:**
-
-    then
-      add a new submission with assignment and submitter, its artifacts holding artifact
-      set submission's number to one more than the highest number among this submitter's submissions for this assignment, or 1 when there are none
-      set submission's submittedAt to at
-      add submission to submitted
-      return submission
-
-##### `withdraw (submission: Submission) : return ()`
-
-**Authored behavior:**
-
-    where submission in submitted
-    then
-      remove submission from submitted
-      add submission to withdrawn
-      return
-    where submission not in submissions
-    then
-      refuse SUBMISSION_NOT_FOUND "There is no such submission."
-    where submission in withdrawn
-    then
-      refuse SUBMISSION_NOT_SUBMITTED "Only a submitted attempt can be withdrawn."
-
-**Registered refusal codes:** `SUBMISSION_NOT_FOUND`, `SUBMISSION_NOT_SUBMITTED`
-
-##### `restore (submission: Submission) : return ()`
-
-**Authored behavior:**
-
-    where submission in withdrawn
-    then
-      remove submission from withdrawn
-      add submission to submitted
-      return
-    where submission not in submissions
-    then
-      refuse SUBMISSION_NOT_FOUND "There is no such submission."
-    where submission in submitted
-    then
-      refuse SUBMISSION_NOT_WITHDRAWN "Only a withdrawn attempt can be restored."
-
-**Registered refusal codes:** `SUBMISSION_NOT_FOUND`, `SUBMISSION_NOT_WITHDRAWN`
+- `submit(assignment: Assignment, submitter: Submitter, artifact: Artifact, at: Date) : return (submission: Submission)`
+- `withdraw(submission: Submission) : return (submission: Submission)`
+  - Refuses `SUBMISSION_NOT_FOUND`: There is no such submission.
+  - Refuses `SUBMISSION_NOT_SUBMITTED`: Only a submitted attempt can be withdrawn.
+- `restore(submission: Submission) : return (submission: Submission)`
+  - Refuses `SUBMISSION_NOT_FOUND`: There is no such submission.
+  - Refuses `SUBMISSION_NOT_WITHDRAWN`: Only a withdrawn attempt can be restored.
 
 #### Queries
 
-##### `_getLatest (assignment: String, submitter: String) : optional (latest: Submission)`
+- `_getLatest(assignment: String, submitter: String) : optional (latest: Submission)`
+- `_getAttempts(assignment: String, submitter: String) : many (submission: String, artifacts: Strings, submittedAt: Date, number: Number, status: String)`
+- `_getSubmissionsForAssignment(assignment: String) : many (submitter: String, submission: String, submittedAt: Date, number: Number, status: String)`
+- `_getSubmissionsForSubmitter(submitter: String) : many (assignment: String, submission: String, submittedAt: Date, number: Number, status: String)`
 
-##### `_getAttempts (assignment: String, submitter: String) : many (submission: String, artifacts: Strings, submittedAt: Date, number: Number, status: String)`
+#### Selected instances and bindings
 
-##### `_getSubmissionsForAssignment (assignment: String) : many (submitter: String, submission: String, submittedAt: Date, number: Number, status: String)`
-
-##### `_getSubmissionsForSubmitter (submitter: String) : many (assignment: String, submission: String, submittedAt: Date, number: Number, status: String)`
+- `Submitting`
+  - `Submitting.Assignment` is `Assigning.Assignment` — [Commons application types](../design/types.md), line 160.
+  - `Submitting.Submitter` is `Authenticating.User` — [Commons application types](../design/types.md), line 163.
+  - `Submitting.Strings` is `StringList` — [Commons application types](../design/types.md), line 166.
 
 ### Subscribing
 
-**Purpose.** Record the targets a person follows so later events on those targets can reach
-them.
-
-**Principle.** Mara follows two threads, and her subscriptions list the newer one first.
-Following the first thread again is refused. Unfollowing it succeeds once and
-is refused the second time. Asking whether she follows a target always answers
-yes or no.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Actions
 
-##### `subscribe (user: Person, target: Target, at: Date) : return (subscription: Subscription)`
-
-**Authored behavior:**
-
-    where no subscription has this user and target
-    then
-      add a new subscription with user, target, and subscribedAt at
-      return subscription
-    where some subscription has this user and target
-    then
-      refuse ALREADY_SUBSCRIBED "This person already follows the target."
-
-**Registered refusal codes:** `ALREADY_SUBSCRIBED`
-
-##### `unsubscribe (user: Person, target: Target) : return (subscription: Subscription)`
-
-**Authored behavior:**
-
-    where some subscription has this user and target
-    then
-      delete that subscription
-      return subscription
-    where no subscription has this user and target
-    then
-      refuse NOT_SUBSCRIBED "There is no such subscription to drop."
-
-**Registered refusal codes:** `NOT_SUBSCRIBED`
-
-##### `clearTarget (target: Target) : return (target: Target)`
-
-**Authored behavior:**
-
-    then
-      delete every subscription to target
-      return target
+- `subscribe(user: Person, target: Target, at: Date) : return (subscription: Subscription)`
+  - Refuses `ALREADY_SUBSCRIBED`: This person already follows the target.
+- `unsubscribe(user: Person, target: Target) : return (subscription: Subscription)`
+  - Refuses `NOT_SUBSCRIBED`: There is no such subscription to drop.
+- `clearTarget(target: Target) : return (target: Target)`
 
 #### Queries
 
-##### `_getSubscribers (target: String) : many (user: String)`
+- `_getSubscribers(target: String) : many (user: String)`
+- `_getSubscriptions(user: String) : many (target: String, subscribedAt: Date)`
+- `_isSubscribed(user: String, target: String) : one (subscribed: Boolean)`
 
-##### `_getSubscriptions (user: String) : many (target: String, subscribedAt: Date)`
+#### Selected instances and bindings
 
-##### `_isSubscribed (user: String, target: String) : one (subscribed: Boolean)`
+- `Subscribing`
+  - `Subscribing.Person` is `Authenticating.User` — [Commons application types](../design/types.md), line 169.
+  - `Subscribing.Target` is `Posting.Post` — [Commons application types](../design/types.md), line 172.
 
 ### Tagging
 
-**Purpose.** Keep a shared set of named tags and apply or remove them from targets.
-
-**Principle.** Ken creates an `urgent` tag and adds it to a report. Applying it again or
-applying an unknown tag is refused. Ken removes the tag from the report.
-Deleting a tag removes it from every target. Clearing a target removes all its
-tags and succeeds when none are present.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Actions
 
-##### `createTag (name: String) : return (tag: Tag)`
-
-**Authored behavior:**
-
-    where no tag has this name
-    then
-      add a new tag with name
-      return tag
-    where some tag has this name
-    then
-      refuse TAG_ALREADY_EXISTS "A tag with this name already exists."
-
-**Registered refusal codes:** `TAG_ALREADY_EXISTS`
-
-##### `addTag (target: Target, tag: Tag) : return ()`
-
-**Authored behavior:**
-
-    where tag in tags and tag not in target's applied
-    then
-      append tag to target's applied
-      return
-    where tag not in tags
-    then
-      refuse TAG_NOT_FOUND "There is no such tag."
-    where tag in target's applied
-    then
-      refuse TAG_ALREADY_APPLIED "This tag is already applied to the target."
-
-**Registered refusal codes:** `TAG_NOT_FOUND`, `TAG_ALREADY_APPLIED`
-
-##### `removeTag (target: Target, tag: Tag) : return ()`
-
-**Authored behavior:**
-
-    where tag in target's applied
-    then
-      remove tag from target's applied
-      return
-    where tag not in target's applied
-    then
-      refuse TAG_NOT_APPLIED "This tag is not applied to the target."
-
-**Registered refusal codes:** `TAG_NOT_APPLIED`
-
-##### `deleteTag (tag: Tag) : return ()`
-
-**Authored behavior:**
-
-    where tag in tags
-    then
-      remove tag from every target's applied
-      delete tag
-      return
-    where tag not in tags
-    then
-      refuse TAG_NOT_FOUND "There is no such tag."
-
-**Registered refusal codes:** `TAG_NOT_FOUND`
-
-##### `clearTarget (target: Target) : return ()`
-
-**Authored behavior:**
-
-    then
-      remove target from tagged
-      return
+- `createTag(name: String) : return (tag: Tag)`
+  - Refuses `TAG_ALREADY_EXISTS`: A tag with this name already exists.
+- `addTag(target: Target, tag: Tag) : return (target: Target)`
+  - Refuses `TAG_NOT_FOUND`: There is no such tag.
+  - Refuses `TAG_ALREADY_APPLIED`: This tag is already applied to the target.
+- `removeTag(target: Target, tag: Tag) : return (target: Target)`
+  - Refuses `TAG_NOT_APPLIED`: This tag is not applied to the target.
+- `deleteTag(tag: Tag) : return (tag: Tag)`
+  - Refuses `TAG_NOT_FOUND`: There is no such tag.
+- `clearTarget(target: Target) : return (target: Target)`
 
 #### Queries
 
-##### `_getTags (target: String) : many (tag: String, name: String)`
+- `_getTags(target: String) : many (tag: String, name: String)`
+- `_getTargets(tag: String) : many (target: String)`
+- `_getByName(name: String) : optional (tag: String)`
+- `_getAllTags() : many (tag: String, name: String)`
 
-##### `_getTargets (tag: String) : many (target: String)`
+#### Selected instances and bindings
 
-##### `_getByName (name: String) : optional (tag: String)`
-
-##### `_getAllTags () : many (tag: String, name: String)`
+- `Tagging`
+  - `Tagging.Target` is `Posting.Post` — [Commons application types](../design/types.md), line 175.
 
 ### Timing
 
-**Purpose.** Tell a caller the current moment, so a choice that needs a timestamp does not
-invent one.
-
-**Principle.** Noor asks what time it is and learns that it is 10:30. When she asks later, she
-learns the later moment rather than the earlier answer.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Timing](../design/concepts/Timing.md), line 1.
 
 #### Actions
 
-##### `capture () : return (at: Date)`
-
-**Authored behavior:**
-
-    then
-      return the current moment as at
+- `capture() : return (at: Date)`
 
 #### Queries
 
-##### `_now () : one (at: Date)`
+- `_now() : one (at: Date)`
+
+#### Selected instances and bindings
+
+- `Timing`
 
 ### Tracking
 
-**Purpose.** Record which items belong to each scope and which items each user has seen.
-
-**Principle.** Dana registers a discussion in the Algebra course. It is unread for Bob until
-he marks it seen. Marking it seen again or marking an unregistered item is
-refused. Marking the whole scope seen records every remaining item and succeeds
-when none remain. Unregistering the discussion removes it and all of its seen
-marks; unregistering it again succeeds. Registering it twice is refused.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Actions
 
-##### `register (item: Item, scope: Scope) : return (item: Item)`
-
-**Authored behavior:**
-
-    where item not in registered
-    then
-      add item to registered with scope
-      return item
-    where item in registered
-    then
-      refuse ITEM_ALREADY_REGISTERED "This item is already being tracked."
-
-**Registered refusal codes:** `ITEM_ALREADY_REGISTERED`
-
-##### `unregister (item: Item) : return (item: Item)`
-
-**Authored behavior:**
-
-    then
-      remove item from registered
-      remove every seen-mark of item
-      return item
-
-##### `markSeen (user: User, item: Item) : return (item: Item)`
-
-**Authored behavior:**
-
-    where item in registered and no seen-mark has this user and item
-    then
-      add a seen-mark with user and item
-      return item
-    where item not in registered
-    then
-      refuse ITEM_NOT_REGISTERED "This item is not being tracked."
-    where some seen-mark has this user and item
-    then
-      refuse ITEM_ALREADY_SEEN "This user has already seen this item."
-
-**Registered refusal codes:** `ITEM_NOT_REGISTERED`, `ITEM_ALREADY_SEEN`
-
-##### `markAllSeen (user: User, scope: Scope) : return (user: User)`
-
-**Authored behavior:**
-
-    then
-      for every registered item in scope the user has not seen,
-        add a seen-mark with user and that item
-      return user
+- `register(item: Item, scope: Scope) : return (item: Item)`
+  - Refuses `ITEM_ALREADY_REGISTERED`: This item is already being tracked.
+- `unregister(item: Item) : return (item: Item)`
+- `markSeen(user: User, item: Item) : return (item: Item)`
+  - Refuses `ITEM_NOT_REGISTERED`: This item is not being tracked.
+  - Refuses `ITEM_ALREADY_SEEN`: This user has already seen this item.
+- `markAllSeen(user: User, scope: Scope) : return (user: User)`
 
 #### Queries
 
-##### `_inScope (scope: String) : many (item: String)`
+- `_inScope(scope: String) : many (item: String)`
+- `_getUnread(user: String, scope: String) : many (item: String)`
+- `_getUnreadCount(user: String, scope: String) : one (count: Number)`
 
-##### `_getUnread (user: String, scope: String) : many (item: String)`
+#### Selected instances and bindings
 
-##### `_getUnreadCount (user: String, scope: String) : one (count: Number)`
+- `Tracking`
+  - `Tracking.User` is `Authenticating.User` — [Commons application types](../design/types.md), line 178.
+  - `Tracking.Scope` is `Context` — [Commons application types](../design/types.md), line 181.
+  - `Tracking.Item` is `Posting.Post` — [Commons application types](../design/types.md), line 184.
 
 ### Trashing
 
-**Purpose.** Let an item be moved to trash, restored, or removed permanently.
-
-**Principle.** Maya trashes a draft, recording who did it and when. She restores it, trashes
-it again, and then purges it. Restoring or purging an item outside the trash is
-refused, as is trashing an item already there.
-
-_Registration checks member names, recoverable input names, and refusal mappings._
-_Engine-evaluated reads enforce query cardinality. Types, results, and behavior prose are not executable assertions._
+Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Actions
 
-##### `trash (item: Item, by: User, at: Date) : return ()`
-
-**Authored behavior:**
-
-    where item not in trashed
-    then
-      add item to trashed with trashedBy by and trashedAt at
-      return
-    where item in trashed
-    then
-      refuse ITEM_ALREADY_TRASHED "This item is already in the trash."
-
-**Registered refusal codes:** `ITEM_ALREADY_TRASHED`
-
-##### `restore (item: Item) : return ()`
-
-**Authored behavior:**
-
-    where item in trashed
-    then
-      remove item from trashed
-      return
-    where item not in trashed
-    then
-      refuse ITEM_NOT_TRASHED "This item is not in the trash."
-
-**Registered refusal codes:** `ITEM_NOT_TRASHED`
-
-##### `purge (item: Item) : return ()`
-
-**Authored behavior:**
-
-    where item in trashed
-    then
-      remove item from trashed
-      return
-    where item not in trashed
-    then
-      refuse ITEM_NOT_TRASHED "This item is not in the trash."
-
-**Registered refusal codes:** `ITEM_NOT_TRASHED`
+- `trash(item: Item, by: User, at: Date) : return (item: Item)`
+  - Refuses `ITEM_ALREADY_TRASHED`: This item is already in the trash.
+- `restore(item: Item) : return (item: Item)`
+  - Refuses `ITEM_NOT_TRASHED`: This item is not in the trash.
+- `purge(item: Item) : return (item: Item)`
+  - Refuses `ITEM_NOT_TRASHED`: This item is not in the trash.
 
 #### Queries
 
-##### `_isTrashed (item: String) : one (trashed: Boolean)`
+- `_isTrashed(item: String) : one (trashed: Boolean)`
+- `_getTrashed() : many (item: String, trashedBy: String, trashedAt: Date)`
 
-##### `_getTrashed () : many (item: String, trashedBy: String, trashedAt: Date)`
+#### Selected instances and bindings
+
+- `Trashing`
+  - `Trashing.User` is `Authenticating.User` — [Commons application types](../design/types.md), line 187.
+  - `Trashing.Item` is `Posting.Post` — [Commons application types](../design/types.md), line 190.
+
+## Application types
+
+Concrete types:
+
+- `StringList` — [Commons application types](../design/types.md), line 7.
+- `SectionList` — [Commons application types](../design/types.md), line 10.
+- `RosterRows` — [Commons application types](../design/types.md), line 13.
+- `Context` — [Commons application types](../design/types.md), line 16.
+- `GradeEvidence` — [Commons application types](../design/types.md), line 19.
+
+## Computations
+
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application types](../design/types.md), line 201.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application types](../design/types.md), line 198.
+- `notificationMailHtml(notification: String) : String` — [Commons application types](../design/types.md), line 207.
+- `notificationMailText(notification: String) : String` — [Commons application types](../design/types.md), line 204.
 
 ## Views
 
 _Views name reusable conditions. Multiple `where` blocks are alternatives._
 
+### (item) is intact
+
+Authored path: `Forum.threads.intact`.
+- Covered by [Forum](../design/compositions/Forum.md), line 180.
+
 ```view
 (item) is intact — inputs (item); outputs (); bindings ()
   where Trashing._isTrashed (item) has (trashed: false)
 ```
+
+### (conversation) is readable
+
+Authored path: `Forum.threads.readableConversation`.
+- Covered by [Forum](../design/compositions/Forum.md), line 183.
 
 ```view
 (conversation) is readable — inputs (conversation); outputs (); bindings (node, item)
@@ -2495,11 +911,21 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     view "(item) is intact" with (item)
 ```
 
+### (post) is not readable
+
+Authored path: `Forum.posts.notReadable`.
+- Covered by [Forum](../design/compositions/Forum.md), line 176.
+
 ```view
 (post) is not readable — inputs (post); outputs (); bindings ()
   where Trashing._isTrashed (item: post) has (trashed: true)
   where no Posting._getPost (post)
 ```
+
+### (post) is readable
+
+Authored path: `Forum.posts.readable`.
+- Covered by [Forum](../design/compositions/Forum.md), line 178.
 
 ```view
 (post) is readable — inputs (post); outputs (); bindings ()
@@ -2507,6 +933,11 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     Posting._getPost (post)
     Trashing._isTrashed (item: post) has (trashed: false)
 ```
+
+### (target) is public
+
+Authored path: `Forum.threads.publicTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 182.
 
 ```view
 (target) is public — inputs (target); outputs (); bindings ()
@@ -2516,30 +947,60 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
   where view "(conversation) is readable" with (conversation: target)
 ```
 
+### (user) authored (post)
+
+Authored path: `Access.policy.authored`.
+- Covered by [Access](../design/compositions/Access.md), line 63.
+
 ```view
 (user) authored (post) — inputs (user, post); outputs (); bindings ()
   where Posting._getPost (post) has (author: user)
 ```
+
+### (user) did not author (post)
+
+Authored path: `Access.policy.didNotAuthor`.
+- Covered by [Access](../design/compositions/Access.md), line 64.
 
 ```view
 (user) did not author (post) — inputs (user, post); outputs (); bindings ()
   where Posting._getPost (post) and not (author: user)
 ```
 
+### (user) is an active course member
+
+Authored path: `Access.policy.isActiveCourseMember`.
+- Covered by [Access](../design/compositions/Access.md), line 65.
+
 ```view
 (user) is an active course member — inputs (user); outputs (); bindings ()
   where Rostering._getSeatByUser (user) has (status: "ACTIVE")
 ```
+
+### (user) is an active student
+
+Authored path: `Access.policy.isActiveStudent`.
+- Covered by [Access](../design/compositions/Access.md), line 66.
 
 ```view
 (user) is an active student — inputs (user); outputs (); bindings ()
   where Rostering._isActiveStudent (user) has (active: true)
 ```
 
+### (user) is not an active student
+
+Authored path: `Access.policy.isNotActiveStudent`.
+- Covered by [Access](../design/compositions/Access.md), line 67.
+
 ```view
 (user) is not an active student — inputs (user); outputs (); bindings ()
   where Rostering._isActiveStudent (user) has (active: false)
 ```
+
+### (user) is not mentioned in (post)
+
+Authored path: `Forum.notifications.isNotMentionedIn`.
+- Covered by [Forum](../design/compositions/Forum.md), line 173.
 
 ```view
 (user) is not mentioned in (post) — inputs (user, post); outputs (); bindings (username)
@@ -2548,16 +1009,31 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     Posting._isMentioned (handle: username, post) has (mentioned: false)
 ```
 
+### (user) is not yet notified about (subject)
+
+Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
+- Covered by [Forum](../design/compositions/Forum.md), line 174.
+
 ```view
 (user) is not yet notified about (subject) — inputs (user, subject); outputs (); bindings ()
   where Notifying._hasFor (subject, user) has (notified: false)
 ```
+
+### (user) may administer
+
+Authored path: `Access.policy.mayAdminister`.
+- Covered by [Access](../design/compositions/Access.md), line 68.
 
 ```view
 (user) may administer — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: true)
   where Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: false)
 ```
+
+### (user) may edit (post)
+
+Authored path: `Access.policy.mayEditPost`.
+- Covered by [Access](../design/compositions/Access.md), line 69.
 
 ```view
 (user) may edit (post) — inputs (user, post); outputs (); bindings (node, conversation)
@@ -2569,30 +1045,60 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     Locking._isLocked (target: conversation) has (locked: false)
 ```
 
+### (user) may manage assignments
+
+Authored path: `Access.policy.mayManageAssignments`.
+- Covered by [Access](../design/compositions/Access.md), line 70.
+
 ```view
 (user) may manage assignments — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "assignments:manage", context: "forum", user) has (allowed: true)
 ```
+
+### (user) may manage grades
+
+Authored path: `Access.policy.mayManageGrades`.
+- Covered by [Access](../design/compositions/Access.md), line 71.
 
 ```view
 (user) may manage grades — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "grades:manage", context: "forum", user) has (allowed: true)
 ```
 
+### (user) may manage late days
+
+Authored path: `Access.policy.mayManageLateDays`.
+- Covered by [Access](../design/compositions/Access.md), line 72.
+
 ```view
 (user) may manage late days — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "late-days:manage", context: "forum", user) has (allowed: true)
 ```
+
+### (user) may manage student notes
+
+Authored path: `Access.policy.mayManageStudentNotes`.
+- Covered by [Access](../design/compositions/Access.md), line 74.
 
 ```view
 (user) may manage student notes — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "student-notes:manage", context: "forum", user) has (allowed: true)
 ```
 
+### (user) may manage the roster
+
+Authored path: `Access.policy.mayManageRoster`.
+- Covered by [Access](../design/compositions/Access.md), line 73.
+
 ```view
 (user) may manage the roster — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: true)
 ```
+
+### (user) may moderate
+
+Authored path: `Access.policy.mayModerate`.
+- Covered by [Access](../design/compositions/Access.md), line 75.
 
 ```view
 (user) may moderate — inputs (user); outputs (); bindings ()
@@ -2600,12 +1106,22 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
   where Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: false)
 ```
 
+### (user) may not administer
+
+Authored path: `Access.policy.mayNotAdminister`.
+- Covered by [Access](../design/compositions/Access.md), line 76.
+
 ```view
 (user) may not administer — inputs (user); outputs (); bindings ()
   where
     Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: false)
     Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: true)
 ```
+
+### (user) may not edit (post)
+
+Authored path: `Access.policy.mayNotEditPost`.
+- Covered by [Access](../design/compositions/Access.md), line 77.
 
 ```view
 (user) may not edit (post) — inputs (user, post); outputs (); bindings (node, conversation)
@@ -2620,30 +1136,60 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     Locking._isLocked (target: conversation) has (locked: true)
 ```
 
+### (user) may not manage assignments
+
+Authored path: `Access.policy.mayNotManageAssignments`.
+- Covered by [Access](../design/compositions/Access.md), line 78.
+
 ```view
 (user) may not manage assignments — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "assignments:manage", context: "forum", user) has (allowed: false)
 ```
+
+### (user) may not manage grades
+
+Authored path: `Access.policy.mayNotManageGrades`.
+- Covered by [Access](../design/compositions/Access.md), line 79.
 
 ```view
 (user) may not manage grades — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "grades:manage", context: "forum", user) has (allowed: false)
 ```
 
+### (user) may not manage late days
+
+Authored path: `Access.policy.mayNotManageLateDays`.
+- Covered by [Access](../design/compositions/Access.md), line 80.
+
 ```view
 (user) may not manage late days — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "late-days:manage", context: "forum", user) has (allowed: false)
 ```
+
+### (user) may not manage student notes
+
+Authored path: `Access.policy.mayNotManageStudentNotes`.
+- Covered by [Access](../design/compositions/Access.md), line 82.
 
 ```view
 (user) may not manage student notes — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "student-notes:manage", context: "forum", user) has (allowed: false)
 ```
 
+### (user) may not manage the roster
+
+Authored path: `Access.policy.mayNotManageRoster`.
+- Covered by [Access](../design/compositions/Access.md), line 81.
+
 ```view
 (user) may not manage the roster — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: false)
 ```
+
+### (user) may not moderate
+
+Authored path: `Access.policy.mayNotModerate`.
+- Covered by [Access](../design/compositions/Access.md), line 83.
 
 ```view
 (user) may not moderate — inputs (user); outputs (); bindings ()
@@ -2652,6 +1198,11 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: true)
 ```
 
+### (user) may not pin in (scope)
+
+Authored path: `Access.policy.mayNotPinInScope`.
+- Covered by [Access](../design/compositions/Access.md), line 84.
+
 ```view
 (user) may not pin in (scope) — inputs (user, scope); outputs (); bindings ()
   where
@@ -2659,15 +1210,30 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     Roling._hasCapability (capability: "pin", context: "forum", user) has (allowed: false)
 ```
 
+### (user) may not view all grades
+
+Authored path: `Access.policy.mayNotViewAllGrades`.
+- Covered by [Access](../design/compositions/Access.md), line 85.
+
 ```view
 (user) may not view all grades — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "grades:view-all", context: "forum", user) has (allowed: false)
 ```
 
+### (user) may not view all submissions
+
+Authored path: `Access.policy.mayNotViewAllSubmissions`.
+- Covered by [Access](../design/compositions/Access.md), line 86.
+
 ```view
 (user) may not view all submissions — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "submissions:view-all", context: "forum", user) has (allowed: false)
 ```
+
+### (user) may not view the staff calendar
+
+Authored path: `Access.policy.mayNotViewStaffCalendar`.
+- Covered by [Access](../design/compositions/Access.md), line 87.
 
 ```view
 (user) may not view the staff calendar — inputs (user); outputs (); bindings ()
@@ -2676,27 +1242,52 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: false)
 ```
 
+### (user) may pin in (scope)
+
+Authored path: `Access.policy.mayPinInScope`.
+- Covered by [Access](../design/compositions/Access.md), line 88.
+
 ```view
 (user) may pin in (scope) — inputs (user, scope); outputs (); bindings ()
   where Roling._hasCapability (capability: "pin", context: scope, user) has (allowed: true)
   where Roling._hasCapability (capability: "pin", context: "forum", user) has (allowed: true)
 ```
 
+### (user) may view all grades
+
+Authored path: `Access.policy.mayViewAllGrades`.
+- Covered by [Access](../design/compositions/Access.md), line 89.
+
 ```view
 (user) may view all grades — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "grades:view-all", context: "forum", user) has (allowed: true)
 ```
+
+### (user) may view all submissions
+
+Authored path: `Access.policy.mayViewAllSubmissions`.
+- Covered by [Access](../design/compositions/Access.md), line 90.
 
 ```view
 (user) may view all submissions — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "submissions:view-all", context: "forum", user) has (allowed: true)
 ```
 
+### (user) may view the staff calendar
+
+Authored path: `Access.policy.mayViewStaffCalendar`.
+- Covered by [Access](../design/compositions/Access.md), line 91.
+
 ```view
 (user) may view the staff calendar — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "calendar:view-staff", context: "forum", user) has (allowed: true)
   where Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: true)
 ```
+
+### the active user of (session)
+
+Authored path: `Access.session.activeUser`.
+- Covered by [Access](../design/compositions/Access.md), line 92.
 
 ```view
 the active user of (session) — inputs (session); outputs (user); bindings (at) — answers at most one (user)
@@ -2705,15 +1296,30 @@ the active user of (session) — inputs (session); outputs (user); bindings (at)
     Sessioning._getUser (at, session) has (user)
 ```
 
+### the assignment (assignment)
+
+Authored path: `Course.assignments.theAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 139.
+
 ```view
 the assignment (assignment) — inputs (assignment); outputs (detail); bindings () — answers at most one (detail)
   where Assigning._getDetail (assignment) has (detail)
 ```
 
+### the class configuration ()
+
+Authored path: `Course.roster.theClassConfiguration`.
+- Covered by [Course](../design/compositions/Course.md), line 142.
+
 ```view
 the class configuration () — inputs (); outputs (detail); bindings () — answers at most one (detail)
   where Rostering._getClass () has (detail)
 ```
+
+### the conversation placing (item)
+
+Authored path: `Forum.threads.placementOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 181.
 
 ```view
 the conversation placing (item) — inputs (item); outputs (conversation); bindings (node) — answers at most one (conversation)
@@ -2724,10 +1330,20 @@ the conversation placing (item) — inputs (item); outputs (conversation); bindi
     Conversing._getConversation (node) has (conversation)
 ```
 
+### the latest submission for (assignment) by (submitter)
+
+Authored path: `Course.submissions.theLatestSubmission`.
+- Covered by [Course](../design/compositions/Course.md), line 144.
+
 ```view
 the latest submission for (assignment) by (submitter) — inputs (assignment, submitter); outputs (latest); bindings () — answers at most one (latest)
   where Submitting._getLatest (assignment, submitter) has (latest)
 ```
+
+### the other users mentioned in (post)
+
+Authored path: `Forum.notifications.otherUsersMentionedIn`.
+- Covered by [Forum](../design/compositions/Forum.md), line 175.
 
 ```view
 the other users mentioned in (post) — inputs (post); outputs (user); bindings (handle) — answers any number of (user)
@@ -2737,10 +1353,20 @@ the other users mentioned in (post) — inputs (post); outputs (user); bindings 
     Posting._getPost (post) and not (author: user)
 ```
 
+### the profile of (user)
+
+Authored path: `Forum.profiles.theProfileOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 179.
+
 ```view
 the profile of (user) — inputs (user); outputs (profile); bindings () — answers at most one (profile)
   where Profiling._getProfile (user) has (profile)
 ```
+
+### the public posts by (author)
+
+Authored path: `Forum.posts.publicPostsBy`.
+- Covered by [Forum](../design/compositions/Forum.md), line 177.
 
 ```view
 the public posts by (author) — inputs (author); outputs (post); bindings () — answers any number of (post)
@@ -2748,6 +1374,11 @@ the public posts by (author) — inputs (author); outputs (post); bindings () �
     Posting._getByAuthor (author) has (post)
     view "(item) is intact" with (item: post)
 ```
+
+### the public posts in (conversation)
+
+Authored path: `Forum.fragments.publicThreadPosts`.
+- Covered by [Forum](../design/compositions/Forum.md), line 172.
 
 ```view
 the public posts in (conversation) — inputs (conversation); outputs (node, item, author, createdAt); bindings () — answers any number of (node, item, author, createdAt)
@@ -2757,6 +1388,11 @@ the public posts in (conversation) — inputs (conversation); outputs (node, ite
     Posting._getPost (post: item) has (author, createdAt)
 ```
 
+### the readable bookmarks of (user)
+
+Authored path: `Forum.bookmarks.readableBookmarksOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 171.
+
 ```view
 the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bindings () — answers any number of (item, savedAt)
   where
@@ -2764,10 +1400,20 @@ the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bin
     view "(post) is readable" with (post: item)
 ```
 
+### the seat detail of (user)
+
+Authored path: `Course.notes.theSeatDetailOf`.
+- Covered by [Course](../design/compositions/Course.md), line 140.
+
 ```view
 the seat detail of (user) — inputs (user); outputs (detail); bindings () — answers at most one (detail)
   where Rostering._getSeatDetail (user) has (detail)
 ```
+
+### the seat matching (user) and (externalKey)
+
+Authored path: `Course.roster.identityMatchedSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 141.
 
 ```view
 the seat matching (user) and (externalKey) — inputs (user, externalKey); outputs (seat); bindings (email) — answers at most one (seat)
@@ -2776,10 +1422,20 @@ the seat matching (user) and (externalKey) — inputs (user, externalKey); outpu
     Rostering._getSeatByExternalKey (externalKey) has (email, seat)
 ```
 
+### the seat of (user)
+
+Authored path: `Course.roster.theSeatOf`.
+- Covered by [Course](../design/compositions/Course.md), line 143.
+
 ```view
 the seat of (user) — inputs (user); outputs (seat); bindings () — answers at most one (seat)
   where Rostering._getSeatByUser (user) has (seat)
 ```
+
+### the user named (username)
+
+Authored path: `Access.auth.theUserNamed`.
+- Covered by [Access](../design/compositions/Access.md), line 62.
 
 ```view
 the user named (username) — inputs (username); outputs (user); bindings () — answers at most one (user)
@@ -2790,6 +1446,11 @@ the user named (username) — inputs (username); outputs (user); bindings () —
 
 _Formers name result shapes evaluated when asked. The source former owns_
 _the authored explanation; this section records the generated shape._
+
+### the assigned population for (assignment)
+
+Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 170.
 
 ```former
 Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, rosterName, release, dueOverride, releaseStatus); promises exactly one record — forms:
@@ -2804,6 +1465,11 @@ Former "the assigned population for (assignment)" — inputs (assignment); bindi
       status: releaseStatus
 ```
 
+### the assignments of (student)
+
+Authored path: `Course.assignments.theAssignmentsOf`.
+- Covered by [Course](../design/compositions/Course.md), line 148.
+
 ```former
 Former "the assignments of (student)" — inputs (student); bindings (assignment, release, dueOverride, releaseStatus); promises exactly one record — forms:
   each Assigning._getAssigned (assignee: student) has (assignment, dueOverride, release, status: releaseStatus)
@@ -2814,6 +1480,11 @@ Former "the assignments of (student)" — inputs (student); bindings (assignment
       release
       status: releaseStatus
 ```
+
+### the attempts for (assignment) by (submitter)
+
+Authored path: `Course.submissions.theAttempts`.
+- Covered by [Course](../design/compositions/Course.md), line 171.
 
 ```former
 Former "the attempts for (assignment) by (submitter)" — inputs (assignment, submitter); bindings (submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
@@ -2826,6 +1497,11 @@ Former "the attempts for (assignment) by (submitter)" — inputs (assignment, su
       submittedAt
 ```
 
+### the backlinks of (target)
+
+Authored path: `Forum.links.theBacklinksOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 196.
+
 ```former
 Former "the backlinks of (target)" — inputs (target); bindings (source); promises exactly one record — forms:
   each Linking._getBacklinks (target) has (source)
@@ -2833,6 +1509,11 @@ Former "the backlinks of (target)" — inputs (target); bindings (source); promi
     form a record of
       source
 ```
+
+### the post summary of (item)
+
+Authored path: `Forum.fragments.thePostSummaryOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 192.
 
 ```former
 Former "the post summary of (item)" — inputs (item); bindings (author, content, createdAt, editedAt); promises at most one record — forms:
@@ -2844,6 +1525,11 @@ Former "the post summary of (item)" — inputs (item); bindings (author, content
     editedAt
 ```
 
+### the bookmarked posts of (user)
+
+Authored path: `Forum.bookmarks.theBookmarkedPostsOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 187.
+
 ```former
 Former "the bookmarked posts of (user)" — inputs (user); bindings (item, savedAt); promises exactly one record — forms:
   each view "the readable bookmarks of (user)" with (user) has (item, savedAt)
@@ -2853,6 +1539,11 @@ Former "the bookmarked posts of (user)" — inputs (user); bindings (item, saved
       savedAt
 ```
 
+### the bookmarks of (user)
+
+Authored path: `Forum.bookmarks.theBookmarksOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 188.
+
 ```former
 Former "the bookmarks of (user)" — inputs (user); bindings (item, savedAt); promises exactly one record — forms:
   each view "the readable bookmarks of (user)" with (user) has (item, savedAt)
@@ -2860,6 +1551,11 @@ Former "the bookmarks of (user)" — inputs (user); bindings (item, savedAt); pr
       item
       savedAt
 ```
+
+### the calendar between (start) and (end)
+
+Authored path: `Course.calendar.theCalendarBetween`.
+- Covered by [Course](../design/compositions/Course.md), line 150.
 
 ```former
 Former "the calendar between (start) and (end)" — inputs (start, end); bindings (assignment, title, kind, availableAt, dueAt, closeAt, status); promises exactly one record — forms:
@@ -2875,6 +1571,11 @@ Former "the calendar between (start) and (end)" — inputs (start, end); binding
       title
 ```
 
+### the categories ()
+
+Authored path: `Forum.categories.theCategories`.
+- Covered by [Forum](../design/compositions/Forum.md), line 189.
+
 ```former
 Former "the categories ()" — inputs (); bindings (category, name, description); promises exactly one record — forms:
   each Categorizing._getAllCategories () has (category, description, name)
@@ -2884,6 +1585,11 @@ Former "the categories ()" — inputs (); bindings (category, name, description)
       name
 ```
 
+### the category of (item)
+
+Authored path: `Forum.categories.theCategoryOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 190.
+
 ```former
 Former "the category of (item)" — inputs (item); bindings (category, name, description); promises exactly one record — forms:
   each Categorizing._getCategory (item) has (category, description, name)
@@ -2892,6 +1598,11 @@ Former "the category of (item)" — inputs (item); bindings (category, name, des
       description
       name
 ```
+
+### the criteria of (item)
+
+Authored path: `Course.grades.theCriteriaOf`.
+- Covered by [Course](../design/compositions/Course.md), line 154.
 
 ```former
 Former "the criteria of (item)" — inputs (item); bindings (criterion, name, maxPoints, position); promises exactly one record — forms:
@@ -2903,6 +1614,11 @@ Former "the criteria of (item)" — inputs (item); bindings (criterion, name, ma
       position
 ```
 
+### the criterion scores of (learner) on (item)
+
+Authored path: `Course.grades.theCriterionScoresOf`.
+- Covered by [Course](../design/compositions/Course.md), line 155.
+
 ```former
 Former "the criterion scores of (learner) on (item)" — inputs (learner, item); bindings (criterion, points, maxPoints, feedback); promises exactly one record — forms:
   each Grading._getCriterionScores (item, learner) has (criterion, feedback, points)
@@ -2913,6 +1629,11 @@ Former "the criterion scores of (learner) on (item)" — inputs (learner, item);
       maxPoints
       points
 ```
+
+### the dashboard seat of (user)
+
+Authored path: `Course.calendar.theDashboardSeatOf`.
+- Covered by [Course](../design/compositions/Course.md), line 151.
 
 ```former
 Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder, externalKey, email, rosterName, kind, section, status); promises exactly one record — forms:
@@ -2928,6 +1649,11 @@ Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder,
       user: holder
 ```
 
+### the defined roles ()
+
+Authored path: `Access.roles.theDefinedRoles`.
+- Covered by [Access](../design/compositions/Access.md), line 97.
+
 ```former
 Former "the defined roles ()" — inputs (); bindings (role, name, capabilities); promises exactly one record — forms:
   each Roling._listRoles () has (capabilities, name, role)
@@ -2936,6 +1662,11 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
       name
       role
 ```
+
+### the dropped roster ()
+
+Authored path: `Course.roster.theDroppedRoster`.
+- Covered by [Course](../design/compositions/Course.md), line 166.
 
 ```former
 Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
@@ -2949,6 +1680,11 @@ Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, sectio
       user
 ```
 
+### the flags on (target)
+
+Authored path: `Forum.moderation.theFlagsOn`.
+- Covered by [Forum](../design/compositions/Forum.md), line 198.
+
 ```former
 Former "the flags on (target)" — inputs (target); bindings (flag, reporter, reason, status, createdAt); promises exactly one record — forms:
   each Flagging._getFlags (target) has (createdAt, flag, reason, reporter, status)
@@ -2960,6 +1696,11 @@ Former "the flags on (target)" — inputs (target); bindings (flag, reporter, re
       status
 ```
 
+### the forward links of (source)
+
+Authored path: `Forum.links.theForwardLinksOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 197.
+
 ```former
 Former "the forward links of (source)" — inputs (source); bindings (target); promises exactly one record — forms:
   each Linking._getLinks (source) has (target)
@@ -2967,6 +1708,11 @@ Former "the forward links of (source)" — inputs (source); bindings (target); p
     form a record of
       target
 ```
+
+### the gradebook ()
+
+Authored path: `Course.grades.theGradebook`.
+- Covered by [Course](../design/compositions/Course.md), line 156.
 
 ```former
 Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, rosterName, email, cellItem, grade, score, status); promises exactly one record — forms:
@@ -2992,6 +1738,11 @@ Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user,
         section
 ```
 
+### the gradebook learners ()
+
+Authored path: `Course.grades.theGradebookLearners`.
+- Covered by [Course](../design/compositions/Course.md), line 157.
+
 ```former
 Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, rosterName, email); promises exactly one record — forms:
   each Rostering._getActiveStudents () has (email, rosterName, seat, section, user)
@@ -3002,6 +1753,11 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
       section
       user
 ```
+
+### the grades of (learner)
+
+Authored path: `Course.grades.theGradesOf`.
+- Covered by [Course](../design/compositions/Course.md), line 158.
 
 ```former
 Former "the grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -3017,6 +1773,11 @@ Former "the grades of (learner)" — inputs (learner); bindings (item, grade, sc
       status
 ```
 
+### the grades on (item)
+
+Authored path: `Course.grades.theGradesOn`.
+- Covered by [Course](../design/compositions/Course.md), line 159.
+
 ```former
 Former "the grades on (item)" — inputs (item); bindings (learner, grade, score, status); promises exactly one record — forms:
   each Grading._getGradesForItem (item) has (grade, learner, score, status)
@@ -3027,6 +1788,11 @@ Former "the grades on (item)" — inputs (item); bindings (learner, grade, score
       status
 ```
 
+### the thread stats of (conversation)
+
+Authored path: `Forum.fragments.theThreadStatsOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 195.
+
 ```former
 Former "the thread stats of (conversation)" — inputs (conversation); bindings (replyNode, replyItem, activityItem, activityAt, partItem, participant); promises exactly one record — forms:
   a record of
@@ -3036,6 +1802,11 @@ Former "the thread stats of (conversation)" — inputs (conversation); bindings 
     replyCount: the count of view "the public posts in (conversation)" with (conversation) has (item: replyItem, node: replyNode)
       where Conversing._parentOf (node: replyNode)
 ```
+
+### the home feed by activity ()
+
+Authored path: `Forum.threads.theHomeFeedByActivity`.
+- Covered by [Forum](../design/compositions/Forum.md), line 224.
 
 ```former
 Former "the home feed by activity ()" — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName); promises exactly one record — forms:
@@ -3060,6 +1831,11 @@ Former "the home feed by activity ()" — inputs (); bindings (conversation, roo
       … former "the thread stats of (conversation)" with (conversation)
 ```
 
+### the home feed by creation ()
+
+Authored path: `Forum.threads.theHomeFeedByCreation`.
+- Covered by [Forum](../design/compositions/Forum.md), line 225.
+
 ```former
 Former "the home feed by creation ()" — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName); promises exactly one record — forms:
   each Conversing._getConversations () has (conversation, createdAt, item, root)
@@ -3083,6 +1859,11 @@ Former "the home feed by creation ()" — inputs (); bindings (conversation, roo
       … former "the thread stats of (conversation)" with (conversation)
 ```
 
+### the notification presentation of (item)
+
+Authored path: `Forum.notifications.theNotificationPresentationOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 204.
+
 ```former
 Former "the notification presentation of (item)" — inputs (item); bindings (author, content, createdAt, editedAt, username, displayName, avatar); promises exactly one record — forms:
   a record of
@@ -3101,6 +1882,11 @@ Former "the notification presentation of (item)" — inputs (item); bindings (au
       editedAt
 ```
 
+### the inbox of (user)
+
+Authored path: `Forum.notifications.theInboxOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 203.
+
 ```former
 Former "the inbox of (user)" — inputs (user); bindings (notification, kind, link, createdAt, read); promises exactly one record — forms:
   each Notifying._getInbox (recipient: user) has (createdAt, kind, link, notification, read)
@@ -3112,6 +1898,11 @@ Former "the inbox of (user)" — inputs (user); bindings (notification, kind, li
       read
       … former "the notification presentation of (item)" with (item: link), with blank leaves if absent
 ```
+
+### the invitations ()
+
+Authored path: `Access.invitations.theInvitations`.
+- Covered by [Access](../design/compositions/Access.md), line 96.
 
 ```former
 Former "the invitations ()" — inputs (); bindings (invitation, channel, address, createdAt, lastInvitedAt, inviteCount, user); promises exactly one record — forms:
@@ -3126,6 +1917,11 @@ Former "the invitations ()" — inputs (); bindings (invitation, channel, addres
       user
 ```
 
+### the items in (category)
+
+Authored path: `Forum.categories.theItemsIn`.
+- Covered by [Forum](../design/compositions/Forum.md), line 191.
+
 ```former
 Former "the items in (category)" — inputs (category); bindings (item); promises exactly one record — forms:
   each Categorizing._getItems (category) has (item)
@@ -3133,6 +1929,11 @@ Former "the items in (category)" — inputs (category); bindings (item); promise
     form a record of
       item
 ```
+
+### the late-day balance of (learner)
+
+Authored path: `Course.lateDays.theLateDayBalanceOf`.
+- Covered by [Course](../design/compositions/Course.md), line 161.
 
 ```former
 Former "the late-day balance of (learner)" — inputs (learner); bindings (granted, used, remaining); promises exactly one record — forms:
@@ -3142,6 +1943,11 @@ Former "the late-day balance of (learner)" — inputs (learner); bindings (grant
     remaining
     used
 ```
+
+### the late-day uses of (learner)
+
+Authored path: `Course.lateDays.theLateDayUsesOf`.
+- Covered by [Course](../design/compositions/Course.md), line 162.
 
 ```former
 Former "the late-day uses of (learner)" — inputs (learner); bindings (use, item, days, status, appliedAt); promises exactly one record — forms:
@@ -3154,6 +1960,11 @@ Former "the late-day uses of (learner)" — inputs (learner); bindings (use, ite
       use
 ```
 
+### the late-day uses on (assignment)
+
+Authored path: `Course.lateDays.theLateDayUsesOn`.
+- Covered by [Course](../design/compositions/Course.md), line 163.
+
 ```former
 Former "the late-day uses on (assignment)" — inputs (assignment); bindings (learner, days); promises exactly one record — forms:
   each Banking._getUsesForItem (item: assignment) has (days, learner)
@@ -3161,6 +1972,11 @@ Former "the late-day uses on (assignment)" — inputs (assignment); bindings (le
       days
       learner
 ```
+
+### the latest revision of (item)
+
+Authored path: `Forum.revisions.theLatestRevisionOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 214.
 
 ```former
 Former "the latest revision of (item)" — inputs (item); bindings (revision, number, content, savedAt); promises exactly one record — forms:
@@ -3172,6 +1988,11 @@ Former "the latest revision of (item)" — inputs (item); bindings (revision, nu
       savedAt
 ```
 
+### the locked list ()
+
+Authored path: `Forum.moderation.theLockedList`.
+- Covered by [Forum](../design/compositions/Forum.md), line 199.
+
 ```former
 Former "the locked list ()" — inputs (); bindings (target, lockedAt); promises exactly one record — forms:
   each Locking._getLocked () has (lockedAt, target)
@@ -3180,6 +2001,11 @@ Former "the locked list ()" — inputs (); bindings (target, lockedAt); promises
       lockedAt
       target
 ```
+
+### the moderation queue ()
+
+Authored path: `Forum.moderation.theModerationQueue`.
+- Covered by [Forum](../design/compositions/Forum.md), line 200.
 
 ```former
 Former "the moderation queue ()" — inputs (); bindings (target, count, node, conversation, author, content, createdAt, editedAt, rendered, flag, reporter, reason, status, flaggedAt); promises exactly one record — forms:
@@ -3207,6 +2033,11 @@ Former "the moderation queue ()" — inputs (); bindings (target, count, node, c
       target
 ```
 
+### the notes shown to (learner)
+
+Authored path: `Course.notes.theNotesShownTo`.
+- Covered by [Course](../design/compositions/Course.md), line 164.
+
 ```former
 Former "the notes shown to (learner)" — inputs (learner); bindings (note, author, body, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags); promises exactly one record — forms:
   each Noting._getShownTo (learner) has (acknowledgedAt, author, body, createdAt, followUpAt, note, status, tags, updatedAt)
@@ -3223,6 +2054,11 @@ Former "the notes shown to (learner)" — inputs (learner); bindings (note, auth
       updatedAt
 ```
 
+### the notifications of (user)
+
+Authored path: `Forum.notifications.theNotificationsOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 205.
+
 ```former
 Former "the notifications of (user)" — inputs (user); bindings (notification, kind, subject, link, createdAt, read); promises exactly one record — forms:
   each Notifying._getInbox (recipient: user) has (createdAt, kind, link, notification, read, subject)
@@ -3235,6 +2071,11 @@ Former "the notifications of (user)" — inputs (user); bindings (notification, 
       subject
 ```
 
+### the open flags ()
+
+Authored path: `Forum.moderation.theOpenFlags`.
+- Covered by [Forum](../design/compositions/Forum.md), line 201.
+
 ```former
 Former "the open flags ()" — inputs (); bindings (target, count); promises exactly one record — forms:
   each Flagging._getOpenTargets () has (count, target)
@@ -3243,6 +2084,11 @@ Former "the open flags ()" — inputs (); bindings (target, count); promises exa
       count
       target
 ```
+
+### the pending roster ()
+
+Authored path: `Course.roster.thePendingRoster`.
+- Covered by [Course](../design/compositions/Course.md), line 167.
 
 ```former
 Former "the pending roster ()" — inputs (); bindings (seat, externalKey, email, rosterName, kind, section); promises exactly one record — forms:
@@ -3256,6 +2102,11 @@ Former "the pending roster ()" — inputs (); bindings (seat, externalKey, email
       section
 ```
 
+### the pins of (scope)
+
+Authored path: `Forum.pins.thePinsOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 206.
+
 ```former
 Former "the pins of (scope)" — inputs (scope); bindings (item, priority); promises exactly one record — forms:
   each Pinning._getPinned (scope) has (item, priority)
@@ -3264,6 +2115,11 @@ Former "the pins of (scope)" — inputs (scope); bindings (item, priority); prom
       item
       priority
 ```
+
+### the post (post)
+
+Authored path: `Forum.posts.thePost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 207.
 
 ```former
 Former "the post (post)" — inputs (post); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
@@ -3277,6 +2133,11 @@ Former "the post (post)" — inputs (post); bindings (author, content, createdAt
     rendered
 ```
 
+### the private profile of (user)
+
+Authored path: `Forum.fragments.thePrivateProfileOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 193.
+
 ```former
 Former "the private profile of (user)" — inputs (user); bindings (displayName, bio, avatar, email); promises at most one record — forms:
   a record of
@@ -3287,6 +2148,11 @@ Former "the private profile of (user)" — inputs (user); bindings (displayName,
     email
 ```
 
+### the profile face of (user)
+
+Authored path: `Forum.fragments.theProfileFaceOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 194.
+
 ```former
 Former "the profile face of (user)" — inputs (user); bindings (displayName, bio, avatar); promises at most one record — forms:
   a record of
@@ -3296,12 +2162,22 @@ Former "the profile face of (user)" — inputs (user); bindings (displayName, bi
     displayName
 ```
 
+### the public posts of (author)
+
+Authored path: `Forum.posts.thePublicPostsOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 208.
+
 ```former
 Former "the public posts of (author)" — inputs (author); bindings (post); promises exactly one record — forms:
   each view "the public posts by (author)" with (author) has (post)
     form a record of
       post
 ```
+
+### the reaction counts on (target)
+
+Authored path: `Forum.reactions.theReactionCountsOn`.
+- Covered by [Forum](../design/compositions/Forum.md), line 211.
 
 ```former
 Former "the reaction counts on (target)" — inputs (target); bindings (kind, count); promises exactly one record — forms:
@@ -3311,6 +2187,11 @@ Former "the reaction counts on (target)" — inputs (target); bindings (kind, co
       kind
 ```
 
+### the reactions on (target)
+
+Authored path: `Forum.reactions.theReactionsOn`.
+- Covered by [Forum](../design/compositions/Forum.md), line 212.
+
 ```former
 Former "the reactions on (target)" — inputs (target); bindings (reaction, reactor, kind); promises exactly one record — forms:
   each Reacting._getReactionsForTarget (target) has (kind, reaction, reactor)
@@ -3319,6 +2200,11 @@ Former "the reactions on (target)" — inputs (target); bindings (reaction, reac
       reaction
       user: reactor
 ```
+
+### the released grades of (learner)
+
+Authored path: `Course.grades.theReleasedGradesOf`.
+- Covered by [Course](../design/compositions/Course.md), line 160.
 
 ```former
 Former "the released grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -3335,6 +2221,11 @@ Former "the released grades of (learner)" — inputs (learner); bindings (item, 
       status
 ```
 
+### the resolution of (question)
+
+Authored path: `Forum.resolutions.theResolutionOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 213.
+
 ```former
 Former "the resolution of (question)" — inputs (question); bindings (answer, resolvedBy, resolvedAt); promises exactly one record — forms:
   each Resolving._getResolution (question) has (answer, resolvedAt, resolvedBy)
@@ -3344,6 +2235,11 @@ Former "the resolution of (question)" — inputs (question); bindings (answer, r
       resolvedAt
       resolvedBy
 ```
+
+### the revision history of (item)
+
+Authored path: `Forum.revisions.theRevisionHistoryOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 215.
 
 ```former
 Former "the revision history of (item)" — inputs (item); bindings (revision, number, content, savedAt); promises exactly one record — forms:
@@ -3355,6 +2251,11 @@ Former "the revision history of (item)" — inputs (item); bindings (revision, n
       savedAt
 ```
 
+### the revision numbered (number) of (item)
+
+Authored path: `Forum.revisions.theRevisionNumberedOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 216.
+
 ```former
 Former "the revision numbered (number) of (item)" — inputs (number, item); bindings (content, savedAt); promises exactly one record — forms:
   each Revising._getRevision (item, number) has (content, savedAt)
@@ -3363,12 +2264,22 @@ Former "the revision numbered (number) of (item)" — inputs (number, item); bin
       savedAt
 ```
 
+### the roles held by (user) in (context)
+
+Authored path: `Access.roles.theRolesHeldBy`.
+- Covered by [Access](../design/compositions/Access.md), line 98.
+
 ```former
 Former "the roles held by (user) in (context)" — inputs (user, context); bindings (role); promises exactly one record — forms:
   each Roling._getRoles (context, user) has (role)
     form a record of
       role
 ```
+
+### the roster ()
+
+Authored path: `Course.roster.theRoster`.
+- Covered by [Course](../design/compositions/Course.md), line 168.
 
 ```former
 Former "the roster ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
@@ -3382,6 +2293,11 @@ Former "the roster ()" — inputs (); bindings (user, seat, kind, section, roste
       user
 ```
 
+### the sections ()
+
+Authored path: `Course.roster.theSections`.
+- Covered by [Course](../design/compositions/Course.md), line 169.
+
 ```former
 Former "the sections ()" — inputs (); bindings (section, name, location, meetingPattern, status); promises exactly one record — forms:
   each Rostering._getSections () has (location, meetingPattern, name, section, status)
@@ -3392,6 +2308,11 @@ Former "the sections ()" — inputs (); bindings (section, name, location, meeti
       section
       status
 ```
+
+### the staff assignments ()
+
+Authored path: `Course.assignments.theStaffAssignments`.
+- Covered by [Course](../design/compositions/Course.md), line 149.
 
 ```former
 Former "the staff assignments ()" — inputs (); bindings (assignment, author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, status, createdAt, updatedAt); promises exactly one record — forms:
@@ -3413,6 +2334,11 @@ Former "the staff assignments ()" — inputs (); bindings (assignment, author, t
       updatedAt
 ```
 
+### the staff dashboard ()
+
+Authored path: `Course.calendar.theStaffDashboard`.
+- Covered by [Course](../design/compositions/Course.md), line 152.
+
 ```former
 Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
   each Rostering._getActiveMembers () has (email, kind, rosterName, seat, section, user)
@@ -3425,6 +2351,11 @@ Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, secti
       user
 ```
 
+### the staff dashboard counts ()
+
+Authored path: `Course.calendar.theStaffDashboardCounts`.
+- Covered by [Course](../design/compositions/Course.md), line 153.
+
 ```former
 Former "the staff dashboard counts ()" — inputs (); bindings (assignment, item, learner, use); promises exactly one record — forms:
   a record of
@@ -3433,6 +2364,11 @@ Former "the staff dashboard counts ()" — inputs (); bindings (assignment, item
     lateDayUses: the count of Rostering._getActiveStudents () has (user: learner)
       where Banking._getUses (learner) has (status: "APPLIED", use)
 ```
+
+### the staff notes on (learner)
+
+Authored path: `Course.notes.theStaffNotesOn`.
+- Covered by [Course](../design/compositions/Course.md), line 165.
 
 ```former
 Former "the staff notes on (learner)" — inputs (learner); bindings (note, author, body, visibility, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags); promises exactly one record — forms:
@@ -3451,6 +2387,11 @@ Former "the staff notes on (learner)" — inputs (learner); bindings (note, auth
       visibility
 ```
 
+### the submissions by (submitter)
+
+Authored path: `Course.submissions.theSubmissionsBy`.
+- Covered by [Course](../design/compositions/Course.md), line 172.
+
 ```former
 Former "the submissions by (submitter)" — inputs (submitter); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
   each Submitting._getSubmissionsForSubmitter (submitter) has (assignment, number, status, submission, submittedAt)
@@ -3461,6 +2402,11 @@ Former "the submissions by (submitter)" — inputs (submitter); bindings (assign
       submission
       submittedAt
 ```
+
+### the submissions for (assignment)
+
+Authored path: `Course.submissions.theSubmissionsForAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 173.
 
 ```former
 Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, submittedAt, number, status); promises exactly one record — forms:
@@ -3475,6 +2421,11 @@ Former "the submissions for (assignment)" — inputs (assignment); bindings (sub
       submitterName
 ```
 
+### the subscribers of (target)
+
+Authored path: `Forum.subscriptions.theSubscribersOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 217.
+
 ```former
 Former "the subscribers of (target)" — inputs (target); bindings (user); promises exactly one record — forms:
   each Subscribing._getSubscribers (target) has (user)
@@ -3482,6 +2433,11 @@ Former "the subscribers of (target)" — inputs (target); bindings (user); promi
     form a record of
       user
 ```
+
+### the subscriptions of (user)
+
+Authored path: `Forum.subscriptions.theSubscriptionsOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 218.
 
 ```former
 Former "the subscriptions of (user)" — inputs (user); bindings (target, subscribedAt); promises exactly one record — forms:
@@ -3492,6 +2448,11 @@ Former "the subscriptions of (user)" — inputs (user); bindings (target, subscr
       target
 ```
 
+### the tags ()
+
+Authored path: `Forum.tags.theTags`.
+- Covered by [Forum](../design/compositions/Forum.md), line 220.
+
 ```former
 Former "the tags ()" — inputs (); bindings (tag, name); promises exactly one record — forms:
   each Tagging._getAllTags () has (name, tag)
@@ -3499,6 +2460,11 @@ Former "the tags ()" — inputs (); bindings (tag, name); promises exactly one r
       name
       tag
 ```
+
+### the tags on (target)
+
+Authored path: `Forum.tags.theTagsOn`.
+- Covered by [Forum](../design/compositions/Forum.md), line 221.
 
 ```former
 Former "the tags on (target)" — inputs (target); bindings (tag, name); promises exactly one record — forms:
@@ -3509,6 +2475,11 @@ Former "the tags on (target)" — inputs (target); bindings (tag, name); promise
       tag
 ```
 
+### the targets tagged (tag)
+
+Authored path: `Forum.tags.theTargetsTagged`.
+- Covered by [Forum](../design/compositions/Forum.md), line 222.
+
 ```former
 Former "the targets tagged (tag)" — inputs (tag); bindings (target); promises exactly one record — forms:
   each Tagging._getTargets (tag) has (target)
@@ -3516,6 +2487,11 @@ Former "the targets tagged (tag)" — inputs (tag); bindings (target); promises 
     form a record of
       target
 ```
+
+### the targets tagged with (name)
+
+Authored path: `Forum.tags.theTargetsTaggedWithName`.
+- Covered by [Forum](../design/compositions/Forum.md), line 223.
 
 ```former
 Former "the targets tagged with (name)" — inputs (name); bindings (tag, target); promises exactly one record — forms:
@@ -3525,6 +2501,11 @@ Former "the targets tagged with (name)" — inputs (name); bindings (tag, target
     form a record of
       target
 ```
+
+### the thread (conversation)
+
+Authored path: `Forum.threads.theThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 226.
 
 ```former
 Former "the thread (conversation)" — inputs (conversation); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
@@ -3544,6 +2525,11 @@ Former "the thread (conversation)" — inputs (conversation); bindings (node, it
         editedAt
       rendered
 ```
+
+### the thread context (conversation)
+
+Authored path: `Forum.threads.theThreadContext`.
+- Covered by [Forum](../design/compositions/Forum.md), line 227.
 
 ```former
 Former "the thread context (conversation)" — inputs (conversation); bindings (node, item, category, tag, tagName, locked, answer); promises exactly one record — forms:
@@ -3565,6 +2551,11 @@ Former "the thread context (conversation)" — inputs (conversation); bindings (
       … former "the thread stats of (conversation)" with (conversation)
 ```
 
+### the trash bin ()
+
+Authored path: `Forum.moderation.theTrashBin`.
+- Covered by [Forum](../design/compositions/Forum.md), line 202.
+
 ```former
 Former "the trash bin ()" — inputs (); bindings (item, trashedBy, trashedAt); promises exactly one record — forms:
   each Trashing._getTrashed () has (item, trashedAt, trashedBy)
@@ -3574,12 +2565,22 @@ Former "the trash bin ()" — inputs (); bindings (item, trashedBy, trashedAt); 
       trashedBy
 ```
 
+### the unread of (user) in (scope)
+
+Authored path: `Forum.unread.theUnreadOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 228.
+
 ```former
 Former "the unread of (user) in (scope)" — inputs (user, scope); bindings (item); promises exactly one record — forms:
   each Tracking._getUnread (scope, user) has (item)
     form a record of
       item
 ```
+
+### the user page of (user)
+
+Authored path: `Forum.profiles.theUserPage`.
+- Covered by [Forum](../design/compositions/Forum.md), line 209.
 
 ```former
 Former "the user page of (user)" — inputs (user); bindings (role, name, post, node, conversation); promises exactly one record — forms:
@@ -3600,6 +2601,11 @@ Former "the user page of (user)" — inputs (user); bindings (role, name, post, 
         role
 ```
 
+### the user search (query)
+
+Authored path: `Forum.profiles.theUserSearch`.
+- Covered by [Forum](../design/compositions/Forum.md), line 210.
+
 ```former
 Former "the user search (query)" — inputs (query); bindings (user, username); promises exactly one record — forms:
   each Authenticating._search (query) has (user, username)
@@ -3608,6 +2614,11 @@ Former "the user search (query)" — inputs (query); bindings (user, username); 
       user
       username
 ```
+
+### the watched threads of (user)
+
+Authored path: `Forum.subscriptions.theWatchedThreadsOf`.
+- Covered by [Forum](../design/compositions/Forum.md), line 219.
 
 ```former
 Former "the watched threads of (user)" — inputs (user); bindings (target, subscribedAt, rootItem, rootNode); promises exactly one record — forms:
@@ -3626,6 +2637,9 @@ Former "the watched threads of (user)" — inputs (user); bindings (target, subs
 
 ### Access.auth.AcceptInvitation
 
+Authored path: `Access.auth.AcceptInvitation`.
+- Covered by [Access](../design/compositions/Access.md), line 40.
+
 ```reaction
 when RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
 then
@@ -3633,6 +2647,9 @@ then
 ```
 
 ### Access.auth.AcceptInvitation#2
+
+Authored path: `Access.auth.AcceptInvitation`.
+- Covered by [Access](../design/compositions/Access.md), line 40.
 
 ```reaction
 when Inviting.verify (channel: "email", credential: temporaryPassword, invitation, address: email), asked by Access.auth.AcceptInvitation
@@ -3644,6 +2661,9 @@ then
 
 ### Access.auth.AcceptInvitation#3
 
+Authored path: `Access.auth.AcceptInvitation`.
+- Covered by [Access](../design/compositions/Access.md), line 40.
+
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.AcceptInvitation#2
 where
@@ -3653,6 +2673,9 @@ then
 ```
 
 ### Access.auth.AcceptInvitation#4
+
+Authored path: `Access.auth.AcceptInvitation`.
+- Covered by [Access](../design/compositions/Access.md), line 40.
 
 ```reaction
 when Profiling.createProfile (displayName, email, user), asked by Access.auth.AcceptInvitation#3
@@ -3664,6 +2687,9 @@ then
 
 ### Access.auth.AcceptInvitation#5
 
+Authored path: `Access.auth.AcceptInvitation`.
+- Covered by [Access](../design/compositions/Access.md), line 40.
+
 ```reaction
 when Inviting.claim (credential: temporaryPassword, invitation, user), asked by Access.auth.AcceptInvitation#4
 where
@@ -3673,6 +2699,9 @@ then
 ```
 
 ### Access.auth.BootstrapAdminOnLogin
+
+Authored path: `Access.auth.BootstrapAdminOnLogin`.
+- Covered by [Access](../design/compositions/Access.md), line 41.
 
 ```reaction
 when Authenticating.authenticate (user)
@@ -3685,6 +2714,9 @@ then
 
 ### Access.auth.BootstrapAdminOnLogin#2
 
+Authored path: `Access.auth.BootstrapAdminOnLogin`.
+- Covered by [Access](../design/compositions/Access.md), line 41.
+
 ```reaction
 when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnLogin
 where
@@ -3694,6 +2726,9 @@ then
 ```
 
 ### Access.auth.BootstrapAdminOnRegister
+
+Authored path: `Access.auth.BootstrapAdminOnRegister`.
+- Covered by [Access](../design/compositions/Access.md), line 42.
 
 ```reaction
 when Authenticating.register (user)
@@ -3706,6 +2741,9 @@ then
 
 ### Access.auth.BootstrapAdminOnRegister#2
 
+Authored path: `Access.auth.BootstrapAdminOnRegister`.
+- Covered by [Access](../design/compositions/Access.md), line 42.
+
 ```reaction
 when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnRegister
 where
@@ -3715,6 +2753,9 @@ then
 ```
 
 ### Access.auth.ChangePassword
+
+Authored path: `Access.auth.ChangePassword`.
+- Covered by [Access](../design/compositions/Access.md), line 43.
 
 ```reaction
 when RequestBoundary.request (newPassword, oldPassword, path: "/auth/changePassword", requestId, session)
@@ -3726,6 +2767,9 @@ then
 
 ### Access.auth.ChangePassword#2
 
+Authored path: `Access.auth.ChangePassword`.
+- Covered by [Access](../design/compositions/Access.md), line 43.
+
 ```reaction
 when Authenticating.changePassword (newPassword, oldPassword, user), asked by Access.auth.ChangePassword
 then
@@ -3733,6 +2777,9 @@ then
 ```
 
 ### Access.auth.ChangePassword#3
+
+Authored path: `Access.auth.ChangePassword`.
+- Covered by [Access](../design/compositions/Access.md), line 43.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ChangePassword#2
@@ -3743,6 +2790,9 @@ then
 ```
 
 ### Access.auth.InvalidSessionIsRejected:expired-session
+
+Authored path: `Access.auth.InvalidSessionIsRejected`.
+- Covered by [Access](../design/compositions/Access.md), line 44.
 
 ```reaction
 when RequestBoundary.request (requestId, session)
@@ -3755,6 +2805,9 @@ then
 
 ### Access.auth.InvalidSessionIsRejected:expired-session#2
 
+Authored path: `Access.auth.InvalidSessionIsRejected`.
+- Covered by [Access](../design/compositions/Access.md), line 44.
+
 ```reaction
 when Sessioning.end (session), asked by Access.auth.InvalidSessionIsRejected:expired-session
 where
@@ -3764,6 +2817,9 @@ then
 ```
 
 ### Access.auth.InvalidSessionIsRejected:unknown-session
+
+Authored path: `Access.auth.InvalidSessionIsRejected`.
+- Covered by [Access](../design/compositions/Access.md), line 44.
 
 ```reaction
 when RequestBoundary.request (requestId, session)
@@ -3777,6 +2833,9 @@ then
 
 ### Access.auth.Login
 
+Authored path: `Access.auth.Login`.
+- Covered by [Access](../design/compositions/Access.md), line 45.
+
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
 then
@@ -3785,6 +2844,9 @@ then
 
 ### Access.auth.Login#2
 
+Authored path: `Access.auth.Login`.
+- Covered by [Access](../design/compositions/Access.md), line 45.
+
 ```reaction
 when Authenticating.authenticate (password, username, user), asked by Access.auth.Login
 then
@@ -3792,6 +2854,9 @@ then
 ```
 
 ### Access.auth.Login#3
+
+Authored path: `Access.auth.Login`.
+- Covered by [Access](../design/compositions/Access.md), line 45.
 
 ```reaction
 when Timing.capture (at), asked by Access.auth.Login#2
@@ -3803,6 +2868,9 @@ then
 
 ### Access.auth.Login#4
 
+Authored path: `Access.auth.Login`.
+- Covered by [Access](../design/compositions/Access.md), line 45.
+
 ```reaction
 when Sessioning.start (at, user, expiresAt, session), asked by Access.auth.Login#3
 where
@@ -3812,6 +2880,9 @@ then
 ```
 
 ### Access.auth.Logout
+
+Authored path: `Access.auth.Logout`.
+- Covered by [Access](../design/compositions/Access.md), line 46.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/logout", requestId, session)
@@ -3823,6 +2894,9 @@ then
 
 ### Access.auth.Logout#2
 
+Authored path: `Access.auth.Logout`.
+- Covered by [Access](../design/compositions/Access.md), line 46.
+
 ```reaction
 when Sessioning.end (session), asked by Access.auth.Logout
 where
@@ -3832,6 +2906,9 @@ then
 ```
 
 ### Access.auth.Me
+
+Authored path: `Access.auth.Me`.
+- Covered by [Access](../design/compositions/Access.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/me", requestId, session)
@@ -3845,6 +2922,9 @@ then
 
 ### Access.auth.Resolve:absent
 
+Authored path: `Access.auth.Resolve`.
+- Covered by [Access](../design/compositions/Access.md), line 48.
+
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
 where
@@ -3855,6 +2935,9 @@ then
 
 ### Access.auth.Resolve:found
 
+Authored path: `Access.auth.Resolve`.
+- Covered by [Access](../design/compositions/Access.md), line 48.
+
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
 where
@@ -3864,6 +2947,9 @@ then
 ```
 
 ### Access.invitations.EmailInvitationQueuesMail
+
+Authored path: `Access.invitations.EmailInvitationQueuesMail`.
+- Covered by [Access](../design/compositions/Access.md), line 49.
 
 ```reaction
 when Inviting.invite (address, at, channel: "email", created, credential, invitation)
@@ -3876,6 +2962,9 @@ then
 
 ### Access.invitations.Invite:forbidden
 
+Authored path: `Access.invitations.Invite`.
+- Covered by [Access](../design/compositions/Access.md), line 50.
+
 ```reaction
 when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
 where
@@ -3886,6 +2975,9 @@ then
 ```
 
 ### Access.invitations.Invite:success
+
+Authored path: `Access.invitations.Invite`.
+- Covered by [Access](../design/compositions/Access.md), line 50.
 
 ```reaction
 when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
@@ -3898,6 +2990,9 @@ then
 
 ### Access.invitations.Invite:success#2
 
+Authored path: `Access.invitations.Invite`.
+- Covered by [Access](../design/compositions/Access.md), line 50.
+
 ```reaction
 when Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.invitations.Invite:success
 then
@@ -3905,6 +3000,9 @@ then
 ```
 
 ### Access.invitations.Invite:success#3
+
+Authored path: `Access.invitations.Invite`.
+- Covered by [Access](../design/compositions/Access.md), line 50.
 
 ```reaction
 when Timing.capture (at), asked by Access.invitations.Invite:success#2
@@ -3916,6 +3014,9 @@ then
 
 ### Access.invitations.Invite:success#4
 
+Authored path: `Access.invitations.Invite`.
+- Covered by [Access](../design/compositions/Access.md), line 50.
+
 ```reaction
 when Inviting.invite (address: recipient, at, channel: "email", created, invitation), asked by Access.invitations.Invite:success#3
 where
@@ -3925,6 +3026,9 @@ then
 ```
 
 ### Access.invitations.List:forbidden
+
+Authored path: `Access.invitations.List`.
+- Covered by [Access](../design/compositions/Access.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/invitations/list", requestId, session)
@@ -3937,6 +3041,9 @@ then
 
 ### Access.invitations.List:success
 
+Authored path: `Access.invitations.List`.
+- Covered by [Access](../design/compositions/Access.md), line 51.
+
 ```reaction
 when RequestBoundary.request (path: "/invitations/list", requestId, session)
 where
@@ -3947,6 +3054,9 @@ then
 ```
 
 ### Access.roles.DefineRole:forbidden
+
+Authored path: `Access.roles.DefineRole`.
+- Covered by [Access](../design/compositions/Access.md), line 52.
 
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
@@ -3959,6 +3069,9 @@ then
 
 ### Access.roles.DefineRole:success
 
+Authored path: `Access.roles.DefineRole`.
+- Covered by [Access](../design/compositions/Access.md), line 52.
+
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
 where
@@ -3970,6 +3083,9 @@ then
 
 ### Access.roles.DefineRole:success#2
 
+Authored path: `Access.roles.DefineRole`.
+- Covered by [Access](../design/compositions/Access.md), line 52.
+
 ```reaction
 when Roling.defineRole (capabilities, name, role), asked by Access.roles.DefineRole:success
 where
@@ -3979,6 +3095,9 @@ then
 ```
 
 ### Access.roles.GrantRole:forbidden
+
+Authored path: `Access.roles.GrantRole`.
+- Covered by [Access](../design/compositions/Access.md), line 53.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/grant", requestId, role, session, user)
@@ -3990,6 +3109,9 @@ then
 ```
 
 ### Access.roles.GrantRole:success
+
+Authored path: `Access.roles.GrantRole`.
+- Covered by [Access](../design/compositions/Access.md), line 53.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/grant", requestId, role, session, user)
@@ -4004,6 +3126,9 @@ then
 
 ### Access.roles.GrantRole:success#2
 
+Authored path: `Access.roles.GrantRole`.
+- Covered by [Access](../design/compositions/Access.md), line 53.
+
 ```reaction
 when Roling.grant (context, role: resolved, user: subject, grant), asked by Access.roles.GrantRole:success
 where
@@ -4013,6 +3138,9 @@ then
 ```
 
 ### Access.roles.RevokeRole:forbidden
+
+Authored path: `Access.roles.RevokeRole`.
+- Covered by [Access](../design/compositions/Access.md), line 54.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, role, session, user)
@@ -4024,6 +3152,9 @@ then
 ```
 
 ### Access.roles.RevokeRole:success
+
+Authored path: `Access.roles.RevokeRole`.
+- Covered by [Access](../design/compositions/Access.md), line 54.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, role, session, user)
@@ -4038,6 +3169,9 @@ then
 
 ### Access.roles.RevokeRole:success#2
 
+Authored path: `Access.roles.RevokeRole`.
+- Covered by [Access](../design/compositions/Access.md), line 54.
+
 ```reaction
 when Roling.revoke (context, role: resolved, user: subject, grant), asked by Access.roles.RevokeRole:success
 where
@@ -4047,6 +3181,9 @@ then
 ```
 
 ### Access.roles.RoleCan
+
+Authored path: `Access.roles.RoleCan`.
+- Covered by [Access](../design/compositions/Access.md), line 55.
 
 ```reaction
 when RequestBoundary.request (capability, context, path: "/roles/can", requestId, user)
@@ -4058,6 +3195,9 @@ then
 
 ### Access.roles.RoleGet
 
+Authored path: `Access.roles.RoleGet`.
+- Covered by [Access](../design/compositions/Access.md), line 56.
+
 ```reaction
 when RequestBoundary.request (path: "/roles/get", requestId, role)
 where
@@ -4068,6 +3208,9 @@ then
 
 ### Access.roles.RoleList
 
+Authored path: `Access.roles.RoleList`.
+- Covered by [Access](../design/compositions/Access.md), line 57.
+
 ```reaction
 when RequestBoundary.request (path: "/roles/list", requestId)
 then
@@ -4075,6 +3218,9 @@ then
 ```
 
 ### Access.roles.RolesForUser
+
+Authored path: `Access.roles.RolesForUser`.
+- Covered by [Access](../design/compositions/Access.md), line 58.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/forUser", requestId, user)
@@ -4086,6 +3232,9 @@ then
 
 ### Course.assignments.Archive:forbidden
 
+Authored path: `Course.assignments.Archive`.
+- Covered by [Course](../design/compositions/Course.md), line 55.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
 where
@@ -4096,6 +3245,9 @@ then
 ```
 
 ### Course.assignments.Archive:success
+
+Authored path: `Course.assignments.Archive`.
+- Covered by [Course](../design/compositions/Course.md), line 55.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
@@ -4109,6 +3261,9 @@ then
 
 ### Course.assignments.Archive:success#2
 
+Authored path: `Course.assignments.Archive`.
+- Covered by [Course](../design/compositions/Course.md), line 55.
+
 ```reaction
 when Assigning.archive (assignment, at, result.assignment: archived), asked by Course.assignments.Archive:success
 where
@@ -4118,6 +3273,9 @@ then
 ```
 
 ### Course.assignments.ClaimedStudentSeatReceivesPublished
+
+Authored path: `Course.assignments.ClaimedStudentSeatReceivesPublished`.
+- Covered by [Course](../design/compositions/Course.md), line 56.
 
 ```reaction
 when Rostering.claimSeat (kind: "STUDENT", section, user)
@@ -4131,6 +3289,9 @@ then
 
 ### Course.assignments.ClearDueOverride:forbidden
 
+Authored path: `Course.assignments.ClearDueOverride`.
+- Covered by [Course](../design/compositions/Course.md), line 57.
+
 ```reaction
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
 where
@@ -4141,6 +3302,9 @@ then
 ```
 
 ### Course.assignments.ClearDueOverride:success
+
+Authored path: `Course.assignments.ClearDueOverride`.
+- Covered by [Course](../design/compositions/Course.md), line 57.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
@@ -4153,6 +3317,9 @@ then
 
 ### Course.assignments.ClearDueOverride:success#2
 
+Authored path: `Course.assignments.ClearDueOverride`.
+- Covered by [Course](../design/compositions/Course.md), line 57.
+
 ```reaction
 when Assigning.clearDueOverride (assignee, assignment, release), asked by Course.assignments.ClearDueOverride:success
 where
@@ -4162,6 +3329,9 @@ then
 ```
 
 ### Course.assignments.CreateDraft:forbidden
+
+Authored path: `Course.assignments.CreateDraft`.
+- Covered by [Course](../design/compositions/Course.md), line 58.
 
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
@@ -4173,6 +3343,9 @@ then
 ```
 
 ### Course.assignments.CreateDraft:success
+
+Authored path: `Course.assignments.CreateDraft`.
+- Covered by [Course](../design/compositions/Course.md), line 58.
 
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
@@ -4186,6 +3359,9 @@ then
 
 ### Course.assignments.CreateDraft:success#2
 
+Authored path: `Course.assignments.CreateDraft`.
+- Covered by [Course](../design/compositions/Course.md), line 58.
+
 ```reaction
 when Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, targets, title, assignment), asked by Course.assignments.CreateDraft:success
 where
@@ -4195,6 +3371,9 @@ then
 ```
 
 ### Course.assignments.ForMe:forbidden
+
+Authored path: `Course.assignments.ForMe`.
+- Covered by [Course](../design/compositions/Course.md), line 59.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
@@ -4207,6 +3386,9 @@ then
 
 ### Course.assignments.ForMe:success
 
+Authored path: `Course.assignments.ForMe`.
+- Covered by [Course](../design/compositions/Course.md), line 59.
+
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
 where
@@ -4218,6 +3400,9 @@ then
 
 ### Course.assignments.GetAssignment:forbidden
 
+Authored path: `Course.assignments.GetAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 60.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
 where
@@ -4228,6 +3413,9 @@ then
 ```
 
 ### Course.assignments.GetAssignment:found
+
+Authored path: `Course.assignments.GetAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 60.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -4243,6 +3431,9 @@ then
 
 ### Course.assignments.GetAssignment:not-assigned
 
+Authored path: `Course.assignments.GetAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 60.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
 where
@@ -4254,6 +3445,9 @@ then
 ```
 
 ### Course.assignments.GetAssignment:not-published
+
+Authored path: `Course.assignments.GetAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 60.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -4268,6 +3462,9 @@ then
 
 ### Course.assignments.Publish:forbidden
 
+Authored path: `Course.assignments.Publish`.
+- Covered by [Course](../design/compositions/Course.md), line 61.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
 where
@@ -4278,6 +3475,9 @@ then
 ```
 
 ### Course.assignments.Publish:success
+
+Authored path: `Course.assignments.Publish`.
+- Covered by [Course](../design/compositions/Course.md), line 61.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
@@ -4291,6 +3491,9 @@ then
 
 ### Course.assignments.Publish:success#2
 
+Authored path: `Course.assignments.Publish`.
+- Covered by [Course](../design/compositions/Course.md), line 61.
+
 ```reaction
 when Assigning.publish (assignment, at, result.assignment: published), asked by Course.assignments.Publish:success
 where
@@ -4300,6 +3503,9 @@ then
 ```
 
 ### Course.assignments.PublishedAcceptingAssignmentGetsGradeItem
+
+Authored path: `Course.assignments.PublishedAcceptingAssignmentGetsGradeItem`.
+- Covered by [Course](../design/compositions/Course.md), line 62.
 
 ```reaction
 when Assigning.publish (acceptsSubmissions: true, assignment)
@@ -4311,6 +3517,9 @@ then
 
 ### Course.assignments.PublishedAssignmentAssignsAudienceStudents:everyone
 
+Authored path: `Course.assignments.PublishedAssignmentAssignsAudienceStudents`.
+- Covered by [Course](../design/compositions/Course.md), line 63.
+
 ```reaction
 when Assigning.publish (at, assignment, audience, targets)
 where
@@ -4321,6 +3530,9 @@ then
 ```
 
 ### Course.assignments.PublishedAssignmentAssignsAudienceStudents:targets
+
+Authored path: `Course.assignments.PublishedAssignmentAssignsAudienceStudents`.
+- Covered by [Course](../design/compositions/Course.md), line 63.
 
 ```reaction
 when Assigning.publish (at, assignment, audience, targets)
@@ -4334,6 +3546,9 @@ then
 
 ### Course.assignments.ReinstatedStudentSeatReceivesPublished
 
+Authored path: `Course.assignments.ReinstatedStudentSeatReceivesPublished`.
+- Covered by [Course](../design/compositions/Course.md), line 64.
+
 ```reaction
 when Rostering.reinstateSeat (kind: "STUDENT", section, user)
 where
@@ -4346,6 +3561,9 @@ then
 
 ### Course.assignments.Revise:forbidden
 
+Authored path: `Course.assignments.Revise`.
+- Covered by [Course](../design/compositions/Course.md), line 65.
+
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
 where
@@ -4356,6 +3574,9 @@ then
 ```
 
 ### Course.assignments.Revise:success
+
+Authored path: `Course.assignments.Revise`.
+- Covered by [Course](../design/compositions/Course.md), line 65.
 
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
@@ -4369,6 +3590,9 @@ then
 
 ### Course.assignments.Revise:success#2
 
+Authored path: `Course.assignments.Revise`.
+- Covered by [Course](../design/compositions/Course.md), line 65.
+
 ```reaction
 when Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, targets, title, result.assignment: revised), asked by Course.assignments.Revise:success
 where
@@ -4378,6 +3602,9 @@ then
 ```
 
 ### Course.assignments.RevisedAssignmentAssignsNewAudienceStudents:everyone
+
+Authored path: `Course.assignments.RevisedAssignmentAssignsNewAudienceStudents`.
+- Covered by [Course](../design/compositions/Course.md), line 66.
 
 ```reaction
 when Assigning.revise (at, assignment, audience, status, targets)
@@ -4391,6 +3618,9 @@ then
 ```
 
 ### Course.assignments.RevisedAssignmentAssignsNewAudienceStudents:targets
+
+Authored path: `Course.assignments.RevisedAssignmentAssignsNewAudienceStudents`.
+- Covered by [Course](../design/compositions/Course.md), line 66.
 
 ```reaction
 when Assigning.revise (at, assignment, audience, status, targets)
@@ -4406,6 +3636,9 @@ then
 
 ### Course.assignments.SetDueOverride:forbidden
 
+Authored path: `Course.assignments.SetDueOverride`.
+- Covered by [Course](../design/compositions/Course.md), line 67.
+
 ```reaction
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
 where
@@ -4416,6 +3649,9 @@ then
 ```
 
 ### Course.assignments.SetDueOverride:success
+
+Authored path: `Course.assignments.SetDueOverride`.
+- Covered by [Course](../design/compositions/Course.md), line 67.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
@@ -4428,6 +3664,9 @@ then
 
 ### Course.assignments.SetDueOverride:success#2
 
+Authored path: `Course.assignments.SetDueOverride`.
+- Covered by [Course](../design/compositions/Course.md), line 67.
+
 ```reaction
 when Assigning.setDueOverride (assignee, assignment, dueAt, release), asked by Course.assignments.SetDueOverride:success
 where
@@ -4437,6 +3676,9 @@ then
 ```
 
 ### Course.assignments.StaffList:forbidden
+
+Authored path: `Course.assignments.StaffList`.
+- Covered by [Course](../design/compositions/Course.md), line 68.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
@@ -4449,6 +3691,9 @@ then
 
 ### Course.assignments.StaffList:success
 
+Authored path: `Course.assignments.StaffList`.
+- Covered by [Course](../design/compositions/Course.md), line 68.
+
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
 where
@@ -4460,6 +3705,9 @@ then
 
 ### Course.assignments.StaffSummary:forbidden
 
+Authored path: `Course.assignments.StaffSummary`.
+- Covered by [Course](../design/compositions/Course.md), line 69.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
 where
@@ -4470,6 +3718,9 @@ then
 ```
 
 ### Course.assignments.StaffSummary:found
+
+Authored path: `Course.assignments.StaffSummary`.
+- Covered by [Course](../design/compositions/Course.md), line 69.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -4483,6 +3734,9 @@ then
 
 ### Course.assignments.StaffSummary:missing
 
+Authored path: `Course.assignments.StaffSummary`.
+- Covered by [Course](../design/compositions/Course.md), line 69.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
 where
@@ -4495,6 +3749,9 @@ then
 
 ### Course.assignments.Submit:forbidden
 
+Authored path: `Course.assignments.Submit`.
+- Covered by [Course](../design/compositions/Course.md), line 70.
+
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
 where
@@ -4505,6 +3762,9 @@ then
 ```
 
 ### Course.assignments.Submit:success
+
+Authored path: `Course.assignments.Submit`.
+- Covered by [Course](../design/compositions/Course.md), line 70.
 
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
@@ -4518,6 +3778,9 @@ then
 
 ### Course.assignments.Submit:success#2
 
+Authored path: `Course.assignments.Submit`.
+- Covered by [Course](../design/compositions/Course.md), line 70.
+
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Course.assignments.Submit:success
 where
@@ -4528,6 +3791,9 @@ then
 
 ### Course.assignments.Submit:success#3
 
+Authored path: `Course.assignments.Submit`.
+- Covered by [Course](../design/compositions/Course.md), line 70.
+
 ```reaction
 when Submitting.submit (artifact: post, assignment, at, submitter: user, submission), asked by Course.assignments.Submit:success#2
 where
@@ -4537,6 +3803,9 @@ then
 ```
 
 ### Course.calendar.CalendarMe:forbidden
+
+Authored path: `Course.calendar.CalendarMe`.
+- Covered by [Course](../design/compositions/Course.md), line 71.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
@@ -4549,6 +3818,9 @@ then
 
 ### Course.calendar.CalendarMe:success
 
+Authored path: `Course.calendar.CalendarMe`.
+- Covered by [Course](../design/compositions/Course.md), line 71.
+
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
 where
@@ -4559,6 +3831,9 @@ then
 ```
 
 ### Course.calendar.CalendarStaff:forbidden
+
+Authored path: `Course.calendar.CalendarStaff`.
+- Covered by [Course](../design/compositions/Course.md), line 72.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
@@ -4571,6 +3846,9 @@ then
 
 ### Course.calendar.CalendarStaff:success
 
+Authored path: `Course.calendar.CalendarStaff`.
+- Covered by [Course](../design/compositions/Course.md), line 72.
+
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
 where
@@ -4581,6 +3859,9 @@ then
 ```
 
 ### Course.calendar.LmsMe:forbidden
+
+Authored path: `Course.calendar.LmsMe`.
+- Covered by [Course](../design/compositions/Course.md), line 73.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
@@ -4593,6 +3874,9 @@ then
 
 ### Course.calendar.LmsMe:success
 
+Authored path: `Course.calendar.LmsMe`.
+- Covered by [Course](../design/compositions/Course.md), line 73.
+
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
 where
@@ -4603,6 +3887,9 @@ then
 ```
 
 ### Course.calendar.LmsStaffDashboard:forbidden
+
+Authored path: `Course.calendar.LmsStaffDashboard`.
+- Covered by [Course](../design/compositions/Course.md), line 74.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)
@@ -4615,6 +3902,9 @@ then
 
 ### Course.calendar.LmsStaffDashboard:success
 
+Authored path: `Course.calendar.LmsStaffDashboard`.
+- Covered by [Course](../design/compositions/Course.md), line 74.
+
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)
 where
@@ -4625,6 +3915,9 @@ then
 ```
 
 ### Course.grades.GradesAddCriterion:forbidden
+
+Authored path: `Course.grades.GradesAddCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 75.
 
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
@@ -4637,6 +3930,9 @@ then
 
 ### Course.grades.GradesAddCriterion:success
 
+Authored path: `Course.grades.GradesAddCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 75.
+
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
 where
@@ -4648,6 +3944,9 @@ then
 
 ### Course.grades.GradesAddCriterion:success#2
 
+Authored path: `Course.grades.GradesAddCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 75.
+
 ```reaction
 when Itemizing.addCriterion (item, maxPoints, name, position, criterion), asked by Course.grades.GradesAddCriterion:success
 where
@@ -4657,6 +3956,9 @@ then
 ```
 
 ### Course.grades.GradesConfigureItem:forbidden
+
+Authored path: `Course.grades.GradesConfigureItem`.
+- Covered by [Course](../design/compositions/Course.md), line 76.
 
 ```reaction
 when RequestBoundary.request (item, label, maxPoints, path: "/grades/configure-item", requestId, session)
@@ -4669,6 +3971,9 @@ then
 
 ### Course.grades.GradesConfigureItem:success
 
+Authored path: `Course.grades.GradesConfigureItem`.
+- Covered by [Course](../design/compositions/Course.md), line 76.
+
 ```reaction
 when RequestBoundary.request (item, label, maxPoints, path: "/grades/configure-item", requestId, session)
 where
@@ -4680,6 +3985,9 @@ then
 
 ### Course.grades.GradesConfigureItem:success#2
 
+Authored path: `Course.grades.GradesConfigureItem`.
+- Covered by [Course](../design/compositions/Course.md), line 76.
+
 ```reaction
 when Itemizing.configureItem (item, label, maxPoints, gradeItem), asked by Course.grades.GradesConfigureItem:success
 where
@@ -4689,6 +3997,9 @@ then
 ```
 
 ### Course.grades.GradesCriterionScores:forbidden
+
+Authored path: `Course.grades.GradesCriterionScores`.
+- Covered by [Course](../design/compositions/Course.md), line 77.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
@@ -4701,6 +4012,9 @@ then
 
 ### Course.grades.GradesCriterionScores:success
 
+Authored path: `Course.grades.GradesCriterionScores`.
+- Covered by [Course](../design/compositions/Course.md), line 77.
+
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
 where
@@ -4712,6 +4026,9 @@ then
 
 ### Course.grades.GradesExcuse:forbidden
 
+Authored path: `Course.grades.GradesExcuse`.
+- Covered by [Course](../design/compositions/Course.md), line 78.
+
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
 where
@@ -4722,6 +4039,9 @@ then
 ```
 
 ### Course.grades.GradesExcuse:success
+
+Authored path: `Course.grades.GradesExcuse`.
+- Covered by [Course](../design/compositions/Course.md), line 78.
 
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
@@ -4735,6 +4055,9 @@ then
 
 ### Course.grades.GradesExcuse:success#2
 
+Authored path: `Course.grades.GradesExcuse`.
+- Covered by [Course](../design/compositions/Course.md), line 78.
+
 ```reaction
 when Grading.excuse (at, feedback, grader: user, item, learner, grade), asked by Course.grades.GradesExcuse:success
 where
@@ -4744,6 +4067,9 @@ then
 ```
 
 ### Course.grades.GradesExport:forbidden
+
+Authored path: `Course.grades.GradesExport`.
+- Covered by [Course](../design/compositions/Course.md), line 79.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -4756,6 +4082,9 @@ then
 
 ### Course.grades.GradesExport:success
 
+Authored path: `Course.grades.GradesExport`.
+- Covered by [Course](../design/compositions/Course.md), line 79.
+
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
 where
@@ -4766,6 +4095,9 @@ then
 ```
 
 ### Course.grades.GradesForItem:forbidden
+
+Authored path: `Course.grades.GradesForItem`.
+- Covered by [Course](../design/compositions/Course.md), line 80.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -4778,6 +4110,9 @@ then
 
 ### Course.grades.GradesForItem:success
 
+Authored path: `Course.grades.GradesForItem`.
+- Covered by [Course](../design/compositions/Course.md), line 80.
+
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
 where
@@ -4788,6 +4123,9 @@ then
 ```
 
 ### Course.grades.GradesForMe:not-student
+
+Authored path: `Course.grades.GradesForMe`.
+- Covered by [Course](../design/compositions/Course.md), line 81.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -4800,6 +4138,9 @@ then
 
 ### Course.grades.GradesForMe:success
 
+Authored path: `Course.grades.GradesForMe`.
+- Covered by [Course](../design/compositions/Course.md), line 81.
+
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
 where
@@ -4810,6 +4151,9 @@ then
 ```
 
 ### Course.grades.GradesForStudent:forbidden
+
+Authored path: `Course.grades.GradesForStudent`.
+- Covered by [Course](../design/compositions/Course.md), line 82.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -4822,6 +4166,9 @@ then
 
 ### Course.grades.GradesForStudent:success
 
+Authored path: `Course.grades.GradesForStudent`.
+- Covered by [Course](../design/compositions/Course.md), line 82.
+
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
 where
@@ -4832,6 +4179,9 @@ then
 ```
 
 ### Course.grades.GradesGradebook:forbidden
+
+Authored path: `Course.grades.GradesGradebook`.
+- Covered by [Course](../design/compositions/Course.md), line 83.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -4844,6 +4194,9 @@ then
 
 ### Course.grades.GradesGradebook:success
 
+Authored path: `Course.grades.GradesGradebook`.
+- Covered by [Course](../design/compositions/Course.md), line 83.
+
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
 where
@@ -4855,6 +4208,9 @@ then
 
 ### Course.grades.GradesItem:forbidden
 
+Authored path: `Course.grades.GradesItem`.
+- Covered by [Course](../design/compositions/Course.md), line 84.
+
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
 where
@@ -4865,6 +4221,9 @@ then
 ```
 
 ### Course.grades.GradesItem:missing
+
+Authored path: `Course.grades.GradesItem`.
+- Covered by [Course](../design/compositions/Course.md), line 84.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -4878,6 +4237,9 @@ then
 
 ### Course.grades.GradesItem:success
 
+Authored path: `Course.grades.GradesItem`.
+- Covered by [Course](../design/compositions/Course.md), line 84.
+
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
 where
@@ -4890,6 +4252,9 @@ then
 
 ### Course.grades.GradesRecord:forbidden
 
+Authored path: `Course.grades.GradesRecord`.
+- Covered by [Course](../design/compositions/Course.md), line 85.
+
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
 where
@@ -4900,6 +4265,9 @@ then
 ```
 
 ### Course.grades.GradesRecord:missing-item
+
+Authored path: `Course.grades.GradesRecord`.
+- Covered by [Course](../design/compositions/Course.md), line 85.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -4912,6 +4280,9 @@ then
 ```
 
 ### Course.grades.GradesRecord:success
+
+Authored path: `Course.grades.GradesRecord`.
+- Covered by [Course](../design/compositions/Course.md), line 85.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -4926,6 +4297,9 @@ then
 
 ### Course.grades.GradesRecord:success#2
 
+Authored path: `Course.grades.GradesRecord`.
+- Covered by [Course](../design/compositions/Course.md), line 85.
+
 ```reaction
 when Grading.record (at, evidence, feedback, grader: user, item, learner, outOf: maxPoints, score, grade), asked by Course.grades.GradesRecord:success
 where
@@ -4935,6 +4309,9 @@ then
 ```
 
 ### Course.grades.GradesRelease:forbidden
+
+Authored path: `Course.grades.GradesRelease`.
+- Covered by [Course](../design/compositions/Course.md), line 86.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
@@ -4946,6 +4323,9 @@ then
 ```
 
 ### Course.grades.GradesRelease:success
+
+Authored path: `Course.grades.GradesRelease`.
+- Covered by [Course](../design/compositions/Course.md), line 86.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
@@ -4959,6 +4339,9 @@ then
 
 ### Course.grades.GradesRelease:success#2
 
+Authored path: `Course.grades.GradesRelease`.
+- Covered by [Course](../design/compositions/Course.md), line 86.
+
 ```reaction
 when Grading.release (at, item, learner, grade), asked by Course.grades.GradesRelease:success
 where
@@ -4968,6 +4351,9 @@ then
 ```
 
 ### Course.grades.GradesReleaseItem:forbidden
+
+Authored path: `Course.grades.GradesReleaseItem`.
+- Covered by [Course](../design/compositions/Course.md), line 87.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -4979,6 +4365,9 @@ then
 ```
 
 ### Course.grades.GradesReleaseItem:success
+
+Authored path: `Course.grades.GradesReleaseItem`.
+- Covered by [Course](../design/compositions/Course.md), line 87.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -4992,6 +4381,9 @@ then
 
 ### Course.grades.GradesReleaseItem:success#2
 
+Authored path: `Course.grades.GradesReleaseItem`.
+- Covered by [Course](../design/compositions/Course.md), line 87.
+
 ```reaction
 when Grading.releaseItem (at, item, released), asked by Course.grades.GradesReleaseItem:success
 where
@@ -5001,6 +4393,9 @@ then
 ```
 
 ### Course.grades.GradesRemoveCriterion:forbidden
+
+Authored path: `Course.grades.GradesRemoveCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 88.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
@@ -5013,6 +4408,9 @@ then
 
 ### Course.grades.GradesRemoveCriterion:success
 
+Authored path: `Course.grades.GradesRemoveCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 88.
+
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
 where
@@ -5024,6 +4422,9 @@ then
 
 ### Course.grades.GradesRemoveCriterion:success#2
 
+Authored path: `Course.grades.GradesRemoveCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 88.
+
 ```reaction
 when Itemizing.removeCriterion (criterion, result.criterion: removed), asked by Course.grades.GradesRemoveCriterion:success
 where
@@ -5033,6 +4434,9 @@ then
 ```
 
 ### Course.grades.GradesRetract:forbidden
+
+Authored path: `Course.grades.GradesRetract`.
+- Covered by [Course](../design/compositions/Course.md), line 89.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
@@ -5044,6 +4448,9 @@ then
 ```
 
 ### Course.grades.GradesRetract:success
+
+Authored path: `Course.grades.GradesRetract`.
+- Covered by [Course](../design/compositions/Course.md), line 89.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
@@ -5057,6 +4464,9 @@ then
 
 ### Course.grades.GradesRetract:success#2
 
+Authored path: `Course.grades.GradesRetract`.
+- Covered by [Course](../design/compositions/Course.md), line 89.
+
 ```reaction
 when Grading.retract (at, item, learner, grade), asked by Course.grades.GradesRetract:success
 where
@@ -5066,6 +4476,9 @@ then
 ```
 
 ### Course.grades.GradesReviseCriterion:forbidden
+
+Authored path: `Course.grades.GradesReviseCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 90.
 
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
@@ -5078,6 +4491,9 @@ then
 
 ### Course.grades.GradesReviseCriterion:success
 
+Authored path: `Course.grades.GradesReviseCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 90.
+
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
 where
@@ -5089,6 +4505,9 @@ then
 
 ### Course.grades.GradesReviseCriterion:success#2
 
+Authored path: `Course.grades.GradesReviseCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 90.
+
 ```reaction
 when Itemizing.reviseCriterion (criterion, maxPoints, name, position, result.criterion: revised), asked by Course.grades.GradesReviseCriterion:success
 where
@@ -5098,6 +4517,9 @@ then
 ```
 
 ### Course.grades.GradesScoreCriterion:cross-item
+
+Authored path: `Course.grades.GradesScoreCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 91.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -5111,6 +4533,9 @@ then
 
 ### Course.grades.GradesScoreCriterion:forbidden
 
+Authored path: `Course.grades.GradesScoreCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 91.
+
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
 where
@@ -5121,6 +4546,9 @@ then
 ```
 
 ### Course.grades.GradesScoreCriterion:missing
+
+Authored path: `Course.grades.GradesScoreCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 91.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -5134,6 +4562,9 @@ then
 
 ### Course.grades.GradesScoreCriterion:success
 
+Authored path: `Course.grades.GradesScoreCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 91.
+
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
 where
@@ -5146,6 +4577,9 @@ then
 
 ### Course.grades.GradesScoreCriterion:success#2
 
+Authored path: `Course.grades.GradesScoreCriterion`.
+- Covered by [Course](../design/compositions/Course.md), line 91.
+
 ```reaction
 when Grading.scoreCriterion (criterion, feedback, item, learner, outOf: critMax, points, criterionScore), asked by Course.grades.GradesScoreCriterion:success
 where
@@ -5156,6 +4590,9 @@ then
 
 ### Course.grades.RemovedCriterionClearsScores
 
+Authored path: `Course.grades.RemovedCriterionClearsScores`.
+- Covered by [Course](../design/compositions/Course.md), line 92.
+
 ```reaction
 when Itemizing.removeCriterion (criterion)
 then
@@ -5164,6 +4601,9 @@ then
 
 ### Course.grades.RevisedAcceptingAssignmentEnsuresGradeItem
 
+Authored path: `Course.grades.RevisedAcceptingAssignmentEnsuresGradeItem`.
+- Covered by [Course](../design/compositions/Course.md), line 93.
+
 ```reaction
 when Assigning.revise (title, acceptsSubmissions: true, assignment, status: "PUBLISHED")
 then
@@ -5171,6 +4611,9 @@ then
 ```
 
 ### Course.lateDays.Apply:forbidden
+
+Authored path: `Course.lateDays.Apply`.
+- Covered by [Course](../design/compositions/Course.md), line 94.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
@@ -5182,6 +4625,9 @@ then
 ```
 
 ### Course.lateDays.Apply:success
+
+Authored path: `Course.lateDays.Apply`.
+- Covered by [Course](../design/compositions/Course.md), line 94.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
@@ -5195,6 +4641,9 @@ then
 
 ### Course.lateDays.Apply:success#2
 
+Authored path: `Course.lateDays.Apply`.
+- Covered by [Course](../design/compositions/Course.md), line 94.
+
 ```reaction
 when Banking.apply (at, days, item: assignment, learner: user, use), asked by Course.lateDays.Apply:success
 where
@@ -5204,6 +4653,9 @@ then
 ```
 
 ### Course.lateDays.Balance:balance
+
+Authored path: `Course.lateDays.Balance`.
+- Covered by [Course](../design/compositions/Course.md), line 95.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -5216,6 +4668,9 @@ then
 
 ### Course.lateDays.Balance:balance-missing
 
+Authored path: `Course.lateDays.Balance`.
+- Covered by [Course](../design/compositions/Course.md), line 95.
+
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
 where
@@ -5226,6 +4681,9 @@ then
 ```
 
 ### Course.lateDays.Balance:balance-unauthorized
+
+Authored path: `Course.lateDays.Balance`.
+- Covered by [Course](../design/compositions/Course.md), line 95.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -5239,6 +4697,9 @@ then
 
 ### Course.lateDays.Balance:staff-balance
 
+Authored path: `Course.lateDays.Balance`.
+- Covered by [Course](../design/compositions/Course.md), line 95.
+
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
 where
@@ -5251,6 +4712,9 @@ then
 
 ### Course.lateDays.Cancel:forbidden
 
+Authored path: `Course.lateDays.Cancel`.
+- Covered by [Course](../design/compositions/Course.md), line 96.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/cancel", requestId, session)
 where
@@ -5261,6 +4725,9 @@ then
 ```
 
 ### Course.lateDays.Cancel:success
+
+Authored path: `Course.lateDays.Cancel`.
+- Covered by [Course](../design/compositions/Course.md), line 96.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/cancel", requestId, session)
@@ -5273,6 +4740,9 @@ then
 
 ### Course.lateDays.Cancel:success#2
 
+Authored path: `Course.lateDays.Cancel`.
+- Covered by [Course](../design/compositions/Course.md), line 96.
+
 ```reaction
 when Banking.cancel (item: assignment, learner: user, use), asked by Course.lateDays.Cancel:success
 where
@@ -5282,6 +4752,9 @@ then
 ```
 
 ### Course.lateDays.Change:forbidden
+
+Authored path: `Course.lateDays.Change`.
+- Covered by [Course](../design/compositions/Course.md), line 97.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
@@ -5294,6 +4767,9 @@ then
 
 ### Course.lateDays.Change:success
 
+Authored path: `Course.lateDays.Change`.
+- Covered by [Course](../design/compositions/Course.md), line 97.
+
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
 where
@@ -5305,6 +4781,9 @@ then
 
 ### Course.lateDays.Change:success#2
 
+Authored path: `Course.lateDays.Change`.
+- Covered by [Course](../design/compositions/Course.md), line 97.
+
 ```reaction
 when Banking.change (days, item: assignment, learner: user, use), asked by Course.lateDays.Change:success
 where
@@ -5314,6 +4793,9 @@ then
 ```
 
 ### Course.lateDays.ConfigurePolicy:forbidden
+
+Authored path: `Course.lateDays.ConfigurePolicy`.
+- Covered by [Course](../design/compositions/Course.md), line 98.
 
 ```reaction
 when RequestBoundary.request (defaultDays, maxDaysPerItem, path: "/late-days/configure-policy", requestId, session, unitHours)
@@ -5326,6 +4808,9 @@ then
 
 ### Course.lateDays.ConfigurePolicy:success
 
+Authored path: `Course.lateDays.ConfigurePolicy`.
+- Covered by [Course](../design/compositions/Course.md), line 98.
+
 ```reaction
 when RequestBoundary.request (defaultDays, maxDaysPerItem, path: "/late-days/configure-policy", requestId, session, unitHours)
 where
@@ -5337,6 +4822,9 @@ then
 
 ### Course.lateDays.ConfigurePolicy:success#2
 
+Authored path: `Course.lateDays.ConfigurePolicy`.
+- Covered by [Course](../design/compositions/Course.md), line 98.
+
 ```reaction
 when Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours), asked by Course.lateDays.ConfigurePolicy:success
 where
@@ -5346,6 +4834,9 @@ then
 ```
 
 ### Course.lateDays.ForAssignment:forbidden
+
+Authored path: `Course.lateDays.ForAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 99.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
@@ -5358,6 +4849,9 @@ then
 
 ### Course.lateDays.ForAssignment:success
 
+Authored path: `Course.lateDays.ForAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 99.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
 where
@@ -5369,6 +4863,9 @@ then
 
 ### Course.lateDays.Grant:forbidden
 
+Authored path: `Course.lateDays.Grant`.
+- Covered by [Course](../design/compositions/Course.md), line 100.
+
 ```reaction
 when RequestBoundary.request (days, learner, path: "/late-days/grant", reason, requestId, session)
 where
@@ -5379,6 +4876,9 @@ then
 ```
 
 ### Course.lateDays.Grant:success
+
+Authored path: `Course.lateDays.Grant`.
+- Covered by [Course](../design/compositions/Course.md), line 100.
 
 ```reaction
 when RequestBoundary.request (days, learner, path: "/late-days/grant", reason, requestId, session)
@@ -5392,6 +4892,9 @@ then
 
 ### Course.lateDays.Grant:success#2
 
+Authored path: `Course.lateDays.Grant`.
+- Covered by [Course](../design/compositions/Course.md), line 100.
+
 ```reaction
 when Banking.grant (at, days, learner, reason, grant), asked by Course.lateDays.Grant:success
 where
@@ -5401,6 +4904,9 @@ then
 ```
 
 ### Course.lateDays.List:forbidden
+
+Authored path: `Course.lateDays.List`.
+- Covered by [Course](../design/compositions/Course.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/list", requestId, session)
@@ -5413,6 +4919,9 @@ then
 
 ### Course.lateDays.List:success
 
+Authored path: `Course.lateDays.List`.
+- Covered by [Course](../design/compositions/Course.md), line 101.
+
 ```reaction
 when RequestBoundary.request (path: "/late-days/list", requestId, session)
 where
@@ -5424,6 +4933,9 @@ then
 
 ### Course.lateDays.Policy:forbidden
 
+Authored path: `Course.lateDays.Policy`.
+- Covered by [Course](../design/compositions/Course.md), line 102.
+
 ```reaction
 when RequestBoundary.request (path: "/late-days/policy", requestId, session)
 where
@@ -5434,6 +4946,9 @@ then
 ```
 
 ### Course.lateDays.Policy:success
+
+Authored path: `Course.lateDays.Policy`.
+- Covered by [Course](../design/compositions/Course.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/policy", requestId, session)
@@ -5447,6 +4962,9 @@ then
 
 ### Course.lateDays.StaffCancel:hidden
 
+Authored path: `Course.lateDays.StaffCancel`.
+- Covered by [Course](../design/compositions/Course.md), line 103.
+
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
 where
@@ -5457,6 +4975,9 @@ then
 ```
 
 ### Course.lateDays.StaffCancel:success
+
+Authored path: `Course.lateDays.StaffCancel`.
+- Covered by [Course](../design/compositions/Course.md), line 103.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -5470,6 +4991,9 @@ then
 
 ### Course.lateDays.StaffCancel:success#2
 
+Authored path: `Course.lateDays.StaffCancel`.
+- Covered by [Course](../design/compositions/Course.md), line 103.
+
 ```reaction
 when Banking.cancel (item: assignment, learner, use), asked by Course.lateDays.StaffCancel:success
 where
@@ -5479,6 +5003,9 @@ then
 ```
 
 ### Course.lateDays.StaffCancel:unauthorized
+
+Authored path: `Course.lateDays.StaffCancel`.
+- Covered by [Course](../design/compositions/Course.md), line 103.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -5492,6 +5019,9 @@ then
 
 ### Course.lateDays.StaffChange:hidden
 
+Authored path: `Course.lateDays.StaffChange`.
+- Covered by [Course](../design/compositions/Course.md), line 104.
+
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
 where
@@ -5502,6 +5032,9 @@ then
 ```
 
 ### Course.lateDays.StaffChange:success
+
+Authored path: `Course.lateDays.StaffChange`.
+- Covered by [Course](../design/compositions/Course.md), line 104.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -5515,6 +5048,9 @@ then
 
 ### Course.lateDays.StaffChange:success#2
 
+Authored path: `Course.lateDays.StaffChange`.
+- Covered by [Course](../design/compositions/Course.md), line 104.
+
 ```reaction
 when Banking.change (days, item: assignment, learner, use), asked by Course.lateDays.StaffChange:success
 where
@@ -5524,6 +5060,9 @@ then
 ```
 
 ### Course.lateDays.StaffChange:unauthorized
+
+Authored path: `Course.lateDays.StaffChange`.
+- Covered by [Course](../design/compositions/Course.md), line 104.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -5537,6 +5076,9 @@ then
 
 ### Course.notes.Acknowledge:forbidden
 
+Authored path: `Course.notes.Acknowledge`.
+- Covered by [Course](../design/compositions/Course.md), line 105.
+
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/acknowledge", requestId, session)
 where
@@ -5547,6 +5089,9 @@ then
 ```
 
 ### Course.notes.Acknowledge:success
+
+Authored path: `Course.notes.Acknowledge`.
+- Covered by [Course](../design/compositions/Course.md), line 105.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/acknowledge", requestId, session)
@@ -5560,6 +5105,9 @@ then
 
 ### Course.notes.Acknowledge:success#2
 
+Authored path: `Course.notes.Acknowledge`.
+- Covered by [Course](../design/compositions/Course.md), line 105.
+
 ```reaction
 when Noting.acknowledge (at, learner: user, note), asked by Course.notes.Acknowledge:success
 where
@@ -5569,6 +5117,9 @@ then
 ```
 
 ### Course.notes.Archive:forbidden
+
+Authored path: `Course.notes.Archive`.
+- Covered by [Course](../design/compositions/Course.md), line 106.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/archive", requestId, session)
@@ -5580,6 +5131,9 @@ then
 ```
 
 ### Course.notes.Archive:success
+
+Authored path: `Course.notes.Archive`.
+- Covered by [Course](../design/compositions/Course.md), line 106.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/archive", requestId, session)
@@ -5593,6 +5147,9 @@ then
 
 ### Course.notes.Archive:success#2
 
+Authored path: `Course.notes.Archive`.
+- Covered by [Course](../design/compositions/Course.md), line 106.
+
 ```reaction
 when Noting.archive (at, note), asked by Course.notes.Archive:success
 where
@@ -5602,6 +5159,9 @@ then
 ```
 
 ### Course.notes.NotesList:forbidden
+
+Authored path: `Course.notes.NotesList`.
+- Covered by [Course](../design/compositions/Course.md), line 107.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/students/notes/list", requestId, session)
@@ -5614,6 +5174,9 @@ then
 
 ### Course.notes.NotesList:success
 
+Authored path: `Course.notes.NotesList`.
+- Covered by [Course](../design/compositions/Course.md), line 107.
+
 ```reaction
 when RequestBoundary.request (learner, path: "/students/notes/list", requestId, session)
 where
@@ -5624,6 +5187,9 @@ then
 ```
 
 ### Course.notes.NotesVisible:forbidden
+
+Authored path: `Course.notes.NotesVisible`.
+- Covered by [Course](../design/compositions/Course.md), line 108.
 
 ```reaction
 when RequestBoundary.request (path: "/students/notes/visible", requestId, session)
@@ -5636,6 +5202,9 @@ then
 
 ### Course.notes.NotesVisible:success
 
+Authored path: `Course.notes.NotesVisible`.
+- Covered by [Course](../design/compositions/Course.md), line 108.
+
 ```reaction
 when RequestBoundary.request (path: "/students/notes/visible", requestId, session)
 where
@@ -5647,6 +5216,9 @@ then
 
 ### Course.notes.Resolve:forbidden
 
+Authored path: `Course.notes.Resolve`.
+- Covered by [Course](../design/compositions/Course.md), line 109.
+
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/resolve", requestId, session)
 where
@@ -5657,6 +5229,9 @@ then
 ```
 
 ### Course.notes.Resolve:success
+
+Authored path: `Course.notes.Resolve`.
+- Covered by [Course](../design/compositions/Course.md), line 109.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/resolve", requestId, session)
@@ -5670,6 +5245,9 @@ then
 
 ### Course.notes.Resolve:success#2
 
+Authored path: `Course.notes.Resolve`.
+- Covered by [Course](../design/compositions/Course.md), line 109.
+
 ```reaction
 when Noting.resolve (at, note), asked by Course.notes.Resolve:success
 where
@@ -5679,6 +5257,9 @@ then
 ```
 
 ### Course.notes.Restore:forbidden
+
+Authored path: `Course.notes.Restore`.
+- Covered by [Course](../design/compositions/Course.md), line 110.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/restore", requestId, session)
@@ -5690,6 +5271,9 @@ then
 ```
 
 ### Course.notes.Restore:success
+
+Authored path: `Course.notes.Restore`.
+- Covered by [Course](../design/compositions/Course.md), line 110.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/restore", requestId, session)
@@ -5703,6 +5287,9 @@ then
 
 ### Course.notes.Restore:success#2
 
+Authored path: `Course.notes.Restore`.
+- Covered by [Course](../design/compositions/Course.md), line 110.
+
 ```reaction
 when Noting.restore (at, note), asked by Course.notes.Restore:success
 where
@@ -5712,6 +5299,9 @@ then
 ```
 
 ### Course.notes.Revise:forbidden
+
+Authored path: `Course.notes.Revise`.
+- Covered by [Course](../design/compositions/Course.md), line 111.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, note, path: "/students/notes/revise", requestId, session, tags, visibility)
@@ -5723,6 +5313,9 @@ then
 ```
 
 ### Course.notes.Revise:success
+
+Authored path: `Course.notes.Revise`.
+- Covered by [Course](../design/compositions/Course.md), line 111.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, note, path: "/students/notes/revise", requestId, session, tags, visibility)
@@ -5736,6 +5329,9 @@ then
 
 ### Course.notes.Revise:success#2
 
+Authored path: `Course.notes.Revise`.
+- Covered by [Course](../design/compositions/Course.md), line 111.
+
 ```reaction
 when Noting.revise (at, body, followUpAt, note, tags, visibility), asked by Course.notes.Revise:success
 where
@@ -5745,6 +5341,9 @@ then
 ```
 
 ### Course.notes.StudentsDetail:forbidden
+
+Authored path: `Course.notes.StudentsDetail`.
+- Covered by [Course](../design/compositions/Course.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -5756,6 +5355,9 @@ then
 ```
 
 ### Course.notes.StudentsDetail:found
+
+Authored path: `Course.notes.StudentsDetail`.
+- Covered by [Course](../design/compositions/Course.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -5769,6 +5371,9 @@ then
 
 ### Course.notes.StudentsDetail:missing
 
+Authored path: `Course.notes.StudentsDetail`.
+- Covered by [Course](../design/compositions/Course.md), line 112.
+
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
 where
@@ -5781,6 +5386,9 @@ then
 
 ### Course.notes.Write:forbidden
 
+Authored path: `Course.notes.Write`.
+- Covered by [Course](../design/compositions/Course.md), line 113.
+
 ```reaction
 when RequestBoundary.request (body, followUpAt, learner, path: "/students/notes/write", requestId, session, tags, visibility)
 where
@@ -5791,6 +5399,9 @@ then
 ```
 
 ### Course.notes.Write:success
+
+Authored path: `Course.notes.Write`.
+- Covered by [Course](../design/compositions/Course.md), line 113.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, learner, path: "/students/notes/write", requestId, session, tags, visibility)
@@ -5804,6 +5415,9 @@ then
 
 ### Course.notes.Write:success#2
 
+Authored path: `Course.notes.Write`.
+- Covered by [Course](../design/compositions/Course.md), line 113.
+
 ```reaction
 when Noting.write (at, author: user, body, followUpAt, learner, tags, visibility, note), asked by Course.notes.Write:success
 where
@@ -5813,6 +5427,9 @@ then
 ```
 
 ### Course.roster.ClaimSeat:matched-seat
+
+Authored path: `Course.roster.ClaimSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 114.
 
 ```reaction
 when RequestBoundary.request (externalKey, path: "/roster/claim-seat", requestId, session)
@@ -5825,6 +5442,9 @@ then
 
 ### Course.roster.ClaimSeat:matched-seat#2
 
+Authored path: `Course.roster.ClaimSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 114.
+
 ```reaction
 when Rostering.claimSeat (seat, user, result.seat: claimed), asked by Course.roster.ClaimSeat:matched-seat
 where
@@ -5834,6 +5454,9 @@ then
 ```
 
 ### Course.roster.ClaimSeat:missing-seat
+
+Authored path: `Course.roster.ClaimSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 114.
 
 ```reaction
 when RequestBoundary.request (externalKey, path: "/roster/claim-seat", requestId, session)
@@ -5845,6 +5468,9 @@ then
 ```
 
 ### Course.roster.ClassConfiguration:absent
+
+Authored path: `Course.roster.ClassConfiguration`.
+- Covered by [Course](../design/compositions/Course.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
@@ -5858,6 +5484,9 @@ then
 
 ### Course.roster.ClassConfiguration:forbidden
 
+Authored path: `Course.roster.ClassConfiguration`.
+- Covered by [Course](../design/compositions/Course.md), line 115.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
 where
@@ -5868,6 +5497,9 @@ then
 ```
 
 ### Course.roster.ClassConfiguration:found
+
+Authored path: `Course.roster.ClassConfiguration`.
+- Covered by [Course](../design/compositions/Course.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
@@ -5881,6 +5513,9 @@ then
 
 ### Course.roster.ConfigureClass:forbidden
 
+Authored path: `Course.roster.ConfigureClass`.
+- Covered by [Course](../design/compositions/Course.md), line 116.
+
 ```reaction
 when RequestBoundary.request (code, path: "/roster/configure-class", requestId, session, term, timezone, title)
 where
@@ -5891,6 +5526,9 @@ then
 ```
 
 ### Course.roster.ConfigureClass:success
+
+Authored path: `Course.roster.ConfigureClass`.
+- Covered by [Course](../design/compositions/Course.md), line 116.
 
 ```reaction
 when RequestBoundary.request (code, path: "/roster/configure-class", requestId, session, term, timezone, title)
@@ -5903,6 +5541,9 @@ then
 
 ### Course.roster.ConfigureClass:success#2
 
+Authored path: `Course.roster.ConfigureClass`.
+- Covered by [Course](../design/compositions/Course.md), line 116.
+
 ```reaction
 when Rostering.configureClass (code, term, timezone, title, class), asked by Course.roster.ConfigureClass:success
 where
@@ -5912,6 +5553,9 @@ then
 ```
 
 ### Course.roster.DropSeat
+
+Authored path: `Course.roster.DropSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 119.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/drop", requestId, seat, session)
@@ -5923,6 +5567,9 @@ then
 
 ### Course.roster.DropSeat#2
 
+Authored path: `Course.roster.DropSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 119.
+
 ```reaction
 when Roling.requireCapability (capability: "roster:manage", context: "forum", user), asked by Course.roster.DropSeat
 where
@@ -5933,6 +5580,9 @@ then
 
 ### Course.roster.DropSeat#3
 
+Authored path: `Course.roster.DropSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 119.
+
 ```reaction
 when Rostering.dropSeat (seat, result.seat: dropped), asked by Course.roster.DropSeat#2
 where
@@ -5942,6 +5592,9 @@ then
 ```
 
 ### Course.roster.DroppedRoster:forbidden
+
+Authored path: `Course.roster.DroppedRoster`.
+- Covered by [Course](../design/compositions/Course.md), line 117.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/dropped", requestId, session)
@@ -5954,6 +5607,9 @@ then
 
 ### Course.roster.DroppedRoster:success
 
+Authored path: `Course.roster.DroppedRoster`.
+- Covered by [Course](../design/compositions/Course.md), line 117.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/dropped", requestId, session)
 where
@@ -5964,6 +5620,9 @@ then
 ```
 
 ### Course.roster.DroppedStaffSeatRevokesCourseStaff
+
+Authored path: `Course.roster.DroppedStaffSeatRevokesCourseStaff`.
+- Covered by [Course](../design/compositions/Course.md), line 118.
 
 ```reaction
 when Rostering.dropSeat (kind: "STAFF", user: holder)
@@ -5976,6 +5635,9 @@ then
 
 ### Course.roster.ImportPreview
 
+Authored path: `Course.roster.ImportPreview`.
+- Covered by [Course](../design/compositions/Course.md), line 120.
+
 ```reaction
 when RequestBoundary.request (csv, path: "/roster/import-preview", requestId)
 then
@@ -5983,6 +5645,9 @@ then
 ```
 
 ### Course.roster.ImportPreview#2
+
+Authored path: `Course.roster.ImportPreview`.
+- Covered by [Course](../design/compositions/Course.md), line 120.
 
 ```reaction
 when Rostering.previewImport (csv, rows), asked by Course.roster.ImportPreview
@@ -5993,6 +5658,9 @@ then
 ```
 
 ### Course.roster.ImportSeats:forbidden
+
+Authored path: `Course.roster.ImportSeats`.
+- Covered by [Course](../design/compositions/Course.md), line 121.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/import", requestId, rows, session)
@@ -6005,6 +5673,9 @@ then
 
 ### Course.roster.ImportSeats:success
 
+Authored path: `Course.roster.ImportSeats`.
+- Covered by [Course](../design/compositions/Course.md), line 121.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/import", requestId, rows, session)
 where
@@ -6016,6 +5687,9 @@ then
 
 ### Course.roster.ImportSeats:success#2
 
+Authored path: `Course.roster.ImportSeats`.
+- Covered by [Course](../design/compositions/Course.md), line 121.
+
 ```reaction
 when Rostering.importSeats (rows, created, skipped), asked by Course.roster.ImportSeats:success
 where
@@ -6025,6 +5699,9 @@ then
 ```
 
 ### Course.roster.LinkUser:forbidden
+
+Authored path: `Course.roster.LinkUser`.
+- Covered by [Course](../design/compositions/Course.md), line 122.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/link-user", requestId, seat, session, user)
@@ -6037,6 +5714,9 @@ then
 
 ### Course.roster.LinkUser:success
 
+Authored path: `Course.roster.LinkUser`.
+- Covered by [Course](../design/compositions/Course.md), line 122.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/link-user", requestId, seat, session, user)
 where
@@ -6048,6 +5728,9 @@ then
 
 ### Course.roster.LinkUser:success#2
 
+Authored path: `Course.roster.LinkUser`.
+- Covered by [Course](../design/compositions/Course.md), line 122.
+
 ```reaction
 when Rostering.claimSeat (seat, user, result.seat: linked), asked by Course.roster.LinkUser:success
 where
@@ -6057,6 +5740,9 @@ then
 ```
 
 ### Course.roster.MoveSection:forbidden
+
+Authored path: `Course.roster.MoveSection`.
+- Covered by [Course](../design/compositions/Course.md), line 123.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/move-section", requestId, seat, section, session)
@@ -6069,6 +5755,9 @@ then
 
 ### Course.roster.MoveSection:success
 
+Authored path: `Course.roster.MoveSection`.
+- Covered by [Course](../design/compositions/Course.md), line 123.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/move-section", requestId, seat, section, session)
 where
@@ -6080,6 +5769,9 @@ then
 
 ### Course.roster.MoveSection:success#2
 
+Authored path: `Course.roster.MoveSection`.
+- Covered by [Course](../design/compositions/Course.md), line 123.
+
 ```reaction
 when Rostering.moveSection (seat, section, result.seat: moved), asked by Course.roster.MoveSection:success
 where
@@ -6089,6 +5781,9 @@ then
 ```
 
 ### Course.roster.PendingRoster:forbidden
+
+Authored path: `Course.roster.PendingRoster`.
+- Covered by [Course](../design/compositions/Course.md), line 124.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/pending", requestId, session)
@@ -6101,6 +5796,9 @@ then
 
 ### Course.roster.PendingRoster:success
 
+Authored path: `Course.roster.PendingRoster`.
+- Covered by [Course](../design/compositions/Course.md), line 124.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/pending", requestId, session)
 where
@@ -6111,6 +5809,9 @@ then
 ```
 
 ### Course.roster.ReinstateSeat:forbidden
+
+Authored path: `Course.roster.ReinstateSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 125.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/reinstate", requestId, seat, session)
@@ -6123,6 +5824,9 @@ then
 
 ### Course.roster.ReinstateSeat:success
 
+Authored path: `Course.roster.ReinstateSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 125.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/reinstate", requestId, seat, session)
 where
@@ -6134,6 +5838,9 @@ then
 
 ### Course.roster.ReinstateSeat:success#2
 
+Authored path: `Course.roster.ReinstateSeat`.
+- Covered by [Course](../design/compositions/Course.md), line 125.
+
 ```reaction
 when Rostering.reinstateSeat (seat, result.seat: reinstated), asked by Course.roster.ReinstateSeat:success
 where
@@ -6143,6 +5850,9 @@ then
 ```
 
 ### Course.roster.RosterList:forbidden
+
+Authored path: `Course.roster.RosterList`.
+- Covered by [Course](../design/compositions/Course.md), line 126.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/list", requestId, session)
@@ -6155,6 +5865,9 @@ then
 
 ### Course.roster.RosterList:success
 
+Authored path: `Course.roster.RosterList`.
+- Covered by [Course](../design/compositions/Course.md), line 126.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/list", requestId, session)
 where
@@ -6165,6 +5878,9 @@ then
 ```
 
 ### Course.roster.RosterMe:absent
+
+Authored path: `Course.roster.RosterMe`.
+- Covered by [Course](../design/compositions/Course.md), line 127.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/me", requestId, session)
@@ -6177,6 +5893,9 @@ then
 
 ### Course.roster.RosterMe:found
 
+Authored path: `Course.roster.RosterMe`.
+- Covered by [Course](../design/compositions/Course.md), line 127.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/me", requestId, session)
 where
@@ -6187,6 +5906,9 @@ then
 ```
 
 ### Course.roster.SectionsCreate:forbidden
+
+Authored path: `Course.roster.SectionsCreate`.
+- Covered by [Course](../design/compositions/Course.md), line 128.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/create", requestId, session)
@@ -6199,6 +5921,9 @@ then
 
 ### Course.roster.SectionsCreate:success
 
+Authored path: `Course.roster.SectionsCreate`.
+- Covered by [Course](../design/compositions/Course.md), line 128.
+
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/create", requestId, session)
 where
@@ -6210,6 +5935,9 @@ then
 
 ### Course.roster.SectionsCreate:success#2
 
+Authored path: `Course.roster.SectionsCreate`.
+- Covered by [Course](../design/compositions/Course.md), line 128.
+
 ```reaction
 when Rostering.createSection (location, meetingPattern, name, section), asked by Course.roster.SectionsCreate:success
 where
@@ -6220,6 +5948,9 @@ then
 
 ### Course.roster.SectionsList
 
+Authored path: `Course.roster.SectionsList`.
+- Covered by [Course](../design/compositions/Course.md), line 129.
+
 ```reaction
 when RequestBoundary.request (path: "/roster/sections/list", requestId)
 then
@@ -6227,6 +5958,9 @@ then
 ```
 
 ### Course.roster.SectionsUpdate:forbidden
+
+Authored path: `Course.roster.SectionsUpdate`.
+- Covered by [Course](../design/compositions/Course.md), line 130.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/update", requestId, section, session)
@@ -6239,6 +5973,9 @@ then
 
 ### Course.roster.SectionsUpdate:success
 
+Authored path: `Course.roster.SectionsUpdate`.
+- Covered by [Course](../design/compositions/Course.md), line 130.
+
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/update", requestId, section, session)
 where
@@ -6250,6 +5987,9 @@ then
 
 ### Course.roster.SectionsUpdate:success#2
 
+Authored path: `Course.roster.SectionsUpdate`.
+- Covered by [Course](../design/compositions/Course.md), line 130.
+
 ```reaction
 when Rostering.updateSection (location, meetingPattern, name, section, result.section: updated), asked by Course.roster.SectionsUpdate:success
 where
@@ -6259,6 +5999,9 @@ then
 ```
 
 ### Course.roster.StaffSeatGrantsCourseStaff
+
+Authored path: `Course.roster.StaffSeatGrantsCourseStaff`.
+- Covered by [Course](../design/compositions/Course.md), line 131.
 
 ```reaction
 when Rostering.claimSeat (user: claimer, kind: "STAFF")
@@ -6270,6 +6013,9 @@ then
 
 ### Course.roster.StaffSeatGrantsCourseStaff#2
 
+Authored path: `Course.roster.StaffSeatGrantsCourseStaff`.
+- Covered by [Course](../design/compositions/Course.md), line 131.
+
 ```reaction
 when Roling.ensureRole (capabilities: ["roster:manage", "assignments:manage", "submissions:view-all", "grades:manage", "grades:view-all", "late-days:manage", "student-notes:manage", "calendar:view-staff"], name: "course-staff", role), asked by Course.roster.StaffSeatGrantsCourseStaff
 where
@@ -6279,6 +6025,9 @@ then
 ```
 
 ### Course.submissions.Attempts:attempts
+
+Authored path: `Course.submissions.Attempts`.
+- Covered by [Course](../design/compositions/Course.md), line 132.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -6291,6 +6040,9 @@ then
 
 ### Course.submissions.Attempts:attempts-hidden
 
+Authored path: `Course.submissions.Attempts`.
+- Covered by [Course](../design/compositions/Course.md), line 132.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
 where
@@ -6302,6 +6054,9 @@ then
 
 ### Course.submissions.Attempts:attempts-missing
 
+Authored path: `Course.submissions.Attempts`.
+- Covered by [Course](../design/compositions/Course.md), line 132.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
 where
@@ -6312,6 +6067,9 @@ then
 ```
 
 ### Course.submissions.Attempts:staff-attempts
+
+Authored path: `Course.submissions.Attempts`.
+- Covered by [Course](../design/compositions/Course.md), line 132.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -6325,6 +6083,9 @@ then
 
 ### Course.submissions.ForAssignment:forbidden
 
+Authored path: `Course.submissions.ForAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 133.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
 where
@@ -6335,6 +6096,9 @@ then
 ```
 
 ### Course.submissions.ForAssignment:success
+
+Authored path: `Course.submissions.ForAssignment`.
+- Covered by [Course](../design/compositions/Course.md), line 133.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -6347,6 +6111,9 @@ then
 
 ### Course.submissions.ForStudent:for-student
 
+Authored path: `Course.submissions.ForStudent`.
+- Covered by [Course](../design/compositions/Course.md), line 134.
+
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
 where
@@ -6357,6 +6124,9 @@ then
 ```
 
 ### Course.submissions.ForStudent:for-student-hidden
+
+Authored path: `Course.submissions.ForStudent`.
+- Covered by [Course](../design/compositions/Course.md), line 134.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -6369,6 +6139,9 @@ then
 
 ### Course.submissions.ForStudent:for-student-missing
 
+Authored path: `Course.submissions.ForStudent`.
+- Covered by [Course](../design/compositions/Course.md), line 134.
+
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
 where
@@ -6379,6 +6152,9 @@ then
 ```
 
 ### Course.submissions.ForStudent:staff-for-student
+
+Authored path: `Course.submissions.ForStudent`.
+- Covered by [Course](../design/compositions/Course.md), line 134.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -6392,6 +6168,9 @@ then
 
 ### Course.submissions.Latest:latest-hidden
 
+Authored path: `Course.submissions.Latest`.
+- Covered by [Course](../design/compositions/Course.md), line 135.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
@@ -6403,6 +6182,9 @@ then
 
 ### Course.submissions.Latest:latest-missing
 
+Authored path: `Course.submissions.Latest`.
+- Covered by [Course](../design/compositions/Course.md), line 135.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
@@ -6413,6 +6195,9 @@ then
 ```
 
 ### Course.submissions.Latest:self-found
+
+Authored path: `Course.submissions.Latest`.
+- Covered by [Course](../design/compositions/Course.md), line 135.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -6426,6 +6211,9 @@ then
 
 ### Course.submissions.Latest:self-missing
 
+Authored path: `Course.submissions.Latest`.
+- Covered by [Course](../design/compositions/Course.md), line 135.
+
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
@@ -6437,6 +6225,9 @@ then
 ```
 
 ### Course.submissions.Latest:staff-found
+
+Authored path: `Course.submissions.Latest`.
+- Covered by [Course](../design/compositions/Course.md), line 135.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -6450,6 +6241,9 @@ then
 ```
 
 ### Course.submissions.Latest:staff-missing
+
+Authored path: `Course.submissions.Latest`.
+- Covered by [Course](../design/compositions/Course.md), line 135.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -6484,6 +6278,9 @@ then
 
 ### Forum.bookmarks.IsSaved:hidden
 
+Authored path: `Forum.bookmarks.IsSaved`.
+- Covered by [Forum](../design/compositions/Forum.md), line 61.
+
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/isSaved", requestId, session)
 where
@@ -6494,6 +6291,9 @@ then
 ```
 
 ### Forum.bookmarks.IsSaved:success
+
+Authored path: `Forum.bookmarks.IsSaved`.
+- Covered by [Forum](../design/compositions/Forum.md), line 61.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/isSaved", requestId, session)
@@ -6507,6 +6307,9 @@ then
 
 ### Forum.bookmarks.ListBookmarks
 
+Authored path: `Forum.bookmarks.ListBookmarks`.
+- Covered by [Forum](../design/compositions/Forum.md), line 62.
+
 ```reaction
 when RequestBoundary.request (path: "/bookmarks/list", requestId, session)
 where
@@ -6517,6 +6320,9 @@ then
 
 ### Forum.bookmarks.PurgeClearsBookmarks
 
+Authored path: `Forum.bookmarks.PurgeClearsBookmarks`.
+- Covered by [Forum](../design/compositions/Forum.md), line 63.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -6524,6 +6330,9 @@ then
 ```
 
 ### Forum.bookmarks.SaveBookmark:hidden
+
+Authored path: `Forum.bookmarks.SaveBookmark`.
+- Covered by [Forum](../design/compositions/Forum.md), line 64.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/save", requestId, session)
@@ -6535,6 +6344,9 @@ then
 ```
 
 ### Forum.bookmarks.SaveBookmark:success
+
+Authored path: `Forum.bookmarks.SaveBookmark`.
+- Covered by [Forum](../design/compositions/Forum.md), line 64.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/save", requestId, session)
@@ -6548,6 +6360,9 @@ then
 
 ### Forum.bookmarks.SaveBookmark:success#2
 
+Authored path: `Forum.bookmarks.SaveBookmark`.
+- Covered by [Forum](../design/compositions/Forum.md), line 64.
+
 ```reaction
 when Bookmarking.save (at, item, user, bookmark), asked by Forum.bookmarks.SaveBookmark:success
 where
@@ -6557,6 +6372,9 @@ then
 ```
 
 ### Forum.bookmarks.UnsaveBookmark:hidden
+
+Authored path: `Forum.bookmarks.UnsaveBookmark`.
+- Covered by [Forum](../design/compositions/Forum.md), line 65.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/unsave", requestId, session)
@@ -6569,6 +6387,9 @@ then
 
 ### Forum.bookmarks.UnsaveBookmark:success
 
+Authored path: `Forum.bookmarks.UnsaveBookmark`.
+- Covered by [Forum](../design/compositions/Forum.md), line 65.
+
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/unsave", requestId, session)
 where
@@ -6580,6 +6401,9 @@ then
 
 ### Forum.bookmarks.UnsaveBookmark:success#2
 
+Authored path: `Forum.bookmarks.UnsaveBookmark`.
+- Covered by [Forum](../design/compositions/Forum.md), line 65.
+
 ```reaction
 when Bookmarking.unsave (item, user, bookmark), asked by Forum.bookmarks.UnsaveBookmark:success
 where
@@ -6589,6 +6413,9 @@ then
 ```
 
 ### Forum.categories.AssignCategory:forbidden
+
+Authored path: `Forum.categories.AssignCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 66.
 
 ```reaction
 when RequestBoundary.request (category, item, path: "/categories/assign", requestId, session)
@@ -6600,6 +6427,9 @@ then
 ```
 
 ### Forum.categories.AssignCategory:hidden
+
+Authored path: `Forum.categories.AssignCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 66.
 
 ```reaction
 when RequestBoundary.request (category, item, path: "/categories/assign", requestId, session)
@@ -6613,6 +6443,9 @@ then
 
 ### Forum.categories.AssignCategory:success
 
+Authored path: `Forum.categories.AssignCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 66.
+
 ```reaction
 when RequestBoundary.request (category, item, path: "/categories/assign", requestId, session)
 where
@@ -6625,6 +6458,9 @@ then
 
 ### Forum.categories.AssignCategory:success#2
 
+Authored path: `Forum.categories.AssignCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 66.
+
 ```reaction
 when Categorizing.assign (category, item, result.item: assigned), asked by Forum.categories.AssignCategory:success
 where
@@ -6634,6 +6470,9 @@ then
 ```
 
 ### Forum.categories.CategoryForItem:hidden
+
+Authored path: `Forum.categories.CategoryForItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 67.
 
 ```reaction
 when RequestBoundary.request (item, path: "/categories/forItem", requestId)
@@ -6645,6 +6484,9 @@ then
 
 ### Forum.categories.CategoryForItem:success
 
+Authored path: `Forum.categories.CategoryForItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 67.
+
 ```reaction
 when RequestBoundary.request (item, path: "/categories/forItem", requestId)
 where
@@ -6655,6 +6497,9 @@ then
 
 ### Forum.categories.CategoryItems
 
+Authored path: `Forum.categories.CategoryItems`.
+- Covered by [Forum](../design/compositions/Forum.md), line 68.
+
 ```reaction
 when RequestBoundary.request (category, path: "/categories/items", requestId)
 then
@@ -6662,6 +6507,9 @@ then
 ```
 
 ### Forum.categories.CreateCategory:forbidden
+
+Authored path: `Forum.categories.CreateCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 69.
 
 ```reaction
 when RequestBoundary.request (description, name, path: "/categories/create", requestId, session)
@@ -6674,6 +6522,9 @@ then
 
 ### Forum.categories.CreateCategory:success
 
+Authored path: `Forum.categories.CreateCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 69.
+
 ```reaction
 when RequestBoundary.request (description, name, path: "/categories/create", requestId, session)
 where
@@ -6685,6 +6536,9 @@ then
 
 ### Forum.categories.CreateCategory:success#2
 
+Authored path: `Forum.categories.CreateCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 69.
+
 ```reaction
 when Categorizing.createCategory (description, name, category), asked by Forum.categories.CreateCategory:success
 where
@@ -6694,6 +6548,9 @@ then
 ```
 
 ### Forum.categories.DeleteCategory:forbidden
+
+Authored path: `Forum.categories.DeleteCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 70.
 
 ```reaction
 when RequestBoundary.request (category, path: "/categories/delete", requestId, session)
@@ -6706,6 +6563,9 @@ then
 
 ### Forum.categories.DeleteCategory:success
 
+Authored path: `Forum.categories.DeleteCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 70.
+
 ```reaction
 when RequestBoundary.request (category, path: "/categories/delete", requestId, session)
 where
@@ -6717,6 +6577,9 @@ then
 
 ### Forum.categories.DeleteCategory:success#2
 
+Authored path: `Forum.categories.DeleteCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 70.
+
 ```reaction
 when Categorizing.deleteCategory (category, result.category: deleted), asked by Forum.categories.DeleteCategory:success
 where
@@ -6727,6 +6590,9 @@ then
 
 ### Forum.categories.ListCategories
 
+Authored path: `Forum.categories.ListCategories`.
+- Covered by [Forum](../design/compositions/Forum.md), line 71.
+
 ```reaction
 when RequestBoundary.request (path: "/categories/list", requestId)
 then
@@ -6734,6 +6600,9 @@ then
 ```
 
 ### Forum.categories.PurgeUnassignsCategory
+
+Authored path: `Forum.categories.PurgeUnassignsCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 72.
 
 ```reaction
 when Trashing.purge (item)
@@ -6745,6 +6614,9 @@ then
 
 ### Forum.categories.UnassignCategory:forbidden
 
+Authored path: `Forum.categories.UnassignCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 73.
+
 ```reaction
 when RequestBoundary.request (item, path: "/categories/unassign", requestId, session)
 where
@@ -6755,6 +6627,9 @@ then
 ```
 
 ### Forum.categories.UnassignCategory:hidden
+
+Authored path: `Forum.categories.UnassignCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 73.
 
 ```reaction
 when RequestBoundary.request (item, path: "/categories/unassign", requestId, session)
@@ -6768,6 +6643,9 @@ then
 
 ### Forum.categories.UnassignCategory:success
 
+Authored path: `Forum.categories.UnassignCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 73.
+
 ```reaction
 when RequestBoundary.request (item, path: "/categories/unassign", requestId, session)
 where
@@ -6780,6 +6658,9 @@ then
 
 ### Forum.categories.UnassignCategory:success#2
 
+Authored path: `Forum.categories.UnassignCategory`.
+- Covered by [Forum](../design/compositions/Forum.md), line 73.
+
 ```reaction
 when Categorizing.unassign (item, result.item: unassigned), asked by Forum.categories.UnassignCategory:success
 where
@@ -6789,6 +6670,9 @@ then
 ```
 
 ### Forum.links.Backlinks:hidden
+
+Authored path: `Forum.links.Backlinks`.
+- Covered by [Forum](../design/compositions/Forum.md), line 74.
 
 ```reaction
 when RequestBoundary.request (path: "/links/backlinks", requestId, target)
@@ -6800,6 +6684,9 @@ then
 
 ### Forum.links.Backlinks:success
 
+Authored path: `Forum.links.Backlinks`.
+- Covered by [Forum](../design/compositions/Forum.md), line 74.
+
 ```reaction
 when RequestBoundary.request (path: "/links/backlinks", requestId, target)
 where
@@ -6809,6 +6696,9 @@ then
 ```
 
 ### Forum.links.Forward:hidden
+
+Authored path: `Forum.links.Forward`.
+- Covered by [Forum](../design/compositions/Forum.md), line 75.
 
 ```reaction
 when RequestBoundary.request (path: "/links/forward", requestId, source)
@@ -6820,6 +6710,9 @@ then
 
 ### Forum.links.Forward:success
 
+Authored path: `Forum.links.Forward`.
+- Covered by [Forum](../design/compositions/Forum.md), line 75.
+
 ```reaction
 when RequestBoundary.request (path: "/links/forward", requestId, source)
 where
@@ -6829,6 +6722,9 @@ then
 ```
 
 ### Forum.moderation.FlagRaise:hidden
+
+Authored path: `Forum.moderation.FlagRaise`.
+- Covered by [Forum](../design/compositions/Forum.md), line 76.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/raise", reason, requestId, session, target)
@@ -6840,6 +6736,9 @@ then
 ```
 
 ### Forum.moderation.FlagRaise:success
+
+Authored path: `Forum.moderation.FlagRaise`.
+- Covered by [Forum](../design/compositions/Forum.md), line 76.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/raise", reason, requestId, session, target)
@@ -6853,6 +6752,9 @@ then
 
 ### Forum.moderation.FlagRaise:success#2
 
+Authored path: `Forum.moderation.FlagRaise`.
+- Covered by [Forum](../design/compositions/Forum.md), line 76.
+
 ```reaction
 when Flagging.flag (at, reason, reporter: user, target, flag), asked by Forum.moderation.FlagRaise:success
 where
@@ -6862,6 +6764,9 @@ then
 ```
 
 ### Forum.moderation.FlagResolve:forbidden
+
+Authored path: `Forum.moderation.FlagResolve`.
+- Covered by [Forum](../design/compositions/Forum.md), line 77.
 
 ```reaction
 when RequestBoundary.request (outcome, path: "/flags/resolve", requestId, session, target)
@@ -6873,6 +6778,9 @@ then
 ```
 
 ### Forum.moderation.FlagResolve:hidden
+
+Authored path: `Forum.moderation.FlagResolve`.
+- Covered by [Forum](../design/compositions/Forum.md), line 77.
 
 ```reaction
 when RequestBoundary.request (outcome, path: "/flags/resolve", requestId, session, target)
@@ -6886,6 +6794,9 @@ then
 
 ### Forum.moderation.FlagResolve:success
 
+Authored path: `Forum.moderation.FlagResolve`.
+- Covered by [Forum](../design/compositions/Forum.md), line 77.
+
 ```reaction
 when RequestBoundary.request (outcome, path: "/flags/resolve", requestId, session, target)
 where
@@ -6898,6 +6809,9 @@ then
 
 ### Forum.moderation.FlagResolve:success#2
 
+Authored path: `Forum.moderation.FlagResolve`.
+- Covered by [Forum](../design/compositions/Forum.md), line 77.
+
 ```reaction
 when Flagging.resolve (outcome, target), asked by Forum.moderation.FlagResolve:success
 where
@@ -6907,6 +6821,9 @@ then
 ```
 
 ### Forum.moderation.FlagsForTarget:missing-target
+
+Authored path: `Forum.moderation.FlagsForTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 78.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/forTarget", requestId, session, target)
@@ -6920,6 +6837,9 @@ then
 
 ### Forum.moderation.FlagsForTarget:target
 
+Authored path: `Forum.moderation.FlagsForTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 78.
+
 ```reaction
 when RequestBoundary.request (path: "/flags/forTarget", requestId, session, target)
 where
@@ -6932,6 +6852,9 @@ then
 
 ### Forum.moderation.FlagsForTarget:target-hidden
 
+Authored path: `Forum.moderation.FlagsForTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 78.
+
 ```reaction
 when RequestBoundary.request (path: "/flags/forTarget", requestId, session, target)
 where
@@ -6942,6 +6865,9 @@ then
 ```
 
 ### Forum.moderation.FlagsOpen:hidden
+
+Authored path: `Forum.moderation.FlagsOpen`.
+- Covered by [Forum](../design/compositions/Forum.md), line 79.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/open", requestId, session)
@@ -6954,6 +6880,9 @@ then
 
 ### Forum.moderation.FlagsOpen:success
 
+Authored path: `Forum.moderation.FlagsOpen`.
+- Covered by [Forum](../design/compositions/Forum.md), line 79.
+
 ```reaction
 when RequestBoundary.request (path: "/flags/open", requestId, session)
 where
@@ -6965,6 +6894,9 @@ then
 
 ### Forum.moderation.GetTrashedPost:hidden
 
+Authored path: `Forum.moderation.GetTrashedPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 80.
+
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, session)
 where
@@ -6975,6 +6907,9 @@ then
 ```
 
 ### Forum.moderation.GetTrashedPost:live
+
+Authored path: `Forum.moderation.GetTrashedPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 80.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, session)
@@ -6989,6 +6924,9 @@ then
 
 ### Forum.moderation.GetTrashedPost:missing
 
+Authored path: `Forum.moderation.GetTrashedPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 80.
+
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, session)
 where
@@ -7000,6 +6938,9 @@ then
 ```
 
 ### Forum.moderation.GetTrashedPost:success
+
+Authored path: `Forum.moderation.GetTrashedPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 80.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, session)
@@ -7014,6 +6955,9 @@ then
 
 ### Forum.moderation.IsLocked:hidden
 
+Authored path: `Forum.moderation.IsLocked`.
+- Covered by [Forum](../design/compositions/Forum.md), line 81.
+
 ```reaction
 when RequestBoundary.request (path: "/locks/isLocked", requestId, target)
 where
@@ -7023,6 +6967,9 @@ then
 ```
 
 ### Forum.moderation.IsLocked:success
+
+Authored path: `Forum.moderation.IsLocked`.
+- Covered by [Forum](../design/compositions/Forum.md), line 81.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/isLocked", requestId, target)
@@ -7035,6 +6982,9 @@ then
 
 ### Forum.moderation.IsTrashed:hidden
 
+Authored path: `Forum.moderation.IsTrashed`.
+- Covered by [Forum](../design/compositions/Forum.md), line 82.
+
 ```reaction
 when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session)
 where
@@ -7045,6 +6995,9 @@ then
 ```
 
 ### Forum.moderation.IsTrashed:success
+
+Authored path: `Forum.moderation.IsTrashed`.
+- Covered by [Forum](../design/compositions/Forum.md), line 82.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session)
@@ -7058,6 +7011,9 @@ then
 
 ### Forum.moderation.LockList
 
+Authored path: `Forum.moderation.LockList`.
+- Covered by [Forum](../design/compositions/Forum.md), line 83.
+
 ```reaction
 when RequestBoundary.request (path: "/locks/list", requestId)
 then
@@ -7065,6 +7021,9 @@ then
 ```
 
 ### Forum.moderation.LockTarget:forbidden
+
+Authored path: `Forum.moderation.LockTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 84.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/lock", requestId, session, target)
@@ -7077,6 +7036,9 @@ then
 
 ### Forum.moderation.LockTarget:hidden
 
+Authored path: `Forum.moderation.LockTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 84.
+
 ```reaction
 when RequestBoundary.request (path: "/locks/lock", requestId, session, target)
 where
@@ -7088,6 +7050,9 @@ then
 ```
 
 ### Forum.moderation.LockTarget:success
+
+Authored path: `Forum.moderation.LockTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 84.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/lock", requestId, session, target)
@@ -7102,6 +7067,9 @@ then
 
 ### Forum.moderation.LockTarget:success#2
 
+Authored path: `Forum.moderation.LockTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 84.
+
 ```reaction
 when Locking.lock (at, target), asked by Forum.moderation.LockTarget:success
 where
@@ -7111,6 +7079,9 @@ then
 ```
 
 ### Forum.moderation.PurgeItem:forbidden
+
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 86.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
@@ -7123,6 +7094,9 @@ then
 
 ### Forum.moderation.PurgeItem:success
 
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 86.
+
 ```reaction
 when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
@@ -7134,6 +7108,9 @@ then
 
 ### Forum.moderation.PurgeItem:success#2
 
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 86.
+
 ```reaction
 when Trashing.purge (item), asked by Forum.moderation.PurgeItem:success
 where
@@ -7144,6 +7121,9 @@ then
 
 ### Forum.moderation.PurgedItemClearsModerationState:backlinks
 
+Authored path: `Forum.moderation.PurgedItemClearsModerationState`.
+- Covered by [Forum](../design/compositions/Forum.md), line 85.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -7151,6 +7131,9 @@ then
 ```
 
 ### Forum.moderation.PurgedItemClearsModerationState:conversation-lock
+
+Authored path: `Forum.moderation.PurgedItemClearsModerationState`.
+- Covered by [Forum](../design/compositions/Forum.md), line 85.
 
 ```reaction
 when Trashing.purge (item)
@@ -7164,6 +7147,9 @@ then
 
 ### Forum.moderation.PurgedItemClearsModerationState:flags
 
+Authored path: `Forum.moderation.PurgedItemClearsModerationState`.
+- Covered by [Forum](../design/compositions/Forum.md), line 85.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -7172,6 +7158,9 @@ then
 
 ### Forum.moderation.PurgedItemClearsModerationState:formatting
 
+Authored path: `Forum.moderation.PurgedItemClearsModerationState`.
+- Covered by [Forum](../design/compositions/Forum.md), line 85.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -7179,6 +7168,9 @@ then
 ```
 
 ### Forum.moderation.PurgedItemClearsModerationState:item-lock
+
+Authored path: `Forum.moderation.PurgedItemClearsModerationState`.
+- Covered by [Forum](../design/compositions/Forum.md), line 85.
 
 ```reaction
 when Trashing.purge (item)
@@ -7189,6 +7181,9 @@ then
 ```
 
 ### Forum.moderation.PurgedItemClearsModerationState:leaf-node
+
+Authored path: `Forum.moderation.PurgedItemClearsModerationState`.
+- Covered by [Forum](../design/compositions/Forum.md), line 85.
 
 ```reaction
 when Trashing.purge (item)
@@ -7201,6 +7196,9 @@ then
 
 ### Forum.moderation.PurgedItemClearsModerationState:links
 
+Authored path: `Forum.moderation.PurgedItemClearsModerationState`.
+- Covered by [Forum](../design/compositions/Forum.md), line 85.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -7208,6 +7206,9 @@ then
 ```
 
 ### Forum.moderation.PurgedItemClearsModerationState:post
+
+Authored path: `Forum.moderation.PurgedItemClearsModerationState`.
+- Covered by [Forum](../design/compositions/Forum.md), line 85.
 
 ```reaction
 when Trashing.purge (item)
@@ -7219,6 +7220,9 @@ then
 
 ### Forum.moderation.PurgedItemClearsModerationState:tracking
 
+Authored path: `Forum.moderation.PurgedItemClearsModerationState`.
+- Covered by [Forum](../design/compositions/Forum.md), line 85.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -7226,6 +7230,9 @@ then
 ```
 
 ### Forum.moderation.RestoreItem:forbidden
+
+Authored path: `Forum.moderation.RestoreItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 87.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
@@ -7238,6 +7245,9 @@ then
 
 ### Forum.moderation.RestoreItem:success
 
+Authored path: `Forum.moderation.RestoreItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 87.
+
 ```reaction
 when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
 where
@@ -7249,6 +7259,9 @@ then
 
 ### Forum.moderation.RestoreItem:success#2
 
+Authored path: `Forum.moderation.RestoreItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 87.
+
 ```reaction
 when Trashing.restore (item), asked by Forum.moderation.RestoreItem:success
 where
@@ -7258,6 +7271,9 @@ then
 ```
 
 ### Forum.moderation.TrashItem:forbidden
+
+Authored path: `Forum.moderation.TrashItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 88.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
@@ -7270,6 +7286,9 @@ then
 
 ### Forum.moderation.TrashItem:missing
 
+Authored path: `Forum.moderation.TrashItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 88.
+
 ```reaction
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
 where
@@ -7281,6 +7300,9 @@ then
 ```
 
 ### Forum.moderation.TrashItem:success
+
+Authored path: `Forum.moderation.TrashItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 88.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
@@ -7295,6 +7317,9 @@ then
 
 ### Forum.moderation.TrashItem:success#2
 
+Authored path: `Forum.moderation.TrashItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 88.
+
 ```reaction
 when Trashing.trash (at, by: user, item), asked by Forum.moderation.TrashItem:success
 where
@@ -7304,6 +7329,9 @@ then
 ```
 
 ### Forum.moderation.TrashList:hidden
+
+Authored path: `Forum.moderation.TrashList`.
+- Covered by [Forum](../design/compositions/Forum.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/trash/list", requestId, session)
@@ -7316,6 +7344,9 @@ then
 
 ### Forum.moderation.TrashList:success
 
+Authored path: `Forum.moderation.TrashList`.
+- Covered by [Forum](../design/compositions/Forum.md), line 89.
+
 ```reaction
 when RequestBoundary.request (path: "/trash/list", requestId, session)
 where
@@ -7327,6 +7358,9 @@ then
 
 ### Forum.moderation.UnlockTarget:forbidden
 
+Authored path: `Forum.moderation.UnlockTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 90.
+
 ```reaction
 when RequestBoundary.request (path: "/locks/unlock", requestId, session, target)
 where
@@ -7337,6 +7371,9 @@ then
 ```
 
 ### Forum.moderation.UnlockTarget:hidden
+
+Authored path: `Forum.moderation.UnlockTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 90.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/unlock", requestId, session, target)
@@ -7350,6 +7387,9 @@ then
 
 ### Forum.moderation.UnlockTarget:success
 
+Authored path: `Forum.moderation.UnlockTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 90.
+
 ```reaction
 when RequestBoundary.request (path: "/locks/unlock", requestId, session, target)
 where
@@ -7362,6 +7402,9 @@ then
 
 ### Forum.moderation.UnlockTarget:success#2
 
+Authored path: `Forum.moderation.UnlockTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 90.
+
 ```reaction
 when Locking.unlock (target), asked by Forum.moderation.UnlockTarget:success
 where
@@ -7371,6 +7414,9 @@ then
 ```
 
 ### Forum.notifications.AcceptNotifiesAnswerAuthor
+
+Authored path: `Forum.notifications.AcceptNotifiesAnswerAuthor`.
+- Covered by [Forum](../design/compositions/Forum.md), line 91.
 
 ```reaction
 when Resolving.accept (answer, at, by)
@@ -7383,6 +7429,9 @@ then
 
 ### Forum.notifications.Dismiss
 
+Authored path: `Forum.notifications.Dismiss`.
+- Covered by [Forum](../design/compositions/Forum.md), line 92.
+
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
 where
@@ -7393,6 +7442,9 @@ then
 
 ### Forum.notifications.Dismiss#2
 
+Authored path: `Forum.notifications.Dismiss`.
+- Covered by [Forum](../design/compositions/Forum.md), line 92.
+
 ```reaction
 when Notifying.dismiss (notification, recipient: user, result.notification: dismissed), asked by Forum.notifications.Dismiss
 where
@@ -7402,6 +7454,9 @@ then
 ```
 
 ### Forum.notifications.EditMentionsNotify
+
+Authored path: `Forum.notifications.EditMentionsNotify`.
+- Covered by [Forum](../design/compositions/Forum.md), line 93.
 
 ```reaction
 when Posting.edit (at, post)
@@ -7414,6 +7469,9 @@ then
 
 ### Forum.notifications.ListNotifications
 
+Authored path: `Forum.notifications.ListNotifications`.
+- Covered by [Forum](../design/compositions/Forum.md), line 94.
+
 ```reaction
 when RequestBoundary.request (path: "/notifications/list", requestId, session)
 where
@@ -7423,6 +7481,9 @@ then
 ```
 
 ### Forum.notifications.MarkAllRead
+
+Authored path: `Forum.notifications.MarkAllRead`.
+- Covered by [Forum](../design/compositions/Forum.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
@@ -7434,6 +7495,9 @@ then
 
 ### Forum.notifications.MarkAllRead#2
 
+Authored path: `Forum.notifications.MarkAllRead`.
+- Covered by [Forum](../design/compositions/Forum.md), line 95.
+
 ```reaction
 when Notifying.markAllRead (recipient: user, result.recipient), asked by Forum.notifications.MarkAllRead
 where
@@ -7443,6 +7507,9 @@ then
 ```
 
 ### Forum.notifications.MarkRead
+
+Authored path: `Forum.notifications.MarkRead`.
+- Covered by [Forum](../design/compositions/Forum.md), line 96.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/markRead", requestId, session)
@@ -7454,6 +7521,9 @@ then
 
 ### Forum.notifications.MarkRead#2
 
+Authored path: `Forum.notifications.MarkRead`.
+- Covered by [Forum](../design/compositions/Forum.md), line 96.
+
 ```reaction
 when Notifying.markRead (notification, recipient: user, result.notification: marked), asked by Forum.notifications.MarkRead
 where
@@ -7463,6 +7533,9 @@ then
 ```
 
 ### Forum.notifications.NotificationQueuesEmail
+
+Authored path: `Forum.notifications.NotificationQueuesEmail`.
+- Covered by [Forum](../design/compositions/Forum.md), line 97.
 
 ```reaction
 when Notifying.notify (at, kind, recipient, notification)
@@ -7476,6 +7549,9 @@ then
 
 ### Forum.notifications.PurgeClearsNotifications
 
+Authored path: `Forum.notifications.PurgeClearsNotifications`.
+- Covered by [Forum](../design/compositions/Forum.md), line 98.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -7483,6 +7559,9 @@ then
 ```
 
 ### Forum.notifications.ReadInbox
+
+Authored path: `Forum.notifications.ReadInbox`.
+- Covered by [Forum](../design/compositions/Forum.md), line 99.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/inbox", requestId, session)
@@ -7493,6 +7572,9 @@ then
 ```
 
 ### Forum.notifications.ReplyMentionsNotify
+
+Authored path: `Forum.notifications.ReplyMentionsNotify`.
+- Covered by [Forum](../design/compositions/Forum.md), line 100.
 
 ```reaction
 when Conversing.reply (at, item, parent)
@@ -7506,6 +7588,9 @@ then
 
 ### Forum.notifications.ReplyNotifiesParentAuthor
 
+Authored path: `Forum.notifications.ReplyNotifiesParentAuthor`.
+- Covered by [Forum](../design/compositions/Forum.md), line 101.
+
 ```reaction
 when Conversing.reply (at, item, parent)
 where
@@ -7517,6 +7602,9 @@ then
 ```
 
 ### Forum.notifications.ReplyNotifiesWatchers
+
+Authored path: `Forum.notifications.ReplyNotifiesWatchers`.
+- Covered by [Forum](../design/compositions/Forum.md), line 102.
 
 ```reaction
 when Conversing.reply (at, item, parent)
@@ -7533,6 +7621,9 @@ then
 
 ### Forum.notifications.RootMentionsNotify
 
+Authored path: `Forum.notifications.RootMentionsNotify`.
+- Covered by [Forum](../design/compositions/Forum.md), line 103.
+
 ```reaction
 when Conversing.start (at, item)
 where
@@ -7542,6 +7633,9 @@ then
 ```
 
 ### Forum.notifications.UnreadCount
+
+Authored path: `Forum.notifications.UnreadCount`.
+- Covered by [Forum](../design/compositions/Forum.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/unreadCount", requestId, session)
@@ -7554,6 +7648,9 @@ then
 
 ### Forum.pins.IsPinned:hidden
 
+Authored path: `Forum.pins.IsPinned`.
+- Covered by [Forum](../design/compositions/Forum.md), line 105.
+
 ```reaction
 when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope)
 where
@@ -7563,6 +7660,9 @@ then
 ```
 
 ### Forum.pins.IsPinned:success
+
+Authored path: `Forum.pins.IsPinned`.
+- Covered by [Forum](../design/compositions/Forum.md), line 105.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope)
@@ -7575,6 +7675,9 @@ then
 
 ### Forum.pins.PinItem:forbidden
 
+Authored path: `Forum.pins.PinItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 106.
+
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
 where
@@ -7585,6 +7688,9 @@ then
 ```
 
 ### Forum.pins.PinItem:hidden
+
+Authored path: `Forum.pins.PinItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 106.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
@@ -7597,6 +7703,9 @@ then
 ```
 
 ### Forum.pins.PinItem:success
+
+Authored path: `Forum.pins.PinItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 106.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
@@ -7611,6 +7720,9 @@ then
 
 ### Forum.pins.PinItem:success#2
 
+Authored path: `Forum.pins.PinItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 106.
+
 ```reaction
 when Pinning.pin (at, item, priority, scope, pin), asked by Forum.pins.PinItem:success
 where
@@ -7621,6 +7733,9 @@ then
 
 ### Forum.pins.PinsForScope
 
+Authored path: `Forum.pins.PinsForScope`.
+- Covered by [Forum](../design/compositions/Forum.md), line 107.
+
 ```reaction
 when RequestBoundary.request (path: "/pins/forScope", requestId, scope)
 then
@@ -7629,6 +7744,9 @@ then
 
 ### Forum.pins.PurgeClearsPins
 
+Authored path: `Forum.pins.PurgeClearsPins`.
+- Covered by [Forum](../design/compositions/Forum.md), line 108.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -7636,6 +7754,9 @@ then
 ```
 
 ### Forum.pins.SetPinPriority:forbidden
+
+Authored path: `Forum.pins.SetPinPriority`.
+- Covered by [Forum](../design/compositions/Forum.md), line 109.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/setPriority", priority, requestId, scope, session)
@@ -7647,6 +7768,9 @@ then
 ```
 
 ### Forum.pins.SetPinPriority:hidden
+
+Authored path: `Forum.pins.SetPinPriority`.
+- Covered by [Forum](../design/compositions/Forum.md), line 109.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/setPriority", priority, requestId, scope, session)
@@ -7660,6 +7784,9 @@ then
 
 ### Forum.pins.SetPinPriority:success
 
+Authored path: `Forum.pins.SetPinPriority`.
+- Covered by [Forum](../design/compositions/Forum.md), line 109.
+
 ```reaction
 when RequestBoundary.request (item, path: "/pins/setPriority", priority, requestId, scope, session)
 where
@@ -7672,6 +7799,9 @@ then
 
 ### Forum.pins.SetPinPriority:success#2
 
+Authored path: `Forum.pins.SetPinPriority`.
+- Covered by [Forum](../design/compositions/Forum.md), line 109.
+
 ```reaction
 when Pinning.setPriority (item, priority, scope, pin), asked by Forum.pins.SetPinPriority:success
 where
@@ -7681,6 +7811,9 @@ then
 ```
 
 ### Forum.pins.UnpinItem:forbidden
+
+Authored path: `Forum.pins.UnpinItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 110.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
@@ -7692,6 +7825,9 @@ then
 ```
 
 ### Forum.pins.UnpinItem:hidden
+
+Authored path: `Forum.pins.UnpinItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 110.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
@@ -7705,6 +7841,9 @@ then
 
 ### Forum.pins.UnpinItem:success
 
+Authored path: `Forum.pins.UnpinItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 110.
+
 ```reaction
 when RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 where
@@ -7717,6 +7856,9 @@ then
 
 ### Forum.pins.UnpinItem:success#2
 
+Authored path: `Forum.pins.UnpinItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 110.
+
 ```reaction
 when Pinning.unpin (item, scope, pin), asked by Forum.pins.UnpinItem:success
 where
@@ -7726,6 +7868,9 @@ then
 ```
 
 ### Forum.posts.DeletePost:delete
+
+Authored path: `Forum.posts.DeletePost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
@@ -7742,6 +7887,9 @@ then
 
 ### Forum.posts.DeletePost:delete#2
 
+Authored path: `Forum.posts.DeletePost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 112.
+
 ```reaction
 when Posting.delete (post), asked by Forum.posts.DeletePost:delete
 where
@@ -7751,6 +7899,9 @@ then
 ```
 
 ### Forum.posts.DeletePost:forbidden
+
+Authored path: `Forum.posts.DeletePost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
@@ -7764,6 +7915,9 @@ then
 ```
 
 ### Forum.posts.DeletePost:has-replies
+
+Authored path: `Forum.posts.DeletePost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
@@ -7780,6 +7934,9 @@ then
 
 ### Forum.posts.DeletePost:missing
 
+Authored path: `Forum.posts.DeletePost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 112.
+
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
 where
@@ -7790,6 +7947,9 @@ then
 ```
 
 ### Forum.posts.DeletePost:trashed
+
+Authored path: `Forum.posts.DeletePost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
@@ -7803,6 +7963,9 @@ then
 
 ### Forum.posts.DeletedPostClearsSatellites:backlinks
 
+Authored path: `Forum.posts.DeletedPostClearsSatellites`.
+- Covered by [Forum](../design/compositions/Forum.md), line 111.
+
 ```reaction
 when Posting.delete (post)
 then
@@ -7810,6 +7973,9 @@ then
 ```
 
 ### Forum.posts.DeletedPostClearsSatellites:bookmarks
+
+Authored path: `Forum.posts.DeletedPostClearsSatellites`.
+- Covered by [Forum](../design/compositions/Forum.md), line 111.
 
 ```reaction
 when Posting.delete (post)
@@ -7819,6 +7985,9 @@ then
 
 ### Forum.posts.DeletedPostClearsSatellites:formatting
 
+Authored path: `Forum.posts.DeletedPostClearsSatellites`.
+- Covered by [Forum](../design/compositions/Forum.md), line 111.
+
 ```reaction
 when Posting.delete (post)
 then
@@ -7826,6 +7995,9 @@ then
 ```
 
 ### Forum.posts.DeletedPostClearsSatellites:leaf-node
+
+Authored path: `Forum.posts.DeletedPostClearsSatellites`.
+- Covered by [Forum](../design/compositions/Forum.md), line 111.
 
 ```reaction
 when Posting.delete (post)
@@ -7838,6 +8010,9 @@ then
 
 ### Forum.posts.DeletedPostClearsSatellites:links
 
+Authored path: `Forum.posts.DeletedPostClearsSatellites`.
+- Covered by [Forum](../design/compositions/Forum.md), line 111.
+
 ```reaction
 when Posting.delete (post)
 then
@@ -7845,6 +8020,9 @@ then
 ```
 
 ### Forum.posts.DeletedPostClearsSatellites:pins
+
+Authored path: `Forum.posts.DeletedPostClearsSatellites`.
+- Covered by [Forum](../design/compositions/Forum.md), line 111.
 
 ```reaction
 when Posting.delete (post)
@@ -7854,6 +8032,9 @@ then
 
 ### Forum.posts.DeletedPostClearsSatellites:reactions
 
+Authored path: `Forum.posts.DeletedPostClearsSatellites`.
+- Covered by [Forum](../design/compositions/Forum.md), line 111.
+
 ```reaction
 when Posting.delete (post)
 then
@@ -7861,6 +8042,9 @@ then
 ```
 
 ### Forum.posts.DeletedPostClearsSatellites:tags
+
+Authored path: `Forum.posts.DeletedPostClearsSatellites`.
+- Covered by [Forum](../design/compositions/Forum.md), line 111.
 
 ```reaction
 when Posting.delete (post)
@@ -7870,6 +8054,9 @@ then
 
 ### Forum.posts.DeletedPostClearsSatellites:tracking
 
+Authored path: `Forum.posts.DeletedPostClearsSatellites`.
+- Covered by [Forum](../design/compositions/Forum.md), line 111.
+
 ```reaction
 when Posting.delete (post)
 then
@@ -7877,6 +8064,9 @@ then
 ```
 
 ### Forum.posts.EditPost:missing-post
+
+Authored path: `Forum.posts.EditPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 114.
 
 ```reaction
 when RequestBoundary.request (content, path: "/posts/edit", post, requestId, session)
@@ -7888,6 +8078,9 @@ then
 ```
 
 ### Forum.posts.EditPost:post
+
+Authored path: `Forum.posts.EditPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 114.
 
 ```reaction
 when RequestBoundary.request (content, path: "/posts/edit", post, requestId, session)
@@ -7901,6 +8094,9 @@ then
 
 ### Forum.posts.EditPost:post#2
 
+Authored path: `Forum.posts.EditPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 114.
+
 ```reaction
 when Posting.edit (at, content, post), asked by Forum.posts.EditPost:post
 where
@@ -7910,6 +8106,9 @@ then
 ```
 
 ### Forum.posts.EditPost:post-forbidden
+
+Authored path: `Forum.posts.EditPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 114.
 
 ```reaction
 when RequestBoundary.request (content, path: "/posts/edit", post, requestId, session)
@@ -7922,6 +8121,9 @@ then
 
 ### Forum.posts.EditPost:trashed-post
 
+Authored path: `Forum.posts.EditPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 114.
+
 ```reaction
 when RequestBoundary.request (content, path: "/posts/edit", post, requestId, session)
 where
@@ -7933,6 +8135,9 @@ then
 
 ### Forum.posts.EditedPostRefreshesDerivedContent:links
 
+Authored path: `Forum.posts.EditedPostRefreshesDerivedContent`.
+- Covered by [Forum](../design/compositions/Forum.md), line 113.
+
 ```reaction
 when Posting.edit (content, post)
 then
@@ -7941,6 +8146,9 @@ then
 
 ### Forum.posts.EditedPostRefreshesDerivedContent:render
 
+Authored path: `Forum.posts.EditedPostRefreshesDerivedContent`.
+- Covered by [Forum](../design/compositions/Forum.md), line 113.
+
 ```reaction
 when Posting.edit (content, post)
 then
@@ -7948,6 +8156,9 @@ then
 ```
 
 ### Forum.posts.GetPost:not-found
+
+Authored path: `Forum.posts.GetPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/posts/get", post, requestId)
@@ -7959,6 +8170,9 @@ then
 
 ### Forum.posts.GetPost:success
 
+Authored path: `Forum.posts.GetPost`.
+- Covered by [Forum](../design/compositions/Forum.md), line 115.
+
 ```reaction
 when RequestBoundary.request (path: "/posts/get", post, requestId)
 where
@@ -7969,6 +8183,9 @@ then
 
 ### Forum.posts.PostsByAuthor
 
+Authored path: `Forum.posts.PostsByAuthor`.
+- Covered by [Forum](../design/compositions/Forum.md), line 116.
+
 ```reaction
 when RequestBoundary.request (author, path: "/posts/byAuthor", requestId)
 then
@@ -7976,6 +8193,9 @@ then
 ```
 
 ### Forum.profiles.GetProfile:hidden
+
+Authored path: `Forum.profiles.GetProfile`.
+- Covered by [Forum](../design/compositions/Forum.md), line 117.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -7988,6 +8208,9 @@ then
 ```
 
 ### Forum.profiles.GetProfile:member
+
+Authored path: `Forum.profiles.GetProfile`.
+- Covered by [Forum](../design/compositions/Forum.md), line 117.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -8002,6 +8225,9 @@ then
 
 ### Forum.profiles.GetProfile:missing
 
+Authored path: `Forum.profiles.GetProfile`.
+- Covered by [Forum](../design/compositions/Forum.md), line 117.
+
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
 where
@@ -8012,6 +8238,9 @@ then
 ```
 
 ### Forum.profiles.GetProfile:staff
+
+Authored path: `Forum.profiles.GetProfile`.
+- Covered by [Forum](../design/compositions/Forum.md), line 117.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -8025,6 +8254,9 @@ then
 
 ### Forum.profiles.GetProfile:success
 
+Authored path: `Forum.profiles.GetProfile`.
+- Covered by [Forum](../design/compositions/Forum.md), line 117.
+
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
 where
@@ -8037,6 +8269,9 @@ then
 
 ### Forum.profiles.ResolvePublicUser
 
+Authored path: `Forum.profiles.ResolvePublicUser`.
+- Covered by [Forum](../design/compositions/Forum.md), line 118.
+
 ```reaction
 when RequestBoundary.request (path: "/users/resolve", ref, requestId)
 where
@@ -8046,6 +8281,9 @@ then
 ```
 
 ### Forum.profiles.SearchUsers:hidden
+
+Authored path: `Forum.profiles.SearchUsers`.
+- Covered by [Forum](../design/compositions/Forum.md), line 119.
 
 ```reaction
 when RequestBoundary.request (path: "/users/search", query, requestId, session)
@@ -8058,6 +8296,9 @@ then
 
 ### Forum.profiles.SearchUsers:success
 
+Authored path: `Forum.profiles.SearchUsers`.
+- Covered by [Forum](../design/compositions/Forum.md), line 119.
+
 ```reaction
 when RequestBoundary.request (path: "/users/search", query, requestId, session)
 where
@@ -8069,6 +8310,9 @@ then
 
 ### Forum.profiles.SetAvatar
 
+Authored path: `Forum.profiles.SetAvatar`.
+- Covered by [Forum](../design/compositions/Forum.md), line 120.
+
 ```reaction
 when RequestBoundary.request (avatar, path: "/profiles/setAvatar", requestId, session)
 where
@@ -8078,6 +8322,9 @@ then
 ```
 
 ### Forum.profiles.SetAvatar#2
+
+Authored path: `Forum.profiles.SetAvatar`.
+- Covered by [Forum](../design/compositions/Forum.md), line 120.
 
 ```reaction
 when Profiling.setAvatar (avatar, user), asked by Forum.profiles.SetAvatar
@@ -8089,6 +8336,9 @@ then
 
 ### Forum.profiles.SetBio
 
+Authored path: `Forum.profiles.SetBio`.
+- Covered by [Forum](../design/compositions/Forum.md), line 121.
+
 ```reaction
 when RequestBoundary.request (bio, path: "/profiles/setBio", requestId, session)
 where
@@ -8098,6 +8348,9 @@ then
 ```
 
 ### Forum.profiles.SetBio#2
+
+Authored path: `Forum.profiles.SetBio`.
+- Covered by [Forum](../design/compositions/Forum.md), line 121.
 
 ```reaction
 when Profiling.setBio (bio, user), asked by Forum.profiles.SetBio
@@ -8109,6 +8362,9 @@ then
 
 ### Forum.profiles.SetDisplayName
 
+Authored path: `Forum.profiles.SetDisplayName`.
+- Covered by [Forum](../design/compositions/Forum.md), line 122.
+
 ```reaction
 when RequestBoundary.request (displayName, path: "/profiles/setDisplayName", requestId, session)
 where
@@ -8118,6 +8374,9 @@ then
 ```
 
 ### Forum.profiles.SetDisplayName#2
+
+Authored path: `Forum.profiles.SetDisplayName`.
+- Covered by [Forum](../design/compositions/Forum.md), line 122.
 
 ```reaction
 when Profiling.setDisplayName (displayName, user), asked by Forum.profiles.SetDisplayName
@@ -8129,6 +8388,9 @@ then
 
 ### Forum.reactions.AddReaction:hidden
 
+Authored path: `Forum.reactions.AddReaction`.
+- Covered by [Forum](../design/compositions/Forum.md), line 123.
+
 ```reaction
 when RequestBoundary.request (kind, path: "/reactions/add", requestId, session, target)
 where
@@ -8139,6 +8401,9 @@ then
 ```
 
 ### Forum.reactions.AddReaction:success
+
+Authored path: `Forum.reactions.AddReaction`.
+- Covered by [Forum](../design/compositions/Forum.md), line 123.
 
 ```reaction
 when RequestBoundary.request (kind, path: "/reactions/add", requestId, session, target)
@@ -8152,6 +8417,9 @@ then
 
 ### Forum.reactions.AddReaction:success#2
 
+Authored path: `Forum.reactions.AddReaction`.
+- Covered by [Forum](../design/compositions/Forum.md), line 123.
+
 ```reaction
 when Reacting.react (at, kind, reactor: user, target, reaction), asked by Forum.reactions.AddReaction:success
 where
@@ -8162,6 +8430,9 @@ then
 
 ### Forum.reactions.PurgeClearsReactions
 
+Authored path: `Forum.reactions.PurgeClearsReactions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 124.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -8169,6 +8440,9 @@ then
 ```
 
 ### Forum.reactions.ReactionsForTarget:hidden
+
+Authored path: `Forum.reactions.ReactionsForTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 125.
 
 ```reaction
 when RequestBoundary.request (path: "/reactions/forTarget", requestId, target)
@@ -8180,6 +8454,9 @@ then
 
 ### Forum.reactions.ReactionsForTarget:success
 
+Authored path: `Forum.reactions.ReactionsForTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 125.
+
 ```reaction
 when RequestBoundary.request (path: "/reactions/forTarget", requestId, target)
 where
@@ -8189,6 +8466,9 @@ then
 ```
 
 ### Forum.reactions.RemoveReaction:hidden
+
+Authored path: `Forum.reactions.RemoveReaction`.
+- Covered by [Forum](../design/compositions/Forum.md), line 126.
 
 ```reaction
 when RequestBoundary.request (kind, path: "/reactions/remove", requestId, session, target)
@@ -8201,6 +8481,9 @@ then
 
 ### Forum.reactions.RemoveReaction:success
 
+Authored path: `Forum.reactions.RemoveReaction`.
+- Covered by [Forum](../design/compositions/Forum.md), line 126.
+
 ```reaction
 when RequestBoundary.request (kind, path: "/reactions/remove", requestId, session, target)
 where
@@ -8212,6 +8495,9 @@ then
 
 ### Forum.reactions.RemoveReaction:success#2
 
+Authored path: `Forum.reactions.RemoveReaction`.
+- Covered by [Forum](../design/compositions/Forum.md), line 126.
+
 ```reaction
 when Reacting.unreact (kind, reactor: user, target, reaction), asked by Forum.reactions.RemoveReaction:success
 where
@@ -8221,6 +8507,9 @@ then
 ```
 
 ### Forum.resolutions.AcceptAnswer:accepted
+
+Authored path: `Forum.resolutions.AcceptAnswer`.
+- Covered by [Forum](../design/compositions/Forum.md), line 127.
 
 ```reaction
 when RequestBoundary.request (answer, path: "/resolutions/accept", question, requestId, session)
@@ -8236,6 +8525,9 @@ then
 
 ### Forum.resolutions.AcceptAnswer:accepted#2
 
+Authored path: `Forum.resolutions.AcceptAnswer`.
+- Covered by [Forum](../design/compositions/Forum.md), line 127.
+
 ```reaction
 when Resolving.accept (answer, at, by: user, question, resolution), asked by Forum.resolutions.AcceptAnswer:accepted
 where
@@ -8245,6 +8537,9 @@ then
 ```
 
 ### Forum.resolutions.AcceptAnswer:hidden-answer
+
+Authored path: `Forum.resolutions.AcceptAnswer`.
+- Covered by [Forum](../design/compositions/Forum.md), line 127.
 
 ```reaction
 when RequestBoundary.request (answer, path: "/resolutions/accept", question, requestId, session)
@@ -8258,6 +8553,9 @@ then
 
 ### Forum.resolutions.AcceptAnswer:hidden-question
 
+Authored path: `Forum.resolutions.AcceptAnswer`.
+- Covered by [Forum](../design/compositions/Forum.md), line 127.
+
 ```reaction
 when RequestBoundary.request (answer, path: "/resolutions/accept", question, requestId, session)
 where
@@ -8268,6 +8566,9 @@ then
 ```
 
 ### Forum.resolutions.AcceptAnswer:not-author
+
+Authored path: `Forum.resolutions.AcceptAnswer`.
+- Covered by [Forum](../design/compositions/Forum.md), line 127.
 
 ```reaction
 when RequestBoundary.request (answer, path: "/resolutions/accept", question, requestId, session)
@@ -8282,6 +8583,9 @@ then
 
 ### Forum.resolutions.ClearResolution:hidden
 
+Authored path: `Forum.resolutions.ClearResolution`.
+- Covered by [Forum](../design/compositions/Forum.md), line 128.
+
 ```reaction
 when RequestBoundary.request (path: "/resolutions/clear", question, requestId, session)
 where
@@ -8292,6 +8596,9 @@ then
 ```
 
 ### Forum.resolutions.ClearResolution:not-author
+
+Authored path: `Forum.resolutions.ClearResolution`.
+- Covered by [Forum](../design/compositions/Forum.md), line 128.
 
 ```reaction
 when RequestBoundary.request (path: "/resolutions/clear", question, requestId, session)
@@ -8305,6 +8612,9 @@ then
 
 ### Forum.resolutions.ClearResolution:success
 
+Authored path: `Forum.resolutions.ClearResolution`.
+- Covered by [Forum](../design/compositions/Forum.md), line 128.
+
 ```reaction
 when RequestBoundary.request (path: "/resolutions/clear", question, requestId, session)
 where
@@ -8317,6 +8627,9 @@ then
 
 ### Forum.resolutions.ClearResolution:success#2
 
+Authored path: `Forum.resolutions.ClearResolution`.
+- Covered by [Forum](../design/compositions/Forum.md), line 128.
+
 ```reaction
 when Resolving.clear (question, result.question: cleared), asked by Forum.resolutions.ClearResolution:success
 where
@@ -8326,6 +8639,9 @@ then
 ```
 
 ### Forum.resolutions.GetResolution:hidden
+
+Authored path: `Forum.resolutions.GetResolution`.
+- Covered by [Forum](../design/compositions/Forum.md), line 129.
 
 ```reaction
 when RequestBoundary.request (path: "/resolutions/get", question, requestId)
@@ -8337,6 +8653,9 @@ then
 
 ### Forum.resolutions.GetResolution:success
 
+Authored path: `Forum.resolutions.GetResolution`.
+- Covered by [Forum](../design/compositions/Forum.md), line 129.
+
 ```reaction
 when RequestBoundary.request (path: "/resolutions/get", question, requestId)
 where
@@ -8347,6 +8666,9 @@ then
 
 ### Forum.resolutions.IsResolved:hidden
 
+Authored path: `Forum.resolutions.IsResolved`.
+- Covered by [Forum](../design/compositions/Forum.md), line 130.
+
 ```reaction
 when RequestBoundary.request (path: "/resolutions/isResolved", question, requestId)
 where
@@ -8356,6 +8678,9 @@ then
 ```
 
 ### Forum.resolutions.IsResolved:success
+
+Authored path: `Forum.resolutions.IsResolved`.
+- Covered by [Forum](../design/compositions/Forum.md), line 130.
 
 ```reaction
 when RequestBoundary.request (path: "/resolutions/isResolved", question, requestId)
@@ -8368,6 +8693,9 @@ then
 
 ### Forum.resolutions.PurgedPostClearsResolutions:answer
 
+Authored path: `Forum.resolutions.PurgedPostClearsResolutions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 131.
+
 ```reaction
 when Trashing.purge (item)
 where
@@ -8377,6 +8705,9 @@ then
 ```
 
 ### Forum.resolutions.PurgedPostClearsResolutions:question
+
+Authored path: `Forum.resolutions.PurgedPostClearsResolutions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 131.
 
 ```reaction
 when Trashing.purge (item)
@@ -8388,6 +8719,9 @@ then
 
 ### Forum.revisions.GetRevision:hidden
 
+Authored path: `Forum.revisions.GetRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 132.
+
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
 where
@@ -8398,6 +8732,9 @@ then
 
 ### Forum.revisions.GetRevision:missing
 
+Authored path: `Forum.revisions.GetRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 132.
+
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
 where
@@ -8407,6 +8744,9 @@ then
 ```
 
 ### Forum.revisions.GetRevision:success
+
+Authored path: `Forum.revisions.GetRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 132.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
@@ -8419,6 +8759,9 @@ then
 
 ### Forum.revisions.LatestRevision:hidden
 
+Authored path: `Forum.revisions.LatestRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 133.
+
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
 where
@@ -8429,6 +8772,9 @@ then
 
 ### Forum.revisions.LatestRevision:missing
 
+Authored path: `Forum.revisions.LatestRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 133.
+
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
 where
@@ -8438,6 +8784,9 @@ then
 ```
 
 ### Forum.revisions.LatestRevision:success
+
+Authored path: `Forum.revisions.LatestRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 133.
 
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
@@ -8450,6 +8799,9 @@ then
 
 ### Forum.revisions.ListRevisions:hidden
 
+Authored path: `Forum.revisions.ListRevisions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 134.
+
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/list", requestId)
 where
@@ -8460,6 +8812,9 @@ then
 
 ### Forum.revisions.ListRevisions:missing
 
+Authored path: `Forum.revisions.ListRevisions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 134.
+
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/list", requestId)
 where
@@ -8469,6 +8824,9 @@ then
 ```
 
 ### Forum.revisions.ListRevisions:success
+
+Authored path: `Forum.revisions.ListRevisions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 134.
 
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/list", requestId)
@@ -8481,6 +8839,9 @@ then
 
 ### Forum.revisions.ModeratorGetRevision:hidden
 
+Authored path: `Forum.revisions.ModeratorGetRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 135.
+
 ```reaction
 when RequestBoundary.request (item, number, path: "/moderation/revisions/get", requestId, session)
 where
@@ -8491,6 +8852,9 @@ then
 ```
 
 ### Forum.revisions.ModeratorGetRevision:live
+
+Authored path: `Forum.revisions.ModeratorGetRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 135.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/moderation/revisions/get", requestId, session)
@@ -8505,6 +8869,9 @@ then
 
 ### Forum.revisions.ModeratorGetRevision:missing
 
+Authored path: `Forum.revisions.ModeratorGetRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 135.
+
 ```reaction
 when RequestBoundary.request (item, number, path: "/moderation/revisions/get", requestId, session)
 where
@@ -8516,6 +8883,9 @@ then
 ```
 
 ### Forum.revisions.ModeratorGetRevision:revision
+
+Authored path: `Forum.revisions.ModeratorGetRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 135.
 
 ```reaction
 when RequestBoundary.request (item, number, path: "/moderation/revisions/get", requestId, session)
@@ -8530,6 +8900,9 @@ then
 
 ### Forum.revisions.ModeratorLatestRevision:hidden
 
+Authored path: `Forum.revisions.ModeratorLatestRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 136.
+
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/latest", requestId, session)
 where
@@ -8540,6 +8913,9 @@ then
 ```
 
 ### Forum.revisions.ModeratorLatestRevision:live
+
+Authored path: `Forum.revisions.ModeratorLatestRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 136.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/latest", requestId, session)
@@ -8554,6 +8930,9 @@ then
 
 ### Forum.revisions.ModeratorLatestRevision:missing
 
+Authored path: `Forum.revisions.ModeratorLatestRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 136.
+
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/latest", requestId, session)
 where
@@ -8565,6 +8944,9 @@ then
 ```
 
 ### Forum.revisions.ModeratorLatestRevision:revision
+
+Authored path: `Forum.revisions.ModeratorLatestRevision`.
+- Covered by [Forum](../design/compositions/Forum.md), line 136.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/latest", requestId, session)
@@ -8579,6 +8961,9 @@ then
 
 ### Forum.revisions.ModeratorListRevisions:hidden
 
+Authored path: `Forum.revisions.ModeratorListRevisions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 137.
+
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/list", requestId, session)
 where
@@ -8589,6 +8974,9 @@ then
 ```
 
 ### Forum.revisions.ModeratorListRevisions:live
+
+Authored path: `Forum.revisions.ModeratorListRevisions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 137.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/list", requestId, session)
@@ -8603,6 +8991,9 @@ then
 
 ### Forum.revisions.ModeratorListRevisions:missing
 
+Authored path: `Forum.revisions.ModeratorListRevisions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 137.
+
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/list", requestId, session)
 where
@@ -8614,6 +9005,9 @@ then
 ```
 
 ### Forum.revisions.ModeratorListRevisions:revisions
+
+Authored path: `Forum.revisions.ModeratorListRevisions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 137.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/revisions/list", requestId, session)
@@ -8628,6 +9022,9 @@ then
 
 ### Forum.revisions.PurgeClearsRevisions
 
+Authored path: `Forum.revisions.PurgeClearsRevisions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 138.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -8635,6 +9032,9 @@ then
 ```
 
 ### Forum.revisions.RecordRevisionOnCreate
+
+Authored path: `Forum.revisions.RecordRevisionOnCreate`.
+- Covered by [Forum](../design/compositions/Forum.md), line 139.
 
 ```reaction
 when Posting.create (at, content, post)
@@ -8644,6 +9044,9 @@ then
 
 ### Forum.revisions.RecordRevisionOnEdit
 
+Authored path: `Forum.revisions.RecordRevisionOnEdit`.
+- Covered by [Forum](../design/compositions/Forum.md), line 140.
+
 ```reaction
 when Posting.edit (at, content, post)
 then
@@ -8651,6 +9054,9 @@ then
 ```
 
 ### Forum.subscriptions.IsSubscribed:hidden
+
+Authored path: `Forum.subscriptions.IsSubscribed`.
+- Covered by [Forum](../design/compositions/Forum.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/isSubscribed", requestId, session, target)
@@ -8662,6 +9068,9 @@ then
 ```
 
 ### Forum.subscriptions.IsSubscribed:success
+
+Authored path: `Forum.subscriptions.IsSubscribed`.
+- Covered by [Forum](../design/compositions/Forum.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/isSubscribed", requestId, session, target)
@@ -8675,6 +9084,9 @@ then
 
 ### Forum.subscriptions.MySubscriptions
 
+Authored path: `Forum.subscriptions.MySubscriptions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 142.
+
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/mine", requestId, session)
 where
@@ -8684,6 +9096,9 @@ then
 ```
 
 ### Forum.subscriptions.PurgeClearsConversationSubscriptions
+
+Authored path: `Forum.subscriptions.PurgeClearsConversationSubscriptions`.
+- Covered by [Forum](../design/compositions/Forum.md), line 143.
 
 ```reaction
 when Trashing.purge (item)
@@ -8696,6 +9111,9 @@ then
 
 ### Forum.subscriptions.Subscribe:hidden
 
+Authored path: `Forum.subscriptions.Subscribe`.
+- Covered by [Forum](../design/compositions/Forum.md), line 144.
+
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribe", requestId, session, target)
 where
@@ -8706,6 +9124,9 @@ then
 ```
 
 ### Forum.subscriptions.Subscribe:success
+
+Authored path: `Forum.subscriptions.Subscribe`.
+- Covered by [Forum](../design/compositions/Forum.md), line 144.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribe", requestId, session, target)
@@ -8719,6 +9140,9 @@ then
 
 ### Forum.subscriptions.Subscribe:success#2
 
+Authored path: `Forum.subscriptions.Subscribe`.
+- Covered by [Forum](../design/compositions/Forum.md), line 144.
+
 ```reaction
 when Subscribing.subscribe (at, target, user, subscription), asked by Forum.subscriptions.Subscribe:success
 where
@@ -8728,6 +9152,9 @@ then
 ```
 
 ### Forum.subscriptions.Subscribers:hidden
+
+Authored path: `Forum.subscriptions.Subscribers`.
+- Covered by [Forum](../design/compositions/Forum.md), line 145.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, target)
@@ -8739,6 +9166,9 @@ then
 
 ### Forum.subscriptions.Subscribers:success
 
+Authored path: `Forum.subscriptions.Subscribers`.
+- Covered by [Forum](../design/compositions/Forum.md), line 145.
+
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, target)
 where
@@ -8748,6 +9178,9 @@ then
 ```
 
 ### Forum.subscriptions.Unsubscribe:hidden
+
+Authored path: `Forum.subscriptions.Unsubscribe`.
+- Covered by [Forum](../design/compositions/Forum.md), line 146.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/unsubscribe", requestId, session, target)
@@ -8760,6 +9193,9 @@ then
 
 ### Forum.subscriptions.Unsubscribe:success
 
+Authored path: `Forum.subscriptions.Unsubscribe`.
+- Covered by [Forum](../design/compositions/Forum.md), line 146.
+
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/unsubscribe", requestId, session, target)
 where
@@ -8771,6 +9207,9 @@ then
 
 ### Forum.subscriptions.Unsubscribe:success#2
 
+Authored path: `Forum.subscriptions.Unsubscribe`.
+- Covered by [Forum](../design/compositions/Forum.md), line 146.
+
 ```reaction
 when Subscribing.unsubscribe (target, user, subscription), asked by Forum.subscriptions.Unsubscribe:success
 where
@@ -8780,6 +9219,9 @@ then
 ```
 
 ### Forum.tags.AddTag:hidden
+
+Authored path: `Forum.tags.AddTag`.
+- Covered by [Forum](../design/compositions/Forum.md), line 147.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/add", requestId, session, tag, target)
@@ -8792,6 +9234,9 @@ then
 
 ### Forum.tags.AddTag:success
 
+Authored path: `Forum.tags.AddTag`.
+- Covered by [Forum](../design/compositions/Forum.md), line 147.
+
 ```reaction
 when RequestBoundary.request (path: "/tags/add", requestId, session, tag, target)
 where
@@ -8803,6 +9248,9 @@ then
 
 ### Forum.tags.AddTag:success#2
 
+Authored path: `Forum.tags.AddTag`.
+- Covered by [Forum](../design/compositions/Forum.md), line 147.
+
 ```reaction
 when Tagging.addTag (tag, target, result.target: tagged), asked by Forum.tags.AddTag:success
 where
@@ -8812,6 +9260,9 @@ then
 ```
 
 ### Forum.tags.CreateTag
+
+Authored path: `Forum.tags.CreateTag`.
+- Covered by [Forum](../design/compositions/Forum.md), line 148.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/create", requestId, session)
@@ -8823,6 +9274,9 @@ then
 
 ### Forum.tags.CreateTag#2
 
+Authored path: `Forum.tags.CreateTag`.
+- Covered by [Forum](../design/compositions/Forum.md), line 148.
+
 ```reaction
 when Tagging.createTag (name, tag), asked by Forum.tags.CreateTag
 where
@@ -8833,6 +9287,9 @@ then
 
 ### Forum.tags.ListTags
 
+Authored path: `Forum.tags.ListTags`.
+- Covered by [Forum](../design/compositions/Forum.md), line 149.
+
 ```reaction
 when RequestBoundary.request (path: "/tags/list", requestId)
 then
@@ -8841,6 +9298,9 @@ then
 
 ### Forum.tags.PurgeClearsTags
 
+Authored path: `Forum.tags.PurgeClearsTags`.
+- Covered by [Forum](../design/compositions/Forum.md), line 150.
+
 ```reaction
 when Trashing.purge (item)
 then
@@ -8848,6 +9308,9 @@ then
 ```
 
 ### Forum.tags.RemoveTag:hidden
+
+Authored path: `Forum.tags.RemoveTag`.
+- Covered by [Forum](../design/compositions/Forum.md), line 151.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/remove", requestId, session, tag, target)
@@ -8860,6 +9323,9 @@ then
 
 ### Forum.tags.RemoveTag:success
 
+Authored path: `Forum.tags.RemoveTag`.
+- Covered by [Forum](../design/compositions/Forum.md), line 151.
+
 ```reaction
 when RequestBoundary.request (path: "/tags/remove", requestId, session, tag, target)
 where
@@ -8871,6 +9337,9 @@ then
 
 ### Forum.tags.RemoveTag:success#2
 
+Authored path: `Forum.tags.RemoveTag`.
+- Covered by [Forum](../design/compositions/Forum.md), line 151.
+
 ```reaction
 when Tagging.removeTag (tag, target, result.target: untagged), asked by Forum.tags.RemoveTag:success
 where
@@ -8881,6 +9350,9 @@ then
 
 ### Forum.tags.TagTargets
 
+Authored path: `Forum.tags.TagTargets`.
+- Covered by [Forum](../design/compositions/Forum.md), line 153.
+
 ```reaction
 when RequestBoundary.request (path: "/tags/targets", requestId, tag)
 then
@@ -8889,6 +9361,9 @@ then
 
 ### Forum.tags.TagTargetsByName
 
+Authored path: `Forum.tags.TagTargetsByName`.
+- Covered by [Forum](../design/compositions/Forum.md), line 154.
+
 ```reaction
 when RequestBoundary.request (name, path: "/tags/targetsByName", requestId)
 then
@@ -8896,6 +9371,9 @@ then
 ```
 
 ### Forum.tags.TagsForTarget:hidden
+
+Authored path: `Forum.tags.TagsForTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 152.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/forTarget", requestId, target)
@@ -8907,6 +9385,9 @@ then
 
 ### Forum.tags.TagsForTarget:success
 
+Authored path: `Forum.tags.TagsForTarget`.
+- Covered by [Forum](../design/compositions/Forum.md), line 152.
+
 ```reaction
 when RequestBoundary.request (path: "/tags/forTarget", requestId, target)
 where
@@ -8916,6 +9397,9 @@ then
 ```
 
 ### Forum.threads.CreateThread
+
+Authored path: `Forum.threads.CreateThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 156.
 
 ```reaction
 when RequestBoundary.request (content, path: "/threads/create", requestId, session)
@@ -8928,6 +9412,9 @@ then
 
 ### Forum.threads.CreateThread#2
 
+Authored path: `Forum.threads.CreateThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 156.
+
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Forum.threads.CreateThread
 then
@@ -8935,6 +9422,9 @@ then
 ```
 
 ### Forum.threads.CreateThread#3
+
+Authored path: `Forum.threads.CreateThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 156.
 
 ```reaction
 when Conversing.start (at, item: post, conversation, node), asked by Forum.threads.CreateThread#2
@@ -8946,6 +9436,9 @@ then
 
 ### Forum.threads.CreatedPostRefreshesDerivedContent:links
 
+Authored path: `Forum.threads.CreatedPostRefreshesDerivedContent`.
+- Covered by [Forum](../design/compositions/Forum.md), line 155.
+
 ```reaction
 when Posting.create (content, post)
 then
@@ -8954,6 +9447,9 @@ then
 
 ### Forum.threads.CreatedPostRefreshesDerivedContent:render
 
+Authored path: `Forum.threads.CreatedPostRefreshesDerivedContent`.
+- Covered by [Forum](../design/compositions/Forum.md), line 155.
+
 ```reaction
 when Posting.create (content, post)
 then
@@ -8961,6 +9457,9 @@ then
 ```
 
 ### Forum.threads.ForItem:absent
+
+Authored path: `Forum.threads.ForItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 157.
 
 ```reaction
 when RequestBoundary.request (item, path: "/threads/forItem", requestId)
@@ -8972,6 +9471,9 @@ then
 
 ### Forum.threads.ForItem:found
 
+Authored path: `Forum.threads.ForItem`.
+- Covered by [Forum](../design/compositions/Forum.md), line 157.
+
 ```reaction
 when RequestBoundary.request (item, path: "/threads/forItem", requestId)
 where
@@ -8982,6 +9484,9 @@ then
 
 ### Forum.threads.GetThread
 
+Authored path: `Forum.threads.GetThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 158.
+
 ```reaction
 when RequestBoundary.request (conversation, path: "/threads/get", requestId)
 then
@@ -8989,6 +9494,9 @@ then
 ```
 
 ### Forum.threads.ListActivity
+
+Authored path: `Forum.threads.ListActivity`.
+- Covered by [Forum](../design/compositions/Forum.md), line 159.
 
 ```reaction
 when RequestBoundary.request (path: "/threads/activity", requestId)
@@ -8998,6 +9506,9 @@ then
 
 ### Forum.threads.ListLatest
 
+Authored path: `Forum.threads.ListLatest`.
+- Covered by [Forum](../design/compositions/Forum.md), line 160.
+
 ```reaction
 when RequestBoundary.request (path: "/threads/latest", requestId)
 then
@@ -9005,6 +9516,9 @@ then
 ```
 
 ### Forum.threads.ReplyToThread:locked
+
+Authored path: `Forum.threads.ReplyToThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 161.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
@@ -9018,6 +9532,9 @@ then
 
 ### Forum.threads.ReplyToThread:missing-parent
 
+Authored path: `Forum.threads.ReplyToThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 161.
+
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
 where
@@ -9028,6 +9545,9 @@ then
 ```
 
 ### Forum.threads.ReplyToThread:reply
+
+Authored path: `Forum.threads.ReplyToThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 161.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
@@ -9042,6 +9562,9 @@ then
 
 ### Forum.threads.ReplyToThread:reply#2
 
+Authored path: `Forum.threads.ReplyToThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 161.
+
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Forum.threads.ReplyToThread:reply
 where
@@ -9051,6 +9574,9 @@ then
 ```
 
 ### Forum.threads.ReplyToThread:reply#3
+
+Authored path: `Forum.threads.ReplyToThread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 161.
 
 ```reaction
 when Conversing.reply (at, item: post, parent, node), asked by Forum.threads.ReplyToThread:reply#2
@@ -9062,6 +9588,9 @@ then
 
 ### Forum.threads.TrackReplyUnread
 
+Authored path: `Forum.threads.TrackReplyUnread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 162.
+
 ```reaction
 when Conversing.reply (item, node)
 where
@@ -9072,6 +9601,9 @@ then
 
 ### Forum.threads.TrackRootUnread
 
+Authored path: `Forum.threads.TrackRootUnread`.
+- Covered by [Forum](../design/compositions/Forum.md), line 163.
+
 ```reaction
 when Conversing.start (item, conversation)
 then
@@ -9079,6 +9611,9 @@ then
 ```
 
 ### Forum.unread.MarkAllSeen
+
+Authored path: `Forum.unread.MarkAllSeen`.
+- Covered by [Forum](../design/compositions/Forum.md), line 164.
 
 ```reaction
 when RequestBoundary.request (path: "/unread/markAllSeen", requestId, scope, session)
@@ -9090,6 +9625,9 @@ then
 
 ### Forum.unread.MarkAllSeen#2
 
+Authored path: `Forum.unread.MarkAllSeen`.
+- Covered by [Forum](../design/compositions/Forum.md), line 164.
+
 ```reaction
 when Tracking.markAllSeen (scope, user), asked by Forum.unread.MarkAllSeen
 where
@@ -9099,6 +9637,9 @@ then
 ```
 
 ### Forum.unread.MarkSeen
+
+Authored path: `Forum.unread.MarkSeen`.
+- Covered by [Forum](../design/compositions/Forum.md), line 165.
 
 ```reaction
 when RequestBoundary.request (item, path: "/unread/markSeen", requestId, session)
@@ -9110,6 +9651,9 @@ then
 
 ### Forum.unread.MarkSeen#2
 
+Authored path: `Forum.unread.MarkSeen`.
+- Covered by [Forum](../design/compositions/Forum.md), line 165.
+
 ```reaction
 when Tracking.markSeen (item, user), asked by Forum.unread.MarkSeen
 where
@@ -9119,6 +9663,9 @@ then
 ```
 
 ### Forum.unread.UnreadCount
+
+Authored path: `Forum.unread.UnreadCount`.
+- Covered by [Forum](../design/compositions/Forum.md), line 166.
 
 ```reaction
 when RequestBoundary.request (path: "/unread/count", requestId, scope, session)
@@ -9130,6 +9677,9 @@ then
 ```
 
 ### Forum.unread.UnreadList
+
+Authored path: `Forum.unread.UnreadList`.
+- Covered by [Forum](../design/compositions/Forum.md), line 167.
 
 ```reaction
 when RequestBoundary.request (path: "/unread/list", requestId, scope, session)

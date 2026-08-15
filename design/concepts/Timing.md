@@ -10,6 +10,14 @@ invent one.
 Noor asks what time it is and learns that it is 10:30. When she asks later, she
 learns the later moment rather than the earlier answer.
 
+`_now ()` answers the current moment as `at`.
+
+## Types
+
+```types
+
+```
+
 ## State
 
 ```state
@@ -20,8 +28,9 @@ the current Moment
 
 ```actions
 capture () : return (at: Date)
+  where true
   then
-    return the current moment as at
+    return at
 ```
 
 ## Queries
@@ -29,7 +38,3 @@ capture () : return (at: Date)
 ```queries
 _now () : one (at: Date)
 ```
-
-### Notes
-
-`_now ()` answers the current moment as `at`.

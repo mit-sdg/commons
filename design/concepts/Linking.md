@@ -12,6 +12,25 @@ them. After she edits the guide to link to one worksheet, setting the links
 replaces the previous list. Clearing a discarded worksheet's backlinks removes
 it from every source. Clearing links that do not exist still succeeds.
 
+- `_getLinks (source)` answers the source's targets in their stated order.
+- `_getBacklinks (target)` answers every source that links to the target, in
+  source creation order.
+
+Backlinks are derived from the stored forward links.
+
+## Types
+
+```types
+external Source
+  The application object from which links originate.
+
+external Target
+  The application object affected by the behavior.
+
+external Targets
+  A collection of link targets.
+```
+
 ## State
 
 ```state
@@ -22,26 +41,30 @@ a set of Sources with
 ## Actions
 
 ```actions
-setLinks(source: Source, targets: Targets) : return ()
+setLinks(source: Source, targets: Targets) : return (source: Source)
+  where true
   then
     set source's links to targets, replacing any prior links
-    return
+    return source
 
-setLinksFrom(source: Source, content: String) : return ()
+setLinksFrom(source: Source, content: String) : return (source: Source)
+  where true
   then
     read each nonempty target between [[ and ]] from left to right
     set source's links to those targets in that order, preserving repeats
-    return
+    return source
 
-clearLinks(source: Source) : return ()
+clearLinks(source: Source) : return (source: Source)
+  where true
   then
     remove all of source's links
-    return
+    return source
 
-clearBacklinks(target: Target) : return ()
+clearBacklinks(target: Target) : return (target: Target)
+  where true
   then
     remove target from every source's links
-    return
+    return target
 ```
 
 ## Queries
@@ -51,11 +74,3 @@ _getLinks (source: String) : many (target: String)
 
 _getBacklinks (target: String) : many (source: String)
 ```
-
-### Notes
-
-- `_getLinks (source)` answers the source's targets in their stated order.
-- `_getBacklinks (target)` answers every source that links to the target, in
-  source creation order.
-
-Backlinks are derived from the stored forward links.

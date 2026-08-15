@@ -13,6 +13,33 @@ only one remains. Her advisor grants two extra days for conference travel, so
 the second use succeeds. Ana later cancels that use. Its days return to her
 balance, while the canceled use remains recorded.
 
+A use may be changed to zero days. It remains applied but spends nothing.
+Canceling retains the use with a canceled status.
+
+Items are opaque identities. Banking neither creates nor validates them; it
+records only the learner's standing late-day use of each identity.
+
+- `_getTerms ()` answers exactly one row with the stated or default terms.
+- `_getBalance (learner)` answers exactly one row. `granted` is the allowance
+  plus grant days, `used` is the sum of applied uses, and `remaining` is
+  `granted - used`.
+- `_getApplied (learner, item)` answers at most one standing use.
+- `_getUses (learner)` answers all of the learner's uses in creation order,
+  including canceled uses.
+- `_getUsesForItem (item)` answers the standing uses on the item in creation
+  order.
+- `_getGrants (learner)` answers the learner's grants in creation order.
+
+## Types
+
+```types
+external Learner
+  The learner identity affected by the behavior.
+
+external Item
+  The application item affected by the behavior.
+```
+
 ## State
 
 ```state
@@ -51,10 +78,11 @@ most one applied use per item.
 ## Actions
 
 ```actions
-setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : return ()
+setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : return (allowance: Number, perItemLimit: Number, unitHours: Number)
+  where true
   then
     set the terms' allowance, perItemLimit, and unitHours from the inputs
-    return
+    return allowance, perItemLimit, unitHours
 
 grant(learner: Learner, days: Number, reason: String, at: Date) : return (grant: Grant)
   where days is greater than zero
@@ -115,12 +143,6 @@ cancel(learner: Learner, item: Item) : return (use: Use)
     refuse LATE_USE_NOT_FOUND "No late days stand applied to this item."
 ```
 
-A use may be changed to zero days. It remains applied but spends nothing.
-Canceling retains the use with a canceled status.
-
-Items are opaque identities. Banking neither creates nor validates them; it
-records only the learner's standing late-day use of each identity.
-
 ## Queries
 
 ```queries
@@ -136,16 +158,3 @@ _getUsesForItem (item: String) : many (learner: String, days: Number)
 
 _getGrants (learner: String) : many (grant: String, days: Number, reason: String, grantedAt: Date)
 ```
-
-### Notes
-
-- `_getTerms ()` answers exactly one row with the stated or default terms.
-- `_getBalance (learner)` answers exactly one row. `granted` is the allowance
-  plus grant days, `used` is the sum of applied uses, and `remaining` is
-  `granted - used`.
-- `_getApplied (learner, item)` answers at most one standing use.
-- `_getUses (learner)` answers all of the learner's uses in creation order,
-  including canceled uses.
-- `_getUsesForItem (item)` answers the standing uses on the item in creation
-  order.
-- `_getGrants (learner)` answers the learner's grants in creation order.

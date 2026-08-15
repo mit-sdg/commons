@@ -1,4 +1,3 @@
-import spec from "@design/compositions/Course.md" with { type: "text" };
 import * as assignments from "./course/assignments.ts";
 import * as calendar from "./course/calendar.ts";
 import * as grades from "./course/grades.ts";
@@ -7,7 +6,6 @@ import * as notes from "./course/notes.ts";
 import * as roster from "./course/roster.ts";
 import * as submissions from "./course/submissions.ts";
 
-export { spec };
 export const compositions = {
   assignments,
   calendar,

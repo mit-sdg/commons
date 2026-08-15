@@ -12,6 +12,29 @@ second role with the same name is refused. Maya receives the role in the
 course; granting it there again is refused. Revoking the role succeeds once and
 is refused when she no longer holds it.
 
+- `_hasCapability (user, context, capability)` answers exactly one row with
+  `allowed`.
+- `_hasCapabilityHolder (context, capability)` answers exactly one row with
+  `present`.
+- `_holdsRoleNamed (user, context, name)` answers exactly one row with `held`.
+- `_getRoles (user, context)` answers the user's granted roles in grant order.
+- `_getRoleByName (name)`, `_getRoleDetail (role)`, and `_denotedRole (ref)`
+  each answer at most one role.
+- `_listRoles ()` answers every role in definition order.
+
+## Types
+
+```types
+external User
+  The application user identity.
+
+external Context
+  The application context in which a role applies.
+
+external Strings
+  A collection of string values.
+```
+
 ## State
 
 ```state
@@ -40,7 +63,7 @@ defineRole(name: String, capabilities: Strings) : return (role: Role)
 ensureRole(name: String, capabilities: Strings) : return (role: Role)
   where some role has name name
   then
-    return that role
+    return role
   where no role has name name
   then
     add a new role with name and capabilities
@@ -70,8 +93,9 @@ revoke(user: User, context: Context, role: Role) : return (grant: Grant)
 requireCapability(user: User, context: Context, capability: String) : return (allowed: Boolean)
   where the user holds a granted role in the context that includes capability
   then
-    return allowed true
-  otherwise
+    return allowed
+  where the user holds no granted role in the context that includes capability
+  then
     refuse FORBIDDEN "The user does not hold the required capability in this context."
 ```
 
@@ -94,15 +118,3 @@ _listRoles () : many (role: String, name: String, capabilities: Strings)
 
 _denotedRole (ref: String) : optional (role: String)
 ```
-
-### Notes
-
-- `_hasCapability (user, context, capability)` answers exactly one row with
-  `allowed`.
-- `_hasCapabilityHolder (context, capability)` answers exactly one row with
-  `present`.
-- `_holdsRoleNamed (user, context, name)` answers exactly one row with `held`.
-- `_getRoles (user, context)` answers the user's granted roles in grant order.
-- `_getRoleByName (name)`, `_getRoleDetail (role)`, and `_denotedRole (ref)`
-  each answer at most one role.
-- `_listRoles ()` answers every role in definition order.

@@ -12,6 +12,33 @@ each receive a release. Dana gives Omar a later due date, then clears that
 override. Assigning the problem set to Omar again is refused because he already
 has a release. After Dana archives the problem set, it can no longer be revised.
 
+- `_getDetail (assignment)` answers at most one row containing the assignment's
+  authored fields, audience, status, and dates.
+- `_getAssignments ()` answers every assignment in creation order, including
+  drafts, published assignments, and archived assignments.
+- `_getAssigned (assignee)` answers the assignee's releases in creation order.
+- `_getAssignees (assignment)` answers the assignment's assignees in release
+  order.
+- `_isAssigned (assignment, assignee)` answers exactly one row with `assigned`.
+- `_getPublishedForAudience (audience)` answers published assignments addressed
+  to everyone or to the named section, in creation order.
+- `_getPublishedInWindow (start, end)` answers published assignments whose
+  availability or due date falls within the inclusive window, in creation
+  order.
+
+## Types
+
+```types
+external Author
+  The identity that authors a record.
+
+external Assignee
+  The identity receiving an assignment.
+
+external Sections
+  A collection of section identifiers.
+```
+
 ## State
 
 ```state
@@ -42,9 +69,9 @@ a set of Releases with
 
 An assignment's audience is either everyone or targets; when it is targets, the targets say which sections are addressed, and an assignment addressed to everyone lists none. Whether a given audience and targets agree is a calculation over the inputs alone:
 
-```computation
-(audience: String) suits (targets: Sections) : Bool
-```
+The concept uses the following calculations:
+
+- `(audience: String) suits (targets: Sections) : Bool`
 
 Everyone suits an empty set of targets; targets suits a set holding at least one.
 No other audience value suits a set of targets.
@@ -74,7 +101,7 @@ revise(assignment: Assignment, title: String, instructions: String, kind: String
   then
     set assignment's title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, and targets from the inputs
     set assignment's updatedAt to at
-    return assignment, its status, audience, targets, and acceptsSubmissions
+    return assignment, status, audience, targets, acceptsSubmissions
   where assignment not in assignments
   then
     refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
@@ -97,7 +124,7 @@ publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audi
     remove assignment from draft
     add assignment to published
     set assignment's updatedAt to at
-    return assignment, its audience, targets, and acceptsSubmissions
+    return assignment, audience, targets, acceptsSubmissions
   where assignment not in assignments
   then
     refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
@@ -105,13 +132,13 @@ publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audi
   then
     refuse ASSIGNMENT_NOT_DRAFT "Only a draft can be published."
 
-archive(assignment: Assignment, at: Date) : return ()
+archive(assignment: Assignment, at: Date) : return (assignment: Assignment)
   where assignment in assignments
   then
     remove assignment from draft and from published
     add assignment to archived
     set assignment's updatedAt to at
-    return
+    return assignment
   where assignment not in assignments
   then
     refuse ASSIGNMENT_NOT_FOUND "There is no such assignment."
@@ -168,19 +195,3 @@ _getPublishedForAudience (audience: String|Null) : many (assignment: String)
 
 _getPublishedInWindow (start: String|Date, end: String|Date) : many (assignment: String)
 ```
-
-### Notes
-
-- `_getDetail (assignment)` answers at most one row containing the assignment's
-  authored fields, audience, status, and dates.
-- `_getAssignments ()` answers every assignment in creation order, including
-  drafts, published assignments, and archived assignments.
-- `_getAssigned (assignee)` answers the assignee's releases in creation order.
-- `_getAssignees (assignment)` answers the assignment's assignees in release
-  order.
-- `_isAssigned (assignment, assignee)` answers exactly one row with `assigned`.
-- `_getPublishedForAudience (audience)` answers published assignments addressed
-  to everyone or to the named section, in creation order.
-- `_getPublishedInWindow (start, end)` answers published assignments whose
-  availability or due date falls within the inclusive window, in creation
-  order.

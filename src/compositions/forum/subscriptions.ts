@@ -1,7 +1,7 @@
 import { activeUser } from "../access/session.ts";
 import { each, former, no, reaction, when, whether, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { thePostSummaryOf, theThreadStatsOf } from "./fragments.ts";
 import { readableConversation } from "./threads.ts";
 

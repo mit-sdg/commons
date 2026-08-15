@@ -12,6 +12,26 @@ person may add one reaction of each kind to the target. Noah's second "up" is
 refused. Removing it succeeds once and is refused the second time. Clearing a
 target removes every reaction and succeeds when none exist.
 
+`clearTarget` removes every reaction on the target. It is idempotent: clearing
+a target with no reactions changes nothing and is not refused. Targets are
+opaque identities; Reacting neither creates nor validates them.
+
+- `_getReactionsForTarget (target)` answers its reactions in creation order.
+- `_getReactionsByUser (reactor)` answers the person's reactions in creation
+  order.
+- `_countByKind (target)` answers one row per reaction kind with its count.
+- `_hasReacted (reactor, target, kind)` answers exactly one row with `reacted`.
+
+## Types
+
+```types
+external Person
+  The person identity affected by the behavior.
+
+external Target
+  The application object affected by the behavior.
+```
+
 ## State
 
 ```state
@@ -45,15 +65,12 @@ unreact(reactor: Person, target: Target, kind: String) : return (reaction: React
   then
     refuse REACTION_NOT_FOUND "There is no such reaction to take back."
 
-clearTarget(target: Target) : return ()
+clearTarget(target: Target) : return (target: Target)
+  where true
   then
     remove every reaction on target
-    return
+    return target
 ```
-
-`clearTarget` removes every reaction on the target. It is idempotent: clearing
-a target with no reactions changes nothing and is not refused. Targets are
-opaque identities; Reacting neither creates nor validates them.
 
 ## Queries
 
@@ -66,11 +83,3 @@ _countByKind (target: String) : many (kind: String, count: Number)
 
 _hasReacted (reactor: String, target: String, kind: String) : one (hasReacted: Boolean)
 ```
-
-### Notes
-
-- `_getReactionsForTarget (target)` answers its reactions in creation order.
-- `_getReactionsByUser (reactor)` answers the person's reactions in creation
-  order.
-- `_countByKind (target)` answers one row per reaction kind with its count.
-- `_hasReacted (reactor, target, kind)` answers exactly one row with `reacted`.

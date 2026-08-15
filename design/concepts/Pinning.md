@@ -13,6 +13,24 @@ unpinning it again or changing the priority of an unpinned item is refused. The
 same item may be pinned independently in another scope. Clearing an item
 removes all of its pins and succeeds when none exist.
 
+`clearItem` removes every pin of the item. It is idempotent: clearing an item
+with no pins changes nothing and is not refused. Items and scopes are opaque
+identities; Pinning neither creates nor validates them.
+
+- `_getPinned (scope)` answers the scope's pinned items with highest priority
+  first, with later pins breaking ties.
+- `_isPinned (item, scope)` answers exactly one row with `pinned`.
+
+## Types
+
+```types
+external Item
+  The application item affected by the behavior.
+
+external Scope
+  The application scope containing the item.
+```
+
 ## State
 
 ```state
@@ -55,15 +73,12 @@ setPriority(item: Item, scope: Scope, priority: Number) : return (pin: Pin)
   then
     refuse ITEM_NOT_PINNED "There is no such pin to reprioritize."
 
-clearItem(item: Item) : return ()
+clearItem(item: Item) : return (item: Item)
+  where true
   then
     remove every pin of item
-    return
+    return item
 ```
-
-`clearItem` removes every pin of the item. It is idempotent: clearing an item
-with no pins changes nothing and is not refused. Items and scopes are opaque
-identities; Pinning neither creates nor validates them.
 
 ## Queries
 
@@ -72,9 +87,3 @@ _getPinned (scope: String) : many (item: String, priority: Number)
 
 _isPinned (item: String, scope: String) : one (pinned: Boolean)
 ```
-
-### Notes
-
-- `_getPinned (scope)` answers the scope's pinned items with highest priority
-  first, with later pins breaking ties.
-- `_isPinned (item, scope)` answers exactly one row with `pinned`.

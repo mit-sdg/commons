@@ -1,5 +1,5 @@
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/vocabulary.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { createEngine, type LogEvent } from "@mit-sdg/sync-engine/advanced";
 import { commonsPublicErrors } from "../../src/assembly/http-policy.ts";

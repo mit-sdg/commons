@@ -11,6 +11,12 @@ An application queues an email it has already rendered. A host worker reads
 queued messages, sends them through SMTP, and marks successful deliveries sent.
 Failed messages remain queued for a later attempt.
 
+## Types
+
+```types
+
+```
+
 ## State
 
 ```state
@@ -36,7 +42,7 @@ Email recipients are compared after trimming and lower-casing.
 normalizeRecipient(recipient: String) : return (recipient: String)
   where recipient looks like an email address
   then
-    return the trimmed, lower-cased recipient
+    return recipient
   where recipient does not look like an email address
   then
     refuse MAIL_RECIPIENT_INVALID "The mail recipient is not well formed."
@@ -49,7 +55,7 @@ enqueue(key: String, recipient: String, subject: String, text: String, html: Str
   where recipient looks like an email address and a message already has key
   then
     clear its sentAt and replace its delivery content using the normalized recipient
-    return that message
+    return message
   where recipient does not look like an email address
   then
     refuse MAIL_RECIPIENT_INVALID "The mail recipient is not well formed."

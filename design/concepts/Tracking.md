@@ -12,6 +12,26 @@ refused. Marking the whole scope seen records every remaining item and succeeds
 when none remain. Unregistering the discussion removes it and all of its seen
 marks; unregistering it again succeeds. Registering it twice is refused.
 
+`unregister` removes the item and all its seen marks and succeeds when the item
+is absent. There is no action that makes a seen item unread.
+
+- `_getUnread (user, scope)` answers unseen items in registration order.
+- `_getUnreadCount (user, scope)` answers exactly one row with `count`.
+- `_inScope (scope)` answers every registered item in registration order.
+
+## Types
+
+```types
+external User
+  The application user identity.
+
+external Scope
+  The application scope containing the item.
+
+external Item
+  The application item affected by the behavior.
+```
+
 ## State
 
 ```state
@@ -39,6 +59,7 @@ register(item: Item, scope: Scope) : return (item: Item)
     refuse ITEM_ALREADY_REGISTERED "This item is already being tracked."
 
 unregister(item: Item) : return (item: Item)
+  where true
   then
     remove item from registered
     remove every seen-mark of item
@@ -57,14 +78,12 @@ markSeen(user: User, item: Item) : return (item: Item)
     refuse ITEM_ALREADY_SEEN "This user has already seen this item."
 
 markAllSeen(user: User, scope: Scope) : return (user: User)
+  where true
   then
     for every registered item in scope the user has not seen,
       add a seen-mark with user and that item
     return user
 ```
-
-`unregister` removes the item and all its seen marks and succeeds when the item
-is absent. There is no action that makes a seen item unread.
 
 ## Queries
 
@@ -75,9 +94,3 @@ _getUnread (user: String, scope: String) : many (item: String)
 
 _getUnreadCount (user: String, scope: String) : one (count: Number)
 ```
-
-### Notes
-
-- `_getUnread (user, scope)` answers unseen items in registration order.
-- `_getUnreadCount (user, scope)` answers exactly one row with `count`.
-- `_inScope (scope)` answers every registered item in registration order.

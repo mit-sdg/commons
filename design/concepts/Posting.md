@@ -11,6 +11,18 @@ On Monday Amara creates an announcement. On Wednesday she edits its content,
 and the post records the edit time. On Friday she deletes it. Deleting it again
 is refused because the post no longer exists.
 
+- `_getPost (post)` answers at most one complete post.
+- `_getByAuthor (author)` answers the author's posts newest first.
+- `_getMentions (post)` answers distinct handles in first-appearance order.
+- `_isMentioned (post, handle)` answers exactly one row with `mentioned`.
+
+## Types
+
+```types
+external Author
+  The identity that authors a record.
+```
+
 ## State
 
 ```state
@@ -29,6 +41,7 @@ does not assign them to people.
 
 ```actions
 create(author: Author, content: String, at: Date) : return (post: Post)
+  where true
   then
     add a new post with author, content, and createdAt at
     return post
@@ -42,11 +55,11 @@ edit(post: Post, content: String, at: Date) : return (post: Post)
   then
     refuse POST_NOT_FOUND "There is no such post."
 
-delete(post: Post) : return ()
+delete(post: Post) : return (post: Post)
   where post in posts
   then
     delete post
-    return
+    return post
   where post not in posts
   then
     refuse POST_NOT_FOUND "There is no such post."
@@ -63,10 +76,3 @@ _getMentions (post: String) : many (handle: String)
 
 _isMentioned (post: String, handle: String) : one (mentioned: Boolean)
 ```
-
-### Notes
-
-- `_getPost (post)` answers at most one complete post.
-- `_getByAuthor (author)` answers the author's posts newest first.
-- `_getMentions (post)` answers distinct handles in first-appearance order.
-- `_isMentioned (post, handle)` answers exactly one row with `mentioned`.

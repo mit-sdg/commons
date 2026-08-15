@@ -3,7 +3,7 @@ import { each, form, former, no, view, where, whether } from "@mit-sdg/sync-engi
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { FORUM } from "../access/capabilities.ts";
 import { isActiveCourseMember, mayManageRoster, mayNotManageRoster } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { thePostSummaryOf, thePrivateProfileOf, theProfileFaceOf } from "./fragments.ts";
 import { intact } from "./threads.ts";
 

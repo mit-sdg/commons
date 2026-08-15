@@ -1,5 +1,5 @@
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/vocabulary.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { derivePasswordVerifier } from "../../src/concepts/authenticating/password-verifier.ts";
 import { createEdge } from "../../src/edge.ts";

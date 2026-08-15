@@ -1,7 +1,7 @@
 import { activeUser } from "./session.ts";
 import { no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 import { ADMIN_ROLE, FORUM, INITIAL_ADMIN_CAPABILITIES } from "./capabilities.ts";
 
 const { Authenticating, Inviting, Profiling, Roling, Sessioning, Timing } = concepts;

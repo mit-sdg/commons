@@ -7,7 +7,7 @@ import {
   mayManageLateDays,
   mayNotManageLateDays,
 } from "../access/policy.ts";
-import { concepts } from "../../vocabulary.ts";
+import { concepts } from "../../concepts.ts";
 
 const { Banking, Timing } = concepts;
 /** What late-day balance does this learner have? */
