@@ -234,7 +234,7 @@ describe("application-owned design integration", () => {
     expect(config).toContain('module: new URL("./src/concepts.ts"');
     expect(config).toContain('export: "learningConcepts"');
     expect(config).toContain('httpWire({ policy, name: "CommonsWireHttp" })');
-    expect(manifest.scripts["design:check"]).toBe("sync-engine check --config generated.config.ts");
+    expect(manifest.scripts["source:check"]).toBe("sync-engine check --config generated.config.ts");
   });
 
   test("concept implementations and helpers import no engine API", () => {

@@ -9,7 +9,7 @@ export interface CommonsConceptFloor {
   close(): Promise<void>;
 }
 
-// beta.10's public ConceptFloor constraint is too narrow for registrations whose
+// The public ConceptFloor constraint is too narrow for registrations whose
 // floor factories accept a concrete context, although the runtime accepts them.
 const validateConceptFloor = conceptFloor as unknown as (
   selection: typeof learningConcepts,

@@ -8,11 +8,12 @@
   "type": "module",
   "scripts": {
     "artifacts": "sync-engine artifacts",
-    "design:check": "sync-engine check --config generated.config.ts",
+    "design:check": "sync-engine check-design design/concepts/*.md design/compositions/*/*.md design/application.md",
+    "source:check": "sync-engine check --config generated.config.ts",
     "issues:check": "bun scripts/check-issues.ts",
-    "check": "bun run design:check && bun run artifacts check && bun run issues:check && vp check && bun run --cwd frontend check",
+    "check": "bun run design:check && bun run source:check && bun run artifacts check && bun run issues:check && vp check && bun run --cwd frontend check",
     "build": "bun run --cwd frontend build",
-    "test": "bun run design:check && bun run artifacts check && bun run issues:check && LOG_LEVEL=error node ./node_modules/vite-plus/bin/vp test && bun run --cwd frontend test",
+    "test": "bun run design:check && bun run source:check && bun run artifacts check && bun run issues:check && LOG_LEVEL=error node ./node_modules/vite-plus/bin/vp test && bun run --cwd frontend test",
     "typecheck": "tsc --noEmit",
     "spec": "bun run artifacts spec",
     "spec:pin": "bun run artifacts pin-spec",
@@ -25,8 +26,8 @@
     "stack:mongo": "bun scripts/stack-mongo.ts"
   },
   "dependencies": {
-    "@mit-sdg/sync-engine": "1.0.0-beta.10",
-    "@mit-sdg/sync-engine-http": "1.0.0-beta.10",
+    "@mit-sdg/sync-engine": "1.0.0-beta.12",
+    "@mit-sdg/sync-engine-http": "1.0.0-beta.12",
     "marked": "^18.0.6",
     "mongodb": "^7.2.0",
     "nodemailer": "^9.0.5",
