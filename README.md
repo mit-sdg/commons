@@ -21,8 +21,9 @@ The application opens at `http://127.0.0.1:3000`. Press Ctrl-C once to stop the
 frontend, edge, and temporary MongoDB cleanly. The first run may download the
 MongoDB binary. Use `bun run stack` instead when `MONGODB_URL` names an
 operator-owned database; [`.env.example`](.env.example) lists runtime settings.
-To run the production frontend and backend in Coolify, follow the
-[Docker Compose deployment guide](DEPLOYMENT.md).
+For production, deploy one application image with an operator-managed MongoDB or
+run the complete Coolify Compose resource by following the
+[deployment guide](DEPLOYMENT.md).
 
 ## Read and change the design
 

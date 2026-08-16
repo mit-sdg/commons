@@ -1,5 +1,5 @@
 import { runCommonsProcess } from "./assembly/process.ts";
-import { validateDeploymentConfiguration } from "./deployment.ts";
+import { configuredMongodbUrl, validateDeploymentConfiguration } from "./deployment.ts";
 import { mailConfigurationFromEnv } from "./email/configuration.ts";
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -12,11 +12,12 @@ try {
     throw new Error(`commons: PORT must be an integer from 1 to 65535; received "${sourcePort}"`);
   }
   validateDeploymentConfiguration();
+  const mongodbUrl = configuredMongodbUrl();
   const mail = mailConfigurationFromEnv();
   const running = await runCommonsProcess({
     host,
     port,
-    ...(process.env.MONGODB_URL === undefined ? {} : { mongodbUrl: process.env.MONGODB_URL }),
+    ...(mongodbUrl === undefined ? {} : { mongodbUrl }),
     ...(mail === undefined ? {} : { mail }),
     ...(process.env.COMMONS_TEST_BOOTSTRAP === undefined
       ? {}

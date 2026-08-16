@@ -89,7 +89,11 @@ async function stopChild(running: ReturnType<typeof startChild>) {
   return result.code;
 }
 
-async function startEdge(mongodbUrl: string | undefined, port: number) {
+async function startEdge(
+  mongodbUrl: string | undefined,
+  port: number,
+  mongodbVariable: "MONGODB_URI" | "MONGODB_URL" = "MONGODB_URL",
+) {
   const origin = `http://127.0.0.1:${port}`;
   const env: Record<string, string | undefined> = {
     ...process.env,
@@ -103,8 +107,9 @@ async function startEdge(mongodbUrl: string | undefined, port: number) {
       email: "operator@example.com",
     }),
   };
-  if (mongodbUrl === undefined) delete env.MONGODB_URL;
-  else env.MONGODB_URL = mongodbUrl;
+  delete env.MONGODB_URI;
+  delete env.MONGODB_URL;
+  if (mongodbUrl !== undefined) env[mongodbVariable] = mongodbUrl;
   const running = startChild(["bun", "src/start.ts"], {
     cwd: root,
     env,
@@ -186,6 +191,21 @@ describe("the Commons process with MongoDB", () => {
   test("requires MONGODB_URL", async () => {
     await expect(constructConceptFloor()).rejects.toThrow("commons: MONGODB_URL is required.");
   });
+
+  test("starts with the platform MONGODB_URI environment variable", async () => {
+    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
+    let running: Awaited<ReturnType<typeof startEdge>> | undefined;
+    try {
+      const database = `platform-${crypto.randomUUID()}`;
+      running = await startEdge(mongo.getUri(database), await freePort(), "MONGODB_URI");
+      expect(running.output.join("")).toContain(
+        `commons: storing concept state in MongoDB database ${database}.`,
+      );
+    } finally {
+      if (running !== undefined && running.exitCode() === undefined) await stopChild(running);
+      await mongo.stop();
+    }
+  }, 30_000);
 
   test("reads the database name from mongodb:// and mongodb+srv:// URL paths", async () => {
     for (const [url, database] of [

@@ -1,10 +1,62 @@
-# Deploy Commons with Coolify
+# Deploy Commons
+
+Commons supports two production layouts: one application container connected to
+an operator-managed MongoDB, or a Coolify Compose resource that includes its own
+MongoDB container. Both layouts run exactly one Commons backend process.
+
+## Deploy one container with managed MongoDB
+
+Use [`Dockerfile.platform`](Dockerfile.platform) when the runtime provides
+MongoDB separately and exposes one application port. The image packages the
+frontend and backend together, publishes the frontend on port 3000, and keeps
+the backend reachable only inside the container on port 4000. If either process
+exits, the image stops the other process and exits so the scheduler can replace
+the complete workload.
+
+Build the image from the repository root:
+
+```sh
+docker build --file Dockerfile.platform --tag commons:platform .
+```
+
+Supply these runtime variables through the platform's secret and configuration
+facilities:
+
+| Variable                  | Requirement                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------ |
+| `MONGODB_URI`             | Required scoped MongoDB connection, including a database name and any required TLS options |
+| `PUBLIC_ORIGIN`           | Required exact browser origin, without a trailing slash                                    |
+| `INVITATION_SECRET`       | Required stable secret of at least 32 random bytes                                         |
+| `ADMIN_SETUP_SECRET_HASH` | Optional one-time initial-administrator verifier; remove it after setup                    |
+| `SMTP_*`                  | Optional existing SMTP configuration described below                                       |
+
+`MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
+nonempty, they must contain the same value. Commons refuses conflicting values
+without logging either connection string.
+
+The container does not include MongoDB and writes no durable application state
+to its local filesystem. It supports a read-only root filesystem; MongoDB data,
+credential rotation, and backups remain platform responsibilities. Route public
+traffic only to port 3000. Do not publish port 4000.
+
+The public health endpoint checks backend readiness on every request, and backend
+readiness includes a MongoDB operation:
+
+```sh
+curl --fail https://commons.example.edu/health
+```
+
+A `200` response with `{"status":"ok"}` confirms the frontend, backend, and
+MongoDB path are ready. An unreachable backend or failed MongoDB check returns
+`503` with a generic response.
+
+## Deploy with Coolify
 
 This procedure deploys the Commons frontend, backend, and a private MongoDB
 service as one Coolify Docker Compose resource. MongoDB stores its database in a
 named volume that Coolify can back up.
 
-## Prerequisites
+### Prerequisites
 
 Before deploying, provide:
 
@@ -19,7 +71,7 @@ frontend's same-origin `/api/*` path, the frontend reaches `backend`, and the
 backend reaches `mongodb` over the private Compose network. The Compose file
 publishes none of these container ports on the host.
 
-## Configure the Compose resource
+### Configure the Compose resource
 
 Create a Docker Compose resource from [`compose.yaml`](compose.yaml). Set these
 Coolify environment variables before the first build:
@@ -54,7 +106,7 @@ SMTP is disabled when its variables are absent or blank. To send invitation
 mail, configure `SMTP_HOST` and `SMTP_FROM`; optionally set `SMTP_PORT`,
 `SMTP_SECURE`, and both `SMTP_USERNAME` and `SMTP_PASSWORD`.
 
-## Register the initial administrator
+### Register the initial administrator
 
 The setup endpoint compares a raw secret with the configured verifier and stores
 neither value in MongoDB. Coolify receives only the scrypt verifier. The endpoint
@@ -103,7 +155,7 @@ This creates the initial forum administrator. Establishing that account as a
 course owner and linking it to a roster seat still requires the existing course
 configuration operations; the browser does not perform course setup.
 
-## Verify the deployment
+### Verify the Coolify deployment
 
 Check both public frontend health and backend readiness:
 
