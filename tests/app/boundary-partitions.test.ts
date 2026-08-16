@@ -142,6 +142,7 @@ describe("boundary partitions", () => {
 
   test("overlapping profile absence paths both fire without gaining priority", async () => {
     const app = assembleCommons(mongoImplementations(await testDb()));
+    await actor(app, "profile_overlap_admin");
     const session = await actor(app, "profile_overlap");
     const before = inspectAssembly(app).occurrences.length;
     const result = await app.invoker.invoke("/profiles/get", {

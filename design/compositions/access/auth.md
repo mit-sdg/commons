@@ -37,5 +37,12 @@ the candidate against deployment configuration; Authentication never owns or
 stores it. A wrong or disabled secret returns `UNAUTHORIZED`, and an initialized
 installation returns `CONFLICT`. Successful
 registration creates the profile and triggers the same administrator-bootstrap
-reaction described above; these owner actions are not one transaction, so a
-later failure does not remove the account.
+reaction described above. The built-in administrator role includes
+`roster:manage`, the minimum course capability needed to configure and import the
+initial roster through supported operations; it does not include the remaining
+course-staff capabilities. For installations created with an older administrator
+bundle, [Access.auth.RepairInitialAdminRosterBootstrapOnLogin](reaction:Access.auth.RepairInitialAdminRosterBootstrapOnLogin)
+repairs the sole administrator on login by granting a dedicated role containing
+only `roster:manage`; it does not broaden later multi-account administrators.
+These owner actions are not one transaction, so a later failure does not remove
+the account.

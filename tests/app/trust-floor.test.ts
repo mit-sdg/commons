@@ -107,10 +107,13 @@ describe("HTTP authorization and privacy", () => {
     );
   });
 
-  test("/profiles/get returns email to an active owner or roster:manage reader, public fields to an active member, 401 anonymously, and 404 otherwise", async () => {
+  test("/profiles/get returns email to an authenticated owner or roster:manage reader, public fields to an active member, 401 anonymously, and 404 otherwise", async () => {
     const own = await call("/profiles/get", { user: learner.user }, learner.cookie);
     expect(own.status).toBe(200);
     expect(own.body).toMatchObject({ profile: { email: learner.email } });
+    const unrosteredOwn = await call("/profiles/get", { user: outsider.user }, outsider.cookie);
+    expect(unrosteredOwn.status).toBe(200);
+    expect(unrosteredOwn.body).toMatchObject({ profile: { email: outsider.email } });
     const member = await call("/profiles/get", { user: admin.user }, learner.cookie);
     expect(member.status).toBe(200);
     expect(member.body.profile).not.toHaveProperty("email");

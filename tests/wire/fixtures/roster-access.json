@@ -164,6 +164,7 @@
           "administer",
           "moderate",
           "pin",
+          "roster:manage",
           "late-days:manage",
           "calendar:view-staff",
           "student-notes:manage"
@@ -303,6 +304,7 @@
               "administer",
               "moderate",
               "pin",
+              "roster:manage",
               "late-days:manage",
               "calendar:view-staff",
               "student-notes:manage"

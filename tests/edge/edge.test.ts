@@ -92,6 +92,13 @@ describe("deployment routes", () => {
           capability: "administer",
         }),
       ).toEqual({ allowed: true });
+      expect(
+        await edge.application.concepts.Roling._hasCapability({
+          user,
+          context: "forum",
+          capability: "roster:manage",
+        }),
+      ).toEqual({ allowed: true });
       expect(await edge.application.concepts.Profiling._getProfile({ user })).toMatchObject([
         { profile: { displayName: ALICE.displayName, email: ALICE.email } },
       ]);
@@ -99,6 +106,100 @@ describe("deployment routes", () => {
       const initialized = await request(secret);
       expect(initialized.status).toBe(409);
       expect(await initialized.json()).toEqual({ error: "CONFLICT" });
+
+      const login = await post(edge, "/auth/login", {
+        username: ALICE.username,
+        password: ALICE.password,
+      });
+      const adminCookie = login.headers.get("set-cookie")?.split(";")[0] as string;
+      const ownProfile = await post(edge, "/profiles/get", { user }, adminCookie);
+      expect(ownProfile.status).toBe(200);
+      expect(await ownProfile.json()).toMatchObject({
+        profile: { displayName: ALICE.displayName, email: ALICE.email },
+      });
+      const anonymousProfile = await post(edge, "/profiles/get", { user });
+      expect(anonymousProfile.status).toBe(401);
+      expect(await anonymousProfile.json()).toEqual({ error: "UNAUTHORIZED" });
+
+      const outsider = await edge.application.concepts.Authenticating.register({
+        username: "setup_outsider",
+        password: "password123",
+        email: "setup-outsider@example.com",
+      });
+      await edge.application.concepts.Profiling.createProfile({
+        user: outsider.user,
+        displayName: "Setup outsider",
+        email: "setup-outsider@example.com",
+      });
+      const outsiderLogin = await post(edge, "/auth/login", {
+        username: "setup_outsider",
+        password: "password123",
+      });
+      const outsiderCookie = outsiderLogin.headers.get("set-cookie")?.split(";")[0] as string;
+      const hiddenProfile = await post(edge, "/profiles/get", { user }, outsiderCookie);
+      expect(hiddenProfile.status).toBe(404);
+      expect(await hiddenProfile.json()).toEqual({ error: "NOT_FOUND" });
+
+      const configured = await post(
+        edge,
+        "/roster/configure-class",
+        { code: "COMMONS-101", title: "Commons", term: "Fall", timezone: "UTC" },
+        adminCookie,
+      );
+      expect(configured.status).toBe(200);
+      expect(await configured.json()).toMatchObject({
+        class: { code: "COMMONS-101", title: "Commons" },
+      });
+    } finally {
+      if (previousVerifier === undefined) delete process.env.ADMIN_SETUP_SECRET_HASH;
+      else process.env.ADMIN_SETUP_SECRET_HASH = previousVerifier;
+    }
+  });
+
+  test("repairs roster bootstrap capability for a sole administrator created with the legacy role bundle", async () => {
+    const previousVerifier = process.env.ADMIN_SETUP_SECRET_HASH;
+    const secret = "a-legacy-setup-secret-that-is-at-least-32-characters";
+    process.env.ADMIN_SETUP_SECRET_HASH = await derivePasswordVerifier(secret);
+    try {
+      const edge = createEdge(mongoImplementations(await testDb()));
+      await edge.application.concepts.Roling.defineRole({
+        name: "administrator",
+        capabilities: ["administer", "moderate"],
+      });
+      const registered = await post(edge, "/setup/register-admin", {
+        setupSecret: secret,
+        ...ALICE,
+      });
+      expect(registered.status).toBe(200);
+      const { user } = (await registered.json()) as { user: string };
+      expect(
+        await edge.application.concepts.Roling._hasCapability({
+          user,
+          context: "forum",
+          capability: "roster:manage",
+        }),
+      ).toEqual({ allowed: false });
+
+      const login = await post(edge, "/auth/login", {
+        username: ALICE.username,
+        password: ALICE.password,
+      });
+      expect(login.status).toBe(200);
+      expect(
+        await edge.application.concepts.Roling._hasCapability({
+          user,
+          context: "forum",
+          capability: "roster:manage",
+        }),
+      ).toEqual({ allowed: true });
+      const cookie = login.headers.get("set-cookie")?.split(";")[0] as string;
+      const configured = await post(
+        edge,
+        "/roster/configure-class",
+        { code: "LEGACY-101", title: "Legacy repair", term: "Fall", timezone: "UTC" },
+        cookie,
+      );
+      expect(configured.status).toBe(200);
     } finally {
       if (previousVerifier === undefined) delete process.env.ADMIN_SETUP_SECRET_HASH;
       else process.env.ADMIN_SETUP_SECRET_HASH = previousVerifier;

@@ -1,7 +1,7 @@
 # Profiles and public identity
 
 [Forum.profiles.GetProfile](reaction:Forum.profiles.GetProfile) resolves the caller from the session before
-using [theProfileOf view](view:Forum.profiles.theProfileOf) to choose fields. An active course member sees their own private profile;
+using [theProfileOf view](view:Forum.profiles.theProfileOf) to choose fields. An authenticated account sees its own existing private profile, including before roster linkage;
 roster managers can see another user's private fields; other active members see
 only display name, bio, and avatar. Missing profiles, callers outside the course,
 and unauthorized cross-user reads are hidden as `NOT_FOUND`.

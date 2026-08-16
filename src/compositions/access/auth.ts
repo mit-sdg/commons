@@ -2,7 +2,13 @@ import { activeUser } from "./session.ts";
 import { compute, is, no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { computations, concepts } from "../../concepts.ts";
-import { ADMIN_ROLE, FORUM, INITIAL_ADMIN_CAPABILITIES } from "./capabilities.ts";
+import {
+  ADMIN_ROLE,
+  FORUM,
+  INITIAL_ADMIN_CAPABILITIES,
+  INITIAL_ROSTER_BOOTSTRAP_CAPABILITIES,
+  INITIAL_ROSTER_BOOTSTRAP_ROLE,
+} from "./capabilities.ts";
 
 const { Authenticating, Inviting, Profiling, Roling, Sessioning, Timing } = concepts;
 export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
@@ -33,6 +39,26 @@ export const BootstrapAdminOnLogin = reaction(({ user, role }) =>
       Roling.ensureRole({ name: ADMIN_ROLE, capabilities: INITIAL_ADMIN_CAPABILITIES }).responds({
         role,
       }),
+    )
+    .then(Roling.grant({ user, context: FORUM, role })),
+);
+
+export const RepairInitialAdminRosterBootstrapOnLogin = reaction(({ user, role }) =>
+  when(Authenticating.authenticate({}).responds({ user }))
+    .where(
+      Authenticating._getUserCount({}).is({ count: 1 }),
+      Roling._hasCapability({ user, context: FORUM, capability: "administer" }).is({
+        allowed: true,
+      }),
+      Roling._hasCapability({ user, context: FORUM, capability: "roster:manage" }).is({
+        allowed: false,
+      }),
+    )
+    .then(
+      Roling.ensureRole({
+        name: INITIAL_ROSTER_BOOTSTRAP_ROLE,
+        capabilities: INITIAL_ROSTER_BOOTSTRAP_CAPABILITIES,
+      }).responds({ role }),
     )
     .then(Roling.grant({ user, context: FORUM, role })),
 );

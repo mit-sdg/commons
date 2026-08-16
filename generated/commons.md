@@ -2602,7 +2602,7 @@ where
   Authenticating._getUserCount () has (count: 1)
   Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: false)
 then
-  Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator")
+  Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator")
 ```
 
 ### Access.auth.BootstrapAdminOnLogin#2
@@ -2611,7 +2611,7 @@ Authored path: `Access.auth.BootstrapAdminOnLogin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 29.
 
 ```reaction
-when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnLogin
+when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnLogin
 where
   earlier, Authenticating.authenticate (user)
 then
@@ -2629,7 +2629,7 @@ where
   Authenticating._getUserCount () has (count: 1)
   Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: false)
 then
-  Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator")
+  Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator")
 ```
 
 ### Access.auth.BootstrapAdminOnRegister#2
@@ -2638,7 +2638,7 @@ Authored path: `Access.auth.BootstrapAdminOnRegister`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 27.
 
 ```reaction
-when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnRegister
+when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnRegister
 where
   earlier, Authenticating.register (user)
 then
@@ -2839,6 +2839,34 @@ where
   valid is among [false]
 then
   RequestBoundary.respond (error: "UNAUTHORIZED", requestId)
+```
+
+### Access.auth.RepairInitialAdminRosterBootstrapOnLogin
+
+Authored path: `Access.auth.RepairInitialAdminRosterBootstrapOnLogin`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 44.
+
+```reaction
+when Authenticating.authenticate (user)
+where
+  Authenticating._getUserCount () has (count: 1)
+  Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: true)
+  Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: false)
+then
+  Roling.ensureRole (capabilities: ["roster:manage"], name: "initial-roster-bootstrap")
+```
+
+### Access.auth.RepairInitialAdminRosterBootstrapOnLogin#2
+
+Authored path: `Access.auth.RepairInitialAdminRosterBootstrapOnLogin`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 44.
+
+```reaction
+when Roling.ensureRole (capabilities: ["roster:manage"], name: "initial-roster-bootstrap", role), asked by Access.auth.RepairInitialAdminRosterBootstrapOnLogin
+where
+  earlier, Authenticating.authenticate (user)
+then
+  Roling.grant (context: "forum", role, user)
 ```
 
 ### Access.auth.Resolve:absent
@@ -8169,7 +8197,6 @@ Authored path: `Forum.profiles.GetProfile`.
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) is an active course member" with (user)
   view "the profile of (user)" with (user)
 then
   RequestBoundary.respond (profile: former "the private profile of (user)" with (user), requestId)

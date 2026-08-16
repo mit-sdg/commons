@@ -47,11 +47,7 @@ export const GetProfile = endpoint(
   "/profiles/get",
   ({ session, user, reader }) =>
     receive({ session, user }).then(
-      where(
-        activeUser({ session }).is({ user }),
-        isActiveCourseMember({ user }),
-        theProfileOf({ user }),
-      )
+      where(activeUser({ session }).is({ user }), theProfileOf({ user }))
         .then(respond({ profile: thePrivateProfileOf({ user }) }))
         .named("success"),
       where(
