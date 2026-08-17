@@ -1,0 +1,11 @@
+version: 1
+runtime: bun
+packages:
+  - .
+  - frontend
+scripts:
+  build: build
+  start: platform:start
+port: 3000
+health:
+  path: /health

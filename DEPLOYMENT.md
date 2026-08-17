@@ -1,23 +1,21 @@
 # Deploy Commons
 
-Commons supports two production layouts: one application container connected to
+Commons supports two production layouts: the SDG managed platform connected to
 an operator-managed MongoDB, or a Coolify Compose resource that includes its own
 MongoDB container. Both layouts run exactly one Commons backend process.
 
-## Deploy one container with managed MongoDB
+## Deploy on the SDG managed platform
 
-Use [`Dockerfile.platform`](Dockerfile.platform) when the runtime provides
-MongoDB separately and exposes one application port. The image packages the
-frontend and backend together, publishes the frontend on port 3000, and keeps
-the backend reachable only inside the container on port 4000. If either process
-exits, the image stops the other process and exits so the scheduler can replace
-the complete workload.
+[`platform.yaml`](platform.yaml) is the complete application-owned deployment
+contract. The platform installs the locked root and `frontend` Bun packages,
+runs the root `build` script to assemble the standalone frontend, and starts the
+root `platform:start` script from a platform-owned, digest-pinned recipe.
+Repository Dockerfiles are not inputs to this deployment.
 
-Build the image from the repository root:
-
-```sh
-docker build --file Dockerfile.platform --tag commons:platform .
-```
+The supervisor publishes the frontend on the platform-provided `PORT` (port 3000
+in the contract) and keeps the backend reachable only on container loopback,
+using port 4000 by default. If either process exits, it stops the other process
+and exits so the scheduler can replace the complete workload.
 
 Supply these runtime variables through the platform's secret and configuration
 facilities:
@@ -34,10 +32,11 @@ facilities:
 nonempty, they must contain the same value. Commons refuses conflicting values
 without logging either connection string.
 
-The container does not include MongoDB and writes no durable application state
-to its local filesystem. It supports a read-only root filesystem; MongoDB data,
-credential rotation, and backups remain platform responsibilities. Route public
-traffic only to port 3000. Do not publish port 4000.
+The generated runtime does not include MongoDB and writes no durable application
+state to its local filesystem. It runs as a non-root user with a read-only root
+filesystem; MongoDB data, credential rotation, and backups remain platform
+responsibilities. Route public traffic only to the declared application port.
+The backend loopback port is internal and must not be published.
 
 The public health endpoint checks backend readiness on every request, and backend
 readiness includes a MongoDB operation:
