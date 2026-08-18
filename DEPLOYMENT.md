@@ -14,11 +14,11 @@ Repository Dockerfiles are not inputs to this deployment.
 
 The supervisor publishes the frontend on the platform-provided `PORT` (port 3000
 in the contract) and keeps the backend reachable only on container loopback at
-fixed port 4000. The platform-generated runtime sets `NODE_ENV=production`; the
-supervisor preserves that mode so Commons rejects missing production secrets
-rather than using development defaults. If either process exits, the supervisor
-stops the other process and exits so the scheduler can replace the complete
-workload.
+fixed port 4000. The supervisor forces `NODE_ENV=production` for both child
+processes, regardless of any inherited value, so Commons rejects missing
+production secrets rather than using development defaults. If either process
+exits, the supervisor stops the other process and exits so the scheduler can
+replace the complete workload.
 
 Supply these runtime variables through the platform's secret and configuration
 facilities:

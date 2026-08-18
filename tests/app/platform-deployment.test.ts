@@ -69,25 +69,34 @@ describe("the managed-platform deployment", () => {
     expect(environments.backend.PORT).toBe("4000");
   });
 
-  test("uses the declared frontend port and relies on platform production mode", () => {
+  test("forces production mode and enforces production configuration", () => {
     const defaults = platformProcessEnvironments({});
 
+    expect(defaults.backend.NODE_ENV).toBe("production");
+    expect(defaults.frontend.NODE_ENV).toBe("production");
     expect(defaults.frontend.PORT).toBe("3000");
     expect(defaults.backend.PORT).toBe("4000");
-    expect(defaults.backend.NODE_ENV).toBeUndefined();
-    expect(defaults.frontend.NEXT_TELEMETRY_DISABLED).toBe("1");
 
-    const production = platformProcessEnvironments({
-      NODE_ENV: "production",
+    const staleDevelopment = platformProcessEnvironments({
+      NODE_ENV: "development",
+      PORT: "3210",
+      LOG_LEVEL: "warn",
       MONGODB_URI: "mongodb://platform/commons",
     });
-    expect(production.backend.NODE_ENV).toBe("production");
-    expect(() => validateDeploymentConfiguration(production.backend)).toThrow(
+
+    expect(staleDevelopment.backend.NODE_ENV).toBe("production");
+    expect(staleDevelopment.frontend.NODE_ENV).toBe("production");
+    expect(staleDevelopment.frontend.PORT).toBe("3210");
+    expect(staleDevelopment.backend.PORT).toBe("4000");
+    expect(staleDevelopment.backend.LOG_LEVEL).toBe("warn");
+    expect(staleDevelopment.frontend.LOG_LEVEL).toBe("warn");
+    expect(staleDevelopment.frontend.NEXT_TELEMETRY_DISABLED).toBe("1");
+    expect(() => validateDeploymentConfiguration(staleDevelopment.backend)).toThrow(
       "commons: PUBLIC_ORIGIN is required in production.",
     );
 
     const withOrigin = platformProcessEnvironments({
-      NODE_ENV: "production",
+      NODE_ENV: "development",
       MONGODB_URI: "mongodb://platform/commons",
       PUBLIC_ORIGIN: "https://commons.example.edu",
     });
@@ -96,7 +105,7 @@ describe("the managed-platform deployment", () => {
     );
 
     const complete = platformProcessEnvironments({
-      NODE_ENV: "production",
+      NODE_ENV: "development",
       MONGODB_URI: "mongodb://platform/commons",
       PUBLIC_ORIGIN: "https://commons.example.edu",
       INVITATION_SECRET: "production-invitation-secret",

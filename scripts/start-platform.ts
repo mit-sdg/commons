@@ -12,11 +12,13 @@ export function platformProcessEnvironments(environment: ProcessEnvironment): {
   return {
     backend: {
       ...environment,
+      NODE_ENV: "production",
       HOST: "127.0.0.1",
       PORT: backendPort,
     },
     frontend: {
       ...environment,
+      NODE_ENV: "production",
       HOSTNAME: "0.0.0.0",
       PORT: frontendPort,
       BACKEND_ORIGIN: backendOrigin,
