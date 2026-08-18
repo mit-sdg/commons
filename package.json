@@ -12,7 +12,7 @@
     "source:check": "sync-engine check --config generated.config.ts",
     "issues:check": "bun scripts/check-issues.ts",
     "check": "bun run design:check && bun run source:check && bun run artifacts check && bun run issues:check && vp check && bun run --cwd frontend check",
-    "build": "bun run --cwd frontend build && bun scripts/prepare-platform.ts",
+    "build": "BACKEND_ORIGIN=http://127.0.0.1:4000 bun run --cwd frontend build && bun scripts/prepare-platform.ts",
     "platform:start": "bun scripts/start-platform.ts",
     "test": "bun run design:check && bun run source:check && bun run artifacts check && bun run issues:check && LOG_LEVEL=error node ./node_modules/vite-plus/bin/vp test && bun run --cwd frontend test",
     "typecheck": "tsc --noEmit",

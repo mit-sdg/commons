@@ -5,7 +5,7 @@ export function platformProcessEnvironments(environment: ProcessEnvironment): {
   backend: ProcessEnvironment;
   frontend: ProcessEnvironment;
 } {
-  const backendPort = environment.COMMONS_BACKEND_PORT ?? "4000";
+  const backendPort = "4000";
   const frontendPort = environment.PORT ?? "3000";
   const backendOrigin = `http://127.0.0.1:${backendPort}`;
 
