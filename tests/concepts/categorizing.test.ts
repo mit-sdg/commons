@@ -75,6 +75,66 @@ for (const [floor, make] of floors) {
       );
     });
 
+    test("ensureCategory reaches the existing category and creates only when none has the name", async () => {
+      const categorizing = await make();
+      const { category } = await categorizing.createCategory({
+        name: "Homework",
+        description: "a",
+      });
+      expect(await categorizing.ensureCategory({ name: "Homework", description: "b" })).toEqual({
+        category,
+      });
+      const { category: exams } = await categorizing.ensureCategory({
+        name: "Exams",
+        description: "c",
+      });
+      expect(exams).not.toBe(category);
+      expect(await categorizing._getCategoryDetail({ category })).toEqual([
+        { name: "Homework", description: "a" },
+      ]);
+      expect(await categorizing._getCategoryDetail({ category: "ghost" })).toEqual([]);
+    });
+
+    test("renameCategory keeps the items and refuses a name another category already holds", async () => {
+      const categorizing = await make();
+      const { category } = await categorizing.createCategory({
+        name: "Homework",
+        description: "a",
+      });
+      await categorizing.createCategory({ name: "Exams", description: "b" });
+      await categorizing.assign({ item: "quiz", category });
+
+      expect(await categorizing.renameCategory({ category, name: "Practice" })).toEqual({
+        category,
+      });
+      expect(await categorizing._getCategoryDetail({ category })).toEqual([
+        { name: "Practice", description: "a" },
+      ]);
+      expect(await categorizing._getItems({ category })).toEqual([{ item: "quiz" }]);
+      expect(await categorizing.renameCategory({ category, name: "Practice" })).toEqual({
+        category,
+      });
+      expect(
+        await refusalOf(() => categorizing.renameCategory({ category, name: "Exams" })),
+      ).toBeInstanceOf(refusalErrors.CategoryAlreadyExists);
+      expect(
+        await refusalOf(() => categorizing.renameCategory({ category: "ghost", name: "Other" })),
+      ).toBeInstanceOf(refusalErrors.CategoryNotFound);
+    });
+
+    test("a second instance keeps its categories in its own store", async () => {
+      const database = await testDb();
+      const forum = new MongoCategorizingConcept(database);
+      const lists = new MongoCategorizingConcept(database, "TaskLists");
+      await forum.createCategory({ name: "Homework", description: "" });
+      const { category } = await lists.createCategory({ name: "Homework", description: "" });
+      expect(await lists._getAllCategories({})).toEqual([
+        { category, name: "Homework", description: "" },
+      ]);
+      expect(await forum._getAllCategories({})).toHaveLength(1);
+      expect((await forum._getAllCategories({}))[0].category).not.toBe(category);
+    });
+
     test("deleteCategory removes the category and its item memberships", async () => {
       const categorizing = await make();
       const { category } = await categorizing.createCategory({ name: "Exams", description: "" });

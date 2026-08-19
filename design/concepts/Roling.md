@@ -9,8 +9,10 @@ individual users within a context.
 
 A course defines an instructor role with grade and publish capabilities. A
 second role with the same name is refused. Maya receives the role in the
-course; granting it there again is refused. Revoking the role succeeds once and
-is refused when she no longer holds it.
+course; granting it there again is refused, while asking again that she hold it
+simply reaches the grant she already has. Revoking the role succeeds once and
+is refused when she no longer holds it. Reading the course's instructors, or
+the courses in which Maya is one, follows the same grants.
 
 ## Types
 
@@ -68,6 +70,18 @@ grant(user: User, context: Context, role: Role) : return (grant: Grant)
   then
     refuse GRANT_ALREADY_EXISTS "The user already holds this role in this context."
 
+ensureGrant(user: User, context: Context, role: Role) : return (grant: Grant)
+  where role in roles and some grant has user, context, and role
+  then
+    return grant
+  where role in roles and no grant has user, context, and role
+  then
+    add a new grant with user, context, and role
+    return grant
+  where role not in roles
+  then
+    refuse ROLE_NOT_FOUND "No such role exists."
+
 revoke(user: User, context: Context, role: Role) : return (grant: Grant)
   where some grant has user, context, and role
   then
@@ -100,6 +114,14 @@ _holdsRoleNamed (user: String, context: String, name: String) : one (held: Boole
 
 _getRoles (user: String, context: String) : many (role: String)
   answers the user's granted roles in grant order
+  answers no rows when none match
+
+_getContextsOfRoleNamed (user: String, name: String) : many (context: String)
+  answers every context in which the User holds the named Role, in grant order
+  answers no rows when none match
+
+_getHoldersOfRoleNamed (context: String, name: String) : many (user: String)
+  answers every User holding the named Role in the Context, in grant order
   answers no rows when none match
 
 _getRoleByName (name: String) : optional (role: String)

@@ -12,5 +12,8 @@ export const categorizing = registerConcept({
     CATEGORY_NOT_FOUND: CategoryNotFound,
     ITEM_NOT_CATEGORIZED: ItemNotCategorized,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoCategorizingConcept(database) },
+  floors: {
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoCategorizingConcept(database, instance),
+  },
 });

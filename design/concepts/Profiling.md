@@ -83,4 +83,8 @@ _getProfile (user: String) : optional (profile: Profile)
 _getProfileFields (user: String) : optional (displayName: String, bio: String, avatar: String, email: String)
   answers the User's display name, bio, avatar, and email
   answers no row when the User has no Profile
+
+_getProfilesOf (users: Strings) : many (user: String, displayName: String, bio: String, avatar: String)
+  answers the public face of each named User that has a Profile, in the order the names are given
+  answers no rows when none match
 ```

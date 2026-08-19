@@ -20,5 +20,8 @@ export const roling = registerConcept({
     GRANT_ALREADY_EXISTS: GrantAlreadyExists,
     GRANT_NOT_FOUND: GrantNotFound,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoRolingConcept(database) },
+  floors: {
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoRolingConcept(database, instance),
+  },
 });

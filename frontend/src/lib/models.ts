@@ -39,4 +39,13 @@ export type RoleRow = ArrayElement<Output<"/roles/forUser">["roles"]>;
 export type RoleDetail = Output<"/roles/get">;
 export type RoleSummary = ArrayElement<Output<"/roles/list">["roles"]>;
 
+export type TaskList = ArrayElement<Output<"/tasklists/mine">["lists"]>;
+export type TaskListDetail = NonNullable<Output<"/tasklists/get">["list"]>;
+export type Task = ArrayElement<Output<"/tasklists/get">["tasks"]>;
+export type AssignedTask = ArrayElement<Output<"/tasks/mine">["tasks"]>;
+export interface TaskListPage {
+  list: Output<"/tasklists/get">["list"];
+  tasks: Task[];
+}
+
 export type ID = string;

@@ -28,6 +28,7 @@ import { sessioning } from "./concepts/sessioning/registry.ts";
 import { submitting } from "./concepts/submitting/registry.ts";
 import { subscribing } from "./concepts/subscribing/registry.ts";
 import { tagging } from "./concepts/tagging/registry.ts";
+import { tasking } from "./concepts/tasking/registry.ts";
 import { timing } from "./concepts/timing/registry.ts";
 import { tracking } from "./concepts/tracking/registry.ts";
 import { trashing } from "./concepts/trashing/registry.ts";
@@ -38,6 +39,7 @@ import {
   notificationMailHtml,
   notificationMailText,
 } from "./computations/mail-content.ts";
+import { taskListExtension, taskListKey, taskListMembers } from "./computations/task-lists.ts";
 
 const registrations = {
   Assigning: assigning,
@@ -68,6 +70,9 @@ const registrations = {
   Submitting: submitting,
   Subscribing: subscribing,
   Tagging: tagging,
+  Tasking: tasking,
+  TaskListMembership: roling,
+  TaskLists: categorizing,
   Timing: timing,
   Tracking: tracking,
   Trashing: trashing,
@@ -79,6 +84,9 @@ export const learningConcepts = conceptSet(registrations, {
   notificationMailHtml,
   notificationMailText,
   setupSecretMatches,
+  taskListExtension,
+  taskListKey,
+  taskListMembers,
 });
 
 export const concepts = learningConcepts.concepts;

@@ -16,9 +16,10 @@ export class MongoCategorizingConcept {
   private readonly categories: Collection<CategoryDoc>;
   private readonly memberships: Collection<MembershipDoc>;
 
-  constructor(db: Db) {
-    this.categories = db.collection<CategoryDoc>("categorizing.categories");
-    this.memberships = db.collection<MembershipDoc>("categorizing.memberships");
+  constructor(db: Db, instance = "Categorizing") {
+    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
+    this.categories = db.collection<CategoryDoc>(`${prefix}.categories`);
+    this.memberships = db.collection<MembershipDoc>(`${prefix}.memberships`);
   }
 
   async createCategory({ name, description }: { name: string; description: string }) {
@@ -28,6 +29,27 @@ export class MongoCategorizingConcept {
     }
     const category = crypto.randomUUID();
     await this.categories.insertOne({ _id: category, name, description });
+    return { category };
+  }
+
+  async ensureCategory({ name, description }: { name: string; description: string }) {
+    const existing = await this.categories.findOne({ name });
+    if (existing !== null) return { category: existing._id };
+    const category = crypto.randomUUID();
+    await this.categories.insertOne({ _id: category, name, description });
+    return { category };
+  }
+
+  async renameCategory({ category, name }: { category: string; name: string }) {
+    const doc = await this.categories.findOne({ _id: category });
+    if (doc === null) {
+      throw new CategoryNotFound(category);
+    }
+    const clash = await this.categories.findOne({ name, _id: { $ne: category } });
+    if (clash !== null) {
+      throw new CategoryAlreadyExists(name);
+    }
+    await this.categories.updateOne({ _id: category }, { $set: { name } });
     return { category };
   }
 
@@ -64,6 +86,11 @@ export class MongoCategorizingConcept {
     return doc === null
       ? []
       : [{ category: doc._id, name: doc.name, description: doc.description }];
+  }
+
+  async _getCategoryDetail({ category }: { category: string }) {
+    const doc = await this.categories.findOne({ _id: category });
+    return doc === null ? [] : [{ name: doc.name, description: doc.description }];
   }
 
   async _getHome({ item }: { item: string }) {

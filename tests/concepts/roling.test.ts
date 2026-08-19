@@ -108,5 +108,63 @@ for (const [floor, make] of floors) {
         refusalErrors.CapabilityRequired,
       );
     });
+
+    test("ensureGrant reaches the existing grant, adds a missing one, and refuses an unknown role", async () => {
+      const roling = await make();
+      const { role } = await roling.defineRole({ name: "member", capabilities: ["tasks:manage"] });
+      const { grant } = await roling.grant({ user: "mara", context: "list-1", role });
+      expect(await roling.ensureGrant({ user: "mara", context: "list-1", role })).toEqual({
+        grant,
+      });
+      const added = await roling.ensureGrant({ user: "noah", context: "list-1", role });
+      expect(added.grant).not.toBe(grant);
+      await expectRefusal(
+        () => roling.ensureGrant({ user: "mara", context: "list-1", role: "ghost" }),
+        refusalErrors.RoleNotFound,
+      );
+    });
+
+    test("named-role reads answer a context's holders and a holder's contexts", async () => {
+      const roling = await make();
+      const { role: member } = await roling.defineRole({ name: "member", capabilities: [] });
+      const { role: other } = await roling.defineRole({ name: "other", capabilities: [] });
+      await roling.grant({ user: "mara", context: "list-1", role: member });
+      await roling.grant({ user: "noah", context: "list-1", role: member });
+      await roling.grant({ user: "mara", context: "list-2", role: member });
+      await roling.grant({ user: "mara", context: "list-3", role: other });
+
+      expect(await roling._getHoldersOfRoleNamed({ context: "list-1", name: "member" })).toEqual([
+        { user: "mara" },
+        { user: "noah" },
+      ]);
+      expect(await roling._getContextsOfRoleNamed({ user: "mara", name: "member" })).toEqual([
+        { context: "list-1" },
+        { context: "list-2" },
+      ]);
+      expect(await roling._getContextsOfRoleNamed({ user: "mara", name: "ghost" })).toEqual([]);
+      expect(await roling._getHoldersOfRoleNamed({ context: "list-9", name: "member" })).toEqual(
+        [],
+      );
+    });
+
+    test("a second instance keeps its roles and grants in its own store", async () => {
+      const database = await testDb();
+      const course = new MongoRolingConcept(database);
+      const lists = new MongoRolingConcept(database, "TaskListMembership");
+      const { role } = await lists.ensureRole({ name: "member", capabilities: ["tasks:manage"] });
+      await lists.grant({ user: "mara", context: "list-1", role });
+
+      expect(await course._getRoleByName({ name: "member" })).toEqual([]);
+      expect(
+        await course._hasCapability({
+          user: "mara",
+          context: "list-1",
+          capability: "tasks:manage",
+        }),
+      ).toEqual({ allowed: false });
+      expect(
+        await lists._hasCapability({ user: "mara", context: "list-1", capability: "tasks:manage" }),
+      ).toEqual({ allowed: true });
+    });
   });
 }

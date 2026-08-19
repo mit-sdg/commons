@@ -5,6 +5,7 @@ import {
   Bookmark,
   GraduationCap,
   LayoutGrid,
+  ListChecks,
   LogOut,
   Menu,
   PenLine,
@@ -40,6 +41,7 @@ import { cn } from "@/lib/utils";
 const DISCUSSION_NAV = [
   { href: "/", label: "Discussions", icon: Sparkles },
   { href: "/categories", label: "Categories", icon: LayoutGrid },
+  { href: "/tasks", label: "Tasks", icon: ListChecks },
 ];
 
 const COURSE_PATHS = [
@@ -194,6 +196,11 @@ export function SiteHeader() {
                 <DropdownMenuItem asChild>
                   <Link href="/notifications">
                     <Bell className="size-4" /> Notifications
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/tasks">
+                    <ListChecks className="size-4" /> Tasks
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

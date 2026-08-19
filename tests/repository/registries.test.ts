@@ -20,7 +20,9 @@ const compositionDesigns = () => {
 
 const typedLinks = (source: string) =>
   [
-    ...source.matchAll(/\]\((reaction|view|former):((?:Access|Course|Forum)\.[A-Za-z0-9.]+)\)/g),
+    ...source.matchAll(
+      /\]\((reaction|view|former):((?:Access|Course|Forum|Tasks)\.[A-Za-z0-9.]+)\)/g,
+    ),
   ].map(([, kind, name]) => ({ kind, name }));
 
 describe("application-owned design integration", () => {
@@ -122,6 +124,10 @@ describe("application-owned design integration", () => {
       "Resolving.Question is Posting.Post",
       "Revising.Item is Posting.Post",
       "Tagging.Target is Posting.Post",
+      "Tasking.Assignee is Authenticating.User",
+      "TaskLists.Item is Tasking.Task",
+      "TaskListMembership.User is Authenticating.User",
+      "TaskListMembership.Context is TaskLists.Category",
       "Tracking.Item is Posting.Post",
       "Trashing.Item is Posting.Post",
       "Pinning.Scope is Conversing.Conversation",
@@ -153,13 +159,26 @@ describe("application-owned design integration", () => {
     expect(source).toContain("concrete Lockable");
     expect(source).toContain("Authenticating owns the application's person identity.");
 
+    // Reused concepts are selected a second time under their own instance name;
+    // every binding is still checked against the definition the instance realizes.
+    const definitions: Record<string, string> = {
+      TaskLists: "Categorizing",
+      TaskListMembership: "Roling",
+    };
+    const definitionOf = (name: string) => definitions[name] ?? name;
     for (const { external, owner } of bindings) {
       const [concept, type] = external.split(".");
-      const conceptSource = readFileSync(join(designConcepts, `${concept}.md`), "utf8");
+      const conceptSource = readFileSync(
+        join(designConcepts, `${definitionOf(concept)}.md`),
+        "utf8",
+      );
       expect(conceptSource, external).toMatch(new RegExp(`^external ${type}$`, "m"));
       if (!owner.includes(".")) continue;
       const [ownerConcept, ownerType] = owner.split(".");
-      const ownerSource = readFileSync(join(designConcepts, `${ownerConcept}.md`), "utf8");
+      const ownerSource = readFileSync(
+        join(designConcepts, `${definitionOf(ownerConcept)}.md`),
+        "utf8",
+      );
       expect(ownerSource, owner).toMatch(new RegExp(`\\b${ownerType}\\b`));
     }
   });
@@ -200,7 +219,7 @@ describe("application-owned design integration", () => {
       }
     }
 
-    for (const group of ["Access", "Course", "Forum"]) {
+    for (const group of ["Access", "Course", "Forum", "Tasks"]) {
       expect(readFileSync(join(compositionsRoot, "index.ts"), "utf8"), group).toContain(
         `import * as ${group} from "./${group}.ts"`,
       );
@@ -218,7 +237,7 @@ describe("application-owned design integration", () => {
       ...new Set(
         inspected.reactions
           .map(({ name }) => name.replace(/[:#].*$/, ""))
-          .filter((name) => /^(Access|Course|Forum)\./.test(name))
+          .filter((name) => /^(Access|Course|Forum|Tasks)\./.test(name))
           .map((name) => `reaction:${name}`),
       ),
       ...inspected.views.flatMap(({ authored }) =>

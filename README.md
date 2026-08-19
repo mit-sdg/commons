@@ -42,6 +42,8 @@ Authored behavior and executable behavior have separate application-owned homes:
 
 Start with the [forum thread explanation](design/compositions/forum/threads.md)
 and one concept specification such as [Posting](design/concepts/Posting.md).
+The [task-list explanation](design/compositions/tasks/lists.md) shows how a
+behavior reuses an existing concept under a second registered instance.
 Composition pages use typed links such as
 `[CreateThread](reaction:Forum.threads.CreateThread)` to identify exact
 registered declarations. The [generated artifact guide](generated/README.md) explains the

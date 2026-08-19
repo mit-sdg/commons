@@ -121,5 +121,23 @@ for (const [floor, make] of floors) {
       ]);
       expect(await profiling._getProfileFields({ user: "nobody" })).toEqual([]);
     });
+
+    test("named profiles answer in the order asked, without unknown or repeated names", async () => {
+      const profiling = await make();
+      for (const name of ["priya", "omar"]) {
+        await profiling.createProfile({
+          user: name,
+          displayName: name.toUpperCase(),
+          email: `${name}@example.edu`,
+        });
+      }
+      expect(
+        await profiling._getProfilesOf({ users: ["omar", "nobody", "priya", "omar"] }),
+      ).toEqual([
+        { user: "omar", displayName: "OMAR", bio: "", avatar: "" },
+        { user: "priya", displayName: "PRIYA", bio: "", avatar: "" },
+      ]);
+      expect(await profiling._getProfilesOf({ users: [] })).toEqual([]);
+    });
   });
 }

@@ -85,4 +85,23 @@ export class MongoProfilingConcept {
           },
         ];
   }
+
+  async _getProfilesOf({ users }: { users: string[] }) {
+    const docs = await this.profiles.find({ _id: { $in: [...users] } }).toArray();
+    const found = new Map(docs.map((doc) => [doc._id, doc]));
+    const answered: { user: string; displayName: string; bio: string; avatar: string }[] = [];
+    const seen = new Set<string>();
+    for (const user of users) {
+      const doc = found.get(user);
+      if (doc === undefined || seen.has(user)) continue;
+      seen.add(user);
+      answered.push({
+        user: doc._id,
+        displayName: doc.displayName,
+        bio: doc.bio,
+        avatar: doc.avatar,
+      });
+    }
+    return answered;
+  }
 }

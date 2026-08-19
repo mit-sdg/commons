@@ -21,8 +21,10 @@ concrete Lockable
 
 ## Instances
 
-Commons selects one same-name instance of every concept it registers, and each
-instance supplies its external parameters inline.
+Commons selects a same-name instance of every concept it registers and two
+further instances — `TaskLists` and `TaskListMembership` — of concepts whose
+contract task management reuses unchanged. Each instance supplies its external
+parameters inline.
 
 ```instances
 instantiate Assigning with
@@ -42,6 +44,9 @@ instantiate Bookmarking with
 
 instantiate Categorizing with
   Item is Posting.Post
+
+instantiate Categorizing as TaskLists with
+  Item is Tasking.Task
 
 instantiate Conversing with
   Item is Posting.Post
@@ -111,6 +116,10 @@ instantiate Roling with
   User is Authenticating.User
   Context is Conversing.Conversation
 
+instantiate Roling as TaskListMembership with
+  User is Authenticating.User
+  Context is TaskLists.Category
+
 instantiate Rostering with
   User is Authenticating.User
 
@@ -129,6 +138,9 @@ instantiate Subscribing with
 
 instantiate Tagging with
   Target is Posting.Post
+
+instantiate Tasking with
+  Assignee is Authenticating.User
 
 instantiate Timing
 
@@ -162,6 +174,16 @@ identity, it has no second type binding. Role-management endpoints can store
 other opaque context strings, but built-in policy interprets only `forum` and
 conversation identities. Sessioning uses Timing's current-moment value to decide
 expiry.
+
+Tasking owns task identities. A task list is a second Categorizing instance,
+`TaskLists`, whose items are those tasks, so a list's contents are read directly
+from the list rather than from each task. `TaskListMembership` is a second
+Roling instance whose context is a task list; it shares neither role names nor
+grants with the course-wide `Roling` instance, so task-list membership cannot
+change course authorization and course roles cannot reach a task list. A task
+list is identified by the set of profiles it is for: that set is written into
+the list's Categorizing name, which makes a duplicate set a refused name rather
+than a second list.
 
 These bindings record application meaning. They do not copy state, validate an
 identity at runtime, or make one concept depend on another.
