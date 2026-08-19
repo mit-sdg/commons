@@ -27,18 +27,12 @@ a set of Revisions with
   a number   Number
   a content  String
   a savedAt  Date
+
+Rule: record keeps every supplied statement of content.
+Rule: revision numbers start at 1 for each item; record assigns one more than the item's highest recorded number and stores the supplied at value as savedAt.
+Rule: clearItem removes the item's complete history and is idempotent.
+Rule: items are opaque identities; Revising neither creates nor validates them.
 ```
-
-`record` keeps every supplied statement of content. `clearItem` removes the
-item's complete history and is idempotent. Items are opaque identities; Revising
-neither creates nor validates them.
-
-Revision numbers start at 1 for each item. `record` assigns one more than the
-item's highest recorded number and stores the supplied `at` value as `savedAt`.
-
-`record` keeps every supplied statement of content. `clearItem` removes the
-item's complete history and is idempotent. Items are opaque identities; Revising
-neither creates nor validates them.
 
 ## Actions
 

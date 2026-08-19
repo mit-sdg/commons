@@ -36,9 +36,9 @@ a set of Submissions with
 
 a Submitted set of Submissions
 a Withdrawn set of Submissions
-```
 
-A submitter's attempts on an assignment are numbered from one, and a number, once used, is never reused — withdrawing an attempt does not free its slot.
+Rule: a submitter's attempts on an assignment are numbered from one, and a number, once used, is never reused; withdrawing an attempt does not free its slot.
+```
 
 ## Actions
 

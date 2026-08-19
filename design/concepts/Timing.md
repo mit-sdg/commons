@@ -19,7 +19,10 @@ learns the later moment rather than the earlier answer.
 ## State
 
 ```state
-the current Moment
+a set of Moments
+alias Moment for Moments
+
+Rule: Timing stores no moment; a moment is the clock reading reported at the instant it is asked for.
 ```
 
 ## Actions

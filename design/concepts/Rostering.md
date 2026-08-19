@@ -23,14 +23,14 @@ external User
 ## State
 
 ```state
-an optional Class with
+an element of Class with
   a code     String
   a title    String
   a term     String
   a timezone String
   a status   String
 
-a Sections with
+a set of Sections with
   a name           String
   a location       String
   a meetingPattern String
@@ -47,9 +47,10 @@ a set of Seats with
 a Pending set of Seats
 an Active set of Seats
 a Dropped set of Seats
-```
 
-An import row carries an externalKey, an email, a rosterName, a kind, and optionally a section.
+Rule: the class is absent until it is configured, and it is configured at most once.
+Rule: an import row carries an externalKey, an email, a rosterName, a kind, and optionally a section.
+```
 
 ## Actions
 

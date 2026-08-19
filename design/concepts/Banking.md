@@ -26,7 +26,7 @@ external Item
 ## State
 
 ```state
-an optional Terms with
+an element of Terms with
   an allowance    Number
   a perItemLimit  Number
   a unitHours     Number
@@ -45,24 +45,16 @@ a set of Uses with
 
 an Applied  set of Uses
 a Canceled  set of Uses
+
+Rule: the terms are absent until they are set.
+Rule: until terms are set, the allowance is zero, the per-item limit is five days, and each late day represents twenty-four hours.
+Rule: Banking records unitHours but does not use it when applying days.
+Rule: a learner's remaining balance is the allowance plus granted days minus the days in applied uses.
+Rule: canceled uses are retained but excluded from that balance.
+Rule: a learner has at most one applied use per item.
+Rule: a use may be changed to zero days; it remains applied but spends nothing, and canceling retains the use with a canceled status.
+Rule: items are opaque identities; Banking neither creates nor validates them, and records only the learner's standing late-day use of each identity.
 ```
-
-Until terms are set, the allowance is zero, the per-item limit is five days,
-and each late day represents twenty-four hours. Banking records `unitHours` but
-does not use it when applying days.
-
-A learner's balance is:
-
-`remaining = allowance + granted days - days in applied uses`
-
-Canceled uses are retained but excluded from the equation. A learner has at
-most one applied use per item.
-
-A use may be changed to zero days. It remains applied but spends nothing.
-Canceling retains the use with a canceled status.
-
-Items are opaque identities. Banking neither creates nor validates them; it
-records only the learner's standing late-day use of each identity.
 
 ## Actions
 

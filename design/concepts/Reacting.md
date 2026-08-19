@@ -30,17 +30,11 @@ a set of Reactions with
   a target    Target
   a kind      String
   a reactedAt Date
+
+Rule: a person has at most one reaction of a given kind on a target.
+Rule: clearTarget removes every reaction on the target and is idempotent: clearing a target with no reactions changes nothing and is not refused.
+Rule: targets are opaque identities; Reacting neither creates nor validates them.
 ```
-
-A person has at most one reaction of a given kind on a target.
-
-`clearTarget` removes every reaction on the target. It is idempotent: clearing
-a target with no reactions changes nothing and is not refused. Targets are
-opaque identities; Reacting neither creates nor validates them.
-
-`clearTarget` removes every reaction on the target. It is idempotent: clearing
-a target with no reactions changes nothing and is not refused. Targets are
-opaque identities; Reacting neither creates nor validates them.
 
 ## Actions
 

@@ -17,61 +17,129 @@ concrete MailKey
 
 concrete Lockable
   A post or conversation identity that moderation may lock.
+```
 
-Assigning.Author is Authenticating.User
-Assigning.Assignee is Authenticating.User
-Banking.Learner is Authenticating.User
-Bookmarking.User is Authenticating.User
-Flagging.User is Authenticating.User
-Grading.Grader is Authenticating.User
-Grading.Learner is Authenticating.User
-Inviting.User is Authenticating.User
-Notifying.Person is Authenticating.User
-Noting.Author is Authenticating.User
-Noting.Learner is Authenticating.User
-Posting.Author is Authenticating.User
-Profiling.User is Authenticating.User
-Reacting.Person is Authenticating.User
-Resolving.User is Authenticating.User
-Roling.User is Authenticating.User
-Rostering.User is Authenticating.User
-Sessioning.User is Authenticating.User
-Submitting.Submitter is Authenticating.User
-Subscribing.Person is Authenticating.User
-Tracking.User is Authenticating.User
-Trashing.User is Authenticating.User
-Assigning.Sections is Rostering.Section
-Banking.Item is Assigning.Assignment
-Grading.Item is Assigning.Assignment
-Itemizing.Item is Assigning.Assignment
-Submitting.Assignment is Assigning.Assignment
-Grading.Criterion is Itemizing.Criterion
-Grading.Evidence is Submitting.Submission
-Mailing.Key is MailKey
-Submitting.Artifact is Posting.Post
-Bookmarking.Item is Posting.Post
-Categorizing.Item is Posting.Post
-Conversing.Item is Posting.Post
-Flagging.Target is Posting.Post
-Formatting.Target is Posting.Post
-Linking.Source is Posting.Post
-Linking.Target is Posting.Post
-Locking.Target is Lockable
-Notifying.Link is Posting.Post
-Notifying.Subject is Posting.Post
-Pinning.Item is Posting.Post
-Reacting.Target is Posting.Post
-Resolving.Answer is Posting.Post
-Resolving.Question is Posting.Post
-Revising.Item is Posting.Post
-Tagging.Target is Posting.Post
-Tracking.Item is Posting.Post
-Trashing.Item is Posting.Post
-Pinning.Scope is Conversing.Conversation
-Roling.Context is Conversing.Conversation
-Subscribing.Target is Conversing.Conversation
-Tracking.Scope is Conversing.Conversation
-Sessioning.Moment is Timing.Moment
+## Instances
+
+Commons selects one same-name instance of every concept it registers, and each
+instance supplies its external parameters inline.
+
+```instances
+instantiate Assigning with
+  Author is Authenticating.User
+  Assignee is Authenticating.User
+  Sections is Rostering.Section
+
+instantiate Authenticating
+
+instantiate Banking with
+  Learner is Authenticating.User
+  Item is Assigning.Assignment
+
+instantiate Bookmarking with
+  User is Authenticating.User
+  Item is Posting.Post
+
+instantiate Categorizing with
+  Item is Posting.Post
+
+instantiate Conversing with
+  Item is Posting.Post
+
+instantiate Flagging with
+  User is Authenticating.User
+  Target is Posting.Post
+
+instantiate Formatting with
+  Target is Posting.Post
+
+instantiate Grading with
+  Grader is Authenticating.User
+  Learner is Authenticating.User
+  Item is Assigning.Assignment
+  Criterion is Itemizing.Criterion
+  Evidence is Submitting.Submission
+
+instantiate Inviting with
+  User is Authenticating.User
+
+instantiate Itemizing with
+  Item is Assigning.Assignment
+
+instantiate Linking with
+  Source is Posting.Post
+  Target is Posting.Post
+
+instantiate Locking with
+  Target is Lockable
+
+instantiate Mailing with
+  Key is MailKey
+
+instantiate Notifying with
+  Person is Authenticating.User
+  Subject is Posting.Post
+  Link is Posting.Post
+
+instantiate Noting with
+  Author is Authenticating.User
+  Learner is Authenticating.User
+
+instantiate Pinning with
+  Item is Posting.Post
+  Scope is Conversing.Conversation
+
+instantiate Posting with
+  Author is Authenticating.User
+
+instantiate Profiling with
+  User is Authenticating.User
+
+instantiate Reacting with
+  Person is Authenticating.User
+  Target is Posting.Post
+
+instantiate Resolving with
+  User is Authenticating.User
+  Question is Posting.Post
+  Answer is Posting.Post
+
+instantiate Revising with
+  Item is Posting.Post
+
+instantiate Roling with
+  User is Authenticating.User
+  Context is Conversing.Conversation
+
+instantiate Rostering with
+  User is Authenticating.User
+
+instantiate Sessioning with
+  User is Authenticating.User
+  Moment is Timing.Moment
+
+instantiate Submitting with
+  Submitter is Authenticating.User
+  Assignment is Assigning.Assignment
+  Artifact is Posting.Post
+
+instantiate Subscribing with
+  Person is Authenticating.User
+  Target is Conversing.Conversation
+
+instantiate Tagging with
+  Target is Posting.Post
+
+instantiate Timing
+
+instantiate Tracking with
+  User is Authenticating.User
+  Item is Posting.Post
+  Scope is Conversing.Conversation
+
+instantiate Trashing with
+  User is Authenticating.User
+  Item is Posting.Post
 ```
 
 Authenticating owns the application's person identity. Rostering, profiles,

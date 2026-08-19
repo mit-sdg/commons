@@ -35,7 +35,7 @@ external Evidence
 ## State
 
 ```state
-a Grades with
+a set of Grades with
   a learner    Learner
   an item      Item
   an evidence  Evidence
@@ -46,9 +46,9 @@ a Grades with
   an updatedAt Date
   an optional releasedAt Date
 
-a Draft    Grades
-a Released Grades
-an Excused Grades
+a Draft    set of Grades
+a Released set of Grades
+an Excused set of Grades
 
 a set of CriterionScores with
   a Grade
@@ -56,19 +56,13 @@ a set of CriterionScores with
   a points   Number
   an outOf   Number
   a feedback String
+
+Rule: a learner has at most one grade per item, and a grade has at most one score for each criterion.
+Rule: each grade and criterion score keeps the maximum used when it was recorded.
+Rule: whether a score fits its maximum is calculated from the inputs alone: a score is within outOf when it is at least zero and at most outOf.
+Rule: releasing an item returns every grade released by that action, or an empty set when no drafts remain.
+Rule: clearing a criterion's scores succeeds when none remain.
 ```
-
-A learner has at most one grade per item, and a grade has at most one score for
-each criterion. Each grade and criterion score keeps the maximum used when it
-was recorded. Whether a score fits its maximum is calculated from the inputs:
-
-A score is within outOf when it is at least zero and at most outOf.
-
-Releasing an item returns every grade released by that action, or an empty set
-when no drafts remain. Clearing a criterion's scores succeeds when none remain.
-
-Releasing an item returns every grade released by that action, or an empty set
-when no drafts remain. Clearing a criterion's scores succeeds when none remain.
 
 ## Actions
 

@@ -131,9 +131,19 @@ describe("application-owned design integration", () => {
       "Sessioning.Moment is Timing.Moment",
     ].sort();
     const source = readFileSync(join(root, "design/application.md"), "utf8");
-    const bindings = [
-      ...source.matchAll(/^([A-Z]\w*\.[A-Z]\w*) is ([A-Z]\w*(?:\.[A-Z]\w*)?)$/gm),
-    ].map(([, external, owner]) => ({ external, owner }));
+    const inventory = source.match(/^```instances\n([\s\S]*?)^```$/m)?.[1] ?? "";
+    const bindings: { external: string; owner: string }[] = [];
+    let instance = "";
+    for (const line of inventory.split("\n")) {
+      const declaration = line.match(/^instantiate (\w+)(?: as (\w+))?(?: with)?$/);
+      if (declaration) {
+        instance = declaration[2] ?? (declaration[1] as string);
+        continue;
+      }
+      const binding = line.match(/^ {2}([A-Z]\w*) is ([A-Z]\w*(?:\.[A-Z]\w*)?)$/);
+      if (binding)
+        bindings.push({ external: `${instance}.${binding[1]}`, owner: binding[2] as string });
+    }
     const rendered = bindings.map(({ external, owner }) => `${external} is ${owner}`).sort();
 
     expect(rendered).toEqual([...new Set(rendered)]);

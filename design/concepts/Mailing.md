@@ -29,13 +29,11 @@ a set of Messages with
   an html     String
   a createdAt Date
   an optional sentAt Date
+
+Rule: a key identifies one logical message.
+Rule: enqueuing the same key coalesces pending copies; enqueuing it after delivery deliberately queues that logical message again with its latest content.
+Rule: email recipients are compared after trimming and lower-casing.
 ```
-
-A key identifies one logical message. Enqueuing the same key coalesces pending
-copies; enqueuing it after delivery deliberately queues that logical message
-again with its latest content.
-
-Email recipients are compared after trimming and lower-casing.
 
 ## Actions
 

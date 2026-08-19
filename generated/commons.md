@@ -1,5 +1,5 @@
 <!-- Generated from the Commons assembly. Do not edit. -->
-<!-- Manifest producer: @mit-sdg/sync-engine@1.0.0-beta.12; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.0.0-beta.12. -->
+<!-- Manifest producer: @mit-sdg/sync-engine@1.0.0-beta.14; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.0.0-beta.14. -->
 
 # Commons — assembled read-back
 
@@ -48,12 +48,12 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 - `_getPublishedForAudience(audience: String | Null) : many (assignment: String)`
 - `_getPublishedInWindow(start: String | Date, end: String | Date) : many (assignment: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Assigning`
-  - `Assigning.Author` is `Authenticating.User` — [Commons application](../design/application.md), line 21.
-  - `Assigning.Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 22.
-  - `Assigning.Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 43.
+- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 28.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 30.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 29.
+  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 31.
 
 ### Authenticating
 
@@ -82,9 +82,9 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 - `_resolveIdentity(ref: String) : one (user: String | Null, username: String | Null)`
 - `_denotedUser(ref: String) : one (user: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Authenticating`
+- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 33.
 
 ### Banking
 
@@ -117,11 +117,11 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 - `_getUsesForItem(item: String) : many (learner: String, days: Number)`
 - `_getGrants(learner: String) : many (grant: String, days: Number, reason: String, grantedAt: Date)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Banking`
-  - `Banking.Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 23.
-  - `Banking.Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 44.
+- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 35.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 37.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 36.
 
 ### Bookmarking
 
@@ -140,11 +140,11 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 - `_getSaved(user: String) : many (item: String, savedAt: Date)`
 - `_isSaved(user: String, item: String) : one (saved: Boolean)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Bookmarking`
-  - `Bookmarking.User` is `Authenticating.User` — [Commons application](../design/application.md), line 24.
-  - `Bookmarking.Item` is `Posting.Post` — [Commons application](../design/application.md), line 52.
+- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 39.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 41.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 40.
 
 ### Categorizing
 
@@ -168,10 +168,10 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 - `_getItems(category: String) : many (item: String)`
 - `_getAllCategories() : many (category: String, name: String, description: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Categorizing`
-  - `Categorizing.Item` is `Posting.Post` — [Commons application](../design/application.md), line 53.
+- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 43.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 44.
 
 ### Conversing
 
@@ -199,10 +199,10 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 - `_getConversations() : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)`
 - `_getConversationsByLastActivity() : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Conversing`
-  - `Conversing.Item` is `Posting.Post` — [Commons application](../design/application.md), line 54.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 46.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 47.
 
 ### Flagging
 
@@ -222,11 +222,11 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 - `_getOpenTargets() : many (target: String, count: Number)`
 - `_getFlags(target: String) : many (flag: String, reporter: String, reason: String, status: String, createdAt: Date)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Flagging`
-  - `Flagging.User` is `Authenticating.User` — [Commons application](../design/application.md), line 25.
-  - `Flagging.Target` is `Posting.Post` — [Commons application](../design/application.md), line 55.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 49.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 51.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 50.
 
 ### Formatting
 
@@ -241,10 +241,10 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 - `_getRendered(target: String) : optional (rendered: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Formatting`
-  - `Formatting.Target` is `Posting.Post` — [Commons application](../design/application.md), line 56.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 53.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 54.
 
 ### Grading
 
@@ -277,14 +277,14 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 - `_getGradesForItem(item: String) : many (learner: String, grade: String, score: Number, status: String)`
 - `_getCriterionScores(learner: String, item: String) : many (criterion: String, points: Number, feedback: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Grading`
-  - `Grading.Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 26.
-  - `Grading.Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 27.
-  - `Grading.Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 45.
-  - `Grading.Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 48.
-  - `Grading.Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 49.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 56.
+  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 60.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 61.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 57.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 59.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 58.
 
 ### Inviting
 
@@ -304,10 +304,10 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 - `_getAvailable(invitation: String, credential: String) : optional (channel: String, address: String)`
 - `_getInvitations() : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: User | Null)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Inviting`
-  - `Inviting.User` is `Authenticating.User` — [Commons application](../design/application.md), line 28.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 63.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 64.
 
 ### Itemizing
 
@@ -334,10 +334,10 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 - `_getCriteria(item: String) : many (criterion: String, name: String, maxPoints: Number, position: Number)`
 - `_getCriterion(criterion: String) : optional (item: String, name: String, maxPoints: Number)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Itemizing`
-  - `Itemizing.Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 46.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 66.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 67.
 
 ### Linking
 
@@ -355,11 +355,11 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 - `_getLinks(source: String) : many (target: String)`
 - `_getBacklinks(target: String) : many (source: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Linking`
-  - `Linking.Source` is `Posting.Post` — [Commons application](../design/application.md), line 57.
-  - `Linking.Target` is `Posting.Post` — [Commons application](../design/application.md), line 58.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 69.
+  - `Source` is `Posting.Post` — [Commons application](../design/application.md), line 70.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 71.
 
 ### Locking
 
@@ -377,10 +377,10 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 - `_isLocked(target: String) : one (locked: Boolean)`
 - `_getLocked() : many (target: String, lockedAt: Date)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Locking`
-  - `Locking.Target` is `Lockable` — [Commons application](../design/application.md), line 59.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 73.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 74.
 
 ### Mailing
 
@@ -400,10 +400,10 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 - `_getPending() : many (message: String, key: Key, recipient: String, subject: String, text: String, html: String, createdAt: Date)`
 - `_getStatus(message: String) : optional (sentAt: Date | Null)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Mailing`
-  - `Mailing.Key` is `MailKey` — [Commons application](../design/application.md), line 50.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 76.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 77.
 
 ### Notifying
 
@@ -425,12 +425,12 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 - `_hasFor(user: String, subject: Subject) : one (notified: Boolean)`
 - `_getUnreadCount(recipient: String) : one (count: Number)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Notifying`
-  - `Notifying.Person` is `Authenticating.User` — [Commons application](../design/application.md), line 29.
-  - `Notifying.Link` is `Posting.Post` — [Commons application](../design/application.md), line 60.
-  - `Notifying.Subject` is `Posting.Post` — [Commons application](../design/application.md), line 61.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 79.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 82.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 80.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 81.
 
 ### Noting
 
@@ -466,11 +466,11 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 - `_getByAuthor(author: String) : many (note: String, learner: String, status: String, visibility: String, createdAt: Date)`
 - `_getOpenFollowUpsBefore(before: Date) : many (note: String, author: String, learner: String, body: String, followUpAt: Date, createdAt: Date)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Noting`
-  - `Noting.Author` is `Authenticating.User` — [Commons application](../design/application.md), line 30.
-  - `Noting.Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 31.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 84.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 85.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 86.
 
 ### Pinning
 
@@ -491,11 +491,11 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 - `_getPinned(scope: String) : many (item: String, priority: Number)`
 - `_isPinned(item: String, scope: String) : one (pinned: Boolean)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Pinning`
-  - `Pinning.Item` is `Posting.Post` — [Commons application](../design/application.md), line 62.
-  - `Pinning.Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 70.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 88.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 89.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 90.
 
 ### Posting
 
@@ -516,10 +516,10 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 - `_getMentions(post: String) : many (handle: String)`
 - `_isMentioned(post: String, handle: String) : one (mentioned: Boolean)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Posting`
-  - `Posting.Author` is `Authenticating.User` — [Commons application](../design/application.md), line 32.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 92.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 93.
 
 ### Profiling
 
@@ -541,10 +541,10 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 - `_getProfile(user: String) : optional (profile: Profile)`
 - `_getProfileFields(user: String) : optional (displayName: String, bio: String, avatar: String, email: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Profiling`
-  - `Profiling.User` is `Authenticating.User` — [Commons application](../design/application.md), line 33.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 95.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 96.
 
 ### Reacting
 
@@ -565,11 +565,11 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 - `_countByKind(target: String) : many (kind: String, count: Number)`
 - `_hasReacted(reactor: String, target: String, kind: String) : one (hasReacted: Boolean)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Reacting`
-  - `Reacting.Person` is `Authenticating.User` — [Commons application](../design/application.md), line 34.
-  - `Reacting.Target` is `Posting.Post` — [Commons application](../design/application.md), line 63.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 98.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 99.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 100.
 
 ### Resolving
 
@@ -587,12 +587,12 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 - `_getResolution(question: String) : optional (answer: String, resolvedBy: String, resolvedAt: Date)`
 - `_getQuestionsAnswered(answer: String) : many (question: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Resolving`
-  - `Resolving.User` is `Authenticating.User` — [Commons application](../design/application.md), line 35.
-  - `Resolving.Answer` is `Posting.Post` — [Commons application](../design/application.md), line 64.
-  - `Resolving.Question` is `Posting.Post` — [Commons application](../design/application.md), line 65.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 102.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 105.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 104.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 103.
 
 ### Revising
 
@@ -609,10 +609,10 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 - `_getRevision(item: String, number: Number) : optional (revision: String, number: Number, content: String, savedAt: Date)`
 - `_getLatest(item: String) : optional (revision: String, number: Number, content: String, savedAt: Date)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Revising`
-  - `Revising.Item` is `Posting.Post` — [Commons application](../design/application.md), line 66.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 107.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 108.
 
 ### Roling
 
@@ -642,11 +642,11 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 - `_listRoles() : many (role: String, name: String, capabilities: Strings)`
 - `_denotedRole(ref: String) : one (role: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Roling`
-  - `Roling.User` is `Authenticating.User` — [Commons application](../design/application.md), line 36.
-  - `Roling.Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 71.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 110.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 112.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 111.
 
 ### Rostering
 
@@ -688,10 +688,10 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 - `_getUnclaimedSeats() : many (seat: String, externalKey: String, email: String, rosterName: String, kind: String, section: String | Null)`
 - `_getDroppedSeats() : many (user: String | Null, seat: String, kind: String, section: String | Null, rosterName: String, email: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Rostering`
-  - `Rostering.User` is `Authenticating.User` — [Commons application](../design/application.md), line 37.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 114.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 115.
 
 ### Sessioning
 
@@ -709,11 +709,11 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 - `_getUser(session: String, at?: Date) : optional (user: String)`
 - `_isExpired(session: String, at: Date) : one (expired: Boolean)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Sessioning`
-  - `Sessioning.User` is `Authenticating.User` — [Commons application](../design/application.md), line 38.
-  - `Sessioning.Moment` is `Timing.Moment` — [Commons application](../design/application.md), line 74.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 117.
+  - `Moment` is `Timing.Moment` — [Commons application](../design/application.md), line 119.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 118.
 
 ### Submitting
 
@@ -736,12 +736,12 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 - `_getSubmissionsForAssignment(assignment: String) : many (submitter: String, submission: String, submittedAt: Date, number: Number, status: String)`
 - `_getSubmissionsForSubmitter(submitter: String) : many (assignment: String, submission: String, submittedAt: Date, number: Number, status: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Submitting`
-  - `Submitting.Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 39.
-  - `Submitting.Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 47.
-  - `Submitting.Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 51.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 121.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 124.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 123.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 122.
 
 ### Subscribing
 
@@ -761,11 +761,11 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 - `_getSubscriptions(user: String) : many (target: String, subscribedAt: Date)`
 - `_isSubscribed(user: String, target: String) : one (subscribed: Boolean)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Subscribing`
-  - `Subscribing.Person` is `Authenticating.User` — [Commons application](../design/application.md), line 40.
-  - `Subscribing.Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 72.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 126.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 127.
+  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 128.
 
 ### Tagging
 
@@ -791,10 +791,10 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 - `_getByName(name: String) : optional (tag: String)`
 - `_getAllTags() : many (tag: String, name: String)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Tagging`
-  - `Tagging.Target` is `Posting.Post` — [Commons application](../design/application.md), line 67.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 130.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 131.
 
 ### Timing
 
@@ -808,9 +808,9 @@ Defined in [Timing](../design/concepts/Timing.md), line 1.
 
 - `_now() : one (at: Date)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Timing`
+- `Timing` — instance of `Timing` — [Commons application](../design/application.md), line 133.
 
 ### Tracking
 
@@ -832,12 +832,12 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 - `_getUnread(user: String, scope: String) : many (item: String)`
 - `_getUnreadCount(user: String, scope: String) : one (count: Number)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Tracking`
-  - `Tracking.User` is `Authenticating.User` — [Commons application](../design/application.md), line 41.
-  - `Tracking.Item` is `Posting.Post` — [Commons application](../design/application.md), line 68.
-  - `Tracking.Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 73.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 135.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 137.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 138.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 136.
 
 ### Trashing
 
@@ -857,26 +857,26 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 - `_isTrashed(item: String) : one (trashed: Boolean)`
 - `_getTrashed() : many (item: String, trashedBy: String, trashedAt: Date)`
 
-#### Selected instances and bindings
+#### Instances
 
-- `Trashing`
-  - `Trashing.User` is `Authenticating.User` — [Commons application](../design/application.md), line 42.
-  - `Trashing.Item` is `Posting.Post` — [Commons application](../design/application.md), line 69.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 140.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 142.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 141.
 
 ## Application types
 
 Concrete types:
 
-- `MailKey` — [Commons application](../design/application.md), line 15.
 - `Lockable` — [Commons application](../design/application.md), line 18.
+- `MailKey` — [Commons application](../design/application.md), line 15.
 
 ## Computations
 
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 107.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 104.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 113.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 110.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 116.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 175.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 172.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 181.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 178.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 184.
 
 ## Views
 

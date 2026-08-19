@@ -34,7 +34,8 @@ Authored behavior and executable behavior have separate application-owned homes:
 - [`design/compositions/`](design/compositions/) gives each registered Access,
   Course, and Forum behavior module one focused explanation; helper-only views
   and constants remain implementation details under [`src/compositions/`](src/compositions/).
-- [`design/application.md`](design/application.md) records application types and computations;
+- [`design/application.md`](design/application.md) records application types, the
+  concept instance inventory with its external bindings, and computations;
   [`src/concepts.ts`](src/concepts.ts) owns executable registrations.
 - [`src/assembly/`](src/assembly/) selects implementations and deployment policy.
 - [`frontend/`](frontend/) consumes only the generated browser contract.

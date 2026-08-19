@@ -40,24 +40,16 @@ an Open      set of Notes
 a Resolved   set of Notes
 an Archived  set of Notes
 a Disclosed  set of Notes
+
+Rule: every note has one working status: open, resolved, or archived.
+Rule: disclosure is independent of working status and says whether the learner may see the note.
+Rule: acknowledgedAt records the learner's latest acknowledgment and is retained if the note later becomes staff-only.
+Rule: whether a stated visibility is one of the two this concept knows is a calculation over the input alone: a visibility names a visibility when it is STAFF_ONLY or LEARNER_VISIBLE.
+Rule: acknowledgment checks disclosure and the learner, not working status, so a learner may acknowledge a disclosed resolved or archived note.
+Rule: a later acknowledgment replaces the earlier time.
+Rule: followUpAt may be absent, and an empty tags list means the note has no tags.
+Rule: Noting keeps notes and receipts; it does not decide who may call its actions or queries.
 ```
-
-Every note has one working status: open, resolved, or archived. Disclosure is
-independent of that status and says whether the learner may see the note.
-`acknowledgedAt` records the learner's latest acknowledgment and is retained if
-the note later becomes staff-only.
-
-Whether a stated visibility is one of the two this concept knows is a calculation over the input alone:
-
-A visibility names a visibility when it is "STAFF_ONLY" or "LEARNER_VISIBLE".
-
-Acknowledgment checks disclosure and the learner, not working status. A learner
-may therefore acknowledge a disclosed resolved or archived note. A later
-acknowledgment replaces the earlier time. `followUpAt` may be absent, and an
-empty tags list means the note has no tags.
-
-Noting keeps notes and receipts. It does not decide who may call its actions or
-queries.
 
 ## Actions
 

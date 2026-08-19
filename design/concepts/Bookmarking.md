@@ -28,17 +28,11 @@ a set of Bookmarks with
   a user    User
   an item   Item
   a savedAt Date
+
+Rule: a user has at most one bookmark for a given item.
+Rule: clearItem removes every bookmark of the item and is idempotent: clearing an item with no bookmarks changes nothing and is not refused.
+Rule: items are opaque identities; Bookmarking neither creates nor validates them.
 ```
-
-A user has at most one bookmark for a given item.
-
-`clearItem` removes every bookmark of the item. It is idempotent: clearing an
-item with no bookmarks changes nothing and is not refused. Items are opaque
-identities; Bookmarking neither creates nor validates them.
-
-`clearItem` removes every bookmark of the item. It is idempotent: clearing an
-item with no bookmarks changes nothing and is not refused. Items are opaque
-identities; Bookmarking neither creates nor validates them.
 
 ## Actions
 

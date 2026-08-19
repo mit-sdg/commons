@@ -29,12 +29,11 @@ a set of Subscriptions with
   a user         Person
   a target       Target
   a subscribedAt Date
+
+Rule: a person has at most one subscription to a given target.
+Rule: subscribe records the supplied at as the moment the subscription began.
+Rule: targets are opaque identities; Subscribing neither creates nor validates them.
 ```
-
-A person has at most one subscription to a given target.
-
-`subscribe` records the supplied `at` as the moment the subscription began.
-Targets are opaque identities: Subscribing neither creates nor validates them.
 
 ## Actions
 

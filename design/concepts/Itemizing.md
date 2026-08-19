@@ -36,19 +36,14 @@ a set of Criteria with
   a name      String
   a maxPoints Number
   a position  Number
+
+Rule: at most one grade item is active for an item at a time.
+Rule: criteria belong to the item and stand in position order.
+Rule: whether a maximum is workable is a calculation over the input alone: a maximum is workable when it is at least zero.
+Rule: configuring updates the label and maximum of an existing active item.
+Rule: ensureItem returns an existing active item unchanged or creates one.
+Rule: removing a criterion removes only Itemizing's record of it.
 ```
-
-At most one grade item is active for an item at a time. Criteria belong to the item and stand in position order. Whether a maximum is workable is a calculation over the input alone:
-
-A maximum is workable when it is at least zero.
-
-Configuring updates the label and maximum of an existing active item.
-`ensureItem` returns an existing active item unchanged or creates one. Removing
-a criterion removes only Itemizing's record of it.
-
-Configuring updates the label and maximum of an existing active item.
-`ensureItem` returns an existing active item unchanged or creates one. Removing
-a criterion removes only Itemizing's record of it.
 
 ## Actions
 

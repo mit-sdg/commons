@@ -17,6 +17,8 @@ a set of Things with
   an optional note Type
 
 a Pending set of Things
+
+Rule: an invariant the implementation upholds, stated inside the fence rather than below it.
 ```
 
 ## Actions

@@ -29,9 +29,9 @@ a set of Profiles with
   a bio         String
   an avatar     String
   an email      String
-```
 
-Each user has at most one profile.
+Rule: each user has at most one profile.
+```
 
 ## Actions
 

@@ -28,15 +28,12 @@ a set of Users with
   a username String
   a passwordVerifier String
   an email   String
+
+Rule: registration checks its inputs with these computations: a username is within name length when it is 3 to 32 characters long, it is well-formed when it starts with a letter and contains only letters, digits, hyphens, and underscores, and a password is within password length when it is 8 to 128 characters long.
+Rule: Authenticating derives each verifier with scrypt using N=16384, r=8, p=1, and maxmem 32 MiB, a random 16-byte salt, and a 32-byte derived key; a password matches when the same derivation and a constant-time key comparison succeed.
+Rule: an email looks like an address when it contains an @, and the password itself is never retained.
+Rule: changing a password requires the current password, a failed check does not say whether the account or password was wrong, and the new password follows the same length rule as registration.
 ```
-
-Registration checks its inputs with these computations:
-
-A username is within name length when it is 3 to 32 characters long; it is well-formed when it starts with a letter and contains only letters, digits, hyphens, and underscores. A password is within password length when it is 8 to 128 characters long. Authenticating derives each verifier with scrypt using N=16384, r=8, p=1, and maxmem 32 MiB, a random 16-byte salt, and a 32-byte derived key. A password matches when the same derivation and a constant-time key comparison succeed. An email looks like an address when it contains an @. The password itself is never retained.
-
-Changing a password requires the current password. A failed check does not say
-whether the account or password was wrong. The new password follows the same
-length rule as registration.
 
 ## Actions
 

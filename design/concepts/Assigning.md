@@ -51,12 +51,10 @@ a set of Releases with
   an assignee             Assignee
   an assignedAt           Date
   an optional dueOverride Date
+
+Rule: an assignment's audience is either everyone or targets; when it is targets, the targets say which sections are addressed, and an assignment addressed to everyone lists none.
+Rule: whether a given audience and targets agree is a calculation over the inputs alone: everyone suits an empty set of targets, targets suits a set holding at least one, and no other audience value suits a set of targets.
 ```
-
-An assignment's audience is either everyone or targets; when it is targets, the targets say which sections are addressed, and an assignment addressed to everyone lists none. Whether a given audience and targets agree is a calculation over the inputs alone:
-
-Everyone suits an empty set of targets; targets suits a set holding at least one.
-No other audience value suits a set of targets.
 
 ## Actions
 

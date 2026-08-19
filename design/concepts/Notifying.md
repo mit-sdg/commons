@@ -37,14 +37,11 @@ a set of Notifications with
   a createdAt Date
 
 an Unread set of Notifications
+
+Rule: a notification remains until its recipient dismisses it or clearSubject removes every notification about its subject.
+Rule: actions that name a recipient operate only on that person's notifications, and another person's notification is refused as not found.
+Rule: markAllRead and marking an already-read notification succeed without changing anything.
 ```
-
-A notification remains until its recipient dismisses it or `clearSubject`
-removes every notification about its subject.
-
-Actions that name a recipient operate only on that person's notifications.
-Another person's notification is refused as not found. `markAllRead` and
-marking an already-read notification succeed without changing anything.
 
 ## Actions
 

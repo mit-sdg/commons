@@ -28,19 +28,20 @@ external Scope
 ## State
 
 ```state
-a Registered set of Items with
-  a scope Scope
+a set of Registered with
+  an item  Item
+  a scope  Scope
 
 a set of SeenMarks with
   a user User
   an item Item
+
+Rule: each registered item has one scope.
+Rule: at most one SeenMark exists per user and item.
+Rule: unread items follow registration order; Tracking records no timestamps.
+Rule: unregister removes the item and all its seen marks and succeeds when the item is absent.
+Rule: there is no action that makes a seen item unread.
 ```
-
-Each registered item has one scope. At most one SeenMark exists per user and
-item. Unread items follow registration order; Tracking records no timestamps.
-
-`unregister` removes the item and all its seen marks and succeeds when the item
-is absent. There is no action that makes a seen item unread.
 
 ## Actions
 

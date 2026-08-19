@@ -23,9 +23,13 @@ external Item
 ## State
 
 ```state
-a Trashed set of Items with
+a set of Trashed with
+  an item     Item
   a trashedBy User
   a trashedAt Date
+
+Rule: at most one trashed entry has each item.
+Rule: items are opaque identities; Trashing neither creates nor validates them.
 ```
 
 ## Actions

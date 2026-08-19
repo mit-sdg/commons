@@ -25,9 +25,9 @@ external Moment
 a set of Sessions with
   a user User
   an expiresAt Moment
-```
 
-`endAllForUser` removes every session for the user and succeeds when none remain.
+Rule: endAllForUser removes every session for the user and succeeds when none remain.
+```
 
 ## Actions
 

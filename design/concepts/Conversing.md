@@ -32,9 +32,11 @@ a seq of Nodes with
   an optional parent Node
   a depth           Number
   a createdAt       Date
-```
 
-Each node places one item in one conversation. A node with a parent is a reply, one level deeper than its parent; a node without a parent is the root of its conversation. Both conversations and nodes keep their creation order.
+Rule: each node places one item in one conversation.
+Rule: a node with a parent is a reply, one level deeper than its parent; a node without a parent is the root of its conversation.
+Rule: both conversations and nodes keep their creation order.
+```
 
 ## Actions
 

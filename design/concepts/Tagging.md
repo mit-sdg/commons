@@ -24,8 +24,12 @@ external Target
 a set of Tags with
   a name String
 
-a Tagged set of Targets with
+a set of Tagged with
+  a target   Target
   an applied seq of Tags
+
+Rule: at most one tagged entry has each target, and a target's applied tags stand in application order.
+Rule: targets are opaque identities; Tagging neither creates nor validates them.
 ```
 
 ## Actions

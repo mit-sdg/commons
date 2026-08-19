@@ -25,9 +25,9 @@ a set of Formattings with
   a target   Target
   a source   String
   a rendered String
-```
 
-Each target has at most one formatting.
+Rule: each target has at most one formatting.
+```
 
 ## Actions
 

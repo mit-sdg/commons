@@ -23,9 +23,9 @@ external Target
 a set of Locks with
   a target   Target
   a lockedAt Date
-```
 
-Each target has at most one lock.
+Rule: each target has at most one lock.
+```
 
 ## Actions
 

@@ -34,11 +34,10 @@ a set of Invitations with
   a lastInvitedAt      Date
   an inviteCount       Number
   an optional user     User
-```
 
-An invitation has no expiry. A credential is derived from the
-invitation identifier with a deployment secret; it is stable but is never
-stored by Inviting.
+Rule: an invitation has no expiry.
+Rule: a credential is derived from the invitation identifier with a deployment secret; it is stable but is never stored by Inviting.
+```
 
 ## Actions
 

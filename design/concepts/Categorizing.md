@@ -26,8 +26,12 @@ a set of Categories with
   a name        String
   a description String
 
-a Categorized set of Items with
+a set of Categorized with
+  an item Item
   a home Category
+
+Rule: at most one categorized entry has each item, so an item belongs to at most one category.
+Rule: items are opaque identities; Categorizing neither creates nor validates them.
 ```
 
 ## Actions

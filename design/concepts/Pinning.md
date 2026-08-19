@@ -31,17 +31,11 @@ a set of Pins with
   a scope     Scope
   a priority  Number
   a pinnedAt  Date
+
+Rule: a scope has at most one pin for a given item.
+Rule: clearItem removes every pin of the item and is idempotent: clearing an item with no pins changes nothing and is not refused.
+Rule: items and scopes are opaque identities; Pinning neither creates nor validates them.
 ```
-
-A scope has at most one pin for a given item.
-
-`clearItem` removes every pin of the item. It is idempotent: clearing an item
-with no pins changes nothing and is not refused. Items and scopes are opaque
-identities; Pinning neither creates nor validates them.
-
-`clearItem` removes every pin of the item. It is idempotent: clearing an item
-with no pins changes nothing and is not refused. Items and scopes are opaque
-identities; Pinning neither creates nor validates them.
 
 ## Actions
 

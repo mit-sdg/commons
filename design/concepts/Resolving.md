@@ -27,10 +27,14 @@ external Answer
 ## State
 
 ```state
-a Resolved set of Questions with
+a set of Resolved with
+  a question   Question
   an answer    Answer
   a resolvedBy User
   a resolvedAt Date
+
+Rule: at most one resolved entry has each question, so accepting another answer replaces the earlier resolution.
+Rule: questions and answers are opaque identities; Resolving neither creates nor validates them.
 ```
 
 ## Actions
