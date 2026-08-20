@@ -15,8 +15,6 @@ her. Ending it removes the session. Ending the same session again is refused.
 external User
   An application-owned identity used in the user role.
 
-external Moment
-  An application-owned identity used in the moment role.
 ```
 
 ## State
@@ -24,7 +22,7 @@ external Moment
 ```state
 a set of Sessions with
   a user User
-  an expiresAt Moment
+  an expiresAt Date
 
 Rule: endAllForUser removes every session for the user and succeeds when none remain.
 ```
@@ -32,7 +30,7 @@ Rule: endAllForUser removes every session for the user and succeeds when none re
 ## Actions
 
 ```actions
-start(user: User, at?: Moment) : return (session: Session, expiresAt: Moment)
+start(user: User, at?: Date) : return (session: Session, expiresAt: Date)
   where true
   then
     add a new session with user and expiresAt one day after at

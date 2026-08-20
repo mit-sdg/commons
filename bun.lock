@@ -5,8 +5,8 @@
     "": {
       "name": "commons",
       "dependencies": {
-        "@mit-sdg/sync-engine": "1.0.0-beta.14",
-        "@mit-sdg/sync-engine-http": "1.0.0-beta.14",
+        "@mit-sdg/sync-engine": "1.0.0-beta.15",
+        "@mit-sdg/sync-engine-http": "1.0.0-beta.15",
         "marked": "^18.0.6",
         "mongodb": "^7.2.0",
         "nodemailer": "^9.0.5",
@@ -38,9 +38,9 @@
 
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
-    "@mit-sdg/sync-engine": ["@mit-sdg/sync-engine@1.0.0-beta.14", "", { "dependencies": { "mdast-util-from-markdown": "^2.0.3", "semver": "^7.7.3", "typescript": ">=6 <7" }, "bin": { "sync-engine": "dist/command/main.js" } }, "sha512-g7/YdZMtmn2cMDPr1QUjRU72TIeLPHcFNa3CRV5GxBX26DJinCucAEl/nFEa87f4dEcodJ4+6nE/OVwGexYBuQ=="],
+    "@mit-sdg/sync-engine": ["@mit-sdg/sync-engine@1.0.0-beta.15", "", { "dependencies": { "mdast-util-from-markdown": "^2.0.3", "semver": "^7.7.3", "typescript": ">=6 <7" }, "bin": { "sync-engine": "dist/command/main.js" } }, "sha512-UcK3GBtrN6gpl/ArYhqEc2oqEKLaMEgGw+BY86kWJBfJI82bOiLzlgXcIb2d5tGdS5416/t9o/vFqbqq1+yizQ=="],
 
-    "@mit-sdg/sync-engine-http": ["@mit-sdg/sync-engine-http@1.0.0-beta.14", "", { "peerDependencies": { "@mit-sdg/sync-engine": "1.0.0-beta.14" } }, "sha512-VjlEMvwjysfB1H/opt4MqrLA1cCKJ2UcomjAiqTDPNIWi65hc7qm59lVpkVSNMFXJqn3snYfdrLEa9TuSp5OYg=="],
+    "@mit-sdg/sync-engine-http": ["@mit-sdg/sync-engine-http@1.0.0-beta.15", "", { "peerDependencies": { "@mit-sdg/sync-engine": "1.0.0-beta.15" } }, "sha512-CM2UrFO215dh4G9YYc4LGCzZIsaEH6gtLeJnYp0/LnOB7By+oKopum/xugW+PO2Ru2EKXNGYQEI78AJUEFTrWw=="],
 
     "@mongodb-js/saslprep": ["@mongodb-js/saslprep@1.4.12", "", { "dependencies": { "sparse-bitfield": "^3.0.3" } }, "sha512-QAfAMwNgnYxZ2C6D1HgeP7Gc4i/uvJRim415PCIL9ptRxWMNbWeLBYb2/9R4pGKny/s1FVu2JA2cxCUBUOggrA=="],
 

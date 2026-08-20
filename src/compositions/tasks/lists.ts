@@ -1,12 +1,21 @@
 import { activeUser } from "../access/session.ts";
-import { compute, each, former, no, reaction, when, where } from "@mit-sdg/sync-engine/language";
+import {
+  compute,
+  each,
+  former,
+  no,
+  reaction,
+  when,
+  where,
+  now,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { belongsToList, doesNotBelongToList } from "./policy.ts";
 import { TASK_LIST_MEMBER_CAPABILITIES, TASK_LIST_MEMBER_ROLE } from "./capabilities.ts";
 import { theTasksIn } from "./tasks.ts";
 import { computations, concepts } from "../../concepts.ts";
 
-const { Profiling, Tasking, TaskListMembership, TaskLists, Timing } = concepts;
+const { Profiling, Tasking, TaskListMembership, TaskLists } = concepts;
 
 /** What is this task list, for whom, and who is still in it? */
 export const theTaskList = former(
@@ -87,7 +96,7 @@ export const ExtendedTaskListAdmitsItsMembers = reaction(({ key, list, roster, m
 export const LeftMemberReleasesOpenTasks = reaction(({ user, context, task, at }) =>
   when(TaskListMembership.revoke({ user, context }).responds({}))
     .where(
-      Timing._now({}).is({ at }),
+      now(at),
       TaskLists._getItems({ category: context }).is({ item: task }),
       Tasking._getTask({ task, at }).is({ assignee: user, state: "OPEN" }),
     )
@@ -160,17 +169,13 @@ export const LeaveList = endpoint("/tasklists/leave", ({ session, list, user, ro
 
 export const MyLists = endpoint("/tasklists/mine", ({ session, user, at }) =>
   receive({ session })
-    .where(Timing._now({}).is({ at }), activeUser({ session }).is({ user }))
+    .where(now(at), activeUser({ session }).is({ user }))
     .then(respond({ lists: theTaskListsOf({ user, at }) })),
 );
 
 export const GetList = endpoint("/tasklists/get", ({ session, list, user, at }) =>
   receive({ session, list }).then(
-    where(
-      Timing._now({}).is({ at }),
-      activeUser({ session }).is({ user }),
-      belongsToList({ user, list }),
-    )
+    where(now(at), activeUser({ session }).is({ user }), belongsToList({ user, list }))
       .then(respond({ list: theTaskList({ list, at }), tasks: theTasksIn({ list, at }) }))
       .named("success"),
     where(activeUser({ session }).is({ user }), doesNotBelongToList({ user, list }))

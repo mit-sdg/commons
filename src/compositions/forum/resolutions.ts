@@ -1,11 +1,11 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, when, where } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { authored, didNotAuthor } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 import { notReadable, readable } from "./posts.ts";
 
-const { Resolving, Trashing, Timing } = concepts;
+const { Resolving, Trashing } = concepts;
 
 /** What is the accepted resolution of this question? */
 export const theResolutionOf = former(
@@ -38,7 +38,7 @@ export const AcceptAnswer = endpoint(
   ({ session, question, answer, user, at, resolution }) =>
     receive({ session, question, answer }).then(
       where(
-        Timing._now({}).is({ at }),
+        now(at),
         activeUser({ session }).is({ user }),
         authored({ user, post: question }),
         readable({ post: question }),

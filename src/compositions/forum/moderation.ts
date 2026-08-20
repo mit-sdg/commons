@@ -1,12 +1,12 @@
 import { activeUser } from "../access/session.ts";
-import { each, form, former, no, whether, where } from "@mit-sdg/sync-engine/language";
+import { each, form, former, no, whether, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 import { notReadable, readable, thePost } from "./posts.ts";
 import { publicTarget } from "./threads.ts";
 
-const { Conversing, Flagging, Formatting, Locking, Posting, Trashing, Timing } = concepts;
+const { Conversing, Flagging, Formatting, Locking, Posting, Trashing } = concepts;
 
 /** Which items are in the trash? */
 export const theTrashBin = former("the trash bin ()", (_inputs, { item, trashedBy, trashedAt }) =>
@@ -95,7 +95,7 @@ export const theModerationQueue = former(
 export const TrashItem = endpoint("/trash/trash", ({ session, item, user, at }) =>
   receive({ session, item }).then(
     where(
-      Timing._now({}).is({ at }),
+      now(at),
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       Posting._getPost({ post: item }),
@@ -200,7 +200,7 @@ export const GetTrashedPost = endpoint("/moderation/posts/get", ({ session, item
 export const LockTarget = endpoint("/locks/lock", ({ session, target, user, at }) =>
   receive({ session, target }).then(
     where(
-      Timing._now({}).is({ at }),
+      now(at),
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       publicTarget({ target }),
@@ -249,11 +249,7 @@ export const IsLocked = endpoint("/locks/isLocked", ({ target, locked }) =>
 
 export const FlagRaise = endpoint("/flags/raise", ({ session, target, reason, user, at, flag }) =>
   receive({ session, target, reason }).then(
-    where(
-      Timing._now({}).is({ at }),
-      activeUser({ session }).is({ user }),
-      readable({ post: target }),
-    )
+    where(now(at), activeUser({ session }).is({ user }), readable({ post: target }))
       .then(Flagging.flag({ reporter: user, target, reason, at }).responds({ flag }))
       .then(respond({ flag }))
       .named("success"),

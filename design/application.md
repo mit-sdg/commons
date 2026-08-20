@@ -125,7 +125,6 @@ instantiate Rostering with
 
 instantiate Sessioning with
   User is Authenticating.User
-  Moment is Timing.Moment
 
 instantiate Submitting with
   Submitter is Authenticating.User
@@ -141,8 +140,6 @@ instantiate Tagging with
 
 instantiate Tasking with
   Assignee is Authenticating.User
-
-instantiate Timing
 
 instantiate Tracking with
   User is Authenticating.User
@@ -172,8 +169,7 @@ valid owners. Roling also receives the reserved application-wide context
 `forum`; because that value is a Commons constant rather than a concept-owned
 identity, it has no second type binding. Role-management endpoints can store
 other opaque context strings, but built-in policy interprets only `forum` and
-conversation identities. Sessioning uses Timing's current-moment value to decide
-expiry.
+conversation identities. Sessioning evaluates session expiry against the current instant.
 
 Tasking owns task identities. A task list is a second Categorizing instance,
 `TaskLists`, whose items are those tasks, so a list's contents are read directly

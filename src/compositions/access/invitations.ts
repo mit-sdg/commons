@@ -1,10 +1,10 @@
 import { activeUser } from "./session.ts";
 import { mayAdminister, mayNotAdminister } from "./policy.ts";
-import { compute, each, former, reaction, when, where } from "@mit-sdg/sync-engine/language";
+import { compute, each, former, now, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { computations, concepts } from "../../concepts.ts";
 
-const { Inviting, Mailing, Timing } = concepts;
+const { Inviting, Mailing } = concepts;
 
 export const theInvitations = former(
   "the invitations ()",
@@ -26,9 +26,8 @@ export const Invite = endpoint(
   "/invitations/invite",
   ({ session, email, actor, recipient, at, invitation, created }) =>
     receive({ session, email }).then(
-      where(activeUser({ session }).is({ user: actor }), mayAdminister({ user: actor }))
+      where(now(at), activeUser({ session }).is({ user: actor }), mayAdminister({ user: actor }))
         .then(Mailing.normalizeRecipient({ recipient: email }).responds({ recipient }))
-        .then(Timing.capture({}).responds({ at }))
         .then(
           Inviting.invite({ channel: "email", address: recipient, at }).responds({
             invitation,

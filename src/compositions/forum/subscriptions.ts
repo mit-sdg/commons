@@ -1,11 +1,20 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, no, reaction, when, whether, where } from "@mit-sdg/sync-engine/language";
+import {
+  each,
+  former,
+  no,
+  reaction,
+  when,
+  whether,
+  where,
+  now,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts.ts";
 import { thePostSummaryOf, theThreadStatsOf } from "./fragments.ts";
 import { readableConversation } from "./threads.ts";
 
-const { Conversing, Subscribing, Trashing, Timing } = concepts;
+const { Conversing, Subscribing, Trashing } = concepts;
 
 /** Which targets does this user follow? */
 export const theSubscriptionsOf = former(
@@ -62,7 +71,7 @@ export const Subscribe = endpoint(
   ({ session, target, user, at, subscription }) =>
     receive({ session, target }).then(
       where(
-        Timing._now({}).is({ at }),
+        now(at),
         activeUser({ session }).is({ user }),
         readableConversation({ conversation: target }),
       )

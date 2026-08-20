@@ -1,10 +1,10 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, when, where } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts.ts";
 import { notReadable, readable } from "./posts.ts";
 
-const { Reacting, Trashing, Timing } = concepts;
+const { Reacting, Trashing } = concepts;
 
 /** Which reactions are on this target? */
 export const theReactionsOn = former(
@@ -32,11 +32,7 @@ export const AddReaction = endpoint(
   "/reactions/add",
   ({ session, target, kind, user, at, reaction }) =>
     receive({ session, target, kind }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        readable({ post: target }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), readable({ post: target }))
         .then(Reacting.react({ reactor: user, target, kind, at }).responds({ reaction }))
         .then(respond({ reaction }))
         .named("success"),

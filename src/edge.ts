@@ -19,8 +19,9 @@ function sessionFrom(request: Request): string | undefined {
 export function createEdge(
   instances: CommonsImplementations,
   origin: string = configuredPublicOrigin(),
+  clock?: () => Date,
 ) {
-  const application = assembleCommons(instances);
+  const application = assembleCommons(instances, clock);
   const gateway = createGateway({ application });
   const policy = commonsHttpPolicy(origin);
   const handler = createHttpHandler({ application, gateway, policy });
@@ -54,11 +55,8 @@ export function createEdge(
       !PUBLIC_PATHS.has(logicalPath)
     ) {
       const session = sessionFrom(request);
-      const { at } = await application.concepts.Timing._now();
       const active =
-        session === undefined
-          ? []
-          : await application.concepts.Sessioning._getUser({ session, at });
+        session === undefined ? [] : await application.concepts.Sessioning._getUser({ session });
       if (active.length === 0)
         return Response.json(
           { error: "UNAUTHORIZED" },

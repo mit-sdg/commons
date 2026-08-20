@@ -1,5 +1,5 @@
 <!-- Generated from the Commons assembly. Do not edit. -->
-<!-- Manifest producer: @mit-sdg/sync-engine@1.0.0-beta.14; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.0.0-beta.14. -->
+<!-- Manifest producer: @mit-sdg/sync-engine@1.0.0-beta.15; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.0.0-beta.15. -->
 
 # Commons — assembled read-back
 
@@ -714,7 +714,7 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Actions
 
-- `start(user: User, at?: Moment) : return (session: Session, expiresAt: Moment)`
+- `start(user: User, at?: Date) : return (session: Session, expiresAt: Date)`
 - `end(session: Session) : return (session: Session)`
   - Refuses `SESSION_NOT_FOUND`: There is no such session.
 - `endAllForUser(user: User) : return (user: User)`
@@ -727,7 +727,6 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 #### Instances
 
 - `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 126.
-  - `Moment` is `Timing.Moment` — [Commons application](../design/application.md), line 128.
   - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 127.
 
 ### Submitting
@@ -753,10 +752,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 130.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 133.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 132.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 131.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 129.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 132.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 131.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 130.
 
 ### Subscribing
 
@@ -778,9 +777,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 135.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 136.
-  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 137.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 134.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 135.
+  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 136.
 
 ### Tagging
 
@@ -808,8 +807,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 139.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 140.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 138.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 139.
 
 ### Tasking
 
@@ -848,24 +847,8 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 142.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 143.
-
-### Timing
-
-Defined in [Timing](../design/concepts/Timing.md), line 1.
-
-#### Actions
-
-- `capture() : return (at: Date)`
-
-#### Queries
-
-- `_now() : one (at: Date)`
-
-#### Instances
-
-- `Timing` — instance of `Timing` — [Commons application](../design/application.md), line 145.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 141.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 142.
 
 ### Tracking
 
@@ -889,10 +872,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 147.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 149.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 150.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 148.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 144.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 146.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 147.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 145.
 
 ### Trashing
 
@@ -914,9 +897,9 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Instances
 
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 152.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 154.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 153.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 149.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 151.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 150.
 
 ## Application types
 
@@ -927,11 +910,11 @@ Concrete types:
 
 ## Computations
 
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 197.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 194.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 203.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 200.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 206.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 193.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 190.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 199.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 196.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 202.
 - `taskListExtension(key: String, members: Strings) : String` — [Task lists](../design/compositions/tasks/lists.md), line 69.
 - `taskListKey(members: Strings) : String` — [Task lists](../design/compositions/tasks/lists.md), line 66.
 - `taskListMembers(key: String) : Strings` — [Task lists](../design/compositions/tasks/lists.md), line 72.
@@ -1289,10 +1272,8 @@ Authored path: `Access.session.activeUser`.
 - Covered by [Session boundary](../design/compositions/access/session.md), line 13.
 
 ```view
-the active user of (session) — inputs (session); outputs (user); bindings (at) — answers at most one (user)
-  where
-    Timing._now () has (at)
-    Sessioning._getUser (at, session) has (user)
+the active user of (session) — inputs (session); outputs (user); bindings () — answers at most one (user)
+  where Sessioning._getUser (session) has (user)
 ```
 
 ### the assignment (assignment)
@@ -2882,6 +2863,8 @@ Authored path: `Access.auth.Login`.
 
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
+where
+  at is the current flow's instant
 then
   Authenticating.authenticate (password, username)
 ```
@@ -2893,8 +2876,10 @@ Authored path: `Access.auth.Login`.
 
 ```reaction
 when Authenticating.authenticate (password, username, user), asked by Access.auth.Login
+where
+  at is the current flow's instant
 then
-  Timing.capture ()
+  Sessioning.start (at, user)
 ```
 
 ### Access.auth.Login#3
@@ -2903,20 +2888,7 @@ Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
 
 ```reaction
-when Timing.capture (at), asked by Access.auth.Login#2
-where
-  earlier, Authenticating.authenticate (password, username, user), asked by Access.auth.Login
-then
-  Sessioning.start (at, user)
-```
-
-### Access.auth.Login#4
-
-Authored path: `Access.auth.Login`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-
-```reaction
-when Sessioning.start (at, user, expiresAt, session), asked by Access.auth.Login#3
+when Sessioning.start (at, user, expiresAt, session), asked by Access.auth.Login#2
 where
   earlier, RequestBoundary.request (password, path: "/auth/login", requestId, username)
 then
@@ -3124,6 +3096,7 @@ Authored path: `Access.invitations.Invite`.
 ```reaction
 when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
 then
@@ -3137,8 +3110,10 @@ Authored path: `Access.invitations.Invite`.
 
 ```reaction
 when Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.invitations.Invite:success
+where
+  at is the current flow's instant
 then
-  Timing.capture ()
+  Inviting.invite (address: recipient, at, channel: "email")
 ```
 
 ### Access.invitations.Invite:success#3
@@ -3147,20 +3122,7 @@ Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
 
 ```reaction
-when Timing.capture (at), asked by Access.invitations.Invite:success#2
-where
-  earlier, Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.invitations.Invite:success
-then
-  Inviting.invite (address: recipient, at, channel: "email")
-```
-
-### Access.invitations.Invite:success#4
-
-Authored path: `Access.invitations.Invite`.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-
-```reaction
-when Inviting.invite (address: recipient, at, channel: "email", created, invitation), asked by Access.invitations.Invite:success#3
+when Inviting.invite (address: recipient, at, channel: "email", created, invitation), asked by Access.invitations.Invite:success#2
 where
   earlier, RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
 then
@@ -3380,7 +3342,7 @@ Authored path: `Access.session.InvalidSessionIsRejected`.
 ```reaction
 when RequestBoundary.request (requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   Sessioning._isExpired (at, session) has (expired: true)
 then
   Sessioning.end (session)
@@ -3407,7 +3369,7 @@ Authored path: `Access.session.InvalidSessionIsRejected`.
 ```reaction
 when RequestBoundary.request (requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   Sessioning._isExpired (at, session) has (expired: false)
   no view "the active user of (session)" with (session)
 then
@@ -3436,7 +3398,7 @@ Authored path: `Course.assignments.Archive`.
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage assignments" with (user)
 then
@@ -3464,7 +3426,7 @@ Authored path: `Course.assignments.ClaimedStudentSeatReceivesPublished`.
 ```reaction
 when Rostering.claimSeat (kind: "STUDENT", section, user)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   Assigning._getPublishedForAudience (audience: section) has (assignment)
   Assigning._isAssigned (assignee: user, assignment) has (assigned: false)
 then
@@ -3534,7 +3496,7 @@ Authored path: `Course.assignments.CreateDraft`.
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage assignments" with (user)
 then
@@ -3666,7 +3628,7 @@ Authored path: `Course.assignments.Publish`.
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage assignments" with (user)
 then
@@ -3723,7 +3685,7 @@ Authored path: `Course.assignments.ReinstatedStudentSeatReceivesPublished`.
 ```reaction
 when Rostering.reinstateSeat (kind: "STUDENT", section, user)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   Assigning._getPublishedForAudience (audience: section) has (assignment)
   Assigning._isAssigned (assignee: user, assignment) has (assigned: false)
 then
@@ -3752,7 +3714,7 @@ Authored path: `Course.assignments.Revise`.
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage assignments" with (user)
 then
@@ -3940,7 +3902,7 @@ Authored path: `Course.assignments.Submit`.
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
 then
@@ -4241,7 +4203,7 @@ Authored path: `Course.grades.GradesExcuse`.
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage grades" with (user)
 then
@@ -4482,7 +4444,7 @@ Authored path: `Course.grades.GradesRecord`.
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage grades" with (user)
   Itemizing._getItem (item) has (maxPoints)
@@ -4525,7 +4487,7 @@ Authored path: `Course.grades.GradesRelease`.
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage grades" with (user)
 then
@@ -4567,7 +4529,7 @@ Authored path: `Course.grades.GradesReleaseItem`.
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage grades" with (user)
 then
@@ -4650,7 +4612,7 @@ Authored path: `Course.grades.GradesRetract`.
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage grades" with (user)
 then
@@ -4816,7 +4778,7 @@ Authored path: `Course.lateDays.Apply`.
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
 then
@@ -5067,7 +5029,7 @@ Authored path: `Course.lateDays.Grant`.
 ```reaction
 when RequestBoundary.request (days, learner, path: "/late-days/grant", reason, requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage late days" with (user)
 then
@@ -5280,7 +5242,7 @@ Authored path: `Course.notes.Acknowledge`.
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/acknowledge", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
 then
@@ -5322,7 +5284,7 @@ Authored path: `Course.notes.Archive`.
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/archive", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage student notes" with (user)
 then
@@ -5420,7 +5382,7 @@ Authored path: `Course.notes.Resolve`.
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/resolve", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage student notes" with (user)
 then
@@ -5462,7 +5424,7 @@ Authored path: `Course.notes.Restore`.
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/restore", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage student notes" with (user)
 then
@@ -5504,7 +5466,7 @@ Authored path: `Course.notes.Revise`.
 ```reaction
 when RequestBoundary.request (body, followUpAt, note, path: "/students/notes/revise", requestId, session, tags, visibility)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage student notes" with (user)
 then
@@ -5590,7 +5552,7 @@ Authored path: `Course.notes.Write`.
 ```reaction
 when RequestBoundary.request (body, followUpAt, learner, path: "/students/notes/write", requestId, session, tags, visibility)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage student notes" with (user)
 then
@@ -6535,7 +6497,7 @@ Authored path: `Forum.bookmarks.SaveBookmark`.
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/save", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(post) is readable" with (post: item)
 then
@@ -6960,7 +6922,7 @@ Authored path: `Forum.moderation.FlagRaise`.
 ```reaction
 when RequestBoundary.request (path: "/flags/raise", reason, requestId, session, target)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(post) is readable" with (post: target)
 then
@@ -7274,7 +7236,7 @@ Authored path: `Forum.moderation.LockTarget`.
 ```reaction
 when RequestBoundary.request (path: "/locks/lock", requestId, session, target)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
   view "(target) is public" with (target)
@@ -7414,7 +7376,7 @@ Authored path: `Forum.moderation.TrashItem`.
 ```reaction
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
   Posting._getPost (post: item)
@@ -7817,7 +7779,7 @@ Authored path: `Forum.pins.PinItem`.
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may pin in (scope)" with (scope, user)
   view "(post) is readable" with (post: item)
@@ -8214,7 +8176,7 @@ Authored path: `Forum.posts.EditPost`.
 ```reaction
 when RequestBoundary.request (content, path: "/posts/edit", post, requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may edit (post)" with (post, user)
 then
@@ -8648,7 +8610,7 @@ Authored path: `Forum.reactions.AddReaction`.
 ```reaction
 when RequestBoundary.request (kind, path: "/reactions/add", requestId, session, target)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(post) is readable" with (post: target)
 then
@@ -8754,7 +8716,7 @@ Authored path: `Forum.resolutions.AcceptAnswer`.
 ```reaction
 when RequestBoundary.request (answer, path: "/resolutions/accept", question, requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) authored (post)" with (post: question, user)
   view "(post) is readable" with (post: question)
@@ -9372,7 +9334,7 @@ Authored path: `Forum.subscriptions.Subscribe`.
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribe", requestId, session, target)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(conversation) is readable" with (conversation: target)
 then
@@ -9645,7 +9607,7 @@ Authored path: `Forum.threads.CreateThread`.
 ```reaction
 when RequestBoundary.request (content, path: "/threads/create", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
 then
   Posting.create (at, author: user, content)
@@ -9741,7 +9703,7 @@ where
   view "the active user of (session)" with (session) has (user)
   Conversing._getConversation (node: parent) has (conversation)
   Locking._isLocked (target: conversation) has (locked: false)
-  Timing._now () has (at)
+  at is the current flow's instant
 then
   Posting.create (at, author: user, content)
 ```
@@ -9970,7 +9932,7 @@ Authored path: `Tasks.lists.GetList`.
 ```reaction
 when RequestBoundary.request (list, path: "/tasklists/get", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) belongs to task list (list)" with (list, user)
 then
@@ -10027,7 +9989,7 @@ Authored path: `Tasks.lists.LeftMemberReleasesOpenTasks`.
 ```reaction
 when TaskListMembership.revoke (context, user)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   TaskLists._getItems (category: context) has (item: task)
   Tasking._getTask (at, task) has (assignee: user, state: "OPEN")
 then
@@ -10042,7 +10004,7 @@ Authored path: `Tasks.lists.MyLists`.
 ```reaction
 when RequestBoundary.request (path: "/tasklists/mine", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
 then
   RequestBoundary.respond (lists: former "the task lists of (user) at (at)" with (at, user), requestId)
@@ -10142,7 +10104,7 @@ Authored path: `Tasks.tasks.AssignTask`.
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may act on task (task)" with (task, user)
   view "the task list holding (task)" with (task) has (list)
@@ -10186,7 +10148,7 @@ Authored path: `Tasks.tasks.CancelTask`.
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may act on task (task)" with (task, user)
 then
@@ -10228,7 +10190,7 @@ Authored path: `Tasks.tasks.CompleteTask`.
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may act on task (task)" with (task, user)
 then
@@ -10270,7 +10232,7 @@ Authored path: `Tasks.tasks.CreateTask`.
 ```reaction
 when RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) belongs to task list (list)" with (list, user)
 then
@@ -10311,7 +10273,7 @@ Authored path: `Tasks.tasks.MyTasks`.
 ```reaction
 when RequestBoundary.request (path: "/tasks/mine", requestId, session)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
 then
   RequestBoundary.respond (requestId, tasks: former "the tasks assigned to (user) at (at)" with (at, user))
@@ -10339,7 +10301,7 @@ Authored path: `Tasks.tasks.ReleaseTask`.
 ```reaction
 when RequestBoundary.request (path: "/tasks/release", requestId, session, task)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may act on task (task)" with (task, user)
 then
@@ -10381,7 +10343,7 @@ Authored path: `Tasks.tasks.ReopenTask`.
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may act on task (task)" with (task, user)
 then
@@ -10423,7 +10385,7 @@ Authored path: `Tasks.tasks.RetimeTask`.
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
 where
-  Timing._now () has (at)
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may act on task (task)" with (task, user)
 then

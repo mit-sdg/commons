@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, where } from "@mit-sdg/sync-engine/language";
+import { each, former, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -9,7 +9,7 @@ import {
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Banking, Timing } = concepts;
+const { Banking } = concepts;
 /** What late-day balance does this learner have? */
 export const theLateDayBalanceOf = former(
   "the late-day balance of (learner)",
@@ -88,11 +88,7 @@ export const Grant = endpoint(
   "/late-days/grant",
   ({ session, learner, days, reason, user, at, grant }) =>
     receive({ session, learner, days, reason }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayManageLateDays({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayManageLateDays({ user }))
         .then(Banking.grant({ learner, days, reason, at }).responds({ grant }))
         .then(respond({ grant }))
         .named("success"),
@@ -107,11 +103,7 @@ export const Apply = endpoint(
   "/late-days/apply",
   ({ session, assignment, days, user, at, use }) =>
     receive({ session, assignment, days }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        isActiveStudent({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), isActiveStudent({ user }))
         .then(Banking.apply({ learner: user, item: assignment, days, at }).responds({ use }))
         .then(respond({ use }))
         .named("success"),

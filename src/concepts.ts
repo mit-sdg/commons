@@ -29,7 +29,6 @@ import { submitting } from "./concepts/submitting/registry.ts";
 import { subscribing } from "./concepts/subscribing/registry.ts";
 import { tagging } from "./concepts/tagging/registry.ts";
 import { tasking } from "./concepts/tasking/registry.ts";
-import { timing } from "./concepts/timing/registry.ts";
 import { tracking } from "./concepts/tracking/registry.ts";
 import { trashing } from "./concepts/trashing/registry.ts";
 import { setupSecretMatches } from "./computations/admin-setup.ts";
@@ -73,7 +72,6 @@ const registrations = {
   Tasking: tasking,
   TaskListMembership: roling,
   TaskLists: categorizing,
-  Timing: timing,
   Tracking: tracking,
   Trashing: trashing,
 };
@@ -93,7 +91,7 @@ export const concepts = learningConcepts.concepts;
 export const computations = learningConcepts.computations;
 
 /** Construct the complete persistent implementation floor registered by every concept. */
-export function mongoImplementations(database: Db) {
-  return learningConcepts.implementations("mongo", { database });
+export function mongoImplementations(database: Db, clock?: () => Date) {
+  return learningConcepts.implementations("mongo", { database, clock });
 }
 export type CommonsConceptSet = typeof learningConcepts;

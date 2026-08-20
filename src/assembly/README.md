@@ -15,10 +15,9 @@ have distinct responsibilities:
 
 Each registration's canonical class is the implementation used in production.
 `mongo` is the complete named floor declared across every registration and
-constructed by `src/concepts.ts`; the stateless Timing concept uses the same
-class without a separate storage variant. Assembly accepts a complete
-implementation map so tests can replace an individual instance deliberately
-without introducing another application default.
+constructed by `src/concepts.ts`. Assembly accepts a complete implementation
+map so tests can replace an individual instance deliberately without introducing
+another application default.
 
 `MONGODB_URL` is required. The process opens the configured database, constructs
 the `mongo` floor, closes the client when the process stops, and never drops an

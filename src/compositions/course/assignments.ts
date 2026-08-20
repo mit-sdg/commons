@@ -1,5 +1,15 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, is, no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
+import {
+  each,
+  former,
+  is,
+  no,
+  reaction,
+  view,
+  when,
+  where,
+  now,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -9,7 +19,7 @@ import {
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Assigning, Posting, Rostering, Submitting, Timing } = concepts;
+const { Assigning, Posting, Rostering, Submitting } = concepts;
 /** Which assignments belong to this learner? */
 export const theAssignmentsOf = former(
   "the assignments of (student)",
@@ -130,7 +140,7 @@ export const RevisedAssignmentAssignsNewAudienceStudents = reaction(
 export const ClaimedStudentSeatReceivesPublished = reaction(({ user, section, assignment, at }) =>
   when(Rostering.claimSeat({}).responds({ kind: "STUDENT", user, section }))
     .where(
-      Timing._now({}).is({ at }),
+      now(at),
       Assigning._getPublishedForAudience({ audience: section }).is({ assignment }),
       Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
     )
@@ -140,7 +150,7 @@ export const ReinstatedStudentSeatReceivesPublished = reaction(
   ({ user, section, assignment, at }) =>
     when(Rostering.reinstateSeat({}).responds({ kind: "STUDENT", user, section }))
       .where(
-        Timing._now({}).is({ at }),
+        now(at),
         Assigning._getPublishedForAudience({ audience: section }).is({ assignment }),
         Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
       )
@@ -175,11 +185,7 @@ export const CreateDraft = endpoint(
       audience,
       targets,
     }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayManageAssignments({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayManageAssignments({ user }))
         .then(
           Assigning.createDraft({
             author: user,
@@ -249,11 +255,7 @@ export const Revise = endpoint(
       audience,
       targets,
     }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayManageAssignments({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayManageAssignments({ user }))
         .then(
           Assigning.revise({
             assignment,
@@ -297,11 +299,7 @@ export const Publish = endpoint(
   "/assignments/publish",
   ({ session, assignment, user, at, published }) =>
     receive({ session, assignment }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayManageAssignments({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayManageAssignments({ user }))
         .then(Assigning.publish({ assignment, at }).responds({ assignment: published }))
         .then(respond({ assignment: published }))
         .named("success"),
@@ -315,11 +313,7 @@ export const Archive = endpoint(
   "/assignments/archive",
   ({ session, assignment, user, at, archived }) =>
     receive({ session, assignment }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayManageAssignments({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayManageAssignments({ user }))
         .then(Assigning.archive({ assignment, at }).responds({ assignment: archived }))
         .then(respond({ assignment: archived }))
         .named("success"),
@@ -439,11 +433,7 @@ export const Submit = endpoint(
   "/assignments/submit",
   ({ session, assignment, content, user, at, post, submission }) =>
     receive({ session, assignment, content }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        isActiveStudent({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), isActiveStudent({ user }))
         .then(Posting.create({ author: user, content, at }).responds({ post }))
         .then(
           Submitting.submit({ assignment, submitter: user, artifact: post, at }).responds({

@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, where } from "@mit-sdg/sync-engine/language";
+import { each, former, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   belongsToList,
@@ -11,7 +11,7 @@ import {
 import { TASK_LIST_MEMBER_CAPABILITY } from "./capabilities.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Tasking, TaskListMembership, TaskLists, Timing } = concepts;
+const { Tasking, TaskListMembership, TaskLists } = concepts;
 
 /** What work does this list hold, soonest deadline first? */
 export const theTasksIn = former(
@@ -109,11 +109,7 @@ export const CreateTask = endpoint(
   "/tasks/create",
   ({ session, list, title, details, startsAt, endsAt, user, at, task }) =>
     receive({ session, list, title, details, startsAt, endsAt }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        belongsToList({ user, list }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), belongsToList({ user, list }))
         .then(
           Tasking.create({ title, details, startsAt, endsAt, assignee: null, at }).responds({
             task,
@@ -138,11 +134,7 @@ export const RetimeTask = endpoint(
   "/tasks/retime",
   ({ session, task, startsAt, endsAt, user, at, retimed }) =>
     receive({ session, task, startsAt, endsAt }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayActOnTask({ user, task }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
         .then(Tasking.retime({ task, startsAt, endsAt, at }).responds({ task: retimed }))
         .then(respond({ task: retimed }))
         .named("success"),
@@ -157,7 +149,7 @@ export const AssignTask = endpoint(
   ({ session, task, assignee, user, at, list, assigned }) =>
     receive({ session, task, assignee }).then(
       where(
-        Timing._now({}).is({ at }),
+        now(at),
         activeUser({ session }).is({ user }),
         mayActOnTask({ user, task }),
         theListHolding({ task }).is({ list }),
@@ -182,11 +174,7 @@ export const AssignTask = endpoint(
 
 export const ReleaseTask = endpoint("/tasks/release", ({ session, task, user, at, released }) =>
   receive({ session, task }).then(
-    where(
-      Timing._now({}).is({ at }),
-      activeUser({ session }).is({ user }),
-      mayActOnTask({ user, task }),
-    )
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
       .then(Tasking.release({ task, at }).responds({ task: released }))
       .then(respond({ task: released }))
       .named("success"),
@@ -198,11 +186,7 @@ export const ReleaseTask = endpoint("/tasks/release", ({ session, task, user, at
 
 export const CompleteTask = endpoint("/tasks/complete", ({ session, task, user, at, completed }) =>
   receive({ session, task }).then(
-    where(
-      Timing._now({}).is({ at }),
-      activeUser({ session }).is({ user }),
-      mayActOnTask({ user, task }),
-    )
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
       .then(Tasking.complete({ task, at }).responds({ task: completed }))
       .then(respond({ task: completed }))
       .named("success"),
@@ -214,11 +198,7 @@ export const CompleteTask = endpoint("/tasks/complete", ({ session, task, user, 
 
 export const ReopenTask = endpoint("/tasks/reopen", ({ session, task, user, at, reopened }) =>
   receive({ session, task }).then(
-    where(
-      Timing._now({}).is({ at }),
-      activeUser({ session }).is({ user }),
-      mayActOnTask({ user, task }),
-    )
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
       .then(Tasking.reopen({ task, at }).responds({ task: reopened }))
       .then(respond({ task: reopened }))
       .named("success"),
@@ -230,11 +210,7 @@ export const ReopenTask = endpoint("/tasks/reopen", ({ session, task, user, at, 
 
 export const CancelTask = endpoint("/tasks/cancel", ({ session, task, user, at, canceled }) =>
   receive({ session, task }).then(
-    where(
-      Timing._now({}).is({ at }),
-      activeUser({ session }).is({ user }),
-      mayActOnTask({ user, task }),
-    )
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
       .then(Tasking.cancel({ task, at }).responds({ task: canceled }))
       .then(respond({ task: canceled }))
       .named("success"),
@@ -246,6 +222,6 @@ export const CancelTask = endpoint("/tasks/cancel", ({ session, task, user, at, 
 
 export const MyTasks = endpoint("/tasks/mine", ({ session, user, at }) =>
   receive({ session })
-    .where(Timing._now({}).is({ at }), activeUser({ session }).is({ user }))
+    .where(now(at), activeUser({ session }).is({ user }))
     .then(respond({ tasks: theTasksAssignedTo({ user, at }) })),
 );

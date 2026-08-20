@@ -10,5 +10,8 @@ export const sessioning = registerConcept({
   refusals: {
     SESSION_NOT_FOUND: SessionNotFound,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoSessioningConcept(database) },
+  floors: {
+    mongo: ({ database, clock }: { database: Db; clock?: () => Date }) =>
+      new MongoSessioningConcept(database, clock),
+  },
 });

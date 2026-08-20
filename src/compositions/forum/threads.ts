@@ -1,9 +1,19 @@
 import { activeUser } from "../access/session.ts";
-import { each, form, former, no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
+import {
+  each,
+  form,
+  former,
+  no,
+  reaction,
+  view,
+  when,
+  where,
+  now,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts.ts";
 
-const { Conversing, Formatting, Locking, Posting, Tracking, Trashing, Timing } = concepts;
+const { Conversing, Formatting, Locking, Posting, Tracking, Trashing } = concepts;
 
 export const intact = view("(item) is intact", ({ item }, _outputs, _bindings) =>
   where(Trashing._isTrashed({ item }).is({ trashed: false })),
@@ -73,7 +83,7 @@ export const CreateThread = endpoint(
   "/threads/create",
   ({ session, content, user, at, post, conversation, node }) =>
     receive({ session, content })
-      .where(Timing._now({}).is({ at }), activeUser({ session }).is({ user }))
+      .where(now(at), activeUser({ session }).is({ user }))
       .then(Posting.create({ author: user, content, at }).responds({ post }))
       .then(Conversing.start({ item: post, at }).responds({ conversation, node }))
       .then(respond({ post, conversation, node })),
@@ -87,7 +97,7 @@ export const ReplyToThread = endpoint(
         activeUser({ session }).is({ user }),
         Conversing._getConversation({ node: parent }).is({ conversation }),
         Locking._isLocked({ target: conversation }).is({ locked: false }),
-        Timing._now({}).is({ at }),
+        now(at),
       )
         .then(Posting.create({ author: user, content, at }).responds({ post }))
         .then(Conversing.reply({ item: post, parent, at }).responds({ node }))

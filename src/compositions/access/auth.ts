@@ -1,5 +1,5 @@
 import { activeUser } from "./session.ts";
-import { compute, is, no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
+import { compute, is, no, now, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { computations, concepts } from "../../concepts.ts";
 import {
@@ -10,7 +10,7 @@ import {
   INITIAL_ROSTER_BOOTSTRAP_ROLE,
 } from "./capabilities.ts";
 
-const { Authenticating, Inviting, Profiling, Roling, Sessioning, Timing } = concepts;
+const { Authenticating, Inviting, Profiling, Roling, Sessioning } = concepts;
 export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
   when(Authenticating.register({}).responds({ user }))
     .where(
@@ -106,8 +106,8 @@ export const Login = endpoint(
   "/auth/login",
   ({ username, password, user, session, expiresAt, at }) =>
     receive({ username, password })
+      .where(now(at))
       .then(Authenticating.authenticate({ username, password }).responds({ user }))
-      .then(Timing.capture({}).responds({ at }))
       .then(Sessioning.start({ user, at }).responds({ session, expiresAt }))
       .then(respond({ session, expiresAt, user })),
 );

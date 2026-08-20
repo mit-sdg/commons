@@ -4,7 +4,6 @@ import { afterAll, beforeEach, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { createEdge } from "../../src/edge.ts";
-import { TimingConcept } from "../../src/concepts/timing/timing.ts";
 
 type Actor = { user: string; cookie: string; email: string };
 
@@ -444,10 +443,11 @@ describe("HTTP authorization and privacy", () => {
 test("the HTTP edge rejects and clears a cookie at the server-side expiry boundary", async () => {
   const startedAt = Date.now() + 60_000;
   let now = new Date(startedAt);
-  const edge = createEdge({
-    ...mongoImplementations(await testDb()),
-    Timing: new TimingConcept(() => now),
-  });
+  const edge = createEdge(
+    mongoImplementations(await testDb(), () => now),
+    undefined,
+    () => now,
+  );
   const post = async (path: string, body: Record<string, unknown>, cookie?: string) => {
     const response = await edge.fetch(
       new Request(`http://commons.test/api${path}`, {

@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, no, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
+import { each, former, no, reaction, view, when, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayEditPost, mayNotEditPost } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
@@ -16,7 +16,6 @@ const {
   Tagging,
   Tracking,
   Trashing,
-  Timing,
 } = concepts;
 
 export const readable = view("(post) is readable", ({ post }, _outputs, _bindings) =>
@@ -104,11 +103,7 @@ export const EditPost = endpoint(
       where(activeUser({ session }), no(Posting._getPost({ post })))
         .then(respond({ error: "POST_NOT_FOUND" }))
         .named("missing-post"),
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayEditPost({ user, post }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayEditPost({ user, post }))
         .then(Posting.edit({ post, content, at }))
         .then(respond({ post }))
         .named("post"),

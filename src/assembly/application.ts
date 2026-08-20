@@ -4,11 +4,12 @@ import { composition } from "../compositions/index.ts";
 
 export type CommonsImplementations = ReturnType<typeof mongoImplementations>;
 
-export function assembleCommons(instances: CommonsImplementations) {
+export function assembleCommons(instances: CommonsImplementations, clock?: () => Date) {
   const application = assemble({
     conceptSet: learningConcepts,
     composition,
     instances,
+    ...(clock === undefined ? {} : { clock }),
   });
   return application as Omit<typeof application, "concepts"> & {
     concepts: CommonsImplementations;

@@ -10,12 +10,15 @@ interface SessionDoc {
 export class MongoSessioningConcept {
   private readonly sessions: Collection<SessionDoc>;
 
-  constructor(db: Db) {
+  constructor(
+    db: Db,
+    private readonly clock: () => Date = () => new Date(),
+  ) {
     this.sessions = db.collection<SessionDoc>("sessioning.sessions");
   }
 
   async start({ user, at }: { user: string; at?: Date }) {
-    const beganAt = at ?? new Date();
+    const beganAt = at ?? this.clock();
     const session = crypto.randomUUID();
     const expiresAt = new Date(beganAt.getTime() + 86_400_000);
     await this.sessions.insertOne({
@@ -41,7 +44,7 @@ export class MongoSessioningConcept {
 
   async _getUser({ session, at }: { session: string; at?: Date }) {
     const doc = await this.sessions.findOne({ _id: session });
-    return doc === null || (at ?? new Date()) >= doc.expiresAt ? [] : [{ user: doc.user }];
+    return doc === null || (at ?? this.clock()) >= doc.expiresAt ? [] : [{ user: doc.user }];
   }
 
   async _isExpired({ session, at }: { session: string; at: Date }) {

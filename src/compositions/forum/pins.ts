@@ -1,11 +1,11 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, when, where } from "@mit-sdg/sync-engine/language";
+import { each, former, reaction, when, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayNotPinInScope, mayPinInScope } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 import { notReadable, readable } from "./posts.ts";
 
-const { Pinning, Trashing, Timing } = concepts;
+const { Pinning, Trashing } = concepts;
 
 /** Which items are pinned in this scope? */
 export const thePinsOf = former("the pins of (scope)", ({ scope }, { item, priority }) =>
@@ -23,7 +23,7 @@ export const PinItem = endpoint(
   ({ session, item, scope, priority, user, at, pin }) =>
     receive({ session, item, scope, priority }).then(
       where(
-        Timing._now({}).is({ at }),
+        now(at),
         activeUser({ session }).is({ user }),
         mayPinInScope({ user, scope }),
         readable({ post: item }),

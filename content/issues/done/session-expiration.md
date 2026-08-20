@@ -2,16 +2,14 @@
 milestone: repository-release
 concepts:
   - Sessioning
-  - Timing
 ---
 
 # Expire server-side sessions with their cookies
 
 ## Resolution at completion
 
-Sessioning persists an expiry one day after login. The HTTP edge advances
-Timing before every session-bearing request, and every identity read rejects a
-session at or after that boundary.
+Sessioning persists an expiry one day after login, and every identity read
+rejects a session at or after that boundary.
 
 Before the boundary, `/auth/me` returns 200 with the account response. At the
 boundary, the same cookie returns 401 with `{"error":"UNAUTHORIZED"}` and a
@@ -22,9 +20,9 @@ fresh Mongo Sessioning instance.
 ## Decision at completion
 
 Sessioning records an expiry exactly one day after login. Every identity read
-uses Timing's explicit current moment and rejects a session at or after that
-boundary. An expired session is removed when it is presented. Memory and
-MongoDB follow the same rule, including after restart.
+uses the current instant and rejects a session at or after that boundary. An
+expired session is removed when it is presented. MongoDB follows the same rule,
+including after restart.
 
 ## Verification at completion
 

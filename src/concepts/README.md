@@ -14,11 +14,6 @@ A usual concept has:
   and
 - a focused matching test at `tests/concepts/<name>.test.ts`.
 
-Timing has no durable state and therefore keeps its single implementation in
-`timing.ts`; its `mongo` floor factory uses that same class. Tests exercise the
-production implementation against temporary MongoDB rather than maintaining a
-second in-memory behavior.
-
 [`../concepts.ts`](../concepts.ts) collects every registration in one
 `conceptSet(...)`, exports the executable concepts and computations, and
 constructs the complete named MongoDB floor. Query cardinalities, action/query

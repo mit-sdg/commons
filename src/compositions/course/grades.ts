@@ -5,6 +5,7 @@ import {
   former,
   is,
   no,
+  now,
   reaction,
   whether,
   when,
@@ -21,7 +22,7 @@ import {
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Grading, Itemizing, Rostering, Timing } = concepts;
+const { Grading, Itemizing, Rostering } = concepts;
 
 /** Which released grades belong to this learner? */
 export const theReleasedGradesOf = former(
@@ -249,7 +250,7 @@ export const GradesRecord = endpoint(
   ({ session, learner, item, evidence, score, feedback, user, maxPoints, at, grade }) =>
     receive({ session, learner, item, evidence, score, feedback }).then(
       where(
-        Timing._now({}).is({ at }),
+        now(at),
         activeUser({ session }).is({ user }),
         mayManageGrades({ user }),
         Itemizing._getItem({ item }).is({ maxPoints }),
@@ -332,11 +333,7 @@ export const GradesRelease = endpoint(
   "/grades/release",
   ({ session, learner, item, user, at, grade }) =>
     receive({ session, learner, item }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayManageGrades({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayManageGrades({ user }))
         .then(Grading.release({ learner, item, at }).responds({ grade }))
         .then(respond({ grade }))
         .named("success"),
@@ -350,11 +347,7 @@ export const GradesReleaseItem = endpoint(
   "/grades/release-item",
   ({ session, item, user, at, released }) =>
     receive({ session, item }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayManageGrades({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayManageGrades({ user }))
         .then(Grading.releaseItem({ item, at }).responds({ released }))
         .then(respond({ released }))
         .named("success"),
@@ -368,11 +361,7 @@ export const GradesRetract = endpoint(
   "/grades/retract",
   ({ session, learner, item, user, at, grade }) =>
     receive({ session, learner, item }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayManageGrades({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayManageGrades({ user }))
         .then(Grading.retract({ learner, item, at }).responds({ grade }))
         .then(respond({ grade }))
         .named("success"),
@@ -386,11 +375,7 @@ export const GradesExcuse = endpoint(
   "/grades/excuse",
   ({ session, learner, item, feedback, user, at, grade }) =>
     receive({ session, learner, item, feedback }).then(
-      where(
-        Timing._now({}).is({ at }),
-        activeUser({ session }).is({ user }),
-        mayManageGrades({ user }),
-      )
+      where(now(at), activeUser({ session }).is({ user }), mayManageGrades({ user }))
         .then(Grading.excuse({ learner, item, grader: user, feedback, at }).responds({ grade }))
         .then(respond({ grade }))
         .named("success"),

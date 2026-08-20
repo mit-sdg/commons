@@ -1,16 +1,16 @@
 import { receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { no, reaction, view, where } from "@mit-sdg/sync-engine/language";
+import { no, reaction, view, where, now } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
 
-const { Sessioning, Timing } = concepts;
+const { Sessioning } = concepts;
 
-export const activeUser = view("the active user of (session)", ({ session }, { user }, { at }) =>
-  where(Timing._now({}).is({ at }), Sessioning._getUser({ session, at }).is({ user })),
+export const activeUser = view("the active user of (session)", ({ session }, { user }, _bindings) =>
+  where(Sessioning._getUser({ session }).is({ user })),
 ).optional();
 
 export const InvalidSessionIsRejected = reaction(({ session, at }) =>
   receive({ session })
-    .where(Timing._now({}).is({ at }))
+    .where(now(at))
     .then(
       where(
         Sessioning._isExpired({ session, at }).is({ expired: false }),

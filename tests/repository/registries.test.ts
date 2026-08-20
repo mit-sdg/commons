@@ -43,14 +43,10 @@ describe("application-owned design integration", () => {
       expect(conceptSet, concept).toContain(`from "./concepts/${directory}/registry.ts"`);
       expect(conceptSet, concept).toMatch(new RegExp(`^  ${concept}: \\w+,$`, "m"));
       expect(existsSync(join(root, `tests/concepts/${directory}.test.ts`)), concept).toBe(true);
-      if (concept === "Timing") {
-        expect(existsSync(join(conceptsRoot, directory, `${directory}.ts`)), concept).toBe(true);
-      } else {
-        expect(existsSync(join(conceptsRoot, directory, `${directory}.mongo.ts`)), concept).toBe(
-          true,
-        );
-        expect(existsSync(join(conceptsRoot, directory, `${directory}.ts`)), concept).toBe(false);
-      }
+      expect(existsSync(join(conceptsRoot, directory, `${directory}.mongo.ts`)), concept).toBe(
+        true,
+      );
+      expect(existsSync(join(conceptsRoot, directory, `${directory}.ts`)), concept).toBe(false);
     }
     expect(conceptSet).not.toContain("@design/application.md");
     expect(conceptSet).toContain("export const learningConcepts = conceptSet(");
@@ -134,7 +130,6 @@ describe("application-owned design integration", () => {
       "Roling.Context is Conversing.Conversation",
       "Subscribing.Target is Conversing.Conversation",
       "Tracking.Scope is Conversing.Conversation",
-      "Sessioning.Moment is Timing.Moment",
     ].sort();
     const source = readFileSync(join(root, "design/application.md"), "utf8");
     const inventory = source.match(/^```instances\n([\s\S]*?)^```$/m)?.[1] ?? "";

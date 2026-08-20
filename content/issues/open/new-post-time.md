@@ -2,7 +2,6 @@
 milestone: later
 concepts:
   - Posting
-  - Timing
 ---
 
 # Explain the age of a new post accurately
