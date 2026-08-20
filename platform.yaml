@@ -9,3 +9,9 @@ scripts:
 port: 3000
 health:
   path: /health
+storage:
+  bindings:
+    default:
+      type: mongo
+      environment:
+        uri: MONGODB_URI
