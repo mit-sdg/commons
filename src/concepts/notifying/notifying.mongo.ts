@@ -16,9 +16,10 @@ export class MongoNotifyingConcept {
   private readonly notifications: Collection<NotificationDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 
-  constructor(db: Db) {
-    this.notifications = db.collection<NotificationDoc>("notifying.notifications");
-    this.counters = db.collection("notifying.counters");
+  constructor(db: Db, instance = "Notifying") {
+    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
+    this.notifications = db.collection<NotificationDoc>(`${prefix}.notifications`);
+    this.counters = db.collection(`${prefix}.counters`);
   }
 
   async #nextSeq(): Promise<number> {

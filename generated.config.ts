@@ -53,6 +53,7 @@ export default {
       new URL("./design/compositions/forum/threads.md", import.meta.url),
       new URL("./design/compositions/forum/unread.md", import.meta.url),
       new URL("./design/compositions/tasks/lists.md", import.meta.url),
+      new URL("./design/compositions/tasks/notifications.md", import.meta.url),
       new URL("./design/compositions/tasks/tasks.md", import.meta.url),
     ],
   },

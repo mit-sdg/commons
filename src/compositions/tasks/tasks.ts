@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, now, where } from "@mit-sdg/sync-engine/language";
+import { each, former, no, now, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   belongsToList,
@@ -8,9 +8,10 @@ import {
   mayNotActOnTask,
   theListHolding,
 } from "./policy.ts";
+import { somebodyMustHearAbout } from "./notification-policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Grouping, Tasking } = concepts;
+const { Grouping, TaskNotifying, Tasking } = concepts;
 
 /** What work does this list hold, soonest deadline first? */
 export const theTasksIn = former(
@@ -155,12 +156,40 @@ export const DescribeTask = endpoint(
 
 export const RetimeTask = endpoint(
   "/tasks/retime",
-  ({ session, task, startsAt, endsAt, user, at, retimed }) =>
+  ({ session, task, startsAt, endsAt, user, at, retimed, recipient }) =>
     receive({ session, task, startsAt, endsAt }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        somebodyMustHearAbout({ task, actor: user, at }),
+      )
+        .then(
+          Tasking.retime({ task, startsAt, endsAt, at }).responds({
+            task: retimed,
+            assignee: recipient,
+          }),
+        )
+        .then(
+          TaskNotifying.notify({
+            recipient,
+            kind: "task-retimed",
+            subject: task,
+            link: task,
+            at,
+          }),
+        )
+        .then(respond({ task: retimed }))
+        .named("announced"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        no(somebodyMustHearAbout({ task, actor: user, at })),
+      )
         .then(Tasking.retime({ task, startsAt, endsAt, at }).responds({ task: retimed }))
         .then(respond({ task: retimed }))
-        .named("success"),
+        .named("silent"),
       where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -177,10 +206,31 @@ export const AssignTask = endpoint(
         mayActOnTask({ user, task, at }),
         theListHolding({ task, at }).is({ list }),
         belongsToList({ user: assignee, list }),
+        activeUser({ session }).is.not({ user: assignee }),
+      )
+        .then(Tasking.assign({ task, assignee, at }).responds({ task: assigned }))
+        .then(
+          TaskNotifying.notify({
+            recipient: assignee,
+            kind: "task-assigned",
+            subject: task,
+            link: task,
+            at,
+          }),
+        )
+        .then(respond({ task: assigned }))
+        .named("success"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        theListHolding({ task, at }).is({ list }),
+        belongsToList({ user: assignee, list }),
+        activeUser({ session }).is({ user: assignee }),
       )
         .then(Tasking.assign({ task, assignee, at }).responds({ task: assigned }))
         .then(respond({ task: assigned }))
-        .named("success"),
+        .named("self-assignment"),
       where(
         now(at),
         activeUser({ session }).is({ user }),
@@ -208,52 +258,152 @@ export const ReleaseTask = endpoint("/tasks/release", ({ session, task, user, at
   ),
 );
 
-export const CompleteTask = endpoint("/tasks/complete", ({ session, task, user, at, completed }) =>
-  receive({ session, task }).then(
-    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
-      .then(Tasking.complete({ task, at }).responds({ task: completed }))
-      .then(respond({ task: completed }))
-      .named("success"),
-    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-  ),
+export const CompleteTask = endpoint(
+  "/tasks/complete",
+  ({ session, task, user, at, completed, recipient }) =>
+    receive({ session, task }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        somebodyMustHearAbout({ task, actor: user, at }),
+      )
+        .then(Tasking.complete({ task, at }).responds({ task: completed, assignee: recipient }))
+        .then(
+          TaskNotifying.notify({
+            recipient,
+            kind: "task-completed",
+            subject: task,
+            link: task,
+            at,
+          }),
+        )
+        .then(respond({ task: completed }))
+        .named("announced"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        no(somebodyMustHearAbout({ task, actor: user, at })),
+      )
+        .then(Tasking.complete({ task, at }).responds({ task: completed }))
+        .then(respond({ task: completed }))
+        .named("silent"),
+      where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
-export const ReopenTask = endpoint("/tasks/reopen", ({ session, task, user, at, reopened }) =>
-  receive({ session, task }).then(
-    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
-      .then(Tasking.reopen({ task, at }).responds({ task: reopened }))
-      .then(respond({ task: reopened }))
-      .named("success"),
-    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-  ),
+export const ReopenTask = endpoint(
+  "/tasks/reopen",
+  ({ session, task, user, at, reopened, recipient }) =>
+    receive({ session, task }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        somebodyMustHearAbout({ task, actor: user, at }),
+      )
+        .then(Tasking.reopen({ task, at }).responds({ task: reopened, assignee: recipient }))
+        .then(
+          TaskNotifying.notify({
+            recipient,
+            kind: "task-reopened",
+            subject: task,
+            link: task,
+            at,
+          }),
+        )
+        .then(respond({ task: reopened }))
+        .named("announced"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        no(somebodyMustHearAbout({ task, actor: user, at })),
+      )
+        .then(Tasking.reopen({ task, at }).responds({ task: reopened }))
+        .then(respond({ task: reopened }))
+        .named("silent"),
+      where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
-export const CancelTask = endpoint("/tasks/cancel", ({ session, task, user, at, canceled }) =>
-  receive({ session, task }).then(
-    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
-      .then(Tasking.cancel({ task, at }).responds({ task: canceled }))
-      .then(respond({ task: canceled }))
-      .named("success"),
-    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-  ),
+export const CancelTask = endpoint(
+  "/tasks/cancel",
+  ({ session, task, user, at, canceled, recipient }) =>
+    receive({ session, task }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        somebodyMustHearAbout({ task, actor: user, at }),
+      )
+        .then(Tasking.cancel({ task, at }).responds({ task: canceled, assignee: recipient }))
+        .then(
+          TaskNotifying.notify({
+            recipient,
+            kind: "task-canceled",
+            subject: task,
+            link: task,
+            at,
+          }),
+        )
+        .then(respond({ task: canceled }))
+        .named("announced"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        no(somebodyMustHearAbout({ task, actor: user, at })),
+      )
+        .then(Tasking.cancel({ task, at }).responds({ task: canceled }))
+        .then(respond({ task: canceled }))
+        .named("silent"),
+      where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
-export const UncancelTask = endpoint("/tasks/uncancel", ({ session, task, user, at, uncanceled }) =>
-  receive({ session, task }).then(
-    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
-      .then(Tasking.uncancel({ task, at }).responds({ task: uncanceled }))
-      .then(respond({ task: uncanceled }))
-      .named("success"),
-    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-  ),
+export const UncancelTask = endpoint(
+  "/tasks/uncancel",
+  ({ session, task, user, at, uncanceled, recipient }) =>
+    receive({ session, task }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        somebodyMustHearAbout({ task, actor: user, at }),
+      )
+        .then(Tasking.uncancel({ task, at }).responds({ task: uncanceled, assignee: recipient }))
+        .then(
+          TaskNotifying.notify({
+            recipient,
+            kind: "task-uncanceled",
+            subject: task,
+            link: task,
+            at,
+          }),
+        )
+        .then(respond({ task: uncanceled }))
+        .named("announced"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayActOnTask({ user, task, at }),
+        no(somebodyMustHearAbout({ task, actor: user, at })),
+      )
+        .then(Tasking.uncancel({ task, at }).responds({ task: uncanceled }))
+        .then(respond({ task: uncanceled }))
+        .named("silent"),
+      where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const DeleteTask = endpoint("/tasks/delete", ({ session, task, user, at }) =>

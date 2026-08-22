@@ -47,6 +47,13 @@ const row = (doc: TaskDoc, at: Date) => ({
   updatedAt: doc.updatedAt,
 });
 
+/** What retime, complete, reopen, cancel, and uncancel answer. */
+type SettledTask = { task: string; assignee?: string };
+
+/** Answers the recorded assignee, or nothing at all when the task carries none. */
+const answering = (assignee: string | null): { assignee?: string } =>
+  assignee === null ? {} : { assignee };
+
 export class MongoTaskingConcept {
   private readonly tasks: Collection<TaskDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
@@ -70,6 +77,16 @@ export class MongoTaskingConcept {
     const doc = await this.tasks.findOne({ _id: task });
     if (doc === null) throw new TaskNotFound(task);
     return doc;
+  }
+
+  /** Applies a change and reads back the task as it stands once that change is recorded. */
+  async #record(task: string, change: Partial<TaskDoc>, fallback: TaskDoc): Promise<TaskDoc> {
+    const settled = await this.tasks.findOneAndUpdate(
+      { _id: task },
+      { $set: change },
+      { returnDocument: "after" },
+    );
+    return settled ?? fallback;
   }
 
   async create({
@@ -137,14 +154,14 @@ export class MongoTaskingConcept {
     startsAt: string;
     endsAt: string;
     at: Date;
-  }) {
+  }): Promise<SettledTask> {
     const doc = await this.#require(task);
     if (doc.state === "CANCELED") throw new TaskCanceled(task);
     if (!wellFormedWindow(startsAt, endsAt)) {
       throw new TaskWindowInvalid("A task's window cannot end before it begins.");
     }
-    await this.tasks.updateOne({ _id: task }, { $set: { startsAt, endsAt, updatedAt: at } });
-    return { task };
+    const settled = await this.#record(task, { startsAt, endsAt, updatedAt: at }, doc);
+    return { task, ...answering(settled.assignee) };
   }
 
   async assign({ task, assignee, at }: { task: string; assignee: string; at: Date }) {
@@ -161,36 +178,36 @@ export class MongoTaskingConcept {
     return { task };
   }
 
-  async complete({ task, at }: { task: string; at: Date }) {
+  async complete({ task, at }: { task: string; at: Date }): Promise<SettledTask> {
     const doc = await this.#require(task);
     if (doc.state === "DONE") throw new TaskAlreadyComplete(task);
     if (doc.state === "CANCELED") throw new TaskCanceled(task);
-    await this.tasks.updateOne({ _id: task }, { $set: { state: "DONE", updatedAt: at } });
-    return { task };
+    const settled = await this.#record(task, { state: "DONE", updatedAt: at }, doc);
+    return { task, ...answering(settled.assignee) };
   }
 
-  async reopen({ task, at }: { task: string; at: Date }) {
+  async reopen({ task, at }: { task: string; at: Date }): Promise<SettledTask> {
     const doc = await this.#require(task);
     if (doc.state === "OPEN") throw new TaskNotComplete(task);
     if (doc.state === "CANCELED") throw new TaskCanceled(task);
-    await this.tasks.updateOne({ _id: task }, { $set: { state: "OPEN", updatedAt: at } });
-    return { task };
+    const settled = await this.#record(task, { state: "OPEN", updatedAt: at }, doc);
+    return { task, ...answering(settled.assignee) };
   }
 
-  async cancel({ task, at }: { task: string; at: Date }) {
+  async cancel({ task, at }: { task: string; at: Date }): Promise<SettledTask> {
     const doc = await this.#require(task);
     if (doc.state === "DONE") throw new TaskAlreadyComplete(task);
     if (doc.state === "CANCELED") throw new TaskAlreadyCanceled(task);
-    await this.tasks.updateOne({ _id: task }, { $set: { state: "CANCELED", updatedAt: at } });
-    return { task };
+    const settled = await this.#record(task, { state: "CANCELED", updatedAt: at }, doc);
+    return { task, ...answering(settled.assignee) };
   }
 
-  async uncancel({ task, at }: { task: string; at: Date }) {
+  async uncancel({ task, at }: { task: string; at: Date }): Promise<SettledTask> {
     const doc = await this.#require(task);
     if (doc.state === "OPEN") throw new TaskNotCanceled(task);
     if (doc.state === "DONE") throw new TaskAlreadyComplete(task);
-    await this.tasks.updateOne({ _id: task }, { $set: { state: "OPEN", updatedAt: at } });
-    return { task };
+    const settled = await this.#record(task, { state: "OPEN", updatedAt: at }, doc);
+    return { task, ...answering(settled.assignee) };
   }
 
   async delete({ task, at: _at }: { task: string; at: Date }): Promise<Record<string, never>> {

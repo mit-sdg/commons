@@ -30,6 +30,14 @@ linearize membership loss: when a member leaves or is removed, open tasks in tha
 list assigned to that person are immediately released, while completed and
 canceled tasks retain their recorded history.
 
+The successful Grouping action independently triggers the task notification
+rules: adding a person tells that person, and removing another member tells the
+person removed, each once and each with its own email, however many tasks the
+release above happens to touch. A member who removes themselves is told nothing,
+exactly as leaving tells nobody. The task notifications page states the kinds,
+the email, and the reading rules. These paths share no transaction: the roster
+change stays committed if a follow-up fails, and the announcement is simply lost.
+
 [Tasks.lists.MyLists](reaction:Tasks.lists.MyLists) forms
 [the lists a profile belongs to](former:Tasks.lists.theTaskListsOf), and
 [Tasks.lists.GetList](reaction:Tasks.lists.GetList) forms

@@ -195,3 +195,145 @@ for (const [floor, make] of floors) {
     });
   });
 }
+
+describe("Notifying instances on MongoDB", () => {
+  const forumAnd = async () => {
+    const db = await testDb();
+    return {
+      forum: new MongoNotifyingConcept(db, "Notifying"),
+      tasks: new MongoNotifyingConcept(db, "TaskNotifying"),
+    };
+  };
+
+  test("a notification written through one instance is invisible to the other", async () => {
+    const { forum, tasks } = await forumAnd();
+    const { notification } = await forum.notify({
+      recipient: "mara",
+      kind: "reply",
+      subject: "p1",
+      link: "/p1",
+      at,
+    });
+
+    expect((await forum._getInbox({ recipient: "mara" })).map((n) => n.notification)).toEqual([
+      notification,
+    ]);
+    expect(await tasks._getInbox({ recipient: "mara" })).toEqual([]);
+    expect(await forum._getUnreadCount({ recipient: "mara" })).toEqual({ count: 1 });
+    expect(await tasks._getUnreadCount({ recipient: "mara" })).toEqual({ count: 0 });
+    expect(await forum._hasFor({ user: "mara", subject: "p1" })).toEqual({ notified: true });
+    expect(await tasks._hasFor({ user: "mara", subject: "p1" })).toEqual({ notified: false });
+  });
+
+  test("an identifier minted by one instance is not found by the other", async () => {
+    const { forum, tasks } = await forumAnd();
+    const { notification } = await forum.notify({
+      recipient: "mara",
+      kind: "reply",
+      subject: "p1",
+      link: "/p1",
+      at,
+    });
+
+    expect(
+      await refusalOf(() => tasks.markRead({ notification, recipient: "mara" })),
+    ).toBeInstanceOf(refusalErrors.NotificationNotFound);
+    expect(
+      await refusalOf(() => tasks.dismiss({ notification, recipient: "mara" })),
+    ).toBeInstanceOf(refusalErrors.NotificationNotFound);
+    expect((await forum._getInbox({ recipient: "mara" })).map((n) => n.read)).toEqual([false]);
+  });
+
+  test("markAllRead, dismiss, and clearSubject reach only the acting instance", async () => {
+    const { forum, tasks } = await forumAnd();
+    const forumRow = await forum.notify({
+      recipient: "mara",
+      kind: "reply",
+      subject: "p1",
+      link: "/p1",
+      at,
+    });
+    const taskRow = await tasks.notify({
+      recipient: "mara",
+      kind: "assigned",
+      subject: "p1",
+      link: "/p1",
+      at,
+    });
+
+    expect(await forum.markAllRead({ recipient: "mara" })).toEqual({ recipient: "mara" });
+    expect(await forum._getUnreadCount({ recipient: "mara" })).toEqual({ count: 0 });
+    expect(await tasks._getUnreadCount({ recipient: "mara" })).toEqual({ count: 1 });
+
+    expect(await tasks.dismiss({ notification: taskRow.notification, recipient: "mara" })).toEqual({
+      notification: taskRow.notification,
+    });
+    expect((await forum._getInbox({ recipient: "mara" })).map((n) => n.notification)).toEqual([
+      forumRow.notification,
+    ]);
+
+    expect(await tasks.clearSubject({ subject: "p1" })).toEqual({ subject: "p1" });
+    expect(await forum._hasFor({ user: "mara", subject: "p1" })).toEqual({ notified: true });
+  });
+
+  test("identities stay globally unique and each instance keeps its own newest-first order", async () => {
+    const { forum, tasks } = await forumAnd();
+    const earlier = new Date("2026-07-13T00:00:00Z");
+    const later = new Date("2026-07-13T01:00:00Z");
+
+    const forumFirst = await forum.notify({
+      recipient: "mara",
+      kind: "reply",
+      subject: "p1",
+      link: "/p1",
+      at: earlier,
+    });
+    const taskFirst = await tasks.notify({
+      recipient: "mara",
+      kind: "assigned",
+      subject: "t1",
+      link: "/t1",
+      at: later,
+    });
+    const forumSecond = await forum.notify({
+      recipient: "mara",
+      kind: "mention",
+      subject: "p2",
+      link: "/p2",
+      at: later,
+    });
+    const taskSecond = await tasks.notify({
+      recipient: "mara",
+      kind: "retimed",
+      subject: "t2",
+      link: "/t2",
+      at: later,
+    });
+    const forumThird = await forum.notify({
+      recipient: "mara",
+      kind: "reply",
+      subject: "p3",
+      link: "/p3",
+      at: later,
+    });
+
+    const identities = [
+      forumFirst.notification,
+      forumSecond.notification,
+      forumThird.notification,
+      taskFirst.notification,
+      taskSecond.notification,
+    ];
+    expect(new Set(identities).size).toBe(identities.length);
+
+    expect((await forum._getInbox({ recipient: "mara" })).map((n) => n.notification)).toEqual([
+      forumThird.notification,
+      forumSecond.notification,
+      forumFirst.notification,
+    ]);
+    expect((await tasks._getInbox({ recipient: "mara" })).map((n) => n.notification)).toEqual([
+      taskSecond.notification,
+      taskFirst.notification,
+    ]);
+  });
+});

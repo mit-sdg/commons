@@ -38,6 +38,12 @@ import {
   invitationMailText,
   notificationMailHtml,
   notificationMailText,
+  taskListMailHtml,
+  taskListMailSubject,
+  taskListMailText,
+  taskMailHtml,
+  taskMailSubject,
+  taskMailText,
 } from "./computations/mail-content.ts";
 
 const registrations = {
@@ -70,6 +76,7 @@ const registrations = {
   Submitting: submitting,
   Subscribing: subscribing,
   Tagging: tagging,
+  TaskNotifying: notifying,
   Tasking: tasking,
   Tracking: tracking,
   Trashing: trashing,
@@ -81,6 +88,12 @@ export const learningConcepts = conceptSet(registrations, {
   notificationMailHtml,
   notificationMailText,
   setupSecretMatches,
+  taskListMailHtml,
+  taskListMailSubject,
+  taskListMailText,
+  taskMailHtml,
+  taskMailSubject,
+  taskMailText,
 });
 
 export const concepts = learningConcepts.concepts;

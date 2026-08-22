@@ -10,5 +10,8 @@ export const notifying = registerConcept({
   refusals: {
     NOTIFICATION_NOT_FOUND: NotificationNotFound,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoNotifyingConcept(database) },
+  floors: {
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoNotifyingConcept(database, instance),
+  },
 });

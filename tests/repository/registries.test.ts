@@ -121,6 +121,9 @@ describe("application-owned design integration", () => {
       "Revising.Item is Posting.Post",
       "Grouping.Person is Authenticating.User",
       "Tagging.Target is Posting.Post",
+      "TaskNotifying.Link is TaskSubject",
+      "TaskNotifying.Person is Authenticating.User",
+      "TaskNotifying.Subject is TaskSubject",
       "Tasking.Assignee is Authenticating.User",
       "Tasking.Scope is Grouping.Group",
       "Tracking.Item is Posting.Post",
@@ -133,11 +136,13 @@ describe("application-owned design integration", () => {
     const source = readFileSync(join(root, "design/application.md"), "utf8");
     const inventory = source.match(/^```instances\n([\s\S]*?)^```$/m)?.[1] ?? "";
     const bindings: { external: string; owner: string }[] = [];
+    const definitions: Record<string, string> = {};
     let instance = "";
     for (const line of inventory.split("\n")) {
       const declaration = line.match(/^instantiate (\w+)(?: as (\w+))?(?: with)?$/);
       if (declaration) {
         instance = declaration[2] ?? (declaration[1] as string);
+        if (declaration[2]) definitions[declaration[2]] = declaration[1] as string;
         continue;
       }
       const binding = line.match(/^ {2}([A-Z]\w*) is ([A-Z]\w*(?:\.[A-Z]\w*)?)$/);
@@ -151,9 +156,9 @@ describe("application-owned design integration", () => {
     expect(bindings.some(({ external }) => external === "Authenticating.User")).toBe(false);
     expect(source).toContain("concrete MailKey");
     expect(source).toContain("concrete Lockable");
+    expect(source).toContain("concrete TaskSubject");
     expect(source).toContain("Authenticating owns the application's person identity.");
 
-    const definitions: Record<string, string> = {};
     const definitionOf = (name: string) => definitions[name] ?? name;
     for (const { external, owner } of bindings) {
       const [concept, type] = external.split(".");
