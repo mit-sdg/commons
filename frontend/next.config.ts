@@ -1,9 +1,12 @@
 import { join } from "node:path";
 import type { NextConfig } from "next";
+import { allowedDevOriginsFromPublicOrigin } from "./deployment-config.ts";
 
 const BACKEND_ORIGIN = process.env.BACKEND_ORIGIN ?? "http://localhost:4000";
+const ALLOWED_DEV_ORIGINS = allowedDevOriginsFromPublicOrigin(process.env.PUBLIC_ORIGIN);
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ALLOWED_DEV_ORIGINS,
   output: "standalone",
   outputFileTracingRoot: join(__dirname, ".."),
   experimental: {
