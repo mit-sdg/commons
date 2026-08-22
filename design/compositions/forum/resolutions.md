@@ -19,3 +19,10 @@ After permanent purge,
 [Forum.resolutions.PurgedPostClearsResolutions](reaction:Forum.resolutions.PurgedPostClearsResolutions) clears the post's own question
 resolution and every other question currently using that post as its answer. Each clear is independent; partial fan-out can remain if a later action
 faults. Ordinary author deletion does not trigger this resolution cleanup.
+
+```endpoints
+Forum.resolutions.AcceptAnswer at /resolutions/accept
+Forum.resolutions.ClearResolution at /resolutions/clear
+Forum.resolutions.GetResolution at /resolutions/get
+Forum.resolutions.IsResolved at /resolutions/isResolved
+```

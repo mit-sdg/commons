@@ -32,3 +32,10 @@ leaf node. That cleanup does not include revision history, notifications,
 categories, or accepted-answer state; moderation purge has separate rules for
 those owners. The delete and cleanup are not transactional, so a failed cleanup
 can leave state that public post reads no longer expose.
+
+```endpoints
+Forum.posts.DeletePost at /posts/delete
+Forum.posts.EditPost at /posts/edit
+Forum.posts.GetPost at /posts/get
+Forum.posts.PostsByAuthor at /posts/byAuthor
+```

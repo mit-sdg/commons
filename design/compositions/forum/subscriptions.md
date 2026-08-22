@@ -23,3 +23,11 @@ subscription to that conversation. Purging a reply leaves the conversation's
 subscriptions intact. The Trashing transition remains committed if root lookup
 or cleanup faults, so retained subscribers can still receive later reply
 notifications.
+
+```endpoints
+Forum.subscriptions.IsSubscribed at /subscriptions/isSubscribed
+Forum.subscriptions.MySubscriptions at /subscriptions/mine
+Forum.subscriptions.Subscribe at /subscriptions/subscribe
+Forum.subscriptions.Subscribers at /subscriptions/subscribers
+Forum.subscriptions.Unsubscribe at /subscriptions/unsubscribe
+```

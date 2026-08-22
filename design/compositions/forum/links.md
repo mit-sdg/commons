@@ -15,3 +15,8 @@ changes derived backlinks. Ordinary deletion and permanent purge clear links
 from the deleted source and references to it from every other source. Those
 cleanup actions are independent of the post transition, so a fault can leave
 unexposed link state until repaired.
+
+```endpoints
+Forum.links.Backlinks at /links/backlinks
+Forum.links.Forward at /links/forward
+```

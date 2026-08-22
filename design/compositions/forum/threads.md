@@ -28,3 +28,9 @@ record exists and is not trashed. Thread presentation forms
 [the current thread](former:Forum.threads.theThread) by applying [intact](view:Forum.threads.intact) to each node
 independently: a missing or trashed root is omitted without automatically hiding
 intact replies.
+
+```endpoints
+Forum.threads.CreateThread at /threads/create
+Forum.threads.ForItem at /threads/forItem
+Forum.threads.ReplyToThread at /threads/reply
+```

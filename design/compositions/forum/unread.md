@@ -16,3 +16,10 @@ Thread placement registers roots and replies; ordinary deletion and permanent
 purge unregister a post and remove all of its seen marks. Trash alone does not
 unregister it. These reads do not apply post readability, so they can continue
 to return the identity of a trashed post until it is restored or purged.
+
+```endpoints
+Forum.unread.MarkAllSeen at /unread/markAllSeen
+Forum.unread.MarkSeen at /unread/markSeen
+Forum.unread.UnreadCount at /unread/count
+Forum.unread.UnreadList at /unread/list
+```

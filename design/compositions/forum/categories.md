@@ -20,3 +20,13 @@ Permanent purge triggers [Forum.categories.PurgeUnassignsCategory](reaction:Foru
 the post currently has a category. Ordinary author deletion does not trigger
 that rule, so it can leave a Categorizing record that public post reads no
 longer expose.
+
+```endpoints
+Forum.categories.AssignCategory at /categories/assign
+Forum.categories.CategoryForItem at /categories/forItem
+Forum.categories.CategoryItems at /categories/items
+Forum.categories.CreateCategory at /categories/create
+Forum.categories.DeleteCategory at /categories/delete
+Forum.categories.ListCategories at /categories/list
+Forum.categories.UnassignCategory at /categories/unassign
+```

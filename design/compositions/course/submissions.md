@@ -19,3 +19,10 @@ Attempt creation belongs to assignment behavior. Submitting treats assignment
 and artifact identities as opaque, so these reads report retained attempt state
 without revalidating publication, release, dates, or the current existence of an
 artifact.
+
+```endpoints
+Course.submissions.Attempts at /submissions/attempts
+Course.submissions.ForAssignment at /submissions/for-assignment
+Course.submissions.ForStudent at /submissions/for-student
+Course.submissions.Latest at /submissions/latest
+```

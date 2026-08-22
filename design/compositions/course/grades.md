@@ -46,3 +46,23 @@ items, and any grade cells at read time rather than storing a snapshot. The narr
 presentation fields available to gradebook-oriented reads.
 [Course.grades.GradesExport](reaction:Course.grades.GradesExport) has the same staff guard but is currently a
 placeholder that returns an empty CSV string.
+
+```endpoints
+Course.grades.GradesAddCriterion at /grades/add-criterion
+Course.grades.GradesConfigureItem at /grades/configure-item
+Course.grades.GradesCriterionScores at /grades/criterion-scores
+Course.grades.GradesExcuse at /grades/excuse
+Course.grades.GradesExport at /grades/export
+Course.grades.GradesForItem at /grades/for-item
+Course.grades.GradesForMe at /grades/for-me
+Course.grades.GradesForStudent at /grades/for-student
+Course.grades.GradesGradebook at /grades/gradebook
+Course.grades.GradesItem at /grades/item
+Course.grades.GradesRecord at /grades/record
+Course.grades.GradesRelease at /grades/release
+Course.grades.GradesReleaseItem at /grades/release-item
+Course.grades.GradesRemoveCriterion at /grades/remove-criterion
+Course.grades.GradesRetract at /grades/retract
+Course.grades.GradesReviseCriterion at /grades/revise-criterion
+Course.grades.GradesScoreCriterion at /grades/score-criterion
+```

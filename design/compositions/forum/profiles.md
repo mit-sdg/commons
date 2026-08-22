@@ -22,3 +22,12 @@ user and username as `null` rather than exposing candidates.
 The [user-page former](former:Forum.profiles.theUserPage) combines current account, profile, post, and thread
 state without copying it into another owner. A missing optional profile face
 does not create a replacement identity or grant access.
+
+```endpoints
+Forum.profiles.GetProfile at /profiles/get
+Forum.profiles.ResolvePublicUser at /users/resolve
+Forum.profiles.SearchUsers at /users/search
+Forum.profiles.SetAvatar at /profiles/setAvatar
+Forum.profiles.SetBio at /profiles/setBio
+Forum.profiles.SetDisplayName at /profiles/setDisplayName
+```

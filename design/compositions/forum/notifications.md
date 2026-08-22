@@ -45,3 +45,12 @@ this inbox join does not apply public-readability filtering. Permanent purge
 triggers [Forum.notifications.PurgeClearsNotifications](reaction:Forum.notifications.PurgeClearsNotifications), which deletes every
 notification whose subject is that post. Ordinary author deletion can remove
 the post presentation but does not run this subject cleanup.
+
+```endpoints
+Forum.notifications.Dismiss at /notifications/dismiss
+Forum.notifications.ListNotifications at /notifications/list
+Forum.notifications.MarkAllRead at /notifications/markAllRead
+Forum.notifications.MarkRead at /notifications/markRead
+Forum.notifications.ReadInbox at /notifications/inbox
+Forum.notifications.UnreadCount at /notifications/unreadCount
+```

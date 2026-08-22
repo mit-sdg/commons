@@ -29,3 +29,12 @@ as `NOT_FOUND`.
 Permanent purge triggers [Forum.revisions.PurgeClearsRevisions](reaction:Forum.revisions.PurgeClearsRevisions) and removes the
 complete history. Ordinary author deletion does not, so unexposed revision rows
 can remain after Posting has gone.
+
+```endpoints
+Forum.revisions.GetRevision at /revisions/get
+Forum.revisions.LatestRevision at /revisions/latest
+Forum.revisions.ListRevisions at /revisions/list
+Forum.revisions.ModeratorGetRevision at /moderation/revisions/get
+Forum.revisions.ModeratorLatestRevision at /moderation/revisions/latest
+Forum.revisions.ModeratorListRevisions at /moderation/revisions/list
+```

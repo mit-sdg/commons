@@ -23,3 +23,15 @@ its acknowledgement and disclosure state.
 Writing or disclosing a note, and reaching its follow-up time, sends no
 notification or email. The follow-up timestamp is retained for readers rather
 than used as a scheduler.
+
+```endpoints
+Course.notes.Acknowledge at /students/notes/acknowledge
+Course.notes.Archive at /students/notes/archive
+Course.notes.NotesList at /students/notes/list
+Course.notes.NotesVisible at /students/notes/visible
+Course.notes.Resolve at /students/notes/resolve
+Course.notes.Restore at /students/notes/restore
+Course.notes.Revise at /students/notes/revise
+Course.notes.StudentsDetail at /students/detail
+Course.notes.Write at /students/notes/write
+```

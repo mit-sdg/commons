@@ -21,3 +21,9 @@ These public reads assemble current state from its owners. Category, tag, lock,
 resolution, post, or conversation changes therefore affect the next read
 without rebuilding a stored feed. Optional category state can be absent within
 a retained result.
+
+```endpoints
+Forum.feed.GetThread at /threads/get
+Forum.feed.ListActivity at /threads/activity
+Forum.feed.ListLatest at /threads/latest
+```

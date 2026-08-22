@@ -46,3 +46,22 @@ Seat changes commit before role and assignment follow-ups. If a grant,
 revocation, or release fan-out refuses or faults, the roster transition remains
 and there is no shared transaction; a later qualifying transition is needed to
 trigger the rule again.
+
+```endpoints
+Course.roster.ClaimSeat at /roster/claim-seat
+Course.roster.ClassConfiguration at /roster/class
+Course.roster.ConfigureClass at /roster/configure-class
+Course.roster.DropSeat at /roster/drop
+Course.roster.DroppedRoster at /roster/dropped
+Course.roster.ImportPreview at /roster/import-preview
+Course.roster.ImportSeats at /roster/import
+Course.roster.LinkUser at /roster/link-user
+Course.roster.MoveSection at /roster/move-section
+Course.roster.PendingRoster at /roster/pending
+Course.roster.ReinstateSeat at /roster/reinstate
+Course.roster.RosterList at /roster/list
+Course.roster.RosterMe at /roster/me
+Course.roster.SectionsCreate at /roster/sections/create
+Course.roster.SectionsList at /roster/sections/list
+Course.roster.SectionsUpdate at /roster/sections/update
+```

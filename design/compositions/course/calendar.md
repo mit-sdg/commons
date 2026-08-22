@@ -16,3 +16,10 @@ with [current assignment, grade-item, and late-day counts](former:Course.calenda
 These are read-time joins over Rostering, Assigning, Itemizing, and Banking.
 Publishing or archiving work, changing seats or grade items, and canceling late
 days changes the next result without copied dashboard state.
+
+```endpoints
+Course.calendar.CalendarMe at /calendar/me
+Course.calendar.CalendarStaff at /calendar/staff
+Course.calendar.LmsMe at /lms/me
+Course.calendar.LmsStaffDashboard at /lms/staff-dashboard
+```

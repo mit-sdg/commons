@@ -27,8 +27,8 @@
     "stack:mongo": "bun scripts/stack-mongo.ts"
   },
   "dependencies": {
-    "@mit-sdg/sync-engine": "1.0.0-beta.15",
-    "@mit-sdg/sync-engine-http": "1.0.0-beta.15",
+    "@mit-sdg/sync-engine": "1.0.0-beta.16",
+    "@mit-sdg/sync-engine-http": "1.0.0-beta.16",
     "marked": "^18.0.6",
     "mongodb": "^7.2.0",
     "nodemailer": "^9.0.5",

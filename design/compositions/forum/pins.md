@@ -16,3 +16,11 @@ After permanent post purge, [Forum.pins.PurgeClearsPins](reaction:Forum.pins.Pur
 every scope.
 Ordinary Posting deletion requests the same idempotent clear through post
 cleanup.
+
+```endpoints
+Forum.pins.IsPinned at /pins/isPinned
+Forum.pins.PinItem at /pins/pin
+Forum.pins.PinsForScope at /pins/forScope
+Forum.pins.SetPinPriority at /pins/setPriority
+Forum.pins.UnpinItem at /pins/unpin
+```

@@ -34,3 +34,20 @@ with current post, rendering, placement, and individual flag details without sto
 [Forum.moderation.FlagsForTarget](reaction:Forum.moderation.FlagsForTarget) forms
 [all flags retained for one readable post](former:Forum.moderation.theFlagsOn).
 Both reads hide their results from non-moderators as `NOT_FOUND`.
+
+```endpoints
+Forum.moderation.FlagRaise at /flags/raise
+Forum.moderation.FlagResolve at /flags/resolve
+Forum.moderation.FlagsForTarget at /flags/forTarget
+Forum.moderation.FlagsOpen at /flags/open
+Forum.moderation.GetTrashedPost at /moderation/posts/get
+Forum.moderation.IsLocked at /locks/isLocked
+Forum.moderation.IsTrashed at /trash/isTrashed
+Forum.moderation.LockList at /locks/list
+Forum.moderation.LockTarget at /locks/lock
+Forum.moderation.PurgeItem at /trash/purge
+Forum.moderation.RestoreItem at /trash/restore
+Forum.moderation.TrashItem at /trash/trash
+Forum.moderation.TrashList at /trash/list
+Forum.moderation.UnlockTarget at /locks/unlock
+```

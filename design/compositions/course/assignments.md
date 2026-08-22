@@ -46,3 +46,17 @@ post creation, the post remains because the two owners are not transactional.
 Submission checks only that the caller has an active student seat. The supplied
 assignment need not exist, be published, be released to that student, be open by
 date, or accept submissions.
+
+```endpoints
+Course.assignments.Archive at /assignments/archive
+Course.assignments.ClearDueOverride at /assignments/clear-due-override
+Course.assignments.CreateDraft at /assignments/create-draft
+Course.assignments.ForMe at /assignments/for-me
+Course.assignments.GetAssignment at /assignments/get
+Course.assignments.Publish at /assignments/publish
+Course.assignments.Revise at /assignments/revise
+Course.assignments.SetDueOverride at /assignments/set-due-override
+Course.assignments.StaffList at /assignments/staff-list
+Course.assignments.StaffSummary at /assignments/staff-summary
+Course.assignments.Submit at /assignments/submit
+```

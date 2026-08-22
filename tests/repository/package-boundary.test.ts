@@ -34,10 +34,10 @@ describe("the engine package boundary", () => {
     }
   });
 
-  test("matching beta.15 packages and public commands are pinned", () => {
+  test("matching beta.16 packages and public commands are pinned", () => {
     const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-    expect(manifest.dependencies["@mit-sdg/sync-engine"]).toBe("1.0.0-beta.15");
-    expect(manifest.dependencies["@mit-sdg/sync-engine-http"]).toBe("1.0.0-beta.15");
+    expect(manifest.dependencies["@mit-sdg/sync-engine"]).toBe("1.0.0-beta.16");
+    expect(manifest.dependencies["@mit-sdg/sync-engine-http"]).toBe("1.0.0-beta.16");
     expect(manifest.scripts.artifacts).toBe("sync-engine artifacts");
     expect(manifest.scripts["design:check"]).toBe(
       "sync-engine check-design design/concepts/*.md design/compositions/*/*.md design/application.md",
@@ -55,9 +55,9 @@ describe("the engine package boundary", () => {
     const installedHttp = JSON.parse(
       readFileSync(join(root, "node_modules/@mit-sdg/sync-engine-http/package.json"), "utf8"),
     );
-    expect(installedCore.version).toBe("1.0.0-beta.15");
+    expect(installedCore.version).toBe("1.0.0-beta.16");
     expect(installedCore.bin["sync-engine"]).toBe("./dist/command/main.js");
-    expect(installedHttp.version).toBe("1.0.0-beta.15");
+    expect(installedHttp.version).toBe("1.0.0-beta.16");
 
     for (const home of coreHomes)
       expect(import.meta.resolve(`@mit-sdg/sync-engine/${home}`)).toBeTruthy();

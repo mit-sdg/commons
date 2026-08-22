@@ -18,3 +18,8 @@ SMTP failure leaves Mailing's message pending for a later attempt.
 [the current invitations](former:Access.invitations.theInvitations), including addresses,
 timestamps, send counts, and claiming accounts. It never returns the temporary
 credentials, and a non-administrator receives `FORBIDDEN` rather than the list.
+
+```endpoints
+Access.invitations.Invite at /invitations/invite
+Access.invitations.List at /invitations/list
+```

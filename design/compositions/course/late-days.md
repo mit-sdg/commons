@@ -26,3 +26,17 @@ Banking owns balance and per-item limits but treats an assignment as opaque.
 Applying or changing days does not check that the assignment exists, is released
 to the learner, remains open, or accepts late days. Each request changes only Banking, so a later course-state change leaves that
 use in place.
+
+```endpoints
+Course.lateDays.Apply at /late-days/apply
+Course.lateDays.Balance at /late-days/balance
+Course.lateDays.Cancel at /late-days/cancel
+Course.lateDays.Change at /late-days/change
+Course.lateDays.ConfigurePolicy at /late-days/configure-policy
+Course.lateDays.ForAssignment at /late-days/for-assignment
+Course.lateDays.Grant at /late-days/grant
+Course.lateDays.List at /late-days/list
+Course.lateDays.Policy at /late-days/policy
+Course.lateDays.StaffCancel at /late-days/staff-cancel
+Course.lateDays.StaffChange at /late-days/staff-change
+```

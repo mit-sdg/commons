@@ -18,3 +18,10 @@ Trash filters a bookmark without removing it, so restore makes it visible again.
 After permanent purge, [Forum.bookmarks.PurgeClearsBookmarks](reaction:Forum.bookmarks.PurgeClearsBookmarks) removes the post
 from every user's list. Ordinary Posting deletion requests the same idempotent
 clear through post cleanup, and neither path can restore the bookmarks later.
+
+```endpoints
+Forum.bookmarks.IsSaved at /bookmarks/isSaved
+Forum.bookmarks.ListBookmarks at /bookmarks/list
+Forum.bookmarks.SaveBookmark at /bookmarks/save
+Forum.bookmarks.UnsaveBookmark at /bookmarks/unsave
+```

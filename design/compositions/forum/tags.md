@@ -22,3 +22,13 @@ After permanent post purge, [Forum.tags.PurgeClearsTags](reaction:Forum.tags.Pur
 application on that post. Ordinary
 Posting deletion asks Tagging for the same idempotent clear through post cleanup.
 Commons offers no operation that deletes an entire tag definition.
+
+```endpoints
+Forum.tags.AddTag at /tags/add
+Forum.tags.CreateTag at /tags/create
+Forum.tags.ListTags at /tags/list
+Forum.tags.RemoveTag at /tags/remove
+Forum.tags.TagTargets at /tags/targets
+Forum.tags.TagTargetsByName at /tags/targetsByName
+Forum.tags.TagsForTarget at /tags/forTarget
+```

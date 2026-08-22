@@ -46,3 +46,13 @@ repairs the sole administrator on login by granting a dedicated role containing
 only `roster:manage`; it does not broaden later multi-account administrators.
 These owner actions are not one transaction, so a later failure does not remove
 the account.
+
+```endpoints
+Access.auth.AcceptInvitation at /auth/accept-invitation
+Access.auth.ChangePassword at /auth/changePassword
+Access.auth.Login at /auth/login
+Access.auth.Logout at /auth/logout
+Access.auth.Me at /auth/me
+Access.auth.RegisterInitialAdmin at /setup/register-admin
+Access.auth.Resolve at /auth/resolve
+```

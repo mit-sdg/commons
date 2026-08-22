@@ -28,3 +28,13 @@ these reads creates a role or grant.
 Roster behavior can also change the built-in course-staff grant. Because those
 changes go through Roling, they immediately affect the same policy decisions as
 administrator-managed grants and leave unrelated roles untouched.
+
+```endpoints
+Access.roles.DefineRole at /roles/define
+Access.roles.GrantRole at /roles/grant
+Access.roles.RevokeRole at /roles/revoke
+Access.roles.RoleCan at /roles/can
+Access.roles.RoleGet at /roles/get
+Access.roles.RoleList at /roles/list
+Access.roles.RolesForUser at /roles/forUser
+```

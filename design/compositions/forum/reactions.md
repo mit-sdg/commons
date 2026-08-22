@@ -15,3 +15,9 @@ Trash retains reactions and only hides the read, so restore reveals them again.
 Permanent purge triggers [Forum.reactions.PurgeClearsReactions](reaction:Forum.reactions.PurgeClearsReactions) to remove every
 reaction on the post. Ordinary Posting deletion requests the same idempotent
 clear through post cleanup.
+
+```endpoints
+Forum.reactions.AddReaction at /reactions/add
+Forum.reactions.ReactionsForTarget at /reactions/forTarget
+Forum.reactions.RemoveReaction at /reactions/remove
+```

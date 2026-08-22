@@ -72,3 +72,11 @@ taskListExtension(key: String, members: Strings) : String
 taskListMembers(key: String) : Strings
   Reads back the set of profiles a canonical task-list name stands for.
 ```
+
+```endpoints
+Tasks.lists.ExtendList at /tasklists/extend
+Tasks.lists.GetList at /tasklists/get
+Tasks.lists.LeaveList at /tasklists/leave
+Tasks.lists.MyLists at /tasklists/mine
+Tasks.lists.OpenList at /tasklists/open
+```

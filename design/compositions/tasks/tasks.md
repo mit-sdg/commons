@@ -41,3 +41,14 @@ every list, keeping only the lists that profile still belongs to, which is why a
 list a profile leaves takes its tasks out of that profile's view. Both reads
 carry an overdue answer decided by the current moment against the task's end
 rather than by any stored flag.
+
+```endpoints
+Tasks.tasks.AssignTask at /tasks/assign
+Tasks.tasks.CancelTask at /tasks/cancel
+Tasks.tasks.CompleteTask at /tasks/complete
+Tasks.tasks.CreateTask at /tasks/create
+Tasks.tasks.MyTasks at /tasks/mine
+Tasks.tasks.ReleaseTask at /tasks/release
+Tasks.tasks.ReopenTask at /tasks/reopen
+Tasks.tasks.RetimeTask at /tasks/retime
+```

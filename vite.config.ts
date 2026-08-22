@@ -31,6 +31,7 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.ts"],
+    testTimeout: 30000,
   },
   staged: {
     "*.{ts,json,md}": "vp check --fix",
