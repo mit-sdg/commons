@@ -869,11 +869,18 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 - `reopen(task: Task, at: Date) : return (task: Task)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_NOT_COMPLETE`: Only a completed task can be reopened.
-  - Refuses `TASK_CANCELED`: A canceled task can no longer be changed.
+  - Refuses `TASK_CANCELED`: Only a completed task can be reopened; uncancel this task instead.
 - `cancel(task: Task, at: Date) : return (task: Task)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_ALREADY_COMPLETE`: This task is already complete.
   - Refuses `TASK_ALREADY_CANCELED`: This task is already canceled.
+- `uncancel(task: Task, at: Date) : return (task: Task)`
+  - Refuses `TASK_NOT_FOUND`: There is no such task.
+  - Refuses `TASK_NOT_CANCELED`: Only a canceled task can be uncanceled, and this task is already outstanding.
+  - Refuses `TASK_ALREADY_COMPLETE`: This task is already complete.
+- `delete(task: Task, at: Date) : return ()`
+  - Refuses `TASK_NOT_FOUND`: There is no such task.
+  - Refuses `TASK_NOT_SETTLED`: Only a completed or canceled task can be deleted; complete or cancel this task first.
 
 #### Queries
 
@@ -2549,7 +2556,7 @@ Former "the task lists of (user) at (at)" — inputs (user, at); bindings (list,
 ### the tasks assigned to (user) at (at)
 
 Authored path: `Tasks.tasks.theTasksAssignedTo`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 38.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 76.
 
 ```former
 Former "the tasks assigned to (user) at (at)" — inputs (user, at); bindings (task, title, details, startsAt, endsAt, state, overdue, createdAt, updatedAt, list, listTitle); promises exactly one record — forms:
@@ -2574,7 +2581,7 @@ Former "the tasks assigned to (user) at (at)" — inputs (user, at); bindings (t
 ### the tasks in (list) at (at)
 
 Authored path: `Tasks.tasks.theTasksIn`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 36.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 74.
 
 ```former
 Former "the tasks in (list) at (at)" — inputs (list, at); bindings (task, title, details, startsAt, endsAt, assignee, state, overdue, createdAt, updatedAt); promises exactly one record — forms:
@@ -10552,8 +10559,8 @@ then
 ### Tasks.tasks.AssignTask:assignee-outside-list
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 21.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 43.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 81.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -10570,8 +10577,8 @@ then
 ### Tasks.tasks.AssignTask:forbidden
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 21.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 43.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 81.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -10586,8 +10593,8 @@ then
 ### Tasks.tasks.AssignTask:success
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 21.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 43.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 81.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -10604,8 +10611,8 @@ then
 ### Tasks.tasks.AssignTask:success#2
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 21.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 43.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 81.
 
 ```reaction
 when Tasking.assign (assignee, at, task, result.task: assigned), asked by Tasks.tasks.AssignTask:success
@@ -10618,8 +10625,8 @@ then
 ### Tasks.tasks.CancelTask:forbidden
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 32.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 44.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 82.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
@@ -10634,8 +10641,8 @@ then
 ### Tasks.tasks.CancelTask:success
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 32.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 44.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 82.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
@@ -10650,8 +10657,8 @@ then
 ### Tasks.tasks.CancelTask:success#2
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 32.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 44.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 82.
 
 ```reaction
 when Tasking.cancel (at, task, result.task: canceled), asked by Tasks.tasks.CancelTask:success
@@ -10664,8 +10671,8 @@ then
 ### Tasks.tasks.CompleteTask:forbidden
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 45.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 83.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
@@ -10680,8 +10687,8 @@ then
 ### Tasks.tasks.CompleteTask:success
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 45.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 83.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
@@ -10696,8 +10703,8 @@ then
 ### Tasks.tasks.CompleteTask:success#2
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 45.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 83.
 
 ```reaction
 when Tasking.complete (at, task, result.task: completed), asked by Tasks.tasks.CompleteTask:success
@@ -10710,8 +10717,8 @@ then
 ### Tasks.tasks.CreateTask:forbidden
 
 Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 8.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 46.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 84.
 
 ```reaction
 when RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
@@ -10725,8 +10732,8 @@ then
 ### Tasks.tasks.CreateTask:success
 
 Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 8.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 46.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 84.
 
 ```reaction
 when RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
@@ -10741,8 +10748,8 @@ then
 ### Tasks.tasks.CreateTask:success#2
 
 Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 8.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 46.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 84.
 
 ```reaction
 when Tasking.create (assignee: null, at, details, endsAt, scope: list, startsAt, title, task), asked by Tasks.tasks.CreateTask:success
@@ -10752,11 +10759,57 @@ then
   RequestBoundary.respond (requestId, task)
 ```
 
+### Tasks.tasks.DeleteTask:forbidden
+
+Authored path: `Tasks.tasks.DeleteTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 52.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 85.
+
+```reaction
+when RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Tasks.tasks.DeleteTask:success
+
+Authored path: `Tasks.tasks.DeleteTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 52.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 85.
+
+```reaction
+when RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
+then
+  Tasking.delete (at, task)
+```
+
+### Tasks.tasks.DeleteTask:success#2
+
+Authored path: `Tasks.tasks.DeleteTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 52.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 85.
+
+```reaction
+when Tasking.delete (at, task), asked by Tasks.tasks.DeleteTask:success
+where
+  earlier, RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
+then
+  RequestBoundary.respond (ok: true, requestId)
+```
+
 ### Tasks.tasks.DescribeTask:forbidden
 
 Authored path: `Tasks.tasks.DescribeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 15.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 47.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 86.
 
 ```reaction
 when RequestBoundary.request (details, path: "/tasks/describe", requestId, session, task, title)
@@ -10771,8 +10824,8 @@ then
 ### Tasks.tasks.DescribeTask:success
 
 Authored path: `Tasks.tasks.DescribeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 15.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 47.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 86.
 
 ```reaction
 when RequestBoundary.request (details, path: "/tasks/describe", requestId, session, task, title)
@@ -10787,8 +10840,8 @@ then
 ### Tasks.tasks.DescribeTask:success#2
 
 Authored path: `Tasks.tasks.DescribeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 15.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 47.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 86.
 
 ```reaction
 when Tasking.describe (at, details, task, title, result.task: described), asked by Tasks.tasks.DescribeTask:success
@@ -10801,8 +10854,8 @@ then
 ### Tasks.tasks.MyTasks
 
 Authored path: `Tasks.tasks.MyTasks`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 48.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 75.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 87.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/mine", requestId, session)
@@ -10816,8 +10869,8 @@ then
 ### Tasks.tasks.ReleaseTask:forbidden
 
 Authored path: `Tasks.tasks.ReleaseTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 24.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 49.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 88.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/release", requestId, session, task)
@@ -10832,8 +10885,8 @@ then
 ### Tasks.tasks.ReleaseTask:success
 
 Authored path: `Tasks.tasks.ReleaseTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 24.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 49.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 88.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/release", requestId, session, task)
@@ -10848,8 +10901,8 @@ then
 ### Tasks.tasks.ReleaseTask:success#2
 
 Authored path: `Tasks.tasks.ReleaseTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 24.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 49.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 88.
 
 ```reaction
 when Tasking.release (at, task, result.task: released), asked by Tasks.tasks.ReleaseTask:success
@@ -10862,8 +10915,8 @@ then
 ### Tasks.tasks.ReopenTask:forbidden
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 29.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 50.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
@@ -10878,8 +10931,8 @@ then
 ### Tasks.tasks.ReopenTask:success
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 29.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 50.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
@@ -10894,8 +10947,8 @@ then
 ### Tasks.tasks.ReopenTask:success#2
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 29.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 50.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 89.
 
 ```reaction
 when Tasking.reopen (at, task, result.task: reopened), asked by Tasks.tasks.ReopenTask:success
@@ -10908,8 +10961,8 @@ then
 ### Tasks.tasks.RetimeTask:forbidden
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 18.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 51.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 90.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
@@ -10924,8 +10977,8 @@ then
 ### Tasks.tasks.RetimeTask:success
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 18.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 51.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 90.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
@@ -10940,8 +10993,8 @@ then
 ### Tasks.tasks.RetimeTask:success#2
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 18.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 51.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 90.
 
 ```reaction
 when Tasking.retime (at, endsAt, startsAt, task, result.task: retimed), asked by Tasks.tasks.RetimeTask:success
@@ -10949,6 +11002,52 @@ where
   earlier, RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
 then
   RequestBoundary.respond (requestId, task: retimed)
+```
+
+### Tasks.tasks.UncancelTask:forbidden
+
+Authored path: `Tasks.tasks.UncancelTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 91.
+
+```reaction
+when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Tasks.tasks.UncancelTask:success
+
+Authored path: `Tasks.tasks.UncancelTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 91.
+
+```reaction
+when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
+then
+  Tasking.uncancel (at, task)
+```
+
+### Tasks.tasks.UncancelTask:success#2
+
+Authored path: `Tasks.tasks.UncancelTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 91.
+
+```reaction
+when Tasking.uncancel (at, task, result.task: uncanceled), asked by Tasks.tasks.UncancelTask:success
+where
+  earlier, RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
+then
+  RequestBoundary.respond (requestId, task: uncanceled)
 ```
 
 ## Endpoint input contracts
@@ -11118,11 +11217,13 @@ not listed here have no explicit input contract.
 - `/tasks/cancel` — requires `session`, `task`
 - `/tasks/complete` — requires `session`, `task`
 - `/tasks/create` — requires `session`, `list`, `title`, `startsAt`, `endsAt`; fills `details` with "" when absent
+- `/tasks/delete` — requires `session`, `task`
 - `/tasks/describe` — requires `session`, `task`, `title`; fills `details` with "" when absent
 - `/tasks/mine` — requires `session`
 - `/tasks/release` — requires `session`, `task`
 - `/tasks/reopen` — requires `session`, `task`
 - `/tasks/retime` — requires `endsAt`, `session`, `startsAt`, `task`
+- `/tasks/uncancel` — requires `session`, `task`
 - `/threads/create` — requires `content`, `session`
 - `/threads/forItem` — requires `item`
 - `/threads/get` — requires `conversation`

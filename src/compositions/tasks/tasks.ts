@@ -244,6 +244,30 @@ export const CancelTask = endpoint("/tasks/cancel", ({ session, task, user, at, 
   ),
 );
 
+export const UncancelTask = endpoint("/tasks/uncancel", ({ session, task, user, at, uncanceled }) =>
+  receive({ session, task }).then(
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
+      .then(Tasking.uncancel({ task, at }).responds({ task: uncanceled }))
+      .then(respond({ task: uncanceled }))
+      .named("success"),
+    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
+export const DeleteTask = endpoint("/tasks/delete", ({ session, task, user, at }) =>
+  receive({ session, task }).then(
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
+      .then(Tasking.delete({ task, at }))
+      .then(respond({ ok: true }))
+      .named("success"),
+    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
 export const MyTasks = endpoint("/tasks/mine", ({ session, user, at }) =>
   receive({ session })
     .where(now(at), activeUser({ session }).is({ user }))

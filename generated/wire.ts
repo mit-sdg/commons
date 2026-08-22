@@ -2098,6 +2098,16 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TASK_WINDOW_INVALID" };
   };
+  "/tasks/delete": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["delete"]>[0], ["task"]>]>>;
+    };
+    output: {
+      "ok": true;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TASK_NOT_FOUND" | "TASK_NOT_SETTLED" };
+  };
   "/tasks/describe": {
     input: {
       "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>[0], ["details"]>>;
@@ -2162,6 +2172,16 @@ export type CommonsWire = {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>>, ["task"]>>;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TASK_CANCELED" | "TASK_NOT_FOUND" | "TASK_WINDOW_INVALID" };
+  };
+  "/tasks/uncancel": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["uncancel"]>[0], ["task"]>]>>;
+    };
+    output: {
+      "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["uncancel"]>>, ["task"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TASK_ALREADY_COMPLETE" | "TASK_NOT_CANCELED" | "TASK_NOT_FOUND" };
   };
   "/threads/activity": {
     input: Record<string, never>;
@@ -4337,6 +4357,15 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
+  "/tasks/delete": {
+    input: {
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["delete"]>[0], ["task"]>]>>;
+    };
+    output: {
+      "ok": true;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
   "/tasks/describe": {
     input: {
       "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>[0], ["details"]>>;
@@ -4395,6 +4424,15 @@ export type CommonsWireHttp = {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>>, ["task"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/tasks/uncancel": {
+    input: {
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["uncancel"]>[0], ["task"]>]>>;
+    };
+    output: {
+      "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["uncancel"]>>, ["task"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/threads/activity": {
     input: Record<string, never>;

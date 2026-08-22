@@ -3,8 +3,10 @@ import {
   TaskAlreadyCanceled,
   TaskAlreadyComplete,
   TaskCanceled,
+  TaskNotCanceled,
   TaskNotComplete,
   TaskNotFound,
+  TaskNotSettled,
   TaskWindowInvalid,
 } from "./errors.ts";
 
@@ -181,6 +183,21 @@ export class MongoTaskingConcept {
     if (doc.state === "CANCELED") throw new TaskAlreadyCanceled(task);
     await this.tasks.updateOne({ _id: task }, { $set: { state: "CANCELED", updatedAt: at } });
     return { task };
+  }
+
+  async uncancel({ task, at }: { task: string; at: Date }) {
+    const doc = await this.#require(task);
+    if (doc.state === "OPEN") throw new TaskNotCanceled(task);
+    if (doc.state === "DONE") throw new TaskAlreadyComplete(task);
+    await this.tasks.updateOne({ _id: task }, { $set: { state: "OPEN", updatedAt: at } });
+    return { task };
+  }
+
+  async delete({ task, at: _at }: { task: string; at: Date }): Promise<Record<string, never>> {
+    const doc = await this.#require(task);
+    if (doc.state === "OPEN") throw new TaskNotSettled(task);
+    await this.tasks.deleteOne({ _id: task });
+    return {};
   }
 
   async _getTask({ task, at }: { task: string; at: Date }) {

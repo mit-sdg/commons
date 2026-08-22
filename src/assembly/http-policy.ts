@@ -103,6 +103,8 @@ export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategor
     TASK_ALREADY_CANCELED: "CONFLICT",
     TASK_ALREADY_COMPLETE: "CONFLICT",
     TASK_NOT_COMPLETE: "CONFLICT",
+    TASK_NOT_CANCELED: "CONFLICT",
+    TASK_NOT_SETTLED: "CONFLICT",
   },
 );
 

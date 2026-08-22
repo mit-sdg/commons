@@ -566,4 +566,146 @@ describe("collaborative task lists management", () => {
       }),
     ).toEqual({ error: "TASK_CANCELED" });
   });
+
+  test("a member uncancels a canceled task, keeping its window, text, and assignee", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_uncancel");
+    const noah = await actor(app, "noah_uncancel");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Uncancel List",
+    });
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
+    });
+
+    const { task } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list,
+      title: "Revivable Task",
+      details: "the original details",
+      ...WINDOW,
+    });
+    await call(app, "/tasks/assign", { session: mara.session, task, assignee: noah.user });
+    expect(await call(app, "/tasks/cancel", { session: mara.session, task })).toEqual({ task });
+
+    const canceledPage = await call(app, "/tasklists/get", { session: mara.session, list });
+    expect((canceledPage.list as { openTasks: number }).openTasks).toBe(0);
+
+    // Any member, not only the one who canceled, may take the cancellation back.
+    expect(await call(app, "/tasks/uncancel", { session: noah.session, task })).toEqual({ task });
+
+    const page = await call(app, "/tasklists/get", { session: mara.session, list });
+    expect(page.tasks).toEqual([
+      expect.objectContaining({
+        task,
+        title: "Revivable Task",
+        details: "the original details",
+        startsAt: WINDOW.startsAt,
+        endsAt: WINDOW.endsAt,
+        assignee: noah.user,
+        state: "OPEN",
+      }),
+    ]);
+    // The list counts the revived task as outstanding work again.
+    expect((page.list as { openTasks: number }).openTasks).toBe(1);
+  });
+
+  test("a member deletes settled tasks, and they disappear from the list and from /tasks/mine", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_delete");
+    const noah = await actor(app, "noah_delete");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Delete List",
+    });
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
+    });
+
+    const settled: Record<string, string> = {};
+    for (const title of ["Done Task", "Canceled Task", "Open Task"]) {
+      const { task } = await call(app, "/tasks/create", {
+        session: mara.session,
+        list,
+        title,
+        ...WINDOW,
+      });
+      await call(app, "/tasks/assign", { session: mara.session, task, assignee: noah.user });
+      settled[title] = String(task);
+    }
+    await call(app, "/tasks/complete", { session: mara.session, task: settled["Done Task"] });
+    await call(app, "/tasks/cancel", { session: mara.session, task: settled["Canceled Task"] });
+
+    // An outstanding task cannot be removed in one step, and survives the attempt.
+    expect(
+      await call(app, "/tasks/delete", { session: mara.session, task: settled["Open Task"] }),
+    ).toEqual({ error: "TASK_NOT_SETTLED" });
+
+    expect(
+      await call(app, "/tasks/delete", { session: noah.session, task: settled["Done Task"] }),
+    ).toEqual({ ok: true });
+    expect(
+      await call(app, "/tasks/delete", { session: mara.session, task: settled["Canceled Task"] }),
+    ).toEqual({ ok: true });
+
+    const page = await call(app, "/tasklists/get", { session: mara.session, list });
+    expect(page.tasks).toEqual([
+      expect.objectContaining({ task: settled["Open Task"], title: "Open Task", state: "OPEN" }),
+    ]);
+
+    const mine = await call(app, "/tasks/mine", { session: noah.session });
+    expect(mine.tasks).toEqual([
+      expect.objectContaining({ task: settled["Open Task"], title: "Open Task" }),
+    ]);
+  });
+
+  test("delete and uncancel refuse a non-member, and a repeated delete", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_del_ref");
+    const outsider = await actor(app, "outsider_del_ref");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Delete Refusals List",
+    });
+
+    const { task } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list,
+      title: "Settled Task",
+      ...WINDOW,
+    });
+    await call(app, "/tasks/cancel", { session: mara.session, task });
+
+    expect(await call(app, "/tasks/uncancel", { session: outsider.session, task })).toEqual({
+      error: "FORBIDDEN",
+    });
+    expect(await call(app, "/tasks/delete", { session: outsider.session, task })).toEqual({
+      error: "FORBIDDEN",
+    });
+
+    // Tasking's own refusals still reach the caller distinguishably.
+    await call(app, "/tasks/uncancel", { session: mara.session, task });
+    expect(await call(app, "/tasks/uncancel", { session: mara.session, task })).toEqual({
+      error: "TASK_NOT_CANCELED",
+    });
+    await call(app, "/tasks/complete", { session: mara.session, task });
+    expect(await call(app, "/tasks/uncancel", { session: mara.session, task })).toEqual({
+      error: "TASK_ALREADY_COMPLETE",
+    });
+
+    expect(await call(app, "/tasks/delete", { session: mara.session, task })).toEqual({ ok: true });
+    // A second delete names a task no readable list holds, so it is answered exactly
+    // as a non-member is, with no distinguishable "already removed".
+    expect(await call(app, "/tasks/delete", { session: mara.session, task })).toEqual({
+      error: "FORBIDDEN",
+    });
+  });
 });

@@ -1,8 +1,13 @@
 import { describe, expect, test } from "bun:test";
+import { publicErrorMessage } from "./api.ts";
 import {
   defaultWindow,
   fromLocalInput,
   STATE_LABELS,
+  TASK_CONFLICT_MESSAGES,
+  type TaskAction,
+  taskErrorMessage,
+  taskStateActions,
   toLocalInput,
   windowLabel,
 } from "./tasks.ts";
@@ -50,5 +55,73 @@ describe("task helper utilities", () => {
     expect(STATE_LABELS.OPEN).toBe("Open");
     expect(STATE_LABELS.DONE).toBe("Done");
     expect(STATE_LABELS.CANCELED).toBe("Canceled");
+  });
+});
+
+describe("what a task's state allows", () => {
+  test("an open task keeps the actions it already had, and cannot be deleted", () => {
+    expect(taskStateActions("OPEN")).toEqual({
+      complete: true,
+      reopen: false,
+      uncancel: false,
+      cancel: true,
+      revise: true,
+      remove: false,
+    });
+  });
+
+  test("a done task adds removal to what it already had", () => {
+    expect(taskStateActions("DONE")).toEqual({
+      complete: false,
+      reopen: true,
+      uncancel: false,
+      cancel: false,
+      revise: true,
+      remove: true,
+    });
+  });
+
+  test("a canceled task offers uncancel and removal, and nothing else", () => {
+    expect(taskStateActions("CANCELED")).toEqual({
+      complete: false,
+      reopen: false,
+      uncancel: true,
+      cancel: false,
+      revise: false,
+      remove: true,
+    });
+  });
+});
+
+describe("task refusal messages", () => {
+  // The HTTP boundary projects every domain refusal onto one of five public
+  // categories, so TASK_NOT_SETTLED and friends never reach the browser.
+  // CONFLICT does, and only the caller knows which action produced it.
+  test("CONFLICT is explained by the action that produced it", () => {
+    const uncancel = taskErrorMessage("CONFLICT", "uncancel");
+    const remove = taskErrorMessage("CONFLICT", "remove");
+    const reopen = taskErrorMessage("CONFLICT", "reopen");
+    expect(uncancel).toContain("no longer canceled");
+    expect(remove).toContain("Only a finished or canceled task can be deleted");
+    expect(reopen).toContain("Only a completed task can be reopened");
+    expect(new Set([uncancel, remove, reopen]).size).toBe(3);
+  });
+
+  test("every action has a conflict sentence that points at a reload", () => {
+    for (const [action, message] of Object.entries(TASK_CONFLICT_MESSAGES)) {
+      expect(message.length).toBeGreaterThan(0);
+      expect(taskErrorMessage("CONFLICT", action as TaskAction)).toBe(message);
+    }
+  });
+
+  test("a repeated delete falls back to the shared permission sentence", () => {
+    // The task is looked up before its list is, so a second delete answers
+    // FORBIDDEN exactly as a non-member does. There is nothing kinder to say.
+    expect(taskErrorMessage("FORBIDDEN", "remove")).toBe(
+      publicErrorMessage("FORBIDDEN"),
+    );
+    expect(taskErrorMessage("SOMETHING_NEW", "remove")).toBe(
+      publicErrorMessage("SOMETHING_NEW"),
+    );
   });
 });

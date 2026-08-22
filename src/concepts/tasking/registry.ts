@@ -6,8 +6,10 @@ import {
   TaskAlreadyCanceled,
   TaskAlreadyComplete,
   TaskCanceled,
+  TaskNotCanceled,
   TaskNotComplete,
   TaskNotFound,
+  TaskNotSettled,
   TaskWindowInvalid,
 } from "./errors.ts";
 
@@ -18,8 +20,10 @@ export const tasking = registerConcept({
     TASK_ALREADY_CANCELED: TaskAlreadyCanceled,
     TASK_ALREADY_COMPLETE: TaskAlreadyComplete,
     TASK_CANCELED: TaskCanceled,
+    TASK_NOT_CANCELED: TaskNotCanceled,
     TASK_NOT_COMPLETE: TaskNotComplete,
     TASK_NOT_FOUND: TaskNotFound,
+    TASK_NOT_SETTLED: TaskNotSettled,
     TASK_WINDOW_INVALID: TaskWindowInvalid,
   },
   floors: {

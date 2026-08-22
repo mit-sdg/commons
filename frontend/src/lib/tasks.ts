@@ -1,4 +1,4 @@
-import { api, unwrap } from "@/lib/api";
+import { api, publicErrorMessage, unwrap } from "@/lib/api";
 import type { AssignedTask, TaskList, TaskListPage } from "@/lib/models";
 
 /** A `datetime-local` value for a moment, in the reader's own zone. */
@@ -52,6 +52,76 @@ export const STATE_LABELS: Record<string, string> = {
   DONE: "Done",
   CANCELED: "Canceled",
 };
+
+/**
+ * The refusals a task action can answer, said plainly. A refusal the tasks
+ * endpoints do not name falls through to the shared public sentence.
+ */
+/**
+ * What a refused task action means to a reader.
+ *
+ * The HTTP boundary projects every domain refusal onto one of five public
+ * categories (see `commonsPublicErrors`), so a concept's own code — say
+ * `TASK_NOT_SETTLED` — never reaches the browser; `CONFLICT` does. Every task
+ * refusal that is not a permission or shape problem therefore arrives as the
+ * same `CONFLICT`, and only the caller knows which action produced it. So the
+ * action supplies the sentence, and the category decides whether it is used.
+ *
+ * Each of these says the same thing: the card is showing a state the server no
+ * longer agrees with, and a reload settles it.
+ */
+export const TASK_CONFLICT_MESSAGES = {
+  complete:
+    "That task cannot be completed now. Reload to see its current state.",
+  reopen:
+    "Only a completed task can be reopened. Reload to see its current state.",
+  uncancel: "That task is no longer canceled. Reload to see its current state.",
+  cancel: "That task is no longer open. Reload to see its current state.",
+  assign:
+    "That task cannot be reassigned now. Reload to see its current state.",
+  remove:
+    "Only a finished or canceled task can be deleted. Reload to see its current state.",
+} as const;
+
+export type TaskAction = keyof typeof TASK_CONFLICT_MESSAGES;
+
+/**
+ * The message for a refused task action. `CONFLICT` gets the action's own
+ * sentence, because the category alone cannot say what went wrong; everything
+ * else already has a public sentence of its own.
+ */
+export function taskErrorMessage(error: string, action: TaskAction): string {
+  if (error === "CONFLICT") return TASK_CONFLICT_MESSAGES[action];
+  return publicErrorMessage(error);
+}
+
+export interface TaskStateActions {
+  complete: boolean;
+  reopen: boolean;
+  uncancel: boolean;
+  cancel: boolean;
+  /** Edit, retime, assign, and release: everything cancellation freezes. */
+  revise: boolean;
+  /** Permanent removal, which only a settled task allows. */
+  remove: boolean;
+}
+
+/**
+ * What a task's state alone allows. Membership, an assignee, and a known
+ * roster narrow these further; nothing narrows them back open.
+ */
+export function taskStateActions(state: string): TaskStateActions {
+  const done = state === "DONE";
+  const canceled = state === "CANCELED";
+  return {
+    complete: !done && !canceled,
+    reopen: done,
+    uncancel: canceled,
+    cancel: !done && !canceled,
+    revise: !canceled,
+    remove: done || canceled,
+  };
+}
 
 /** Create a new collaborative task list with an optional title and optional initial members. */
 export async function createTaskList(

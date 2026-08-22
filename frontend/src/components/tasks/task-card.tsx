@@ -8,11 +8,14 @@ import {
   MoreHorizontal,
   Pencil,
   RotateCcw,
+  Trash2,
+  Undo2,
   UserMinus,
   UserPlus,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { TaskMarkdown } from "@/components/tasks/task-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +38,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { UserName } from "@/components/user-name";
 import { api, publicErrorMessage } from "@/lib/api";
-import { fromLocalInput, toLocalInput, windowLabel } from "@/lib/tasks";
+import {
+  fromLocalInput,
+  type TaskAction,
+  taskErrorMessage,
+  taskStateActions,
+  toLocalInput,
+  windowLabel,
+} from "@/lib/tasks";
 import { cn } from "@/lib/utils";
 
 export interface TaskCardTask {
@@ -122,6 +132,7 @@ export function TaskCard({
   const [startsAt, setStartsAt] = useState(() => toLocalInput(task.startsAt));
   const [endsAt, setEndsAt] = useState(() => toLocalInput(task.endsAt));
   const [busy, setBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [selfExpanded, setSelfExpanded] = useState(false);
 
   const hasDetails = Boolean(task.details?.trim());
@@ -135,11 +146,14 @@ export function TaskCard({
   const canceled = task.state === "CANCELED";
   const done = task.state === "DONE";
   const assignee = task.assignee ? String(task.assignee) : null;
-  // A canceled task is read-only, which empties the overflow menu.
-  const hasActions = !canceled;
-  const assignable = !canceled && members !== undefined && members.length > 0;
+  // Every state has a primary action and at least one menu item: an open task
+  // completes, a done one reopens, a canceled one uncancels and can be removed.
+  const allowed = taskStateActions(task.state);
+  const assignable =
+    allowed.revise && members !== undefined && members.length > 0;
 
   async function run(
+    action: TaskAction,
     label: string,
     call: () => Promise<{ error: string } | object>,
   ) {
@@ -147,11 +161,32 @@ export function TaskCard({
     const result = await call();
     setBusy(false);
     if ("error" in result) {
-      toast.error(publicErrorMessage(result.error));
+      toast.error(taskErrorMessage(result.error, action));
     } else {
       toast.success(label);
       onChanged();
     }
+  }
+
+  /**
+   * Permanent removal. The card is about to vanish with the reload, so every
+   * panel and the dialog itself are closed before the page is told.
+   */
+  async function remove() {
+    setBusy(true);
+    const result = await api.tasks.delete({ task: id });
+    setBusy(false);
+    if ("error" in result) {
+      // A second delete is answered FORBIDDEN, exactly as a non-member is:
+      // the task must be found before its list can be read.
+      toast.error(taskErrorMessage(result.error, "remove"));
+      return;
+    }
+    setConfirmingDelete(false);
+    setEditing(false);
+    setRetiming(false);
+    toast.success("Task deleted");
+    onChanged();
   }
 
   async function saveDescription() {
@@ -269,7 +304,7 @@ export function TaskCard({
               value={assignee ?? ""}
               disabled={busy}
               onValueChange={(value) =>
-                run("Assignee changed", () =>
+                run("assign", "Assignee changed", () =>
                   api.tasks.assign({ task: id, assignee: value }),
                 )
               }
@@ -295,106 +330,156 @@ export function TaskCard({
 
         {/* One row at every width: the primary action, then everything else
             behind a single overflow menu. */}
-        {hasActions ? (
-          <div className="flex shrink-0 items-center justify-end gap-2">
-            {!canceled && !done ? (
-              <Button
-                size="sm"
-                disabled={busy}
-                onClick={() =>
-                  run("Task completed", () => api.tasks.complete({ task: id }))
-                }
-              >
-                <Check className="size-4" /> Mark complete
-              </Button>
-            ) : null}
-            {done ? (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={busy}
-                onClick={() =>
-                  run("Task reopened", () => api.tasks.reopen({ task: id }))
-                }
-              >
-                <RotateCcw className="size-4" /> Reopen
-              </Button>
-            ) : null}
+        <div className="flex shrink-0 items-center justify-end gap-2">
+          {allowed.complete ? (
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                run("complete", "Task completed", () =>
+                  api.tasks.complete({ task: id }),
+                )
+              }
+            >
+              <Check className="size-4" /> Mark complete
+            </Button>
+          ) : null}
+          {allowed.reopen ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                run("reopen", "Task reopened", () =>
+                  api.tasks.reopen({ task: id }),
+                )
+              }
+            >
+              <RotateCcw className="size-4" /> Reopen
+            </Button>
+          ) : null}
+          {allowed.uncancel ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                run("uncancel", "Task uncanceled", () =>
+                  api.tasks.uncancel({ task: id }),
+                )
+              }
+            >
+              <Undo2 className="size-4" /> Uncancel
+            </Button>
+          ) : null}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={busy}
-                  aria-label={`More actions for ${task.title}`}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                disabled={busy}
+                aria-label={`More actions for ${task.title}`}
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {allowed.revise ? (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setEditing((prev) => !prev);
+                    setRetiming(false);
+                  }}
                 >
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {!canceled ? (
+                  <Pencil /> Edit title and details
+                </DropdownMenuItem>
+              ) : null}
+              {allowed.revise ? (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setRetiming((prev) => !prev);
+                    setEditing(false);
+                  }}
+                >
+                  <CalendarClock /> Change the window
+                </DropdownMenuItem>
+              ) : null}
+              {allowed.revise && assignee ? (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    void run("assign", "Assignee released", () =>
+                      api.tasks.release({ task: id }),
+                    )
+                  }
+                >
+                  <UserMinus /> Release
+                </DropdownMenuItem>
+              ) : null}
+              {allowed.revise && !assignee && members !== undefined ? (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    void run("assign", "Task taken", () =>
+                      api.tasks.assign({ task: id, assignee: viewer }),
+                    )
+                  }
+                >
+                  <UserPlus /> Take it
+                </DropdownMenuItem>
+              ) : null}
+              {allowed.cancel ? (
+                <>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onSelect={() => {
-                      setEditing((prev) => !prev);
-                      setRetiming(false);
-                    }}
-                  >
-                    <Pencil /> Edit title and details
-                  </DropdownMenuItem>
-                ) : null}
-                {!canceled ? (
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      setRetiming((prev) => !prev);
-                      setEditing(false);
-                    }}
-                  >
-                    <CalendarClock /> Change the window
-                  </DropdownMenuItem>
-                ) : null}
-                {!canceled && assignee ? (
-                  <DropdownMenuItem
+                    variant="destructive"
                     onSelect={() =>
-                      void run("Assignee released", () =>
-                        api.tasks.release({ task: id }),
+                      void run("cancel", "Task canceled", () =>
+                        api.tasks.cancel({ task: id }),
                       )
                     }
                   >
-                    <UserMinus /> Release
+                    <Ban /> Cancel this task
                   </DropdownMenuItem>
-                ) : null}
-                {!canceled && !assignee && members !== undefined ? (
+                </>
+              ) : null}
+              {allowed.remove ? (
+                <>
+                  {/* A canceled task's menu holds nothing above this. */}
+                  {allowed.revise ? <DropdownMenuSeparator /> : null}
                   <DropdownMenuItem
-                    onSelect={() =>
-                      void run("Task taken", () =>
-                        api.tasks.assign({ task: id, assignee: viewer }),
-                      )
-                    }
+                    variant="destructive"
+                    onSelect={() => setConfirmingDelete(true)}
                   >
-                    <UserPlus /> Take it
+                    <Trash2 /> Delete permanently
                   </DropdownMenuItem>
-                ) : null}
-                {!canceled && !done ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onSelect={() =>
-                        void run("Task canceled", () =>
-                          api.tasks.cancel({ task: id }),
-                        )
-                      }
-                    >
-                      <Ban /> Cancel this task
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ) : null}
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      {/* The dialog lives outside the menu, so closing the menu on select
+          cannot take it down with it, and deleting the card takes both. */}
+      {allowed.remove ? (
+        <ConfirmAction
+          open={confirmingDelete}
+          onOpenChange={setConfirmingDelete}
+          title="Delete this task?"
+          description={
+            <>
+              <strong className="font-medium text-foreground">
+                {task.title}
+              </strong>{" "}
+              will be removed permanently, for everyone in the list. This cannot
+              be undone.
+            </>
+          }
+          confirmLabel="Delete permanently"
+          destructive
+          onConfirm={remove}
+        />
+      ) : null}
 
       {editing ? (
         <div className="mt-3 space-y-3 rounded-lg bg-muted/40 p-3">
