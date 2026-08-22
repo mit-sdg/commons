@@ -93,6 +93,10 @@ try {
   ]);
   if (ready) {
     console.log(`[stack] edge ready at ${edgeOrigin}`);
+    if (process.env.MONGODB_URL) {
+      const { seedDemoData } = await import("./seed.ts");
+      await seedDemoData(process.env.MONGODB_URL, edgeOrigin);
+    }
 
     const webEnv = { ...process.env };
     delete webEnv.PORT;
