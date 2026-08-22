@@ -50,10 +50,10 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Instances
 
-- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 35.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 37.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 36.
-  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 38.
+- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 33.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 35.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 34.
+  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 36.
 
 ### Authenticating
 
@@ -84,7 +84,7 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 40.
+- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 38.
 
 ### Banking
 
@@ -119,9 +119,9 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Instances
 
-- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 42.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 44.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 43.
+- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 40.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 42.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 41.
 
 ### Bookmarking
 
@@ -142,9 +142,9 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Instances
 
-- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 46.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 48.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 47.
+- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 44.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 46.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 45.
 
 ### Categorizing
 
@@ -175,8 +175,8 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 
 #### Instances
 
-- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 50.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 51.
+- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 48.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 49.
 
 ### Conversing
 
@@ -206,8 +206,8 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Instances
 
-- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 53.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 54.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 51.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 52.
 
 ### Flagging
 
@@ -229,9 +229,9 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Instances
 
-- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 56.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 58.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 57.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 54.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 56.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 55.
 
 ### Formatting
 
@@ -248,8 +248,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Instances
 
-- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 60.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 61.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 58.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 59.
 
 ### Grading
 
@@ -284,12 +284,12 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Instances
 
-- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 63.
-  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 67.
-  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 68.
-  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 64.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 66.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 65.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 61.
+  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 65.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 66.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 62.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 64.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 63.
 
 ### Grouping
 
@@ -324,8 +324,8 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Instances
 
-- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 70.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 71.
+- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 68.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 69.
 
 ### Inviting
 
@@ -347,8 +347,8 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Instances
 
-- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 73.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 74.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 71.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 72.
 
 ### Itemizing
 
@@ -377,8 +377,8 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Instances
 
-- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 76.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 77.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 74.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 75.
 
 ### Linking
 
@@ -398,9 +398,9 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Instances
 
-- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 79.
-  - `Source` is `Posting.Post` — [Commons application](../design/application.md), line 80.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 81.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 77.
+  - `Source` is `Posting.Post` — [Commons application](../design/application.md), line 78.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 79.
 
 ### Locking
 
@@ -420,8 +420,8 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Instances
 
-- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 83.
-  - `Target` is `Lockable` — [Commons application](../design/application.md), line 84.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 81.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 82.
 
 ### Mailing
 
@@ -443,8 +443,8 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Instances
 
-- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 86.
-  - `Key` is `MailKey` — [Commons application](../design/application.md), line 87.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 84.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 85.
 
 ### Notifying
 
@@ -468,14 +468,14 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Instances
 
-- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 89.
-  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 92.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 90.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 91.
-- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 94.
-  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 97.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 95.
-  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 96.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 87.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 90.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 88.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 89.
+- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 92.
+  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 95.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 93.
+  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 94.
 
 ### Noting
 
@@ -513,9 +513,9 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Instances
 
-- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 99.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 100.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 101.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 97.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 98.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 99.
 
 ### Pinning
 
@@ -538,9 +538,9 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Instances
 
-- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 103.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 104.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 105.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 101.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 102.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 103.
 
 ### Posting
 
@@ -563,8 +563,8 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Instances
 
-- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 107.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 108.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 105.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 106.
 
 ### Profiling
 
@@ -589,8 +589,8 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Instances
 
-- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 110.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 111.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 108.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 109.
 
 ### Reacting
 
@@ -613,9 +613,9 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Instances
 
-- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 113.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 114.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 115.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 111.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 112.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 113.
 
 ### Resolving
 
@@ -635,10 +635,10 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Instances
 
-- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 117.
-  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 120.
-  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 119.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 118.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 115.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 118.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 117.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 116.
 
 ### Revising
 
@@ -657,8 +657,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Instances
 
-- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 122.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 123.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 120.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 121.
 
 ### Roling
 
@@ -694,9 +694,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Instances
 
-- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 125.
-  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 127.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 126.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 123.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 125.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 124.
 
 ### Rostering
 
@@ -740,8 +740,8 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Instances
 
-- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 129.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 130.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 127.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 128.
 
 ### Sessioning
 
@@ -761,8 +761,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 132.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 133.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 130.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 131.
 
 ### Submitting
 
@@ -787,10 +787,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 135.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 138.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 137.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 136.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 133.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 136.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 135.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 134.
 
 ### Subscribing
 
@@ -812,9 +812,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 140.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 141.
-  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 142.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 138.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 139.
+  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 140.
 
 ### Tagging
 
@@ -842,8 +842,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 144.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 145.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 142.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 143.
 
 ### Tasking
 
@@ -894,9 +894,9 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 147.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 149.
-  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 148.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 145.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 147.
+  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 146.
 
 ### Tracking
 
@@ -920,10 +920,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 151.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 153.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 154.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 152.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 149.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 151.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 152.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 150.
 
 ### Trashing
 
@@ -945,9 +945,9 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Instances
 
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 156.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 158.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 157.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 154.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 156.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 155.
 
 ## Application types
 
@@ -959,17 +959,17 @@ Concrete types:
 
 ## Computations
 
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 206.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 203.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 212.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 209.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 215.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 224.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 218.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 221.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 233.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 227.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 230.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 198.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 195.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 204.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 201.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 207.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 216.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 210.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 213.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 225.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 219.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 222.
 
 ## Views
 
@@ -2591,7 +2591,7 @@ Former "the targets tagged with (name)" — inputs (name); bindings (tag, target
 ### the task notification presentation of (subject) of kind (kind) for (reader) at (at)
 
 Authored path: `Tasks.notifications.theTaskNotificationPresentationOf`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 161.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 105.
 
 ```former
 Former "the task notification presentation of (subject) of kind (kind) for (reader) at (at)" — inputs (subject, kind, reader, at); bindings (listTitle, list, title, details, startsAt, endsAt, state, assignee); promises exactly one record — forms:
@@ -2612,7 +2612,7 @@ Former "the task notification presentation of (subject) of kind (kind) for (read
 ### the task inbox of (user) at (at)
 
 Authored path: `Tasks.notifications.theTaskInboxOf`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 159.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 103.
 
 ```former
 Former "the task inbox of (user) at (at)" — inputs (user, at); bindings (notification, kind, subject, link, createdAt, read); promises exactly one record — forms:
@@ -2630,7 +2630,7 @@ Former "the task inbox of (user) at (at)" — inputs (user, at); bindings (notif
 ### the task list (list) at (at)
 
 Authored path: `Tasks.lists.theTaskList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 44.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 43.
 
 ```former
 Former "the task list (list) at (at)" — inputs (list, at); bindings (title, member, memberName, openTask); promises at most one record — forms:
@@ -2649,7 +2649,7 @@ Former "the task list (list) at (at)" — inputs (list, at); bindings (title, me
 ### the task lists of (user) at (at)
 
 Authored path: `Tasks.lists.theTaskListsOf`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 42.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 41.
 
 ```former
 Former "the task lists of (user) at (at)" — inputs (user, at); bindings (list, title, member, memberName, openTask); promises exactly one record — forms:
@@ -2668,7 +2668,7 @@ Former "the task lists of (user) at (at)" — inputs (user, at); bindings (list,
 ### the tasks assigned to (user) at (at)
 
 Authored path: `Tasks.tasks.theTasksAssignedTo`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 93.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 89.
 
 ```former
 Former "the tasks assigned to (user) at (at)" — inputs (user, at); bindings (task, title, details, startsAt, endsAt, state, overdue, createdAt, updatedAt, list, listTitle); promises exactly one record — forms:
@@ -2693,7 +2693,7 @@ Former "the tasks assigned to (user) at (at)" — inputs (user, at); bindings (t
 ### the tasks in (list) at (at)
 
 Authored path: `Tasks.tasks.theTasksIn`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 91.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 87.
 
 ```former
 Former "the tasks in (list) at (at)" — inputs (list, at); bindings (task, title, details, startsAt, endsAt, assignee, state, overdue, createdAt, updatedAt); promises exactly one record — forms:
@@ -10437,7 +10437,7 @@ then
 
 Authored path: `Tasks.lists.AddMember`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 16.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 48.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 47.
 
 ```reaction
 when RequestBoundary.request (candidate, list, path: "/tasklists/add-member", requestId, session)
@@ -10452,7 +10452,7 @@ then
 
 Authored path: `Tasks.lists.AddMember`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 16.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 48.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 47.
 
 ```reaction
 when RequestBoundary.request (candidate, list, path: "/tasklists/add-member", requestId, session)
@@ -10468,7 +10468,7 @@ then
 
 Authored path: `Tasks.lists.AddMember`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 16.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 48.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 47.
 
 ```reaction
 when Grouping.addMember (at, candidate, group: list, member: user, result.group: added), asked by Tasks.lists.AddMember:success
@@ -10482,7 +10482,7 @@ then
 
 Authored path: `Tasks.lists.CreateList`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 8.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 49.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 48.
 
 ```reaction
 when RequestBoundary.request (path: "/tasklists/create", requestId, session, title)
@@ -10497,7 +10497,7 @@ then
 
 Authored path: `Tasks.lists.CreateList`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 8.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 49.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 48.
 
 ```reaction
 when Grouping.create (at, creator: user, title, group: list), asked by Tasks.lists.CreateList
@@ -10510,8 +10510,8 @@ then
 ### Tasks.lists.GetList:forbidden
 
 Authored path: `Tasks.lists.GetList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 43.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 50.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 42.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 49.
 
 ```reaction
 when RequestBoundary.request (list, path: "/tasklists/get", requestId, session)
@@ -10525,8 +10525,8 @@ then
 ### Tasks.lists.GetList:success
 
 Authored path: `Tasks.lists.GetList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 43.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 50.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 42.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 49.
 
 ```reaction
 when RequestBoundary.request (list, path: "/tasklists/get", requestId, session)
@@ -10542,7 +10542,7 @@ then
 
 Authored path: `Tasks.lists.LeaveList`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 24.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 51.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 50.
 
 ```reaction
 when RequestBoundary.request (list, path: "/tasklists/leave", requestId, session)
@@ -10557,7 +10557,7 @@ then
 
 Authored path: `Tasks.lists.LeaveList`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 24.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 51.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 50.
 
 ```reaction
 when Grouping.leave (at, group: list, member: user, result.group: left), asked by Tasks.lists.LeaveList
@@ -10584,8 +10584,8 @@ then
 ### Tasks.lists.MyLists
 
 Authored path: `Tasks.lists.MyLists`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 41.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 52.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 40.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/tasklists/mine", requestId, session)
@@ -10600,7 +10600,7 @@ then
 
 Authored path: `Tasks.lists.RemoveMember`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 20.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 53.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 52.
 
 ```reaction
 when RequestBoundary.request (list, path: "/tasklists/remove-member", requestId, session, target)
@@ -10615,7 +10615,7 @@ then
 
 Authored path: `Tasks.lists.RemoveMember`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 20.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 53.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 52.
 
 ```reaction
 when Grouping.removeMember (at, group: list, member: user, target, result.group: removed), asked by Tasks.lists.RemoveMember
@@ -10643,7 +10643,7 @@ then
 
 Authored path: `Tasks.lists.RenameList`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 13.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 54.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 53.
 
 ```reaction
 when RequestBoundary.request (list, path: "/tasklists/rename", requestId, session, title)
@@ -10658,7 +10658,7 @@ then
 
 Authored path: `Tasks.lists.RenameList`.
 - Covered by [Task lists](../design/compositions/tasks/lists.md), line 13.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 54.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 53.
 
 ```reaction
 when Grouping.rename (at, group: list, member: user, title, result.group: renamed), asked by Tasks.lists.RenameList
@@ -10671,8 +10671,8 @@ then
 ### Tasks.notifications.Dismiss
 
 Authored path: `Tasks.notifications.Dismiss`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 199.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 217.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 133.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 148.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/tasknotifications/dismiss", requestId, session)
@@ -10685,8 +10685,8 @@ then
 ### Tasks.notifications.Dismiss#2
 
 Authored path: `Tasks.notifications.Dismiss`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 199.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 217.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 133.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 148.
 
 ```reaction
 when TaskNotifying.dismiss (notification, recipient: user, result.notification: dismissed), asked by Tasks.notifications.Dismiss
@@ -10699,8 +10699,8 @@ then
 ### Tasks.notifications.MarkAllRead
 
 Authored path: `Tasks.notifications.MarkAllRead`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 197.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 218.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 131.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 149.
 
 ```reaction
 when RequestBoundary.request (path: "/tasknotifications/markAllRead", requestId, session)
@@ -10713,8 +10713,8 @@ then
 ### Tasks.notifications.MarkAllRead#2
 
 Authored path: `Tasks.notifications.MarkAllRead`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 197.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 218.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 131.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 149.
 
 ```reaction
 when TaskNotifying.markAllRead (recipient: user, result.recipient), asked by Tasks.notifications.MarkAllRead
@@ -10727,8 +10727,8 @@ then
 ### Tasks.notifications.MarkRead
 
 Authored path: `Tasks.notifications.MarkRead`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 196.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 219.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 130.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 150.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/tasknotifications/markRead", requestId, session)
@@ -10741,8 +10741,8 @@ then
 ### Tasks.notifications.MarkRead#2
 
 Authored path: `Tasks.notifications.MarkRead`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 196.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 219.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 130.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 150.
 
 ```reaction
 when TaskNotifying.markRead (notification, recipient: user, result.notification: marked), asked by Tasks.notifications.MarkRead
@@ -10755,7 +10755,7 @@ then
 ### Tasks.notifications.MembershipGainNotifies
 
 Authored path: `Tasks.notifications.MembershipGainNotifies`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 20.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 16.
 
 ```reaction
 when Grouping.addMember (at, candidate, group: list)
@@ -10766,7 +10766,7 @@ then
 ### Tasks.notifications.MembershipLossNotifies
 
 Authored path: `Tasks.notifications.MembershipLossNotifies`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 26.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 20.
 
 ```reaction
 when Grouping.removeMember (at, member, target, group: list)
@@ -10779,7 +10779,7 @@ then
 ### Tasks.notifications.NotificationQueuesEmail
 
 Authored path: `Tasks.notifications.NotificationQueuesEmail`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 118.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 74.
 
 ```reaction
 when TaskNotifying.notify (at, kind, recipient, subject, notification)
@@ -10793,8 +10793,8 @@ then
 ### Tasks.notifications.ReadInbox
 
 Authored path: `Tasks.notifications.ReadInbox`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 158.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 220.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 102.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 151.
 
 ```reaction
 when RequestBoundary.request (path: "/tasknotifications/inbox", requestId, session)
@@ -10808,8 +10808,8 @@ then
 ### Tasks.notifications.UnreadCount
 
 Authored path: `Tasks.notifications.UnreadCount`.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 194.
-- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 221.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 128.
+- Covered by [Task notifications](../design/compositions/tasks/notifications.md), line 152.
 
 ```reaction
 when RequestBoundary.request (path: "/tasknotifications/unreadCount", requestId, session)
@@ -10824,7 +10824,7 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -10842,7 +10842,7 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -10858,7 +10858,7 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -10877,7 +10877,7 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
 
 ```reaction
 when Tasking.assign (assignee, at, task, result.task: assigned), asked by Tasks.tasks.AssignTask:self-assignment
@@ -10891,7 +10891,7 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -10910,7 +10910,7 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
 
 ```reaction
 when Tasking.assign (assignee, at, task, result.task: assigned), asked by Tasks.tasks.AssignTask:success
@@ -10922,7 +10922,7 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-assigned", link: task, recipient: assignee, subject: task), asked by Tasks.tasks.AssignTask:success#2
@@ -10937,7 +10937,7 @@ then
 
 Authored path: `Tasks.tasks.CancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
@@ -10954,7 +10954,7 @@ then
 
 Authored path: `Tasks.tasks.CancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
 
 ```reaction
 when Tasking.cancel (at, task, assignee: recipient, result.task: canceled), asked by Tasks.tasks.CancelTask:announced
@@ -10966,7 +10966,7 @@ then
 
 Authored path: `Tasks.tasks.CancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-canceled", link: task, recipient, subject: task), asked by Tasks.tasks.CancelTask:announced#2
@@ -10981,7 +10981,7 @@ then
 
 Authored path: `Tasks.tasks.CancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
@@ -10997,7 +10997,7 @@ then
 
 Authored path: `Tasks.tasks.CancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
@@ -11014,7 +11014,7 @@ then
 
 Authored path: `Tasks.tasks.CancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
 
 ```reaction
 when Tasking.cancel (at, task, result.task: canceled), asked by Tasks.tasks.CancelTask:silent
@@ -11028,7 +11028,7 @@ then
 
 Authored path: `Tasks.tasks.CompleteTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 100.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
@@ -11045,7 +11045,7 @@ then
 
 Authored path: `Tasks.tasks.CompleteTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 100.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
 
 ```reaction
 when Tasking.complete (at, task, assignee: recipient, result.task: completed), asked by Tasks.tasks.CompleteTask:announced
@@ -11057,7 +11057,7 @@ then
 
 Authored path: `Tasks.tasks.CompleteTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 100.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-completed", link: task, recipient, subject: task), asked by Tasks.tasks.CompleteTask:announced#2
@@ -11072,7 +11072,7 @@ then
 
 Authored path: `Tasks.tasks.CompleteTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 100.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
@@ -11088,7 +11088,7 @@ then
 
 Authored path: `Tasks.tasks.CompleteTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 100.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
@@ -11105,7 +11105,7 @@ then
 
 Authored path: `Tasks.tasks.CompleteTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 100.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
 
 ```reaction
 when Tasking.complete (at, task, result.task: completed), asked by Tasks.tasks.CompleteTask:silent
@@ -11119,7 +11119,7 @@ then
 
 Authored path: `Tasks.tasks.CreateTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 97.
 
 ```reaction
 when RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
@@ -11134,7 +11134,7 @@ then
 
 Authored path: `Tasks.tasks.CreateTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 97.
 
 ```reaction
 when RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
@@ -11150,7 +11150,7 @@ then
 
 Authored path: `Tasks.tasks.CreateTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 97.
 
 ```reaction
 when Tasking.create (assignee: null, at, details, endsAt, scope: list, startsAt, title, task), asked by Tasks.tasks.CreateTask:success
@@ -11163,8 +11163,8 @@ then
 ### Tasks.tasks.DeleteTask:forbidden
 
 Authored path: `Tasks.tasks.DeleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 69.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 65.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
@@ -11179,8 +11179,8 @@ then
 ### Tasks.tasks.DeleteTask:success
 
 Authored path: `Tasks.tasks.DeleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 69.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 65.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
@@ -11195,8 +11195,8 @@ then
 ### Tasks.tasks.DeleteTask:success#2
 
 Authored path: `Tasks.tasks.DeleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 69.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 65.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
 
 ```reaction
 when Tasking.delete (at, task), asked by Tasks.tasks.DeleteTask:success
@@ -11210,7 +11210,7 @@ then
 
 Authored path: `Tasks.tasks.DescribeTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
 
 ```reaction
 when RequestBoundary.request (details, path: "/tasks/describe", requestId, session, task, title)
@@ -11226,7 +11226,7 @@ then
 
 Authored path: `Tasks.tasks.DescribeTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
 
 ```reaction
 when RequestBoundary.request (details, path: "/tasks/describe", requestId, session, task, title)
@@ -11242,7 +11242,7 @@ then
 
 Authored path: `Tasks.tasks.DescribeTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
 
 ```reaction
 when Tasking.describe (at, details, task, title, result.task: described), asked by Tasks.tasks.DescribeTask:success
@@ -11255,8 +11255,8 @@ then
 ### Tasks.tasks.MyTasks
 
 Authored path: `Tasks.tasks.MyTasks`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 92.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 88.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 100.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/mine", requestId, session)
@@ -11271,7 +11271,7 @@ then
 
 Authored path: `Tasks.tasks.ReleaseTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 105.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/release", requestId, session, task)
@@ -11287,7 +11287,7 @@ then
 
 Authored path: `Tasks.tasks.ReleaseTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 105.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/release", requestId, session, task)
@@ -11303,7 +11303,7 @@ then
 
 Authored path: `Tasks.tasks.ReleaseTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 105.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when Tasking.release (at, task, result.task: released), asked by Tasks.tasks.ReleaseTask:success
@@ -11317,7 +11317,7 @@ then
 
 Authored path: `Tasks.tasks.ReopenTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 106.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
@@ -11334,7 +11334,7 @@ then
 
 Authored path: `Tasks.tasks.ReopenTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 106.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when Tasking.reopen (at, task, assignee: recipient, result.task: reopened), asked by Tasks.tasks.ReopenTask:announced
@@ -11346,7 +11346,7 @@ then
 
 Authored path: `Tasks.tasks.ReopenTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 106.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-reopened", link: task, recipient, subject: task), asked by Tasks.tasks.ReopenTask:announced#2
@@ -11361,7 +11361,7 @@ then
 
 Authored path: `Tasks.tasks.ReopenTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 106.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
@@ -11377,7 +11377,7 @@ then
 
 Authored path: `Tasks.tasks.ReopenTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 106.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
@@ -11394,7 +11394,7 @@ then
 
 Authored path: `Tasks.tasks.ReopenTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 106.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when Tasking.reopen (at, task, result.task: reopened), asked by Tasks.tasks.ReopenTask:silent
@@ -11408,7 +11408,7 @@ then
 
 Authored path: `Tasks.tasks.RetimeTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 107.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
@@ -11425,7 +11425,7 @@ then
 
 Authored path: `Tasks.tasks.RetimeTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 107.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when Tasking.retime (at, endsAt, startsAt, task, assignee: recipient, result.task: retimed), asked by Tasks.tasks.RetimeTask:announced
@@ -11437,7 +11437,7 @@ then
 
 Authored path: `Tasks.tasks.RetimeTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 107.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-retimed", link: task, recipient, subject: task), asked by Tasks.tasks.RetimeTask:announced#2
@@ -11452,7 +11452,7 @@ then
 
 Authored path: `Tasks.tasks.RetimeTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 107.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
@@ -11468,7 +11468,7 @@ then
 
 Authored path: `Tasks.tasks.RetimeTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 107.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
@@ -11485,7 +11485,7 @@ then
 
 Authored path: `Tasks.tasks.RetimeTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 107.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when Tasking.retime (at, endsAt, startsAt, task, result.task: retimed), asked by Tasks.tasks.RetimeTask:silent
@@ -11499,7 +11499,7 @@ then
 
 Authored path: `Tasks.tasks.UncancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 108.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
@@ -11516,7 +11516,7 @@ then
 
 Authored path: `Tasks.tasks.UncancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 108.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
 
 ```reaction
 when Tasking.uncancel (at, task, assignee: recipient, result.task: uncanceled), asked by Tasks.tasks.UncancelTask:announced
@@ -11528,7 +11528,7 @@ then
 
 Authored path: `Tasks.tasks.UncancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 108.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-uncanceled", link: task, recipient, subject: task), asked by Tasks.tasks.UncancelTask:announced#2
@@ -11543,7 +11543,7 @@ then
 
 Authored path: `Tasks.tasks.UncancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 108.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
@@ -11559,7 +11559,7 @@ then
 
 Authored path: `Tasks.tasks.UncancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 108.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
@@ -11576,7 +11576,7 @@ then
 
 Authored path: `Tasks.tasks.UncancelTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 108.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
 
 ```reaction
 when Tasking.uncancel (at, task, result.task: uncanceled), asked by Tasks.tasks.UncancelTask:silent

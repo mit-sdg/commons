@@ -7,10 +7,8 @@ it occupies, name at most one identity answerable for it, and say whether it is
 still outstanding, finished, or called off, so a deliverable and a time-blocked
 duty are read the same way and neither is lost when it is abandoned; work that
 is already settled can be struck out entirely instead of being kept forever, and
-a calling-off can be taken back so the work is outstanding again. Retiming the
-work, finishing it, reopening it, calling it off, and taking that calling-off back
-each also answer who is recorded answerable for the work once the change is made, so
-whoever keeps track of it does not have to ask again to find out.
+a calling-off can be taken back so the work is outstanding again. A change to
+the work also answers who is recorded answerable for it.
 
 ## Principle
 

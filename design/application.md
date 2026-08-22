@@ -24,12 +24,10 @@ concrete TaskSubject
 
 ## Instances
 
-Commons selects a same-name instance of every concept it registers, and one
-concept also carries a second: `Notifying` is registered twice, once under its
-own name for the forum and once as `TaskNotifying` for the task domain. An aliased instance is
-written `instantiate Notifying as TaskNotifying`, and the alias, not the
-definition name, is the instance every task-domain reaction, former, and
-endpoint binds to. Each instance supplies its external parameters inline.
+Commons selects a same-name instance of every concept it registers, except
+`Notifying`, which is registered twice: under its own name for the forum, and as
+`TaskNotifying` for the task domain. Each instance supplies its external
+parameters inline.
 
 ```instances
 instantiate Assigning with
@@ -183,16 +181,10 @@ members are Authenticating users. Tasking owns task identities within a list
 scope, so a task records its holding list as its Scope. Every member of a group
 holds equal power over the group and the tasks scoped to it.
 
-A task-domain notification is about the concrete `TaskSubject`, which has two
-valid owners exactly as `Lockable` does: a Grouping group when the event is a
-change of task-list membership, and a Tasking task when it is an assignment or
-a change to an assigned task. TaskNotifying carries that one identity as both
-the subject and the link of an entry, so a membership entry points at its list
-and a task entry points at its task. A reader's inbox tells the two apart by
-which read resolves the identity, the group read or the task read, never by
-parsing the entry's kind, so renaming a kind cannot misroute a row. The
-forum's Notifying instance is untouched: its subject and link remain Posting
-posts, and neither instance can see the other's entries.
+`TaskSubject` has two valid owners, as `Lockable` does: a Grouping group for a
+task-list membership event, and a Tasking task for an assignment or a change to
+an assigned task. TaskNotifying uses that identity as both the subject and the
+link of an entry.
 
 These bindings record application meaning. They do not copy state, validate an
 identity at runtime, or make one concept depend on another.
