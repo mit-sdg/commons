@@ -1,16 +1,15 @@
 # Deploy Commons
 
-Commons supports two production layouts: the SDG managed platform connected to
-an operator-managed MongoDB, or a Coolify Compose resource that includes its own
-MongoDB container. Both layouts run exactly one Commons backend process.
+Commons is deployed via [`platform.yaml`](platform.yaml) connected to a managed
+MongoDB instance. The platform deployment runs exactly one Commons backend
+process alongside the Next.js frontend.
 
-## Deploy on the SDG managed platform
+## Deploy on the platform
 
 [`platform.yaml`](platform.yaml) is the complete application-owned deployment
 contract. The platform installs the locked root and `frontend` Bun packages,
 runs the root `build` script to assemble the standalone frontend, and starts the
 root `platform:start` script from a platform-owned, digest-pinned recipe.
-Repository Dockerfiles are not inputs to this deployment.
 
 The supervisor publishes the frontend on the platform-provided `PORT` (port 3000
 in the contract) and keeps the backend reachable only on container loopback at
@@ -60,7 +59,7 @@ creates an account only while the database has none; a missing
 `ADMIN_SETUP_SECRET_HASH` disables it.
 
 Generate a secret locally, retain the raw value temporarily, and put only the
-printed verifier in Coolify:
+printed verifier into the platform environment:
 
 ```sh
 secret="$(openssl rand -base64 36)"
