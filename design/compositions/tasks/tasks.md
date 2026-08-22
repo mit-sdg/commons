@@ -49,6 +49,19 @@ its assignee. The assignee therefore stands, on a task now outstanding again,
 until a member releases or reassigns it. Uncancelling neither checks nor changes
 it, exactly as reopening does not.
 
+Assignment and the five state operations announce themselves. Assigning a task
+to someone other than the acting member gives that person one unread task
+notification and one email; retiming, cancelling, uncancelling, reopening, and
+completing do the same for the task's recorded assignee, but only when that
+assignee still belongs to the list holding the task and is not the person
+acting. An unassigned task, an operation performed by the assignee, an assignee
+who has left the list, and Describe, Release, Delete, and Create are all silent.
+These endpoints raise those notifications themselves, because no Tasking action
+carries the acting account. Each of the five takes the person to tell from what
+Tasking answers, and consumes it inside the endpoint, so all eleven task
+endpoints answer and refuse exactly as they did. The task notifications page
+states the kinds, the email, and the reading rules.
+
 [Tasks.tasks.DeleteTask](reaction:Tasks.tasks.DeleteTask) permanently removes a
 task that is already done or canceled, and answers only that the removal
 happened; there is no trash, no restore, and no undo window, and once it is

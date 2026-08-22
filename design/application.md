@@ -17,12 +17,17 @@ concrete MailKey
 
 concrete Lockable
   A post or conversation identity that moderation may lock.
+
+concrete TaskSubject
+  A task-list group or task identity that a task-domain notification is about and links to.
 ```
 
 ## Instances
 
-Commons selects a same-name instance of every concept it registers.
-Each instance supplies its external parameters inline.
+Commons selects a same-name instance of every concept it registers, except
+`Notifying`, which is registered twice: under its own name for the forum, and as
+`TaskNotifying` for the task domain. Each instance supplies its external
+parameters inline.
 
 ```instances
 instantiate Assigning with
@@ -83,6 +88,11 @@ instantiate Notifying with
   Person is Authenticating.User
   Subject is Posting.Post
   Link is Posting.Post
+
+instantiate Notifying as TaskNotifying with
+  Person is Authenticating.User
+  Subject is TaskSubject
+  Link is TaskSubject
 
 instantiate Noting with
   Author is Authenticating.User
@@ -171,6 +181,11 @@ members are Authenticating users. Tasking owns task identities within a list
 scope, so a task records its holding list as its Scope. Every member of a group
 holds equal power over the group and the tasks scoped to it.
 
+`TaskSubject` has two valid owners, as `Lockable` does: a Grouping group for a
+task-list membership event, and a Tasking task for an assignment or a change to
+an assigned task. TaskNotifying uses that identity as both the subject and the
+link of an entry.
+
 These bindings record application meaning. They do not copy state, validate an
 identity at runtime, or make one concept depend on another.
 
@@ -191,8 +206,28 @@ notificationMailHtml(notification: String) : String
 
 setupSecretMatches(secret: String) : Bool
   Reports whether the candidate matches the configured setup-secret verifier.
+
+taskListMailSubject(kind: String, listTitle: String) : String
+  Renders the subject line for a task-list membership notification of that kind.
+
+taskListMailText(kind: String, listTitle: String) : String
+  Renders the plain-text membership message naming the list.
+
+taskListMailHtml(kind: String, listTitle: String) : String
+  Renders the HTML membership message naming the list.
+
+taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String
+  Renders the subject line for a task assignment or task state change of that kind.
+
+taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String
+  Renders the plain-text task message, saying which change occurred and naming the task, its list, and its deadline.
+
+taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String
+  Renders the HTML task message, saying which change occurred and naming the task, its list, and its deadline.
 ```
 
 These pure computations render Commons-specific email bodies. Compositions pass
 the rendered text and HTML to Mailing, which queues the finished message for the
-mail worker to transport.
+mail worker to transport. The task renderers take resolved content rather than
+an identity, because a task email is a snapshot: it must still read on its own
+after the task or list it names has changed or gone.

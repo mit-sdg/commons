@@ -25,6 +25,10 @@ export type Notification = ArrayElement<
 export type InboxNotification = ArrayElement<
   Output<"/notifications/inbox">["notifications"]
 >;
+/** A row of the task domain's own inbox, served by the second Notifying instance. */
+export type TaskInboxNotification = ArrayElement<
+  Output<"/tasknotifications/inbox">["notifications"]
+>;
 export type Flag = ArrayElement<Output<"/flags/forTarget">["flags"]>;
 export type OpenFlag = ArrayElement<Output<"/flags/open">["targets"]>;
 export type TrashedItem = ArrayElement<Output<"/trash/list">["trashed"]>;

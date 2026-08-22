@@ -154,7 +154,7 @@ for (const [floor, make] of floors) {
       );
 
       const { task } = await tasking.create({ ...draft, assignee: "mara" });
-      expect(await tasking.cancel({ task, at })).toEqual({ task });
+      expect(await tasking.cancel({ task, at })).toEqual({ task, assignee: "mara" });
       expect((await tasking._getTask({ task, at }))[0]).toMatchObject({
         state: "CANCELED",
         assignee: "mara",
@@ -192,7 +192,7 @@ for (const [floor, make] of floors) {
       const tasking = await make();
       const { task } = await tasking.create({ ...draft, assignee: "mara" });
       await tasking.cancel({ task, at });
-      expect(await tasking.uncancel({ task, at: later })).toEqual({ task });
+      expect(await tasking.uncancel({ task, at: later })).toEqual({ task, assignee: "mara" });
       expect(await tasking._getTask({ task, at })).toEqual([
         {
           scope: "list-1",
@@ -266,6 +266,63 @@ for (const [floor, make] of floors) {
       expect(
         (await tasking._getTasksInScope({ scope: "list-1", at })).map((row) => row.task),
       ).toEqual([first, third]);
+    });
+
+    test("the five state actions answer the assignee the task carries", async () => {
+      const tasking = await make();
+      const { task } = await tasking.create({ ...draft, assignee: "mara" });
+
+      expect(
+        await tasking.retime({
+          task,
+          startsAt: "2026-09-01T09:00:00.000Z",
+          endsAt: "2026-09-01T10:00:00.000Z",
+          at: later,
+        }),
+      ).toStrictEqual({ task, assignee: "mara" });
+      expect(await tasking.complete({ task, at: later })).toStrictEqual({ task, assignee: "mara" });
+      expect(await tasking.reopen({ task, at: later })).toStrictEqual({ task, assignee: "mara" });
+      expect(await tasking.cancel({ task, at: later })).toStrictEqual({ task, assignee: "mara" });
+      expect((await tasking._getTask({ task, at }))[0]).toMatchObject({
+        state: "CANCELED",
+        assignee: "mara",
+      });
+      expect(await tasking.uncancel({ task, at: later })).toStrictEqual({ task, assignee: "mara" });
+
+      expect((await tasking._getTask({ task, at }))[0]).toMatchObject({
+        state: "OPEN",
+        assignee: "mara",
+      });
+      expect(await tasking._getAssigned({ assignee: "mara", at })).toEqual([
+        expect.objectContaining({ task, state: "OPEN" }),
+      ]);
+    });
+
+    test("the five state actions answer no assignee for a task that carries none", async () => {
+      const tasking = await make();
+      const { task } = await tasking.create(draft);
+
+      expect(await tasking.retime({ task, ...window, at })).toStrictEqual({ task });
+      expect(await tasking.complete({ task, at })).toStrictEqual({ task });
+      expect(await tasking.reopen({ task, at })).toStrictEqual({ task });
+      expect(await tasking.cancel({ task, at })).toStrictEqual({ task });
+      expect(await tasking.uncancel({ task, at })).toStrictEqual({ task });
+      expect((await tasking._getTask({ task, at }))[0]).toMatchObject({ assignee: null });
+    });
+
+    test("the answered assignee follows assign and release without being changed by them", async () => {
+      const tasking = await make();
+      const { task } = await tasking.create({ ...draft, assignee: "mara" });
+
+      await tasking.assign({ task, assignee: "noah", at });
+      expect(await tasking.complete({ task, at })).toStrictEqual({ task, assignee: "noah" });
+      await tasking.reopen({ task, at });
+      await tasking.release({ task, at });
+      expect(await tasking.cancel({ task, at })).toStrictEqual({ task });
+      expect(await tasking.uncancel({ task, at })).toStrictEqual({ task });
+      expect((await tasking._getTask({ task, at }))[0]).toMatchObject({ assignee: null });
+      expect(await tasking._getAssigned({ assignee: "noah", at })).toEqual([]);
+      expect(await tasking._getAssigned({ assignee: "mara", at })).toEqual([]);
     });
 
     test("assigned tasks answer in creation order", async () => {
