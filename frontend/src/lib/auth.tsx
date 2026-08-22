@@ -23,7 +23,6 @@ export interface AuthState {
     invitation: string,
     temporaryPassword: string,
     username: string,
-    password: string,
     displayName: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
@@ -90,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       invitation: string,
       temporaryPassword: string,
       username: string,
-      password: string,
       displayName: string,
     ) => {
       unwrap(
@@ -98,11 +96,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           invitation,
           temporaryPassword,
           username,
-          password,
+          password: temporaryPassword,
           displayName,
         }),
       );
-      unwrap(await api.auth.login({ username, password }));
+      unwrap(await api.auth.login({ username, password: temporaryPassword }));
       setSession(true);
       await hydrate();
     },

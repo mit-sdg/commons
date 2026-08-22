@@ -47,7 +47,6 @@ export function AuthForm({
           invitation,
           temporaryPassword,
           username.trim(),
-          password,
           displayName.trim(),
         );
         toast.success("Account created.");
@@ -122,18 +121,20 @@ export function AuthForm({
                 </div>
               </>
             ) : null}
-            <div className="flex flex-col gap-2.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete={isRegister ? "new-password" : "current-password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </div>
+            {!isRegister ? (
+              <div className="flex flex-col gap-2.5">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+            ) : null}
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
             <Button type="submit" className="w-full" disabled={busy}>
