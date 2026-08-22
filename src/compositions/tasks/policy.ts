@@ -1,18 +1,16 @@
 import { no, view, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
-import { TASK_LIST_MEMBER_CAPABILITY } from "./capabilities.ts";
 
-const { TaskListMembership, TaskLists } = concepts;
+const { Grouping, Tasking } = concepts;
 
 export const belongsToList = view(
   "(user) belongs to task list (list)",
   ({ user, list }, _outputs, _bindings) =>
     where(
-      TaskListMembership._hasCapability({
-        user,
-        context: list,
-        capability: TASK_LIST_MEMBER_CAPABILITY,
-      }).is({ allowed: true }),
+      Grouping._isMember({
+        group: list,
+        member: user,
+      }).is({ isMember: true }),
     ),
 ).holds();
 
@@ -20,45 +18,41 @@ export const doesNotBelongToList = view(
   "(user) does not belong to task list (list)",
   ({ user, list }, _outputs, _bindings) =>
     where(
-      TaskListMembership._hasCapability({
-        user,
-        context: list,
-        capability: TASK_LIST_MEMBER_CAPABILITY,
-      }).is({ allowed: false }),
+      Grouping._isMember({
+        group: list,
+        member: user,
+      }).is({ isMember: false }),
     ),
 ).holds();
 
 /** Which list holds this task? Membership runs from the list to the task. */
 export const theListHolding = view(
-  "the task list holding (task)",
-  ({ task }, { list }, _bindings) =>
-    where(TaskLists._getCategory({ item: task }).is({ category: list })),
+  "the task list holding (task) at (at)",
+  ({ task, at }, { list }, _bindings) => where(Tasking._getTask({ task, at }).is({ scope: list })),
 ).optional();
 
 export const mayActOnTask = view(
-  "(user) may act on task (task)",
-  ({ user, task }, _outputs, { list }) =>
+  "(user) may act on task (task) at (at)",
+  ({ user, task, at }, _outputs, { list }) =>
     where(
-      TaskLists._getCategory({ item: task }).is({ category: list }),
-      TaskListMembership._hasCapability({
-        user,
-        context: list,
-        capability: TASK_LIST_MEMBER_CAPABILITY,
-      }).is({ allowed: true }),
+      Tasking._getTask({ task, at }).is({ scope: list }),
+      Grouping._isMember({
+        group: list,
+        member: user,
+      }).is({ isMember: true }),
     ),
 ).holds();
 
 export const mayNotActOnTask = view(
-  "(user) may not act on task (task)",
-  ({ user, task }, _outputs, { list }) => [
+  "(user) may not act on task (task) at (at)",
+  ({ user, task, at }, _outputs, { list }) => [
     where(
-      TaskLists._getCategory({ item: task }).is({ category: list }),
-      TaskListMembership._hasCapability({
-        user,
-        context: list,
-        capability: TASK_LIST_MEMBER_CAPABILITY,
-      }).is({ allowed: false }),
+      Tasking._getTask({ task, at }).is({ scope: list }),
+      Grouping._isMember({
+        group: list,
+        member: user,
+      }).is({ isMember: false }),
     ),
-    where(no(TaskLists._getCategory({ item: task }))),
+    where(no(Tasking._getTask({ task, at }))),
   ],
 ).holds();

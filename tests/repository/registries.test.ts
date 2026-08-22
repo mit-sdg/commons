@@ -119,11 +119,10 @@ describe("application-owned design integration", () => {
       "Resolving.Answer is Posting.Post",
       "Resolving.Question is Posting.Post",
       "Revising.Item is Posting.Post",
+      "Grouping.Person is Authenticating.User",
       "Tagging.Target is Posting.Post",
       "Tasking.Assignee is Authenticating.User",
-      "TaskLists.Item is Tasking.Task",
-      "TaskListMembership.User is Authenticating.User",
-      "TaskListMembership.Context is TaskLists.Category",
+      "Tasking.Scope is Grouping.Group",
       "Tracking.Item is Posting.Post",
       "Trashing.Item is Posting.Post",
       "Pinning.Scope is Conversing.Conversation",
@@ -154,12 +153,7 @@ describe("application-owned design integration", () => {
     expect(source).toContain("concrete Lockable");
     expect(source).toContain("Authenticating owns the application's person identity.");
 
-    // Reused concepts are selected a second time under their own instance name;
-    // every binding is still checked against the definition the instance realizes.
-    const definitions: Record<string, string> = {
-      TaskLists: "Categorizing",
-      TaskListMembership: "Roling",
-    };
+    const definitions: Record<string, string> = {};
     const definitionOf = (name: string) => definitions[name] ?? name;
     for (const { external, owner } of bindings) {
       const [concept, type] = external.split(".");

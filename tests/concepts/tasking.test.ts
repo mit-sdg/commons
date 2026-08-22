@@ -16,6 +16,7 @@ const later = new Date("2026-08-25T12:00:00.000Z");
 const window = { startsAt: "2026-08-19T16:00:00.000Z", endsAt: "2026-08-19T17:00:00.000Z" };
 
 const draft = {
+  scope: "list-1",
   title: "Draft the reading",
   details: "Two pages",
   ...window,
@@ -30,6 +31,7 @@ for (const [floor, make] of floors) {
       const { task } = await tasking.create(draft);
       expect(await tasking._getTask({ task, at })).toEqual([
         {
+          scope: "list-1",
           title: "Draft the reading",
           details: "Two pages",
           ...window,
@@ -40,7 +42,35 @@ for (const [floor, make] of floors) {
           updatedAt: at,
         },
       ]);
+      expect(await tasking._getTasksInScope({ scope: "list-1", at })).toEqual([
+        expect.objectContaining({ task, title: "Draft the reading" }),
+      ]);
       expect(await tasking._getTask({ task: "ghost", at })).toEqual([]);
+    });
+
+    test("describe edits title and details while not canceled", async () => {
+      const tasking = await make();
+      const { task } = await tasking.create(draft);
+      expect(
+        await tasking.describe({
+          task,
+          title: "Updated reading",
+          details: "Three pages",
+          at: later,
+        }),
+      ).toEqual({ task });
+      expect((await tasking._getTask({ task, at }))[0]).toMatchObject({
+        title: "Updated reading",
+        details: "Three pages",
+        updatedAt: later,
+      });
+
+      await tasking.cancel({ task, at: later });
+      expect(
+        await refusalOf(() =>
+          tasking.describe({ task, title: "After cancel", details: "", at: later }),
+        ),
+      ).toBeInstanceOf(refusalErrors.TaskCanceled);
     });
 
     test("create refuses a window that ends before it begins or cannot be read", async () => {
@@ -86,7 +116,7 @@ for (const [floor, make] of floors) {
       const { task } = await tasking.create(draft);
       await tasking.assign({ task, assignee: "mara", at });
       expect(await tasking._getAssigned({ assignee: "mara", at })).toEqual([
-        expect.objectContaining({ task, state: "OPEN", overdue: false }),
+        expect.objectContaining({ task, scope: "list-1", state: "OPEN", overdue: false }),
       ]);
       await tasking.assign({ task, assignee: "noah", at });
       expect(await tasking._getAssigned({ assignee: "mara", at })).toEqual([]);

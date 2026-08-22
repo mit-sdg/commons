@@ -1,6 +1,6 @@
 "use client";
 
-import { ListChecks, Plus, Users } from "lucide-react";
+import { CalendarClock, ListChecks, Plus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -29,7 +29,7 @@ import { CommonsError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { count } from "@/lib/format";
 import type { AssignedTask, TaskList } from "@/lib/models";
-import { loadMyLists, loadMyTasks, openTaskList } from "@/lib/tasks";
+import { createTaskList, loadMyLists, loadMyTasks } from "@/lib/tasks";
 
 function NewListDialog({
   me,
@@ -49,19 +49,20 @@ function NewListDialog({
   async function create() {
     setBusy(true);
     try {
-      const list = await openTaskList(
-        members.map((member) => member.user),
+      const list = await createTaskList(
         title.trim(),
+        chosen.map((member) => member.user),
       );
       setOpen(false);
       setTitle("");
       setChosen([]);
+      toast.success("Task list created");
       onOpened(list);
     } catch (error) {
       toast.error(
         error instanceof CommonsError
           ? error.message
-          : "The list could not be opened.",
+          : "The list could not be created.",
       );
     } finally {
       setBusy(false);
@@ -77,7 +78,7 @@ function NewListDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Open a task list</DialogTitle>
+          <DialogTitle>Create a task list</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
@@ -99,13 +100,13 @@ function NewListDialog({
             }
           />
           <p className="text-xs text-muted-foreground">
-            A list is the set of people it is for. Opening the same set again
-            reaches the same list rather than making another.
+            You will be added as a member. You can add more members now or
+            later.
           </p>
         </div>
         <DialogFooter>
           <Button disabled={busy} onClick={() => void create()}>
-            {busy ? "Opening…" : "Open list"}
+            {busy ? "Creating…" : "Create list"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -116,7 +117,6 @@ function NewListDialog({
 function ListRow({ list }: { list: TaskList }) {
   const id = String(list.list);
   const members = list.members ?? [];
-  const present = new Set((list.present ?? []).map((row) => String(row.user)));
   return (
     <Link
       href={`/tasks/${id}`}
@@ -135,13 +135,7 @@ function ListRow({ list }: { list: TaskList }) {
           <Users className="size-3.5" />
           {members.length === 1
             ? "Just you"
-            : members
-                .map((member) =>
-                  present.has(String(member.user))
-                    ? member.displayName
-                    : `${member.displayName} (left)`,
-                )
-                .join(", ")}
+            : members.map((member) => member.displayName).join(", ")}
         </p>
       </div>
       <span className="shrink-0 text-sm text-muted-foreground">
@@ -155,7 +149,6 @@ function Tasks() {
   const { me, session } = useAuth();
   const router = useRouter();
   const viewer = me ? String(me.user) : "";
-  const [openingOwn, setOpeningOwn] = useState(false);
 
   const lists = useQuery<TaskList[]>(session ? loadMyLists : null, [session]);
   const tasks = useQuery<AssignedTask[]>(session ? loadMyTasks : null, [
@@ -167,25 +160,33 @@ function Tasks() {
     tasks.refetch();
   }
 
-  async function openOwnList() {
-    setOpeningOwn(true);
-    try {
-      router.push(`/tasks/${await openTaskList([viewer])}`);
-    } catch (error) {
-      toast.error(
-        error instanceof CommonsError
-          ? error.message
-          : "Your own list could not be opened.",
-      );
-    } finally {
-      setOpeningOwn(false);
-    }
-  }
+  const allTasks = tasks.data ?? [];
+  const [now] = useState(() => Date.now());
 
-  const outstanding = (tasks.data ?? []).filter(
-    (task) => task.state === "OPEN",
-  );
-  const settled = (tasks.data ?? []).filter((task) => task.state !== "OPEN");
+  const openTasks = allTasks.filter((task) => task.state === "OPEN");
+  const activeAndOverdue = openTasks
+    .filter((task) => new Date(task.startsAt as string).getTime() <= now)
+    .sort(
+      (a, b) =>
+        new Date(a.endsAt as string).getTime() -
+        new Date(b.endsAt as string).getTime(),
+    );
+
+  const upcoming = openTasks
+    .filter((task) => new Date(task.startsAt as string).getTime() > now)
+    .sort(
+      (a, b) =>
+        new Date(a.endsAt as string).getTime() -
+        new Date(b.endsAt as string).getTime(),
+    );
+
+  const settled = allTasks
+    .filter((task) => task.state !== "OPEN")
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt ?? (b.createdAt as string)).getTime() -
+        new Date(a.updatedAt ?? (a.createdAt as string)).getTime(),
+    );
 
   return (
     <PageContainer>
@@ -195,59 +196,90 @@ function Tasks() {
         description="Everything assigned to you, across every list you belong to."
         actions={
           me ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={openingOwn}
-                onClick={() => void openOwnList()}
-              >
-                My own tasks
-              </Button>
-              <NewListDialog
-                me={viewer}
-                myName={me.profile.displayName}
-                onOpened={(list) => router.push(`/tasks/${list}`)}
-              />
-            </>
+            <NewListDialog
+              me={viewer}
+              myName={me.profile.displayName}
+              onOpened={(list) => router.push(`/tasks/${list}`)}
+            />
           ) : null
         }
       />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
-        <section className="space-y-4" aria-label="Assigned to me">
+        <section className="space-y-6" aria-label="Assigned to me">
           {tasks.loading && !tasks.data ? (
             <LoadingState />
           ) : tasks.error ? (
             <ErrorState message={tasks.error} onRetry={tasks.refetch} />
-          ) : outstanding.length === 0 && settled.length === 0 ? (
+          ) : allTasks.length === 0 ? (
             <EmptyState
               icon={ListChecks}
               title="Nothing is assigned to you"
-              description="Open a list, add a task, and take it — or wait for someone in a shared list to hand you one."
+              description="Create or open a list, add a task, and take it — or collaborate with team members in a shared list."
             />
           ) : (
             <>
-              {outstanding.map((task) => (
-                <TaskCard
-                  key={String(task.task)}
-                  task={{ ...task, assignee: viewer }}
-                  viewer={viewer}
-                  onChanged={refreshAll}
-                  context={
-                    <Link
-                      href={`/tasks/${String(task.list)}`}
-                      className="underline underline-offset-2 hover:text-foreground"
-                    >
-                      {task.listTitle || "Task list"}
-                    </Link>
-                  }
+              {activeAndOverdue.length > 0 ? (
+                <div className="space-y-3">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    Active &amp; Overdue ({activeAndOverdue.length})
+                  </h2>
+                  {activeAndOverdue.map((task) => (
+                    <TaskCard
+                      key={String(task.task)}
+                      task={{ ...task, assignee: viewer }}
+                      viewer={viewer}
+                      onChanged={refreshAll}
+                      context={
+                        <Link
+                          href={`/tasks/${String(task.list)}`}
+                          className="underline underline-offset-2 hover:text-foreground"
+                        >
+                          {task.listTitle || "Task list"}
+                        </Link>
+                      }
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              {upcoming.length > 0 ? (
+                <div className="space-y-3">
+                  <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    <CalendarClock className="size-4" />
+                    Upcoming ({upcoming.length})
+                  </h2>
+                  {upcoming.map((task) => (
+                    <TaskCard
+                      key={String(task.task)}
+                      task={{ ...task, assignee: viewer }}
+                      viewer={viewer}
+                      onChanged={refreshAll}
+                      context={
+                        <Link
+                          href={`/tasks/${String(task.list)}`}
+                          className="underline underline-offset-2 hover:text-foreground"
+                        >
+                          {task.listTitle || "Task list"}
+                        </Link>
+                      }
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              {activeAndOverdue.length === 0 && upcoming.length === 0 ? (
+                <EmptyState
+                  icon={ListChecks}
+                  title="No open tasks assigned to you"
+                  description="All your assigned tasks are completed or canceled."
                 />
-              ))}
+              ) : null}
+
               {settled.length > 0 ? (
-                <>
-                  <h2 className="pt-2 text-sm font-semibold text-muted-foreground">
-                    Finished and canceled
+                <div className="space-y-3 pt-2">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    Finished and canceled ({settled.length})
                   </h2>
                   {settled.map((task) => (
                     <TaskCard
@@ -265,7 +297,7 @@ function Tasks() {
                       }
                     />
                   ))}
-                </>
+                </div>
               ) : null}
             </>
           )}

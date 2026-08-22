@@ -1953,59 +1953,66 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" };
   };
-  "/tasklists/extend": {
+  "/tasklists/add-member": {
     input: {
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["renameCategory"]>[0], ["category"]>]>>;
-      "members": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["taskListExtension"]["fn"]>[0], ["members"]>>;
+      "candidate": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfile"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["addMember"]>[0], ["candidate"]>]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["addMember"]>[0], ["group"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["renameCategory"]>>, ["category"]>>;
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["addMember"]>>, ["group"]>>;
     };
-    error: { error: AppWideError | "CATEGORY_ALREADY_EXISTS" | "CATEGORY_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" | "ROLE_NOT_FOUND" };
+    error: { error: AppWideError | "ALREADY_A_MEMBER" | "GROUP_NOT_FOUND" | "INVALID_INPUT" | "NOT_A_MEMBER" | "NOT_FOUND" };
+  };
+  "/tasklists/create": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "title"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["create"]>[0], ["title"]>>;
+    };
+    output: {
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["create"]>>, ["group"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
   };
   "/tasklists/get": {
     input: {
-      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "list": {
-        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategoryDetail"]>[0], ["category"]>]>>;
+        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>]>>;
         "members": {
-          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>>;
+          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+          "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getMembers"]>>>, ["member"]>]>>;
         }[];
         "openTasks": number;
-        "present": {
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_getHoldersOfRoleNamed"]>>>, ["user"]>>;
-        }[];
-        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategoryDetail"]>>>, ["description"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>>>, ["title"]>>;
       } | null;
       "tasks": {
-        "assignee": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["assignee"]>>;
-        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["createdAt"]>>;
-        "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["details"]>>;
-        "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["endsAt"]>>;
-        "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["overdue"]>>;
-        "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["startsAt"]>>;
-        "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["state"]>>;
-        "task": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getItems"]>>>, ["item"]>]>>;
-        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["title"]>>;
-        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["updatedAt"]>>;
+        "assignee": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["assignee"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["createdAt"]>>;
+        "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["details"]>>;
+        "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["endsAt"]>>;
+        "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["overdue"]>>;
+        "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["startsAt"]>>;
+        "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["state"]>>;
+        "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["task"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["title"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["updatedAt"]>>;
       }[];
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/tasklists/leave": {
     input: {
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["revoke"]>[0], ["context"]>]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["leave"]>[0], ["group"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["revoke"]>[0], ["context"]>>;
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["leave"]>>, ["group"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "GRANT_NOT_FOUND" | "INVALID_INPUT" | "TASK_CANCELED" | "TASK_NOT_FOUND" };
+    error: { error: AppWideError | "GROUP_NOT_FOUND" | "INVALID_INPUT" | "LAST_MEMBER" | "NOT_A_MEMBER" | "TASK_CANCELED" | "TASK_NOT_FOUND" };
   };
   "/tasklists/mine": {
     input: {
@@ -2013,36 +2020,44 @@ export type CommonsWire = {
     };
     output: {
       "lists": {
-        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_getContextsOfRoleNamed"]>>>, ["context"]>]>>;
+        "list": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroupsOf"]>>>, ["group"]>>;
         "members": {
-          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>>;
+          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+          "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getMembers"]>>>, ["member"]>]>>;
         }[];
         "openTasks": number;
-        "present": {
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_getHoldersOfRoleNamed"]>>>, ["user"]>>;
-        }[];
-        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategoryDetail"]>>>, ["description"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroupsOf"]>>>, ["title"]>>;
       }[];
     };
     error: { error: AppWideError | "INVALID_INPUT" };
   };
-  "/tasklists/open": {
+  "/tasklists/remove-member": {
     input: {
-      "members": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["taskListKey"]["fn"]>[0], ["members"]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["removeMember"]>[0], ["group"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "title"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["ensureCategory"]>[0], ["description"]>>;
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["removeMember"]>[0], ["target"]>>;
     };
     output: {
-      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["ensureCategory"]>>, ["category"]>>;
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["removeMember"]>>, ["group"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "ROLE_NOT_FOUND" };
+    error: { error: AppWideError | "GROUP_NOT_FOUND" | "INVALID_INPUT" | "LAST_MEMBER" | "NOT_A_MEMBER" | "TARGET_NOT_A_MEMBER" | "TASK_CANCELED" | "TASK_NOT_FOUND" };
+  };
+  "/tasklists/rename": {
+    input: {
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["rename"]>[0], ["group"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["rename"]>[0], ["title"]>>;
+    };
+    output: {
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["rename"]>>, ["group"]>>;
+    };
+    error: { error: AppWideError | "GROUP_NOT_FOUND" | "INVALID_INPUT" | "NOT_A_MEMBER" };
   };
   "/tasks/assign": {
     input: {
-      "assignee": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>]>>;
+      "assignee": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>>, ["task"]>>;
@@ -2052,7 +2067,7 @@ export type CommonsWire = {
   "/tasks/cancel": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["cancel"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["cancel"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["cancel"]>>, ["task"]>>;
@@ -2062,7 +2077,7 @@ export type CommonsWire = {
   "/tasks/complete": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["complete"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["complete"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["complete"]>>, ["task"]>>;
@@ -2073,15 +2088,27 @@ export type CommonsWire = {
     input: {
       "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["details"]>>;
       "endsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["endsAt"]>>;
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["assign"]>[0], ["category"]>]>>;
+      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "startsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["startsAt"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["title"]>>;
     };
     output: {
-      "task": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["assign"]>[0], ["item"]>>;
+      "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>>, ["task"]>>;
     };
-    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "TASK_WINDOW_INVALID" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TASK_WINDOW_INVALID" };
+  };
+  "/tasks/describe": {
+    input: {
+      "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>[0], ["details"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>[0], ["task"]>]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>[0], ["title"]>>;
+    };
+    output: {
+      "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>>, ["task"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TASK_CANCELED" | "TASK_NOT_FOUND" };
   };
   "/tasks/mine": {
     input: {
@@ -2092,12 +2119,12 @@ export type CommonsWire = {
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["createdAt"]>>;
         "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["details"]>>;
         "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["endsAt"]>>;
-        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>>>, ["category"]>]>>;
-        "listTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>>>, ["description"]>>;
+        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["scope"]>]>>;
+        "listTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>>>, ["title"]>>;
         "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["overdue"]>>;
         "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["startsAt"]>>;
         "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["state"]>>;
-        "task": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["task"]>]>>;
+        "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["task"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["title"]>>;
         "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["updatedAt"]>>;
       }[];
@@ -2107,7 +2134,7 @@ export type CommonsWire = {
   "/tasks/release": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["release"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["release"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["release"]>>, ["task"]>>;
@@ -2117,7 +2144,7 @@ export type CommonsWire = {
   "/tasks/reopen": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["reopen"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["reopen"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["reopen"]>>, ["task"]>>;
@@ -2129,12 +2156,12 @@ export type CommonsWire = {
       "endsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>[0], ["endsAt"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "startsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>[0], ["startsAt"]>>;
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>>, ["task"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TASK_NOT_FOUND" | "TASK_WINDOW_INVALID" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TASK_CANCELED" | "TASK_NOT_FOUND" | "TASK_WINDOW_INVALID" };
   };
   "/threads/activity": {
     input: Record<string, never>;
@@ -4177,89 +4204,102 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
-  "/tasklists/extend": {
+  "/tasklists/add-member": {
     input: {
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["renameCategory"]>[0], ["category"]>]>>;
-      "members": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["taskListExtension"]["fn"]>[0], ["members"]>>;
+      "candidate": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfile"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["addMember"]>[0], ["candidate"]>]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["addMember"]>[0], ["group"]>>;
     };
     output: {
-      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["renameCategory"]>>, ["category"]>>;
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["addMember"]>>, ["group"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/tasklists/create": {
+    input: {
+      "title"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["create"]>[0], ["title"]>>;
+    };
+    output: {
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["create"]>>, ["group"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/tasklists/get": {
     input: {
-      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>>;
     };
     output: {
       "list": {
-        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategoryDetail"]>[0], ["category"]>]>>;
+        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>]>>;
         "members": {
-          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>>;
+          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+          "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getMembers"]>>>, ["member"]>]>>;
         }[];
         "openTasks": number;
-        "present": {
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_getHoldersOfRoleNamed"]>>>, ["user"]>>;
-        }[];
-        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategoryDetail"]>>>, ["description"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>>>, ["title"]>>;
       } | null;
       "tasks": {
-        "assignee": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["assignee"]>>;
-        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["createdAt"]>>;
-        "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["details"]>>;
-        "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["endsAt"]>>;
-        "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["overdue"]>>;
-        "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["startsAt"]>>;
-        "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["state"]>>;
-        "task": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getItems"]>>>, ["item"]>]>>;
-        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["title"]>>;
-        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>>>, ["updatedAt"]>>;
+        "assignee": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["assignee"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["createdAt"]>>;
+        "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["details"]>>;
+        "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["endsAt"]>>;
+        "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["overdue"]>>;
+        "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["startsAt"]>>;
+        "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["state"]>>;
+        "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["task"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["title"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["updatedAt"]>>;
       }[];
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
   "/tasklists/leave": {
     input: {
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["revoke"]>[0], ["context"]>]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["leave"]>[0], ["group"]>>;
     };
     output: {
-      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["revoke"]>[0], ["context"]>>;
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["leave"]>>, ["group"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/tasklists/mine": {
     input: Record<string, never>;
     output: {
       "lists": {
-        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_getContextsOfRoleNamed"]>>>, ["context"]>]>>;
+        "list": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroupsOf"]>>>, ["group"]>>;
         "members": {
-          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>>;
+          "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+          "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getMembers"]>>>, ["member"]>]>>;
         }[];
         "openTasks": number;
-        "present": {
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_getHoldersOfRoleNamed"]>>>, ["user"]>>;
-        }[];
-        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategoryDetail"]>>>, ["description"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroupsOf"]>>>, ["title"]>>;
       }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
-  "/tasklists/open": {
+  "/tasklists/remove-member": {
     input: {
-      "members": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["taskListKey"]["fn"]>[0], ["members"]>>;
-      "title"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["ensureCategory"]>[0], ["description"]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["removeMember"]>[0], ["group"]>>;
+      "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["removeMember"]>[0], ["target"]>>;
     };
     output: {
-      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["ensureCategory"]>>, ["category"]>>;
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["removeMember"]>>, ["group"]>>;
     };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/tasklists/rename": {
+    input: {
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["rename"]>[0], ["group"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["rename"]>[0], ["title"]>>;
+    };
+    output: {
+      "list": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["rename"]>>, ["group"]>>;
+    };
+    error: { error: HttpAppWideError | "INTERNAL_ERROR" | "INVALID_REQUEST" };
   };
   "/tasks/assign": {
     input: {
-      "assignee": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>]>>;
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["task"]>]>>;
+      "assignee": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>>, ["task"]>>;
@@ -4268,7 +4308,7 @@ export type CommonsWireHttp = {
   };
   "/tasks/cancel": {
     input: {
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["cancel"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["cancel"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["cancel"]>>, ["task"]>>;
@@ -4277,7 +4317,7 @@ export type CommonsWireHttp = {
   };
   "/tasks/complete": {
     input: {
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["complete"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["complete"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["complete"]>>, ["task"]>>;
@@ -4288,14 +4328,25 @@ export type CommonsWireHttp = {
     input: {
       "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["details"]>>;
       "endsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["endsAt"]>>;
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["assign"]>[0], ["category"]>]>>;
+      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>]>>;
       "startsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["startsAt"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["title"]>>;
     };
     output: {
-      "task": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["assign"]>[0], ["item"]>>;
+      "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>>, ["task"]>>;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/tasks/describe": {
+    input: {
+      "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>[0], ["details"]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>[0], ["task"]>]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>[0], ["title"]>>;
+    };
+    output: {
+      "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["describe"]>>, ["task"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/tasks/mine": {
     input: Record<string, never>;
@@ -4304,12 +4355,12 @@ export type CommonsWireHttp = {
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["createdAt"]>>;
         "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["details"]>>;
         "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["endsAt"]>>;
-        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskListMembership"]["_hasCapability"]>[0], ["context"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>>>, ["category"]>]>>;
-        "listTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>>>, ["description"]>>;
+        "list": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["scope"]>]>>;
+        "listTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>>>, ["title"]>>;
         "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["overdue"]>>;
         "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["startsAt"]>>;
         "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["state"]>>;
-        "task": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["task"]>]>>;
+        "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["task"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["title"]>>;
         "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["updatedAt"]>>;
       }[];
@@ -4318,7 +4369,7 @@ export type CommonsWireHttp = {
   };
   "/tasks/release": {
     input: {
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["release"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["release"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["release"]>>, ["task"]>>;
@@ -4327,7 +4378,7 @@ export type CommonsWireHttp = {
   };
   "/tasks/reopen": {
     input: {
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["reopen"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["reopen"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["reopen"]>>, ["task"]>>;
@@ -4338,12 +4389,12 @@ export type CommonsWireHttp = {
     input: {
       "endsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>[0], ["endsAt"]>>;
       "startsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>[0], ["startsAt"]>>;
-      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["TaskLists"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>[0], ["task"]>]>>;
+      "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>[0], ["task"]>]>>;
     };
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["retime"]>>, ["task"]>>;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/threads/activity": {
     input: Record<string, never>;

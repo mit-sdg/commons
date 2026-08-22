@@ -13,6 +13,8 @@
         "sanitize-html": "^2.17.6",
       },
       "devDependencies": {
+        "@mit-sdg/sync-engine-analysis": "1.0.0-beta.16",
+        "@mit-sdg/sync-engine-catalog": "1.0.0-beta.16",
         "@types/bun": "^1.3.14",
         "@types/node": "^24.0.0",
         "@types/nodemailer": "^8.0.1",
@@ -39,6 +41,10 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
     "@mit-sdg/sync-engine": ["@mit-sdg/sync-engine@1.0.0-beta.16", "", { "dependencies": { "mdast-util-from-markdown": "^2.0.3", "semver": "^7.7.3", "typescript": ">=6 <7" }, "bin": { "sync-engine": "dist/command/main.js" } }, "sha512-x+9qkUCgH4x3ZWwDbHPx2L7TaetkjdMebd78HLB0YYiozRIOY8NtYNL+HD6SK8/mYRuiHTEbh3omF644Kmm+MA=="],
+
+    "@mit-sdg/sync-engine-analysis": ["@mit-sdg/sync-engine-analysis@1.0.0-beta.16", "", { "dependencies": { "typescript": ">=6 <7" }, "peerDependencies": { "@mit-sdg/sync-engine": "1.0.0-beta.16" }, "bin": { "sync-engine-analysis": "dist/command.js" } }, "sha512-UTMrw82UX33NglwnMQ1i/428qlnG2phd0ty7Vr4W4xIL6ilPV2L1SNSeNQWPxcsm+smtwcbJf2A8lL8f/4wFeg=="],
+
+    "@mit-sdg/sync-engine-catalog": ["@mit-sdg/sync-engine-catalog@1.0.0-beta.16", "", { "bin": { "sync-engine-catalog": "dist/command.js" } }, "sha512-yC0yiM/cUBn5YP5jctu3Lq1X7BvcHVwDnEOcpIBd08EEqD7reswZOINI9AQUU6e08Qdn+xHjbfSaF5fMUhufog=="],
 
     "@mit-sdg/sync-engine-http": ["@mit-sdg/sync-engine-http@1.0.0-beta.16", "", { "peerDependencies": { "@mit-sdg/sync-engine": "1.0.0-beta.16" } }, "sha512-BJKd3e76m8Iz5Sm6Gn6AooORd3gBRtUlmx7A6a/DqSppgjo8NCSApQzmV5/t7AxA1RgOqCGutfFkTBx5ypI/pA=="],
 

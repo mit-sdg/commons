@@ -4,12 +4,14 @@ import {
   Ban,
   CalendarClock,
   Check,
+  Pencil,
   RotateCcw,
   UserMinus,
   UserPlus,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { TaskMarkdown } from "@/components/tasks/task-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { UserName } from "@/components/user-name";
 import { api, publicErrorMessage } from "@/lib/api";
 import { fromLocalInput, toLocalInput, windowLabel } from "@/lib/tasks";
@@ -58,9 +61,13 @@ export function TaskCard({
 }) {
   const id = String(task.task);
   const [retiming, setRetiming] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editDetails, setEditDetails] = useState(task.details || "");
   const [startsAt, setStartsAt] = useState(() => toLocalInput(task.startsAt));
   const [endsAt, setEndsAt] = useState(() => toLocalInput(task.endsAt));
   const [busy, setBusy] = useState(false);
+
   const canceled = task.state === "CANCELED";
   const done = task.state === "DONE";
   const assignee = task.assignee ? String(task.assignee) : null;
@@ -72,9 +79,31 @@ export function TaskCard({
     setBusy(true);
     const result = await call();
     setBusy(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
+    if ("error" in result) {
+      toast.error(publicErrorMessage(result.error));
+    } else {
       toast.success(label);
+      onChanged();
+    }
+  }
+
+  async function saveDescription() {
+    if (editTitle.trim() === "") {
+      toast.error("Task title cannot be empty.");
+      return;
+    }
+    setBusy(true);
+    const result = await api.tasks.describe({
+      task: id,
+      title: editTitle.trim(),
+      details: editDetails.trim(),
+    });
+    setBusy(false);
+    if ("error" in result) {
+      toast.error(publicErrorMessage(result.error));
+    } else {
+      toast.success("Task updated");
+      setEditing(false);
       onChanged();
     }
   }
@@ -93,8 +122,13 @@ export function TaskCard({
       endsAt: end,
     });
     setBusy(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
+    if ("error" in result) {
+      toast.error(
+        result.error === "INVALID_REQUEST"
+          ? "A task cannot end before it begins."
+          : publicErrorMessage(result.error),
+      );
+    } else {
       toast.success("Window changed");
       setRetiming(false);
       onChanged();
@@ -109,10 +143,10 @@ export function TaskCard({
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 flex-1 space-y-1">
           <h3
             className={cn(
-              "font-medium",
+              "font-medium text-foreground",
               (done || canceled) && "text-muted-foreground line-through",
             )}
           >
@@ -124,13 +158,15 @@ export function TaskCard({
             {context}
           </p>
           {task.details ? (
-            <p className="max-w-prose text-sm text-muted-foreground">
-              {task.details}
-            </p>
+            <div className="mt-1.5 max-w-prose">
+              <TaskMarkdown content={task.details} />
+            </div>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          {task.overdue ? <Badge variant="destructive">Overdue</Badge> : null}
+          {task.overdue && !done && !canceled ? (
+            <Badge variant="destructive">Overdue</Badge>
+          ) : null}
           {done ? <Badge variant="secondary">Done</Badge> : null}
           {canceled ? <Badge variant="outline">Canceled</Badge> : null}
           {!done && !canceled && !task.overdue ? (
@@ -206,7 +242,23 @@ export function TaskCard({
               variant="ghost"
               size="sm"
               disabled={busy}
-              onClick={() => setRetiming((open) => !open)}
+              onClick={() => {
+                setEditing((prev) => !prev);
+                setRetiming(false);
+              }}
+            >
+              <Pencil className="size-4" /> Edit
+            </Button>
+          ) : null}
+          {!canceled ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => {
+                setRetiming((prev) => !prev);
+                setEditing(false);
+              }}
             >
               <CalendarClock className="size-4" /> Retime
             </Button>
@@ -251,6 +303,55 @@ export function TaskCard({
         </span>
       </div>
 
+      {editing ? (
+        <div className="mt-3 space-y-3 rounded-lg bg-muted/40 p-3">
+          <div className="space-y-1.5">
+            <Label htmlFor={`edit-title-${id}`}>Title</Label>
+            <Input
+              id={`edit-title-${id}`}
+              value={editTitle}
+              disabled={busy}
+              placeholder="Task title"
+              onChange={(event) => setEditTitle(event.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`edit-details-${id}`}>
+              Details (Markdown supported)
+            </Label>
+            <Textarea
+              id={`edit-details-${id}`}
+              value={editDetails}
+              disabled={busy}
+              rows={3}
+              placeholder="Add details in Markdown..."
+              onChange={(event) => setEditDetails(event.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => {
+                setEditTitle(task.title);
+                setEditDetails(task.details || "");
+                setEditing(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={() => void saveDescription()}
+            >
+              Save description
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       {retiming ? (
         <div className="mt-3 grid gap-3 rounded-lg bg-muted/40 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
           <div className="space-y-1.5">
@@ -259,6 +360,7 @@ export function TaskCard({
               id={`start-${id}`}
               type="datetime-local"
               value={startsAt}
+              disabled={busy}
               onChange={(event) => setStartsAt(event.target.value)}
             />
           </div>
@@ -268,12 +370,27 @@ export function TaskCard({
               id={`end-${id}`}
               type="datetime-local"
               value={endsAt}
+              disabled={busy}
               onChange={(event) => setEndsAt(event.target.value)}
             />
           </div>
-          <Button disabled={busy} onClick={() => void saveWindow()}>
-            Save window
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => {
+                setStartsAt(toLocalInput(task.startsAt));
+                setEndsAt(toLocalInput(task.endsAt));
+                setRetiming(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button size="sm" disabled={busy} onClick={() => void saveWindow()}>
+              Save window
+            </Button>
+          </div>
         </div>
       ) : null}
     </article>

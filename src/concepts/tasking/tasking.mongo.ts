@@ -12,6 +12,7 @@ type TaskState = "OPEN" | "DONE" | "CANCELED";
 
 interface TaskDoc {
   _id: string;
+  scope: string;
   title: string;
   details: string;
   startsAt: string;
@@ -32,6 +33,7 @@ const wellFormedWindow = (startsAt: string, endsAt: string): boolean => {
 };
 
 const row = (doc: TaskDoc, at: Date) => ({
+  scope: doc.scope,
   title: doc.title,
   details: doc.details,
   startsAt: doc.startsAt,
@@ -69,6 +71,7 @@ export class MongoTaskingConcept {
   }
 
   async create({
+    scope,
     title,
     details,
     startsAt,
@@ -76,6 +79,7 @@ export class MongoTaskingConcept {
     assignee,
     at,
   }: {
+    scope: string;
     title: string;
     details: string;
     startsAt: string;
@@ -90,6 +94,7 @@ export class MongoTaskingConcept {
     const seq = await this.#nextSeq("tasks");
     await this.tasks.insertOne({
       _id: task,
+      scope,
       title,
       details,
       startsAt,
@@ -100,6 +105,23 @@ export class MongoTaskingConcept {
       updatedAt: at,
       seq,
     });
+    return { task };
+  }
+
+  async describe({
+    task,
+    title,
+    details,
+    at,
+  }: {
+    task: string;
+    title: string;
+    details: string;
+    at: Date;
+  }) {
+    const doc = await this.#require(task);
+    if (doc.state === "CANCELED") throw new TaskCanceled(task);
+    await this.tasks.updateOne({ _id: task }, { $set: { title, details, updatedAt: at } });
     return { task };
   }
 
@@ -114,7 +136,8 @@ export class MongoTaskingConcept {
     endsAt: string;
     at: Date;
   }) {
-    await this.#require(task);
+    const doc = await this.#require(task);
+    if (doc.state === "CANCELED") throw new TaskCanceled(task);
     if (!wellFormedWindow(startsAt, endsAt)) {
       throw new TaskWindowInvalid("A task's window cannot end before it begins.");
     }
@@ -165,11 +188,18 @@ export class MongoTaskingConcept {
     return doc === null ? [] : [row(doc, at)];
   }
 
+  async _getTasksInScope({ scope, at }: { scope: string; at: Date }) {
+    const docs = await this.tasks.find({ scope }).sort({ seq: 1 }).toArray();
+    return docs.map((doc) => {
+      const { scope: _scope, ...fields } = row(doc, at);
+      return { task: doc._id, ...fields };
+    });
+  }
+
   async _getAssigned({ assignee, at }: { assignee: string; at: Date }) {
     const docs = await this.tasks.find({ assignee }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => {
-      const { assignee: recorded, ...fields } = row(doc, at);
-      void recorded;
+      const { assignee: _recorded, ...fields } = row(doc, at);
       return { task: doc._id, ...fields };
     });
   }

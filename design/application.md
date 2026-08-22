@@ -21,10 +21,8 @@ concrete Lockable
 
 ## Instances
 
-Commons selects a same-name instance of every concept it registers and two
-further instances — `TaskLists` and `TaskListMembership` — of concepts whose
-contract task management reuses unchanged. Each instance supplies its external
-parameters inline.
+Commons selects a same-name instance of every concept it registers.
+Each instance supplies its external parameters inline.
 
 ```instances
 instantiate Assigning with
@@ -45,9 +43,6 @@ instantiate Bookmarking with
 instantiate Categorizing with
   Item is Posting.Post
 
-instantiate Categorizing as TaskLists with
-  Item is Tasking.Task
-
 instantiate Conversing with
   Item is Posting.Post
 
@@ -64,6 +59,9 @@ instantiate Grading with
   Item is Assigning.Assignment
   Criterion is Itemizing.Criterion
   Evidence is Submitting.Submission
+
+instantiate Grouping with
+  Person is Authenticating.User
 
 instantiate Inviting with
   User is Authenticating.User
@@ -116,10 +114,6 @@ instantiate Roling with
   User is Authenticating.User
   Context is Conversing.Conversation
 
-instantiate Roling as TaskListMembership with
-  User is Authenticating.User
-  Context is TaskLists.Category
-
 instantiate Rostering with
   User is Authenticating.User
 
@@ -139,6 +133,7 @@ instantiate Tagging with
   Target is Posting.Post
 
 instantiate Tasking with
+  Scope is Grouping.Group
   Assignee is Authenticating.User
 
 instantiate Tracking with
@@ -171,15 +166,10 @@ identity, it has no second type binding. Role-management endpoints can store
 other opaque context strings, but built-in policy interprets only `forum` and
 conversation identities. Sessioning evaluates session expiry against the current instant.
 
-Tasking owns task identities. A task list is a second Categorizing instance,
-`TaskLists`, whose items are those tasks, so a list's contents are read directly
-from the list rather than from each task. `TaskListMembership` is a second
-Roling instance whose context is a task list; it shares neither role names nor
-grants with the course-wide `Roling` instance, so task-list membership cannot
-change course authorization and course roles cannot reach a task list. A task
-list is identified by the set of profiles it is for: that set is written into
-the list's Categorizing name, which makes a duplicate set a refused name rather
-than a second list.
+Grouping owns task list group identities. A task list is a Grouping group whose
+members are Authenticating users. Tasking owns task identities within a list
+scope, so a task records its holding list as its Scope. Every member of a group
+holds equal power over the group and the tasks scoped to it.
 
 These bindings record application meaning. They do not copy state, validate an
 identity at runtime, or make one concept depend on another.

@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, where, now } from "@mit-sdg/sync-engine/language";
+import { each, former, now, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   belongsToList,
@@ -8,10 +8,9 @@ import {
   mayNotActOnTask,
   theListHolding,
 } from "./policy.ts";
-import { TASK_LIST_MEMBER_CAPABILITY } from "./capabilities.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Tasking, TaskListMembership, TaskLists } = concepts;
+const { Grouping, Tasking } = concepts;
 
 /** What work does this list hold, soonest deadline first? */
 export const theTasksIn = former(
@@ -20,20 +19,20 @@ export const theTasksIn = former(
     { list, at },
     { task, title, details, startsAt, endsAt, assignee, state, overdue, createdAt, updatedAt },
   ) =>
-    each(TaskLists._getItems({ category: list }).is({ item: task }))
-      .where(
-        Tasking._getTask({ task, at }).is({
-          title,
-          details,
-          startsAt,
-          endsAt,
-          assignee,
-          state,
-          overdue,
-          createdAt,
-          updatedAt,
-        }),
-      )
+    each(
+      Tasking._getTasksInScope({ scope: list, at }).is({
+        task,
+        title,
+        details,
+        startsAt,
+        endsAt,
+        assignee,
+        state,
+        overdue,
+        createdAt,
+        updatedAt,
+      }),
+    )
       .arranged(endsAt)
       .form({
         task,
@@ -71,6 +70,7 @@ export const theTasksAssignedTo = former(
     each(
       Tasking._getAssigned({ assignee: user, at }).is({
         task,
+        scope: list,
         title,
         details,
         startsAt,
@@ -82,12 +82,8 @@ export const theTasksAssignedTo = former(
       }),
     )
       .where(
-        TaskLists._getCategory({ item: task }).is({ category: list, description: listTitle }),
-        TaskListMembership._hasCapability({
-          user,
-          context: list,
-          capability: TASK_LIST_MEMBER_CAPABILITY,
-        }).is({ allowed: true }),
+        Grouping._getGroup({ group: list }).is({ title: listTitle }),
+        Grouping._isMember({ group: list, member: user }).is({ isMember: true }),
       )
       .arranged(endsAt)
       .form({
@@ -111,11 +107,18 @@ export const CreateTask = endpoint(
     receive({ session, list, title, details, startsAt, endsAt }).then(
       where(now(at), activeUser({ session }).is({ user }), belongsToList({ user, list }))
         .then(
-          Tasking.create({ title, details, startsAt, endsAt, assignee: null, at }).responds({
+          Tasking.create({
+            scope: list,
+            title,
+            details,
+            startsAt,
+            endsAt,
+            assignee: null,
+            at,
+          }).responds({
             task,
           }),
         )
-        .then(TaskLists.assign({ item: task, category: list }))
         .then(respond({ task }))
         .named("success"),
       where(activeUser({ session }).is({ user }), doesNotBelongToList({ user, list }))
@@ -130,15 +133,35 @@ export const CreateTask = endpoint(
   },
 );
 
+export const DescribeTask = endpoint(
+  "/tasks/describe",
+  ({ session, task, title, details, user, at, described }) =>
+    receive({ session, task, title, details }).then(
+      where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
+        .then(Tasking.describe({ task, title, details, at }).responds({ task: described }))
+        .then(respond({ task: described }))
+        .named("success"),
+      where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  {
+    input: {
+      required: ["session", "task", "title"],
+      defaults: { details: "" },
+    },
+  },
+);
+
 export const RetimeTask = endpoint(
   "/tasks/retime",
   ({ session, task, startsAt, endsAt, user, at, retimed }) =>
     receive({ session, task, startsAt, endsAt }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
+      where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
         .then(Tasking.retime({ task, startsAt, endsAt, at }).responds({ task: retimed }))
         .then(respond({ task: retimed }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotActOnTask({ user, task }))
+      where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -151,22 +174,23 @@ export const AssignTask = endpoint(
       where(
         now(at),
         activeUser({ session }).is({ user }),
-        mayActOnTask({ user, task }),
-        theListHolding({ task }).is({ list }),
+        mayActOnTask({ user, task, at }),
+        theListHolding({ task, at }).is({ list }),
         belongsToList({ user: assignee, list }),
       )
         .then(Tasking.assign({ task, assignee, at }).responds({ task: assigned }))
         .then(respond({ task: assigned }))
         .named("success"),
       where(
+        now(at),
         activeUser({ session }).is({ user }),
-        mayActOnTask({ user, task }),
-        theListHolding({ task }).is({ list }),
+        mayActOnTask({ user, task, at }),
+        theListHolding({ task, at }).is({ list }),
         doesNotBelongToList({ user: assignee, list }),
       )
         .then(respond({ error: "FORBIDDEN" }))
         .named("assignee-outside-list"),
-      where(activeUser({ session }).is({ user }), mayNotActOnTask({ user, task }))
+      where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -174,11 +198,11 @@ export const AssignTask = endpoint(
 
 export const ReleaseTask = endpoint("/tasks/release", ({ session, task, user, at, released }) =>
   receive({ session, task }).then(
-    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
       .then(Tasking.release({ task, at }).responds({ task: released }))
       .then(respond({ task: released }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotActOnTask({ user, task }))
+    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
   ),
@@ -186,11 +210,11 @@ export const ReleaseTask = endpoint("/tasks/release", ({ session, task, user, at
 
 export const CompleteTask = endpoint("/tasks/complete", ({ session, task, user, at, completed }) =>
   receive({ session, task }).then(
-    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
       .then(Tasking.complete({ task, at }).responds({ task: completed }))
       .then(respond({ task: completed }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotActOnTask({ user, task }))
+    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
   ),
@@ -198,11 +222,11 @@ export const CompleteTask = endpoint("/tasks/complete", ({ session, task, user, 
 
 export const ReopenTask = endpoint("/tasks/reopen", ({ session, task, user, at, reopened }) =>
   receive({ session, task }).then(
-    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
       .then(Tasking.reopen({ task, at }).responds({ task: reopened }))
       .then(respond({ task: reopened }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotActOnTask({ user, task }))
+    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
   ),
@@ -210,11 +234,11 @@ export const ReopenTask = endpoint("/tasks/reopen", ({ session, task, user, at, 
 
 export const CancelTask = endpoint("/tasks/cancel", ({ session, task, user, at, canceled }) =>
   receive({ session, task }).then(
-    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task }))
+    where(now(at), activeUser({ session }).is({ user }), mayActOnTask({ user, task, at }))
       .then(Tasking.cancel({ task, at }).responds({ task: canceled }))
       .then(respond({ task: canceled }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotActOnTask({ user, task }))
+    where(now(at), activeUser({ session }).is({ user }), mayNotActOnTask({ user, task, at }))
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
   ),

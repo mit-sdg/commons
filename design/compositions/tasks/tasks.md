@@ -1,52 +1,50 @@
 # Tasks
 
 A task carries one window from a start moment to an end moment, where the end is
-both the deadline and the end of the period the task occupies. That is why a
-deliverable and a time-blocked duty such as office hours need no separate shape.
-A task is assigned to one profile or to none, so two people staffing one block
-are two tasks.
+both the deadline and the end of the period the task occupies. A task records
+the list that keeps it as its scope and is assigned to at most one member of
+that list.
 
 [Tasks.tasks.CreateTask](reaction:Tasks.tasks.CreateTask) requires the acting profile to belong to
-the named list, records the task unassigned, and then places it in that list, so
-the list owns the task and a list's contents are read directly from the list.
-The interface offers the creation moment as the start and lets the creator choose
-a later one; Tasking takes both as ordinary input and refuses a window whose end
-precedes its start. Because concept commits are independent, a fault between the
-two steps can retain a task no list reaches; nothing else is affected.
+the named list, records the task in that list scope, and sets its window. Tasking
+refuses a window whose end precedes its start.
 
-Every following operation asks the same question through
-`mayActOnTask`: which list holds this task, and does the acting profile belong to
-it? A task in no list, and a task in a list the caller left, both answer the
-same refusal, so authority is read from current membership rather than from
-anything stored on the task.
-[Tasks.tasks.RetimeTask](reaction:Tasks.tasks.RetimeTask) replaces the window,
-[Tasks.tasks.AssignTask](reaction:Tasks.tasks.AssignTask) overwrites the single assignee and
-additionally refuses a profile that does not belong to that task's list, and
-[Tasks.tasks.ReleaseTask](reaction:Tasks.tasks.ReleaseTask) clears it, which is how an unassigned
-task in a shared list is taken by any member and handed on. Every member holds
-the same powers, so none of these checks looks at who created the task.
+Every task operation requires the acting user to belong to the list holding that
+task. Every member holds the same powers, regardless of who created the task.
 
-[Tasks.tasks.CompleteTask](reaction:Tasks.tasks.CompleteTask) and
-[Tasks.tasks.ReopenTask](reaction:Tasks.tasks.ReopenTask) are each other's undo, so a mistaken
-completion is corrected rather than living in the list forever.
-[Tasks.tasks.CancelTask](reaction:Tasks.tasks.CancelTask) records the state only: a canceled task
-stays readable with its original window and its recorded assignee, and canceling
-a completed task stays refused, which keeps done and canceled distinct.
+[Tasks.tasks.DescribeTask](reaction:Tasks.tasks.DescribeTask) edits the title and
+details of a non-canceled task.
 
-Reads join task, list, and membership state at the moment they are asked.
-[The tasks in a list](former:Tasks.tasks.theTasksIn) orders by deadline and is
-read by the list page. [Tasks.tasks.MyTasks](reaction:Tasks.tasks.MyTasks) forms
+[Tasks.tasks.RetimeTask](reaction:Tasks.tasks.RetimeTask) replaces the window of a
+non-canceled task.
+
+[Tasks.tasks.AssignTask](reaction:Tasks.tasks.AssignTask) sets the assignee and
+refuses assigning to a person who is not a current member of that task's list.
+
+[Tasks.tasks.ReleaseTask](reaction:Tasks.tasks.ReleaseTask) clears the assignee.
+
+[Tasks.tasks.CompleteTask](reaction:Tasks.tasks.CompleteTask) marks an open task
+done.
+
+[Tasks.tasks.ReopenTask](reaction:Tasks.tasks.ReopenTask) restores a completed task
+to open.
+
+[Tasks.tasks.CancelTask](reaction:Tasks.tasks.CancelTask) cancels an open task. A
+canceled task remains readable with its details, window, and recorded assignee.
+
+Reads join task and list membership at the moment they are asked.
+[The tasks in a list](former:Tasks.tasks.theTasksIn) orders tasks by deadline and
+is read by the list page. [Tasks.tasks.MyTasks](reaction:Tasks.tasks.MyTasks) forms
 [the tasks assigned to a profile](former:Tasks.tasks.theTasksAssignedTo) across
-every list, keeping only the lists that profile still belongs to, which is why a
-list a profile leaves takes its tasks out of that profile's view. Both reads
-carry an overdue answer decided by the current moment against the task's end
-rather than by any stored flag.
+every list the profile still belongs to. Both reads carry an overdue status
+calculated against the current instant.
 
 ```endpoints
 Tasks.tasks.AssignTask at /tasks/assign
 Tasks.tasks.CancelTask at /tasks/cancel
 Tasks.tasks.CompleteTask at /tasks/complete
 Tasks.tasks.CreateTask at /tasks/create
+Tasks.tasks.DescribeTask at /tasks/describe
 Tasks.tasks.MyTasks at /tasks/mine
 Tasks.tasks.ReleaseTask at /tasks/release
 Tasks.tasks.ReopenTask at /tasks/reopen
