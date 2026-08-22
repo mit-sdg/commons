@@ -23,6 +23,8 @@
     "serve": "bun src/start.ts",
     "setup:hash": "bun scripts/hash-setup-secret.ts",
     "scenario": "bun src/scenario.ts",
+    "dev": "bun scripts/stack-mongo.ts",
+    "start": "bun scripts/stack-mongo.ts",
     "stack": "bun scripts/stack.ts",
     "stack:mongo": "bun scripts/stack-mongo.ts"
   },
