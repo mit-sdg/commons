@@ -11,13 +11,14 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireAuth } from "@/components/require-auth";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
+import { ExpandAllDetails } from "@/components/tasks/expand-all-details";
 import {
   MemberPicker,
   type PickedMember,
@@ -36,6 +37,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useExpandedTasks } from "@/hooks/use-expanded-tasks";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -377,8 +379,16 @@ function TaskListView() {
     page.refetch();
   }
 
-  const allTasks = page.data?.tasks ?? [];
+  const allTasks = useMemo(() => page.data?.tasks ?? [], [page.data]);
   const [now] = useState(() => Date.now());
+  const expandable = useMemo(
+    () =>
+      allTasks
+        .filter((task) => task.details?.trim())
+        .map((task) => String(task.task)),
+    [allTasks],
+  );
+  const details = useExpandedTasks(expandable);
 
   const openTasks = allTasks.filter((task) => task.state === "OPEN");
   const activeAndOverdue = openTasks
@@ -523,6 +533,8 @@ function TaskListView() {
             />
           ) : (
             <div className="space-y-6">
+              <ExpandAllDetails details={details} />
+
               {activeAndOverdue.length > 0 ? (
                 <section className="space-y-3" aria-label="Active and overdue">
                   <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -531,6 +543,8 @@ function TaskListView() {
                   {activeAndOverdue.map((task) => (
                     <TaskCard
                       key={String(task.task)}
+                      expanded={details.isExpanded(String(task.task))}
+                      onToggleExpanded={() => details.toggle(String(task.task))}
                       task={task}
                       members={roster}
                       viewer={viewer}
@@ -549,6 +563,8 @@ function TaskListView() {
                   {upcoming.map((task) => (
                     <TaskCard
                       key={String(task.task)}
+                      expanded={details.isExpanded(String(task.task))}
+                      onToggleExpanded={() => details.toggle(String(task.task))}
                       task={task}
                       members={roster}
                       viewer={viewer}
@@ -574,6 +590,8 @@ function TaskListView() {
                   {settled.map((task) => (
                     <TaskCard
                       key={String(task.task)}
+                      expanded={details.isExpanded(String(task.task))}
+                      onToggleExpanded={() => details.toggle(String(task.task))}
                       task={task}
                       members={roster}
                       viewer={viewer}

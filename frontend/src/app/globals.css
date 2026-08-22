@@ -261,6 +261,75 @@
     @apply border px-3 py-1.5 text-left;
   }
 
+  /* Compact prose for Markdown details inside task cards. Deliberately a
+     sibling of .prose-forum rather than an override of it: task cards need a
+     tighter scale, and cascading two prose classes fought over spacing. */
+  .prose-task {
+    @apply text-sm leading-6 text-muted-foreground;
+  }
+  .prose-task > * + * {
+    @apply mt-2;
+  }
+  .prose-task h4,
+  .prose-task h5,
+  .prose-task h6 {
+    @apply font-display font-semibold tracking-tight text-foreground;
+  }
+  .prose-task h4 {
+    @apply mt-3 text-[0.9375rem];
+  }
+  .prose-task h5 {
+    @apply mt-3 text-sm;
+  }
+  .prose-task h6 {
+    @apply mt-3 text-xs;
+  }
+  .prose-task a {
+    @apply font-medium text-primary underline decoration-primary/30 underline-offset-2 hover:decoration-primary;
+  }
+  .prose-task strong {
+    @apply font-semibold text-foreground;
+  }
+  .prose-task em {
+    @apply italic;
+  }
+  .prose-task ul,
+  .prose-task ol {
+    @apply space-y-1;
+  }
+  .prose-task ul {
+    @apply list-disc pl-5;
+  }
+  .prose-task ol {
+    @apply list-decimal pl-5;
+  }
+  /* Task lists supply their own checkbox marker. */
+  .prose-task ul.prose-task-checklist {
+    @apply list-none pl-0;
+  }
+  .prose-task li > ul,
+  .prose-task li > ol {
+    @apply mt-1;
+  }
+  .prose-task blockquote {
+    @apply border-l-2 border-primary/40 pl-3 italic;
+  }
+  .prose-task blockquote > * + * {
+    @apply mt-1;
+  }
+  .prose-task code {
+    @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground;
+  }
+  .prose-task pre {
+    @apply overflow-x-auto rounded-lg border bg-muted/60 p-3 font-mono text-xs text-foreground;
+  }
+  .prose-task pre code {
+    @apply bg-transparent p-0;
+  }
+  .prose-task hr {
+    @apply border-border;
+  }
+
   /* Hairline section label, broadsheet style. */
   .eyebrow {
     @apply text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
