@@ -16,6 +16,7 @@ const later = new Date("2026-08-25T12:00:00.000Z");
 const window = { startsAt: "2026-08-19T16:00:00.000Z", endsAt: "2026-08-19T17:00:00.000Z" };
 
 const draft = {
+  scope: "list-1",
   title: "Draft the reading",
   details: "Two pages",
   ...window,
@@ -30,6 +31,7 @@ for (const [floor, make] of floors) {
       const { task } = await tasking.create(draft);
       expect(await tasking._getTask({ task, at })).toEqual([
         {
+          scope: "list-1",
           title: "Draft the reading",
           details: "Two pages",
           ...window,
@@ -40,7 +42,35 @@ for (const [floor, make] of floors) {
           updatedAt: at,
         },
       ]);
+      expect(await tasking._getTasksInScope({ scope: "list-1", at })).toEqual([
+        expect.objectContaining({ task, title: "Draft the reading" }),
+      ]);
       expect(await tasking._getTask({ task: "ghost", at })).toEqual([]);
+    });
+
+    test("describe edits title and details while not canceled", async () => {
+      const tasking = await make();
+      const { task } = await tasking.create(draft);
+      expect(
+        await tasking.describe({
+          task,
+          title: "Updated reading",
+          details: "Three pages",
+          at: later,
+        }),
+      ).toEqual({ task });
+      expect((await tasking._getTask({ task, at }))[0]).toMatchObject({
+        title: "Updated reading",
+        details: "Three pages",
+        updatedAt: later,
+      });
+
+      await tasking.cancel({ task, at: later });
+      expect(
+        await refusalOf(() =>
+          tasking.describe({ task, title: "After cancel", details: "", at: later }),
+        ),
+      ).toBeInstanceOf(refusalErrors.TaskCanceled);
     });
 
     test("create refuses a window that ends before it begins or cannot be read", async () => {
@@ -86,7 +116,7 @@ for (const [floor, make] of floors) {
       const { task } = await tasking.create(draft);
       await tasking.assign({ task, assignee: "mara", at });
       expect(await tasking._getAssigned({ assignee: "mara", at })).toEqual([
-        expect.objectContaining({ task, state: "OPEN", overdue: false }),
+        expect.objectContaining({ task, scope: "list-1", state: "OPEN", overdue: false }),
       ]);
       await tasking.assign({ task, assignee: "noah", at });
       expect(await tasking._getAssigned({ assignee: "mara", at })).toEqual([]);
@@ -156,6 +186,86 @@ for (const [floor, make] of floors) {
       ]);
       await tasking.complete({ task, at: later });
       expect((await tasking._getTask({ task, at: later }))[0]).toMatchObject({ overdue: false });
+    });
+
+    test("uncancel returns a canceled task to open, keeping window, text and assignee", async () => {
+      const tasking = await make();
+      const { task } = await tasking.create({ ...draft, assignee: "mara" });
+      await tasking.cancel({ task, at });
+      expect(await tasking.uncancel({ task, at: later })).toEqual({ task });
+      expect(await tasking._getTask({ task, at })).toEqual([
+        {
+          scope: "list-1",
+          title: "Draft the reading",
+          details: "Two pages",
+          ...window,
+          assignee: "mara",
+          state: "OPEN",
+          overdue: false,
+          createdAt: at,
+          updatedAt: later,
+        },
+      ]);
+      expect(await tasking._getAssigned({ assignee: "mara", at })).toEqual([
+        expect.objectContaining({ task, state: "OPEN" }),
+      ]);
+    });
+
+    test("uncancel refuses an open, a completed, or an unknown task", async () => {
+      const tasking = await make();
+      const { task } = await tasking.create(draft);
+      expect(await refusalOf(() => tasking.uncancel({ task, at }))).toBeInstanceOf(
+        refusalErrors.TaskNotCanceled,
+      );
+      await tasking.complete({ task, at });
+      expect(await refusalOf(() => tasking.uncancel({ task, at }))).toBeInstanceOf(
+        refusalErrors.TaskAlreadyComplete,
+      );
+      expect(await refusalOf(() => tasking.uncancel({ task: "ghost", at }))).toBeInstanceOf(
+        refusalErrors.TaskNotFound,
+      );
+      expect((await tasking._getTask({ task, at }))[0]).toMatchObject({ state: "DONE" });
+    });
+
+    test("delete removes a completed task and a canceled task from every reading", async () => {
+      const tasking = await make();
+      const { task: done } = await tasking.create({ ...draft, assignee: "mara", title: "One" });
+      await tasking.complete({ task: done, at });
+      expect(await tasking.delete({ task: done, at: later })).toEqual({});
+      expect(await tasking._getTask({ task: done, at })).toEqual([]);
+      expect(await tasking._getTasksInScope({ scope: "list-1", at })).toEqual([]);
+      expect(await tasking._getAssigned({ assignee: "mara", at })).toEqual([]);
+
+      const { task: canceled } = await tasking.create({ ...draft, assignee: "mara", title: "Two" });
+      await tasking.cancel({ task: canceled, at });
+      expect(await tasking.delete({ task: canceled, at: later })).toEqual({});
+      expect(await tasking._getTask({ task: canceled, at })).toEqual([]);
+      expect(await tasking._getTasksInScope({ scope: "list-1", at })).toEqual([]);
+      expect(await tasking._getAssigned({ assignee: "mara", at })).toEqual([]);
+    });
+
+    test("delete refuses an open task and an unknown task", async () => {
+      const tasking = await make();
+      const { task } = await tasking.create(draft);
+      expect(await refusalOf(() => tasking.delete({ task, at }))).toBeInstanceOf(
+        refusalErrors.TaskNotSettled,
+      );
+      expect((await tasking._getTask({ task, at }))[0]).toMatchObject({ state: "OPEN" });
+      expect(await refusalOf(() => tasking.delete({ task: "ghost", at }))).toBeInstanceOf(
+        refusalErrors.TaskNotFound,
+      );
+    });
+
+    test("deleting one task leaves the other tasks in its scope intact", async () => {
+      const tasking = await make();
+      const { task: first } = await tasking.create({ ...draft, title: "One" });
+      const { task: second } = await tasking.create({ ...draft, title: "Two" });
+      const { task: third } = await tasking.create({ ...draft, title: "Three" });
+      await tasking.cancel({ task: second, at });
+      await tasking.delete({ task: second, at });
+      expect(
+        (await tasking._getTasksInScope({ scope: "list-1", at })).map((row) => row.task),
+      ).toEqual([first, third]);
     });
 
     test("assigned tasks answer in creation order", async () => {

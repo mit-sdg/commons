@@ -43,373 +43,486 @@ async function newApp() {
 
 afterAll(stopTestDb);
 
-describe("task management", () => {
-  test("a profile's own tasks are the list whose only member is that profile", async () => {
+describe("collaborative task lists management", () => {
+  test("creating two lists produces distinct independent lists", async () => {
     const app = await newApp();
     const mara = await actor(app, "mara");
 
-    const opened = await call(app, "/tasklists/open", {
+    const created1 = await call(app, "/tasklists/create", {
       session: mara.session,
-      members: [mara.user],
-      title: "My work",
+      title: "Team Project",
     });
-    const list = String(opened.list);
-    expect(list).toEqual(expect.any(String));
+    const list1 = String(created1.list);
+    expect(list1).toEqual(expect.any(String));
 
-    const again = await call(app, "/tasklists/open", {
+    const created2 = await call(app, "/tasklists/create", {
       session: mara.session,
-      members: [mara.user],
-      title: "Ignored on reopening",
+      title: "Team Project",
     });
-    expect(again.list).toBe(list);
+    const list2 = String(created2.list);
+    expect(list2).toEqual(expect.any(String));
+    expect(list1).not.toBe(list2);
 
-    const created = await call(app, "/tasks/create", {
+    const taskCreated = await call(app, "/tasks/create", {
       session: mara.session,
-      list,
-      title: "Read the chapter",
+      list: list1,
+      title: "Task in List 1",
       ...WINDOW,
     });
-    const task = String(created.task);
+    const task = String(taskCreated.task);
 
-    const page = await call(app, "/tasklists/get", { session: mara.session, list });
-    expect(page.list).toEqual(
-      expect.objectContaining({
-        list,
-        title: "My work",
-        members: [{ user: mara.user, displayName: "mara" }],
-        present: [{ user: mara.user }],
-        openTasks: 1,
-      }),
-    );
-    expect(page.tasks).toEqual([
-      expect.objectContaining({ task, title: "Read the chapter", state: "OPEN", assignee: null }),
+    const page1 = await call(app, "/tasklists/get", { session: mara.session, list: list1 });
+    expect(page1.tasks).toEqual([
+      expect.objectContaining({ task, title: "Task in List 1", state: "OPEN" }),
     ]);
 
-    expect(await call(app, "/tasks/complete", { session: mara.session, task })).toEqual({ task });
-    const done = await call(app, "/tasklists/get", { session: mara.session, list });
-    expect((done.tasks as { state: string }[])[0].state).toBe("DONE");
+    const page2 = await call(app, "/tasklists/get", { session: mara.session, list: list2 });
+    expect(page2.tasks).toEqual([]);
   });
 
-  test("a time-blocked duty is read as an occupied window assigned to its holder", async () => {
+  test("any member can rename a list", async () => {
     const app = await newApp();
-    const staff = await actor(app, "staff_omar");
-    const { list } = await call(app, "/tasklists/open", {
-      session: staff.session,
-      members: [staff.user],
-      title: "Duties",
+    const mara = await actor(app, "mara_rename");
+    const noah = await actor(app, "noah_rename");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Draft Title",
     });
-    const { task } = await call(app, "/tasks/create", {
-      session: staff.session,
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
       list,
-      title: "Office hours",
-      details: "Room 2-131",
-      startsAt: "2026-09-01T20:00:00.000Z",
-      endsAt: "2026-09-01T21:00:00.000Z",
+      candidate: noah.user,
     });
+
+    const renamed = await call(app, "/tasklists/rename", {
+      session: noah.session,
+      list,
+      title: "Renamed by Noah",
+    });
+    expect(renamed).toEqual({ list });
+
+    const page = await call(app, "/tasklists/get", { session: mara.session, list });
+    expect((page.list as { title: string }).title).toBe("Renamed by Noah");
+  });
+
+  test("any member can add, remove, or leave, with equal authority", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_collab");
+    const noah = await actor(app, "noah_collab");
+    const priya = await actor(app, "priya_collab");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Shared Board",
+    });
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
+    });
+
+    // Noah adds Priya
     expect(
-      await call(app, "/tasks/assign", { session: staff.session, task, assignee: staff.user }),
+      await call(app, "/tasklists/add-member", {
+        session: noah.session,
+        list,
+        candidate: priya.user,
+      }),
+    ).toEqual({ list });
+
+    const pageBefore = await call(app, "/tasklists/get", { session: mara.session, list });
+    expect((pageBefore.list as { members: { user: string }[] }).members).toHaveLength(3);
+
+    // Noah creates task, Priya assigns to Noah, Mara edits description
+    const { task } = await call(app, "/tasks/create", {
+      session: noah.session,
+      list,
+      title: "Initial title",
+      details: "Initial details",
+      ...WINDOW,
+    });
+
+    expect(
+      await call(app, "/tasks/assign", { session: priya.session, task, assignee: noah.user }),
     ).toEqual({ task });
 
-    const mine = await call(app, "/tasks/mine", { session: staff.session });
-    expect(mine.tasks).toEqual([
+    expect(
+      await call(app, "/tasks/describe", {
+        session: mara.session,
+        task,
+        title: "Edited title",
+        details: "Markdown **details**",
+      }),
+    ).toEqual({ task });
+
+    const taskPage = await call(app, "/tasklists/get", { session: priya.session, list });
+    expect((taskPage.tasks as { title: string; details: string; assignee: string }[])[0]).toEqual(
+      expect.objectContaining({
+        title: "Edited title",
+        details: "Markdown **details**",
+        assignee: noah.user,
+      }),
+    );
+
+    // Noah removes Priya
+    expect(
+      await call(app, "/tasklists/remove-member", {
+        session: noah.session,
+        list,
+        target: priya.user,
+      }),
+    ).toEqual({ list });
+
+    expect(await call(app, "/tasklists/get", { session: priya.session, list })).toEqual({
+      error: "FORBIDDEN",
+    });
+  });
+
+  test("leaving or removal releases open tasks and preserves done/canceled task history", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_lin");
+    const noah = await actor(app, "noah_lin");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Linearization List",
+    });
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
+    });
+
+    const { task: openTask } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list,
+      title: "Open Task",
+      ...WINDOW,
+    });
+    await call(app, "/tasks/assign", {
+      session: mara.session,
+      task: openTask,
+      assignee: noah.user,
+    });
+
+    const { task: doneTask } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list,
+      title: "Done Task",
+      ...WINDOW,
+    });
+    await call(app, "/tasks/assign", {
+      session: mara.session,
+      task: doneTask,
+      assignee: noah.user,
+    });
+    await call(app, "/tasks/complete", { session: mara.session, task: doneTask });
+
+    const { task: canceledTask } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list,
+      title: "Canceled Task",
+      ...WINDOW,
+    });
+    await call(app, "/tasks/assign", {
+      session: mara.session,
+      task: canceledTask,
+      assignee: noah.user,
+    });
+    await call(app, "/tasks/cancel", { session: mara.session, task: canceledTask });
+
+    // Noah leaves
+    expect(await call(app, "/tasklists/leave", { session: noah.session, list })).toEqual({ list });
+    await app.whenIdle();
+
+    const kept = await call(app, "/tasklists/get", { session: mara.session, list });
+    const tasks = kept.tasks as { task: string; assignee: string | null; state: string }[];
+    const openRow = tasks.find((t) => t.task === openTask);
+    const doneRow = tasks.find((t) => t.task === doneTask);
+    const canceledRow = tasks.find((t) => t.task === canceledTask);
+
+    expect(openRow).toEqual(expect.objectContaining({ state: "OPEN", assignee: null }));
+    expect(doneRow).toEqual(expect.objectContaining({ state: "DONE", assignee: noah.user }));
+    expect(canceledRow).toEqual(
+      expect.objectContaining({ state: "CANCELED", assignee: noah.user }),
+    );
+  });
+
+  test("last remaining member cannot leave or be removed", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_last");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Solo List",
+    });
+
+    expect(await call(app, "/tasklists/leave", { session: mara.session, list })).toEqual({
+      error: "LAST_MEMBER",
+    });
+    expect(
+      await call(app, "/tasklists/remove-member", {
+        session: mara.session,
+        list,
+        target: mara.user,
+      }),
+    ).toEqual({ error: "LAST_MEMBER" });
+  });
+
+  test("tasks/mine returns open tasks across lists the user belongs to ordered by due time", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_mine");
+
+    const { list: listA } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "List A",
+    });
+    const { list: listB } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "List B",
+    });
+
+    const { task: taskLater } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list: listA,
+      title: "Due Later",
+      startsAt: "2026-08-19T10:00:00.000Z",
+      endsAt: "2026-08-19T18:00:00.000Z",
+    });
+    await call(app, "/tasks/assign", {
+      session: mara.session,
+      task: taskLater,
+      assignee: mara.user,
+    });
+
+    const { task: taskSooner } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list: listB,
+      title: "Due Sooner",
+      startsAt: "2026-08-19T10:00:00.000Z",
+      endsAt: "2026-08-19T14:00:00.000Z",
+    });
+    await call(app, "/tasks/assign", {
+      session: mara.session,
+      task: taskSooner,
+      assignee: mara.user,
+    });
+
+    const mine = await call(app, "/tasks/mine", { session: mara.session });
+    const mineTasks = mine.tasks as { task: string; title: string }[];
+    expect(mineTasks.map((t) => t.task)).toEqual([taskSooner, taskLater]);
+  });
+
+  test("retime, release, and reopen endpoints operate correctly for members", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_ops");
+    const noah = await actor(app, "noah_ops");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Ops List",
+    });
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
+    });
+
+    const { task } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list,
+      title: "Ops Task",
+      ...WINDOW,
+    });
+
+    // Retime
+    const retimed = await call(app, "/tasks/retime", {
+      session: noah.session,
+      task,
+      startsAt: "2026-08-20T09:00:00.000Z",
+      endsAt: "2026-08-20T17:00:00.000Z",
+    });
+    expect(retimed).toEqual({ task });
+
+    // Assign then release
+    await call(app, "/tasks/assign", { session: mara.session, task, assignee: noah.user });
+    const released = await call(app, "/tasks/release", { session: noah.session, task });
+    expect(released).toEqual({ task });
+
+    // Complete then reopen
+    const completed = await call(app, "/tasks/complete", { session: mara.session, task });
+    expect(completed).toEqual({ task });
+    const reopened = await call(app, "/tasks/reopen", { session: noah.session, task });
+    expect(reopened).toEqual({ task });
+
+    const page = await call(app, "/tasklists/get", { session: mara.session, list });
+    expect(page.tasks).toEqual([
       expect.objectContaining({
         task,
-        list,
-        listTitle: "Duties",
-        title: "Office hours",
-        startsAt: "2026-09-01T20:00:00.000Z",
-        endsAt: "2026-09-01T21:00:00.000Z",
+        startsAt: "2026-08-20T09:00:00.000Z",
+        endsAt: "2026-08-20T17:00:00.000Z",
+        assignee: null,
         state: "OPEN",
       }),
     ]);
   });
 
-  test("overdue follows the current moment rather than a stored flag", async () => {
+  test("leaving or being removed from a list removes its tasks from cross-list /tasks/mine read", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_overdue");
-    const { list } = await call(app, "/tasklists/open", {
-      session: mara.session,
-      members: [mara.user],
-      title: "",
-    });
-    const { task } = await call(app, "/tasks/create", {
-      session: mara.session,
-      list,
-      title: "Late already",
-      startsAt: "2020-01-01T00:00:00.000Z",
-      endsAt: "2020-01-02T00:00:00.000Z",
-    });
-    await call(app, "/tasks/assign", { session: mara.session, task, assignee: mara.user });
+    const mara = await actor(app, "mara_mine_leave");
+    const noah = await actor(app, "noah_mine_leave");
 
-    const before = await call(app, "/tasks/mine", { session: mara.session });
-    expect((before.tasks as { overdue: boolean }[])[0].overdue).toBe(true);
-
-    await call(app, "/tasks/retime", {
+    const { list: listA } = await call(app, "/tasklists/create", {
       session: mara.session,
-      task,
-      startsAt: "2099-01-01T00:00:00.000Z",
-      endsAt: "2099-01-02T00:00:00.000Z",
+      title: "List A",
     });
-    const after = await call(app, "/tasks/mine", { session: mara.session });
-    expect((after.tasks as { overdue: boolean }[])[0].overdue).toBe(false);
-  });
-
-  test("either member of a shared list may take, reassign, retime, and cancel its tasks", async () => {
-    const app = await newApp();
-    const mara = await actor(app, "mara_team");
-    const noah = await actor(app, "noah_team");
-
-    const { list } = await call(app, "/tasklists/open", {
+    const { list: listB } = await call(app, "/tasklists/create", {
       session: mara.session,
-      members: [mara.user, noah.user],
-      title: "Team project",
+      title: "List B",
     });
-    const { task } = await call(app, "/tasks/create", {
+
+    await call(app, "/tasklists/add-member", {
       session: mara.session,
-      list,
-      title: "Write the report",
+      list: listA,
+      candidate: noah.user,
+    });
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list: listB,
+      candidate: noah.user,
+    });
+
+    const { task: taskA } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list: listA,
+      title: "Task in A",
       ...WINDOW,
     });
+    await call(app, "/tasks/assign", { session: mara.session, task: taskA, assignee: noah.user });
 
-    const seenByNoah = await call(app, "/tasklists/get", { session: noah.session, list });
-    expect(seenByNoah.tasks).toEqual([expect.objectContaining({ task, assignee: null })]);
+    const { task: taskB } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list: listB,
+      title: "Task in B",
+      ...WINDOW,
+    });
+    await call(app, "/tasks/assign", { session: mara.session, task: taskB, assignee: noah.user });
 
-    expect(
-      await call(app, "/tasks/assign", { session: noah.session, task, assignee: noah.user }),
-    ).toEqual({ task });
-    expect(
-      await call(app, "/tasks/assign", { session: mara.session, task, assignee: mara.user }),
-    ).toEqual({ task });
-    expect(
-      await call(app, "/tasks/retime", {
-        session: noah.session,
-        task,
-        startsAt: "2026-08-20T16:00:00.000Z",
-        endsAt: "2026-08-21T17:00:00.000Z",
-      }),
-    ).toEqual({ task });
-    expect(await call(app, "/tasks/cancel", { session: noah.session, task })).toEqual({ task });
+    const mineInitial = await call(app, "/tasks/mine", { session: noah.session });
+    const initialTaskIds = (mineInitial.tasks as { task: string }[]).map((t) => t.task);
+    expect(initialTaskIds).toContain(taskA);
+    expect(initialTaskIds).toContain(taskB);
 
-    const after = await call(app, "/tasklists/get", { session: mara.session, list });
-    expect(after.tasks).toEqual([
+    // Noah leaves List A
+    await call(app, "/tasklists/leave", { session: noah.session, list: listA });
+
+    const mineAfter = await call(app, "/tasks/mine", { session: noah.session });
+    const afterTaskIds = (mineAfter.tasks as { task: string }[]).map((t) => t.task);
+    expect(afterTaskIds).not.toContain(taskA);
+    expect(afterTaskIds).toContain(taskB);
+  });
+
+  test("state survives application restart in MongoDB", async () => {
+    const db = await testDb();
+    const app1 = assembleCommons(mongoImplementations(db));
+    const mara = await actor(app1, "mara_restart");
+    const noah = await actor(app1, "noah_restart");
+
+    const { list } = await call(app1, "/tasklists/create", {
+      session: mara.session,
+      title: "Durable List",
+    });
+    await call(app1, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
+    });
+
+    const { task } = await call(app1, "/tasks/create", {
+      session: mara.session,
+      list,
+      title: "Durable Task",
+      details: "Must survive restart",
+      ...WINDOW,
+    });
+    await call(app1, "/tasks/assign", { session: mara.session, task, assignee: noah.user });
+
+    // Restart application by instantiating new assembly over same db
+    const app2 = assembleCommons(mongoImplementations(db));
+
+    const page = await call(app2, "/tasklists/get", { session: mara.session, list });
+    expect((page.list as { title: string }).title).toBe("Durable List");
+    expect((page.list as { members: { user: string }[] }).members).toHaveLength(2);
+    expect(page.tasks).toEqual([
       expect.objectContaining({
         task,
-        state: "CANCELED",
-        assignee: mara.user,
-        startsAt: "2026-08-20T16:00:00.000Z",
-        endsAt: "2026-08-21T17:00:00.000Z",
+        title: "Durable Task",
+        details: "Must survive restart",
+        assignee: noah.user,
+        state: "OPEN",
+      }),
+    ]);
+
+    // Perform lifecycle transition on second instance
+    const completed = await call(app2, "/tasks/complete", { session: noah.session, task });
+    expect(completed).toEqual({ task });
+
+    const pageUpdated = await call(app2, "/tasklists/get", { session: mara.session, list });
+    expect(pageUpdated.tasks).toEqual([
+      expect.objectContaining({
+        task,
+        state: "DONE",
       }),
     ]);
   });
 
-  test("a mistaken completion is reopened and the task is outstanding again", async () => {
-    const app = await newApp();
-    const mara = await actor(app, "mara_reopen");
-    const { list } = await call(app, "/tasklists/open", {
-      session: mara.session,
-      members: [mara.user],
-      title: "",
-    });
-    const { task } = await call(app, "/tasks/create", {
-      session: mara.session,
-      list,
-      title: "Wrong one",
-      ...WINDOW,
-    });
-    await call(app, "/tasks/complete", { session: mara.session, task });
-    expect(await call(app, "/tasks/cancel", { session: mara.session, task })).toEqual({
-      error: "TASK_ALREADY_COMPLETE",
-    });
-    expect(await call(app, "/tasks/reopen", { session: mara.session, task })).toEqual({ task });
-
-    const page = await call(app, "/tasklists/get", { session: mara.session, list });
-    expect((page.tasks as { state: string }[])[0].state).toBe("OPEN");
-    expect((page.list as { openTasks: number }).openTasks).toBe(1);
-  });
-
-  test("leaving releases held tasks, withdraws membership, and keeps the list's identity", async () => {
-    const app = await newApp();
-    const mara = await actor(app, "mara_leave");
-    const noah = await actor(app, "noah_leave");
-
-    const { list } = await call(app, "/tasklists/open", {
-      session: mara.session,
-      members: [mara.user, noah.user],
-      title: "Shared",
-    });
-    const { task } = await call(app, "/tasks/create", {
-      session: mara.session,
-      list,
-      title: "Held by noah",
-      ...WINDOW,
-    });
-    await call(app, "/tasks/assign", { session: mara.session, task, assignee: noah.user });
-
-    expect(await call(app, "/tasklists/leave", { session: noah.session, list })).toEqual({ list });
-    await app.whenIdle();
-
-    expect(await call(app, "/tasks/mine", { session: noah.session })).toEqual({ tasks: [] });
-    expect(await call(app, "/tasklists/mine", { session: noah.session })).toEqual({ lists: [] });
-    expect(await call(app, "/tasklists/get", { session: noah.session, list })).toEqual({
-      error: "FORBIDDEN",
-    });
-    expect(await call(app, "/tasklists/leave", { session: noah.session, list })).toEqual({
-      error: "FORBIDDEN",
-    });
-
-    const kept = await call(app, "/tasklists/get", { session: mara.session, list });
-    expect((kept.list as { members: unknown[]; present: unknown[] }).members).toHaveLength(2);
-    expect((kept.list as { present: unknown[] }).present).toEqual([{ user: mara.user }]);
-    expect(kept.tasks).toEqual([expect.objectContaining({ task, assignee: null, state: "OPEN" })]);
-
-    const reopened = await call(app, "/tasklists/open", {
-      session: mara.session,
-      members: [noah.user, mara.user],
-      title: "Shared",
-    });
-    expect(reopened.list).toBe(list);
-    await app.whenIdle();
-    expect(await call(app, "/tasklists/mine", { session: noah.session })).toEqual({
-      lists: [expect.objectContaining({ list })],
-    });
-  });
-
-  test("adding a member either takes the list along or starts a separate one", async () => {
-    const app = await newApp();
-    const mara = await actor(app, "mara_extend");
-    const noah = await actor(app, "noah_extend");
-    const priya = await actor(app, "priya_extend");
-
-    const { list } = await call(app, "/tasklists/open", {
-      session: mara.session,
-      members: [mara.user, noah.user],
-      title: "Pair",
-    });
-    await call(app, "/tasks/create", {
-      session: mara.session,
-      list,
-      title: "Existing work",
-      ...WINDOW,
-    });
-
-    expect(
-      await call(app, "/tasklists/extend", {
-        session: mara.session,
-        list,
-        members: [mara.user, noah.user, priya.user],
-      }),
-    ).toEqual({ list });
-    await app.whenIdle();
-
-    const taken = await call(app, "/tasklists/get", { session: priya.session, list });
-    expect((taken.list as { members: unknown[] }).members).toHaveLength(3);
-    expect(taken.tasks).toHaveLength(1);
-
-    const separate = await call(app, "/tasklists/open", {
-      session: mara.session,
-      members: [mara.user, noah.user],
-      title: "Pair again",
-    });
-    expect(separate.list).not.toBe(list);
-    const fresh = await call(app, "/tasklists/get", { session: mara.session, list: separate.list });
-    expect(fresh.tasks).toEqual([]);
-
-    // Taking the separate list to the set the first list already holds is refused.
-    expect(
-      await call(app, "/tasklists/extend", {
-        session: mara.session,
-        list: separate.list,
-        members: [priya.user],
-      }),
-    ).toEqual({ error: "CATEGORY_ALREADY_EXISTS" });
-  });
-
-  test("extending only ever enlarges the set a list is for", async () => {
-    const app = await newApp();
-    const mara = await actor(app, "mara_grow");
-    const noah = await actor(app, "noah_grow");
-    const priya = await actor(app, "priya_grow");
-
-    const { list } = await call(app, "/tasklists/open", {
-      session: mara.session,
-      members: [mara.user, noah.user],
-      title: "Pair",
-    });
-    // A request naming only the new member keeps everyone the list is already for.
-    expect(
-      await call(app, "/tasklists/extend", {
-        session: mara.session,
-        list,
-        members: [priya.user],
-      }),
-    ).toEqual({ list });
-    await app.whenIdle();
-
-    const page = await call(app, "/tasklists/get", { session: priya.session, list });
-    expect(
-      ((page.list as { members: { user: string }[] }).members ?? [])
-        .map((member) => member.user)
-        .sort(),
-    ).toEqual([mara.user, noah.user, priya.user].sort());
-    expect(await call(app, "/tasklists/get", { session: noah.session, list })).toEqual(
-      expect.objectContaining({ tasks: [] }),
-    );
-  });
-
   test("expected refusals", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_refusals");
-    const outsider = await actor(app, "outsider_refusals");
+    const mara = await actor(app, "mara_ref");
+    const outsider = await actor(app, "outsider_ref");
 
-    const { list } = await call(app, "/tasklists/open", {
+    const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
-      members: [mara.user],
-      title: "",
+      title: "Refusals List",
     });
 
+    // Invalid window
     expect(
       await call(app, "/tasks/create", {
         session: mara.session,
         list,
-        title: "Backwards",
+        title: "Bad window",
         startsAt: "2026-08-19T17:00:00.000Z",
         endsAt: "2026-08-19T16:00:00.000Z",
       }),
     ).toEqual({ error: "TASK_WINDOW_INVALID" });
 
+    // Valid task
     const { task } = await call(app, "/tasks/create", {
       session: mara.session,
       list,
-      title: "Fine",
+      title: "Valid task",
       ...WINDOW,
     });
 
-    expect(
-      await call(app, "/tasks/retime", {
-        session: mara.session,
-        task,
-        startsAt: "2026-08-19T17:00:00.000Z",
-        endsAt: "2026-08-19T16:00:00.000Z",
-      }),
-    ).toEqual({ error: "TASK_WINDOW_INVALID" });
-
+    // Outsider cannot act
+    expect(await call(app, "/tasklists/get", { session: outsider.session, list })).toEqual({
+      error: "FORBIDDEN",
+    });
     expect(await call(app, "/tasks/complete", { session: outsider.session, task })).toEqual({
       error: "FORBIDDEN",
     });
     expect(
-      await call(app, "/tasks/create", {
+      await call(app, "/tasks/describe", {
         session: outsider.session,
-        list,
-        title: "Not mine",
-        ...WINDOW,
+        task,
+        title: "Hack",
+        details: "",
       }),
     ).toEqual({ error: "FORBIDDEN" });
-    expect(await call(app, "/tasklists/get", { session: outsider.session, list })).toEqual({
-      error: "FORBIDDEN",
-    });
-    expect(await call(app, "/tasklists/leave", { session: outsider.session, list })).toEqual({
-      error: "FORBIDDEN",
-    });
+
+    // Assigning outsider refused
     expect(
       await call(app, "/tasks/assign", {
         session: mara.session,
@@ -418,6 +531,25 @@ describe("task management", () => {
       }),
     ).toEqual({ error: "FORBIDDEN" });
 
+    // Adding already member refused
+    expect(
+      await call(app, "/tasklists/add-member", {
+        session: mara.session,
+        list,
+        candidate: mara.user,
+      }),
+    ).toEqual({ error: "ALREADY_A_MEMBER" });
+
+    // Adding nonexistent user refused
+    expect(
+      await call(app, "/tasklists/add-member", {
+        session: mara.session,
+        list,
+        candidate: "nonexistent-user-id",
+      }),
+    ).toEqual({ error: "NOT_FOUND" });
+
+    // Cancel workflow
     await call(app, "/tasks/cancel", { session: mara.session, task });
     expect(await call(app, "/tasks/cancel", { session: mara.session, task })).toEqual({
       error: "TASK_ALREADY_CANCELED",
@@ -425,42 +557,155 @@ describe("task management", () => {
     expect(await call(app, "/tasks/complete", { session: mara.session, task })).toEqual({
       error: "TASK_CANCELED",
     });
-
-    expect(await call(app, "/tasks/complete", { session: mara.session, task: "ghost" })).toEqual({
-      error: "FORBIDDEN",
-    });
+    expect(
+      await call(app, "/tasks/describe", {
+        session: mara.session,
+        task,
+        title: "Try edit",
+        details: "",
+      }),
+    ).toEqual({ error: "TASK_CANCELED" });
   });
 
-  test("task-list membership shares no role space or store with course authorization", async () => {
+  test("a member uncancels a canceled task, keeping its window, text, and assignee", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_isolated");
-    const { list } = await call(app, "/tasklists/open", {
+    const mara = await actor(app, "mara_uncancel");
+    const noah = await actor(app, "noah_uncancel");
+
+    const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
-      members: [mara.user],
-      title: "",
+      title: "Uncancel List",
+    });
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
     });
 
-    expect(await app.concepts.Roling._getRoleByName({ name: "task-list-member" })).toEqual([]);
-    expect(
-      await app.concepts.Roling._hasCapability({
-        user: mara.user,
-        context: String(list),
-        capability: "tasks:manage",
+    const { task } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list,
+      title: "Revivable Task",
+      details: "the original details",
+      ...WINDOW,
+    });
+    await call(app, "/tasks/assign", { session: mara.session, task, assignee: noah.user });
+    expect(await call(app, "/tasks/cancel", { session: mara.session, task })).toEqual({ task });
+
+    const canceledPage = await call(app, "/tasklists/get", { session: mara.session, list });
+    expect((canceledPage.list as { openTasks: number }).openTasks).toBe(0);
+
+    // Any member, not only the one who canceled, may take the cancellation back.
+    expect(await call(app, "/tasks/uncancel", { session: noah.session, task })).toEqual({ task });
+
+    const page = await call(app, "/tasklists/get", { session: mara.session, list });
+    expect(page.tasks).toEqual([
+      expect.objectContaining({
+        task,
+        title: "Revivable Task",
+        details: "the original details",
+        startsAt: WINDOW.startsAt,
+        endsAt: WINDOW.endsAt,
+        assignee: noah.user,
+        state: "OPEN",
       }),
-    ).toEqual({ allowed: false });
+    ]);
+    // The list counts the revived task as outstanding work again.
+    expect((page.list as { openTasks: number }).openTasks).toBe(1);
+  });
+
+  test("a member deletes settled tasks, and they disappear from the list and from /tasks/mine", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_delete");
+    const noah = await actor(app, "noah_delete");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Delete List",
+    });
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
+    });
+
+    const settled: Record<string, string> = {};
+    for (const title of ["Done Task", "Canceled Task", "Open Task"]) {
+      const { task } = await call(app, "/tasks/create", {
+        session: mara.session,
+        list,
+        title,
+        ...WINDOW,
+      });
+      await call(app, "/tasks/assign", { session: mara.session, task, assignee: noah.user });
+      settled[title] = String(task);
+    }
+    await call(app, "/tasks/complete", { session: mara.session, task: settled["Done Task"] });
+    await call(app, "/tasks/cancel", { session: mara.session, task: settled["Canceled Task"] });
+
+    // An outstanding task cannot be removed in one step, and survives the attempt.
     expect(
-      await app.concepts.TaskListMembership._hasCapability({
-        user: mara.user,
-        context: String(list),
-        capability: "tasks:manage",
-      }),
-    ).toEqual({ allowed: true });
+      await call(app, "/tasks/delete", { session: mara.session, task: settled["Open Task"] }),
+    ).toEqual({ error: "TASK_NOT_SETTLED" });
+
     expect(
-      await app.concepts.TaskListMembership._hasCapability({
-        user: mara.user,
-        context: "forum",
-        capability: "administer",
-      }),
-    ).toEqual({ allowed: false });
+      await call(app, "/tasks/delete", { session: noah.session, task: settled["Done Task"] }),
+    ).toEqual({ ok: true });
+    expect(
+      await call(app, "/tasks/delete", { session: mara.session, task: settled["Canceled Task"] }),
+    ).toEqual({ ok: true });
+
+    const page = await call(app, "/tasklists/get", { session: mara.session, list });
+    expect(page.tasks).toEqual([
+      expect.objectContaining({ task: settled["Open Task"], title: "Open Task", state: "OPEN" }),
+    ]);
+
+    const mine = await call(app, "/tasks/mine", { session: noah.session });
+    expect(mine.tasks).toEqual([
+      expect.objectContaining({ task: settled["Open Task"], title: "Open Task" }),
+    ]);
+  });
+
+  test("delete and uncancel refuse a non-member, and a repeated delete", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_del_ref");
+    const outsider = await actor(app, "outsider_del_ref");
+
+    const { list } = await call(app, "/tasklists/create", {
+      session: mara.session,
+      title: "Delete Refusals List",
+    });
+
+    const { task } = await call(app, "/tasks/create", {
+      session: mara.session,
+      list,
+      title: "Settled Task",
+      ...WINDOW,
+    });
+    await call(app, "/tasks/cancel", { session: mara.session, task });
+
+    expect(await call(app, "/tasks/uncancel", { session: outsider.session, task })).toEqual({
+      error: "FORBIDDEN",
+    });
+    expect(await call(app, "/tasks/delete", { session: outsider.session, task })).toEqual({
+      error: "FORBIDDEN",
+    });
+
+    // Tasking's own refusals still reach the caller distinguishably.
+    await call(app, "/tasks/uncancel", { session: mara.session, task });
+    expect(await call(app, "/tasks/uncancel", { session: mara.session, task })).toEqual({
+      error: "TASK_NOT_CANCELED",
+    });
+    await call(app, "/tasks/complete", { session: mara.session, task });
+    expect(await call(app, "/tasks/uncancel", { session: mara.session, task })).toEqual({
+      error: "TASK_ALREADY_COMPLETE",
+    });
+
+    expect(await call(app, "/tasks/delete", { session: mara.session, task })).toEqual({ ok: true });
+    // A second delete names a task no readable list holds, so it is answered exactly
+    // as a non-member is, with no distinguishable "already removed".
+    expect(await call(app, "/tasks/delete", { session: mara.session, task })).toEqual({
+      error: "FORBIDDEN",
+    });
   });
 });

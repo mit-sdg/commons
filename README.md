@@ -7,23 +7,16 @@ sync-engine assembly.
 
 ## Run Commons locally
 
-Commons requires Bun 1.3 and installs the published sync-engine core and HTTP
-packages at the versions pinned in [`package.json`](package.json). Install both
-application packages, then start the MongoDB-backed stack:
+Commons requires Bun 1.3. Install dependencies and start the full local stack with a single command:
 
 ```sh
-bun install
-bun install --cwd frontend
-bun run stack:mongo
+bun install && bun install --cwd frontend
+bun dev
 ```
 
-The application opens at `http://127.0.0.1:3000`. Press Ctrl-C once to stop the
-frontend, edge, and temporary MongoDB cleanly. The first run may download the
-MongoDB binary. Use `bun run stack` instead when `MONGODB_URL` names an
-operator-owned database; [`.env.example`](.env.example) lists runtime settings.
-For production, deploy one application image with an operator-managed MongoDB or
-run the complete Coolify Compose resource by following the
-[deployment guide](DEPLOYMENT.md).
+`bun dev` automatically boots a local MongoDB database, the backend edge server at `http://127.0.0.1:4000`, and the Next.js web frontend at `http://127.0.0.1:3000` with live reload. Press Ctrl-C once to stop the frontend, edge, and database cleanly.
+
+If `MONGODB_URL` is set in your environment or `.env`, `bun dev` connects to your external database instead of creating a temporary one. For production, deploy using [`platform.yaml`](platform.yaml) or refer to the [deployment guide](DEPLOYMENT.md).
 
 ## Read and change the design
 

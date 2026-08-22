@@ -9,6 +9,7 @@ import { conversing } from "./concepts/conversing/registry.ts";
 import { flagging } from "./concepts/flagging/registry.ts";
 import { formatting } from "./concepts/formatting/registry.ts";
 import { grading } from "./concepts/grading/registry.ts";
+import { grouping } from "./concepts/grouping/registry.ts";
 import { inviting } from "./concepts/inviting/registry.ts";
 import { itemizing } from "./concepts/itemizing/registry.ts";
 import { linking } from "./concepts/linking/registry.ts";
@@ -38,7 +39,6 @@ import {
   notificationMailHtml,
   notificationMailText,
 } from "./computations/mail-content.ts";
-import { taskListExtension, taskListKey, taskListMembers } from "./computations/task-lists.ts";
 
 const registrations = {
   Assigning: assigning,
@@ -50,6 +50,7 @@ const registrations = {
   Flagging: flagging,
   Formatting: formatting,
   Grading: grading,
+  Grouping: grouping,
   Inviting: inviting,
   Itemizing: itemizing,
   Linking: linking,
@@ -70,8 +71,6 @@ const registrations = {
   Subscribing: subscribing,
   Tagging: tagging,
   Tasking: tasking,
-  TaskListMembership: roling,
-  TaskLists: categorizing,
   Tracking: tracking,
   Trashing: trashing,
 };
@@ -82,9 +81,6 @@ export const learningConcepts = conceptSet(registrations, {
   notificationMailHtml,
   notificationMailText,
   setupSecretMatches,
-  taskListExtension,
-  taskListKey,
-  taskListMembers,
 });
 
 export const concepts = learningConcepts.concepts;

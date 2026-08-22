@@ -21,6 +21,27 @@ const onSignal = (signal: NodeJS.Signals) => {
 process.once("SIGINT", onSignal);
 process.once("SIGTERM", onSignal);
 
+if (process.env.MONGODB_URL) {
+  const stack = Bun.spawn(["bun", "scripts/stack.ts"], {
+    cwd: root,
+    env: process.env,
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  const first = await Promise.race([
+    stack.exited.then((code) => ({ source: "stack" as const, code })),
+    signaled.then(() => ({ source: "signal" as const, code: 0 })),
+  ]);
+  if (first.source === "signal") {
+    stack.kill(receivedSignal ?? "SIGTERM");
+    await stack.exited;
+    process.exit(0);
+  } else {
+    process.exit(first.code);
+  }
+}
+
 console.log("commons: starting temporary local MongoDB (the first run may download mongod)");
 
 let exitCode = 1;

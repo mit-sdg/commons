@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test, vi } from "vite-plus/test";
+import { allowedDevOriginsFromPublicOrigin } from "../../frontend/deployment-config.ts";
 import { backendReadinessResponse } from "../../frontend/src/lib/health.ts";
+import { stackBackendEnvironment } from "../../scripts/stack-environment.ts";
 import { platformProcessEnvironments } from "../../scripts/start-platform.ts";
 import { validateDeploymentConfiguration } from "../../src/deployment.ts";
 
@@ -85,5 +87,34 @@ describe("the managed-platform deployment", () => {
       INVITATION_SECRET: "production-invitation-secret",
     });
     expect(() => validateDeploymentConfiguration(complete.backend)).not.toThrow();
+  });
+});
+
+describe("the local development stack", () => {
+  test("derives the exact Next.js development hostname from the current public origin", () => {
+    const publicOrigin = "https://ephemeral-tunnel.example.test";
+
+    expect(allowedDevOriginsFromPublicOrigin(publicOrigin)).toEqual([
+      "ephemeral-tunnel.example.test",
+    ]);
+  });
+
+  test("adds no development-origin allowance when PUBLIC_ORIGIN is absent", () => {
+    expect(allowedDevOriginsFromPublicOrigin(undefined)).toEqual([]);
+  });
+
+  test("preserves an exported backend PUBLIC_ORIGIN and otherwise uses the local web origin", () => {
+    const localWebOrigin = "http://127.0.0.1:3210";
+    const publicOrigin = "https://current-tunnel.example.test";
+
+    const publicEnvironment = stackBackendEnvironment(
+      { PUBLIC_ORIGIN: publicOrigin, LOG_LEVEL: "debug" },
+      localWebOrigin,
+    );
+    expect(publicEnvironment.PUBLIC_ORIGIN).toBe(publicOrigin);
+    expect(publicEnvironment.LOG_LEVEL).toBe("debug");
+
+    const localEnvironment = stackBackendEnvironment({}, localWebOrigin);
+    expect(localEnvironment.PUBLIC_ORIGIN).toBe(localWebOrigin);
   });
 });

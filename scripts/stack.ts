@@ -1,3 +1,5 @@
+import { stackBackendEnvironment } from "./stack-environment.ts";
+
 const root = `${import.meta.dir}/..`;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -58,10 +60,22 @@ const edgePort = portFrom("PORT", "4000");
 const webPort = portFrom("WEB_PORT", "3000");
 const edgeOrigin = `http://127.0.0.1:${edgePort}`;
 const webOrigin = `http://127.0.0.1:${webPort}`;
+const defaultBootstrap = JSON.stringify({
+  username: "mara",
+  password: "password123",
+  displayName: "Mara Chen",
+  email: "mara@example.edu",
+});
 
 const edge = spawnPiped(["bun", "src/start.ts"], {
   cwd: root,
-  env: { ...process.env, PUBLIC_ORIGIN: webOrigin },
+  env: stackBackendEnvironment(
+    {
+      COMMONS_TEST_BOOTSTRAP: process.env.COMMONS_TEST_BOOTSTRAP ?? defaultBootstrap,
+      ...process.env,
+    },
+    webOrigin,
+  ),
 });
 let edgeExitCode: number | undefined;
 const edgeExited = edge.exited.then((code) => {
@@ -93,6 +107,10 @@ try {
   ]);
   if (ready) {
     console.log(`[stack] edge ready at ${edgeOrigin}`);
+    if (process.env.MONGODB_URL) {
+      const { seedDemoData } = await import("./seed.ts");
+      await seedDemoData(process.env.MONGODB_URL, edgeOrigin);
+    }
 
     const webEnv = { ...process.env };
     delete webEnv.PORT;

@@ -1,170 +1,127 @@
 import { activeUser } from "../access/session.ts";
-import {
-  compute,
-  each,
-  former,
-  no,
-  reaction,
-  when,
-  where,
-  now,
-} from "@mit-sdg/sync-engine/language";
+import { each, former, no, reaction, when, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { belongsToList, doesNotBelongToList } from "./policy.ts";
-import { TASK_LIST_MEMBER_CAPABILITIES, TASK_LIST_MEMBER_ROLE } from "./capabilities.ts";
 import { theTasksIn } from "./tasks.ts";
-import { computations, concepts } from "../../concepts.ts";
+import { concepts } from "../../concepts.ts";
 
-const { Profiling, Tasking, TaskListMembership, TaskLists } = concepts;
+const { Grouping, Profiling, Tasking } = concepts;
 
 /** What is this task list, for whom, and who is still in it? */
 export const theTaskList = former(
   "the task list (list) at (at)",
-  ({ list, at }, { key, description, roster, member, memberName, present, openTask }) =>
-    where(
-      TaskLists._getCategoryDetail({ category: list }).is({ name: key, description }),
-      compute(computations.taskListMembers, { key }, roster),
-    ).form({
+  ({ list, at }, { title, member, memberName, openTask }) =>
+    where(Grouping._getGroup({ group: list }).is({ title })).form({
       list,
-      title: description,
-      members: each(
-        Profiling._getProfilesOf({ users: roster }).is({ user: member, displayName: memberName }),
-      ).form({ user: member, displayName: memberName }),
-      present: each(
-        TaskListMembership._getHoldersOfRoleNamed({
-          context: list,
-          name: TASK_LIST_MEMBER_ROLE,
-        }).is({ user: present }),
-      ).form({ user: present }),
-      openTasks: each(TaskLists._getItems({ category: list }).is({ item: openTask }))
-        .where(Tasking._getTask({ task: openTask, at }).is({ state: "OPEN" }))
-        .count(),
+      title,
+      members: each(Grouping._getMembers({ group: list }).is({ member }))
+        .where(Profiling._getProfileFields({ user: member }).is({ displayName: memberName }))
+        .form({ user: member, displayName: memberName }),
+      openTasks: each(
+        Tasking._getTasksInScope({ scope: list, at }).is({ task: openTask, state: "OPEN" }),
+      ).count(),
     }),
 ).optional();
 
-/** Which task lists does this profile still belong to? */
+/** Which task lists does this profile belong to? */
 export const theTaskListsOf = former(
   "the task lists of (user) at (at)",
-  ({ user, at }, { list, key, description, roster, member, memberName, present, openTask }) =>
-    each(
-      TaskListMembership._getContextsOfRoleNamed({ user, name: TASK_LIST_MEMBER_ROLE }).is({
-        context: list,
-      }),
-    )
-      .where(
-        TaskLists._getCategoryDetail({ category: list }).is({ name: key, description }),
-        compute(computations.taskListMembers, { key }, roster),
-      )
-      .form({
-        list,
-        title: description,
-        members: each(
-          Profiling._getProfilesOf({ users: roster }).is({ user: member, displayName: memberName }),
-        ).form({ user: member, displayName: memberName }),
-        present: each(
-          TaskListMembership._getHoldersOfRoleNamed({
-            context: list,
-            name: TASK_LIST_MEMBER_ROLE,
-          }).is({ user: present }),
-        ).form({ user: present }),
-        openTasks: each(TaskLists._getItems({ category: list }).is({ item: openTask }))
-          .where(Tasking._getTask({ task: openTask, at }).is({ state: "OPEN" }))
-          .count(),
-      }),
+  ({ user, at }, { list, title, member, memberName, openTask }) =>
+    each(Grouping._getGroupsOf({ member: user }).is({ group: list, title })).form({
+      list,
+      title,
+      members: each(Grouping._getMembers({ group: list }).is({ member }))
+        .where(Profiling._getProfileFields({ user: member }).is({ displayName: memberName }))
+        .form({ user: member, displayName: memberName }),
+      openTasks: each(
+        Tasking._getTasksInScope({ scope: list, at }).is({ task: openTask, state: "OPEN" }),
+      ).count(),
+    }),
 );
 
-export const OpenedTaskListAdmitsItsMembers = reaction(({ key, list, roster, member, role }) =>
-  when(TaskLists.ensureCategory({ name: key }).responds({ category: list }))
-    .where(
-      compute(computations.taskListMembers, { key }, roster),
-      Profiling._getProfilesOf({ users: roster }).is({ user: member }),
-      TaskListMembership._getRoleByName({ name: TASK_LIST_MEMBER_ROLE }).is({ role }),
-    )
-    .then(TaskListMembership.ensureGrant({ user: member, context: list, role })),
-);
-
-export const ExtendedTaskListAdmitsItsMembers = reaction(({ key, list, roster, member, role }) =>
-  when(TaskLists.renameCategory({ name: key }).responds({ category: list }))
-    .where(
-      compute(computations.taskListMembers, { key }, roster),
-      Profiling._getProfilesOf({ users: roster }).is({ user: member }),
-      TaskListMembership._getRoleByName({ name: TASK_LIST_MEMBER_ROLE }).is({ role }),
-    )
-    .then(TaskListMembership.ensureGrant({ user: member, context: list, role })),
-);
-
-export const LeftMemberReleasesOpenTasks = reaction(({ user, context, task, at }) =>
-  when(TaskListMembership.revoke({ user, context }).responds({}))
+export const LeftMemberReleasesOpenTasks = reaction(({ user, group, task, at }) =>
+  when(Grouping.leave({ member: user }).responds({ group }))
     .where(
       now(at),
-      TaskLists._getItems({ category: context }).is({ item: task }),
-      Tasking._getTask({ task, at }).is({ assignee: user, state: "OPEN" }),
+      Tasking._getTasksInScope({ scope: group, at }).is({ task, assignee: user, state: "OPEN" }),
     )
     .then(Tasking.release({ task, at })),
 );
 
-export const OpenList = endpoint(
-  "/tasklists/open",
-  ({ session, members, title, key, role, list }) =>
-    receive({ session, members, title })
-      .where(activeUser({ session }), compute(computations.taskListKey, { members }, key))
-      .then(
-        TaskListMembership.ensureRole({
-          name: TASK_LIST_MEMBER_ROLE,
-          capabilities: TASK_LIST_MEMBER_CAPABILITIES,
-        }).responds({ role }),
-      )
-      .then(
-        TaskLists.ensureCategory({ name: key, description: title }).responds({ category: list }),
-      )
-      .then(respond({ list })),
-  { input: { required: ["session", "members"], defaults: { title: "" } } },
+export const RemovedMemberReleasesOpenTasks = reaction(({ target, group, task, at }) =>
+  when(Grouping.removeMember({ target }).responds({ group }))
+    .where(
+      now(at),
+      Tasking._getTasksInScope({ scope: group, at }).is({ task, assignee: target, state: "OPEN" }),
+    )
+    .then(Tasking.release({ task, at })),
 );
 
-export const ExtendList = endpoint(
-  "/tasklists/extend",
-  ({ session, list, members, user, held, enlarged, extended }) =>
-    receive({ session, list, members }).then(
+export const CreateList = endpoint(
+  "/tasklists/create",
+  ({ session, title, user, at, list }) =>
+    receive({ session, title })
+      .where(now(at), activeUser({ session }).is({ user }))
+      .then(Grouping.create({ title, creator: user, at }).responds({ group: list }))
+      .then(respond({ list })),
+  { input: { required: ["session"], defaults: { title: "" } } },
+);
+
+export const RenameList = endpoint(
+  "/tasklists/rename",
+  ({ session, list, title, user, at, renamed }) =>
+    receive({ session, list, title })
+      .where(now(at), activeUser({ session }).is({ user }))
+      .then(Grouping.rename({ group: list, member: user, title, at }).responds({ group: renamed }))
+      .then(respond({ list: renamed })),
+  { input: { required: ["session", "list", "title"] } },
+);
+
+export const AddMember = endpoint(
+  "/tasklists/add-member",
+  ({ session, list, candidate, user, at, added }) =>
+    receive({ session, list, candidate }).then(
       where(
+        now(at),
         activeUser({ session }).is({ user }),
-        belongsToList({ user, list }),
-        TaskLists._getCategoryDetail({ category: list }).is({ name: held }),
-        compute(computations.taskListExtension, { key: held, members }, enlarged),
+        Profiling._getProfile({ user: candidate }),
       )
         .then(
-          TaskLists.renameCategory({ category: list, name: enlarged }).responds({
-            category: extended,
+          Grouping.addMember({ group: list, member: user, candidate, at }).responds({
+            group: added,
           }),
         )
-        .then(respond({ list: extended }))
+        .then(respond({ list: added }))
         .named("success"),
-      where(
-        activeUser({ session }).is({ user }),
-        belongsToList({ user, list }),
-        no(TaskLists._getCategoryDetail({ category: list })),
-      )
+      where(activeUser({ session }), no(Profiling._getProfile({ user: candidate })))
         .then(respond({ error: "NOT_FOUND" }))
-        .named("missing"),
-      where(activeUser({ session }).is({ user }), doesNotBelongToList({ user, list }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
+        .named("profile-not-found"),
     ),
+  { input: { required: ["session", "list", "candidate"] } },
 );
 
-export const LeaveList = endpoint("/tasklists/leave", ({ session, list, user, role }) =>
-  receive({ session, list }).then(
-    where(
-      activeUser({ session }).is({ user }),
-      belongsToList({ user, list }),
-      TaskListMembership._getRoleByName({ name: TASK_LIST_MEMBER_ROLE }).is({ role }),
-    )
-      .then(TaskListMembership.revoke({ user, context: list, role }).responds({}))
-      .then(respond({ list }))
-      .named("success"),
-    where(activeUser({ session }).is({ user }), doesNotBelongToList({ user, list }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-  ),
+export const RemoveMember = endpoint(
+  "/tasklists/remove-member",
+  ({ session, list, target, user, at, removed }) =>
+    receive({ session, list, target })
+      .where(now(at), activeUser({ session }).is({ user }))
+      .then(
+        Grouping.removeMember({ group: list, member: user, target, at }).responds({
+          group: removed,
+        }),
+      )
+      .then(respond({ list: removed })),
+  { input: { required: ["session", "list", "target"] } },
+);
+
+export const LeaveList = endpoint(
+  "/tasklists/leave",
+  ({ session, list, user, at, left }) =>
+    receive({ session, list })
+      .where(now(at), activeUser({ session }).is({ user }))
+      .then(Grouping.leave({ group: list, member: user, at }).responds({ group: left }))
+      .then(respond({ list: left })),
+  { input: { required: ["session", "list"] } },
 );
 
 export const MyLists = endpoint("/tasklists/mine", ({ session, user, at }) =>

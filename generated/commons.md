@@ -50,10 +50,10 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Instances
 
-- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 30.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 32.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 31.
-  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 33.
+- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 28.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 30.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 29.
+  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 31.
 
 ### Authenticating
 
@@ -84,7 +84,7 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 35.
+- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 33.
 
 ### Banking
 
@@ -119,9 +119,9 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Instances
 
-- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 37.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 39.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 38.
+- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 35.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 37.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 36.
 
 ### Bookmarking
 
@@ -142,9 +142,9 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Instances
 
-- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 41.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 43.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 42.
+- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 39.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 41.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 40.
 
 ### Categorizing
 
@@ -175,10 +175,8 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 
 #### Instances
 
-- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 45.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 46.
-- `TaskLists` — instance of `Categorizing` — [Commons application](../design/application.md), line 48.
-  - `Item` is `Tasking.Task` — [Commons application](../design/application.md), line 49.
+- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 43.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 44.
 
 ### Conversing
 
@@ -208,8 +206,8 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Instances
 
-- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 51.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 52.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 46.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 47.
 
 ### Flagging
 
@@ -231,9 +229,9 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Instances
 
-- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 54.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 56.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 55.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 49.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 51.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 50.
 
 ### Formatting
 
@@ -250,8 +248,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Instances
 
-- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 58.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 59.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 53.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 54.
 
 ### Grading
 
@@ -286,12 +284,48 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Instances
 
-- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 61.
-  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 65.
-  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 66.
-  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 62.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 64.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 63.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 56.
+  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 60.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 61.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 57.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 59.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 58.
+
+### Grouping
+
+Defined in [Grouping](../design/concepts/Grouping.md), line 1.
+
+#### Actions
+
+- `create(title: String, creator: Person, at: Date) : return (group: Group)`
+- `rename(group: Group, member: Person, title: String, at: Date) : return (group: Group)`
+  - Refuses `GROUP_NOT_FOUND`: There is no such group.
+  - Refuses `NOT_A_MEMBER`: This person is not a member of the group.
+- `addMember(group: Group, member: Person, candidate: Person, at: Date) : return (group: Group)`
+  - Refuses `GROUP_NOT_FOUND`: There is no such group.
+  - Refuses `NOT_A_MEMBER`: This person is not a member of the group.
+  - Refuses `ALREADY_A_MEMBER`: This person is already a member of the group.
+- `removeMember(group: Group, member: Person, target: Person, at: Date) : return (group: Group)`
+  - Refuses `GROUP_NOT_FOUND`: There is no such group.
+  - Refuses `NOT_A_MEMBER`: This person is not a member of the group.
+  - Refuses `TARGET_NOT_A_MEMBER`: The target person is not a member of the group.
+  - Refuses `LAST_MEMBER`: The final member cannot be removed from the group.
+- `leave(group: Group, member: Person, at: Date) : return (group: Group)`
+  - Refuses `GROUP_NOT_FOUND`: There is no such group.
+  - Refuses `NOT_A_MEMBER`: This person is not a member of the group.
+  - Refuses `LAST_MEMBER`: The final member cannot leave the group.
+
+#### Queries
+
+- `_getGroup(group: String) : optional (title: String, createdAt: Date, updatedAt: Date)`
+- `_getMembers(group: String) : many (member: String)`
+- `_getGroupsOf(member: String) : many (group: String, title: String, createdAt: Date, updatedAt: Date)`
+- `_isMember(group: String, member: String) : one (isMember: Boolean)`
+
+#### Instances
+
+- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 63.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 64.
 
 ### Inviting
 
@@ -313,8 +347,8 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Instances
 
-- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 68.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 69.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 66.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 67.
 
 ### Itemizing
 
@@ -343,8 +377,8 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Instances
 
-- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 71.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 72.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 69.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 70.
 
 ### Linking
 
@@ -364,9 +398,9 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Instances
 
-- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 74.
-  - `Source` is `Posting.Post` — [Commons application](../design/application.md), line 75.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 76.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 72.
+  - `Source` is `Posting.Post` — [Commons application](../design/application.md), line 73.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 74.
 
 ### Locking
 
@@ -386,8 +420,8 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Instances
 
-- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 78.
-  - `Target` is `Lockable` — [Commons application](../design/application.md), line 79.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 76.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 77.
 
 ### Mailing
 
@@ -409,8 +443,8 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Instances
 
-- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 81.
-  - `Key` is `MailKey` — [Commons application](../design/application.md), line 82.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 79.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 80.
 
 ### Notifying
 
@@ -434,10 +468,10 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Instances
 
-- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 84.
-  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 87.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 85.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 86.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 82.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 85.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 83.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 84.
 
 ### Noting
 
@@ -475,9 +509,9 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Instances
 
-- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 89.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 90.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 91.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 87.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 88.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 89.
 
 ### Pinning
 
@@ -500,9 +534,9 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Instances
 
-- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 93.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 94.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 95.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 91.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 92.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 93.
 
 ### Posting
 
@@ -525,8 +559,8 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Instances
 
-- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 97.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 98.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 95.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 96.
 
 ### Profiling
 
@@ -551,8 +585,8 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Instances
 
-- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 100.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 101.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 98.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 99.
 
 ### Reacting
 
@@ -575,9 +609,9 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Instances
 
-- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 103.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 104.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 105.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 101.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 102.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 103.
 
 ### Resolving
 
@@ -597,10 +631,10 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Instances
 
-- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 107.
-  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 110.
-  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 109.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 108.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 105.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 108.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 107.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 106.
 
 ### Revising
 
@@ -619,8 +653,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Instances
 
-- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 112.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 113.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 110.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 111.
 
 ### Roling
 
@@ -656,12 +690,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Instances
 
-- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 115.
-  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 117.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 116.
-- `TaskListMembership` — instance of `Roling` — [Commons application](../design/application.md), line 119.
-  - `Context` is `TaskLists.Category` — [Commons application](../design/application.md), line 121.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 120.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 113.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 115.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 114.
 
 ### Rostering
 
@@ -705,8 +736,8 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Instances
 
-- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 123.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 124.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 117.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 118.
 
 ### Sessioning
 
@@ -726,8 +757,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 126.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 127.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 120.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 121.
 
 ### Submitting
 
@@ -752,10 +783,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 129.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 132.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 131.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 130.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 123.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 126.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 125.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 124.
 
 ### Subscribing
 
@@ -777,9 +808,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 134.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 135.
-  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 136.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 128.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 129.
+  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 130.
 
 ### Tagging
 
@@ -807,8 +838,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 138.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 139.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 132.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 133.
 
 ### Tasking
 
@@ -816,10 +847,14 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Actions
 
-- `create(title: String, details: String, startsAt: Date, endsAt: Date, assignee: Assignee, at: Date) : return (task: Task)`
+- `create(scope: Scope, title: String, details: String, startsAt: Date, endsAt: Date, assignee: Assignee, at: Date) : return (task: Task)`
   - Refuses `TASK_WINDOW_INVALID`: A task's window cannot end before it begins.
+- `describe(task: Task, title: String, details: String, at: Date) : return (task: Task)`
+  - Refuses `TASK_NOT_FOUND`: There is no such task.
+  - Refuses `TASK_CANCELED`: A canceled task can no longer be changed.
 - `retime(task: Task, startsAt: Date, endsAt: Date, at: Date) : return (task: Task)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
+  - Refuses `TASK_CANCELED`: A canceled task can no longer be changed.
   - Refuses `TASK_WINDOW_INVALID`: A task's window cannot end before it begins.
 - `assign(task: Task, assignee: Assignee, at: Date) : return (task: Task)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
@@ -834,21 +869,30 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 - `reopen(task: Task, at: Date) : return (task: Task)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_NOT_COMPLETE`: Only a completed task can be reopened.
-  - Refuses `TASK_CANCELED`: A canceled task can no longer be changed.
+  - Refuses `TASK_CANCELED`: Only a completed task can be reopened; uncancel this task instead.
 - `cancel(task: Task, at: Date) : return (task: Task)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_ALREADY_COMPLETE`: This task is already complete.
   - Refuses `TASK_ALREADY_CANCELED`: This task is already canceled.
+- `uncancel(task: Task, at: Date) : return (task: Task)`
+  - Refuses `TASK_NOT_FOUND`: There is no such task.
+  - Refuses `TASK_NOT_CANCELED`: Only a canceled task can be uncanceled, and this task is already outstanding.
+  - Refuses `TASK_ALREADY_COMPLETE`: This task is already complete.
+- `delete(task: Task, at: Date) : return ()`
+  - Refuses `TASK_NOT_FOUND`: There is no such task.
+  - Refuses `TASK_NOT_SETTLED`: Only a completed or canceled task can be deleted; complete or cancel this task first.
 
 #### Queries
 
-- `_getTask(task: String, at: Date) : optional (title: String, details: String, startsAt: String, endsAt: String, assignee: String | Null, state: String, overdue: Boolean, createdAt: Date, updatedAt: Date)`
-- `_getAssigned(assignee: String, at: Date) : many (task: String, title: String, details: String, startsAt: String, endsAt: String, state: String, overdue: Boolean, createdAt: Date, updatedAt: Date)`
+- `_getTask(task: String, at: Date) : optional (scope: String, title: String, details: String, startsAt: String, endsAt: String, assignee: String | Null, state: String, overdue: Boolean, createdAt: Date, updatedAt: Date)`
+- `_getTasksInScope(scope: String, at: Date) : many (task: String, title: String, details: String, startsAt: String, endsAt: String, assignee: String | Null, state: String, overdue: Boolean, createdAt: Date, updatedAt: Date)`
+- `_getAssigned(assignee: String, at: Date) : many (task: String, scope: String, title: String, details: String, startsAt: String, endsAt: String, state: String, overdue: Boolean, createdAt: Date, updatedAt: Date)`
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 141.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 142.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 135.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 137.
+  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 136.
 
 ### Tracking
 
@@ -872,10 +916,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 144.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 146.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 147.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 145.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 139.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 141.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 142.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 140.
 
 ### Trashing
 
@@ -897,9 +941,9 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Instances
 
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 149.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 151.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 150.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 144.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 146.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 145.
 
 ## Application types
 
@@ -910,14 +954,11 @@ Concrete types:
 
 ## Computations
 
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 193.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 190.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 199.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 196.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 202.
-- `taskListExtension(key: String, members: Strings) : String` — [Task lists](../design/compositions/tasks/lists.md), line 69.
-- `taskListKey(members: Strings) : String` — [Task lists](../design/compositions/tasks/lists.md), line 66.
-- `taskListMembers(key: String) : Strings` — [Task lists](../design/compositions/tasks/lists.md), line 72.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 183.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 180.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 189.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 186.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 192.
 
 ## Views
 
@@ -994,7 +1035,7 @@ Authored path: `Forum.threads.publicTarget`.
 
 ```view
 (user) belongs to task list (list) — inputs (user, list); outputs (); bindings ()
-  where TaskListMembership._hasCapability (capability: "tasks:manage", context: list, user) has (allowed: true)
+  where Grouping._isMember (group: list, member: user) has (isMember: true)
 ```
 
 ### (user) did not author (post)
@@ -1008,7 +1049,7 @@ Authored path: `Forum.threads.publicTarget`.
 
 ```view
 (user) does not belong to task list (list) — inputs (user, list); outputs (); bindings ()
-  where TaskListMembership._hasCapability (capability: "tasks:manage", context: list, user) has (allowed: false)
+  where Grouping._isMember (group: list, member: user) has (isMember: false)
 ```
 
 ### (user) is an active course member
@@ -1054,13 +1095,13 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where Notifying._hasFor (subject, user) has (notified: false)
 ```
 
-### (user) may act on task (task)
+### (user) may act on task (task) at (at)
 
 ```view
-(user) may act on task (task) — inputs (user, task); outputs (); bindings (list)
+(user) may act on task (task) at (at) — inputs (user, task, at); outputs (); bindings (list)
   where
-    TaskLists._getCategory (item: task) has (category: list)
-    TaskListMembership._hasCapability (capability: "tasks:manage", context: list, user) has (allowed: true)
+    Tasking._getTask (at, task) has (scope: list)
+    Grouping._isMember (group: list, member: user) has (isMember: true)
 ```
 
 ### (user) may administer
@@ -1126,14 +1167,14 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: false)
 ```
 
-### (user) may not act on task (task)
+### (user) may not act on task (task) at (at)
 
 ```view
-(user) may not act on task (task) — inputs (user, task); outputs (); bindings (list)
+(user) may not act on task (task) at (at) — inputs (user, task, at); outputs (); bindings (list)
   where
-    TaskLists._getCategory (item: task) has (category: list)
-    TaskListMembership._hasCapability (capability: "tasks:manage", context: list, user) has (allowed: false)
-  where no TaskLists._getCategory (item: task)
+    Tasking._getTask (at, task) has (scope: list)
+    Grouping._isMember (group: list, member: user) has (isMember: false)
+  where no Tasking._getTask (at, task)
 ```
 
 ### (user) may not administer
@@ -1409,11 +1450,11 @@ the seat of (user) — inputs (user); outputs (seat); bindings () — answers at
   where Rostering._getSeatByUser (user) has (seat)
 ```
 
-### the task list holding (task)
+### the task list holding (task) at (at)
 
 ```view
-the task list holding (task) — inputs (task); outputs (list); bindings () — answers at most one (list)
-  where TaskLists._getCategory (item: task) has (category: list)
+the task list holding (task) at (at) — inputs (task, at); outputs (list); bindings () — answers at most one (list)
+  where Tasking._getTask (at, task) has (scope: list)
 ```
 
 ### the user named (username)
@@ -2477,60 +2518,51 @@ Former "the targets tagged with (name)" — inputs (name); bindings (tag, target
 ### the task list (list) at (at)
 
 Authored path: `Tasks.lists.theTaskList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 61.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 36.
 
 ```former
-Former "the task list (list) at (at)" — inputs (list, at); bindings (key, description, roster, member, memberName, present, openTask); promises at most one record — forms:
+Former "the task list (list) at (at)" — inputs (list, at); bindings (title, member, memberName, openTask); promises at most one record — forms:
   a record of
-    where TaskLists._getCategoryDetail (category: list) has (description, name: key)
-    where roster is taskListMembers (key)
+    where Grouping._getGroup (group: list) has (title)
     list
-    members: each Profiling._getProfilesOf (users: roster) has (displayName: memberName, user: member)
+    members: each Grouping._getMembers (group: list) has (member)
+      where Profiling._getProfileFields (user: member) has (displayName: memberName)
       form a record of
         displayName: memberName
         user: member
-    openTasks: the count of TaskLists._getItems (category: list) has (item: openTask)
-      where Tasking._getTask (at, task: openTask) has (state: "OPEN")
-    present: each TaskListMembership._getHoldersOfRoleNamed (context: list, name: "task-list-member") has (user: present)
-      form a record of
-        user: present
-    title: description
+    openTasks: the count of Tasking._getTasksInScope (at, scope: list) has (state: "OPEN", task: openTask)
+    title
 ```
 
 ### the task lists of (user) at (at)
 
 Authored path: `Tasks.lists.theTaskListsOf`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 59.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 34.
 
 ```former
-Former "the task lists of (user) at (at)" — inputs (user, at); bindings (list, key, description, roster, member, memberName, present, openTask); promises exactly one record — forms:
-  each TaskListMembership._getContextsOfRoleNamed (name: "task-list-member", user) has (context: list)
-    where TaskLists._getCategoryDetail (category: list) has (description, name: key)
-    where roster is taskListMembers (key)
+Former "the task lists of (user) at (at)" — inputs (user, at); bindings (list, title, member, memberName, openTask); promises exactly one record — forms:
+  each Grouping._getGroupsOf (member: user) has (group: list, title)
     form a record of
       list
-      members: each Profiling._getProfilesOf (users: roster) has (displayName: memberName, user: member)
+      members: each Grouping._getMembers (group: list) has (member)
+        where Profiling._getProfileFields (user: member) has (displayName: memberName)
         form a record of
           displayName: memberName
           user: member
-      openTasks: the count of TaskLists._getItems (category: list) has (item: openTask)
-        where Tasking._getTask (at, task: openTask) has (state: "OPEN")
-      present: each TaskListMembership._getHoldersOfRoleNamed (context: list, name: "task-list-member") has (user: present)
-        form a record of
-          user: present
-      title: description
+      openTasks: the count of Tasking._getTasksInScope (at, scope: list) has (state: "OPEN", task: openTask)
+      title
 ```
 
 ### the tasks assigned to (user) at (at)
 
 Authored path: `Tasks.tasks.theTasksAssignedTo`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 39.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 76.
 
 ```former
 Former "the tasks assigned to (user) at (at)" — inputs (user, at); bindings (task, title, details, startsAt, endsAt, state, overdue, createdAt, updatedAt, list, listTitle); promises exactly one record — forms:
-  each Tasking._getAssigned (assignee: user, at) has (createdAt, details, endsAt, overdue, startsAt, state, task, title, updatedAt)
-    where TaskLists._getCategory (item: task) has (category: list, description: listTitle)
-    where TaskListMembership._hasCapability (capability: "tasks:manage", context: list, user) has (allowed: true)
+  each Tasking._getAssigned (assignee: user, at) has (createdAt, details, endsAt, overdue, scope: list, startsAt, state, task, title, updatedAt)
+    where Grouping._getGroup (group: list) has (title: listTitle)
+    where Grouping._isMember (group: list, member: user) has (isMember: true)
     arranged by endsAt
     form a record of
       createdAt
@@ -2549,12 +2581,11 @@ Former "the tasks assigned to (user) at (at)" — inputs (user, at); bindings (t
 ### the tasks in (list) at (at)
 
 Authored path: `Tasks.tasks.theTasksIn`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 74.
 
 ```former
 Former "the tasks in (list) at (at)" — inputs (list, at); bindings (task, title, details, startsAt, endsAt, assignee, state, overdue, createdAt, updatedAt); promises exactly one record — forms:
-  each TaskLists._getItems (category: list) has (item: task)
-    where Tasking._getTask (at, task) has (assignee, createdAt, details, endsAt, overdue, startsAt, state, title, updatedAt)
+  each Tasking._getTasksInScope (at, scope: list) has (assignee, createdAt, details, endsAt, overdue, startsAt, state, task, title, updatedAt)
     arranged by endsAt
     form a record of
       assignee
@@ -10290,88 +10321,85 @@ then
   RequestBoundary.respond (items: former "the unread of (user) in (scope)" with (scope, user), requestId)
 ```
 
-### Tasks.lists.ExtendList:forbidden
+### Tasks.lists.AddMember:profile-not-found
 
-Authored path: `Tasks.lists.ExtendList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 34.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 77.
-
-```reaction
-when RequestBoundary.request (list, members, path: "/tasklists/extend", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) does not belong to task list (list)" with (list, user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Tasks.lists.ExtendList:missing
-
-Authored path: `Tasks.lists.ExtendList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 34.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 77.
+Authored path: `Tasks.lists.AddMember`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 16.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 40.
 
 ```reaction
-when RequestBoundary.request (list, members, path: "/tasklists/extend", requestId, session)
+when RequestBoundary.request (candidate, list, path: "/tasklists/add-member", requestId, session)
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) belongs to task list (list)" with (list, user)
-  no TaskLists._getCategoryDetail (category: list)
+  view "the active user of (session)" with (session)
+  no Profiling._getProfile (user: candidate)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### Tasks.lists.ExtendList:success
+### Tasks.lists.AddMember:success
 
-Authored path: `Tasks.lists.ExtendList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 34.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 77.
+Authored path: `Tasks.lists.AddMember`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 16.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 40.
 
 ```reaction
-when RequestBoundary.request (list, members, path: "/tasklists/extend", requestId, session)
+when RequestBoundary.request (candidate, list, path: "/tasklists/add-member", requestId, session)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) belongs to task list (list)" with (list, user)
-  TaskLists._getCategoryDetail (category: list) has (name: held)
-  enlarged is taskListExtension (key: held, members)
+  Profiling._getProfile (user: candidate)
 then
-  TaskLists.renameCategory (category: list, name: enlarged)
+  Grouping.addMember (at, candidate, group: list, member: user)
 ```
 
-### Tasks.lists.ExtendList:success#2
+### Tasks.lists.AddMember:success#2
 
-Authored path: `Tasks.lists.ExtendList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 34.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 77.
+Authored path: `Tasks.lists.AddMember`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 16.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 40.
 
 ```reaction
-when TaskLists.renameCategory (category: list, name: enlarged, result.category: extended), asked by Tasks.lists.ExtendList:success
+when Grouping.addMember (at, candidate, group: list, member: user, result.group: added), asked by Tasks.lists.AddMember:success
 where
-  earlier, RequestBoundary.request (list, members, path: "/tasklists/extend", requestId, session)
+  earlier, RequestBoundary.request (candidate, list, path: "/tasklists/add-member", requestId, session)
 then
-  RequestBoundary.respond (list: extended, requestId)
+  RequestBoundary.respond (list: added, requestId)
 ```
 
-### Tasks.lists.ExtendedTaskListAdmitsItsMembers
+### Tasks.lists.CreateList
 
-Authored path: `Tasks.lists.ExtendedTaskListAdmitsItsMembers`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 43.
+Authored path: `Tasks.lists.CreateList`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 8.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 41.
 
 ```reaction
-when TaskLists.renameCategory (name: key, category: list)
+when RequestBoundary.request (path: "/tasklists/create", requestId, session, title)
 where
-  roster is taskListMembers (key)
-  Profiling._getProfilesOf (users: roster) has (user: member)
-  TaskListMembership._getRoleByName (name: "task-list-member") has (role)
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
 then
-  TaskListMembership.ensureGrant (context: list, role, user: member)
+  Grouping.create (at, creator: user, title)
+```
+
+### Tasks.lists.CreateList#2
+
+Authored path: `Tasks.lists.CreateList`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 8.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 41.
+
+```reaction
+when Grouping.create (at, creator: user, title, group: list), asked by Tasks.lists.CreateList
+where
+  earlier, RequestBoundary.request (path: "/tasklists/create", requestId, session, title)
+then
+  RequestBoundary.respond (list, requestId)
 ```
 
 ### Tasks.lists.GetList:forbidden
 
 Authored path: `Tasks.lists.GetList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 60.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 78.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 35.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 42.
 
 ```reaction
 when RequestBoundary.request (list, path: "/tasklists/get", requestId, session)
@@ -10385,8 +10413,8 @@ then
 ### Tasks.lists.GetList:success
 
 Authored path: `Tasks.lists.GetList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 60.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 78.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 35.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 42.
 
 ```reaction
 when RequestBoundary.request (list, path: "/tasklists/get", requestId, session)
@@ -10398,62 +10426,45 @@ then
   RequestBoundary.respond (list: former "the task list (list) at (at)" with (at, list), requestId, tasks: former "the tasks in (list) at (at)" with (at, list))
 ```
 
-### Tasks.lists.LeaveList:forbidden
+### Tasks.lists.LeaveList
 
 Authored path: `Tasks.lists.LeaveList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 48.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 79.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 24.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 43.
 
 ```reaction
 when RequestBoundary.request (list, path: "/tasklists/leave", requestId, session)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) does not belong to task list (list)" with (list, user)
 then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  Grouping.leave (at, group: list, member: user)
 ```
 
-### Tasks.lists.LeaveList:success
+### Tasks.lists.LeaveList#2
 
 Authored path: `Tasks.lists.LeaveList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 48.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 79.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 24.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 43.
 
 ```reaction
-when RequestBoundary.request (list, path: "/tasklists/leave", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) belongs to task list (list)" with (list, user)
-  TaskListMembership._getRoleByName (name: "task-list-member") has (role)
-then
-  TaskListMembership.revoke (context: list, role, user)
-```
-
-### Tasks.lists.LeaveList:success#2
-
-Authored path: `Tasks.lists.LeaveList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 48.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 79.
-
-```reaction
-when TaskListMembership.revoke (context: list, role, user), asked by Tasks.lists.LeaveList:success
+when Grouping.leave (at, group: list, member: user, result.group: left), asked by Tasks.lists.LeaveList
 where
   earlier, RequestBoundary.request (list, path: "/tasklists/leave", requestId, session)
 then
-  RequestBoundary.respond (list, requestId)
+  RequestBoundary.respond (list: left, requestId)
 ```
 
 ### Tasks.lists.LeftMemberReleasesOpenTasks
 
 Authored path: `Tasks.lists.LeftMemberReleasesOpenTasks`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 52.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 27.
 
 ```reaction
-when TaskListMembership.revoke (context, user)
+when Grouping.leave (member: user, group)
 where
   at is the current flow's instant
-  TaskLists._getItems (category: context) has (item: task)
-  Tasking._getTask (at, task) has (assignee: user, state: "OPEN")
+  Tasking._getTasksInScope (at, scope: group) has (assignee: user, state: "OPEN", task)
 then
   Tasking.release (at, task)
 ```
@@ -10461,8 +10472,8 @@ then
 ### Tasks.lists.MyLists
 
 Authored path: `Tasks.lists.MyLists`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 58.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 80.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 33.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 44.
 
 ```reaction
 when RequestBoundary.request (path: "/tasklists/mine", requestId, session)
@@ -10473,77 +10484,91 @@ then
   RequestBoundary.respond (lists: former "the task lists of (user) at (at)" with (at, user), requestId)
 ```
 
-### Tasks.lists.OpenList
+### Tasks.lists.RemoveMember
 
-Authored path: `Tasks.lists.OpenList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 13.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 81.
+Authored path: `Tasks.lists.RemoveMember`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 20.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 45.
 
 ```reaction
-when RequestBoundary.request (members, path: "/tasklists/open", requestId, session, title)
+when RequestBoundary.request (list, path: "/tasklists/remove-member", requestId, session, target)
 where
-  view "the active user of (session)" with (session)
-  key is taskListKey (members)
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
 then
-  TaskListMembership.ensureRole (capabilities: ["tasks:manage"], name: "task-list-member")
+  Grouping.removeMember (at, group: list, member: user, target)
 ```
 
-### Tasks.lists.OpenList#2
+### Tasks.lists.RemoveMember#2
 
-Authored path: `Tasks.lists.OpenList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 13.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 81.
+Authored path: `Tasks.lists.RemoveMember`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 20.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 45.
 
 ```reaction
-when TaskListMembership.ensureRole (capabilities: ["tasks:manage"], name: "task-list-member", role), asked by Tasks.lists.OpenList
+when Grouping.removeMember (at, group: list, member: user, target, result.group: removed), asked by Tasks.lists.RemoveMember
 where
-  earlier, RequestBoundary.request (members, path: "/tasklists/open", requestId, session, title)
-  key is taskListKey (members)
+  earlier, RequestBoundary.request (list, path: "/tasklists/remove-member", requestId, session, target)
 then
-  TaskLists.ensureCategory (description: title, name: key)
+  RequestBoundary.respond (list: removed, requestId)
 ```
 
-### Tasks.lists.OpenList#3
+### Tasks.lists.RemovedMemberReleasesOpenTasks
 
-Authored path: `Tasks.lists.OpenList`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 13.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 81.
+Authored path: `Tasks.lists.RemovedMemberReleasesOpenTasks`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 28.
 
 ```reaction
-when TaskLists.ensureCategory (description: title, name: key, category: list), asked by Tasks.lists.OpenList#2
+when Grouping.removeMember (target, group)
 where
-  earlier, RequestBoundary.request (members, path: "/tasklists/open", requestId, session, title)
+  at is the current flow's instant
+  Tasking._getTasksInScope (at, scope: group) has (assignee: target, state: "OPEN", task)
 then
-  RequestBoundary.respond (list, requestId)
+  Tasking.release (at, task)
 ```
 
-### Tasks.lists.OpenedTaskListAdmitsItsMembers
+### Tasks.lists.RenameList
 
-Authored path: `Tasks.lists.OpenedTaskListAdmitsItsMembers`.
-- Covered by [Task lists](../design/compositions/tasks/lists.md), line 27.
+Authored path: `Tasks.lists.RenameList`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 13.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 46.
 
 ```reaction
-when TaskLists.ensureCategory (name: key, category: list)
+when RequestBoundary.request (list, path: "/tasklists/rename", requestId, session, title)
 where
-  roster is taskListMembers (key)
-  Profiling._getProfilesOf (users: roster) has (user: member)
-  TaskListMembership._getRoleByName (name: "task-list-member") has (role)
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
 then
-  TaskListMembership.ensureGrant (context: list, role, user: member)
+  Grouping.rename (at, group: list, member: user, title)
+```
+
+### Tasks.lists.RenameList#2
+
+Authored path: `Tasks.lists.RenameList`.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 13.
+- Covered by [Task lists](../design/compositions/tasks/lists.md), line 46.
+
+```reaction
+when Grouping.rename (at, group: list, member: user, title, result.group: renamed), asked by Tasks.lists.RenameList
+where
+  earlier, RequestBoundary.request (list, path: "/tasklists/rename", requestId, session, title)
+then
+  RequestBoundary.respond (list: renamed, requestId)
 ```
 
 ### Tasks.tasks.AssignTask:assignee-outside-list
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 46.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 81.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may act on task (task)" with (task, user)
-  view "the task list holding (task)" with (task) has (list)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
+  view "the task list holding (task) at (at)" with (at, task) has (list)
   view "(user) does not belong to task list (list)" with (list, user: assignee)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
@@ -10553,13 +10578,14 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 46.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 81.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not act on task (task)" with (task, user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -10568,15 +10594,15 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 46.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 81.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may act on task (task)" with (task, user)
-  view "the task list holding (task)" with (task) has (list)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
+  view "the task list holding (task) at (at)" with (at, task) has (list)
   view "(user) belongs to task list (list)" with (list, user: assignee)
 then
   Tasking.assign (assignee, at, task)
@@ -10586,7 +10612,7 @@ then
 
 Authored path: `Tasks.tasks.AssignTask`.
 - Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 46.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 81.
 
 ```reaction
 when Tasking.assign (assignee, at, task, result.task: assigned), asked by Tasks.tasks.AssignTask:success
@@ -10599,14 +10625,15 @@ then
 ### Tasks.tasks.CancelTask:forbidden
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 32.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 47.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 82.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not act on task (task)" with (task, user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -10614,15 +10641,15 @@ then
 ### Tasks.tasks.CancelTask:success
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 32.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 47.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 82.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may act on task (task)" with (task, user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
 then
   Tasking.cancel (at, task)
 ```
@@ -10630,8 +10657,8 @@ then
 ### Tasks.tasks.CancelTask:success#2
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 32.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 47.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 82.
 
 ```reaction
 when Tasking.cancel (at, task, result.task: canceled), asked by Tasks.tasks.CancelTask:success
@@ -10644,14 +10671,15 @@ then
 ### Tasks.tasks.CompleteTask:forbidden
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 29.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 48.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 83.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not act on task (task)" with (task, user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -10659,15 +10687,15 @@ then
 ### Tasks.tasks.CompleteTask:success
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 29.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 48.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 83.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may act on task (task)" with (task, user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
 then
   Tasking.complete (at, task)
 ```
@@ -10675,8 +10703,8 @@ then
 ### Tasks.tasks.CompleteTask:success#2
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 29.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 48.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 83.
 
 ```reaction
 when Tasking.complete (at, task, result.task: completed), asked by Tasks.tasks.CompleteTask:success
@@ -10689,8 +10717,8 @@ then
 ### Tasks.tasks.CreateTask:forbidden
 
 Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 9.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 49.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 84.
 
 ```reaction
 when RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
@@ -10704,8 +10732,8 @@ then
 ### Tasks.tasks.CreateTask:success
 
 Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 9.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 49.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 84.
 
 ```reaction
 when RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
@@ -10714,42 +10742,120 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) belongs to task list (list)" with (list, user)
 then
-  Tasking.create (assignee: null, at, details, endsAt, startsAt, title)
+  Tasking.create (assignee: null, at, details, endsAt, scope: list, startsAt, title)
 ```
 
 ### Tasks.tasks.CreateTask:success#2
 
 Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 9.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 49.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 84.
 
 ```reaction
-when Tasking.create (assignee: null, at, details, endsAt, startsAt, title, task), asked by Tasks.tasks.CreateTask:success
-where
-  earlier, RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
-then
-  TaskLists.assign (category: list, item: task)
-```
-
-### Tasks.tasks.CreateTask:success#3
-
-Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 9.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 49.
-
-```reaction
-when TaskLists.assign (category: list, item: task), asked by Tasks.tasks.CreateTask:success#2
+when Tasking.create (assignee: null, at, details, endsAt, scope: list, startsAt, title, task), asked by Tasks.tasks.CreateTask:success
 where
   earlier, RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
 then
   RequestBoundary.respond (requestId, task)
 ```
 
+### Tasks.tasks.DeleteTask:forbidden
+
+Authored path: `Tasks.tasks.DeleteTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 52.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 85.
+
+```reaction
+when RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Tasks.tasks.DeleteTask:success
+
+Authored path: `Tasks.tasks.DeleteTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 52.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 85.
+
+```reaction
+when RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
+then
+  Tasking.delete (at, task)
+```
+
+### Tasks.tasks.DeleteTask:success#2
+
+Authored path: `Tasks.tasks.DeleteTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 52.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 85.
+
+```reaction
+when Tasking.delete (at, task), asked by Tasks.tasks.DeleteTask:success
+where
+  earlier, RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
+then
+  RequestBoundary.respond (ok: true, requestId)
+```
+
+### Tasks.tasks.DescribeTask:forbidden
+
+Authored path: `Tasks.tasks.DescribeTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 86.
+
+```reaction
+when RequestBoundary.request (details, path: "/tasks/describe", requestId, session, task, title)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Tasks.tasks.DescribeTask:success
+
+Authored path: `Tasks.tasks.DescribeTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 86.
+
+```reaction
+when RequestBoundary.request (details, path: "/tasks/describe", requestId, session, task, title)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
+then
+  Tasking.describe (at, details, task, title)
+```
+
+### Tasks.tasks.DescribeTask:success#2
+
+Authored path: `Tasks.tasks.DescribeTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 86.
+
+```reaction
+when Tasking.describe (at, details, task, title, result.task: described), asked by Tasks.tasks.DescribeTask:success
+where
+  earlier, RequestBoundary.request (details, path: "/tasks/describe", requestId, session, task, title)
+then
+  RequestBoundary.respond (requestId, task: described)
+```
+
 ### Tasks.tasks.MyTasks
 
 Authored path: `Tasks.tasks.MyTasks`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 38.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 50.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 75.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 87.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/mine", requestId, session)
@@ -10763,14 +10869,15 @@ then
 ### Tasks.tasks.ReleaseTask:forbidden
 
 Authored path: `Tasks.tasks.ReleaseTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 25.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 51.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 88.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/release", requestId, session, task)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not act on task (task)" with (task, user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -10778,15 +10885,15 @@ then
 ### Tasks.tasks.ReleaseTask:success
 
 Authored path: `Tasks.tasks.ReleaseTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 25.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 51.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 88.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/release", requestId, session, task)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may act on task (task)" with (task, user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
 then
   Tasking.release (at, task)
 ```
@@ -10794,8 +10901,8 @@ then
 ### Tasks.tasks.ReleaseTask:success#2
 
 Authored path: `Tasks.tasks.ReleaseTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 25.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 51.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 88.
 
 ```reaction
 when Tasking.release (at, task, result.task: released), asked by Tasks.tasks.ReleaseTask:success
@@ -10808,14 +10915,15 @@ then
 ### Tasks.tasks.ReopenTask:forbidden
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 52.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not act on task (task)" with (task, user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -10823,15 +10931,15 @@ then
 ### Tasks.tasks.ReopenTask:success
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 52.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may act on task (task)" with (task, user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
 then
   Tasking.reopen (at, task)
 ```
@@ -10839,8 +10947,8 @@ then
 ### Tasks.tasks.ReopenTask:success#2
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 52.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 89.
 
 ```reaction
 when Tasking.reopen (at, task, result.task: reopened), asked by Tasks.tasks.ReopenTask:success
@@ -10853,14 +10961,15 @@ then
 ### Tasks.tasks.RetimeTask:forbidden
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 22.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 53.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 90.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not act on task (task)" with (task, user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -10868,15 +10977,15 @@ then
 ### Tasks.tasks.RetimeTask:success
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 22.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 53.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 90.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may act on task (task)" with (task, user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
 then
   Tasking.retime (at, endsAt, startsAt, task)
 ```
@@ -10884,8 +10993,8 @@ then
 ### Tasks.tasks.RetimeTask:success#2
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 22.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 53.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 90.
 
 ```reaction
 when Tasking.retime (at, endsAt, startsAt, task, result.task: retimed), asked by Tasks.tasks.RetimeTask:success
@@ -10893,6 +11002,52 @@ where
   earlier, RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
 then
   RequestBoundary.respond (requestId, task: retimed)
+```
+
+### Tasks.tasks.UncancelTask:forbidden
+
+Authored path: `Tasks.tasks.UncancelTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 91.
+
+```reaction
+when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not act on task (task) at (at)" with (at, task, user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Tasks.tasks.UncancelTask:success
+
+Authored path: `Tasks.tasks.UncancelTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 91.
+
+```reaction
+when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may act on task (task) at (at)" with (at, task, user)
+then
+  Tasking.uncancel (at, task)
+```
+
+### Tasks.tasks.UncancelTask:success#2
+
+Authored path: `Tasks.tasks.UncancelTask`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 91.
+
+```reaction
+when Tasking.uncancel (at, task, result.task: uncanceled), asked by Tasks.tasks.UncancelTask:success
+where
+  earlier, RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
+then
+  RequestBoundary.respond (requestId, task: uncanceled)
 ```
 
 ## Endpoint input contracts
@@ -11051,19 +11206,24 @@ not listed here have no explicit input contract.
 - `/tags/remove` — requires `session`, `tag`, `target`
 - `/tags/targets` — requires `tag`
 - `/tags/targetsByName` — requires `name`
-- `/tasklists/extend` — requires `list`, `members`, `session`
+- `/tasklists/add-member` — requires `session`, `list`, `candidate`
+- `/tasklists/create` — requires `session`; fills `title` with "" when absent
 - `/tasklists/get` — requires `list`, `session`
-- `/tasklists/leave` — requires `list`, `session`
+- `/tasklists/leave` — requires `session`, `list`
 - `/tasklists/mine` — requires `session`
-- `/tasklists/open` — requires `session`, `members`; fills `title` with "" when absent
+- `/tasklists/remove-member` — requires `session`, `list`, `target`
+- `/tasklists/rename` — requires `session`, `list`, `title`
 - `/tasks/assign` — requires `assignee`, `session`, `task`
 - `/tasks/cancel` — requires `session`, `task`
 - `/tasks/complete` — requires `session`, `task`
 - `/tasks/create` — requires `session`, `list`, `title`, `startsAt`, `endsAt`; fills `details` with "" when absent
+- `/tasks/delete` — requires `session`, `task`
+- `/tasks/describe` — requires `session`, `task`, `title`; fills `details` with "" when absent
 - `/tasks/mine` — requires `session`
 - `/tasks/release` — requires `session`, `task`
 - `/tasks/reopen` — requires `session`, `task`
 - `/tasks/retime` — requires `endsAt`, `session`, `startsAt`, `task`
+- `/tasks/uncancel` — requires `session`, `task`
 - `/threads/create` — requires `content`, `session`
 - `/threads/forItem` — requires `item`
 - `/threads/get` — requires `conversation`

@@ -20,16 +20,29 @@ export function ConfirmAction({
   confirmLabel,
   onConfirm,
   destructive = false,
+  open: openProp,
+  onOpenChange,
 }: {
-  trigger: React.ReactNode;
+  /** Omit when the opener cannot host the trigger, such as a menu item. */
+  trigger?: React.ReactNode;
   title: string;
   description: React.ReactNode;
   confirmLabel: string;
   onConfirm: () => void | Promise<void>;
   destructive?: boolean;
+  /** Pass both to drive the dialog from outside; omit both to let it govern itself. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [selfOpen, setSelfOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const governed = openProp !== undefined;
+  const open = governed ? openProp : selfOpen;
+
+  function setOpen(next: boolean) {
+    if (!governed) setSelfOpen(next);
+    onOpenChange?.(next);
+  }
 
   async function confirm() {
     setBusy(true);
@@ -43,7 +56,7 @@ export function ConfirmAction({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

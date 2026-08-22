@@ -23,6 +23,8 @@
     "serve": "bun src/start.ts",
     "setup:hash": "bun scripts/hash-setup-secret.ts",
     "scenario": "bun src/scenario.ts",
+    "dev": "bun scripts/stack-mongo.ts",
+    "start": "bun scripts/stack-mongo.ts",
     "stack": "bun scripts/stack.ts",
     "stack:mongo": "bun scripts/stack-mongo.ts"
   },
@@ -35,6 +37,8 @@
     "sanitize-html": "^2.17.6"
   },
   "devDependencies": {
+    "@mit-sdg/sync-engine-analysis": "1.0.0-beta.16",
+    "@mit-sdg/sync-engine-catalog": "1.0.0-beta.16",
     "@types/bun": "^1.3.14",
     "@types/node": "^24.0.0",
     "@types/nodemailer": "^8.0.1",
@@ -56,5 +60,6 @@
   },
   "engines": {
     "bun": ">=1.3.0"
-  }
+  },
+  "packageManager": "bun@1.3.14"
 }
