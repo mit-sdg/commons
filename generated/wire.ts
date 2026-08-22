@@ -4364,7 +4364,7 @@ export type CommonsWireHttp = {
     output: {
       "ok": true;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/tasks/describe": {
     input: {
@@ -4432,7 +4432,7 @@ export type CommonsWireHttp = {
     output: {
       "task": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["uncancel"]>>, ["task"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/threads/activity": {
     input: Record<string, never>;
