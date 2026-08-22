@@ -52,4 +52,9 @@ export interface TaskListPage {
   tasks: Task[];
 }
 
+export type RegisteredUser = ArrayElement<Output<"/users/list">["users"]>;
+export type Invitation = ArrayElement<
+  Output<"/invitations/list">["invitations"]
+>;
+
 export type ID = string;

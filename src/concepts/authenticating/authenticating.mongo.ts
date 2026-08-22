@@ -100,6 +100,15 @@ export class MongoAuthenticatingConcept {
     return { count: await this.users.countDocuments() };
   }
 
+  async _getUsers(_: Record<string, never>) {
+    const docs = await this.users.find().sort({ username: 1 }).toArray();
+    return docs.map((doc) => ({
+      user: doc._id,
+      username: doc.username,
+      email: doc.email,
+    }));
+  }
+
   async _search({ query }: { query: string }) {
     const needle = query.toLowerCase();
     const docs = await this.users.find().toArray();

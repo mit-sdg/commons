@@ -706,6 +706,16 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
+  "/invitations/retract": {
+    input: {
+      "invitation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["retract"]>[0], ["invitation"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "invitation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["retract"]>[0], ["invitation"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVITATION_ALREADY_CLAIMED" | "INVITATION_NOT_FOUND" };
+  };
   "/late-days/apply": {
     input: {
       "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["apply"]>[0], ["item"]>>;
@@ -2477,6 +2487,24 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_SEEN" | "ITEM_NOT_REGISTERED" };
   };
+  "/users/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "users": ({
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>> | null;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getUsers"]>>>, ["email"]>>;
+        "roles": {
+          "role": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRoles"]>>>, ["role"]>>;
+        }[];
+        "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getUsers"]>>>, ["user"]>]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getUsers"]>>>, ["username"]>>;
+      })[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
   "/users/resolve": {
     input: {
       "ref": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_resolveIdentity"]>[0], ["ref"]>>;
@@ -3142,6 +3170,15 @@ export type CommonsWireHttp = {
       }[];
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/invitations/retract": {
+    input: {
+      "invitation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["retract"]>[0], ["invitation"]>>;
+    };
+    output: {
+      "invitation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["retract"]>[0], ["invitation"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/late-days/apply": {
     input: {
@@ -4783,6 +4820,22 @@ export type CommonsWireHttp = {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["markSeen"]>[0], ["item"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
+  "/users/list": {
+    input: Record<string, never>;
+    output: {
+      "users": ({
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>> | null;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getUsers"]>>>, ["email"]>>;
+        "roles": {
+          "role": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRoles"]>>>, ["role"]>>;
+        }[];
+        "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getUsers"]>>>, ["user"]>]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getUsers"]>>>, ["username"]>>;
+      })[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
   "/users/resolve": {
     input: {

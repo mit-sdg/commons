@@ -1,6 +1,20 @@
 import { activeUser } from "./session.ts";
-import { compute, is, no, now, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
+import {
+  compute,
+  each,
+  former,
+  is,
+  no,
+  now,
+  reaction,
+  view,
+  when,
+  where,
+  whether,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
+import { mayAdminister, mayNotAdminister } from "./policy.ts";
+import { theRolesHeldBy } from "./roles.ts";
 import { computations, concepts } from "../../concepts.ts";
 import {
   ADMIN_ROLE,
@@ -146,4 +160,30 @@ export const ChangePassword = endpoint(
       .then(Sessioning.endAllForUser({ user }))
       .then(respond({ user })),
   { input: { required: ["session", "oldPassword", "newPassword"] } },
+);
+
+export const theRegisteredUsers = former(
+  "the registered users ()",
+  (_inputs, { user, username, email, displayName, avatar }) =>
+    each(Authenticating._getUsers({}).is({ user, username, email }))
+      .where(whether(Profiling._getProfileFields({ user }).is({ displayName, avatar })))
+      .form({
+        user,
+        username,
+        email,
+        displayName,
+        avatar,
+        roles: theRolesHeldBy({ user, context: FORUM }),
+      }),
+);
+
+export const ListUsers = endpoint("/users/list", ({ session, actor }) =>
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user: actor }), mayAdminister({ user: actor }))
+      .then(respond({ users: theRegisteredUsers({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );

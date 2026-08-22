@@ -78,6 +78,7 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 - `_getById(user: String) : optional (username: String, email: String)`
 - `_getByUsername(username: String) : optional (user: String)`
 - `_getUserCount() : one (count: Number)`
+- `_getUsers() : many (user: String, username: String, email: String)`
 - `_search(query: String) : many (user: String, username: String)`
 - `_resolveIdentity(ref: String) : one (user: String | Null, username: String | Null)`
 - `_denotedUser(ref: String) : one (user: String)`
@@ -339,6 +340,9 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
   - Refuses `INVITATION_INVALID`: That invitation is not valid.
 - `claim(invitation: Invitation, credential: String, user: User) : return (invitation: Invitation, channel: String, address: String)`
   - Refuses `INVITATION_INVALID`: That invitation is not valid.
+- `retract(invitation: Invitation) : return ()`
+  - Refuses `INVITATION_NOT_FOUND`: That invitation no longer exists.
+  - Refuses `INVITATION_ALREADY_CLAIMED`: That invitation has already been used.
 
 #### Queries
 
@@ -2287,6 +2291,36 @@ Former "the reactions on (target)" — inputs (target); bindings (reaction, reac
       user: reactor
 ```
 
+### the roles held by (user) in (context)
+
+Authored path: `Access.roles.theRolesHeldBy`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 21.
+
+```former
+Former "the roles held by (user) in (context)" — inputs (user, context); bindings (role); promises exactly one record — forms:
+  each Roling._getRoles (context, user) has (role)
+    form a record of
+      role
+```
+
+### the registered users ()
+
+Authored path: `Access.auth.theRegisteredUsers`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 53.
+
+```former
+Former "the registered users ()" — inputs (); bindings (user, username, email, displayName, avatar); promises exactly one record — forms:
+  each Authenticating._getUsers () has (email, user, username)
+    where whether Profiling._getProfileFields (user) has (avatar, displayName)
+    form a record of
+      avatar
+      displayName
+      email
+      roles: former "the roles held by (user) in (context)" with (context: "forum", user)
+      user
+      username
+```
+
 ### the released grades of (learner)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
@@ -2348,18 +2382,6 @@ Former "the revision numbered (number) of (item)" — inputs (number, item); bin
     form a record of
       content
       savedAt
-```
-
-### the roles held by (user) in (context)
-
-Authored path: `Access.roles.theRolesHeldBy`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 21.
-
-```former
-Former "the roles held by (user) in (context)" — inputs (user, context); bindings (role); promises exactly one record — forms:
-  each Roling._getRoles (context, user) has (role)
-    form a record of
-      role
 ```
 
 ### the roster ()
@@ -2849,7 +2871,7 @@ Former "the watched threads of (user)" — inputs (user); bindings (target, subs
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
 
 ```reaction
 when RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
@@ -2861,7 +2883,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
 
 ```reaction
 when Inviting.verify (channel: "email", credential: temporaryPassword, invitation, address: email), asked by Access.auth.AcceptInvitation
@@ -2875,7 +2897,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.AcceptInvitation#2
@@ -2889,7 +2911,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
 
 ```reaction
 when Profiling.createProfile (displayName, email, user), asked by Access.auth.AcceptInvitation#3
@@ -2903,7 +2925,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
 
 ```reaction
 when Inviting.claim (credential: temporaryPassword, invitation, user), asked by Access.auth.AcceptInvitation#4
@@ -2971,7 +2993,7 @@ then
 
 Authored path: `Access.auth.ChangePassword`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 21.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 52.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 57.
 
 ```reaction
 when RequestBoundary.request (newPassword, oldPassword, path: "/auth/changePassword", requestId, session)
@@ -2985,7 +3007,7 @@ then
 
 Authored path: `Access.auth.ChangePassword`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 21.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 52.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 57.
 
 ```reaction
 when Authenticating.changePassword (newPassword, oldPassword, user), asked by Access.auth.ChangePassword
@@ -2997,7 +3019,7 @@ then
 
 Authored path: `Access.auth.ChangePassword`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 21.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 52.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 57.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ChangePassword#2
@@ -3007,11 +3029,41 @@ then
   RequestBoundary.respond (requestId, user)
 ```
 
+### Access.auth.ListUsers:forbidden
+
+Authored path: `Access.auth.ListUsers`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 58.
+
+```reaction
+when RequestBoundary.request (path: "/users/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.auth.ListUsers:success
+
+Authored path: `Access.auth.ListUsers`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 58.
+
+```reaction
+when RequestBoundary.request (path: "/users/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+then
+  RequestBoundary.respond (requestId, users: former "the registered users ()")
+```
+
 ### Access.auth.Login
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 53.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 59.
 
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
@@ -3025,7 +3077,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 53.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 59.
 
 ```reaction
 when Authenticating.authenticate (password, username, user), asked by Access.auth.Login
@@ -3039,7 +3091,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 53.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 59.
 
 ```reaction
 when Sessioning.start (at, user, expiresAt, session), asked by Access.auth.Login#2
@@ -3053,7 +3105,7 @@ then
 
 Authored path: `Access.auth.Logout`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 13.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 54.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/logout", requestId, session)
@@ -3067,7 +3119,7 @@ then
 
 Authored path: `Access.auth.Logout`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 13.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 54.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 60.
 
 ```reaction
 when Sessioning.end (session), asked by Access.auth.Logout
@@ -3081,7 +3133,7 @@ then
 
 Authored path: `Access.auth.Me`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 14.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/me", requestId, session)
@@ -3097,7 +3149,7 @@ then
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3113,7 +3165,7 @@ then
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3129,7 +3181,7 @@ then
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.RegisterInitialAdmin:success
@@ -3143,7 +3195,7 @@ then
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
 
 ```reaction
 when Profiling.createProfile (displayName, email, user), asked by Access.auth.RegisterInitialAdmin:success#2
@@ -3157,7 +3209,7 @@ then
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3200,7 +3252,7 @@ then
 
 Authored path: `Access.auth.Resolve`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 18.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 57.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -3214,7 +3266,7 @@ then
 
 Authored path: `Access.auth.Resolve`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 18.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 57.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -3242,7 +3294,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
 
 ```reaction
 when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
@@ -3257,7 +3309,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
 
 ```reaction
 when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
@@ -3273,7 +3325,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
 
 ```reaction
 when Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.invitations.Invite:success
@@ -3287,7 +3339,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
 
 ```reaction
 when Inviting.invite (address: recipient, at, channel: "email", created, invitation), asked by Access.invitations.Invite:success#2
@@ -3301,7 +3353,7 @@ then
 
 Authored path: `Access.invitations.List`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 17.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 24.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/invitations/list", requestId, session)
@@ -3316,7 +3368,7 @@ then
 
 Authored path: `Access.invitations.List`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 17.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 24.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/invitations/list", requestId, session)
@@ -3325,6 +3377,50 @@ where
   view "(user) may administer" with (user: actor)
 then
   RequestBoundary.respond (invitations: former "the invitations ()", requestId)
+```
+
+### Access.invitations.Retract:forbidden
+
+Authored path: `Access.invitations.Retract`.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 32.
+
+```reaction
+when RequestBoundary.request (invitation, path: "/invitations/retract", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.invitations.Retract:success
+
+Authored path: `Access.invitations.Retract`.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 32.
+
+```reaction
+when RequestBoundary.request (invitation, path: "/invitations/retract", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+then
+  Inviting.retract (invitation)
+```
+
+### Access.invitations.Retract:success#2
+
+Authored path: `Access.invitations.Retract`.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 32.
+
+```reaction
+when Inviting.retract (invitation), asked by Access.invitations.Retract:success
+where
+  earlier, RequestBoundary.request (invitation, path: "/invitations/retract", requestId, session)
+then
+  RequestBoundary.respond (invitation, requestId)
 ```
 
 ### Access.roles.DefineRole:forbidden
@@ -11645,6 +11741,7 @@ not listed here have no explicit input contract.
 - `/grades/score-criterion` — requires `criterion`, `feedback`, `item`, `learner`, `points`, `session`
 - `/invitations/invite` — requires `email`, `session`
 - `/invitations/list` — requires `session`
+- `/invitations/retract` — requires `invitation`, `session`
 - `/late-days/apply` — requires `session`, `assignment`, `days`
 - `/late-days/balance` — requires `session`, `learner`
 - `/late-days/cancel` — requires `session`, `assignment`
@@ -11778,5 +11875,6 @@ not listed here have no explicit input contract.
 - `/unread/list` — requires `session`, `scope`
 - `/unread/markAllSeen` — requires `session`, `scope`
 - `/unread/markSeen` — requires `session`, `item`
+- `/users/list` — requires `session`
 - `/users/resolve` — requires `ref`
 - `/users/search` — requires `session`, `query`

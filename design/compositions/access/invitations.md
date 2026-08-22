@@ -19,7 +19,15 @@ SMTP failure leaves Mailing's message pending for a later attempt.
 timestamps, send counts, and claiming accounts. It never returns the temporary
 credentials, and a non-administrator receives `FORBIDDEN` rather than the list.
 
+An administrator can retract an unaccepted invitation.
+[Access.invitations.Retract](reaction:Access.invitations.Retract) resolves the caller
+from the session, verifies that the caller holds `administer`, and instructs
+Inviting to delete the unclaimed invitation, permanently invalidating its
+credential. A non-administrator receives `FORBIDDEN`, and attempting to retract
+an unknown or already-claimed invitation is refused.
+
 ```endpoints
 Access.invitations.Invite at /invitations/invite
 Access.invitations.List at /invitations/list
+Access.invitations.Retract at /invitations/retract
 ```

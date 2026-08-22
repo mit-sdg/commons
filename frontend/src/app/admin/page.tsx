@@ -3,12 +3,17 @@
 import {
   FolderPlus,
   List,
+  Mail,
   MailPlus,
+  RefreshCw,
+  Search,
   Shield,
   Trash2,
   UserCog,
+  Users,
+  X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { CategoryDot } from "@/components/forum/badges";
@@ -19,12 +24,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserAvatar } from "@/components/user-avatar";
 import { UserName } from "@/components/user-name";
+import type { QueryState } from "@/hooks/use-query";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { FORUM_CONTEXT, useAuth } from "@/lib/auth";
-import { shortId } from "@/lib/format";
-import type { Category, RoleDetail, RoleRow, RoleSummary } from "@/lib/models";
+import { fullTime, relativeTime, shortId } from "@/lib/format";
+import type {
+  Category,
+  Invitation,
+  RegisteredUser,
+  RoleDetail,
+  RoleRow,
+  RoleSummary,
+} from "@/lib/models";
+import { cn } from "@/lib/utils";
 
 const CAPABILITY_INFO: Record<string, string> = {
   administer:
@@ -34,10 +49,48 @@ const CAPABILITY_INFO: Record<string, string> = {
   pin: "Pin threads to the top of category listings.",
 };
 
-function InvitationAdmin() {
+function UserRoleBadges({
+  roles,
+  rolesMap,
+}: {
+  roles?: { role: string }[];
+  rolesMap: Record<string, RoleSummary>;
+}) {
+  if (!roles || roles.length === 0) {
+    return (
+      <Badge
+        variant="outline"
+        className="text-xs text-muted-foreground font-normal"
+      >
+        Member
+      </Badge>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {roles.map((r) => {
+        const roleKey = String(r.role);
+        const roleSummary = rolesMap[roleKey];
+        const roleName = roleSummary?.name ?? shortId(roleKey);
+        return (
+          <Badge
+            key={roleKey}
+            variant="secondary"
+            className="text-xs font-medium capitalize"
+          >
+            {roleName}
+          </Badge>
+        );
+      })}
+    </div>
+  );
+}
+
+function InviteMembersSection({ onInvited }: { onInvited: () => void }) {
   const [emails, setEmails] = useState("");
   const [busy, setBusy] = useState(false);
-  const invitations = useQuery(() => api.invitations.list({}), []);
+  const [isOpen, setIsOpen] = useState(true);
 
   async function sendInvitations() {
     const unique = [
@@ -61,60 +114,416 @@ function InvitationAdmin() {
     if (sent > 0)
       toast.success(`${sent} invitation${sent === 1 ? "" : "s"} queued.`);
     setEmails("");
-    invitations.refetch();
+    onInvited();
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-2 flex items-center gap-2 font-display text-lg font-semibold">
-          <MailPlus className="size-5" /> Invite members
+    <section className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="flex items-center gap-2 font-display text-lg font-semibold">
+          <MailPlus className="size-5 text-primary" /> Invite members
         </h3>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Enter email addresses separated by spaces, commas, or new lines.
-          Re-inviting a pending address sends the same temporary password again.
-        </p>
-        <Label htmlFor="invite-emails">Email addresses</Label>
-        <textarea
-          id="invite-emails"
-          className="mt-2 min-h-32 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-          value={emails}
-          onChange={(event) => setEmails(event.target.value)}
-          placeholder="member@example.edu"
-        />
         <Button
-          className="mt-3"
-          disabled={busy || !emails.trim()}
-          onClick={sendInvitations}
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="text-xs text-muted-foreground"
         >
-          {busy ? "Queuing…" : "Send invitations"}
+          {isOpen ? "Collapse" : "Expand"}
         </Button>
-      </section>
-      <section>
-        <h3 className="eyebrow mb-3">Invitations</h3>
-        <div className="divide-y divide-border rounded-xl border border-border bg-card">
-          {invitations.data && !("error" in invitations.data)
-            ? invitations.data.invitations.map((invitation) => (
-                <div
-                  key={String(invitation.invitation)}
-                  className="flex items-center justify-between p-4"
-                >
-                  <div>
-                    <p className="font-medium">{invitation.address}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Invited {invitation.inviteCount} time
-                      {invitation.inviteCount === 1 ? "" : "s"} via{" "}
-                      {invitation.channel}
-                    </p>
-                  </div>
-                  <Badge variant={invitation.user ? "default" : "secondary"}>
-                    {invitation.user ? "Registered" : "Pending"}
-                  </Badge>
-                </div>
-              ))
-            : null}
+      </div>
+
+      {isOpen ? (
+        <div className="mt-3 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Enter email addresses separated by spaces, commas, or new lines.
+            Re-inviting a pending address sends the same temporary password
+            again.
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="invite-emails">Email addresses</Label>
+            <textarea
+              id="invite-emails"
+              className="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              value={emails}
+              onChange={(event) => setEmails(event.target.value)}
+              placeholder="alice@example.edu, bob@example.edu"
+            />
+          </div>
+          <Button
+            size="sm"
+            disabled={busy || !emails.trim()}
+            onClick={sendInvitations}
+          >
+            {busy ? "Queuing…" : "Send invitations"}
+          </Button>
         </div>
-      </section>
+      ) : null}
+    </section>
+  );
+}
+
+function RegisteredUsersView({
+  usersQuery,
+  onInspectRoles,
+  rolesMap,
+}: {
+  usersQuery: QueryState<{ users: RegisteredUser[] }>;
+  onInspectRoles: (username: string) => void;
+  rolesMap: Record<string, RoleSummary>;
+}) {
+  const [search, setSearch] = useState("");
+
+  const users = useMemo(() => usersQuery.data?.users ?? [], [usersQuery.data]);
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      (u) =>
+        u.username.toLowerCase().includes(q) ||
+        (u.displayName && u.displayName.toLowerCase().includes(q)) ||
+        u.email.toLowerCase().includes(q),
+    );
+  }, [users, search]);
+
+  if (usersQuery.loading) {
+    return <LoadingState />;
+  }
+
+  if (usersQuery.error) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="Failed to load users"
+        description={usersQuery.error}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, @username, or email…"
+            className="pl-9 pr-9"
+          />
+          {search ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+            >
+              <X className="size-3.5" />
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {users.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No registered users"
+          description="No users have registered yet."
+        />
+      ) : filteredUsers.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="No users found"
+          description={`No users matching "${search}".`}
+        />
+      ) : (
+        <div className="divide-y divide-border rounded-xl border border-border bg-card overflow-hidden">
+          {filteredUsers.map((u) => (
+            <div
+              key={String(u.user)}
+              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <UserAvatar
+                  user={String(u.user)}
+                  name={u.displayName ?? u.username}
+                  avatar={u.avatar ?? undefined}
+                  className="size-10 shrink-0"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <UserName
+                      user={String(u.user)}
+                      name={u.displayName ?? u.username}
+                      className="font-medium truncate"
+                    />
+                    <span className="text-xs text-muted-foreground font-mono">
+                      @{u.username}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {u.email}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end">
+                <UserRoleBadges roles={u.roles} rolesMap={rolesMap} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={() => onInspectRoles(u.username)}
+                >
+                  <Shield className="size-3.5" />
+                  Inspect roles
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PendingInvitationsView({
+  invitationsQuery,
+}: {
+  invitationsQuery: QueryState<{ invitations: Invitation[] }>;
+}) {
+  const [resending, setResending] = useState<Record<string, boolean>>({});
+
+  const allInvitations = useMemo(
+    () => invitationsQuery.data?.invitations ?? [],
+    [invitationsQuery.data],
+  );
+  const pendingInvitations = useMemo(
+    () => allInvitations.filter((i) => i.user === null),
+    [allInvitations],
+  );
+
+  async function resendInvitation(address: string) {
+    setResending((prev) => ({ ...prev, [address]: true }));
+    try {
+      const result = await api.invitations.invite({ email: address });
+      if ("error" in result) {
+        toast.error(`${address}: ${publicErrorMessage(result.error)}`);
+      } else {
+        toast.success(`Invitation resent to ${address}`);
+        invitationsQuery.refetch();
+      }
+    } finally {
+      setResending((prev) => ({ ...prev, [address]: false }));
+    }
+  }
+
+  async function retractInvitation(invitationId: string, address: string) {
+    const result = await api.invitations.retract({
+      invitation: invitationId,
+    });
+    if ("error" in result) {
+      // The boundary reports a vanished invitation as NOT_FOUND and an
+      // already-claimed one as CONFLICT; both mean this row is stale, so say
+      // that rather than a generic failure, and refresh the list.
+      if (result.error === "NOT_FOUND" || result.error === "CONFLICT") {
+        toast.error(
+          `The invitation for ${address} is no longer pending. Refreshing the list.`,
+        );
+        invitationsQuery.refetch();
+      } else {
+        toast.error(publicErrorMessage(result.error));
+      }
+    } else {
+      toast.success(`Invitation for ${address} retracted`);
+      invitationsQuery.refetch();
+    }
+  }
+
+  if (invitationsQuery.loading) {
+    return <LoadingState />;
+  }
+
+  if (invitationsQuery.error) {
+    return (
+      <EmptyState
+        icon={Mail}
+        title="Failed to load invitations"
+        description={invitationsQuery.error}
+      />
+    );
+  }
+
+  if (pendingInvitations.length === 0) {
+    return (
+      <EmptyState
+        icon={Mail}
+        title="No pending invitations"
+        description="All invitations have been claimed or none have been sent."
+      />
+    );
+  }
+
+  return (
+    <div className="divide-y divide-border rounded-xl border border-border bg-card overflow-hidden">
+      {pendingInvitations.map((invitation) => {
+        const address = invitation.address;
+        const invId = String(invitation.invitation);
+        const isResending = !!resending[address];
+
+        return (
+          <div
+            key={invId}
+            className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium text-foreground">{address}</p>
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium"
+                >
+                  Pending
+                </Badge>
+              </div>
+              <p
+                className="text-xs text-muted-foreground mt-0.5"
+                title={
+                  invitation.createdAt
+                    ? fullTime(invitation.createdAt)
+                    : undefined
+                }
+              >
+                Invited {invitation.inviteCount} time
+                {invitation.inviteCount === 1 ? "" : "s"}
+                {invitation.createdAt
+                  ? ` · Created ${relativeTime(invitation.createdAt)}`
+                  : ""}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs"
+                disabled={isResending}
+                onClick={() => resendInvitation(address)}
+              >
+                <RefreshCw
+                  className={cn("size-3.5", isResending && "animate-spin")}
+                />
+                {isResending ? "Resending…" : "Resend"}
+              </Button>
+
+              <ConfirmAction
+                title={`Retract invitation for ${address}?`}
+                description="This will invalidate the invitation link and temporary password. The user will no longer be able to use it to register."
+                confirmLabel="Retract invitation"
+                destructive
+                onConfirm={() => retractInvitation(invId, address)}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="size-3.5" />
+                    Retract
+                  </Button>
+                }
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function UsersAndInvitationsAdmin({
+  onInspectRoles,
+  rolesMap,
+}: {
+  onInspectRoles: (username: string) => void;
+  rolesMap: Record<string, RoleSummary>;
+}) {
+  const [subView, setSubView] = useState<"users" | "invitations">("users");
+
+  const usersQuery = useQuery<{ users: RegisteredUser[] }>(
+    () => api.users.list({}),
+    [],
+  );
+  const invitationsQuery = useQuery<{ invitations: Invitation[] }>(
+    () => api.invitations.list({}),
+    [],
+  );
+
+  const registeredCount = usersQuery.data?.users?.length ?? 0;
+  const pendingCount = useMemo(
+    () =>
+      invitationsQuery.data?.invitations?.filter((i) => i.user === null)
+        .length ?? 0,
+    [invitationsQuery.data],
+  );
+
+  return (
+    <div className="space-y-6">
+      <InviteMembersSection
+        onInvited={() => {
+          invitationsQuery.refetch();
+          usersQuery.refetch();
+        }}
+      />
+
+      <div className="space-y-4">
+        <Tabs
+          value={subView}
+          onValueChange={(val) => setSubView(val as "users" | "invitations")}
+        >
+          <TabsList className="w-full">
+            <TabsTrigger value="users" className="gap-1.5 sm:gap-2">
+              <Users className="size-4 shrink-0" />
+              <span className="sm:hidden" aria-hidden="true">
+                Users
+              </span>
+              <span className="hidden sm:inline">Registered Users</span>
+              <Badge
+                variant="secondary"
+                className="ml-1 px-1.5 py-0.5 text-xs font-semibold shrink-0"
+              >
+                {usersQuery.loading ? "…" : registeredCount}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="invitations" className="gap-1.5 sm:gap-2">
+              <Mail className="size-4 shrink-0" />
+              <span className="sm:hidden" aria-hidden="true">
+                Invitations
+              </span>
+              <span className="hidden sm:inline">Pending Invitations</span>
+              <Badge
+                variant="secondary"
+                className="ml-1 px-1.5 py-0.5 text-xs font-semibold shrink-0"
+              >
+                {invitationsQuery.loading ? "…" : pendingCount}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users" className="mt-4">
+            <RegisteredUsersView
+              usersQuery={usersQuery}
+              onInspectRoles={onInspectRoles}
+              rolesMap={rolesMap}
+            />
+          </TabsContent>
+
+          <TabsContent value="invitations" className="mt-4">
+            <PendingInvitationsView invitationsQuery={invitationsQuery} />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
@@ -237,15 +646,25 @@ function CategoryAdmin() {
   );
 }
 
-function RoleAdmin() {
+function RoleAdmin({
+  initialInspectUser,
+  roleList,
+}: {
+  initialInspectUser?: string | null;
+  roleList: QueryState<{ roles: RoleSummary[] }>;
+}) {
   const { session } = useAuth();
   const [roleName, setRoleName] = useState("");
   const [caps, setCaps] = useState<string[]>([]);
   const [grantUser, setGrantUser] = useState("");
   const [grantRole, setGrantRole] = useState("");
-  const [lookupUser, setLookupUser] = useState("");
-  const [queryUser, setQueryUser] = useState<string | null>(null);
-  const [queryUsername, setQueryUsername] = useState<string | null>(null);
+  const [lookupUser, setLookupUser] = useState(initialInspectUser ?? "");
+  const [queryUser, setQueryUser] = useState<string | null>(
+    initialInspectUser ?? null,
+  );
+  const [queryUsername, setQueryUsername] = useState<string | null>(
+    initialInspectUser ?? null,
+  );
   const [roleDetails, setRoleDetails] = useState<Record<string, RoleDetail>>(
     {},
   );
@@ -255,11 +674,6 @@ function RoleAdmin() {
     setRoleDetails({});
     fetchedRef.current.clear();
   }
-
-  const roleList = useQuery<{ roles: RoleSummary[] }>(
-    () => api.roles.list({}),
-    [],
-  );
 
   const roles = useQuery<{ roles: RoleRow[] }>(
     queryUser
@@ -580,6 +994,28 @@ function RoleAdmin() {
 
 export default function AdminPage() {
   const { loading, can } = useAuth();
+  const [activeTab, setActiveTab] = useState<string>("users");
+  const [inspectUser, setInspectUser] = useState<string | null>(null);
+
+  const roleList = useQuery<{ roles: RoleSummary[] }>(
+    () => api.roles.list({}),
+    [],
+  );
+
+  const rolesMap = useMemo(() => {
+    const map: Record<string, RoleSummary> = {};
+    if (roleList.data?.roles) {
+      for (const r of roleList.data.roles) {
+        map[String(r.role)] = r;
+      }
+    }
+    return map;
+  }, [roleList.data]);
+
+  function handleInspectRoles(username: string) {
+    setInspectUser(username);
+    setActiveTab("roles");
+  }
 
   if (loading)
     return (
@@ -604,22 +1040,38 @@ export default function AdminPage() {
       <PageHeader
         eyebrow="Console"
         title="Administration"
-        description="Manage categories and the roles that grant moderation powers."
+        description="Manage users, invitations, categories, and moderation roles."
       />
-      <Tabs defaultValue="invitations">
-        <TabsList>
-          <TabsTrigger value="invitations">Invitations</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="roles">Roles</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full">
+          <TabsTrigger value="users" className="gap-2">
+            <Users className="size-4" />
+            Users & Invitations
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="gap-2">
+            <FolderPlus className="size-4" />
+            Categories
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="gap-2">
+            <Shield className="size-4" />
+            Roles
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="invitations" className="mt-6">
-          <InvitationAdmin />
+        <TabsContent value="users" className="mt-6">
+          <UsersAndInvitationsAdmin
+            onInspectRoles={handleInspectRoles}
+            rolesMap={rolesMap}
+          />
         </TabsContent>
         <TabsContent value="categories" className="mt-6">
           <CategoryAdmin />
         </TabsContent>
         <TabsContent value="roles" className="mt-6">
-          <RoleAdmin />
+          <RoleAdmin
+            key={inspectUser ?? "default"}
+            initialInspectUser={inspectUser}
+            roleList={roleList}
+          />
         </TabsContent>
       </Tabs>
     </PageContainer>

@@ -47,9 +47,15 @@ only `roster:manage`; it does not broaden later multi-account administrators.
 These owner actions are not one transaction, so a later failure does not remove
 the account.
 
+Only administrators may list all registered user accounts.
+[Access.auth.ListUsers](reaction:Access.auth.ListUsers) resolves the caller from the
+session, verifies that the caller holds `administer`, and gives administrators
+[the registered users](former:Access.auth.theRegisteredUsers). A non-administrator receives `FORBIDDEN`.
+
 ```endpoints
 Access.auth.AcceptInvitation at /auth/accept-invitation
 Access.auth.ChangePassword at /auth/changePassword
+Access.auth.ListUsers at /users/list
 Access.auth.Login at /auth/login
 Access.auth.Logout at /auth/logout
 Access.auth.Me at /auth/me

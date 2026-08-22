@@ -8,12 +8,15 @@ export function UserName({
   user,
   className,
   fallback = "Someone",
+  name,
 }: {
   user: string;
   className?: string;
   fallback?: string;
+  /** Pass when the caller already has the display name, to skip the profile fetch. */
+  name?: string;
 }) {
-  const profile = useProfile(user);
+  const profile = useProfile(name ? null : user);
   return (
     <Link
       href={`/u/${user}`}
@@ -22,7 +25,7 @@ export function UserName({
         className,
       )}
     >
-      {profile?.displayName ?? fallback}
+      {name ?? profile?.displayName ?? fallback}
     </Link>
   );
 }

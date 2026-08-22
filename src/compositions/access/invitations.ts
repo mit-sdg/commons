@@ -77,3 +77,15 @@ export const List = endpoint("/invitations/list", ({ session, actor }) =>
       .named("forbidden"),
   ),
 );
+
+export const Retract = endpoint("/invitations/retract", ({ session, invitation, actor }) =>
+  receive({ session, invitation }).then(
+    where(activeUser({ session }).is({ user: actor }), mayAdminister({ user: actor }))
+      .then(Inviting.retract({ invitation }))
+      .then(respond({ invitation }))
+      .named("success"),
+    where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);

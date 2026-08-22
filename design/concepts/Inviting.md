@@ -13,6 +13,10 @@ Inviting the same channel and address again returns the same invitation and
 credential; it does not rotate them. Nadia uses both values to claim the
 invitation once.
 
+When an administrator retracts an unclaimed invitation, it is deleted and its
+temporary credential can no longer be used. Retracting a claimed invitation or
+an unknown invitation is refused.
+
 Inviting does not interpret channels or addresses. A composition chooses the
 channel and delegates validation, normalization, and delivery to the concept
 that owns that channel.
@@ -71,6 +75,18 @@ claim(invitation: Invitation, credential: String, user: User) : return (invitati
   where no such unclaimed invitation matches
   then
     refuse INVITATION_INVALID "That invitation is not valid."
+
+retract(invitation: Invitation) : return ()
+  where no such invitation exists
+  then
+    refuse INVITATION_NOT_FOUND "That invitation no longer exists."
+  where invitation exists and has a user
+  then
+    refuse INVITATION_ALREADY_CLAIMED "That invitation has already been used."
+  where invitation exists and has no user
+  then
+    delete the invitation
+    return
 ```
 
 ## Queries

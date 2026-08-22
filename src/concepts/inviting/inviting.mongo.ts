@@ -1,6 +1,6 @@
 import type { Collection, Db } from "mongodb";
 import { invitationCredential } from "./credential.ts";
-import { InvitationAlreadyClaimed, InvitationInvalid } from "./errors.ts";
+import { InvitationAlreadyClaimed, InvitationInvalid, InvitationNotFound } from "./errors.ts";
 
 interface InvitationDoc {
   _id: string;
@@ -117,6 +117,18 @@ export class MongoInvitingConcept {
       channel: result.channel,
       address: result.address,
     };
+  }
+
+  async retract({ invitation }: { invitation: string }) {
+    const result = await this.invitations.findOneAndDelete({ _id: invitation, user: null });
+    if (result !== null) {
+      return {};
+    }
+    const existing = await this.invitations.findOne({ _id: invitation });
+    if (existing !== null && existing.user !== null) {
+      throw new InvitationAlreadyClaimed(invitation);
+    }
+    throw new InvitationNotFound(invitation);
   }
 
   async _getAvailable({ invitation, credential }: { invitation: string; credential: string }) {
