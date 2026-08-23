@@ -2,7 +2,11 @@ import { view, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
 import { FORUM } from "./capabilities.ts";
 
-const { Conversing, Locking, Posting, Roling, Rostering, Trashing } = concepts;
+const { Archiving, Conversing, Locking, Posting, Roling, Rostering, Trashing } = concepts;
+
+export const isArchived = view("(user) is archived", ({ user }, _outputs, _bindings) =>
+  where(Archiving._isTrashed({ item: user }).is({ trashed: true })),
+).holds();
 
 export const mayModerate = view("(user) may moderate", ({ user }, _outputs, _bindings) => [
   where(

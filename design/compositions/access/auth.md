@@ -10,7 +10,11 @@ one transaction: if profile creation or claiming fails after registration, the
 new account remains and Commons does not roll it back.
 
 [Access.auth.Login](reaction:Access.auth.Login) verifies a username and password, captures the current
-time, and starts a timed session. [Access.auth.Logout](reaction:Access.auth.Logout) resolves the caller
+time, and starts a timed session. An archived account cannot sign in: the
+[theArchivedUserNamed view](view:Access.auth.theArchivedUserNamed) relates an exact username to an
+account that has been archived, and login still verifies the password before
+answering `FORBIDDEN`, so a wrong password stays indistinguishable from an
+unknown account. [Access.auth.Logout](reaction:Access.auth.Logout) resolves the caller
 from a live session before ending that session. [Access.auth.Me](reaction:Access.auth.Me) uses the same
 resolved caller to return account and profile data, so a body parameter cannot
 select another account. For a public exact-username lookup, the
@@ -47,6 +51,17 @@ only `roster:manage`; it does not broaden later multi-account administrators.
 These owner actions are not one transaction, so a later failure does not remove
 the account.
 
+Only administrators may archive an account.
+[Access.auth.ArchiveUser](reaction:Access.auth.ArchiveUser) resolves the caller from the session,
+verifies that the caller holds `administer` and is not the account named, and
+then archives the account and ends every session it holds. The account and
+everything it authored are kept; it simply can no longer sign in. An
+administrator cannot archive their own account, and a non-administrator receives
+`FORBIDDEN`. [Access.auth.RestoreUser](reaction:Access.auth.RestoreUser) lifts the archive again and
+lets that person sign in. Archiving and ending sessions are ordered actions, not
+one transaction, so a failure to end sessions leaves the account archived and
+its existing sessions live until they expire.
+
 Only administrators may list all registered user accounts.
 [Access.auth.ListUsers](reaction:Access.auth.ListUsers) resolves the caller from the
 session, verifies that the caller holds `administer`, and gives administrators
@@ -54,6 +69,7 @@ session, verifies that the caller holds `administer`, and gives administrators
 
 ```endpoints
 Access.auth.AcceptInvitation at /auth/accept-invitation
+Access.auth.ArchiveUser at /users/archive
 Access.auth.ChangePassword at /auth/changePassword
 Access.auth.ListUsers at /users/list
 Access.auth.Login at /auth/login
@@ -61,4 +77,5 @@ Access.auth.Logout at /auth/logout
 Access.auth.Me at /auth/me
 Access.auth.RegisterInitialAdmin at /setup/register-admin
 Access.auth.Resolve at /auth/resolve
+Access.auth.RestoreUser at /users/restore
 ```

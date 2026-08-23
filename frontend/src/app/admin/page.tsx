@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  Archive,
+  ArchiveRestore,
   FolderPlus,
   List,
   Mail,
@@ -167,12 +169,36 @@ function RegisteredUsersView({
   usersQuery,
   onInspectRoles,
   rolesMap,
+  currentUser,
 }: {
   usersQuery: QueryState<{ users: RegisteredUser[] }>;
   onInspectRoles: (username: string) => void;
   rolesMap: Record<string, RoleSummary>;
+  currentUser: string | null;
 }) {
   const [search, setSearch] = useState("");
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
+
+  async function setArchived(
+    user: string,
+    label: string,
+    archive: boolean,
+  ): Promise<void> {
+    setBusy((prev) => ({ ...prev, [user]: true }));
+    try {
+      const result = archive
+        ? await api.users.archive({ user })
+        : await api.users.restore({ user });
+      if ("error" in result) {
+        toast.error(publicErrorMessage(result.error));
+      } else {
+        toast.success(archive ? `${label} archived` : `${label} restored`);
+      }
+      usersQuery.refetch();
+    } finally {
+      setBusy((prev) => ({ ...prev, [user]: false }));
+    }
+  }
 
   const users = useMemo(() => usersQuery.data?.users ?? [], [usersQuery.data]);
   const filteredUsers = useMemo(() => {
@@ -239,49 +265,99 @@ function RegisteredUsersView({
         />
       ) : (
         <div className="divide-y divide-border rounded-xl border border-border bg-card overflow-hidden">
-          {filteredUsers.map((u) => (
-            <div
-              key={String(u.user)}
-              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <UserAvatar
-                  user={String(u.user)}
-                  name={u.displayName ?? u.username}
-                  avatar={u.avatar ?? undefined}
-                  className="size-10 shrink-0"
-                />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <UserName
-                      user={String(u.user)}
-                      name={u.displayName ?? u.username}
-                      className="font-medium truncate"
-                    />
-                    <span className="text-xs text-muted-foreground font-mono">
-                      @{u.username}
-                    </span>
+          {filteredUsers.map((u) => {
+            const id = String(u.user);
+            const label = u.displayName ?? u.username;
+            const isSelf = currentUser !== null && id === currentUser;
+            return (
+              <div
+                key={id}
+                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <UserAvatar
+                    user={id}
+                    name={label}
+                    avatar={u.avatar ?? undefined}
+                    className={cn(
+                      "size-10 shrink-0",
+                      u.archived && "grayscale",
+                    )}
+                  />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <UserName
+                        user={id}
+                        name={label}
+                        className={cn(
+                          "font-medium truncate",
+                          u.archived && "text-muted-foreground",
+                        )}
+                      />
+                      <span className="text-xs text-muted-foreground font-mono">
+                        @{u.username}
+                      </span>
+                      {u.archived ? (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium"
+                        >
+                          Archived
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {u.email}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {u.email}
-                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end">
+                  <UserRoleBadges roles={u.roles} rolesMap={rolesMap} />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs"
+                    onClick={() => onInspectRoles(u.username)}
+                  >
+                    <Shield className="size-3.5" />
+                    Inspect roles
+                  </Button>
+                  {u.archived ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-xs"
+                      disabled={!!busy[id]}
+                      onClick={() => setArchived(id, label, false)}
+                    >
+                      <ArchiveRestore className="size-3.5" />
+                      Restore
+                    </Button>
+                  ) : isSelf ? null : (
+                    <ConfirmAction
+                      title={`Archive ${label}?`}
+                      description="They will be signed out of every device and will not be able to sign in again. Their posts, tasks, and profile are kept, and you can restore them at any time."
+                      confirmLabel="Archive account"
+                      destructive
+                      onConfirm={() => setArchived(id, label, true)}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          disabled={!!busy[id]}
+                        >
+                          <Archive className="size-3.5" />
+                          Archive
+                        </Button>
+                      }
+                    />
+                  )}
                 </div>
               </div>
-
-              <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end">
-                <UserRoleBadges roles={u.roles} rolesMap={rolesMap} />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs"
-                  onClick={() => onInspectRoles(u.username)}
-                >
-                  <Shield className="size-3.5" />
-                  Inspect roles
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -445,9 +521,11 @@ function PendingInvitationsView({
 function UsersAndInvitationsAdmin({
   onInspectRoles,
   rolesMap,
+  currentUser,
 }: {
   onInspectRoles: (username: string) => void;
   rolesMap: Record<string, RoleSummary>;
+  currentUser: string | null;
 }) {
   const [subView, setSubView] = useState<"users" | "invitations">("users");
 
@@ -516,6 +594,7 @@ function UsersAndInvitationsAdmin({
               usersQuery={usersQuery}
               onInspectRoles={onInspectRoles}
               rolesMap={rolesMap}
+              currentUser={currentUser}
             />
           </TabsContent>
 
@@ -993,7 +1072,7 @@ function RoleAdmin({
 }
 
 export default function AdminPage() {
-  const { loading, can } = useAuth();
+  const { loading, can, me } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("users");
   const [inspectUser, setInspectUser] = useState<string | null>(null);
 
@@ -1061,6 +1140,7 @@ export default function AdminPage() {
           <UsersAndInvitationsAdmin
             onInspectRoles={handleInspectRoles}
             rolesMap={rolesMap}
+            currentUser={me ? String(me.user) : null}
           />
         </TabsContent>
         <TabsContent value="categories" className="mt-6">

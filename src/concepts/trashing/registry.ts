@@ -11,5 +11,8 @@ export const trashing = registerConcept({
     ITEM_ALREADY_TRASHED: ItemAlreadyTrashed,
     ITEM_NOT_TRASHED: ItemNotTrashed,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoTrashingConcept(database) },
+  floors: {
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoTrashingConcept(database, instance),
+  },
 });
