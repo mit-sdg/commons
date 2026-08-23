@@ -73,6 +73,8 @@ describe("application-owned design integration", () => {
 
   test("the application design records the manually audited external-role bindings", () => {
     const expectedBindings = [
+      "Archiving.Item is Authenticating.User",
+      "Archiving.User is Authenticating.User",
       "Assigning.Author is Authenticating.User",
       "Assigning.Assignee is Authenticating.User",
       "Banking.Learner is Authenticating.User",

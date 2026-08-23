@@ -25,6 +25,7 @@ export default {
       new URL("./design/application.md", import.meta.url),
       new URL("./design/compositions/access/auth.md", import.meta.url),
       new URL("./design/compositions/access/invitations.md", import.meta.url),
+      new URL("./design/compositions/access/mail.md", import.meta.url),
       new URL("./design/compositions/access/roles.md", import.meta.url),
       new URL("./design/compositions/access/session.md", import.meta.url),
       new URL("./design/compositions/course/assignments.md", import.meta.url),

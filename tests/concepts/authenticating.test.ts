@@ -213,6 +213,32 @@ for (const [floor, make] of floors) {
         user,
       });
     });
+
+    test("_getUsers returns all registered users sorted alphabetically by username", async () => {
+      const auth = await make();
+      expect(await auth._getUsers({})).toEqual([]);
+      const { user: zoe } = await auth.register({
+        username: "zoe",
+        password: "long-enough-secret",
+        email: "zoe@example.edu",
+      });
+      const { user: alice } = await auth.register({
+        username: "alice",
+        password: "long-enough-secret",
+        email: "alice@example.edu",
+      });
+      const { user: bob } = await auth.register({
+        username: "bob",
+        password: "long-enough-secret",
+        email: "bob@example.edu",
+      });
+
+      expect(await auth._getUsers({})).toEqual([
+        { user: alice, username: "alice", email: "alice@example.edu" },
+        { user: bob, username: "bob", email: "bob@example.edu" },
+        { user: zoe, username: "zoe", email: "zoe@example.edu" },
+      ]);
+    });
   });
 }
 

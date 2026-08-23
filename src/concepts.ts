@@ -47,6 +47,7 @@ import {
 } from "./computations/mail-content.ts";
 
 const registrations = {
+  Archiving: trashing,
   Assigning: assigning,
   Authenticating: authenticating,
   Banking: banking,

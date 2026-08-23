@@ -1,6 +1,20 @@
 import { activeUser } from "./session.ts";
-import { compute, is, no, now, reaction, view, when, where } from "@mit-sdg/sync-engine/language";
+import {
+  compute,
+  each,
+  former,
+  is,
+  no,
+  now,
+  reaction,
+  view,
+  when,
+  where,
+  whether,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
+import { isArchived, mayAdminister, mayNotAdminister } from "./policy.ts";
+import { theRolesHeldBy } from "./roles.ts";
 import { computations, concepts } from "../../concepts.ts";
 import {
   ADMIN_ROLE,
@@ -10,7 +24,7 @@ import {
   INITIAL_ROSTER_BOOTSTRAP_ROLE,
 } from "./capabilities.ts";
 
-const { Authenticating, Inviting, Profiling, Roling, Sessioning } = concepts;
+const { Archiving, Authenticating, Inviting, Profiling, Roling, Sessioning } = concepts;
 export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
   when(Authenticating.register({}).responds({ user }))
     .where(
@@ -102,14 +116,26 @@ export const AcceptInvitation = endpoint(
       .then(respond({ user })),
 );
 
+export const theArchivedUserNamed = view(
+  "the archived user named (username)",
+  ({ username }, { user }, _bindings) =>
+    where(Authenticating._getByUsername({ username }).is({ user }), isArchived({ user })),
+).optional();
+
 export const Login = endpoint(
   "/auth/login",
   ({ username, password, user, session, expiresAt, at }) =>
-    receive({ username, password })
-      .where(now(at))
-      .then(Authenticating.authenticate({ username, password }).responds({ user }))
-      .then(Sessioning.start({ user, at }).responds({ session, expiresAt }))
-      .then(respond({ session, expiresAt, user })),
+    receive({ username, password }).then(
+      where(theArchivedUserNamed({ username }))
+        .then(Authenticating.authenticate({ username, password }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("archived"),
+      where(now(at), no(theArchivedUserNamed({ username })))
+        .then(Authenticating.authenticate({ username, password }).responds({ user }))
+        .then(Sessioning.start({ user, at }).responds({ session, expiresAt }))
+        .then(respond({ session, expiresAt, user }))
+        .named("success"),
+    ),
 );
 
 export const Logout = endpoint("/auth/logout", ({ session }) =>
@@ -146,4 +172,71 @@ export const ChangePassword = endpoint(
       .then(Sessioning.endAllForUser({ user }))
       .then(respond({ user })),
   { input: { required: ["session", "oldPassword", "newPassword"] } },
+);
+
+export const theRegisteredUsers = former(
+  "the registered users ()",
+  (_inputs, { user, username, email, displayName, avatar, archived }) =>
+    each(Authenticating._getUsers({}).is({ user, username, email }))
+      .where(
+        whether(Profiling._getProfileFields({ user }).is({ displayName, avatar })),
+        Archiving._isTrashed({ item: user }).is({ trashed: archived }),
+      )
+      .form({
+        user,
+        username,
+        email,
+        displayName,
+        avatar,
+        archived,
+        roles: theRolesHeldBy({ user, context: FORUM }),
+      }),
+);
+
+export const ListUsers = endpoint("/users/list", ({ session, actor }) =>
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user: actor }), mayAdminister({ user: actor }))
+      .then(respond({ users: theRegisteredUsers({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
+export const ArchiveUser = endpoint("/users/archive", ({ session, user, actor, at }) =>
+  receive({ session, user }).then(
+    where(
+      now(at),
+      activeUser({ session }).is({ user: actor }),
+      mayAdminister({ user: actor }),
+      activeUser({ session }).is({ user: actor }).is.not({ user }),
+    )
+      .then(Archiving.trash({ item: user, by: actor, at }))
+      .then(Sessioning.endAllForUser({ user }))
+      .then(respond({ user }))
+      .named("success"),
+    where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+    where(
+      activeUser({ session }).is({ user: actor }),
+      mayAdminister({ user: actor }),
+      activeUser({ session }).is({ user: actor }).is({ user }),
+    )
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("self"),
+  ),
+);
+
+export const RestoreUser = endpoint("/users/restore", ({ session, user, actor }) =>
+  receive({ session, user }).then(
+    where(activeUser({ session }).is({ user: actor }), mayAdminister({ user: actor }))
+      .then(Archiving.restore({ item: user }))
+      .then(respond({ user }))
+      .named("success"),
+    where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );

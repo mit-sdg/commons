@@ -94,6 +94,11 @@ _getByUsername (username: String) : optional (user: String)
 _getUserCount () : one (count: Number)
   answers the number of Users
 
+_getUsers () : many (user: String, username: String, email: String)
+  answers all registered Users with their usernames and email addresses
+  orders rows alphabetically by username
+  answers no rows when none match
+
 _search (query: String) : many (user: String, username: String)
   answers Users whose usernames start with query, ignoring case
   orders rows alphabetically by username and returns at most ten

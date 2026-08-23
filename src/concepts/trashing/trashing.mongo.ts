@@ -10,8 +10,9 @@ interface TrashDoc {
 export class MongoTrashingConcept {
   private readonly trashed: Collection<TrashDoc>;
 
-  constructor(db: Db) {
-    this.trashed = db.collection<TrashDoc>("trashing.items");
+  constructor(db: Db, instance = "Trashing") {
+    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
+    this.trashed = db.collection<TrashDoc>(`${prefix}.items`);
   }
 
   async trash({ item, by, at }: { item: string; by: string; at: Date }) {

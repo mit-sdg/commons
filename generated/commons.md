@@ -50,10 +50,10 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Instances
 
-- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 33.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 35.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 34.
-  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 36.
+- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 37.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 39.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 38.
+  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 40.
 
 ### Authenticating
 
@@ -78,13 +78,14 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 - `_getById(user: String) : optional (username: String, email: String)`
 - `_getByUsername(username: String) : optional (user: String)`
 - `_getUserCount() : one (count: Number)`
+- `_getUsers() : many (user: String, username: String, email: String)`
 - `_search(query: String) : many (user: String, username: String)`
 - `_resolveIdentity(ref: String) : one (user: String | Null, username: String | Null)`
 - `_denotedUser(ref: String) : one (user: String)`
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 38.
+- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 42.
 
 ### Banking
 
@@ -119,9 +120,9 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Instances
 
-- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 40.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 42.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 41.
+- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 44.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 46.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 45.
 
 ### Bookmarking
 
@@ -142,9 +143,9 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Instances
 
-- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 44.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 46.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 45.
+- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 48.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 50.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 49.
 
 ### Categorizing
 
@@ -175,8 +176,8 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 
 #### Instances
 
-- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 48.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 49.
+- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 52.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 53.
 
 ### Conversing
 
@@ -206,8 +207,8 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Instances
 
-- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 51.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 52.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 55.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 56.
 
 ### Flagging
 
@@ -229,9 +230,9 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Instances
 
-- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 54.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 56.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 55.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 58.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 60.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 59.
 
 ### Formatting
 
@@ -248,8 +249,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Instances
 
-- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 58.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 59.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 62.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 63.
 
 ### Grading
 
@@ -284,12 +285,12 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Instances
 
-- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 61.
-  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 65.
-  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 66.
-  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 62.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 64.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 63.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 65.
+  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 69.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 70.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 66.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 68.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 67.
 
 ### Grouping
 
@@ -324,8 +325,8 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Instances
 
-- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 68.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 69.
+- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 72.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 73.
 
 ### Inviting
 
@@ -339,6 +340,9 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
   - Refuses `INVITATION_INVALID`: That invitation is not valid.
 - `claim(invitation: Invitation, credential: String, user: User) : return (invitation: Invitation, channel: String, address: String)`
   - Refuses `INVITATION_INVALID`: That invitation is not valid.
+- `retract(invitation: Invitation) : return ()`
+  - Refuses `INVITATION_NOT_FOUND`: That invitation no longer exists.
+  - Refuses `INVITATION_ALREADY_CLAIMED`: That invitation has already been used.
 
 #### Queries
 
@@ -347,8 +351,8 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Instances
 
-- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 71.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 72.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 75.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 76.
 
 ### Itemizing
 
@@ -377,8 +381,8 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Instances
 
-- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 74.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 75.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 78.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 79.
 
 ### Linking
 
@@ -398,9 +402,9 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Instances
 
-- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 77.
-  - `Source` is `Posting.Post` — [Commons application](../design/application.md), line 78.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 79.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 81.
+  - `Source` is `Posting.Post` — [Commons application](../design/application.md), line 82.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 83.
 
 ### Locking
 
@@ -420,8 +424,8 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Instances
 
-- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 81.
-  - `Target` is `Lockable` — [Commons application](../design/application.md), line 82.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 85.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 86.
 
 ### Mailing
 
@@ -435,16 +439,19 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
   - Refuses `MAIL_RECIPIENT_INVALID`: The mail recipient is not well formed.
 - `markSent(message: Message, at: Date) : return (message: Message)`
   - Refuses `MAIL_NOT_FOUND`: There is no such mail message.
+- `markFailed(message: Message, error: String, at: Date) : return (message: Message)`
+  - Refuses `MAIL_NOT_FOUND`: There is no such mail message.
 
 #### Queries
 
 - `_getPending() : many (message: String, key: Key, recipient: String, subject: String, text: String, html: String, createdAt: Date)`
 - `_getStatus(message: String) : optional (sentAt: Date | Null)`
+- `_getMessages() : many (message: String, key: Key, recipient: String, subject: String, createdAt: Date, sentAt: Date | Null, attempts: Number, lastAttemptAt: Date | Null, lastError: String | Null)`
 
 #### Instances
 
-- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 84.
-  - `Key` is `MailKey` — [Commons application](../design/application.md), line 85.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 88.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 89.
 
 ### Notifying
 
@@ -468,14 +475,14 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Instances
 
-- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 87.
-  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 90.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 88.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 89.
-- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 92.
-  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 95.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 93.
-  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 94.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 91.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 94.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 92.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 93.
+- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 96.
+  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 99.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 97.
+  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 98.
 
 ### Noting
 
@@ -513,9 +520,9 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Instances
 
-- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 97.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 98.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 99.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 101.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 102.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 103.
 
 ### Pinning
 
@@ -538,9 +545,9 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Instances
 
-- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 101.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 102.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 103.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 105.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 106.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 107.
 
 ### Posting
 
@@ -563,8 +570,8 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Instances
 
-- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 105.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 106.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 109.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 110.
 
 ### Profiling
 
@@ -589,8 +596,8 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Instances
 
-- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 108.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 109.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 112.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 113.
 
 ### Reacting
 
@@ -613,9 +620,9 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Instances
 
-- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 111.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 112.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 113.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 115.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 116.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 117.
 
 ### Resolving
 
@@ -635,10 +642,10 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Instances
 
-- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 115.
-  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 118.
-  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 117.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 116.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 119.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 122.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 121.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 120.
 
 ### Revising
 
@@ -657,8 +664,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Instances
 
-- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 120.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 121.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 124.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 125.
 
 ### Roling
 
@@ -694,9 +701,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Instances
 
-- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 123.
-  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 125.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 124.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 127.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 129.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 128.
 
 ### Rostering
 
@@ -740,8 +747,8 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Instances
 
-- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 127.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 128.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 131.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 132.
 
 ### Sessioning
 
@@ -761,8 +768,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 130.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 131.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 134.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 135.
 
 ### Submitting
 
@@ -787,10 +794,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 133.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 136.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 135.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 134.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 137.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 140.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 139.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 138.
 
 ### Subscribing
 
@@ -812,9 +819,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 138.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 139.
-  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 140.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 142.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 143.
+  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 144.
 
 ### Tagging
 
@@ -842,8 +849,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 142.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 143.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 146.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 147.
 
 ### Tasking
 
@@ -894,9 +901,9 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 145.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 147.
-  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 146.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 149.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 151.
+  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 150.
 
 ### Tracking
 
@@ -920,10 +927,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 149.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 151.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 152.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 150.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 153.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 155.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 156.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 154.
 
 ### Trashing
 
@@ -945,9 +952,12 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Instances
 
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 154.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 156.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 155.
+- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 33.
+  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 35.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 34.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 158.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 160.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 159.
 
 ## Application types
 
@@ -959,17 +969,17 @@ Concrete types:
 
 ## Computations
 
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 198.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 195.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 204.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 201.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 207.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 216.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 210.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 213.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 225.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 219.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 222.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 202.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 199.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 208.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 205.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 211.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 220.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 214.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 217.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 229.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 223.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 226.
 
 ## Views
 
@@ -1082,6 +1092,13 @@ Authored path: `Forum.threads.publicTarget`.
 ```view
 (user) is an active student — inputs (user); outputs (); bindings ()
   where Rostering._isActiveStudent (user) has (active: true)
+```
+
+### (user) is archived
+
+```view
+(user) is archived — inputs (user); outputs (); bindings ()
+  where Archiving._isTrashed (item: user) has (trashed: true)
 ```
 
 ### (user) is not an active student
@@ -1346,6 +1363,18 @@ the active user of (session) — inputs (session); outputs (user); bindings () �
   where Sessioning._getUser (session) has (user)
 ```
 
+### the archived user named (username)
+
+Authored path: `Access.auth.theArchivedUserNamed`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 14.
+
+```view
+the archived user named (username) — inputs (username); outputs (user); bindings () — answers at most one (user)
+  where
+    Authenticating._getByUsername (username) has (user)
+    view "(user) is archived" with (user)
+```
+
 ### the assignment (assignment)
 
 Authored path: `Course.assignments.theAssignment`.
@@ -1533,7 +1562,7 @@ the task notification mail of kind (kind) about (subject) for (recipient) at (at
 ### the user named (username)
 
 Authored path: `Access.auth.theUserNamed`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 17.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
 
 ```view
 the user named (username) — inputs (username); outputs (user); bindings () — answers at most one (user)
@@ -2094,6 +2123,26 @@ Former "the locked list ()" — inputs (); bindings (target, lockedAt); promises
       target
 ```
 
+### the mail messages ()
+
+Authored path: `Access.mail.theMailMessages`.
+- Covered by [Mail](../design/compositions/access/mail.md), line 15.
+
+```former
+Former "the mail messages ()" — inputs (); bindings (message, key, recipient, subject, createdAt, sentAt, attempts, lastAttemptAt, lastError); promises exactly one record — forms:
+  each Mailing._getMessages () has (attempts, createdAt, key, lastAttemptAt, lastError, message, recipient, sentAt, subject)
+    form a record of
+      attempts
+      createdAt
+      key
+      lastAttemptAt
+      lastError
+      message
+      recipient
+      sentAt
+      subject
+```
+
 ### the moderation queue ()
 
 Authored path: `Forum.moderation.theModerationQueue`.
@@ -2287,6 +2336,38 @@ Former "the reactions on (target)" — inputs (target); bindings (reaction, reac
       user: reactor
 ```
 
+### the roles held by (user) in (context)
+
+Authored path: `Access.roles.theRolesHeldBy`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 21.
+
+```former
+Former "the roles held by (user) in (context)" — inputs (user, context); bindings (role); promises exactly one record — forms:
+  each Roling._getRoles (context, user) has (role)
+    form a record of
+      role
+```
+
+### the registered users ()
+
+Authored path: `Access.auth.theRegisteredUsers`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 68.
+
+```former
+Former "the registered users ()" — inputs (); bindings (user, username, email, displayName, avatar, archived); promises exactly one record — forms:
+  each Authenticating._getUsers () has (email, user, username)
+    where whether Profiling._getProfileFields (user) has (avatar, displayName)
+    where Archiving._isTrashed (item: user) has (trashed: archived)
+    form a record of
+      archived
+      avatar
+      displayName
+      email
+      roles: former "the roles held by (user) in (context)" with (context: "forum", user)
+      user
+      username
+```
+
 ### the released grades of (learner)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
@@ -2348,18 +2429,6 @@ Former "the revision numbered (number) of (item)" — inputs (number, item); bin
     form a record of
       content
       savedAt
-```
-
-### the roles held by (user) in (context)
-
-Authored path: `Access.roles.theRolesHeldBy`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 21.
-
-```former
-Former "the roles held by (user) in (context)" — inputs (user, context); bindings (role); promises exactly one record — forms:
-  each Roling._getRoles (context, user) has (role)
-    form a record of
-      role
 ```
 
 ### the roster ()
@@ -2849,7 +2918,7 @@ Former "the watched threads of (user)" — inputs (user); bindings (target, subs
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
 
 ```reaction
 when RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
@@ -2861,7 +2930,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
 
 ```reaction
 when Inviting.verify (channel: "email", credential: temporaryPassword, invitation, address: email), asked by Access.auth.AcceptInvitation
@@ -2875,7 +2944,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.AcceptInvitation#2
@@ -2889,7 +2958,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
 
 ```reaction
 when Profiling.createProfile (displayName, email, user), asked by Access.auth.AcceptInvitation#3
@@ -2903,7 +2972,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
 
 ```reaction
 when Inviting.claim (credential: temporaryPassword, invitation, user), asked by Access.auth.AcceptInvitation#4
@@ -2913,10 +2982,84 @@ then
   RequestBoundary.respond (requestId, user)
 ```
 
+### Access.auth.ArchiveUser:forbidden
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+
+```reaction
+when RequestBoundary.request (path: "/users/archive", requestId, session, user)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.auth.ArchiveUser:self
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+
+```reaction
+when RequestBoundary.request (path: "/users/archive", requestId, session, user)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  view "the active user of (session)" with (session) has (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.auth.ArchiveUser:success
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+
+```reaction
+when RequestBoundary.request (path: "/users/archive", requestId, session, user)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  view "the active user of (session)" with (session) has (user: actor) and not (user)
+then
+  Archiving.trash (at, by: actor, item: user)
+```
+
+### Access.auth.ArchiveUser:success#2
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+
+```reaction
+when Archiving.trash (at, by: actor, item: user), asked by Access.auth.ArchiveUser:success
+then
+  Sessioning.endAllForUser (user)
+```
+
+### Access.auth.ArchiveUser:success#3
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+
+```reaction
+when Sessioning.endAllForUser (user), asked by Access.auth.ArchiveUser:success#2
+where
+  earlier, RequestBoundary.request (path: "/users/archive", requestId, session, user)
+then
+  RequestBoundary.respond (requestId, user)
+```
+
 ### Access.auth.BootstrapAdminOnLogin
 
 Authored path: `Access.auth.BootstrapAdminOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 29.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
 
 ```reaction
 when Authenticating.authenticate (user)
@@ -2930,7 +3073,7 @@ then
 ### Access.auth.BootstrapAdminOnLogin#2
 
 Authored path: `Access.auth.BootstrapAdminOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 29.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnLogin
@@ -2943,7 +3086,7 @@ then
 ### Access.auth.BootstrapAdminOnRegister
 
 Authored path: `Access.auth.BootstrapAdminOnRegister`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 27.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 31.
 
 ```reaction
 when Authenticating.register (user)
@@ -2957,7 +3100,7 @@ then
 ### Access.auth.BootstrapAdminOnRegister#2
 
 Authored path: `Access.auth.BootstrapAdminOnRegister`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 27.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 31.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnRegister
@@ -2970,8 +3113,8 @@ then
 ### Access.auth.ChangePassword
 
 Authored path: `Access.auth.ChangePassword`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 52.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 25.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 73.
 
 ```reaction
 when RequestBoundary.request (newPassword, oldPassword, path: "/auth/changePassword", requestId, session)
@@ -2984,8 +3127,8 @@ then
 ### Access.auth.ChangePassword#2
 
 Authored path: `Access.auth.ChangePassword`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 52.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 25.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 73.
 
 ```reaction
 when Authenticating.changePassword (newPassword, oldPassword, user), asked by Access.auth.ChangePassword
@@ -2996,8 +3139,8 @@ then
 ### Access.auth.ChangePassword#3
 
 Authored path: `Access.auth.ChangePassword`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 52.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 25.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 73.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ChangePassword#2
@@ -3007,42 +3150,101 @@ then
   RequestBoundary.respond (requestId, user)
 ```
 
-### Access.auth.Login
+### Access.auth.ListUsers:forbidden
+
+Authored path: `Access.auth.ListUsers`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 66.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 74.
+
+```reaction
+when RequestBoundary.request (path: "/users/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.auth.ListUsers:success
+
+Authored path: `Access.auth.ListUsers`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 66.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 74.
+
+```reaction
+when RequestBoundary.request (path: "/users/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+then
+  RequestBoundary.respond (requestId, users: former "the registered users ()")
+```
+
+### Access.auth.Login:archived
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 53.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
+
+```reaction
+when RequestBoundary.request (password, path: "/auth/login", requestId, username)
+where
+  view "the archived user named (username)" with (username)
+then
+  Authenticating.authenticate (password, username)
+```
+
+### Access.auth.Login:archived#2
+
+Authored path: `Access.auth.Login`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 12.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
+
+```reaction
+when Authenticating.authenticate (password, username), asked by Access.auth.Login:archived
+where
+  earlier, RequestBoundary.request (password, path: "/auth/login", requestId, username)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.auth.Login:success
+
+Authored path: `Access.auth.Login`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 12.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
 
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
 where
   at is the current flow's instant
+  no view "the archived user named (username)" with (username)
 then
   Authenticating.authenticate (password, username)
 ```
 
-### Access.auth.Login#2
+### Access.auth.Login:success#2
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 53.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
 
 ```reaction
-when Authenticating.authenticate (password, username, user), asked by Access.auth.Login
+when Authenticating.authenticate (password, username, user), asked by Access.auth.Login:success
 where
   at is the current flow's instant
 then
   Sessioning.start (at, user)
 ```
 
-### Access.auth.Login#3
+### Access.auth.Login:success#3
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 53.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
 
 ```reaction
-when Sessioning.start (at, user, expiresAt, session), asked by Access.auth.Login#2
+when Sessioning.start (at, user, expiresAt, session), asked by Access.auth.Login:success#2
 where
   earlier, RequestBoundary.request (password, path: "/auth/login", requestId, username)
 then
@@ -3052,8 +3254,8 @@ then
 ### Access.auth.Logout
 
 Authored path: `Access.auth.Logout`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 13.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 54.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 17.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 76.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/logout", requestId, session)
@@ -3066,8 +3268,8 @@ then
 ### Access.auth.Logout#2
 
 Authored path: `Access.auth.Logout`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 13.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 54.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 17.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 76.
 
 ```reaction
 when Sessioning.end (session), asked by Access.auth.Logout
@@ -3080,8 +3282,8 @@ then
 ### Access.auth.Me
 
 Authored path: `Access.auth.Me`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 14.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 18.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/me", requestId, session)
@@ -3096,8 +3298,8 @@ then
 ### Access.auth.RegisterInitialAdmin:initialized
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 38.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3112,8 +3314,8 @@ then
 ### Access.auth.RegisterInitialAdmin:success
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 38.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3128,8 +3330,8 @@ then
 ### Access.auth.RegisterInitialAdmin:success#2
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 38.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.RegisterInitialAdmin:success
@@ -3142,8 +3344,8 @@ then
 ### Access.auth.RegisterInitialAdmin:success#3
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 38.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
 
 ```reaction
 when Profiling.createProfile (displayName, email, user), asked by Access.auth.RegisterInitialAdmin:success#2
@@ -3156,8 +3358,8 @@ then
 ### Access.auth.RegisterInitialAdmin:unauthorized
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 34.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 38.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3171,7 +3373,7 @@ then
 ### Access.auth.RepairInitialAdminRosterBootstrapOnLogin
 
 Authored path: `Access.auth.RepairInitialAdminRosterBootstrapOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 44.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 48.
 
 ```reaction
 when Authenticating.authenticate (user)
@@ -3186,7 +3388,7 @@ then
 ### Access.auth.RepairInitialAdminRosterBootstrapOnLogin#2
 
 Authored path: `Access.auth.RepairInitialAdminRosterBootstrapOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 44.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 48.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["roster:manage"], name: "initial-roster-bootstrap", role), asked by Access.auth.RepairInitialAdminRosterBootstrapOnLogin
@@ -3199,8 +3401,8 @@ then
 ### Access.auth.Resolve:absent
 
 Authored path: `Access.auth.Resolve`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 18.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 57.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 22.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 79.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -3213,13 +3415,57 @@ then
 ### Access.auth.Resolve:found
 
 Authored path: `Access.auth.Resolve`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 18.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 57.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 22.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 79.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
 where
   view "the user named (username)" with (username) has (user)
+then
+  RequestBoundary.respond (requestId, user)
+```
+
+### Access.auth.RestoreUser:forbidden
+
+Authored path: `Access.auth.RestoreUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 60.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 80.
+
+```reaction
+when RequestBoundary.request (path: "/users/restore", requestId, session, user)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.auth.RestoreUser:success
+
+Authored path: `Access.auth.RestoreUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 60.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 80.
+
+```reaction
+when RequestBoundary.request (path: "/users/restore", requestId, session, user)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+then
+  Archiving.restore (item: user)
+```
+
+### Access.auth.RestoreUser:success#2
+
+Authored path: `Access.auth.RestoreUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 60.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 80.
+
+```reaction
+when Archiving.restore (item: user), asked by Access.auth.RestoreUser:success
+where
+  earlier, RequestBoundary.request (path: "/users/restore", requestId, session, user)
 then
   RequestBoundary.respond (requestId, user)
 ```
@@ -3242,7 +3488,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
 
 ```reaction
 when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
@@ -3257,7 +3503,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
 
 ```reaction
 when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
@@ -3273,7 +3519,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
 
 ```reaction
 when Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.invitations.Invite:success
@@ -3287,7 +3533,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
 
 ```reaction
 when Inviting.invite (address: recipient, at, channel: "email", created, invitation), asked by Access.invitations.Invite:success#2
@@ -3301,7 +3547,7 @@ then
 
 Authored path: `Access.invitations.List`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 17.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 24.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/invitations/list", requestId, session)
@@ -3316,7 +3562,7 @@ then
 
 Authored path: `Access.invitations.List`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 17.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 24.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/invitations/list", requestId, session)
@@ -3325,6 +3571,80 @@ where
   view "(user) may administer" with (user: actor)
 then
   RequestBoundary.respond (invitations: former "the invitations ()", requestId)
+```
+
+### Access.invitations.Retract:forbidden
+
+Authored path: `Access.invitations.Retract`.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 32.
+
+```reaction
+when RequestBoundary.request (invitation, path: "/invitations/retract", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.invitations.Retract:success
+
+Authored path: `Access.invitations.Retract`.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 32.
+
+```reaction
+when RequestBoundary.request (invitation, path: "/invitations/retract", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+then
+  Inviting.retract (invitation)
+```
+
+### Access.invitations.Retract:success#2
+
+Authored path: `Access.invitations.Retract`.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 32.
+
+```reaction
+when Inviting.retract (invitation), asked by Access.invitations.Retract:success
+where
+  earlier, RequestBoundary.request (invitation, path: "/invitations/retract", requestId, session)
+then
+  RequestBoundary.respond (invitation, requestId)
+```
+
+### Access.mail.List:forbidden
+
+Authored path: `Access.mail.List`.
+- Covered by [Mail](../design/compositions/access/mail.md), line 13.
+- Covered by [Mail](../design/compositions/access/mail.md), line 22.
+
+```reaction
+when RequestBoundary.request (path: "/mail/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.mail.List:success
+
+Authored path: `Access.mail.List`.
+- Covered by [Mail](../design/compositions/access/mail.md), line 13.
+- Covered by [Mail](../design/compositions/access/mail.md), line 22.
+
+```reaction
+when RequestBoundary.request (path: "/mail/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+then
+  RequestBoundary.respond (messages: former "the mail messages ()", requestId)
 ```
 
 ### Access.roles.DefineRole:forbidden
@@ -11645,6 +11965,7 @@ not listed here have no explicit input contract.
 - `/grades/score-criterion` — requires `criterion`, `feedback`, `item`, `learner`, `points`, `session`
 - `/invitations/invite` — requires `email`, `session`
 - `/invitations/list` — requires `session`
+- `/invitations/retract` — requires `invitation`, `session`
 - `/late-days/apply` — requires `session`, `assignment`, `days`
 - `/late-days/balance` — requires `session`, `learner`
 - `/late-days/cancel` — requires `session`, `assignment`
@@ -11663,6 +11984,7 @@ not listed here have no explicit input contract.
 - `/locks/isLocked` — requires `target`
 - `/locks/lock` — requires `session`, `target`
 - `/locks/unlock` — requires `session`, `target`
+- `/mail/list` — requires `session`
 - `/moderation/posts/get` — requires `item`, `session`
 - `/moderation/revisions/get` — requires `item`, `number`, `session`
 - `/moderation/revisions/latest` — requires `item`, `session`
@@ -11778,5 +12100,8 @@ not listed here have no explicit input contract.
 - `/unread/list` — requires `session`, `scope`
 - `/unread/markAllSeen` — requires `session`, `scope`
 - `/unread/markSeen` — requires `session`, `item`
+- `/users/archive` — requires `session`, `user`
+- `/users/list` — requires `session`
 - `/users/resolve` — requires `ref`
+- `/users/restore` — requires `session`, `user`
 - `/users/search` — requires `session`, `query`

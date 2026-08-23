@@ -30,6 +30,10 @@ Commons selects a same-name instance of every concept it registers, except
 parameters inline.
 
 ```instances
+instantiate Trashing as Archiving with
+  User is Authenticating.User
+  Item is Authenticating.User
+
 instantiate Assigning with
   Author is Authenticating.User
   Assignee is Authenticating.User

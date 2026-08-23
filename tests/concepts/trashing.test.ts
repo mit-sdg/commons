@@ -15,6 +15,30 @@ for (const [floor, make] of floors) {
   describe(`Trashing ${floor}`, () => {
     const at = new Date("2026-01-01T00:00:00Z");
 
+    test("a second instantiation keeps its own trash, and Trashing keeps its collection", async () => {
+      const database = await testDb();
+      const trashing = new MongoTrashingConcept(database);
+      const archiving = new MongoTrashingConcept(database, "Archiving");
+
+      await trashing.trash({ item: "shared-id", by: "maya", at });
+      expect(await trashing._isTrashed({ item: "shared-id" })).toEqual({ trashed: true });
+      // The same identity in the other instance is untouched.
+      expect(await archiving._isTrashed({ item: "shared-id" })).toEqual({ trashed: false });
+
+      await archiving.trash({ item: "shared-id", by: "admin", at });
+      expect(await archiving._getTrashed({})).toEqual([
+        { item: "shared-id", trashedBy: "admin", trashedAt: at },
+      ]);
+      // Restoring in one instance leaves the other alone.
+      await archiving.restore({ item: "shared-id" });
+      expect(await archiving._isTrashed({ item: "shared-id" })).toEqual({ trashed: false });
+      expect(await trashing._isTrashed({ item: "shared-id" })).toEqual({ trashed: true });
+
+      // The default instance must keep writing to the pre-existing collection.
+      expect(await database.collection("trashing.items").countDocuments()).toBe(1);
+      expect(await database.collection("archiving.items").countDocuments()).toBe(0);
+    });
+
     test("trash records who moved the item and when", async () => {
       const trashing = await make();
       expect(await trashing.trash({ item: "draft", by: "maya", at })).toEqual({ item: "draft" });
