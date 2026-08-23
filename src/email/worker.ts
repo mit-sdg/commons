@@ -25,6 +25,19 @@ type Awaitable<Value> = Value | PromiseLike<Value>;
 export interface MailOutbox {
   _getPending(input: Record<string, never>): Awaitable<PendingMail[]>;
   markSent(input: { message: string; at: Date }): Awaitable<unknown>;
+  markFailed(input: { message: string; error: string; at: Date }): Awaitable<unknown>;
+}
+
+/** Keep the outbox reason short and free of the transport's stack trace. */
+function deliveryFailureReason(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? `${error.message}`
+      : typeof error === "string"
+        ? error
+        : "The mail transport rejected the message.";
+  const collapsed = raw.replace(/\s+/g, " ").trim();
+  return collapsed.length > 300 ? `${collapsed.slice(0, 299)}\u2026` : collapsed;
 }
 
 export function smtpSender(configuration: MailConfiguration): MailSender {
@@ -61,8 +74,17 @@ export async function deliverPendingMail(
       });
       await outbox.markSent({ message: mail.message, at: new Date() });
       delivered += 1;
-    } catch {
+    } catch (error) {
       console.error("email: delivery failed; the message remains queued.");
+      try {
+        await outbox.markFailed({
+          message: mail.message,
+          error: deliveryFailureReason(error),
+          at: new Date(),
+        });
+      } catch {
+        console.error("email: could not record the delivery failure.");
+      }
     }
   }
   return delivered;

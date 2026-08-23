@@ -241,6 +241,97 @@ describe("invitations and email", () => {
     });
   });
 
+  test("a failed delivery is recorded on the message and the outbox lists it for administrators", async () => {
+    const edge = createEdge(mongoImplementations(await testDb()));
+    const adminReg = await edge.application.concepts.Authenticating.register({
+      username: "mail_admin",
+      password: "password123",
+      email: "mail-admin@example.edu",
+    });
+    if ("error" in adminReg) throw new Error(String(adminReg.error));
+    await edge.application.whenIdle();
+    const adminSession = await edge.application.concepts.Sessioning.start({
+      user: adminReg.user,
+      at: new Date(),
+    });
+    if ("error" in adminSession) throw new Error(String(adminSession.error));
+
+    await edge.application.concepts.Inviting.invite({
+      channel: "email",
+      address: "unreachable@example.edu",
+      at: new Date(),
+    });
+    await edge.application.whenIdle();
+
+    // The transport rejects everything; the worker must record why.
+    await deliverPendingMail(edge.application.concepts.Mailing, configuration, {
+      async sendMail() {
+        throw new Error("550 mailbox unavailable");
+      },
+    });
+
+    const listed = await edge.gateway.invoke("/mail/list", { session: adminSession.session });
+    if (!listed.ok) throw new Error("the administrator could not read the outbox");
+    const messages = (
+      listed.value as {
+        messages: {
+          recipient: string;
+          sentAt: string | null;
+          attempts: number;
+          lastError: string | null;
+        }[];
+      }
+    ).messages;
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatchObject({
+      recipient: "unreachable@example.edu",
+      sentAt: null,
+      attempts: 1,
+    });
+    expect(messages[0].lastError).toContain("550 mailbox unavailable");
+
+    // It stays queued, so a later attempt can still succeed and clear the error.
+    await deliverPendingMail(edge.application.concepts.Mailing, configuration, {
+      async sendMail() {},
+    });
+    const afterSuccess = await edge.gateway.invoke("/mail/list", {
+      session: adminSession.session,
+    });
+    if (!afterSuccess.ok) throw new Error("the administrator could not read the outbox");
+    const settled = (
+      afterSuccess.value as { messages: { sentAt: string | null; lastError: string | null }[] }
+    ).messages;
+    expect(settled[0].sentAt).not.toBeNull();
+    expect(settled[0].lastError).toBeNull();
+  });
+
+  test("a non-administrator cannot read the mail outbox", async () => {
+    const edge = createEdge(mongoImplementations(await testDb()));
+    const adminReg = await edge.application.concepts.Authenticating.register({
+      username: "mail_admin2",
+      password: "password123",
+      email: "mail-admin2@example.edu",
+    });
+    if ("error" in adminReg) throw new Error(String(adminReg.error));
+    await edge.application.whenIdle();
+    const memberReg = await edge.application.concepts.Authenticating.register({
+      username: "mail_member",
+      password: "password123",
+      email: "mail-member@example.edu",
+    });
+    if ("error" in memberReg) throw new Error(String(memberReg.error));
+    await edge.application.whenIdle();
+    const memberSession = await edge.application.concepts.Sessioning.start({
+      user: memberReg.user,
+      at: new Date(),
+    });
+    if ("error" in memberSession) throw new Error(String(memberSession.error));
+
+    expect(
+      await edge.gateway.invoke("/mail/list", { session: memberSession.session }),
+    ).toMatchObject({ ok: false, error: { kind: "domain", value: "FORBIDDEN" } });
+  });
+
   test("the HTTP boundary denies every data route without a session", async () => {
     const edge = createEdge(mongoImplementations(await testDb()));
     expect([...edge.publicPaths].sort()).toEqual([

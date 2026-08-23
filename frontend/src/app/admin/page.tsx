@@ -11,6 +11,7 @@ import {
   Search,
   Shield,
   Trash2,
+  TriangleAlert,
   UserCog,
   Users,
   X,
@@ -36,6 +37,7 @@ import { fullTime, relativeTime, shortId } from "@/lib/format";
 import type {
   Category,
   Invitation,
+  MailMessage,
   RegisteredUser,
   RoleDetail,
   RoleRow,
@@ -1071,6 +1073,165 @@ function RoleAdmin({
   );
 }
 
+/** A queued message is failing when it has an error recorded and never landed. */
+function isFailing(m: MailMessage): boolean {
+  return m.sentAt === null && m.lastError !== null;
+}
+
+function MailStatusBadge({ message }: { message: MailMessage }) {
+  if (message.sentAt !== null) {
+    return (
+      <Badge
+        variant="outline"
+        className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium"
+      >
+        Sent
+      </Badge>
+    );
+  }
+  if (message.lastError !== null) {
+    return (
+      <Badge
+        variant="outline"
+        className="border-destructive/30 bg-destructive/10 text-destructive text-xs font-medium"
+      >
+        Failing
+      </Badge>
+    );
+  }
+  return (
+    <Badge
+      variant="outline"
+      className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium"
+    >
+      Queued
+    </Badge>
+  );
+}
+
+function MailAdmin({
+  mailQuery,
+}: {
+  mailQuery: QueryState<{ messages: MailMessage[] }>;
+}) {
+  const [onlyFailing, setOnlyFailing] = useState(false);
+
+  const messages = useMemo(
+    () => mailQuery.data?.messages ?? [],
+    [mailQuery.data],
+  );
+  const failing = useMemo(() => messages.filter(isFailing), [messages]);
+  const shown = onlyFailing ? failing : messages;
+
+  if (mailQuery.loading) return <LoadingState />;
+  if (mailQuery.error) {
+    return (
+      <EmptyState
+        icon={Mail}
+        title="Failed to load the outbox"
+        description={mailQuery.error}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm text-muted-foreground">
+          Every email Commons has queued, newest first.{" "}
+          {failing.length > 0 ? (
+            <span className="text-destructive font-medium">
+              {failing.length}{" "}
+              {failing.length === 1 ? "message is" : "messages are"} not getting
+              through.
+            </span>
+          ) : (
+            <span>Nothing is currently failing.</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={onlyFailing ? "default" : "outline"}
+            size="sm"
+            className="gap-1.5 text-xs"
+            disabled={failing.length === 0 && !onlyFailing}
+            onClick={() => setOnlyFailing((prev) => !prev)}
+          >
+            <TriangleAlert className="size-3.5" />
+            {onlyFailing ? "Showing failures" : "Only failures"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() => mailQuery.refetch()}
+          >
+            <RefreshCw className="size-3.5" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {shown.length === 0 ? (
+        <EmptyState
+          icon={Mail}
+          title={onlyFailing ? "No failing messages" : "No email yet"}
+          description={
+            onlyFailing
+              ? "Every queued message has been delivered."
+              : "Commons has not queued any email yet."
+          }
+        />
+      ) : (
+        <div className="divide-y divide-border rounded-xl border border-border bg-card overflow-hidden">
+          {shown.map((m) => (
+            <div key={String(m.message)} className="flex flex-col gap-2 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-medium text-foreground">{m.subject}</p>
+                <MailStatusBadge message={m} />
+                {m.attempts > 1 ? (
+                  <span className="text-xs text-muted-foreground">
+                    {m.attempts} attempts
+                  </span>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                To {m.recipient} · Queued{" "}
+                <span title={fullTime(m.createdAt)}>
+                  {relativeTime(m.createdAt)}
+                </span>
+                {m.sentAt !== null ? (
+                  <>
+                    {" "}
+                    · Sent{" "}
+                    <span title={fullTime(m.sentAt)}>
+                      {relativeTime(m.sentAt)}
+                    </span>
+                  </>
+                ) : null}
+                {m.sentAt === null && m.lastAttemptAt !== null ? (
+                  <>
+                    {" "}
+                    · Last tried{" "}
+                    <span title={fullTime(m.lastAttemptAt)}>
+                      {relativeTime(m.lastAttemptAt)}
+                    </span>
+                  </>
+                ) : null}
+              </p>
+              {m.lastError !== null && m.sentAt === null ? (
+                <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 font-mono text-xs text-destructive break-words">
+                  {m.lastError}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { loading, can, me } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("users");
@@ -1079,6 +1240,15 @@ export default function AdminPage() {
   const roleList = useQuery<{ roles: RoleSummary[] }>(
     () => api.roles.list({}),
     [],
+  );
+  const mailQuery = useQuery<{ messages: MailMessage[] }>(
+    () => api.mail.list({}),
+    [],
+  );
+
+  const failingMail = useMemo(
+    () => (mailQuery.data?.messages ?? []).filter(isFailing).length,
+    [mailQuery.data],
   );
 
   const rolesMap = useMemo(() => {
@@ -1119,21 +1289,45 @@ export default function AdminPage() {
       <PageHeader
         eyebrow="Console"
         title="Administration"
-        description="Manage users, invitations, categories, and moderation roles."
+        description="Manage users, invitations, categories, roles, and outgoing email."
       />
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full">
-          <TabsTrigger value="users" className="gap-2">
-            <Users className="size-4" />
-            Users & Invitations
+          <TabsTrigger
+            value="users"
+            className="gap-1.5 px-1.5 sm:gap-2 sm:px-2"
+          >
+            <Users className="size-4 shrink-0" />
+            <span className="sm:hidden" aria-hidden="true">
+              Users
+            </span>
+            <span className="hidden sm:inline">Users & Invitations</span>
           </TabsTrigger>
-          <TabsTrigger value="categories" className="gap-2">
-            <FolderPlus className="size-4" />
+          <TabsTrigger
+            value="categories"
+            className="gap-1.5 px-1.5 sm:gap-2 sm:px-2"
+          >
+            <FolderPlus className="size-4 shrink-0" />
             Categories
           </TabsTrigger>
-          <TabsTrigger value="roles" className="gap-2">
-            <Shield className="size-4" />
+          <TabsTrigger
+            value="roles"
+            className="gap-1.5 px-1.5 sm:gap-2 sm:px-2"
+          >
+            <Shield className="size-4 shrink-0" />
             Roles
+          </TabsTrigger>
+          <TabsTrigger value="mail" className="gap-1.5 px-1.5 sm:gap-2 sm:px-2">
+            <Mail className="size-4 shrink-0" />
+            Email
+            {failingMail > 0 ? (
+              <Badge
+                variant="outline"
+                className="ml-1 border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-xs font-semibold text-destructive shrink-0"
+              >
+                {failingMail}
+              </Badge>
+            ) : null}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
@@ -1152,6 +1346,9 @@ export default function AdminPage() {
             initialInspectUser={inspectUser}
             roleList={roleList}
           />
+        </TabsContent>
+        <TabsContent value="mail" className="mt-6">
+          <MailAdmin mailQuery={mailQuery} />
         </TabsContent>
       </Tabs>
     </PageContainer>

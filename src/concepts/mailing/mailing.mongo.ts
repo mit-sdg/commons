@@ -11,6 +11,9 @@ interface MailDoc {
   html: string;
   createdAt: Date;
   sentAt: Date | null;
+  attempts: number;
+  lastAttemptAt: Date | null;
+  lastError: string | null;
 }
 
 export class MongoMailingConcept {
@@ -53,6 +56,9 @@ export class MongoMailingConcept {
             html,
             createdAt: at,
             sentAt: null,
+            attempts: 0,
+            lastAttemptAt: null,
+            lastError: null,
           },
         },
       );
@@ -73,6 +79,9 @@ export class MongoMailingConcept {
         html,
         createdAt: at,
         sentAt: null,
+        attempts: 0,
+        lastAttemptAt: null,
+        lastError: null,
       });
     } catch (error) {
       if (
@@ -91,7 +100,19 @@ export class MongoMailingConcept {
   }
 
   async markSent({ message, at }: { message: string; at: Date }) {
-    const result = await this.messages.updateOne({ _id: message }, { $set: { sentAt: at } });
+    const result = await this.messages.updateOne(
+      { _id: message },
+      { $set: { sentAt: at, lastError: null } },
+    );
+    if (result.matchedCount === 0) throw new MailNotFound(message);
+    return { message };
+  }
+
+  async markFailed({ message, error, at }: { message: string; error: string; at: Date }) {
+    const result = await this.messages.updateOne(
+      { _id: message },
+      { $set: { lastAttemptAt: at, lastError: error }, $inc: { attempts: 1 } },
+    );
     if (result.matchedCount === 0) throw new MailNotFound(message);
     return { message };
   }
@@ -113,5 +134,19 @@ export class MongoMailingConcept {
   async _getStatus({ message }: { message: string }) {
     const doc = await this.messages.findOne({ _id: message });
     return doc === null ? [] : [{ sentAt: doc.sentAt }];
+  }
+
+  async _getMessages(_: Record<string, never>) {
+    return (await this.messages.find().sort({ createdAt: -1 }).toArray()).map((doc) => ({
+      message: doc._id,
+      key: doc.key,
+      recipient: doc.recipient,
+      subject: doc.subject,
+      createdAt: doc.createdAt,
+      sentAt: doc.sentAt,
+      attempts: doc.attempts ?? 0,
+      lastAttemptAt: doc.lastAttemptAt ?? null,
+      lastError: doc.lastError ?? null,
+    }));
   }
 }

@@ -439,11 +439,14 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
   - Refuses `MAIL_RECIPIENT_INVALID`: The mail recipient is not well formed.
 - `markSent(message: Message, at: Date) : return (message: Message)`
   - Refuses `MAIL_NOT_FOUND`: There is no such mail message.
+- `markFailed(message: Message, error: String, at: Date) : return (message: Message)`
+  - Refuses `MAIL_NOT_FOUND`: There is no such mail message.
 
 #### Queries
 
 - `_getPending() : many (message: String, key: Key, recipient: String, subject: String, text: String, html: String, createdAt: Date)`
 - `_getStatus(message: String) : optional (sentAt: Date | Null)`
+- `_getMessages() : many (message: String, key: Key, recipient: String, subject: String, createdAt: Date, sentAt: Date | Null, attempts: Number, lastAttemptAt: Date | Null, lastError: String | Null)`
 
 #### Instances
 
@@ -2120,6 +2123,26 @@ Former "the locked list ()" — inputs (); bindings (target, lockedAt); promises
       target
 ```
 
+### the mail messages ()
+
+Authored path: `Access.mail.theMailMessages`.
+- Covered by [Mail](../design/compositions/access/mail.md), line 15.
+
+```former
+Former "the mail messages ()" — inputs (); bindings (message, key, recipient, subject, createdAt, sentAt, attempts, lastAttemptAt, lastError); promises exactly one record — forms:
+  each Mailing._getMessages () has (attempts, createdAt, key, lastAttemptAt, lastError, message, recipient, sentAt, subject)
+    form a record of
+      attempts
+      createdAt
+      key
+      lastAttemptAt
+      lastError
+      message
+      recipient
+      sentAt
+      subject
+```
+
 ### the moderation queue ()
 
 Authored path: `Forum.moderation.theModerationQueue`.
@@ -3592,6 +3615,36 @@ where
   earlier, RequestBoundary.request (invitation, path: "/invitations/retract", requestId, session)
 then
   RequestBoundary.respond (invitation, requestId)
+```
+
+### Access.mail.List:forbidden
+
+Authored path: `Access.mail.List`.
+- Covered by [Mail](../design/compositions/access/mail.md), line 13.
+- Covered by [Mail](../design/compositions/access/mail.md), line 22.
+
+```reaction
+when RequestBoundary.request (path: "/mail/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.mail.List:success
+
+Authored path: `Access.mail.List`.
+- Covered by [Mail](../design/compositions/access/mail.md), line 13.
+- Covered by [Mail](../design/compositions/access/mail.md), line 22.
+
+```reaction
+when RequestBoundary.request (path: "/mail/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+then
+  RequestBoundary.respond (messages: former "the mail messages ()", requestId)
 ```
 
 ### Access.roles.DefineRole:forbidden
@@ -11931,6 +11984,7 @@ not listed here have no explicit input contract.
 - `/locks/isLocked` — requires `target`
 - `/locks/lock` — requires `session`, `target`
 - `/locks/unlock` — requires `session`, `target`
+- `/mail/list` — requires `session`
 - `/moderation/posts/get` — requires `item`, `session`
 - `/moderation/revisions/get` — requires `item`, `number`, `session`
 - `/moderation/revisions/latest` — requires `item`, `session`
