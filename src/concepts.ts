@@ -33,6 +33,7 @@ import { tasking } from "./concepts/tasking/registry.ts";
 import { tracking } from "./concepts/tracking/registry.ts";
 import { trashing } from "./concepts/trashing/registry.ts";
 import { setupSecretMatches } from "./computations/admin-setup.ts";
+import { capabilitiesAreKnown, effectiveCapabilities } from "./computations/capabilities.ts";
 import {
   invitationMailHtml,
   invitationMailText,
@@ -84,6 +85,8 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  capabilitiesAreKnown,
+  effectiveCapabilities,
   invitationMailHtml,
   invitationMailText,
   notificationMailHtml,

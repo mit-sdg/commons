@@ -69,28 +69,40 @@ describe("Commons with every concept on MongoDB", () => {
     expect(feed.conversations[0].conversation).toBe(thread.conversation);
   });
 
-  test("a course-staff role authorizes roster, assignment, and submission endpoints", async () => {
+  test("an assigned course:manage role authorizes roster, assignment, and submission endpoints", async () => {
     const { send, signUp } = await mongoApp();
+    // The first account is the bootstrap administrator; the staff account under
+    // test is a separate one carrying only course:manage.
+    const admin = await signUp("admin");
     const staff = await signUp("staff");
 
     const { user } = (await send("/auth/me", { session: staff })) as { user: string };
     const { role } = (await send("/roles/define", {
-      session: staff,
+      session: admin,
       name: "course-staff",
-      capabilities: ["roster:manage", "assignments:manage"],
+      capabilities: ["course:manage"],
     })) as { role: string };
-    const granted = await send("/roles/grant", { session: staff, user, context: "forum", role });
-    expect(granted.error).toBeUndefined();
+    const assigned = await send("/roles/assign", { session: admin, user, context: "forum", role });
+    expect(assigned.error).toBeUndefined();
 
     const imported = await send("/roster/import", {
       session: staff,
-      rows: [{ externalKey: "s-1", email: "s1@x.com", rosterName: "Student One", kind: "STUDENT" }],
+      rows: [{ email: "s1@x.com", kind: "STUDENT" }],
     });
     expect(imported.error).toBeUndefined();
 
     const student = await signUp("student1", "s1@x.com");
-    const claim = await send("/roster/claim-seat", { session: student, externalKey: "s-1" });
-    expect(claim.error).toBeUndefined();
+    const { user: studentUser } = (await send("/auth/me", { session: student })) as {
+      user: string;
+    };
+    const enrolled = await send("/roster/enroll", {
+      session: staff,
+      email: "s1@x.com",
+      kind: "STUDENT",
+      section: null,
+      user: studentUser,
+    });
+    expect(enrolled.error).toBeUndefined();
     expect(await send("/assignments/staff-list", { session: student })).toEqual({
       error: "FORBIDDEN",
     });

@@ -1,6 +1,6 @@
 # Late days
 
-[Course.lateDays.Policy](reaction:Course.lateDays.Policy) lets late-day managers read the current allowance,
+[Course.lateDays.Policy](reaction:Course.lateDays.Policy) lets callers holding `student-records` read the current allowance,
 per-assignment limit, and hours per day. [Course.lateDays.ConfigurePolicy](reaction:Course.lateDays.ConfigurePolicy)
 replaces those terms, so every learner's next computed balance immediately uses
 the new default. [Course.lateDays.Grant](reaction:Course.lateDays.Grant) adds a positive, time-stamped grant
@@ -13,14 +13,15 @@ An active student uses [Course.lateDays.Apply](reaction:Course.lateDays.Apply) t
 [complete applied and canceled use history](former:Course.lateDays.theLateDayUsesOf).
 [Course.lateDays.Balance](reaction:Course.lateDays.Balance) forms the learner's
 [current granted, used, and remaining balance](former:Course.lateDays.theLateDayBalanceOf)
-for the learner or authorized staff. Requests naming a non-student, and unauthorized
+for the learner or a caller holding `student-records`. Requests naming a non-student, and unauthorized
 requests for someone else's balance, are hidden as `NOT_FOUND`.
 
-[Course.lateDays.StaffChange](reaction:Course.lateDays.StaffChange) lets late-day managers replace another active
-student's standing use. [Course.lateDays.StaffCancel](reaction:Course.lateDays.StaffCancel) lets late-day managers cancel another active
-student's standing use. [Course.lateDays.ForAssignment](reaction:Course.lateDays.ForAssignment) gives authorized staff
-[the current uses on one assignment](former:Course.lateDays.theLateDayUsesOn); general policy reads instead return `FORBIDDEN` when
-capability is missing.
+[Course.lateDays.StaffChange](reaction:Course.lateDays.StaffChange) lets callers holding `student-records` replace another active
+student's standing use. [Course.lateDays.StaffCancel](reaction:Course.lateDays.StaffCancel) lets the same callers cancel another active
+student's standing use. [Course.lateDays.ForAssignment](reaction:Course.lateDays.ForAssignment) gives them
+[the current uses on one assignment](former:Course.lateDays.theLateDayUsesOn). Every staff path here enforces the one
+`student-records` capability; general policy reads return `FORBIDDEN` when it is
+missing.
 
 Banking owns balance and per-item limits but treats an assignment as opaque.
 Applying or changing days does not check that the assignment exists, is released

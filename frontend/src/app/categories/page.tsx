@@ -16,7 +16,7 @@ import { useAuth } from "@/lib/auth";
 import type { Category } from "@/lib/models";
 
 export default function CategoriesPage() {
-  const { session, can } = useAuth();
+  const { session, permissions } = useAuth();
   const { data, error, loading, refetch } = useQuery<{
     categories: Category[];
   }>(() => api.categories.list({}), []);
@@ -50,7 +50,7 @@ export default function CategoriesPage() {
         description="Topics grouped by the spaces they belong to."
       />
 
-      {can.administer ? (
+      {permissions.can("administer") ? (
         <section className="mb-6 rounded-xl border border-border bg-card p-5">
           <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
             <FolderPlus className="size-5" />

@@ -4,8 +4,8 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
   isNotActiveStudent,
-  mayManageLateDays,
-  mayNotManageLateDays,
+  mayManageStudentRecords,
+  mayNotManageStudentRecords,
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
@@ -48,7 +48,7 @@ export const Policy = endpoint(
     receive({ session }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayManageLateDays({ user }),
+        mayManageStudentRecords({ user }),
         Banking._getTerms({}).is({
           allowance: defaultDays,
           perItemLimit: maxDaysPerItem,
@@ -57,7 +57,7 @@ export const Policy = endpoint(
       )
         .then(respond({ defaultDays, maxDaysPerItem, unitHours }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -67,7 +67,7 @@ export const ConfigurePolicy = endpoint(
   "/late-days/configure-policy",
   ({ session, defaultDays, unitHours, maxDaysPerItem, user }) =>
     receive({ session, defaultDays, unitHours, maxDaysPerItem }).then(
-      where(activeUser({ session }).is({ user }), mayManageLateDays({ user }))
+      where(activeUser({ session }).is({ user }), mayManageStudentRecords({ user }))
         .then(
           Banking.setTerms({
             allowance: defaultDays,
@@ -77,7 +77,7 @@ export const ConfigurePolicy = endpoint(
         )
         .then(respond({ policy: true }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -88,11 +88,11 @@ export const Grant = endpoint(
   "/late-days/grant",
   ({ session, learner, days, reason, user, at, grant }) =>
     receive({ session, learner, days, reason }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageLateDays({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageStudentRecords({ user }))
         .then(Banking.grant({ learner, days, reason, at }).responds({ grant }))
         .then(respond({ grant }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -167,14 +167,14 @@ export const Balance = endpoint(
         .named("balance"),
       where(
         activeUser({ session }).is({ user }),
-        mayManageLateDays({ user }),
+        mayManageStudentRecords({ user }),
         isActiveStudent({ user: learner }),
       )
         .then(respond({ balance: theLateDayBalanceOf({ learner }) }))
         .named("staff-balance"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: learner }),
-        mayNotManageLateDays({ user }),
+        mayNotManageStudentRecords({ user }),
         isActiveStudent({ user: learner }),
       )
         .then(respond({ error: "NOT_FOUND" }))
@@ -192,7 +192,7 @@ export const StaffChange = endpoint(
     receive({ session, learner, assignment, days }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayManageLateDays({ user }),
+        mayManageStudentRecords({ user }),
         isActiveStudent({ user: learner }),
       )
         .then(Banking.change({ learner, item: assignment, days }).responds({ use }))
@@ -203,7 +203,7 @@ export const StaffChange = endpoint(
         .named("hidden"),
       where(
         activeUser({ session }).is({ user }),
-        mayNotManageLateDays({ user }),
+        mayNotManageStudentRecords({ user }),
         isActiveStudent({ user: learner }),
       )
         .then(respond({ error: "NOT_FOUND" }))
@@ -218,7 +218,7 @@ export const StaffCancel = endpoint(
     receive({ session, learner, assignment }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayManageLateDays({ user }),
+        mayManageStudentRecords({ user }),
         isActiveStudent({ user: learner }),
       )
         .then(Banking.cancel({ learner, item: assignment }).responds({ use }))
@@ -229,7 +229,7 @@ export const StaffCancel = endpoint(
         .named("hidden"),
       where(
         activeUser({ session }).is({ user }),
-        mayNotManageLateDays({ user }),
+        mayNotManageStudentRecords({ user }),
         isActiveStudent({ user: learner }),
       )
         .then(respond({ error: "NOT_FOUND" }))
@@ -242,10 +242,10 @@ export const ForAssignment = endpoint(
   "/late-days/for-assignment",
   ({ session, assignment, user }) =>
     receive({ session, assignment }).then(
-      where(activeUser({ session }).is({ user }), mayManageLateDays({ user }))
+      where(activeUser({ session }).is({ user }), mayManageStudentRecords({ user }))
         .then(respond({ users: theLateDayUsesOn({ assignment }) }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageLateDays({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),

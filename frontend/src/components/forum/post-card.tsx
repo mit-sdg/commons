@@ -59,7 +59,7 @@ export function PostCard({
   isUnread = false,
   onChanged,
 }: PostCardProps) {
-  const { session, me, can } = useAuth();
+  const { session, me, permissions } = useAuth();
   const [editing, setEditing] = useState(false);
   const [replying, setReplying] = useState(false);
   const [flagOpen, setFlagOpen] = useState(false);
@@ -278,7 +278,7 @@ export function PostCard({
                     <FlagIcon className="size-4" />
                     Report
                   </DropdownMenuItem>
-                  {can.moderate ? (
+                  {permissions.can("moderate") ? (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={moderatorTrash}>

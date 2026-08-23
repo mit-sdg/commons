@@ -13,16 +13,18 @@ import {
   whether,
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { isArchived, mayAdminister, mayNotAdminister } from "./policy.ts";
-import { theRolesHeldBy } from "./roles.ts";
-import { computations, concepts } from "../../concepts.ts";
 import {
-  ADMIN_ROLE,
-  FORUM,
-  INITIAL_ADMIN_CAPABILITIES,
-  INITIAL_ROSTER_BOOTSTRAP_CAPABILITIES,
-  INITIAL_ROSTER_BOOTSTRAP_ROLE,
-} from "./capabilities.ts";
+  holdsARole,
+  holdsNoRole,
+  isArchived,
+  isNotSoleAdministrator,
+  isSoleAdministrator,
+  mayAdminister,
+  mayNotAdminister,
+} from "./policy.ts";
+import { theRoleFaceOf, theRoleOf } from "./roles.ts";
+import { computations, concepts } from "../../concepts.ts";
+import { ADMIN_ROLE, ADMINISTER, FORUM, INITIAL_ADMIN_CAPABILITIES } from "./capabilities.ts";
 
 const { Archiving, Authenticating, Inviting, Profiling, Roling, Sessioning } = concepts;
 export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
@@ -38,7 +40,7 @@ export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
         role,
       }),
     )
-    .then(Roling.grant({ user, context: FORUM, role })),
+    .then(Roling.assign({ user, context: FORUM, role })),
 );
 
 export const BootstrapAdminOnLogin = reaction(({ user, role }) =>
@@ -54,27 +56,7 @@ export const BootstrapAdminOnLogin = reaction(({ user, role }) =>
         role,
       }),
     )
-    .then(Roling.grant({ user, context: FORUM, role })),
-);
-
-export const RepairInitialAdminRosterBootstrapOnLogin = reaction(({ user, role }) =>
-  when(Authenticating.authenticate({}).responds({ user }))
-    .where(
-      Authenticating._getUserCount({}).is({ count: 1 }),
-      Roling._hasCapability({ user, context: FORUM, capability: "administer" }).is({
-        allowed: true,
-      }),
-      Roling._hasCapability({ user, context: FORUM, capability: "roster:manage" }).is({
-        allowed: false,
-      }),
-    )
-    .then(
-      Roling.ensureRole({
-        name: INITIAL_ROSTER_BOOTSTRAP_ROLE,
-        capabilities: INITIAL_ROSTER_BOOTSTRAP_CAPABILITIES,
-      }).responds({ role }),
-    )
-    .then(Roling.grant({ user, context: FORUM, role })),
+    .then(Roling.assign({ user, context: FORUM, role })),
 );
 
 export const RegisterInitialAdmin = endpoint(
@@ -155,6 +137,31 @@ export const Me = endpoint("/auth/me", ({ session, user, username, email, profil
     .then(respond({ user, username, email, profile })),
 );
 
+/**
+ * Every capability the signed-in caller reaches, in one read.
+ *
+ * The `administer` wildcard is expanded here rather than in the browser, so the
+ * client and the endpoints that enforce policy cannot disagree about what a
+ * caller may do.
+ */
+export const Permissions = endpoint(
+  "/auth/permissions",
+  ({ session, user, capabilities, effective }) =>
+    receive({ session })
+      .where(activeUser({ session }).is({ user }))
+      .then(
+        where(
+          theRoleOf({ user, context: FORUM }).is({ capabilities }),
+          compute(computations.effectiveCapabilities, { capabilities }, effective),
+        )
+          .then(respond({ capabilities: effective }))
+          .named("assigned"),
+        where(no(theRoleOf({ user, context: FORUM })))
+          .then(respond({ capabilities: [] }))
+          .named("none"),
+      ),
+);
+
 export const Resolve = endpoint("/auth/resolve", ({ username, user }) =>
   receive({ username }).then(
     where(theUserNamed({ username }).is({ user })).then(respond({ user })).named("found"),
@@ -189,7 +196,7 @@ export const theRegisteredUsers = former(
         displayName,
         avatar,
         archived,
-        roles: theRolesHeldBy({ user, context: FORUM }),
+        role: whether(theRoleFaceOf({ user, context: FORUM })),
       }),
 );
 
@@ -204,29 +211,57 @@ export const ListUsers = endpoint("/users/list", ({ session, actor }) =>
   ),
 );
 
+/**
+ * An archived account can never sign in again, so it must not go on counting as
+ * a holder of `administer`: the role goes before the archive does, and the
+ * last-administrator floor guards the archive the same way it guards a
+ * revocation. The steps are visible between one another — between the
+ * revocation and the archive the account reads as an ordinary member that can
+ * still sign in.
+ */
 export const ArchiveUser = endpoint("/users/archive", ({ session, user, actor, at }) =>
-  receive({ session, user }).then(
-    where(
-      now(at),
-      activeUser({ session }).is({ user: actor }),
-      mayAdminister({ user: actor }),
-      activeUser({ session }).is({ user: actor }).is.not({ user }),
-    )
-      .then(Archiving.trash({ item: user, by: actor, at }))
-      .then(Sessioning.endAllForUser({ user }))
-      .then(respond({ user }))
-      .named("success"),
-    where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-    where(
-      activeUser({ session }).is({ user: actor }),
-      mayAdminister({ user: actor }),
-      activeUser({ session }).is({ user: actor }).is({ user }),
-    )
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("self"),
-  ),
+  receive({ session, user })
+    .where(now(at), activeUser({ session }).is({ user: actor }))
+    .then(
+      where(
+        mayAdminister({ user: actor }),
+        activeUser({ session }).is.not({ user }),
+        isNotSoleAdministrator({ user }),
+        holdsARole({ user, context: FORUM }),
+      )
+        // The caller's authority is confirmed against Roling itself before the
+        // ordered effects begin, which is also what carries the resolved caller
+        // past the revocation and into the archive that records them.
+        .then(Roling.requireCapability({ user: actor, context: FORUM, capability: ADMINISTER }))
+        .then(Roling.revoke({ user, context: FORUM }))
+        .then(Archiving.trash({ item: user, by: actor, at }))
+        .then(Sessioning.endAllForUser({ user }))
+        .then(respond({ user }))
+        .named("success"),
+      where(
+        mayAdminister({ user: actor }),
+        activeUser({ session }).is.not({ user }),
+        isNotSoleAdministrator({ user }),
+        holdsNoRole({ user, context: FORUM }),
+      )
+        .then(Archiving.trash({ item: user, by: actor, at }))
+        .then(Sessioning.endAllForUser({ user }))
+        .then(respond({ user }))
+        .named("success-without-role"),
+      where(
+        mayAdminister({ user: actor }),
+        activeUser({ session }).is.not({ user }),
+        isSoleAdministrator({ user }),
+      )
+        .then(respond({ error: "LAST_ADMINISTRATOR" }))
+        .named("last-administrator"),
+      where(mayNotAdminister({ user: actor }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(mayAdminister({ user: actor }), activeUser({ session }).is({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("self"),
+    ),
 );
 
 export const RestoreUser = endpoint("/users/restore", ({ session, user, actor }) =>

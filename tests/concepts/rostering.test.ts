@@ -16,15 +16,11 @@ const expectRefusal = async (fn: () => unknown, Refusal: RefusalClass) => {
 };
 
 const anaRow = {
-  externalKey: "ana-1",
   email: "ana@example.edu",
-  rosterName: "Ana",
   kind: "STUDENT",
 };
 const benRow = {
-  externalKey: "ben-1",
   email: "ben@example.edu",
-  rosterName: "Ben",
   kind: "STUDENT",
 };
 
@@ -89,36 +85,123 @@ for (const [floor, make] of floors) {
       );
     });
 
-    test("importSeats creates pending seats and reports a duplicate row as skipped", async () => {
+    test("importSeats creates pending seats and reports a repeated address as skipped", async () => {
       const rostering = await make();
       const first = await rostering.importSeats({ rows: [anaRow, benRow] });
       expect(first.created).toHaveLength(2);
       expect(first.skipped).toEqual([]);
       expect(first.created[0]).toMatchObject({
-        externalKey: "ana-1",
+        email: "ana@example.edu",
         status: "PENDING",
         section: null,
       });
       const second = await rostering.importSeats({
-        rows: [anaRow, { externalKey: "cai-1", email: "cai@example.edu", rosterName: "Cai" }],
+        rows: [anaRow, { email: "cai@example.edu" }],
       });
       expect(second.created).toHaveLength(1);
-      expect(second.created[0]).toMatchObject({ externalKey: "cai-1", kind: "STUDENT" });
-      expect(second.skipped).toEqual(["ana-1"]);
-      expect(await rostering._getSeatByExternalKey({ externalKey: "ana-1" })).toEqual([
+      expect(second.created[0]).toMatchObject({ email: "cai@example.edu", kind: "STUDENT" });
+      expect(second.skipped).toEqual(["ana@example.edu"]);
+      expect(await rostering._getSeatByEmail({ email: "ana@example.edu" })).toEqual([
         { seat: first.created[0]._id, email: "ana@example.edu" },
       ]);
       expect(await rostering._getUnclaimedSeats({})).toHaveLength(3);
+    });
+
+    test("importSeats matches an address regardless of the case it arrives in", async () => {
+      const rostering = await make();
+      await rostering.importSeats({ rows: [anaRow] });
+      const again = await rostering.importSeats({ rows: [{ email: "Ana@Example.edu" }] });
+      expect(again.created).toEqual([]);
+      expect(again.skipped).toEqual(["ana@example.edu"]);
+    });
+
+    test("importSeats skips a row carrying no address", async () => {
+      const rostering = await make();
+      const result = await rostering.importSeats({ rows: [{ kind: "STUDENT" }] });
+      expect(result.created).toEqual([]);
+      expect(result.skipped).toEqual([""]);
+    });
+
+    test("enrol seats somebody who already has an account", async () => {
+      const rostering = await make();
+      const result = await rostering.enrol({
+        email: "cai@example.edu",
+        kind: "STAFF",
+        section: null,
+        user: "cai",
+      });
+      expect(result).toMatchObject({ kind: "STAFF", user: "cai" });
+      expect(result.seat).toMatchObject({ status: "ACTIVE", email: "cai@example.edu" });
+      expect(await rostering._getSeatByUser({ user: "cai" })).toEqual([
+        {
+          seat: result.seat._id,
+          user: "cai",
+          email: "cai@example.edu",
+          kind: "STAFF",
+          section: null,
+          status: "ACTIVE",
+        },
+      ]);
+    });
+
+    test("enrol claims a seat already waiting for that address", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({ rows: [anaRow] });
+      const result = await rostering.enrol({
+        email: "ana@example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "ana",
+      });
+      expect(result.seat._id).toBe(created[0]._id);
+      expect(result.seat).toMatchObject({ status: "ACTIVE", user: "ana" });
+      expect(await rostering._getUnclaimedSeats({})).toEqual([]);
+    });
+
+    test("enrol refuses an address already actively seated, and an already-seated person", async () => {
+      const rostering = await make();
+      await rostering.enrol({
+        email: "ana@example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "ana",
+      });
+      await expectRefusal(
+        () =>
+          rostering.enrol({
+            email: "ana@example.edu",
+            kind: "STUDENT",
+            section: null,
+            user: "someone-else",
+          }),
+        refusalErrors.SeatAlreadyExists,
+      );
+      await rostering.enrol({
+        email: "cai@example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "cai",
+      });
+      await expectRefusal(
+        () =>
+          rostering.enrol({
+            email: "dan@example.edu",
+            kind: "STUDENT",
+            section: null,
+            user: "cai",
+          }),
+        refusalErrors.SeatAlreadyActive,
+      );
     });
 
     test("previewImport names rows from the CSV header", async () => {
       const rostering = await make();
       expect(
         await rostering.previewImport({
-          csv: "externalKey,email,rosterName\nana-1,ana@example.edu,Ana",
+          csv: "email,kind\nana@example.edu,STUDENT",
         }),
       ).toEqual({
-        rows: [{ externalKey: "ana-1", email: "ana@example.edu", rosterName: "Ana" }],
+        rows: [{ email: "ana@example.edu", kind: "STUDENT" }],
       });
     });
 
@@ -169,7 +252,6 @@ for (const [floor, make] of floors) {
           seat,
           kind: "STUDENT",
           section: null,
-          rosterName: "Ana",
           email: "ana@example.edu",
         },
       ]);
@@ -190,7 +272,7 @@ for (const [floor, make] of floors) {
       expect(result).toMatchObject({ kind: "STUDENT", user: "ana", section: null });
       expect(result.seat).toMatchObject({ status: "ACTIVE" });
       expect(await rostering._getActiveStudents({})).toEqual([
-        { user: "ana", seat, section: null, rosterName: "Ana", email: "ana@example.edu" },
+        { user: "ana", seat, section: null, email: "ana@example.edu" },
       ]);
       await rostering.dropSeat({ seat });
       await rostering.claimSeat({ seat: created[1]._id, user: "ana" });
@@ -214,9 +296,7 @@ for (const [floor, make] of floors) {
           detail: {
             seat,
             user: "ana",
-            externalKey: "ana-1",
             email: "ana@example.edu",
-            rosterName: "Ana",
             kind: "STUDENT",
             section: section._id,
             status: "ACTIVE",

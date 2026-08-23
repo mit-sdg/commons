@@ -347,6 +347,7 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 #### Queries
 
 - `_getAvailable(invitation: String, credential: String) : optional (channel: String, address: String)`
+- `_getInvitationByAddress(channel: String, address: String) : optional (invitation: String, user: User | Null)`
 - `_getInvitations() : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: User | Null)`
 
 #### Instances
@@ -676,13 +677,13 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 - `defineRole(name: String, capabilities: Strings) : return (role: Role)`
   - Refuses `ROLE_ALREADY_EXISTS`: A role with this name already exists.
 - `ensureRole(name: String, capabilities: Strings) : return (role: Role)`
-- `grant(user: User, context: Context, role: Role) : return (grant: Grant)`
+- `deleteRole(role: Role) : return (role: Role)`
   - Refuses `ROLE_NOT_FOUND`: No such role exists.
-  - Refuses `GRANT_ALREADY_EXISTS`: The user already holds this role in this context.
-- `ensureGrant(user: User, context: Context, role: Role) : return (grant: Grant)`
+  - Refuses `ROLE_IN_USE`: The role is still assigned to a user.
+- `assign(user: User, context: Context, role: Role) : return (assignment: Assignment)`
   - Refuses `ROLE_NOT_FOUND`: No such role exists.
-- `revoke(user: User, context: Context, role: Role) : return (grant: Grant)`
-  - Refuses `GRANT_NOT_FOUND`: The user does not hold this role in this context.
+- `revoke(user: User, context: Context) : return (assignment: Assignment)`
+  - Refuses `ASSIGNMENT_NOT_FOUND`: The user holds no role in this context.
 - `requireCapability(user: User, context: Context, capability: String) : return (allowed: Boolean)`
   - Refuses `FORBIDDEN`: The user does not hold the required capability in this context.
 
@@ -690,8 +691,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 - `_hasCapability(user: String, context: String, capability: String) : one (allowed: Boolean)`
 - `_hasCapabilityHolder(context: String, capability: String) : one (present: Boolean)`
+- `_isSoleCapabilityHolder(user: String, context: String, capability: String) : one (sole: Boolean)`
 - `_holdsRoleNamed(user: String, context: String, name: String) : one (held: Boolean)`
-- `_getRoles(user: String, context: String) : many (role: String)`
+- `_getRole(user: String, context: String) : optional (role: String)`
 - `_getContextsOfRoleNamed(user: String, name: String) : many (context: String)`
 - `_getHoldersOfRoleNamed(context: String, name: String) : many (user: String)`
 - `_getRoleByName(name: String) : optional (role: String)`
@@ -718,6 +720,9 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
   - Refuses `SECTION_NOT_FOUND`: No such section exists.
 - `previewImport(csv: String) : return (rows: Rows)`
 - `importSeats(rows: Rows) : return (created: Seats, skipped: Strings)`
+- `enrol(email: String, kind: String, section: Section, user: User) : return (seat: Seat, kind: String, user: User, section: Section)`
+  - Refuses `SEAT_ALREADY_EXISTS`: A seat already exists for this address.
+  - Refuses `SEAT_ALREADY_ACTIVE`: This user already holds an active seat.
 - `claimSeat(seat: Seat, user: User) : return (seat: Seat, kind: String, user: User, section: Section)`
   - Refuses `SEAT_NOT_FOUND`: No such seat exists.
   - Refuses `SEAT_NOT_PENDING`: This seat is not open to claim.
@@ -736,14 +741,15 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 - `_getClass() : optional (detail: Class)`
 - `_getSections() : many (section: String, name: String, location: String, meetingPattern: String, status: String)`
-- `_getSeatByExternalKey(externalKey: String) : optional (seat: String, email: String)`
-- `_getSeatByUser(user: String) : optional (seat: String, user: String | Null, externalKey: String, email: String, rosterName: String, kind: String, section: String | Null, status: String)`
+- `_getSeatByEmail(email: String) : optional (seat: String, email: String)`
+- `_getPendingSeatByEmail(email: String) : optional (seat: String, email: String)`
+- `_getSeatByUser(user: String) : optional (seat: String, user: String | Null, email: String, kind: String, section: String | Null, status: String)`
 - `_getSeatDetail(user: String) : optional (detail: Seat)`
-- `_getActiveMembers() : many (user: String | Null, seat: String, kind: String, section: String | Null, rosterName: String, email: String)`
+- `_getActiveMembers() : many (user: String | Null, seat: String, kind: String, section: String | Null, email: String)`
 - `_isActiveStudent(user: String) : one (active: Boolean)`
-- `_getActiveStudents() : many (user: String, seat: String, section: String | Null, rosterName: String, email: String)`
-- `_getUnclaimedSeats() : many (seat: String, externalKey: String, email: String, rosterName: String, kind: String, section: String | Null)`
-- `_getDroppedSeats() : many (user: String | Null, seat: String, kind: String, section: String | Null, rosterName: String, email: String)`
+- `_getActiveStudents() : many (user: String, seat: String, section: String | Null, email: String)`
+- `_getUnclaimedSeats() : many (seat: String, email: String, kind: String, section: String | Null)`
+- `_getDroppedSeats() : many (user: String | Null, seat: String, kind: String, section: String | Null, email: String)`
 
 #### Instances
 
@@ -969,17 +975,19 @@ Concrete types:
 
 ## Computations
 
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 202.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 199.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 208.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 205.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 211.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 220.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 214.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 217.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 229.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 223.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 226.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 216.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 220.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 207.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 204.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 213.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 210.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 225.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 234.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 228.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 231.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 243.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 237.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 240.
 
 ## Views
 
@@ -1080,6 +1088,20 @@ Authored path: `Forum.threads.publicTarget`.
   where Grouping._isMember (group: list, member: user) has (isMember: false)
 ```
 
+### (user) holds a role in (context)
+
+```view
+(user) holds a role in (context) — inputs (user, context); outputs (); bindings ()
+  where Roling._getRole (context, user)
+```
+
+### (user) holds no role in (context)
+
+```view
+(user) holds no role in (context) — inputs (user, context); outputs (); bindings ()
+  where no Roling._getRole (context, user)
+```
+
 ### (user) is an active course member
 
 ```view
@@ -1120,6 +1142,13 @@ Authored path: `Forum.notifications.isNotMentionedIn`.
     Posting._isMentioned (handle: username, post) has (mentioned: false)
 ```
 
+### (user) is not the only administrator
+
+```view
+(user) is not the only administrator — inputs (user); outputs (); bindings ()
+  where Roling._isSoleCapabilityHolder (capability: "administer", context: "forum", user) has (sole: false)
+```
+
 ### (user) is not yet notified about (subject)
 
 Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
@@ -1128,6 +1157,13 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 ```view
 (user) is not yet notified about (subject) — inputs (user, subject); outputs (); bindings ()
   where Notifying._hasFor (subject, user) has (notified: false)
+```
+
+### (user) is the only administrator
+
+```view
+(user) is the only administrator — inputs (user); outputs (); bindings ()
+  where Roling._isSoleCapabilityHolder (capability: "administer", context: "forum", user) has (sole: true)
 ```
 
 ### (user) may act on task (task) at (at)
@@ -1144,7 +1180,6 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 ```view
 (user) may administer — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: true)
-  where Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: false)
 ```
 
 ### (user) may edit (post)
@@ -1159,39 +1194,28 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     Locking._isLocked (target: conversation) has (locked: false)
 ```
 
-### (user) may manage assignments
+### (user) may grade
 
 ```view
-(user) may manage assignments — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "assignments:manage", context: "forum", user) has (allowed: true)
+(user) may grade — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "grade", context: "forum", user) has (allowed: true)
+  where Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: true)
 ```
 
-### (user) may manage grades
+### (user) may manage student records
 
 ```view
-(user) may manage grades — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "grades:manage", context: "forum", user) has (allowed: true)
+(user) may manage student records — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "student-records", context: "forum", user) has (allowed: true)
+  where Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: true)
 ```
 
-### (user) may manage late days
+### (user) may manage the course
 
 ```view
-(user) may manage late days — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "late-days:manage", context: "forum", user) has (allowed: true)
-```
-
-### (user) may manage student notes
-
-```view
-(user) may manage student notes — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "student-notes:manage", context: "forum", user) has (allowed: true)
-```
-
-### (user) may manage the roster
-
-```view
-(user) may manage the roster — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: true)
+(user) may manage the course — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "course:manage", context: "forum", user) has (allowed: true)
+  where Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: true)
 ```
 
 ### (user) may moderate
@@ -1199,7 +1223,7 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 ```view
 (user) may moderate — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "moderate", context: "forum", user) has (allowed: true)
-  where Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: false)
+  where Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: true)
 ```
 
 ### (user) may not act on task (task) at (at)
@@ -1216,9 +1240,7 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 
 ```view
 (user) may not administer — inputs (user); outputs (); bindings ()
-  where
-    Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: false)
-    Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: true)
+  where Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: false)
 ```
 
 ### (user) may not edit (post)
@@ -1236,39 +1258,31 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     Locking._isLocked (target: conversation) has (locked: true)
 ```
 
-### (user) may not manage assignments
+### (user) may not grade
 
 ```view
-(user) may not manage assignments — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "assignments:manage", context: "forum", user) has (allowed: false)
+(user) may not grade — inputs (user); outputs (); bindings ()
+  where
+    Roling._hasCapability (capability: "grade", context: "forum", user) has (allowed: false)
+    Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: false)
 ```
 
-### (user) may not manage grades
+### (user) may not manage student records
 
 ```view
-(user) may not manage grades — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "grades:manage", context: "forum", user) has (allowed: false)
+(user) may not manage student records — inputs (user); outputs (); bindings ()
+  where
+    Roling._hasCapability (capability: "student-records", context: "forum", user) has (allowed: false)
+    Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: false)
 ```
 
-### (user) may not manage late days
+### (user) may not manage the course
 
 ```view
-(user) may not manage late days — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "late-days:manage", context: "forum", user) has (allowed: false)
-```
-
-### (user) may not manage student notes
-
-```view
-(user) may not manage student notes — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "student-notes:manage", context: "forum", user) has (allowed: false)
-```
-
-### (user) may not manage the roster
-
-```view
-(user) may not manage the roster — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: false)
+(user) may not manage the course — inputs (user); outputs (); bindings ()
+  where
+    Roling._hasCapability (capability: "course:manage", context: "forum", user) has (allowed: false)
+    Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: false)
 ```
 
 ### (user) may not moderate
@@ -1277,30 +1291,7 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 (user) may not moderate — inputs (user); outputs (); bindings ()
   where
     Roling._hasCapability (capability: "moderate", context: "forum", user) has (allowed: false)
-    Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: true)
-```
-
-### (user) may not pin in (scope)
-
-```view
-(user) may not pin in (scope) — inputs (user, scope); outputs (); bindings ()
-  where
-    Roling._hasCapability (capability: "pin", context: scope, user) has (allowed: false)
-    Roling._hasCapability (capability: "pin", context: "forum", user) has (allowed: false)
-```
-
-### (user) may not view all grades
-
-```view
-(user) may not view all grades — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "grades:view-all", context: "forum", user) has (allowed: false)
-```
-
-### (user) may not view all submissions
-
-```view
-(user) may not view all submissions — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "submissions:view-all", context: "forum", user) has (allowed: false)
+    Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: false)
 ```
 
 ### (user) may not view the staff calendar
@@ -1308,38 +1299,22 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 ```view
 (user) may not view the staff calendar — inputs (user); outputs (); bindings ()
   where
-    Roling._hasCapability (capability: "calendar:view-staff", context: "forum", user) has (allowed: false)
-    Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: false)
-```
-
-### (user) may pin in (scope)
-
-```view
-(user) may pin in (scope) — inputs (user, scope); outputs (); bindings ()
-  where Roling._hasCapability (capability: "pin", context: scope, user) has (allowed: true)
-  where Roling._hasCapability (capability: "pin", context: "forum", user) has (allowed: true)
-```
-
-### (user) may view all grades
-
-```view
-(user) may view all grades — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "grades:view-all", context: "forum", user) has (allowed: true)
-```
-
-### (user) may view all submissions
-
-```view
-(user) may view all submissions — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "submissions:view-all", context: "forum", user) has (allowed: true)
+    Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: false)
+    Roling._hasCapability (capability: "course:manage", context: "forum", user) has (allowed: false)
+    Roling._hasCapability (capability: "grade", context: "forum", user) has (allowed: false)
+    Roling._hasCapability (capability: "student-records", context: "forum", user) has (allowed: false)
+    Roling._hasCapability (capability: "moderate", context: "forum", user) has (allowed: false)
 ```
 
 ### (user) may view the staff calendar
 
 ```view
 (user) may view the staff calendar — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "calendar:view-staff", context: "forum", user) has (allowed: true)
-  where Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: true)
+  where Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: true)
+  where Roling._hasCapability (capability: "course:manage", context: "forum", user) has (allowed: true)
+  where Roling._hasCapability (capability: "grade", context: "forum", user) has (allowed: true)
+  where Roling._hasCapability (capability: "student-records", context: "forum", user) has (allowed: true)
+  where Roling._hasCapability (capability: "moderate", context: "forum", user) has (allowed: true)
 ```
 
 ### somebody other than (actor) must hear about (task) at (at)
@@ -1407,6 +1382,16 @@ the conversation placing (item) — inputs (item); outputs (conversation); bindi
     Posting._getPost (post: item)
     view "(item) is intact" with (item)
     Conversing._getConversation (node) has (conversation)
+```
+
+### the invitation for (address)
+
+Authored path: `Access.invitations.theInvitationFor`.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 14.
+
+```view
+the invitation for (address) — inputs (address); outputs (invitation); bindings () — answers at most one (invitation)
+  where Inviting._getInvitationByAddress (address, channel: "email") has (invitation)
 ```
 
 ### the latest submission for (assignment) by (submitter)
@@ -1493,6 +1478,18 @@ the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bin
     view "(post) is readable" with (post: item)
 ```
 
+### the role of (user) in (context)
+
+Authored path: `Access.roles.theRoleOf`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 66.
+
+```view
+the role of (user) in (context) — inputs (user, context); outputs (role, name, capabilities); bindings () — answers at most one (role, name, capabilities)
+  where
+    Roling._getRole (context, user) has (role)
+    Roling._getRoleDetail (role) has (capabilities, name)
+```
+
 ### the seat detail of (user)
 
 Authored path: `Course.notes.theSeatDetailOf`.
@@ -1503,26 +1500,14 @@ the seat detail of (user) — inputs (user); outputs (detail); bindings () — a
   where Rostering._getSeatDetail (user) has (detail)
 ```
 
-### the seat matching (user) and (externalKey)
-
-Authored path: `Course.roster.identityMatchedSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 19.
-
-```view
-the seat matching (user) and (externalKey) — inputs (user, externalKey); outputs (seat); bindings (email) — answers at most one (seat)
-  where
-    Profiling._getProfileFields (user) has (email)
-    Rostering._getSeatByExternalKey (externalKey) has (email, seat)
-```
-
 ### the seat of (user)
 
 Authored path: `Course.roster.theSeatOf`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 27.
+- Covered by [Roster](../design/compositions/course/roster.md), line 55.
 
 ```view
 the seat of (user) — inputs (user); outputs (seat); bindings () — answers at most one (seat)
-  where Rostering._getSeatByUser (user) has (seat)
+  where Rostering._getSeatByUser (user) has (seat, status: "ACTIVE")
 ```
 
 ### the task behind (subject) for (reader) at (at)
@@ -1580,15 +1565,15 @@ Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
 
 ```former
-Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, rosterName, release, dueOverride, releaseStatus); promises exactly one record — forms:
+Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, displayName, release, dueOverride, releaseStatus); promises exactly one record — forms:
   each Assigning._getAssignees (assignment) has (assignee)
-    where Rostering._getSeatByUser (user: assignee) has (rosterName)
+    where whether Profiling._getProfileFields (user: assignee) has (displayName)
     where Assigning._getAssigned (assignee) has (assignment, dueOverride, release, status: releaseStatus)
     form a record of
       assignee
+      displayName
       dueOverride
       release
-      rosterName
       status: releaseStatus
 ```
 
@@ -1698,7 +1683,7 @@ Former "the calendar between (start) and (end)" — inputs (start, end); binding
 ### the categories ()
 
 Authored path: `Forum.categories.theCategories`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 12.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 13.
 
 ```former
 Former "the categories ()" — inputs (); bindings (category, name, description); promises exactly one record — forms:
@@ -1712,7 +1697,7 @@ Former "the categories ()" — inputs (); bindings (category, name, description)
 ### the category of (item)
 
 Authored path: `Forum.categories.theCategoryOf`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 16.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 17.
 
 ```former
 Former "the category of (item)" — inputs (item); bindings (category, name, description); promises exactly one record — forms:
@@ -1741,7 +1726,7 @@ Former "the criteria of (item)" — inputs (item); bindings (criterion, name, ma
 ### the criterion scores of (learner) on (item)
 
 Authored path: `Course.grades.theCriterionScoresOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 18.
+- Covered by [Grades](../design/compositions/course/grades.md), line 21.
 
 ```former
 Former "the criterion scores of (learner) on (item)" — inputs (learner, item); bindings (criterion, points, maxPoints, feedback); promises exactly one record — forms:
@@ -1757,16 +1742,14 @@ Former "the criterion scores of (learner) on (item)" — inputs (learner, item);
 ### the dashboard seat of (user)
 
 Authored path: `Course.calendar.theDashboardSeatOf`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 12.
 
 ```former
-Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder, externalKey, email, rosterName, kind, section, status); promises exactly one record — forms:
-  each Rostering._getSeatByUser (user) has (email, externalKey, kind, rosterName, seat, section, status, user: holder)
+Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder, email, kind, section, status); promises exactly one record — forms:
+  each Rostering._getSeatByUser (user) has (email, kind, seat, section, status, user: holder)
     form a record of
       email
-      externalKey
       kind
-      rosterName
       seat
       section
       status
@@ -1776,7 +1759,7 @@ Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder,
 ### the defined roles ()
 
 Authored path: `Access.roles.theDefinedRoles`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 25.
+- Covered by [Roles](../design/compositions/access/roles.md), line 63.
 
 ```former
 Former "the defined roles ()" — inputs (); bindings (role, name, capabilities); promises exactly one record — forms:
@@ -1790,15 +1773,16 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
 ### the dropped roster ()
 
 Authored path: `Course.roster.theDroppedRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 34.
+- Covered by [Roster](../design/compositions/course/roster.md), line 62.
 
 ```former
-Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
-  each Rostering._getDroppedSeats () has (email, kind, rosterName, seat, section, user)
+Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, section, email, displayName); promises exactly one record — forms:
+  each Rostering._getDroppedSeats () has (email, kind, seat, section, user)
+    where whether Profiling._getProfileFields (user) has (displayName)
     form a record of
+      displayName
       email
       kind
-      rosterName
       seat
       section
       user
@@ -1836,18 +1820,19 @@ Former "the forward links of (source)" — inputs (source); bindings (target); p
 ### the gradebook ()
 
 Authored path: `Course.grades.theGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 43.
+- Covered by [Grades](../design/compositions/course/grades.md), line 46.
 
 ```former
-Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, rosterName, email, cellItem, grade, score, status); promises exactly one record — forms:
+Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, status); promises exactly one record — forms:
   a record of
     items: each Itemizing._getItems () has (item, label, maxPoints)
       form a record of
         item
         label
         maxPoints
-    learners: each Rostering._getActiveStudents () has (email, rosterName, section, user)
-      arranged by rosterName
+    learners: each Rostering._getActiveStudents () has (email, section, user)
+      where whether Profiling._getProfileFields (user) has (displayName)
+      arranged by displayName
       form a record of
         cells: each Itemizing._getItems () has (item: cellItem)
           where whether Grading._getGrade (item: cellItem, learner: user) has (grade, score, status)
@@ -1856,23 +1841,24 @@ Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user,
             item: cellItem
             score
             status
+        displayName
         email
         learner: user
-        rosterName
         section
 ```
 
 ### the gradebook learners ()
 
 Authored path: `Course.grades.theGradebookLearners`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
+- Covered by [Grades](../design/compositions/course/grades.md), line 48.
 
 ```former
-Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, rosterName, email); promises exactly one record — forms:
-  each Rostering._getActiveStudents () has (email, rosterName, seat, section, user)
+Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, email, displayName); promises exactly one record — forms:
+  each Rostering._getActiveStudents () has (email, seat, section, user)
+    where whether Profiling._getProfileFields (user) has (displayName)
     form a record of
+      displayName
       email
-      rosterName
       seat
       section
       user
@@ -1881,7 +1867,7 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
 ### the grades of (learner)
 
 Authored path: `Course.grades.theGradesOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 39.
+- Covered by [Grades](../design/compositions/course/grades.md), line 42.
 
 ```former
 Former "the grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -1900,7 +1886,7 @@ Former "the grades of (learner)" — inputs (learner); bindings (item, grade, sc
 ### the grades on (item)
 
 Authored path: `Course.grades.theGradesOn`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 41.
+- Covered by [Grades](../design/compositions/course/grades.md), line 44.
 
 ```former
 Former "the grades on (item)" — inputs (item); bindings (learner, grade, score, status); promises exactly one record — forms:
@@ -2023,7 +2009,7 @@ Former "the inbox of (user)" — inputs (user); bindings (notification, kind, li
 ### the invitations ()
 
 Authored path: `Access.invitations.theInvitations`.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 18.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 26.
 
 ```former
 Former "the invitations ()" — inputs (); bindings (invitation, channel, address, createdAt, lastInvitedAt, inviteCount, user); promises exactly one record — forms:
@@ -2041,7 +2027,7 @@ Former "the invitations ()" — inputs (); bindings (invitation, channel, addres
 ### the items in (category)
 
 Authored path: `Forum.categories.theItemsIn`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 14.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 15.
 
 ```former
 Former "the items in (category)" — inputs (category); bindings (item); promises exactly one record — forms:
@@ -2229,16 +2215,14 @@ Former "the open flags ()" — inputs (); bindings (target, count); promises exa
 ### the pending roster ()
 
 Authored path: `Course.roster.thePendingRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 32.
+- Covered by [Roster](../design/compositions/course/roster.md), line 60.
 
 ```former
-Former "the pending roster ()" — inputs (); bindings (seat, externalKey, email, rosterName, kind, section); promises exactly one record — forms:
-  each Rostering._getUnclaimedSeats () has (email, externalKey, kind, rosterName, seat, section)
+Former "the pending roster ()" — inputs (); bindings (seat, email, kind, section); promises exactly one record — forms:
+  each Rostering._getUnclaimedSeats () has (email, kind, seat, section)
     form a record of
       email
-      externalKey
       kind
-      rosterName
       seat
       section
 ```
@@ -2336,22 +2320,25 @@ Former "the reactions on (target)" — inputs (target); bindings (reaction, reac
       user: reactor
 ```
 
-### the roles held by (user) in (context)
+### the role face of (user) in (context)
 
-Authored path: `Access.roles.theRolesHeldBy`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 21.
+Authored path: `Access.roles.theRoleFaceOf`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 59.
 
 ```former
-Former "the roles held by (user) in (context)" — inputs (user, context); bindings (role); promises exactly one record — forms:
-  each Roling._getRoles (context, user) has (role)
-    form a record of
-      role
+Former "the role face of (user) in (context)" — inputs (user, context); bindings (role, name, capabilities); promises at most one record — forms:
+  a record of
+    where Roling._getRole (context, user) has (role)
+    where Roling._getRoleDetail (role) has (capabilities, name)
+    capabilities
+    name
+    role
 ```
 
 ### the registered users ()
 
 Authored path: `Access.auth.theRegisteredUsers`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 68.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 92.
 
 ```former
 Former "the registered users ()" — inputs (); bindings (user, username, email, displayName, avatar, archived); promises exactly one record — forms:
@@ -2363,7 +2350,7 @@ Former "the registered users ()" — inputs (); bindings (user, username, email,
       avatar
       displayName
       email
-      roles: former "the roles held by (user) in (context)" with (context: "forum", user)
+      role: whether former "the role face of (user) in (context)" with (context: "forum", user)
       user
       username
 ```
@@ -2371,7 +2358,7 @@ Former "the registered users ()" — inputs (); bindings (user, username, email,
 ### the released grades of (learner)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 36.
+- Covered by [Grades](../design/compositions/course/grades.md), line 39.
 
 ```former
 Former "the released grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -2434,15 +2421,16 @@ Former "the revision numbered (number) of (item)" — inputs (number, item); bin
 ### the roster ()
 
 Authored path: `Course.roster.theRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 30.
+- Covered by [Roster](../design/compositions/course/roster.md), line 58.
 
 ```former
-Former "the roster ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
-  each Rostering._getActiveMembers () has (email, kind, rosterName, seat, section, user)
+Former "the roster ()" — inputs (); bindings (user, seat, kind, section, email, displayName); promises exactly one record — forms:
+  each Rostering._getActiveMembers () has (email, kind, seat, section, user)
+    where whether Profiling._getProfileFields (user) has (displayName)
     form a record of
+      displayName
       email
       kind
-      rosterName
       seat
       section
       user
@@ -2492,15 +2480,16 @@ Former "the staff assignments ()" — inputs (); bindings (assignment, author, t
 ### the staff dashboard ()
 
 Authored path: `Course.calendar.theStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 13.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 14.
 
 ```former
-Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, section, rosterName, email); promises exactly one record — forms:
-  each Rostering._getActiveMembers () has (email, kind, rosterName, seat, section, user)
+Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, section, email, displayName); promises exactly one record — forms:
+  each Rostering._getActiveMembers () has (email, kind, seat, section, user)
+    where whether Profiling._getProfileFields (user) has (displayName)
     form a record of
+      displayName
       email
       kind
-      rosterName
       seat
       section
       user
@@ -2509,7 +2498,7 @@ Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, secti
 ### the staff dashboard counts ()
 
 Authored path: `Course.calendar.theStaffDashboardCounts`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 14.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 15.
 
 ```former
 Former "the staff dashboard counts ()" — inputs (); bindings (assignment, item, learner, use); promises exactly one record — forms:
@@ -2566,7 +2555,7 @@ Authored path: `Course.submissions.theSubmissionsForAssignment`.
 ```former
 Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, submittedAt, number, status); promises exactly one record — forms:
   each Submitting._getSubmissionsForAssignment (assignment) has (number, status, submission, submittedAt, submitter)
-    where Rostering._getSeatByUser (user: submitter) has (rosterName: submitterName)
+    where whether Profiling._getProfileFields (user: submitter) has (displayName: submitterName)
     form a record of
       number
       status
@@ -2606,7 +2595,7 @@ Former "the subscriptions of (user)" — inputs (user); bindings (target, subscr
 ### the tags ()
 
 Authored path: `Forum.tags.theTags`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 11.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 12.
 
 ```former
 Former "the tags ()" — inputs (); bindings (tag, name); promises exactly one record — forms:
@@ -2619,7 +2608,7 @@ Former "the tags ()" — inputs (); bindings (tag, name); promises exactly one r
 ### the tags on (target)
 
 Authored path: `Forum.tags.theTagsOn`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 13.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 14.
 
 ```former
 Former "the tags on (target)" — inputs (target); bindings (tag, name); promises exactly one record — forms:
@@ -2633,7 +2622,7 @@ Former "the tags on (target)" — inputs (target); bindings (tag, name); promise
 ### the targets tagged (tag)
 
 Authored path: `Forum.tags.theTargetsTagged`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 15.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 16.
 
 ```former
 Former "the targets tagged (tag)" — inputs (tag); bindings (target); promises exactly one record — forms:
@@ -2646,7 +2635,7 @@ Former "the targets tagged (tag)" — inputs (tag); bindings (target); promises 
 ### the targets tagged with (name)
 
 Authored path: `Forum.tags.theTargetsTaggedWithName`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 17.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 18.
 
 ```former
 Former "the targets tagged with (name)" — inputs (name); bindings (tag, target); promises exactly one record — forms:
@@ -2859,10 +2848,10 @@ Former "the unread of (user) in (scope)" — inputs (user, scope); bindings (ite
 ### the user page of (user)
 
 Authored path: `Forum.profiles.theUserPage`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 22.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 30.
 
 ```former
-Former "the user page of (user)" — inputs (user); bindings (role, name, post, node, conversation); promises exactly one record — forms:
+Former "the user page of (user)" — inputs (user); bindings (post, node, conversation); promises exactly one record — forms:
   a record of
     posts: each Posting._getByAuthor (author: user) has (post)
       where view "(item) is intact" with (item: post)
@@ -2873,17 +2862,13 @@ Former "the user page of (user)" — inputs (user); bindings (role, name, post, 
         item: post
         post: whether former "the post summary of (item)" with (item: post)
     profile: whether former "the profile face of (user)" with (user)
-    roles: each Roling._getRoles (context: "forum", user) has (role)
-      where Roling._getRoleDetail (role) has (name)
-      form a record of
-        name
-        role
+    role: whether former "the role face of (user) in (context)" with (context: "forum", user)
 ```
 
 ### the user search (query)
 
 Authored path: `Forum.profiles.theUserSearch`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 16.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 24.
 
 ```former
 Former "the user search (query)" — inputs (query); bindings (user, username); promises exactly one record — forms:
@@ -2918,7 +2903,7 @@ Former "the watched threads of (user)" — inputs (user); bindings (target, subs
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 95.
 
 ```reaction
 when RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
@@ -2930,7 +2915,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 95.
 
 ```reaction
 when Inviting.verify (channel: "email", credential: temporaryPassword, invitation, address: email), asked by Access.auth.AcceptInvitation
@@ -2944,7 +2929,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 95.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.AcceptInvitation#2
@@ -2958,7 +2943,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 95.
 
 ```reaction
 when Profiling.createProfile (displayName, email, user), asked by Access.auth.AcceptInvitation#3
@@ -2972,7 +2957,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 71.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 95.
 
 ```reaction
 when Inviting.claim (credential: temporaryPassword, invitation, user), asked by Access.auth.AcceptInvitation#4
@@ -2985,27 +2970,47 @@ then
 ### Access.auth.ArchiveUser:forbidden
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may not administer" with (user: actor)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Access.auth.ArchiveUser:self
+### Access.auth.ArchiveUser:last-administrator
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
 where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  view "the active user of (session)" with (session) and not (user)
+  view "(user) is the only administrator" with (user)
+then
+  RequestBoundary.respond (error: "LAST_ADMINISTRATOR", requestId)
+```
+
+### Access.auth.ArchiveUser:self
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+
+```reaction
+when RequestBoundary.request (path: "/users/archive", requestId, session, user)
+where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
   view "the active user of (session)" with (session) has (user)
@@ -3016,8 +3021,8 @@ then
 ### Access.auth.ArchiveUser:success
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -3025,31 +3030,107 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
-  view "the active user of (session)" with (session) has (user: actor) and not (user)
+  view "the active user of (session)" with (session) and not (user)
+  view "(user) is not the only administrator" with (user)
+  view "(user) holds a role in (context)" with (context: "forum", user)
 then
-  Archiving.trash (at, by: actor, item: user)
+  Roling.requireCapability (capability: "administer", context: "forum", user: actor)
 ```
 
 ### Access.auth.ArchiveUser:success#2
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
 
 ```reaction
-when Archiving.trash (at, by: actor, item: user), asked by Access.auth.ArchiveUser:success
+when Roling.requireCapability (capability: "administer", context: "forum", user: actor), asked by Access.auth.ArchiveUser:success
+where
+  earlier, RequestBoundary.request (path: "/users/archive", requestId, session, user)
 then
-  Sessioning.endAllForUser (user)
+  Roling.revoke (context: "forum", user)
 ```
 
 ### Access.auth.ArchiveUser:success#3
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
 
 ```reaction
-when Sessioning.endAllForUser (user), asked by Access.auth.ArchiveUser:success#2
+when Roling.revoke (context: "forum", user), asked by Access.auth.ArchiveUser:success#2
+where
+  earlier, Roling.requireCapability (capability: "administer", context: "forum", user: actor), asked by Access.auth.ArchiveUser:success
+  at is the current flow's instant
+then
+  Archiving.trash (at, by: actor, item: user)
+```
+
+### Access.auth.ArchiveUser:success#4
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+
+```reaction
+when Archiving.trash (at, by: actor, item: user), asked by Access.auth.ArchiveUser:success#3
+then
+  Sessioning.endAllForUser (user)
+```
+
+### Access.auth.ArchiveUser:success#5
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+
+```reaction
+when Sessioning.endAllForUser (user), asked by Access.auth.ArchiveUser:success#4
+where
+  earlier, RequestBoundary.request (path: "/users/archive", requestId, session, user)
+then
+  RequestBoundary.respond (requestId, user)
+```
+
+### Access.auth.ArchiveUser:success-without-role
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+
+```reaction
+when RequestBoundary.request (path: "/users/archive", requestId, session, user)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  view "the active user of (session)" with (session) and not (user)
+  view "(user) is not the only administrator" with (user)
+  view "(user) holds no role in (context)" with (context: "forum", user)
+then
+  Archiving.trash (at, by: actor, item: user)
+```
+
+### Access.auth.ArchiveUser:success-without-role#2
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+
+```reaction
+when Archiving.trash (at, by: actor, item: user), asked by Access.auth.ArchiveUser:success-without-role
+then
+  Sessioning.endAllForUser (user)
+```
+
+### Access.auth.ArchiveUser:success-without-role#3
+
+Authored path: `Access.auth.ArchiveUser`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 62.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+
+```reaction
+when Sessioning.endAllForUser (user), asked by Access.auth.ArchiveUser:success-without-role#2
 where
   earlier, RequestBoundary.request (path: "/users/archive", requestId, session, user)
 then
@@ -3067,7 +3148,7 @@ where
   Authenticating._getUserCount () has (count: 1)
   Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: false)
 then
-  Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator")
+  Roling.ensureRole (capabilities: ["administer"], name: "administrator")
 ```
 
 ### Access.auth.BootstrapAdminOnLogin#2
@@ -3076,11 +3157,11 @@ Authored path: `Access.auth.BootstrapAdminOnLogin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 33.
 
 ```reaction
-when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnLogin
+when Roling.ensureRole (capabilities: ["administer"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnLogin
 where
   earlier, Authenticating.authenticate (user)
 then
-  Roling.grant (context: "forum", role, user)
+  Roling.assign (context: "forum", role, user)
 ```
 
 ### Access.auth.BootstrapAdminOnRegister
@@ -3094,7 +3175,7 @@ where
   Authenticating._getUserCount () has (count: 1)
   Roling._hasCapabilityHolder (capability: "administer", context: "forum") has (present: false)
 then
-  Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator")
+  Roling.ensureRole (capabilities: ["administer"], name: "administrator")
 ```
 
 ### Access.auth.BootstrapAdminOnRegister#2
@@ -3103,18 +3184,18 @@ Authored path: `Access.auth.BootstrapAdminOnRegister`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 31.
 
 ```reaction
-when Roling.ensureRole (capabilities: ["administer", "moderate", "pin", "roster:manage", "late-days:manage", "calendar:view-staff", "student-notes:manage"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnRegister
+when Roling.ensureRole (capabilities: ["administer"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnRegister
 where
   earlier, Authenticating.register (user)
 then
-  Roling.grant (context: "forum", role, user)
+  Roling.assign (context: "forum", role, user)
 ```
 
 ### Access.auth.ChangePassword
 
 Authored path: `Access.auth.ChangePassword`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 25.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 73.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 97.
 
 ```reaction
 when RequestBoundary.request (newPassword, oldPassword, path: "/auth/changePassword", requestId, session)
@@ -3128,7 +3209,7 @@ then
 
 Authored path: `Access.auth.ChangePassword`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 25.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 73.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 97.
 
 ```reaction
 when Authenticating.changePassword (newPassword, oldPassword, user), asked by Access.auth.ChangePassword
@@ -3140,7 +3221,7 @@ then
 
 Authored path: `Access.auth.ChangePassword`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 25.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 73.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 97.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ChangePassword#2
@@ -3153,8 +3234,8 @@ then
 ### Access.auth.ListUsers:forbidden
 
 Authored path: `Access.auth.ListUsers`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 66.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 74.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 90.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
 
 ```reaction
 when RequestBoundary.request (path: "/users/list", requestId, session)
@@ -3168,8 +3249,8 @@ then
 ### Access.auth.ListUsers:success
 
 Authored path: `Access.auth.ListUsers`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 66.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 74.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 90.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
 
 ```reaction
 when RequestBoundary.request (path: "/users/list", requestId, session)
@@ -3184,7 +3265,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 99.
 
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
@@ -3198,7 +3279,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 99.
 
 ```reaction
 when Authenticating.authenticate (password, username), asked by Access.auth.Login:archived
@@ -3212,7 +3293,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 99.
 
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
@@ -3227,7 +3308,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 99.
 
 ```reaction
 when Authenticating.authenticate (password, username, user), asked by Access.auth.Login:success
@@ -3241,7 +3322,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 12.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 75.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 99.
 
 ```reaction
 when Sessioning.start (at, user, expiresAt, session), asked by Access.auth.Login:success#2
@@ -3255,7 +3336,7 @@ then
 
 Authored path: `Access.auth.Logout`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 17.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 76.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/logout", requestId, session)
@@ -3269,7 +3350,7 @@ then
 
 Authored path: `Access.auth.Logout`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 17.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 76.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 101.
 
 ```reaction
 when Sessioning.end (session), asked by Access.auth.Logout
@@ -3283,7 +3364,7 @@ then
 
 Authored path: `Access.auth.Me`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 18.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 77.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/me", requestId, session)
@@ -3295,11 +3376,42 @@ then
   RequestBoundary.respond (email, profile, requestId, user, username)
 ```
 
+### Access.auth.Permissions:assigned
+
+Authored path: `Access.auth.Permissions`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 50.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 100.
+
+```reaction
+when RequestBoundary.request (path: "/auth/permissions", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "the role of (user) in (context)" with (context: "forum", user) has (capabilities)
+  effective is effectiveCapabilities (capabilities)
+then
+  RequestBoundary.respond (capabilities: effective, requestId)
+```
+
+### Access.auth.Permissions:none
+
+Authored path: `Access.auth.Permissions`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 50.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 100.
+
+```reaction
+when RequestBoundary.request (path: "/auth/permissions", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  no view "the role of (user) in (context)" with (context: "forum", user)
+then
+  RequestBoundary.respond (capabilities: [], requestId)
+```
+
 ### Access.auth.RegisterInitialAdmin:initialized
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 38.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 103.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3315,7 +3427,7 @@ then
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 38.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 103.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3331,7 +3443,7 @@ then
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 38.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 103.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.RegisterInitialAdmin:success
@@ -3345,7 +3457,7 @@ then
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 38.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 103.
 
 ```reaction
 when Profiling.createProfile (displayName, email, user), asked by Access.auth.RegisterInitialAdmin:success#2
@@ -3359,7 +3471,7 @@ then
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 38.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 78.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 103.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3370,39 +3482,11 @@ then
   RequestBoundary.respond (error: "UNAUTHORIZED", requestId)
 ```
 
-### Access.auth.RepairInitialAdminRosterBootstrapOnLogin
-
-Authored path: `Access.auth.RepairInitialAdminRosterBootstrapOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 48.
-
-```reaction
-when Authenticating.authenticate (user)
-where
-  Authenticating._getUserCount () has (count: 1)
-  Roling._hasCapability (capability: "administer", context: "forum", user) has (allowed: true)
-  Roling._hasCapability (capability: "roster:manage", context: "forum", user) has (allowed: false)
-then
-  Roling.ensureRole (capabilities: ["roster:manage"], name: "initial-roster-bootstrap")
-```
-
-### Access.auth.RepairInitialAdminRosterBootstrapOnLogin#2
-
-Authored path: `Access.auth.RepairInitialAdminRosterBootstrapOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 48.
-
-```reaction
-when Roling.ensureRole (capabilities: ["roster:manage"], name: "initial-roster-bootstrap", role), asked by Access.auth.RepairInitialAdminRosterBootstrapOnLogin
-where
-  earlier, Authenticating.authenticate (user)
-then
-  Roling.grant (context: "forum", role, user)
-```
-
 ### Access.auth.Resolve:absent
 
 Authored path: `Access.auth.Resolve`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 22.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 79.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -3416,7 +3500,7 @@ then
 
 Authored path: `Access.auth.Resolve`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 22.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 79.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -3429,8 +3513,8 @@ then
 ### Access.auth.RestoreUser:forbidden
 
 Authored path: `Access.auth.RestoreUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 60.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 80.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 82.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/users/restore", requestId, session, user)
@@ -3444,8 +3528,8 @@ then
 ### Access.auth.RestoreUser:success
 
 Authored path: `Access.auth.RestoreUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 60.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 80.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 82.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/users/restore", requestId, session, user)
@@ -3459,8 +3543,8 @@ then
 ### Access.auth.RestoreUser:success#2
 
 Authored path: `Access.auth.RestoreUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 60.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 80.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 82.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 105.
 
 ```reaction
 when Archiving.restore (item: user), asked by Access.auth.RestoreUser:success
@@ -3473,7 +3557,7 @@ then
 ### Access.invitations.EmailInvitationQueuesMail
 
 Authored path: `Access.invitations.EmailInvitationQueuesMail`.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 11.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 19.
 
 ```reaction
 when Inviting.invite (address, at, channel: "email", created, credential, invitation)
@@ -3488,7 +3572,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 38.
 
 ```reaction
 when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
@@ -3503,7 +3587,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 38.
 
 ```reaction
 when RequestBoundary.request (email, path: "/invitations/invite", requestId, session)
@@ -3519,7 +3603,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 38.
 
 ```reaction
 when Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.invitations.Invite:success
@@ -3533,7 +3617,7 @@ then
 
 Authored path: `Access.invitations.Invite`.
 - Covered by [Invitations](../design/compositions/access/invitations.md), line 4.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 30.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 38.
 
 ```reaction
 when Inviting.invite (address: recipient, at, channel: "email", created, invitation), asked by Access.invitations.Invite:success#2
@@ -3546,8 +3630,8 @@ then
 ### Access.invitations.List:forbidden
 
 Authored path: `Access.invitations.List`.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 17.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 31.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 25.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 39.
 
 ```reaction
 when RequestBoundary.request (path: "/invitations/list", requestId, session)
@@ -3561,8 +3645,8 @@ then
 ### Access.invitations.List:success
 
 Authored path: `Access.invitations.List`.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 17.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 31.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 25.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 39.
 
 ```reaction
 when RequestBoundary.request (path: "/invitations/list", requestId, session)
@@ -3576,8 +3660,8 @@ then
 ### Access.invitations.Retract:forbidden
 
 Authored path: `Access.invitations.Retract`.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 32.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 31.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 40.
 
 ```reaction
 when RequestBoundary.request (invitation, path: "/invitations/retract", requestId, session)
@@ -3591,8 +3675,8 @@ then
 ### Access.invitations.Retract:success
 
 Authored path: `Access.invitations.Retract`.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 32.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 31.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 40.
 
 ```reaction
 when RequestBoundary.request (invitation, path: "/invitations/retract", requestId, session)
@@ -3606,8 +3690,8 @@ then
 ### Access.invitations.Retract:success#2
 
 Authored path: `Access.invitations.Retract`.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 23.
-- Covered by [Invitations](../design/compositions/access/invitations.md), line 32.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 31.
+- Covered by [Invitations](../design/compositions/access/invitations.md), line 40.
 
 ```reaction
 when Inviting.retract (invitation), asked by Access.invitations.Retract:success
@@ -3647,15 +3731,80 @@ then
   RequestBoundary.respond (messages: former "the mail messages ()", requestId)
 ```
 
+### Access.roles.AssignRole:forbidden
+
+Authored path: `Access.roles.AssignRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 28.
+- Covered by [Roles](../design/compositions/access/roles.md), line 73.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not administer" with (user: actor)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.roles.AssignRole:last-administrator
+
+Authored path: `Access.roles.AssignRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 28.
+- Covered by [Roles](../design/compositions/access/roles.md), line 73.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  Authenticating._denotedUser (ref: user) has (user: subject)
+  view "(user) is the only administrator" with (user: subject)
+then
+  RequestBoundary.respond (error: "LAST_ADMINISTRATOR", requestId)
+```
+
+### Access.roles.AssignRole:success
+
+Authored path: `Access.roles.AssignRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 28.
+- Covered by [Roles](../design/compositions/access/roles.md), line 73.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  Authenticating._denotedUser (ref: user) has (user: subject)
+  view "(user) is not the only administrator" with (user: subject)
+  Roling._denotedRole (ref: role) has (role: resolved)
+then
+  Roling.assign (context, role: resolved, user: subject)
+```
+
+### Access.roles.AssignRole:success#2
+
+Authored path: `Access.roles.AssignRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 28.
+- Covered by [Roles](../design/compositions/access/roles.md), line 73.
+
+```reaction
+when Roling.assign (context, role: resolved, user: subject, assignment), asked by Access.roles.AssignRole:success
+where
+  earlier, RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
+then
+  RequestBoundary.respond (assignment, requestId)
+```
+
 ### Access.roles.DefineRole:forbidden
 
 Authored path: `Access.roles.DefineRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 6.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
+- Covered by [Roles](../design/compositions/access/roles.md), line 18.
+- Covered by [Roles](../design/compositions/access/roles.md), line 71.
 
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
 where
+  known is capabilitiesAreKnown (capabilities)
   view "the active user of (session)" with (session) has (user)
   view "(user) may not administer" with (user)
 then
@@ -3665,14 +3814,16 @@ then
 ### Access.roles.DefineRole:success
 
 Authored path: `Access.roles.DefineRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 6.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
+- Covered by [Roles](../design/compositions/access/roles.md), line 18.
+- Covered by [Roles](../design/compositions/access/roles.md), line 71.
 
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
 where
+  known is capabilitiesAreKnown (capabilities)
   view "the active user of (session)" with (session) has (user)
   view "(user) may administer" with (user)
+  known is among [true]
 then
   Roling.defineRole (capabilities, name)
 ```
@@ -3680,8 +3831,8 @@ then
 ### Access.roles.DefineRole:success#2
 
 Authored path: `Access.roles.DefineRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 6.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
+- Covered by [Roles](../design/compositions/access/roles.md), line 18.
+- Covered by [Roles](../design/compositions/access/roles.md), line 71.
 
 ```reaction
 when Roling.defineRole (capabilities, name, role), asked by Access.roles.DefineRole:success
@@ -3691,60 +3842,76 @@ then
   RequestBoundary.respond (requestId, role)
 ```
 
-### Access.roles.GrantRole:forbidden
+### Access.roles.DefineRole:unknown-capability
 
-Authored path: `Access.roles.GrantRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 8.
-- Covered by [Roles](../design/compositions/access/roles.md), line 34.
+Authored path: `Access.roles.DefineRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 18.
+- Covered by [Roles](../design/compositions/access/roles.md), line 71.
 
 ```reaction
-when RequestBoundary.request (context, path: "/roles/grant", requestId, role, session, user)
+when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
 where
-  view "the active user of (session)" with (session) has (user: actor)
-  view "(user) may not administer" with (user: actor)
+  known is capabilitiesAreKnown (capabilities)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may administer" with (user)
+  known is among [false]
+then
+  RequestBoundary.respond (error: "UNKNOWN_CAPABILITY", requestId)
+```
+
+### Access.roles.DeleteRole:forbidden
+
+Authored path: `Access.roles.DeleteRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 25.
+- Covered by [Roles](../design/compositions/access/roles.md), line 72.
+
+```reaction
+when RequestBoundary.request (path: "/roles/delete", requestId, role, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not administer" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Access.roles.GrantRole:success
+### Access.roles.DeleteRole:success
 
-Authored path: `Access.roles.GrantRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 8.
-- Covered by [Roles](../design/compositions/access/roles.md), line 34.
+Authored path: `Access.roles.DeleteRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 25.
+- Covered by [Roles](../design/compositions/access/roles.md), line 72.
 
 ```reaction
-when RequestBoundary.request (context, path: "/roles/grant", requestId, role, session, user)
+when RequestBoundary.request (path: "/roles/delete", requestId, role, session)
 where
-  view "the active user of (session)" with (session) has (user: actor)
-  view "(user) may administer" with (user: actor)
-  Authenticating._denotedUser (ref: user) has (user: subject)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may administer" with (user)
   Roling._denotedRole (ref: role) has (role: resolved)
 then
-  Roling.grant (context, role: resolved, user: subject)
+  Roling.deleteRole (role: resolved)
 ```
 
-### Access.roles.GrantRole:success#2
+### Access.roles.DeleteRole:success#2
 
-Authored path: `Access.roles.GrantRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 8.
-- Covered by [Roles](../design/compositions/access/roles.md), line 34.
+Authored path: `Access.roles.DeleteRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 25.
+- Covered by [Roles](../design/compositions/access/roles.md), line 72.
 
 ```reaction
-when Roling.grant (context, role: resolved, user: subject, grant), asked by Access.roles.GrantRole:success
+when Roling.deleteRole (role: resolved), asked by Access.roles.DeleteRole:success
 where
-  earlier, RequestBoundary.request (context, path: "/roles/grant", requestId, role, session, user)
+  earlier, RequestBoundary.request (path: "/roles/delete", requestId, role, session)
 then
-  RequestBoundary.respond (grant, requestId)
+  RequestBoundary.respond (requestId, role: resolved)
 ```
 
 ### Access.roles.RevokeRole:forbidden
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 11.
-- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 31.
+- Covered by [Roles](../design/compositions/access/roles.md), line 74.
 
 ```reaction
-when RequestBoundary.request (context, path: "/roles/revoke", requestId, role, session, user)
+when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
 where
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may not administer" with (user: actor)
@@ -3752,56 +3919,89 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Access.roles.RevokeRole:success
+### Access.roles.RevokeRole:last-administrator
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 11.
-- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 31.
+- Covered by [Roles](../design/compositions/access/roles.md), line 74.
 
 ```reaction
-when RequestBoundary.request (context, path: "/roles/revoke", requestId, role, session, user)
+when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
 where
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
   Authenticating._denotedUser (ref: user) has (user: subject)
-  Roling._denotedRole (ref: role) has (role: resolved)
+  view "(user) is the only administrator" with (user: subject)
 then
-  Roling.revoke (context, role: resolved, user: subject)
+  RequestBoundary.respond (error: "LAST_ADMINISTRATOR", requestId)
+```
+
+### Access.roles.RevokeRole:success
+
+Authored path: `Access.roles.RevokeRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 31.
+- Covered by [Roles](../design/compositions/access/roles.md), line 74.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  Authenticating._denotedUser (ref: user) has (user: subject)
+  view "(user) is not the only administrator" with (user: subject)
+then
+  Roling.revoke (context, user: subject)
 ```
 
 ### Access.roles.RevokeRole:success#2
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 11.
-- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 31.
+- Covered by [Roles](../design/compositions/access/roles.md), line 74.
 
 ```reaction
-when Roling.revoke (context, role: resolved, user: subject, grant), asked by Access.roles.RevokeRole:success
+when Roling.revoke (context, user: subject, assignment), asked by Access.roles.RevokeRole:success
 where
-  earlier, RequestBoundary.request (context, path: "/roles/revoke", requestId, role, session, user)
+  earlier, RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
 then
-  RequestBoundary.respond (grant, requestId)
+  RequestBoundary.respond (assignment, requestId)
 ```
 
-### Access.roles.RoleCan
+### Access.roles.RoleForUser:held
 
-Authored path: `Access.roles.RoleCan`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 22.
-- Covered by [Roles](../design/compositions/access/roles.md), line 36.
+Authored path: `Access.roles.RoleForUser`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 58.
+- Covered by [Roles](../design/compositions/access/roles.md), line 75.
 
 ```reaction
-when RequestBoundary.request (capability, context, path: "/roles/can", requestId, user)
+when RequestBoundary.request (context, path: "/roles/forUser", requestId, user)
 where
-  Roling._hasCapability (capability, context, user) has (allowed)
+  Authenticating._denotedUser (ref: user) has (user: subject)
+  view "the role of (user) in (context)" with (context, user: subject) has (capabilities, name, role)
 then
-  RequestBoundary.respond (allowed, requestId)
+  RequestBoundary.respond (capabilities, name, requestId, role)
+```
+
+### Access.roles.RoleForUser:none
+
+Authored path: `Access.roles.RoleForUser`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 58.
+- Covered by [Roles](../design/compositions/access/roles.md), line 75.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/forUser", requestId, user)
+where
+  Authenticating._denotedUser (ref: user) has (user: subject)
+  no view "the role of (user) in (context)" with (context, user: subject)
+then
+  RequestBoundary.respond (capabilities: [], name: null, requestId, role: null)
 ```
 
 ### Access.roles.RoleGet
 
 Authored path: `Access.roles.RoleGet`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 23.
-- Covered by [Roles](../design/compositions/access/roles.md), line 37.
+- Covered by [Roles](../design/compositions/access/roles.md), line 61.
+- Covered by [Roles](../design/compositions/access/roles.md), line 76.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/get", requestId, role)
@@ -3814,27 +4014,13 @@ then
 ### Access.roles.RoleList
 
 Authored path: `Access.roles.RoleList`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 24.
-- Covered by [Roles](../design/compositions/access/roles.md), line 38.
+- Covered by [Roles](../design/compositions/access/roles.md), line 62.
+- Covered by [Roles](../design/compositions/access/roles.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/list", requestId)
 then
   RequestBoundary.respond (requestId, roles: former "the defined roles ()")
-```
-
-### Access.roles.RolesForUser
-
-Authored path: `Access.roles.RolesForUser`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 20.
-- Covered by [Roles](../design/compositions/access/roles.md), line 39.
-
-```reaction
-when RequestBoundary.request (context, path: "/roles/forUser", requestId, user)
-where
-  Authenticating._denotedUser (ref: user) has (user: subject)
-then
-  RequestBoundary.respond (requestId, roles: former "the roles held by (user) in (context)" with (context, user: subject))
 ```
 
 ### Access.session.InvalidSessionIsRejected:expired-session
@@ -3889,7 +4075,7 @@ Authored path: `Course.assignments.Archive`.
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage assignments" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -3905,7 +4091,7 @@ when RequestBoundary.request (assignment, path: "/assignments/archive", requestI
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage assignments" with (user)
+  view "(user) may manage the course" with (user)
 then
   Assigning.archive (assignment, at)
 ```
@@ -3949,7 +4135,7 @@ Authored path: `Course.assignments.ClearDueOverride`.
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage assignments" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -3964,7 +4150,7 @@ Authored path: `Course.assignments.ClearDueOverride`.
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage assignments" with (user)
+  view "(user) may manage the course" with (user)
 then
   Assigning.clearDueOverride (assignee, assignment)
 ```
@@ -3993,7 +4179,7 @@ Authored path: `Course.assignments.CreateDraft`.
 when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage assignments" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4009,7 +4195,7 @@ when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage assignments" with (user)
+  view "(user) may manage the course" with (user)
 then
   Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, targets, title)
 ```
@@ -4134,7 +4320,7 @@ Authored path: `Course.assignments.Publish`.
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage assignments" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4150,7 +4336,7 @@ when RequestBoundary.request (assignment, path: "/assignments/publish", requestI
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage assignments" with (user)
+  view "(user) may manage the course" with (user)
 then
   Assigning.publish (assignment, at)
 ```
@@ -4223,7 +4409,7 @@ Authored path: `Course.assignments.Revise`.
 when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage assignments" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4239,7 +4425,7 @@ when RequestBoundary.request (acceptsSubmissions, assignment, audience, availabl
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage assignments" with (user)
+  view "(user) may manage the course" with (user)
 then
   Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, targets, title)
 ```
@@ -4301,7 +4487,7 @@ Authored path: `Course.assignments.SetDueOverride`.
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage assignments" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4316,7 +4502,7 @@ Authored path: `Course.assignments.SetDueOverride`.
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage assignments" with (user)
+  view "(user) may manage the course" with (user)
 then
   Assigning.setDueOverride (assignee, assignment, dueAt)
 ```
@@ -4345,7 +4531,7 @@ Authored path: `Course.assignments.StaffList`.
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage assignments" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4360,7 +4546,7 @@ Authored path: `Course.assignments.StaffList`.
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage assignments" with (user)
+  view "(user) may manage the course" with (user)
 then
   RequestBoundary.respond (assignments: former "the staff assignments ()", requestId)
 ```
@@ -4375,7 +4561,7 @@ Authored path: `Course.assignments.StaffSummary`.
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage assignments" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4390,7 +4576,7 @@ Authored path: `Course.assignments.StaffSummary`.
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage assignments" with (user)
+  view "(user) may manage the course" with (user)
   view "the assignment (assignment)" with (assignment) has (detail)
 then
   RequestBoundary.respond (requestId, summary: detail)
@@ -4406,7 +4592,7 @@ Authored path: `Course.assignments.StaffSummary`.
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage assignments" with (user)
+  view "(user) may manage the course" with (user)
   no view "the assignment (assignment)" with (assignment)
 then
   RequestBoundary.respond (requestId, summary: null)
@@ -4475,7 +4661,7 @@ then
 
 Authored path: `Course.calendar.CalendarMe`.
 - Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 21.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 22.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
@@ -4490,7 +4676,7 @@ then
 
 Authored path: `Course.calendar.CalendarMe`.
 - Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 21.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 22.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
@@ -4505,7 +4691,7 @@ then
 
 Authored path: `Course.calendar.CalendarStaff`.
 - Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 6.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 22.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 23.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
@@ -4520,7 +4706,7 @@ then
 
 Authored path: `Course.calendar.CalendarStaff`.
 - Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 6.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 22.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 23.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
@@ -4534,8 +4720,8 @@ then
 ### Course.calendar.LmsMe:forbidden
 
 Authored path: `Course.calendar.LmsMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 10.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 23.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 24.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
@@ -4549,8 +4735,8 @@ then
 ### Course.calendar.LmsMe:success
 
 Authored path: `Course.calendar.LmsMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 10.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 23.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 24.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
@@ -4564,14 +4750,14 @@ then
 ### Course.calendar.LmsStaffDashboard:forbidden
 
 Authored path: `Course.calendar.LmsStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 12.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 24.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 13.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 25.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4579,14 +4765,14 @@ then
 ### Course.calendar.LmsStaffDashboard:success
 
 Authored path: `Course.calendar.LmsStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 12.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 24.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 13.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 25.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   RequestBoundary.respond (counts: former "the staff dashboard counts ()", dashboard: former "the staff dashboard ()", requestId)
 ```
@@ -4618,14 +4804,14 @@ then
 ### Course.grades.GradesAddCriterion:forbidden
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 10.
-- Covered by [Grades](../design/compositions/course/grades.md), line 51.
+- Covered by [Grades](../design/compositions/course/grades.md), line 13.
+- Covered by [Grades](../design/compositions/course/grades.md), line 56.
 
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4633,14 +4819,14 @@ then
 ### Course.grades.GradesAddCriterion:success
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 10.
-- Covered by [Grades](../design/compositions/course/grades.md), line 51.
+- Covered by [Grades](../design/compositions/course/grades.md), line 13.
+- Covered by [Grades](../design/compositions/course/grades.md), line 56.
 
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
 then
   Itemizing.addCriterion (item, maxPoints, name, position)
 ```
@@ -4648,8 +4834,8 @@ then
 ### Course.grades.GradesAddCriterion:success#2
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 10.
-- Covered by [Grades](../design/compositions/course/grades.md), line 51.
+- Covered by [Grades](../design/compositions/course/grades.md), line 13.
+- Covered by [Grades](../design/compositions/course/grades.md), line 56.
 
 ```reaction
 when Itemizing.addCriterion (item, maxPoints, name, position, criterion), asked by Course.grades.GradesAddCriterion:success
@@ -4663,13 +4849,13 @@ then
 
 Authored path: `Course.grades.GradesConfigureItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 4.
-- Covered by [Grades](../design/compositions/course/grades.md), line 52.
+- Covered by [Grades](../design/compositions/course/grades.md), line 57.
 
 ```reaction
 when RequestBoundary.request (item, label, maxPoints, path: "/grades/configure-item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4678,13 +4864,13 @@ then
 
 Authored path: `Course.grades.GradesConfigureItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 4.
-- Covered by [Grades](../design/compositions/course/grades.md), line 52.
+- Covered by [Grades](../design/compositions/course/grades.md), line 57.
 
 ```reaction
 when RequestBoundary.request (item, label, maxPoints, path: "/grades/configure-item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
 then
   Itemizing.configureItem (item, label, maxPoints)
 ```
@@ -4693,7 +4879,7 @@ then
 
 Authored path: `Course.grades.GradesConfigureItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 4.
-- Covered by [Grades](../design/compositions/course/grades.md), line 52.
+- Covered by [Grades](../design/compositions/course/grades.md), line 57.
 
 ```reaction
 when Itemizing.configureItem (item, label, maxPoints, gradeItem), asked by Course.grades.GradesConfigureItem:success
@@ -4706,14 +4892,14 @@ then
 ### Course.grades.GradesCriterionScores:forbidden
 
 Authored path: `Course.grades.GradesCriterionScores`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 17.
-- Covered by [Grades](../design/compositions/course/grades.md), line 53.
+- Covered by [Grades](../design/compositions/course/grades.md), line 20.
+- Covered by [Grades](../design/compositions/course/grades.md), line 58.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not view all grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4721,14 +4907,14 @@ then
 ### Course.grades.GradesCriterionScores:success
 
 Authored path: `Course.grades.GradesCriterionScores`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 17.
-- Covered by [Grades](../design/compositions/course/grades.md), line 53.
+- Covered by [Grades](../design/compositions/course/grades.md), line 20.
+- Covered by [Grades](../design/compositions/course/grades.md), line 58.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may view all grades" with (user)
+  view "(user) may grade" with (user)
 then
   RequestBoundary.respond (requestId, scores: former "the criterion scores of (learner) on (item)" with (item, learner))
 ```
@@ -4736,14 +4922,14 @@ then
 ### Course.grades.GradesExcuse:forbidden
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 31.
-- Covered by [Grades](../design/compositions/course/grades.md), line 54.
+- Covered by [Grades](../design/compositions/course/grades.md), line 34.
+- Covered by [Grades](../design/compositions/course/grades.md), line 59.
 
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4751,15 +4937,15 @@ then
 ### Course.grades.GradesExcuse:success
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 31.
-- Covered by [Grades](../design/compositions/course/grades.md), line 54.
+- Covered by [Grades](../design/compositions/course/grades.md), line 34.
+- Covered by [Grades](../design/compositions/course/grades.md), line 59.
 
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
 then
   Grading.excuse (at, feedback, grader: user, item, learner)
 ```
@@ -4767,8 +4953,8 @@ then
 ### Course.grades.GradesExcuse:success#2
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 31.
-- Covered by [Grades](../design/compositions/course/grades.md), line 54.
+- Covered by [Grades](../design/compositions/course/grades.md), line 34.
+- Covered by [Grades](../design/compositions/course/grades.md), line 59.
 
 ```reaction
 when Grading.excuse (at, feedback, grader: user, item, learner, grade), asked by Course.grades.GradesExcuse:success
@@ -4781,14 +4967,14 @@ then
 ### Course.grades.GradesExport:forbidden
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 47.
-- Covered by [Grades](../design/compositions/course/grades.md), line 55.
+- Covered by [Grades](../design/compositions/course/grades.md), line 52.
+- Covered by [Grades](../design/compositions/course/grades.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not view all grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4796,14 +4982,14 @@ then
 ### Course.grades.GradesExport:success
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 47.
-- Covered by [Grades](../design/compositions/course/grades.md), line 55.
+- Covered by [Grades](../design/compositions/course/grades.md), line 52.
+- Covered by [Grades](../design/compositions/course/grades.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may view all grades" with (user)
+  view "(user) may grade" with (user)
 then
   RequestBoundary.respond (csv: "", requestId)
 ```
@@ -4811,14 +4997,14 @@ then
 ### Course.grades.GradesForItem:forbidden
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 40.
-- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+- Covered by [Grades](../design/compositions/course/grades.md), line 43.
+- Covered by [Grades](../design/compositions/course/grades.md), line 61.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not view all grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4826,14 +5012,14 @@ then
 ### Course.grades.GradesForItem:success
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 40.
-- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+- Covered by [Grades](../design/compositions/course/grades.md), line 43.
+- Covered by [Grades](../design/compositions/course/grades.md), line 61.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may view all grades" with (user)
+  view "(user) may grade" with (user)
 then
   RequestBoundary.respond (grades: former "the grades on (item)" with (item), requestId)
 ```
@@ -4841,8 +5027,8 @@ then
 ### Course.grades.GradesForMe:not-student
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 37.
-- Covered by [Grades](../design/compositions/course/grades.md), line 57.
+- Covered by [Grades](../design/compositions/course/grades.md), line 40.
+- Covered by [Grades](../design/compositions/course/grades.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -4856,8 +5042,8 @@ then
 ### Course.grades.GradesForMe:success
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 37.
-- Covered by [Grades](../design/compositions/course/grades.md), line 57.
+- Covered by [Grades](../design/compositions/course/grades.md), line 40.
+- Covered by [Grades](../design/compositions/course/grades.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -4871,14 +5057,14 @@ then
 ### Course.grades.GradesForStudent:forbidden
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 38.
-- Covered by [Grades](../design/compositions/course/grades.md), line 58.
+- Covered by [Grades](../design/compositions/course/grades.md), line 41.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not view all grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4886,14 +5072,14 @@ then
 ### Course.grades.GradesForStudent:success
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 38.
-- Covered by [Grades](../design/compositions/course/grades.md), line 58.
+- Covered by [Grades](../design/compositions/course/grades.md), line 41.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may view all grades" with (user)
+  view "(user) may grade" with (user)
 then
   RequestBoundary.respond (grades: former "the grades of (learner)" with (learner), requestId)
 ```
@@ -4901,14 +5087,14 @@ then
 ### Course.grades.GradesGradebook:forbidden
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 42.
-- Covered by [Grades](../design/compositions/course/grades.md), line 59.
+- Covered by [Grades](../design/compositions/course/grades.md), line 45.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not view all grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4916,14 +5102,14 @@ then
 ### Course.grades.GradesGradebook:success
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 42.
-- Covered by [Grades](../design/compositions/course/grades.md), line 59.
+- Covered by [Grades](../design/compositions/course/grades.md), line 45.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may view all grades" with (user)
+  view "(user) may grade" with (user)
 then
   RequestBoundary.respond (gradebook: former "the gradebook ()", requestId)
 ```
@@ -4932,13 +5118,13 @@ then
 
 Authored path: `Course.grades.GradesItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 7.
-- Covered by [Grades](../design/compositions/course/grades.md), line 60.
+- Covered by [Grades](../design/compositions/course/grades.md), line 65.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not view all grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4947,13 +5133,13 @@ then
 
 Authored path: `Course.grades.GradesItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 7.
-- Covered by [Grades](../design/compositions/course/grades.md), line 60.
+- Covered by [Grades](../design/compositions/course/grades.md), line 65.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may view all grades" with (user)
+  view "(user) may grade" with (user)
   no Itemizing._getItem (item)
 then
   RequestBoundary.respond (error: "GRADE_ITEM_NOT_FOUND", requestId)
@@ -4963,13 +5149,13 @@ then
 
 Authored path: `Course.grades.GradesItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 7.
-- Covered by [Grades](../design/compositions/course/grades.md), line 60.
+- Covered by [Grades](../design/compositions/course/grades.md), line 65.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may view all grades" with (user)
+  view "(user) may grade" with (user)
   Itemizing._getItem (item) has (label, maxPoints, status)
 then
   RequestBoundary.respond (criteria: former "the criteria of (item)" with (item), item, label, maxPoints, requestId, status)
@@ -4978,14 +5164,14 @@ then
 ### Course.grades.GradesRecord:forbidden
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 21.
-- Covered by [Grades](../design/compositions/course/grades.md), line 61.
+- Covered by [Grades](../design/compositions/course/grades.md), line 24.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -4993,14 +5179,14 @@ then
 ### Course.grades.GradesRecord:missing-item
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 21.
-- Covered by [Grades](../design/compositions/course/grades.md), line 61.
+- Covered by [Grades](../design/compositions/course/grades.md), line 24.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
   no Itemizing._getItem (item)
 then
   RequestBoundary.respond (error: "GRADE_ITEM_NOT_FOUND", requestId)
@@ -5009,15 +5195,15 @@ then
 ### Course.grades.GradesRecord:success
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 21.
-- Covered by [Grades](../design/compositions/course/grades.md), line 61.
+- Covered by [Grades](../design/compositions/course/grades.md), line 24.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
   Itemizing._getItem (item) has (maxPoints)
 then
   Grading.record (at, evidence, feedback, grader: user, item, learner, outOf: maxPoints, score)
@@ -5026,8 +5212,8 @@ then
 ### Course.grades.GradesRecord:success#2
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 21.
-- Covered by [Grades](../design/compositions/course/grades.md), line 61.
+- Covered by [Grades](../design/compositions/course/grades.md), line 24.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when Grading.record (at, evidence, feedback, grader: user, item, learner, outOf: maxPoints, score, grade), asked by Course.grades.GradesRecord:success
@@ -5040,14 +5226,14 @@ then
 ### Course.grades.GradesRelease:forbidden
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 27.
-- Covered by [Grades](../design/compositions/course/grades.md), line 62.
+- Covered by [Grades](../design/compositions/course/grades.md), line 30.
+- Covered by [Grades](../design/compositions/course/grades.md), line 67.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5055,15 +5241,15 @@ then
 ### Course.grades.GradesRelease:success
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 27.
-- Covered by [Grades](../design/compositions/course/grades.md), line 62.
+- Covered by [Grades](../design/compositions/course/grades.md), line 30.
+- Covered by [Grades](../design/compositions/course/grades.md), line 67.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
 then
   Grading.release (at, item, learner)
 ```
@@ -5071,8 +5257,8 @@ then
 ### Course.grades.GradesRelease:success#2
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 27.
-- Covered by [Grades](../design/compositions/course/grades.md), line 62.
+- Covered by [Grades](../design/compositions/course/grades.md), line 30.
+- Covered by [Grades](../design/compositions/course/grades.md), line 67.
 
 ```reaction
 when Grading.release (at, item, learner, grade), asked by Course.grades.GradesRelease:success
@@ -5085,14 +5271,14 @@ then
 ### Course.grades.GradesReleaseItem:forbidden
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 28.
-- Covered by [Grades](../design/compositions/course/grades.md), line 63.
+- Covered by [Grades](../design/compositions/course/grades.md), line 31.
+- Covered by [Grades](../design/compositions/course/grades.md), line 68.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5100,15 +5286,15 @@ then
 ### Course.grades.GradesReleaseItem:success
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 28.
-- Covered by [Grades](../design/compositions/course/grades.md), line 63.
+- Covered by [Grades](../design/compositions/course/grades.md), line 31.
+- Covered by [Grades](../design/compositions/course/grades.md), line 68.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
 then
   Grading.releaseItem (at, item)
 ```
@@ -5116,8 +5302,8 @@ then
 ### Course.grades.GradesReleaseItem:success#2
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 28.
-- Covered by [Grades](../design/compositions/course/grades.md), line 63.
+- Covered by [Grades](../design/compositions/course/grades.md), line 31.
+- Covered by [Grades](../design/compositions/course/grades.md), line 68.
 
 ```reaction
 when Grading.releaseItem (at, item, released), asked by Course.grades.GradesReleaseItem:success
@@ -5130,14 +5316,14 @@ then
 ### Course.grades.GradesRemoveCriterion:forbidden
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 12.
-- Covered by [Grades](../design/compositions/course/grades.md), line 64.
+- Covered by [Grades](../design/compositions/course/grades.md), line 15.
+- Covered by [Grades](../design/compositions/course/grades.md), line 69.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5145,14 +5331,14 @@ then
 ### Course.grades.GradesRemoveCriterion:success
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 12.
-- Covered by [Grades](../design/compositions/course/grades.md), line 64.
+- Covered by [Grades](../design/compositions/course/grades.md), line 15.
+- Covered by [Grades](../design/compositions/course/grades.md), line 69.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
 then
   Itemizing.removeCriterion (criterion)
 ```
@@ -5160,8 +5346,8 @@ then
 ### Course.grades.GradesRemoveCriterion:success#2
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 12.
-- Covered by [Grades](../design/compositions/course/grades.md), line 64.
+- Covered by [Grades](../design/compositions/course/grades.md), line 15.
+- Covered by [Grades](../design/compositions/course/grades.md), line 69.
 
 ```reaction
 when Itemizing.removeCriterion (criterion, result.criterion: removed), asked by Course.grades.GradesRemoveCriterion:success
@@ -5174,14 +5360,14 @@ then
 ### Course.grades.GradesRetract:forbidden
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 29.
-- Covered by [Grades](../design/compositions/course/grades.md), line 65.
+- Covered by [Grades](../design/compositions/course/grades.md), line 32.
+- Covered by [Grades](../design/compositions/course/grades.md), line 70.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5189,15 +5375,15 @@ then
 ### Course.grades.GradesRetract:success
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 29.
-- Covered by [Grades](../design/compositions/course/grades.md), line 65.
+- Covered by [Grades](../design/compositions/course/grades.md), line 32.
+- Covered by [Grades](../design/compositions/course/grades.md), line 70.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
 then
   Grading.retract (at, item, learner)
 ```
@@ -5205,8 +5391,8 @@ then
 ### Course.grades.GradesRetract:success#2
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 29.
-- Covered by [Grades](../design/compositions/course/grades.md), line 65.
+- Covered by [Grades](../design/compositions/course/grades.md), line 32.
+- Covered by [Grades](../design/compositions/course/grades.md), line 70.
 
 ```reaction
 when Grading.retract (at, item, learner, grade), asked by Course.grades.GradesRetract:success
@@ -5219,14 +5405,14 @@ then
 ### Course.grades.GradesReviseCriterion:forbidden
 
 Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 11.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 14.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5234,14 +5420,14 @@ then
 ### Course.grades.GradesReviseCriterion:success
 
 Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 11.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 14.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
 then
   Itemizing.reviseCriterion (criterion, maxPoints, name, position)
 ```
@@ -5249,8 +5435,8 @@ then
 ### Course.grades.GradesReviseCriterion:success#2
 
 Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 11.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 14.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when Itemizing.reviseCriterion (criterion, maxPoints, name, position, result.criterion: revised), asked by Course.grades.GradesReviseCriterion:success
@@ -5263,14 +5449,14 @@ then
 ### Course.grades.GradesScoreCriterion:cross-item
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 23.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 26.
+- Covered by [Grades](../design/compositions/course/grades.md), line 72.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
   Itemizing._getCriterion (criterion) and not (item)
 then
   RequestBoundary.respond (error: "CRITERION_NOT_FOUND", requestId)
@@ -5279,14 +5465,14 @@ then
 ### Course.grades.GradesScoreCriterion:forbidden
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 23.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 26.
+- Covered by [Grades](../design/compositions/course/grades.md), line 72.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage grades" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5294,14 +5480,14 @@ then
 ### Course.grades.GradesScoreCriterion:missing
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 23.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 26.
+- Covered by [Grades](../design/compositions/course/grades.md), line 72.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
   no Itemizing._getCriterion (criterion)
 then
   RequestBoundary.respond (error: "CRITERION_NOT_FOUND", requestId)
@@ -5310,14 +5496,14 @@ then
 ### Course.grades.GradesScoreCriterion:success
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 23.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 26.
+- Covered by [Grades](../design/compositions/course/grades.md), line 72.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage grades" with (user)
+  view "(user) may grade" with (user)
   Itemizing._getCriterion (criterion) has (item, maxPoints: critMax)
 then
   Grading.scoreCriterion (criterion, feedback, item, learner, outOf: critMax, points)
@@ -5326,8 +5512,8 @@ then
 ### Course.grades.GradesScoreCriterion:success#2
 
 Authored path: `Course.grades.GradesScoreCriterion`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 23.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 26.
+- Covered by [Grades](../design/compositions/course/grades.md), line 72.
 
 ```reaction
 when Grading.scoreCriterion (criterion, feedback, item, learner, outOf: critMax, points, criterionScore), asked by Course.grades.GradesScoreCriterion:success
@@ -5340,7 +5526,7 @@ then
 ### Course.grades.RemovedCriterionClearsScores
 
 Authored path: `Course.grades.RemovedCriterionClearsScores`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 14.
+- Covered by [Grades](../design/compositions/course/grades.md), line 17.
 
 ```reaction
 when Itemizing.removeCriterion (criterion)
@@ -5352,7 +5538,7 @@ then
 
 Authored path: `Course.lateDays.Apply`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 9.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
@@ -5367,7 +5553,7 @@ then
 
 Authored path: `Course.lateDays.Apply`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 9.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
@@ -5383,7 +5569,7 @@ then
 
 Authored path: `Course.lateDays.Apply`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 9.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
 
 ```reaction
 when Banking.apply (at, days, item: assignment, learner: user, use), asked by Course.lateDays.Apply:success
@@ -5397,7 +5583,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -5412,7 +5598,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -5427,13 +5613,13 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
 where
   view "the active user of (session)" with (session) has (user) and not (user: learner)
-  view "(user) may not manage late days" with (user)
+  view "(user) may not manage student records" with (user)
   view "(user) is an active student" with (user: learner)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -5443,13 +5629,13 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage late days" with (user)
+  view "(user) may manage student records" with (user)
   view "(user) is an active student" with (user: learner)
 then
   RequestBoundary.respond (balance: former "the late-day balance of (learner)" with (learner), requestId)
@@ -5459,7 +5645,7 @@ then
 
 Authored path: `Course.lateDays.Cancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 11.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/cancel", requestId, session)
@@ -5474,7 +5660,7 @@ then
 
 Authored path: `Course.lateDays.Cancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 11.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/cancel", requestId, session)
@@ -5489,7 +5675,7 @@ then
 
 Authored path: `Course.lateDays.Cancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 11.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
 
 ```reaction
 when Banking.cancel (item: assignment, learner: user, use), asked by Course.lateDays.Cancel:success
@@ -5503,7 +5689,7 @@ then
 
 Authored path: `Course.lateDays.Change`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 10.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
@@ -5518,7 +5704,7 @@ then
 
 Authored path: `Course.lateDays.Change`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 10.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
@@ -5533,7 +5719,7 @@ then
 
 Authored path: `Course.lateDays.Change`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 10.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
 
 ```reaction
 when Banking.change (days, item: assignment, learner: user, use), asked by Course.lateDays.Change:success
@@ -5547,13 +5733,13 @@ then
 
 Authored path: `Course.lateDays.ConfigurePolicy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 4.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
 
 ```reaction
 when RequestBoundary.request (defaultDays, maxDaysPerItem, path: "/late-days/configure-policy", requestId, session, unitHours)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage late days" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5562,13 +5748,13 @@ then
 
 Authored path: `Course.lateDays.ConfigurePolicy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 4.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
 
 ```reaction
 when RequestBoundary.request (defaultDays, maxDaysPerItem, path: "/late-days/configure-policy", requestId, session, unitHours)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage late days" with (user)
+  view "(user) may manage student records" with (user)
 then
   Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours)
 ```
@@ -5577,7 +5763,7 @@ then
 
 Authored path: `Course.lateDays.ConfigurePolicy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 4.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
 
 ```reaction
 when Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours), asked by Course.lateDays.ConfigurePolicy:success
@@ -5591,13 +5777,13 @@ then
 
 Authored path: `Course.lateDays.ForAssignment`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 21.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage late days" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5606,13 +5792,13 @@ then
 
 Authored path: `Course.lateDays.ForAssignment`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 21.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage late days" with (user)
+  view "(user) may manage student records" with (user)
 then
   RequestBoundary.respond (requestId, users: former "the late-day uses on (assignment)" with (assignment))
 ```
@@ -5621,13 +5807,13 @@ then
 
 Authored path: `Course.lateDays.Grant`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 6.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when RequestBoundary.request (days, learner, path: "/late-days/grant", reason, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage late days" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5636,14 +5822,14 @@ then
 
 Authored path: `Course.lateDays.Grant`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 6.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when RequestBoundary.request (days, learner, path: "/late-days/grant", reason, requestId, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage late days" with (user)
+  view "(user) may manage student records" with (user)
 then
   Banking.grant (at, days, learner, reason)
 ```
@@ -5652,7 +5838,7 @@ then
 
 Authored path: `Course.lateDays.Grant`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 6.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when Banking.grant (at, days, learner, reason, grant), asked by Course.lateDays.Grant:success
@@ -5666,7 +5852,7 @@ then
 
 Authored path: `Course.lateDays.List`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 12.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/list", requestId, session)
@@ -5681,7 +5867,7 @@ then
 
 Authored path: `Course.lateDays.List`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 12.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/list", requestId, session)
@@ -5696,13 +5882,13 @@ then
 
 Authored path: `Course.lateDays.Policy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 3.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/policy", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage late days" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5711,13 +5897,13 @@ then
 
 Authored path: `Course.lateDays.Policy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 3.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/policy", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage late days" with (user)
+  view "(user) may manage student records" with (user)
   Banking._getTerms () has (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours)
 then
   RequestBoundary.respond (defaultDays, maxDaysPerItem, requestId, unitHours)
@@ -5727,7 +5913,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -5742,13 +5928,13 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage late days" with (user)
+  view "(user) may manage student records" with (user)
   view "(user) is an active student" with (user: learner)
 then
   Banking.cancel (item: assignment, learner)
@@ -5758,7 +5944,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
 
 ```reaction
 when Banking.cancel (item: assignment, learner, use), asked by Course.lateDays.StaffCancel:success
@@ -5772,13 +5958,13 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage late days" with (user)
+  view "(user) may not manage student records" with (user)
   view "(user) is an active student" with (user: learner)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -5788,7 +5974,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -5803,13 +5989,13 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage late days" with (user)
+  view "(user) may manage student records" with (user)
   view "(user) is an active student" with (user: learner)
 then
   Banking.change (days, item: assignment, learner)
@@ -5819,7 +6005,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
 
 ```reaction
 when Banking.change (days, item: assignment, learner, use), asked by Course.lateDays.StaffChange:success
@@ -5833,13 +6019,13 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage late days" with (user)
+  view "(user) may not manage student records" with (user)
   view "(user) is an active student" with (user: learner)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -5900,7 +6086,7 @@ Authored path: `Course.notes.Archive`.
 when RequestBoundary.request (note, path: "/students/notes/archive", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage student notes" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5916,7 +6102,7 @@ when RequestBoundary.request (note, path: "/students/notes/archive", requestId, 
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage student notes" with (user)
+  view "(user) may manage student records" with (user)
 then
   Noting.archive (at, note)
 ```
@@ -5945,7 +6131,7 @@ Authored path: `Course.notes.NotesList`.
 when RequestBoundary.request (learner, path: "/students/notes/list", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage student notes" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -5960,7 +6146,7 @@ Authored path: `Course.notes.NotesList`.
 when RequestBoundary.request (learner, path: "/students/notes/list", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage student notes" with (user)
+  view "(user) may manage student records" with (user)
 then
   RequestBoundary.respond (notes: former "the staff notes on (learner)" with (learner), requestId)
 ```
@@ -6005,7 +6191,7 @@ Authored path: `Course.notes.Resolve`.
 when RequestBoundary.request (note, path: "/students/notes/resolve", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage student notes" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6021,7 +6207,7 @@ when RequestBoundary.request (note, path: "/students/notes/resolve", requestId, 
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage student notes" with (user)
+  view "(user) may manage student records" with (user)
 then
   Noting.resolve (at, note)
 ```
@@ -6050,7 +6236,7 @@ Authored path: `Course.notes.Restore`.
 when RequestBoundary.request (note, path: "/students/notes/restore", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage student notes" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6066,7 +6252,7 @@ when RequestBoundary.request (note, path: "/students/notes/restore", requestId, 
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage student notes" with (user)
+  view "(user) may manage student records" with (user)
 then
   Noting.restore (at, note)
 ```
@@ -6095,7 +6281,7 @@ Authored path: `Course.notes.Revise`.
 when RequestBoundary.request (body, followUpAt, note, path: "/students/notes/revise", requestId, session, tags, visibility)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage student notes" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6111,7 +6297,7 @@ when RequestBoundary.request (body, followUpAt, note, path: "/students/notes/rev
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage student notes" with (user)
+  view "(user) may manage student records" with (user)
 then
   Noting.revise (at, body, followUpAt, note, tags, visibility)
 ```
@@ -6140,7 +6326,7 @@ Authored path: `Course.notes.StudentsDetail`.
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage student notes" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6155,7 +6341,7 @@ Authored path: `Course.notes.StudentsDetail`.
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage student notes" with (user)
+  view "(user) may manage student records" with (user)
   view "the seat detail of (user)" with (user: target) has (detail)
 then
   RequestBoundary.respond (detail, requestId)
@@ -6171,7 +6357,7 @@ Authored path: `Course.notes.StudentsDetail`.
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage student notes" with (user)
+  view "(user) may manage student records" with (user)
   no view "the seat detail of (user)" with (user: target)
 then
   RequestBoundary.respond (detail: null, requestId)
@@ -6187,7 +6373,7 @@ Authored path: `Course.notes.Write`.
 when RequestBoundary.request (body, followUpAt, learner, path: "/students/notes/write", requestId, session, tags, visibility)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage student notes" with (user)
+  view "(user) may not manage student records" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6203,7 +6389,7 @@ when RequestBoundary.request (body, followUpAt, learner, path: "/students/notes/
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage student notes" with (user)
+  view "(user) may manage student records" with (user)
 then
   Noting.write (at, author: user, body, followUpAt, learner, tags, visibility)
 ```
@@ -6222,61 +6408,30 @@ then
   RequestBoundary.respond (note, requestId)
 ```
 
-### Course.roster.ClaimSeat:matched-seat
+### Course.roster.ClaimedInvitationClaimsItsSeat
 
-Authored path: `Course.roster.ClaimSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 18.
-- Covered by [Roster](../design/compositions/course/roster.md), line 51.
+Authored path: `Course.roster.ClaimedInvitationClaimsItsSeat`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 26.
 
 ```reaction
-when RequestBoundary.request (externalKey, path: "/roster/claim-seat", requestId, session)
+when Inviting.claim (user, address, channel: "email")
 where
-  view "the active user of (session)" with (session) has (user)
-  view "the seat matching (user) and (externalKey)" with (externalKey, user) has (seat)
+  Rostering._getPendingSeatByEmail (email: address) has (seat)
 then
   Rostering.claimSeat (seat, user)
-```
-
-### Course.roster.ClaimSeat:matched-seat#2
-
-Authored path: `Course.roster.ClaimSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 18.
-- Covered by [Roster](../design/compositions/course/roster.md), line 51.
-
-```reaction
-when Rostering.claimSeat (seat, user, result.seat: claimed), asked by Course.roster.ClaimSeat:matched-seat
-where
-  earlier, RequestBoundary.request (externalKey, path: "/roster/claim-seat", requestId, session)
-then
-  RequestBoundary.respond (requestId, seat: claimed)
-```
-
-### Course.roster.ClaimSeat:missing-seat
-
-Authored path: `Course.roster.ClaimSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 18.
-- Covered by [Roster](../design/compositions/course/roster.md), line 51.
-
-```reaction
-when RequestBoundary.request (externalKey, path: "/roster/claim-seat", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  no view "the seat matching (user) and (externalKey)" with (externalKey, user)
-then
-  RequestBoundary.respond (error: "SEAT_NOT_FOUND", requestId)
 ```
 
 ### Course.roster.ClassConfiguration:absent
 
 Authored path: `Course.roster.ClassConfiguration`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 6.
-- Covered by [Roster](../design/compositions/course/roster.md), line 52.
+- Covered by [Roster](../design/compositions/course/roster.md), line 86.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
   no view "the class configuration ()"
 then
   RequestBoundary.respond (class: null, requestId)
@@ -6286,13 +6441,13 @@ then
 
 Authored path: `Course.roster.ClassConfiguration`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 6.
-- Covered by [Roster](../design/compositions/course/roster.md), line 52.
+- Covered by [Roster](../design/compositions/course/roster.md), line 86.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6301,13 +6456,13 @@ then
 
 Authored path: `Course.roster.ClassConfiguration`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 6.
-- Covered by [Roster](../design/compositions/course/roster.md), line 52.
+- Covered by [Roster](../design/compositions/course/roster.md), line 86.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
   view "the class configuration ()" has (detail)
 then
   RequestBoundary.respond (class: detail, requestId)
@@ -6317,13 +6472,13 @@ then
 
 Authored path: `Course.roster.ConfigureClass`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 4.
-- Covered by [Roster](../design/compositions/course/roster.md), line 53.
+- Covered by [Roster](../design/compositions/course/roster.md), line 87.
 
 ```reaction
 when RequestBoundary.request (code, path: "/roster/configure-class", requestId, session, term, timezone, title)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6332,13 +6487,13 @@ then
 
 Authored path: `Course.roster.ConfigureClass`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 4.
-- Covered by [Roster](../design/compositions/course/roster.md), line 53.
+- Covered by [Roster](../design/compositions/course/roster.md), line 87.
 
 ```reaction
 when RequestBoundary.request (code, path: "/roster/configure-class", requestId, session, term, timezone, title)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   Rostering.configureClass (code, term, timezone, title)
 ```
@@ -6347,7 +6502,7 @@ then
 
 Authored path: `Course.roster.ConfigureClass`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 4.
-- Covered by [Roster](../design/compositions/course/roster.md), line 53.
+- Covered by [Roster](../design/compositions/course/roster.md), line 87.
 
 ```reaction
 when Rostering.configureClass (code, term, timezone, title, class), asked by Course.roster.ConfigureClass:success
@@ -6357,42 +6512,44 @@ then
   RequestBoundary.respond (class, requestId)
 ```
 
-### Course.roster.DropSeat
+### Course.roster.DropSeat:forbidden
 
 Authored path: `Course.roster.DropSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 37.
-- Covered by [Roster](../design/compositions/course/roster.md), line 54.
+- Covered by [Roster](../design/compositions/course/roster.md), line 65.
+- Covered by [Roster](../design/compositions/course/roster.md), line 88.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/drop", requestId, seat, session)
 where
   view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the course" with (user)
 then
-  Roling.requireCapability (capability: "roster:manage", context: "forum", user)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Course.roster.DropSeat#2
+### Course.roster.DropSeat:success
 
 Authored path: `Course.roster.DropSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 37.
-- Covered by [Roster](../design/compositions/course/roster.md), line 54.
+- Covered by [Roster](../design/compositions/course/roster.md), line 65.
+- Covered by [Roster](../design/compositions/course/roster.md), line 88.
 
 ```reaction
-when Roling.requireCapability (capability: "roster:manage", context: "forum", user), asked by Course.roster.DropSeat
+when RequestBoundary.request (path: "/roster/drop", requestId, seat, session)
 where
-  earlier, RequestBoundary.request (path: "/roster/drop", requestId, seat, session)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
 then
   Rostering.dropSeat (seat)
 ```
 
-### Course.roster.DropSeat#3
+### Course.roster.DropSeat:success#2
 
 Authored path: `Course.roster.DropSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 37.
-- Covered by [Roster](../design/compositions/course/roster.md), line 54.
+- Covered by [Roster](../design/compositions/course/roster.md), line 65.
+- Covered by [Roster](../design/compositions/course/roster.md), line 88.
 
 ```reaction
-when Rostering.dropSeat (seat, result.seat: dropped), asked by Course.roster.DropSeat#2
+when Rostering.dropSeat (seat, result.seat: dropped), asked by Course.roster.DropSeat:success
 where
   earlier, RequestBoundary.request (path: "/roster/drop", requestId, seat, session)
 then
@@ -6402,14 +6559,14 @@ then
 ### Course.roster.DroppedRoster:forbidden
 
 Authored path: `Course.roster.DroppedRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 33.
-- Covered by [Roster](../design/compositions/course/roster.md), line 55.
+- Covered by [Roster](../design/compositions/course/roster.md), line 61.
+- Covered by [Roster](../design/compositions/course/roster.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/dropped", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6417,37 +6574,67 @@ then
 ### Course.roster.DroppedRoster:success
 
 Authored path: `Course.roster.DroppedRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 33.
-- Covered by [Roster](../design/compositions/course/roster.md), line 55.
+- Covered by [Roster](../design/compositions/course/roster.md), line 61.
+- Covered by [Roster](../design/compositions/course/roster.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/dropped", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   RequestBoundary.respond (members: former "the dropped roster ()", requestId)
 ```
 
-### Course.roster.DroppedStaffSeatRevokesCourseStaff
+### Course.roster.Enrol:forbidden
 
-Authored path: `Course.roster.DroppedStaffSeatRevokesCourseStaff`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 39.
+Authored path: `Course.roster.Enrol`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 33.
+- Covered by [Roster](../design/compositions/course/roster.md), line 90.
 
 ```reaction
-when Rostering.dropSeat (kind: "STAFF", user: holder)
+when RequestBoundary.request (email, kind, path: "/roster/enroll", requestId, section, session, user)
 where
-  Roling._getRoleByName (name: "course-staff") has (role)
-  Roling._getRoles (context: "forum", user: holder) has (role)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may not manage the course" with (user: actor)
 then
-  Roling.revoke (context: "forum", role, user: holder)
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.roster.Enrol:success
+
+Authored path: `Course.roster.Enrol`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 33.
+- Covered by [Roster](../design/compositions/course/roster.md), line 90.
+
+```reaction
+when RequestBoundary.request (email, kind, path: "/roster/enroll", requestId, section, session, user)
+where
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may manage the course" with (user: actor)
+then
+  Rostering.enrol (email, kind, section, user)
+```
+
+### Course.roster.Enrol:success#2
+
+Authored path: `Course.roster.Enrol`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 33.
+- Covered by [Roster](../design/compositions/course/roster.md), line 90.
+
+```reaction
+when Rostering.enrol (email, kind, section, user, seat), asked by Course.roster.Enrol:success
+where
+  earlier, RequestBoundary.request (email, kind, path: "/roster/enroll", requestId, section, session, user)
+then
+  RequestBoundary.respond (requestId, seat)
 ```
 
 ### Course.roster.ImportPreview
 
 Authored path: `Course.roster.ImportPreview`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 13.
-- Covered by [Roster](../design/compositions/course/roster.md), line 56.
+- Covered by [Roster](../design/compositions/course/roster.md), line 91.
 
 ```reaction
 when RequestBoundary.request (csv, path: "/roster/import-preview", requestId)
@@ -6459,7 +6646,7 @@ then
 
 Authored path: `Course.roster.ImportPreview`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 13.
-- Covered by [Roster](../design/compositions/course/roster.md), line 56.
+- Covered by [Roster](../design/compositions/course/roster.md), line 91.
 
 ```reaction
 when Rostering.previewImport (csv, rows), asked by Course.roster.ImportPreview
@@ -6473,13 +6660,13 @@ then
 
 Authored path: `Course.roster.ImportSeats`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 15.
-- Covered by [Roster](../design/compositions/course/roster.md), line 57.
+- Covered by [Roster](../design/compositions/course/roster.md), line 92.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/import", requestId, rows, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6488,13 +6675,13 @@ then
 
 Authored path: `Course.roster.ImportSeats`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 15.
-- Covered by [Roster](../design/compositions/course/roster.md), line 57.
+- Covered by [Roster](../design/compositions/course/roster.md), line 92.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/import", requestId, rows, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   Rostering.importSeats (rows)
 ```
@@ -6503,7 +6690,7 @@ then
 
 Authored path: `Course.roster.ImportSeats`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 15.
-- Covered by [Roster](../design/compositions/course/roster.md), line 57.
+- Covered by [Roster](../design/compositions/course/roster.md), line 92.
 
 ```reaction
 when Rostering.importSeats (rows, created, skipped), asked by Course.roster.ImportSeats:success
@@ -6513,61 +6700,32 @@ then
   RequestBoundary.respond (created, requestId, skipped)
 ```
 
-### Course.roster.LinkUser:forbidden
+### Course.roster.ImportedSeatInvitesItsAddress
 
-Authored path: `Course.roster.LinkUser`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 20.
-- Covered by [Roster](../design/compositions/course/roster.md), line 58.
-
-```reaction
-when RequestBoundary.request (path: "/roster/link-user", requestId, seat, session, user)
-where
-  view "the active user of (session)" with (session) has (user: actor)
-  view "(user) may not manage the roster" with (user: actor)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Course.roster.LinkUser:success
-
-Authored path: `Course.roster.LinkUser`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 20.
-- Covered by [Roster](../design/compositions/course/roster.md), line 58.
+Authored path: `Course.roster.ImportedSeatInvitesItsAddress`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 19.
 
 ```reaction
-when RequestBoundary.request (path: "/roster/link-user", requestId, seat, session, user)
+when Rostering.importSeats ()
 where
-  view "the active user of (session)" with (session) has (user: actor)
-  view "(user) may manage the roster" with (user: actor)
+  at is the current flow's instant
+  Rostering._getUnclaimedSeats () has (email)
+  no view "the invitation for (address)" with (address: email)
 then
-  Rostering.claimSeat (seat, user)
-```
-
-### Course.roster.LinkUser:success#2
-
-Authored path: `Course.roster.LinkUser`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 20.
-- Covered by [Roster](../design/compositions/course/roster.md), line 58.
-
-```reaction
-when Rostering.claimSeat (seat, user, result.seat: linked), asked by Course.roster.LinkUser:success
-where
-  earlier, RequestBoundary.request (path: "/roster/link-user", requestId, seat, session, user)
-then
-  RequestBoundary.respond (requestId, seat: linked)
+  Inviting.invite (address: email, at, channel: "email")
 ```
 
 ### Course.roster.MoveSection:forbidden
 
 Authored path: `Course.roster.MoveSection`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 41.
-- Covered by [Roster](../design/compositions/course/roster.md), line 59.
+- Covered by [Roster](../design/compositions/course/roster.md), line 67.
+- Covered by [Roster](../design/compositions/course/roster.md), line 93.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/move-section", requestId, seat, section, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6575,14 +6733,14 @@ then
 ### Course.roster.MoveSection:success
 
 Authored path: `Course.roster.MoveSection`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 41.
-- Covered by [Roster](../design/compositions/course/roster.md), line 59.
+- Covered by [Roster](../design/compositions/course/roster.md), line 67.
+- Covered by [Roster](../design/compositions/course/roster.md), line 93.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/move-section", requestId, seat, section, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   Rostering.moveSection (seat, section)
 ```
@@ -6590,8 +6748,8 @@ then
 ### Course.roster.MoveSection:success#2
 
 Authored path: `Course.roster.MoveSection`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 41.
-- Covered by [Roster](../design/compositions/course/roster.md), line 59.
+- Covered by [Roster](../design/compositions/course/roster.md), line 67.
+- Covered by [Roster](../design/compositions/course/roster.md), line 93.
 
 ```reaction
 when Rostering.moveSection (seat, section, result.seat: moved), asked by Course.roster.MoveSection:success
@@ -6604,14 +6762,14 @@ then
 ### Course.roster.PendingRoster:forbidden
 
 Authored path: `Course.roster.PendingRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 31.
-- Covered by [Roster](../design/compositions/course/roster.md), line 60.
+- Covered by [Roster](../design/compositions/course/roster.md), line 59.
+- Covered by [Roster](../design/compositions/course/roster.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/pending", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6619,14 +6777,14 @@ then
 ### Course.roster.PendingRoster:success
 
 Authored path: `Course.roster.PendingRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 31.
-- Covered by [Roster](../design/compositions/course/roster.md), line 60.
+- Covered by [Roster](../design/compositions/course/roster.md), line 59.
+- Covered by [Roster](../design/compositions/course/roster.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/pending", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   RequestBoundary.respond (members: former "the pending roster ()", requestId)
 ```
@@ -6634,14 +6792,14 @@ then
 ### Course.roster.ReinstateSeat:forbidden
 
 Authored path: `Course.roster.ReinstateSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 40.
-- Covered by [Roster](../design/compositions/course/roster.md), line 61.
+- Covered by [Roster](../design/compositions/course/roster.md), line 66.
+- Covered by [Roster](../design/compositions/course/roster.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/reinstate", requestId, seat, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6649,14 +6807,14 @@ then
 ### Course.roster.ReinstateSeat:success
 
 Authored path: `Course.roster.ReinstateSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 40.
-- Covered by [Roster](../design/compositions/course/roster.md), line 61.
+- Covered by [Roster](../design/compositions/course/roster.md), line 66.
+- Covered by [Roster](../design/compositions/course/roster.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/reinstate", requestId, seat, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   Rostering.reinstateSeat (seat)
 ```
@@ -6664,8 +6822,8 @@ then
 ### Course.roster.ReinstateSeat:success#2
 
 Authored path: `Course.roster.ReinstateSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 40.
-- Covered by [Roster](../design/compositions/course/roster.md), line 61.
+- Covered by [Roster](../design/compositions/course/roster.md), line 66.
+- Covered by [Roster](../design/compositions/course/roster.md), line 95.
 
 ```reaction
 when Rostering.reinstateSeat (seat, result.seat: reinstated), asked by Course.roster.ReinstateSeat:success
@@ -6678,14 +6836,14 @@ then
 ### Course.roster.RosterList:forbidden
 
 Authored path: `Course.roster.RosterList`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 29.
-- Covered by [Roster](../design/compositions/course/roster.md), line 62.
+- Covered by [Roster](../design/compositions/course/roster.md), line 57.
+- Covered by [Roster](../design/compositions/course/roster.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/list", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6693,14 +6851,14 @@ then
 ### Course.roster.RosterList:success
 
 Authored path: `Course.roster.RosterList`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 29.
-- Covered by [Roster](../design/compositions/course/roster.md), line 62.
+- Covered by [Roster](../design/compositions/course/roster.md), line 57.
+- Covered by [Roster](../design/compositions/course/roster.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/list", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   RequestBoundary.respond (members: former "the roster ()", requestId)
 ```
@@ -6708,8 +6866,8 @@ then
 ### Course.roster.RosterMe:absent
 
 Authored path: `Course.roster.RosterMe`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 28.
-- Covered by [Roster](../design/compositions/course/roster.md), line 63.
+- Covered by [Roster](../design/compositions/course/roster.md), line 56.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/me", requestId, session)
@@ -6723,8 +6881,8 @@ then
 ### Course.roster.RosterMe:found
 
 Authored path: `Course.roster.RosterMe`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 28.
-- Covered by [Roster](../design/compositions/course/roster.md), line 63.
+- Covered by [Roster](../design/compositions/course/roster.md), line 56.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/me", requestId, session)
@@ -6739,13 +6897,13 @@ then
 
 Authored path: `Course.roster.SectionsCreate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 9.
-- Covered by [Roster](../design/compositions/course/roster.md), line 64.
+- Covered by [Roster](../design/compositions/course/roster.md), line 98.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/create", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6754,13 +6912,13 @@ then
 
 Authored path: `Course.roster.SectionsCreate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 9.
-- Covered by [Roster](../design/compositions/course/roster.md), line 64.
+- Covered by [Roster](../design/compositions/course/roster.md), line 98.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/create", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   Rostering.createSection (location, meetingPattern, name)
 ```
@@ -6769,7 +6927,7 @@ then
 
 Authored path: `Course.roster.SectionsCreate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 9.
-- Covered by [Roster](../design/compositions/course/roster.md), line 64.
+- Covered by [Roster](../design/compositions/course/roster.md), line 98.
 
 ```reaction
 when Rostering.createSection (location, meetingPattern, name, section), asked by Course.roster.SectionsCreate:success
@@ -6783,7 +6941,7 @@ then
 
 Authored path: `Course.roster.SectionsList`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 7.
-- Covered by [Roster](../design/compositions/course/roster.md), line 65.
+- Covered by [Roster](../design/compositions/course/roster.md), line 99.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/sections/list", requestId)
@@ -6795,13 +6953,13 @@ then
 
 Authored path: `Course.roster.SectionsUpdate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 10.
-- Covered by [Roster](../design/compositions/course/roster.md), line 66.
+- Covered by [Roster](../design/compositions/course/roster.md), line 100.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/update", requestId, section, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the roster" with (user)
+  view "(user) may not manage the course" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6810,13 +6968,13 @@ then
 
 Authored path: `Course.roster.SectionsUpdate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 10.
-- Covered by [Roster](../design/compositions/course/roster.md), line 66.
+- Covered by [Roster](../design/compositions/course/roster.md), line 100.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/update", requestId, section, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the roster" with (user)
+  view "(user) may manage the course" with (user)
 then
   Rostering.updateSection (location, meetingPattern, name, section)
 ```
@@ -6825,7 +6983,7 @@ then
 
 Authored path: `Course.roster.SectionsUpdate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 10.
-- Covered by [Roster](../design/compositions/course/roster.md), line 66.
+- Covered by [Roster](../design/compositions/course/roster.md), line 100.
 
 ```reaction
 when Rostering.updateSection (location, meetingPattern, name, section, result.section: updated), asked by Course.roster.SectionsUpdate:success
@@ -6833,32 +6991,6 @@ where
   earlier, RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/update", requestId, section, session)
 then
   RequestBoundary.respond (requestId, section: updated)
-```
-
-### Course.roster.StaffSeatGrantsCourseStaff
-
-Authored path: `Course.roster.StaffSeatGrantsCourseStaff`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 24.
-
-```reaction
-when Rostering.claimSeat (user: claimer, kind: "STAFF")
-where
-  Roling._holdsRoleNamed (context: "forum", name: "course-staff", user: claimer) has (held: false)
-then
-  Roling.ensureRole (capabilities: ["roster:manage", "assignments:manage", "submissions:view-all", "grades:manage", "grades:view-all", "late-days:manage", "student-notes:manage", "calendar:view-staff"], name: "course-staff")
-```
-
-### Course.roster.StaffSeatGrantsCourseStaff#2
-
-Authored path: `Course.roster.StaffSeatGrantsCourseStaff`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 24.
-
-```reaction
-when Roling.ensureRole (capabilities: ["roster:manage", "assignments:manage", "submissions:view-all", "grades:manage", "grades:view-all", "late-days:manage", "student-notes:manage", "calendar:view-staff"], name: "course-staff", role), asked by Course.roster.StaffSeatGrantsCourseStaff
-where
-  earlier, Rostering.claimSeat (user: claimer, kind: "STAFF")
-then
-  Roling.grant (context: "forum", role, user: claimer)
 ```
 
 ### Course.submissions.Attempts:attempts
@@ -6886,7 +7018,7 @@ Authored path: `Course.submissions.Attempts`.
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may not view all submissions" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -6916,7 +7048,7 @@ Authored path: `Course.submissions.Attempts`.
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may view all submissions" with (user)
+  view "(user) may grade" with (user)
   view "(user) is an active student" with (user: submitter)
 then
   RequestBoundary.respond (attempts: former "the attempts for (assignment) by (submitter)" with (assignment, submitter), requestId)
@@ -6932,7 +7064,7 @@ Authored path: `Course.submissions.ForAssignment`.
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not view all submissions" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -6947,7 +7079,7 @@ Authored path: `Course.submissions.ForAssignment`.
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may view all submissions" with (user)
+  view "(user) may grade" with (user)
 then
   RequestBoundary.respond (assigned: former "the assigned population for (assignment)" with (assignment), requestId, submissions: former "the submissions for (assignment)" with (assignment))
 ```
@@ -6977,7 +7109,7 @@ Authored path: `Course.submissions.ForStudent`.
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may not view all submissions" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -7007,7 +7139,7 @@ Authored path: `Course.submissions.ForStudent`.
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may view all submissions" with (user)
+  view "(user) may grade" with (user)
   view "(user) is an active student" with (user: submitter)
 then
   RequestBoundary.respond (requestId, submissions: former "the submissions by (submitter)" with (submitter))
@@ -7023,7 +7155,7 @@ Authored path: `Course.submissions.Latest`.
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may not view all submissions" with (user)
+  view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -7085,7 +7217,7 @@ Authored path: `Course.submissions.Latest`.
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may view all submissions" with (user)
+  view "(user) may grade" with (user)
   view "(user) is an active student" with (user: submitter)
   view "the latest submission for (assignment) by (submitter)" with (assignment, submitter) has (latest)
 then
@@ -7102,7 +7234,7 @@ Authored path: `Course.submissions.Latest`.
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may view all submissions" with (user)
+  view "(user) may grade" with (user)
   view "(user) is an active student" with (user: submitter)
   no view "the latest submission for (assignment) by (submitter)" with (assignment, submitter)
 then
@@ -7277,8 +7409,8 @@ then
 ### Forum.categories.AssignCategory:forbidden
 
 Authored path: `Forum.categories.AssignCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 6.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 25.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 7.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 26.
 
 ```reaction
 when RequestBoundary.request (category, item, path: "/categories/assign", requestId, session)
@@ -7292,8 +7424,8 @@ then
 ### Forum.categories.AssignCategory:hidden
 
 Authored path: `Forum.categories.AssignCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 6.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 25.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 7.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 26.
 
 ```reaction
 when RequestBoundary.request (category, item, path: "/categories/assign", requestId, session)
@@ -7308,8 +7440,8 @@ then
 ### Forum.categories.AssignCategory:success
 
 Authored path: `Forum.categories.AssignCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 6.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 25.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 7.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 26.
 
 ```reaction
 when RequestBoundary.request (category, item, path: "/categories/assign", requestId, session)
@@ -7324,8 +7456,8 @@ then
 ### Forum.categories.AssignCategory:success#2
 
 Authored path: `Forum.categories.AssignCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 6.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 25.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 7.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 26.
 
 ```reaction
 when Categorizing.assign (category, item, result.item: assigned), asked by Forum.categories.AssignCategory:success
@@ -7338,8 +7470,8 @@ then
 ### Forum.categories.CategoryForItem:hidden
 
 Authored path: `Forum.categories.CategoryForItem`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 15.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 26.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 16.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 27.
 
 ```reaction
 when RequestBoundary.request (item, path: "/categories/forItem", requestId)
@@ -7352,8 +7484,8 @@ then
 ### Forum.categories.CategoryForItem:success
 
 Authored path: `Forum.categories.CategoryForItem`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 15.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 26.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 16.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 27.
 
 ```reaction
 when RequestBoundary.request (item, path: "/categories/forItem", requestId)
@@ -7366,8 +7498,8 @@ then
 ### Forum.categories.CategoryItems
 
 Authored path: `Forum.categories.CategoryItems`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 13.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 27.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 14.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 28.
 
 ```reaction
 when RequestBoundary.request (category, path: "/categories/items", requestId)
@@ -7379,7 +7511,7 @@ then
 
 Authored path: `Forum.categories.CreateCategory`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 4.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 28.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 29.
 
 ```reaction
 when RequestBoundary.request (description, name, path: "/categories/create", requestId, session)
@@ -7394,7 +7526,7 @@ then
 
 Authored path: `Forum.categories.CreateCategory`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 4.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 28.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 29.
 
 ```reaction
 when RequestBoundary.request (description, name, path: "/categories/create", requestId, session)
@@ -7409,7 +7541,7 @@ then
 
 Authored path: `Forum.categories.CreateCategory`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 4.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 28.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 29.
 
 ```reaction
 when Categorizing.createCategory (description, name, category), asked by Forum.categories.CreateCategory:success
@@ -7423,7 +7555,7 @@ then
 
 Authored path: `Forum.categories.DeleteCategory`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 4.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 29.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 30.
 
 ```reaction
 when RequestBoundary.request (category, path: "/categories/delete", requestId, session)
@@ -7438,7 +7570,7 @@ then
 
 Authored path: `Forum.categories.DeleteCategory`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 4.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 29.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 30.
 
 ```reaction
 when RequestBoundary.request (category, path: "/categories/delete", requestId, session)
@@ -7453,7 +7585,7 @@ then
 
 Authored path: `Forum.categories.DeleteCategory`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 4.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 29.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 30.
 
 ```reaction
 when Categorizing.deleteCategory (category, result.category: deleted), asked by Forum.categories.DeleteCategory:success
@@ -7466,8 +7598,8 @@ then
 ### Forum.categories.ListCategories
 
 Authored path: `Forum.categories.ListCategories`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 11.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 30.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 12.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/categories/list", requestId)
@@ -7478,7 +7610,7 @@ then
 ### Forum.categories.PurgeUnassignsCategory
 
 Authored path: `Forum.categories.PurgeUnassignsCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 19.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 20.
 
 ```reaction
 when Trashing.purge (item)
@@ -7491,8 +7623,8 @@ then
 ### Forum.categories.UnassignCategory:forbidden
 
 Authored path: `Forum.categories.UnassignCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 7.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 31.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 8.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 32.
 
 ```reaction
 when RequestBoundary.request (item, path: "/categories/unassign", requestId, session)
@@ -7506,8 +7638,8 @@ then
 ### Forum.categories.UnassignCategory:hidden
 
 Authored path: `Forum.categories.UnassignCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 7.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 31.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 8.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 32.
 
 ```reaction
 when RequestBoundary.request (item, path: "/categories/unassign", requestId, session)
@@ -7522,8 +7654,8 @@ then
 ### Forum.categories.UnassignCategory:success
 
 Authored path: `Forum.categories.UnassignCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 7.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 31.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 8.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 32.
 
 ```reaction
 when RequestBoundary.request (item, path: "/categories/unassign", requestId, session)
@@ -7538,8 +7670,8 @@ then
 ### Forum.categories.UnassignCategory:success#2
 
 Authored path: `Forum.categories.UnassignCategory`.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 7.
-- Covered by [Categories](../design/compositions/forum/categories.md), line 31.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 8.
+- Covered by [Categories](../design/compositions/forum/categories.md), line 32.
 
 ```reaction
 when Categorizing.unassign (item, result.item: unassigned), asked by Forum.categories.UnassignCategory:success
@@ -8510,7 +8642,7 @@ then
 
 Authored path: `Forum.pins.IsPinned`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 10.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 21.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope)
@@ -8524,7 +8656,7 @@ then
 
 Authored path: `Forum.pins.IsPinned`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 10.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 21.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope)
@@ -8539,13 +8671,13 @@ then
 
 Authored path: `Forum.pins.PinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not pin in (scope)" with (scope, user)
+  view "(user) may not moderate" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -8554,13 +8686,13 @@ then
 
 Authored path: `Forum.pins.PinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may pin in (scope)" with (scope, user)
+  view "(user) may moderate" with (user)
   view "(post) is not readable" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -8570,14 +8702,14 @@ then
 
 Authored path: `Forum.pins.PinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may pin in (scope)" with (scope, user)
+  view "(user) may moderate" with (user)
   view "(post) is readable" with (post: item)
 then
   Pinning.pin (at, item, priority, scope)
@@ -8587,7 +8719,7 @@ then
 
 Authored path: `Forum.pins.PinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
 
 ```reaction
 when Pinning.pin (at, item, priority, scope, pin), asked by Forum.pins.PinItem:success
@@ -8601,7 +8733,7 @@ then
 
 Authored path: `Forum.pins.PinsForScope`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 8.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
 
 ```reaction
 when RequestBoundary.request (path: "/pins/forScope", requestId, scope)
@@ -8612,7 +8744,7 @@ then
 ### Forum.pins.PurgeClearsPins
 
 Authored path: `Forum.pins.PurgeClearsPins`.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 15.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 16.
 
 ```reaction
 when Trashing.purge (item)
@@ -8624,13 +8756,13 @@ then
 
 Authored path: `Forum.pins.SetPinPriority`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 5.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/setPriority", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not pin in (scope)" with (scope, user)
+  view "(user) may not moderate" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -8639,13 +8771,13 @@ then
 
 Authored path: `Forum.pins.SetPinPriority`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 5.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/setPriority", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may pin in (scope)" with (scope, user)
+  view "(user) may moderate" with (user)
   view "(post) is not readable" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -8655,13 +8787,13 @@ then
 
 Authored path: `Forum.pins.SetPinPriority`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 5.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/setPriority", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may pin in (scope)" with (scope, user)
+  view "(user) may moderate" with (user)
   view "(post) is readable" with (post: item)
 then
   Pinning.setPriority (item, priority, scope)
@@ -8671,7 +8803,7 @@ then
 
 Authored path: `Forum.pins.SetPinPriority`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 5.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
 
 ```reaction
 when Pinning.setPriority (item, priority, scope, pin), asked by Forum.pins.SetPinPriority:success
@@ -8685,13 +8817,13 @@ then
 
 Authored path: `Forum.pins.UnpinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 26.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not pin in (scope)" with (scope, user)
+  view "(user) may not moderate" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -8700,13 +8832,13 @@ then
 
 Authored path: `Forum.pins.UnpinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 26.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may pin in (scope)" with (scope, user)
+  view "(user) may moderate" with (user)
   view "(post) is not readable" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -8716,13 +8848,13 @@ then
 
 Authored path: `Forum.pins.UnpinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 26.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may pin in (scope)" with (scope, user)
+  view "(user) may moderate" with (user)
   view "(post) is readable" with (post: item)
 then
   Pinning.unpin (item, scope)
@@ -8732,7 +8864,7 @@ then
 
 Authored path: `Forum.pins.UnpinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 26.
 
 ```reaction
 when Pinning.unpin (item, scope, pin), asked by Forum.pins.UnpinItem:success
@@ -9107,14 +9239,14 @@ then
 
 Authored path: `Forum.profiles.GetProfile`.
 - Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
 where
   view "the active user of (session)" with (session) has (user: reader)
   no view "(user) is an active course member" with (user: reader)
-  view "(user) may not manage the roster" with (user: reader)
+  view "(user) may not manage the course" with (user: reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -9123,14 +9255,14 @@ then
 
 Authored path: `Forum.profiles.GetProfile`.
 - Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
 where
   view "the active user of (session)" with (session) has (user: reader) and not (user)
   view "(user) is an active course member" with (user: reader)
-  view "(user) may not manage the roster" with (user: reader)
+  view "(user) may not manage the course" with (user: reader)
   view "the profile of (user)" with (user)
 then
   RequestBoundary.respond (profile: former "the profile face of (user)" with (user), requestId)
@@ -9140,7 +9272,7 @@ then
 
 Authored path: `Forum.profiles.GetProfile`.
 - Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -9155,13 +9287,13 @@ then
 
 Authored path: `Forum.profiles.GetProfile`.
 - Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
 where
   view "the active user of (session)" with (session) has (user: reader) and not (user)
-  view "(user) may manage the roster" with (user: reader)
+  view "(user) may manage the course" with (user: reader)
   view "the profile of (user)" with (user)
 then
   RequestBoundary.respond (profile: former "the private profile of (user)" with (user), requestId)
@@ -9171,7 +9303,7 @@ then
 
 Authored path: `Forum.profiles.GetProfile`.
 - Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -9185,8 +9317,8 @@ then
 ### Forum.profiles.ResolvePublicUser
 
 Authored path: `Forum.profiles.ResolvePublicUser`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 17.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 28.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 25.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 36.
 
 ```reaction
 when RequestBoundary.request (path: "/users/resolve", ref, requestId)
@@ -9199,8 +9331,8 @@ then
 ### Forum.profiles.SearchUsers:hidden
 
 Authored path: `Forum.profiles.SearchUsers`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 15.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 29.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 23.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/users/search", query, requestId, session)
@@ -9214,8 +9346,8 @@ then
 ### Forum.profiles.SearchUsers:success
 
 Authored path: `Forum.profiles.SearchUsers`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 15.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 29.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 23.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/users/search", query, requestId, session)
@@ -9229,8 +9361,8 @@ then
 ### Forum.profiles.SetAvatar
 
 Authored path: `Forum.profiles.SetAvatar`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 11.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 30.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 19.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 38.
 
 ```reaction
 when RequestBoundary.request (avatar, path: "/profiles/setAvatar", requestId, session)
@@ -9243,8 +9375,8 @@ then
 ### Forum.profiles.SetAvatar#2
 
 Authored path: `Forum.profiles.SetAvatar`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 11.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 30.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 19.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 38.
 
 ```reaction
 when Profiling.setAvatar (avatar, user), asked by Forum.profiles.SetAvatar
@@ -9257,8 +9389,8 @@ then
 ### Forum.profiles.SetBio
 
 Authored path: `Forum.profiles.SetBio`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 10.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 31.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 18.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 39.
 
 ```reaction
 when RequestBoundary.request (bio, path: "/profiles/setBio", requestId, session)
@@ -9271,8 +9403,8 @@ then
 ### Forum.profiles.SetBio#2
 
 Authored path: `Forum.profiles.SetBio`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 10.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 31.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 18.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 39.
 
 ```reaction
 when Profiling.setBio (bio, user), asked by Forum.profiles.SetBio
@@ -9285,8 +9417,8 @@ then
 ### Forum.profiles.SetDisplayName
 
 Authored path: `Forum.profiles.SetDisplayName`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 10.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 32.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 18.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 40.
 
 ```reaction
 when RequestBoundary.request (displayName, path: "/profiles/setDisplayName", requestId, session)
@@ -9299,8 +9431,8 @@ then
 ### Forum.profiles.SetDisplayName#2
 
 Authored path: `Forum.profiles.SetDisplayName`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 10.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 32.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 18.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 40.
 
 ```reaction
 when Profiling.setDisplayName (displayName, user), asked by Forum.profiles.SetDisplayName
@@ -10312,7 +10444,7 @@ then
 
 Authored path: `Forum.tags.AddTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 27.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/add", requestId, session, tag, target)
@@ -10327,7 +10459,7 @@ then
 
 Authored path: `Forum.tags.AddTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 27.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/add", requestId, session, tag, target)
@@ -10342,7 +10474,7 @@ then
 
 Authored path: `Forum.tags.AddTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 27.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
 
 ```reaction
 when Tagging.addTag (tag, target, result.target: tagged), asked by Forum.tags.AddTag:success
@@ -10356,7 +10488,7 @@ then
 
 Authored path: `Forum.tags.CreateTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 29.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/create", requestId, session)
@@ -10370,7 +10502,7 @@ then
 
 Authored path: `Forum.tags.CreateTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 29.
 
 ```reaction
 when Tagging.createTag (name, tag), asked by Forum.tags.CreateTag
@@ -10383,8 +10515,8 @@ then
 ### Forum.tags.ListTags
 
 Authored path: `Forum.tags.ListTags`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 10.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 29.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 11.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 30.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/list", requestId)
@@ -10395,7 +10527,7 @@ then
 ### Forum.tags.PurgeClearsTags
 
 Authored path: `Forum.tags.PurgeClearsTags`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 21.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 22.
 
 ```reaction
 when Trashing.purge (item)
@@ -10407,7 +10539,7 @@ then
 
 Authored path: `Forum.tags.RemoveTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 5.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 30.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/remove", requestId, session, tag, target)
@@ -10422,7 +10554,7 @@ then
 
 Authored path: `Forum.tags.RemoveTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 5.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 30.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/remove", requestId, session, tag, target)
@@ -10437,7 +10569,7 @@ then
 
 Authored path: `Forum.tags.RemoveTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 5.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 30.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
 
 ```reaction
 when Tagging.removeTag (tag, target, result.target: untagged), asked by Forum.tags.RemoveTag:success
@@ -10450,8 +10582,8 @@ then
 ### Forum.tags.TagTargets
 
 Authored path: `Forum.tags.TagTargets`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 14.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 15.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 32.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/targets", requestId, tag)
@@ -10462,8 +10594,8 @@ then
 ### Forum.tags.TagTargetsByName
 
 Authored path: `Forum.tags.TagTargetsByName`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 16.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 32.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 17.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 33.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/targetsByName", requestId)
@@ -10474,8 +10606,8 @@ then
 ### Forum.tags.TagsForTarget:hidden
 
 Authored path: `Forum.tags.TagsForTarget`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 12.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 33.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 13.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/forTarget", requestId, target)
@@ -10488,8 +10620,8 @@ then
 ### Forum.tags.TagsForTarget:success
 
 Authored path: `Forum.tags.TagsForTarget`.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 12.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 33.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 13.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/forTarget", requestId, target)
@@ -11929,6 +12061,7 @@ not listed here have no explicit input contract.
 - `/auth/login` — requires `password`, `username`
 - `/auth/logout` — requires `session`
 - `/auth/me` — requires `session`
+- `/auth/permissions` — requires `session`
 - `/auth/resolve` — requires `username`
 - `/bookmarks/isSaved` — requires `item`, `session`
 - `/bookmarks/list` — requires `session`
@@ -12018,20 +12151,19 @@ not listed here have no explicit input contract.
 - `/revisions/get` — requires `item`, `number`
 - `/revisions/latest` — requires `item`
 - `/revisions/list` — requires `item`
-- `/roles/can` — requires `capability`, `context`, `user`
+- `/roles/assign` — requires `context`, `role`, `session`, `user`
 - `/roles/define` — requires `capabilities`, `name`, `session`
+- `/roles/delete` — requires `role`, `session`
 - `/roles/forUser` — requires `context`, `user`
 - `/roles/get` — requires `role`
-- `/roles/grant` — requires `context`, `role`, `session`, `user`
-- `/roles/revoke` — requires `context`, `role`, `session`, `user`
-- `/roster/claim-seat` — requires `externalKey`, `session`
+- `/roles/revoke` — requires `context`, `session`, `user`
 - `/roster/class` — requires `session`
 - `/roster/configure-class` — requires `code`, `session`, `term`, `timezone`, `title`
 - `/roster/drop` — requires `seat`, `session`
 - `/roster/dropped` — requires `session`
+- `/roster/enroll` — requires `session`, `email`, `user`; fills `kind` with "STUDENT" when absent; fills `section` with null when absent
 - `/roster/import` — requires `rows`, `session`
 - `/roster/import-preview` — requires `csv`
-- `/roster/link-user` — requires `seat`, `session`, `user`
 - `/roster/list` — requires `session`
 - `/roster/me` — requires `session`
 - `/roster/move-section` — requires `seat`, `section`, `session`

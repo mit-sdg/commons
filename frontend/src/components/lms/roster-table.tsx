@@ -41,7 +41,7 @@ interface Member {
   seat: string;
   kind: string;
   section: string | null;
-  rosterName: string;
+  displayName: string | null;
   email: string;
   status?: string;
 }
@@ -122,7 +122,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                 return (
                   <TableRow key={m.seat}>
                     <TableCell className="font-medium text-sm">
-                      {m.rosterName}
+                      {m.displayName}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {m.email}
@@ -143,7 +143,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                             variant="ghost"
                             size="icon"
                             className="size-8"
-                            aria-label={`Actions for ${m.rosterName}`}
+                            aria-label={`Actions for ${m.displayName}`}
                           >
                             <MoreHorizontal className="size-4" />
                           </Button>
@@ -154,7 +154,10 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() =>
-                              setMoveSeat({ seat: m.seat, name: m.rosterName })
+                              setMoveSeat({
+                                seat: m.seat,
+                                name: m.displayName ?? m.email,
+                              })
                             }
                           >
                             <ArrowLeftRight className="size-4" /> Move Section

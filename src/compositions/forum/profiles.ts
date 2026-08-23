@@ -2,12 +2,13 @@ import { activeUser } from "../access/session.ts";
 import { each, form, former, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { FORUM } from "../access/capabilities.ts";
-import { isActiveCourseMember, mayManageRoster, mayNotManageRoster } from "../access/policy.ts";
+import { isActiveCourseMember, mayManageCourse, mayNotManageCourse } from "../access/policy.ts";
+import { theRoleFaceOf } from "../access/roles.ts";
 import { concepts } from "../../concepts.ts";
 import { thePostSummaryOf, thePrivateProfileOf, theProfileFaceOf } from "./fragments.ts";
 import { intact } from "./threads.ts";
 
-const { Authenticating, Conversing, Posting, Profiling, Roling } = concepts;
+const { Authenticating, Conversing, Posting, Profiling } = concepts;
 /** What is this user's profile? */
 export const theProfileOf = view("the profile of (user)", ({ user }, { profile }, _bindings) =>
   where(Profiling._getProfile({ user }).is({ profile })),
@@ -23,12 +24,10 @@ export const theUserSearch = former("the user search (query)", ({ query }, { use
 /** What belongs on this user's page? */
 export const theUserPage = former(
   "the user page of (user)",
-  ({ user }, { role, name, post, node, conversation }) =>
+  ({ user }, { post, node, conversation }) =>
     form({
       profile: whether(theProfileFaceOf({ user })),
-      roles: each(Roling._getRoles({ user, context: FORUM }).is({ role }))
-        .where(Roling._getRoleDetail({ role }).is({ name }))
-        .form({ role, name }),
+      role: whether(theRoleFaceOf({ user, context: FORUM })),
       posts: each(Posting._getByAuthor({ author: user }).is({ post }))
         .where(
           intact({ item: post }),
@@ -52,7 +51,7 @@ export const GetProfile = endpoint(
         .named("success"),
       where(
         activeUser({ session }).is({ user: reader }).is.not({ user }),
-        mayManageRoster({ user: reader }),
+        mayManageCourse({ user: reader }),
         theProfileOf({ user }),
       )
         .then(respond({ profile: thePrivateProfileOf({ user }) }))
@@ -60,7 +59,7 @@ export const GetProfile = endpoint(
       where(
         activeUser({ session }).is({ user: reader }).is.not({ user }),
         isActiveCourseMember({ user: reader }),
-        mayNotManageRoster({ user: reader }),
+        mayNotManageCourse({ user: reader }),
         theProfileOf({ user }),
       )
         .then(respond({ profile: theProfileFaceOf({ user }) }))
@@ -71,7 +70,7 @@ export const GetProfile = endpoint(
       where(
         activeUser({ session }).is({ user: reader }),
         no(isActiveCourseMember({ user: reader })),
-        mayNotManageRoster({ user: reader }),
+        mayNotManageCourse({ user: reader }),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),

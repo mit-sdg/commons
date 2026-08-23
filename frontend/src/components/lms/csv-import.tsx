@@ -46,32 +46,40 @@ export function CsvImport({ onComplete }: CsvImportProps) {
   async function doImport() {
     if (!session || !rows || rows.length === 0) return;
     setImporting(true);
-    const results = await Promise.all(
-      rows.map((row) => api.roster.import({ rows: [row] })),
-    );
+    const result = await api.roster.import({ rows });
     setImporting(false);
-    const errors = results.filter((r) => "error" in r);
-    if (errors.length > 0) {
-      toast.error(
-        `${errors.length} ${errors.length === 1 ? "row" : "rows"} failed to import`,
-      );
-    } else {
-      toast.success(
-        `Imported ${results.length} ${results.length === 1 ? "seat" : "seats"}`,
-      );
-      onComplete();
+    if ("error" in result) {
+      toast.error(publicErrorMessage(result.error));
+      return;
     }
+    const created = result.created?.length ?? 0;
+    const skipped = result.skipped?.length ?? 0;
+    const people = `${created} ${created === 1 ? "person" : "people"}`;
+    toast.success(
+      skipped === 0
+        ? `Invited ${people}`
+        : `Invited ${people}; ${skipped} already had a seat`,
+    );
+    onComplete();
   }
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="roster-csv">Paste CSV (with header row)</Label>
+        <p className="text-sm text-muted-foreground">
+          Each address is invited by email. Accepting the invitation creates the
+          account and takes the seat, so nothing has to be enrolled by hand. An
+          address that already has a seat is skipped rather than invited again.
+        </p>
+        <pre className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs font-mono leading-relaxed text-muted-foreground">
+          email,kind,section{"\n"}jdoe@school.edu,STUDENT,sec01
+        </pre>
         <Textarea
           id="roster-csv"
           value={csv}
           onChange={(e) => setCsv(e.target.value)}
-          placeholder="externalKey,email,rosterName,kind,section&#10;jdoe,jdoe@school.edu,John Doe,STUDENT,sec01"
+          placeholder="Paste the rows here"
           rows={6}
           className="font-mono text-sm"
         />

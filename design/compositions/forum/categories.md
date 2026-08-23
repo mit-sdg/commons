@@ -1,11 +1,12 @@
 # Categories
 
-An administrator creates a unique named category through
-[Forum.categories.CreateCategory](reaction:Forum.categories.CreateCategory). [Forum.categories.DeleteCategory](reaction:Forum.categories.DeleteCategory) removes one category definition and leaves
-its posts uncategorized. Moderators use
+A caller holding `administer` creates a unique named category through
+[Forum.categories.CreateCategory](reaction:Forum.categories.CreateCategory). [Forum.categories.DeleteCategory](reaction:Forum.categories.DeleteCategory) removes one category definition under the same
+capability and leaves its posts uncategorized. Placing a post is moderation
+rather than administration: a caller holding `moderate` uses
 [Forum.categories.AssignCategory](reaction:Forum.categories.AssignCategory) to give a live post one home, replacing any
 previous home. [Forum.categories.UnassignCategory](reaction:Forum.categories.UnassignCategory) removes a readable post's current category
-assignment.
+assignment under that same capability.
 Unauthorized changes return `FORBIDDEN`; a hidden post returns `NOT_FOUND`.
 
 [Forum.categories.ListCategories](reaction:Forum.categories.ListCategories) forms

@@ -32,7 +32,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@/components/user-avatar";
-import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { loadRosterMe } from "@/lib/lms";
 import { lmsAccess, lmsNavigation } from "@/lib/lms-navigation";
@@ -53,7 +52,7 @@ const COURSE_PATHS = [
 ];
 
 export function SiteHeader() {
-  const { me, loading, can, logout, session } = useAuth();
+  const { me, loading, permissions, logout, session } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [resolvedLmsAccess, setResolvedLmsAccess] = useState({
@@ -66,25 +65,18 @@ export function SiteHeader() {
     if (!session || !me) return;
     let current = true;
     const user = String(me.user);
-    Promise.all([
-      loadRosterMe(),
-      api.roles.can({
-        user,
-        context: "forum",
-        capability: "assignments:manage",
-      }),
-    ]).then(([roster, permission]) => {
+    loadRosterMe().then((roster) => {
       if (!current) return;
       const access = lmsAccess(
         "error" in roster ? null : roster.seat,
-        !("error" in permission) && Boolean(permission.allowed),
+        permissions.isStaff,
       );
       setResolvedLmsAccess({ user, ...access });
     });
     return () => {
       current = false;
     };
-  }, [session, me]);
+  }, [session, me, permissions.isStaff]);
 
   const currentUser = me ? String(me.user) : null;
   const accessIsCurrent =
@@ -92,7 +84,7 @@ export function SiteHeader() {
   const effectiveHasRosterSeat =
     accessIsCurrent && resolvedLmsAccess.hasRosterSeat;
   const effectiveIsStaff = accessIsCurrent && resolvedLmsAccess.isStaff;
-  const courseNav = lmsNavigation(effectiveIsStaff);
+  const courseNav = lmsNavigation(effectiveIsStaff, permissions.can);
   const courseHome = effectiveIsStaff ? "/staff" : "/assignments";
   const isCourseArea = COURSE_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
@@ -136,7 +128,7 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          {effectiveHasRosterSeat ? (
+          {effectiveHasRosterSeat || effectiveIsStaff ? (
             <Link
               href={courseHome}
               aria-current={isCourseArea ? "page" : undefined}
@@ -218,21 +210,21 @@ export function SiteHeader() {
                     <Settings className="size-4" /> Settings
                   </Link>
                 </DropdownMenuItem>
-                {can.moderate ? (
+                {permissions.can("moderate") ? (
                   <DropdownMenuItem asChild>
                     <Link href="/moderation">
                       <Wrench className="size-4" /> Moderation
                     </Link>
                   </DropdownMenuItem>
                 ) : null}
-                {can.administer ? (
+                {permissions.can("administer") ? (
                   <DropdownMenuItem asChild>
                     <Link href="/admin">
                       <Shield className="size-4" /> Administration
                     </Link>
                   </DropdownMenuItem>
                 ) : null}
-                {effectiveHasRosterSeat ? (
+                {effectiveHasRosterSeat || effectiveIsStaff ? (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
@@ -333,7 +325,7 @@ export function SiteHeader() {
                 <item.icon className="size-4" /> {item.label}
               </Link>
             ))}
-            {effectiveHasRosterSeat ? (
+            {effectiveHasRosterSeat || effectiveIsStaff ? (
               <>
                 <p className="mt-3 mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Course {effectiveIsStaff ? "staff" : ""}

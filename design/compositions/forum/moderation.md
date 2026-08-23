@@ -1,6 +1,6 @@
 # Moderation
 
-A caller with moderation capability moves an existing post into trash through
+A caller holding `moderate` moves an existing post into trash through
 [Forum.moderation.TrashItem](reaction:Forum.moderation.TrashItem). [Forum.moderation.RestoreItem](reaction:Forum.moderation.RestoreItem) restores a
 trashed identity without recreating attached state. [Forum.moderation.PurgeItem](reaction:Forum.moderation.PurgeItem)
 removes the trash record permanently and thereby triggers Forum-wide cleanup.

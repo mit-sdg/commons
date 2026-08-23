@@ -137,6 +137,11 @@ export class MongoInvitingConcept {
     return doc === null ? [] : [{ channel: doc.channel, address: doc.address }];
   }
 
+  async _getInvitationByAddress({ channel, address }: { channel: string; address: string }) {
+    const doc = await this.invitations.findOne({ channel, address });
+    return doc === null ? [] : [{ invitation: doc._id, user: doc.user }];
+  }
+
   async _getInvitations(_: Record<string, never>) {
     return (await this.invitations.find().sort({ createdAt: -1 }).toArray()).map((doc) => ({
       invitation: doc._id,

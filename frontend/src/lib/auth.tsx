@@ -9,15 +9,48 @@ import {
   useState,
 } from "react";
 import { api, unwrap } from "@/lib/api";
-import type { Me } from "@/lib/models";
+import type { Capability, Me } from "@/lib/models";
 
 export const FORUM_CONTEXT = "forum";
+
+/**
+ * Everything the signed-in caller may do, as the server computes it.
+ *
+ * `administer` is a wildcard, and the server has already expanded it, so a
+ * `can(...)` check here always agrees with the endpoint that enforces it.
+ */
+export interface Permissions {
+  capabilities: Capability[];
+  can: (capability: Capability) => boolean;
+  isStaff: boolean;
+}
+
+const NO_PERMISSIONS: Permissions = {
+  capabilities: [],
+  can: () => false,
+  isStaff: false,
+};
+
+const STAFF_CAPABILITIES: Capability[] = [
+  "course:manage",
+  "grade",
+  "student-records",
+];
+
+function permissionsOf(capabilities: Capability[]): Permissions {
+  const held = new Set<Capability>(capabilities);
+  return {
+    capabilities,
+    can: (capability) => held.has(capability),
+    isStaff: STAFF_CAPABILITIES.some((capability) => held.has(capability)),
+  };
+}
 
 export interface AuthState {
   session: boolean;
   me: Me | null;
   loading: boolean;
-  can: { administer: boolean; moderate: boolean; pin: boolean };
+  permissions: Permissions;
   login: (username: string, password: string) => Promise<void>;
   register: (
     invitation: string,
@@ -31,42 +64,28 @@ export interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-async function resolveCapabilities(user: string) {
-  const caps = ["administer", "moderate", "pin"] as const;
-  const results = await Promise.all(
-    caps.map((capability) =>
-      api.roles.can({ user, context: FORUM_CONTEXT, capability }),
-    ),
-  );
-  const [administer, moderate, pin] = results.map(unwrap);
-  return {
-    administer: administer.allowed,
-    moderate: moderate.allowed,
-    pin: pin.allowed,
-  };
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState(false);
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
-  const [can, setCan] = useState({
-    administer: false,
-    moderate: false,
-    pin: false,
-  });
+  const [permissions, setPermissions] = useState<Permissions>(NO_PERMISSIONS);
 
   const hydrate = useCallback(async () => {
     const result = await api.auth.me();
     if ("error" in result) {
       setSession(false);
       setMe(null);
-      setCan({ administer: false, moderate: false, pin: false });
+      setPermissions(NO_PERMISSIONS);
       return;
     }
     setSession(true);
     setMe(result);
-    setCan(await resolveCapabilities(String(result.user)));
+    const granted = await api.auth.permissions({});
+    setPermissions(
+      "error" in granted
+        ? NO_PERMISSIONS
+        : permissionsOf(granted.capabilities as Capability[]),
+    );
   }, []);
 
   useEffect(() => {
@@ -111,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (session) unwrap(await api.auth.logout());
     setSession(false);
     setMe(null);
-    setCan({ administer: false, moderate: false, pin: false });
+    setPermissions(NO_PERMISSIONS);
   }, [session]);
 
   const refresh = useCallback(async () => {
@@ -119,8 +138,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [hydrate]);
 
   const value = useMemo<AuthState>(
-    () => ({ session, me, loading, can, login, register, logout, refresh }),
-    [session, me, loading, can, login, register, logout, refresh],
+    () => ({
+      session,
+      me,
+      loading,
+      permissions,
+      login,
+      register,
+      logout,
+      refresh,
+    }),
+    [session, me, loading, permissions, login, register, logout, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

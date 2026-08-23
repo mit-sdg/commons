@@ -8,10 +8,13 @@ seats held by its members.
 ## Principle
 
 The class is configured once; a second configuration is refused. An import
-creates pending seats for Ana and Ben and skips a later row with Ana's existing
-external key. Ana claims her seat and becomes active. Ben cannot claim another
-seat while he already holds an active one. Ana's seat may be dropped,
-reinstated, or moved to another section.
+creates pending seats for Ana and Ben and skips a later row repeating Ana's
+address, and a row reading `Ana@Example.com` repeats it too, because every
+address is trimmed and lower-cased before it is stored or matched. Ana claims her
+seat and becomes active. Ben cannot claim another seat while he already holds an
+active one. Ana's seat may be dropped, reinstated, or moved to another section.
+Once dropped, Ana's seat is reinstated rather than enrolled again: enrolling her
+address once more is refused, because the seat still exists.
 
 ## Types
 
@@ -37,9 +40,7 @@ a set of Sections with
   a status         String
 
 a set of Seats with
-  an externalKey       String
   an email             String
-  a rosterName         String
   a kind               String
   an optional section  Section
   an optional holder   User
@@ -49,7 +50,9 @@ an Active set of Seats
 a Dropped set of Seats
 
 Rule: the class is absent until it is configured, and it is configured at most once.
-Rule: an import row carries an externalKey, an email, a rosterName, a kind, and optionally a section.
+Rule: an import row carries an email, a kind, and optionally a section.
+Rule: an address is trimmed and lower-cased before it is stored on a seat or matched against one, so addresses differing only in surrounding space or letter case name the same seat.
+Rule: an address identifies at most one seat.
 ```
 
 ## Actions
@@ -88,10 +91,29 @@ previewImport(csv: String) : return (rows: Rows)
 importSeats(rows: Rows) : return (created: Seats, skipped: Strings)
   where true
   then
-    for each row whose externalKey no seat already carries:
-      add a new seat with the row's externalKey, email, rosterName, kind, and section, and no holder
+    for each row whose email no seat already carries:
+      add a new seat with the row's email, kind, and section, and no holder
       add the seat to pending
     return created, skipped
+
+enrol(email: String, kind: String, section: Section, user: User) : return (seat: Seat, kind: String, user: User, section: Section)
+  where a seat not in pending carries email
+  then
+    refuse SEAT_ALREADY_EXISTS "A seat already exists for this address."
+  where no seat outside pending carries email and user holds a seat in active
+  then
+    refuse SEAT_ALREADY_ACTIVE "This user already holds an active seat."
+  where a seat in pending carries email and user holds no seat in active
+  then
+    set that seat's holder to user
+    remove it from pending, add it to active
+    take that seat's own kind as kind and its own section as section, leaving the supplied kind and section unused
+    return seat, kind, user, section
+  where no seat carries email and user holds no seat in active
+  then
+    add a new seat with email, kind, and section, held by user
+    add the seat to active
+    return seat, kind, user, section
 
 claimSeat(seat: Seat, user: User) : return (seat: Seat, kind: String, user: User, section: Section)
   where seat in pending and user holds no seat in active
@@ -154,11 +176,15 @@ _getSections () : many (section: String, name: String, location: String, meeting
   answers every section in creation order
   answers no rows when none match
 
-_getSeatByExternalKey (externalKey: String) : optional (seat: String, email: String)
-  answers the Seat and email with the exact external key
+_getSeatByEmail (email: String) : optional (seat: String, email: String)
+  answers the Seat carrying the address, compared after trimming and lower-casing both sides
   answers no row when no Seat matches
 
-_getSeatByUser (user: String) : optional (seat: String, user: String|Null, externalKey: String, email: String, rosterName: String, kind: String, section: String|Null, status: String)
+_getPendingSeatByEmail (email: String) : optional (seat: String, email: String)
+  answers the pending, unclaimed Seat carrying the address, compared the same way
+  answers no row when no pending Seat matches
+
+_getSeatByUser (user: String) : optional (seat: String, user: String|Null, email: String, kind: String, section: String|Null, status: String)
   answers the User's active Seat when one exists, otherwise their most recently created held Seat
   answers no row when the User holds no Seat
 
@@ -166,22 +192,22 @@ _getSeatDetail (user: String) : optional (detail: Seat)
   answers the complete active Seat when one exists, otherwise the User's most recently created held Seat
   answers no row when the User holds no Seat
 
-_getActiveMembers () : many (user: String|Null, seat: String, kind: String, section: String|Null, rosterName: String, email: String)
+_getActiveMembers () : many (user: String|Null, seat: String, kind: String, section: String|Null, email: String)
   answers active seats in creation order
   answers no rows when none match
 
 _isActiveStudent (user: String) : one (active: Boolean)
   answers whether the User holds an active student Seat
 
-_getActiveStudents () : many (user: String, seat: String, section: String|Null, rosterName: String, email: String)
+_getActiveStudents () : many (user: String, seat: String, section: String|Null, email: String)
   answers linked active student seats in creation order
   answers no rows when none match
 
-_getUnclaimedSeats () : many (seat: String, externalKey: String, email: String, rosterName: String, kind: String, section: String|Null)
+_getUnclaimedSeats () : many (seat: String, email: String, kind: String, section: String|Null)
   answers pending unclaimed seats in creation order
   answers no rows when none match
 
-_getDroppedSeats () : many (user: String|Null, seat: String, kind: String, section: String|Null, rosterName: String, email: String)
+_getDroppedSeats () : many (user: String|Null, seat: String, kind: String, section: String|Null, email: String)
   answers dropped seats in creation order
   answers no rows when none match
 ```

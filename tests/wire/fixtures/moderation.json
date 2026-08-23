@@ -26,8 +26,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#2",
+        "expiresAt": "<date>",
         "user": "uuid#1"
       }
     },
@@ -76,8 +76,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#4",
+        "expiresAt": "<date>",
         "user": "uuid#3"
       }
     },
@@ -935,11 +935,10 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$meAdmin.user",
-        "context": "forum",
-        "role": "administrator"
+        "context": "forum"
       },
       "response": {
-        "grant": "uuid#18"
+        "error": "LAST_ADMINISTRATOR"
       }
     },
     {
@@ -952,7 +951,7 @@
         "item": "x-recovery"
       },
       "response": {
-        "error": "NOT_FOUND"
+        "error": "FORBIDDEN"
       }
     },
     {
@@ -965,7 +964,7 @@
         "target": "$createT2.conversation"
       },
       "response": {
-        "target": "uuid#11"
+        "error": "FORBIDDEN"
       }
     },
     {
@@ -979,7 +978,7 @@
         "outcome": "upheld"
       },
       "response": {
-        "target": "uuid#10"
+        "error": "FORBIDDEN"
       }
     }
   ]

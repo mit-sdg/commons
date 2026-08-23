@@ -26,8 +26,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#2",
+        "expiresAt": "<date>",
         "user": "uuid#1"
       }
     },
@@ -56,8 +56,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#4",
+        "expiresAt": "<date>",
         "user": "uuid#3"
       }
     },
@@ -86,8 +86,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#6",
+        "expiresAt": "<date>",
         "user": "uuid#5"
       }
     },
@@ -416,7 +416,9 @@
         "context": "forum"
       },
       "response": {
-        "roles": []
+        "role": null,
+        "name": null,
+        "capabilities": []
       }
     },
     {

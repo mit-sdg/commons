@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { CsvImport } from "@/components/lms/csv-import";
 import { RosterTable } from "@/components/lms/roster-table";
 import { PageContainer, PageHeader } from "@/components/page";
+import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -384,14 +385,21 @@ function PendingSeats({
       toast.error(publicErrorMessage(resolved.error));
       return;
     }
-    const result = await api.roster["link-user"]({
-      seat: linking,
+    const result = await api.roster.enroll({
+      email: linking,
       user: String(resolved.user),
     });
     setBusy(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success(`Linked @${resolved.username}`);
+    if ("error" in result) {
+      // The edge answers a bare CONFLICT here, and on this form it means one of
+      // two things worth naming rather than "that change cannot be made".
+      toast.error(
+        result.error === "CONFLICT"
+          ? `@${resolved.username} already holds a seat on this roster.`
+          : publicErrorMessage(result.error),
+      );
+    } else {
+      toast.success(`Enrolled @${resolved.username}`);
       setLinking(null);
       setAccount("");
       onUpdate();
@@ -416,24 +424,23 @@ function PendingSeats({
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-medium">{member.rosterName}</p>
-              <p className="text-sm text-muted-foreground">{member.email}</p>
+              <p className="font-medium">{member.email}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {member.kind.toLowerCase()} · Key {member.externalKey}
+                {member.kind.toLowerCase()} · invitation not accepted yet
               </p>
             </div>
             <Button
               size="sm"
               variant="outline"
               onClick={() => {
-                setLinking(String(member.seat));
+                setLinking(String(member.email));
                 setAccount("");
               }}
             >
-              Link account
+              Enrol account
             </Button>
           </div>
-          {linking === String(member.seat) ? (
+          {linking === String(member.email) ? (
             <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-1.5">
                 <Label htmlFor={`link-account-${member.seat}`}>
@@ -453,7 +460,7 @@ function PendingSeats({
                   onClick={link}
                   disabled={busy || !account.trim()}
                 >
-                  {busy ? "Linking…" : "Link"}
+                  {busy ? "Enrolling…" : "Enrol"}
                 </Button>
                 <Button
                   size="sm"
@@ -508,7 +515,7 @@ function DroppedSeats({
           className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
         >
           <div>
-            <p className="font-medium">{member.rosterName}</p>
+            <p className="font-medium">{member.displayName ?? member.email}</p>
             <p className="text-sm text-muted-foreground">{member.email}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {member.kind.toLowerCase()}
@@ -528,7 +535,7 @@ function DroppedSeats({
   );
 }
 
-export default function RosterPage() {
+function RosterPageContent() {
   const { session } = useAuth();
   const {
     data: rosterData,
@@ -614,7 +621,7 @@ export default function RosterPage() {
             <EmptyState
               icon={Plus}
               title="No active members"
-              description="Import seats, then let members claim them or link an account."
+              description="Import a roster to invite people, or enrol somebody who already has an account."
             />
           ) : (
             <RosterTable
@@ -661,7 +668,7 @@ export default function RosterPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
-                Import Roster from CSV
+                Import a roster from CSV
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -671,5 +678,13 @@ export default function RosterPage() {
         </TabsContent>
       </Tabs>
     </PageContainer>
+  );
+}
+
+export default function RosterPage() {
+  return (
+    <RequireCapability capability="course:manage">
+      <RosterPageContent />
+    </RequireCapability>
   );
 }

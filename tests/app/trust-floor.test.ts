@@ -52,61 +52,197 @@ describe("HTTP authorization and privacy", () => {
     learner = await register("learner");
     limitedStaff = await register("limited_staff");
     outsider = await register("outsider");
-    const defined = await call(
-      "/roles/define",
-      {
-        name: "course-staff",
-        capabilities: [
-          "roster:manage",
-          "submissions:view-all",
-          "late-days:manage",
-          "student-notes:manage",
-        ],
-      },
-      admin.cookie,
-    );
-    await call(
-      "/roles/grant",
-      { user: admin.user, context: "forum", role: defined.body.role },
-      admin.cookie,
-    );
+    // The administrator already reaches every capability through the wildcard,
+    // so no staff role has to be assigned to them.
     await call(
       "/roster/import",
       {
         rows: [
-          {
-            externalKey: "learner",
-            email: learner.email,
-            rosterName: "Learner",
-            kind: "STUDENT",
-            section: "A",
-          },
-          {
-            externalKey: "limited-staff",
-            email: limitedStaff.email,
-            rosterName: "Limited Staff",
-            kind: "STUDENT",
-            section: "A",
-          },
+          { email: learner.email, kind: "STUDENT", section: "A" },
+          { email: limitedStaff.email, kind: "STUDENT", section: "A" },
         ],
       },
       admin.cookie,
     );
-    await call("/roster/claim-seat", { externalKey: "learner" }, learner.cookie);
-    await call("/roster/claim-seat", { externalKey: "limited-staff" }, limitedStaff.cookie);
-    const limitedRole = await call(
-      "/roles/define",
-      { name: "limited-staff", capabilities: ["calendar:view-staff"] },
+    await call(
+      "/roster/enroll",
+      { email: learner.email, kind: "STUDENT", section: "A", user: learner.user },
       admin.cookie,
     );
     await call(
-      "/roles/grant",
+      "/roster/enroll",
+      {
+        email: limitedStaff.email,
+        kind: "STUDENT",
+        section: "A",
+        user: limitedStaff.user,
+      },
+      admin.cookie,
+    );
+    const limitedRole = await call(
+      "/roles/define",
+      { name: "limited-staff", capabilities: ["moderate"] },
+      admin.cookie,
+    );
+    await call(
+      "/roles/assign",
       { user: limitedStaff.user, context: "forum", role: limitedRole.body.role },
       admin.cookie,
     );
   });
 
-  test("/profiles/get returns email to an authenticated owner or roster:manage reader, public fields to an active member, 401 anonymously, and 404 otherwise", async () => {
+  test("the last administrator cannot be removed and nobody can promote themselves", async () => {
+    // Removing the only administrator used to leave policy open to everyone.
+    const revoked = await call(
+      "/roles/revoke",
+      { user: admin.user, context: "forum" },
+      admin.cookie,
+    );
+    expect(revoked).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
+
+    const lesser = await call(
+      "/roles/define",
+      { name: "lesser", capabilities: ["moderate"] },
+      admin.cookie,
+    );
+    expect(lesser.status).toBe(200);
+    const moved = await call(
+      "/roles/assign",
+      { user: admin.user, context: "forum", role: lesser.body.role },
+      admin.cookie,
+    );
+    expect(moved).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
+
+    // The administrator still administers, and an ordinary account still cannot.
+    expect((await call("/auth/permissions", {}, admin.cookie)).body).toMatchObject({
+      capabilities: expect.arrayContaining(["administer"]),
+    });
+    expect(
+      await call(
+        "/roles/define",
+        { name: "takeover", capabilities: ["administer"] },
+        outsider.cookie,
+      ),
+    ).toMatchObject({ status: 403, body: { error: "FORBIDDEN" } });
+    expect(
+      await call("/invitations/invite", { email: "x@example.edu" }, outsider.cookie),
+    ).toMatchObject({ status: 403, body: { error: "FORBIDDEN" } });
+  });
+
+  test("archiving an account that holds a role revokes it first, then archives, then ends its sessions", async () => {
+    expect(
+      (await call("/roles/forUser", { user: limitedStaff.user, context: "forum" }, admin.cookie))
+        .body,
+    ).toMatchObject({ name: "limited-staff" });
+
+    const before = inspectAssembly(edge.application).occurrences.length;
+    const archived = await call("/users/archive", { user: limitedStaff.user }, admin.cookie);
+    expect(archived).toMatchObject({ status: 200, body: { user: limitedStaff.user } });
+    await edge.application.whenIdle();
+
+    // The order matters: an account that is already archived must never be seen
+    // holding a role, so the revocation lands before the archive commits.
+    const steps = inspectAssembly(edge.application)
+      .occurrences.slice(before)
+      .map((event) => `${event.concept}.${event.action}`);
+    expect(steps).toContain("Roling.revoke");
+    expect(steps.indexOf("Roling.revoke")).toBeLessThan(steps.indexOf("Archiving.trash"));
+    expect(steps.indexOf("Archiving.trash")).toBeLessThan(
+      steps.indexOf("Sessioning.endAllForUser"),
+    );
+
+    expect(
+      (await call("/roles/forUser", { user: limitedStaff.user, context: "forum" }, admin.cookie))
+        .body,
+    ).toMatchObject({ role: null, name: null, capabilities: [] });
+    const listed = await call("/users/list", {}, admin.cookie);
+    expect(
+      (listed.body.users as { user: string; archived: boolean; role: unknown }[]).find(
+        (row) => row.user === limitedStaff.user,
+      ),
+    ).toMatchObject({ archived: true, role: { role: null, name: null, capabilities: null } });
+    expect((await call("/auth/me", {}, limitedStaff.cookie)).status).toBe(401);
+  });
+
+  test("archiving an account that holds no role archives it without surfacing a refusal", async () => {
+    expect(
+      (await call("/roles/forUser", { user: learner.user, context: "forum" }, admin.cookie)).body,
+    ).toMatchObject({ role: null });
+
+    const archived = await call("/users/archive", { user: learner.user }, admin.cookie);
+    expect(archived).toEqual({
+      status: 200,
+      body: { user: learner.user },
+      cookie: undefined,
+    });
+    await edge.application.whenIdle();
+
+    const listed = await call("/users/list", {}, admin.cookie);
+    expect(
+      (listed.body.users as { user: string; archived: boolean }[]).find(
+        (row) => row.user === learner.user,
+      ),
+    ).toMatchObject({ archived: true });
+    expect((await call("/auth/me", {}, learner.cookie)).status).toBe(401);
+  });
+
+  test("archiving the other administrator leaves the last live one unable to give up administer", async () => {
+    // A second administrator holds the built-in role established at registration.
+    expect(
+      await call(
+        "/roles/assign",
+        { user: outsider.user, context: "forum", role: "administrator" },
+        admin.cookie,
+      ),
+    ).toMatchObject({ status: 200 });
+    expect((await call("/auth/permissions", {}, outsider.cookie)).body).toMatchObject({
+      capabilities: expect.arrayContaining(["administer"]),
+    });
+
+    expect(await call("/users/archive", { user: outsider.user }, admin.cookie)).toMatchObject({
+      status: 200,
+      body: { user: outsider.user },
+    });
+    await edge.application.whenIdle();
+
+    // The archived account can never sign in again, so it no longer counts as a
+    // holder: the guard now sees exactly one administrator, the live one.
+    expect(
+      await call("/roles/revoke", { user: admin.user, context: "forum" }, admin.cookie),
+    ).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
+    const lesser = await call(
+      "/roles/define",
+      { name: "lesser", capabilities: ["moderate"] },
+      admin.cookie,
+    );
+    expect(
+      await call(
+        "/roles/assign",
+        { user: admin.user, context: "forum", role: lesser.body.role },
+        admin.cookie,
+      ),
+    ).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
+    expect((await call("/auth/permissions", {}, admin.cookie)).body).toMatchObject({
+      capabilities: expect.arrayContaining(["administer"]),
+    });
+  });
+
+  test("role refusals reach the client as public categories, not as server errors", async () => {
+    const typo = await call(
+      "/roles/define",
+      { name: "typo-role", capabilities: ["gradez:manag"] },
+      admin.cookie,
+    );
+    expect(typo).toMatchObject({
+      status: 400,
+      body: { error: "INVALID_REQUEST" },
+    });
+
+    const held = await call("/roles/delete", { role: "limited-staff" }, admin.cookie);
+    expect(held).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
+  });
+
+  test("/profiles/get returns email to an authenticated owner or course:manage reader, public fields to an active member, 401 anonymously, and 404 otherwise", async () => {
     const own = await call("/profiles/get", { user: learner.user }, learner.cookie);
     expect(own.status).toBe(200);
     expect(own.body).toMatchObject({ profile: { email: learner.email } });
@@ -132,7 +268,7 @@ describe("HTTP authorization and privacy", () => {
     });
   });
 
-  test("submission routes allow the owner or submissions:view-all and balance allows the owner or late-days:manage; other known users and unknown learners receive 404", async () => {
+  test("submission and balance routes allow the owner or grade/student-records staff; other known users and unknown learners receive 404", async () => {
     const submissionReads = [
       ["/submissions/for-student", { submitter: learner.user }],
       ["/submissions/latest", { submitter: learner.user, assignment: "work" }],
@@ -185,7 +321,7 @@ describe("HTTP authorization and privacy", () => {
     ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
   });
 
-  test("active owners may change and cancel late-day use; inactive users receive 403; late-days:manage staff may use staff routes; other and unknown learners receive 404", async () => {
+  test("active owners may change and cancel late-day use; inactive users receive 403; student-records staff may use staff routes; other and unknown learners receive 404", async () => {
     expect(
       (
         await call(
@@ -294,7 +430,7 @@ describe("HTTP authorization and privacy", () => {
     });
   });
 
-  test("a learner receives 404 for staff-only and unknown notes while student-notes:manage staff may read the staff-only note", async () => {
+  test("a learner receives 404 for staff-only and unknown notes while student-records staff may read the staff-only note", async () => {
     const written = await call(
       "/students/notes/write",
       {
@@ -485,7 +621,7 @@ test("the HTTP edge rejects and clears a cookie at the server-side expiry bounda
   expect(await replay.json()).toEqual({ error: "UNAUTHORIZED" });
 });
 
-test("dropping the actor's staff seat returns one response before roster:manage is revoked", async () => {
+test("dropping the actor's own staff seat returns one response and keeps their capability", async () => {
   const app = assembleCommons(mongoImplementations(await testDb()));
   const send = async (path: string, body: Record<string, unknown>) => {
     const result = await app.invoker.invoke(path, body as never);
@@ -510,32 +646,32 @@ test("dropping the actor's staff seat returns one response before roster:manage 
 
   const admin = await actor("roster_admin");
   const staff = await actor("departing_staff");
-  const { role: rosterManager } = await app.concepts.Roling.ensureRole({
-    name: "roster-manager-test",
-    capabilities: ["roster:manage"],
+  const { role: courseManager } = await app.concepts.Roling.ensureRole({
+    name: "course-manager-test",
+    capabilities: ["course:manage"],
   });
-  await app.concepts.Roling.grant({
+  await app.concepts.Roling.assign({
     user: admin.user,
     context: "forum",
-    role: rosterManager,
+    role: courseManager,
+  });
+  await app.concepts.Roling.assign({
+    user: staff.user,
+    context: "forum",
+    role: courseManager,
   });
   await send("/roster/import", {
     session: admin.session,
-    rows: [
-      {
-        externalKey: "departing-staff",
-        email: "departing_staff@example.edu",
-        rosterName: "Departing Staff",
-        kind: "STAFF",
-      },
-    ],
+    rows: [{ email: "departing_staff@example.edu", kind: "STAFF" }],
   });
-  const claimed = await send("/roster/claim-seat", {
-    session: staff.session,
-    externalKey: "departing-staff",
+  const [pending] = await app.concepts.Rostering._getPendingSeatByEmail({
+    email: "departing_staff@example.edu",
   });
-  expect(claimed).toHaveProperty("seat");
-  const seat = (claimed.seat as { _id: string })._id;
+  const claimed = await app.concepts.Rostering.claimSeat({
+    seat: pending.seat,
+    user: staff.user,
+  });
+  const seat = claimed.seat._id;
   expect(await app.concepts.Rostering._getSeatByUser({ user: staff.user })).toEqual([
     expect.objectContaining({ seat, status: "ACTIVE" }),
   ]);
@@ -550,6 +686,16 @@ test("dropping the actor's staff seat returns one response before roster:manage 
     .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");
   expect(responses.filter((event) => event.outcome?.kind === "result")).toHaveLength(1);
   expect(responses.filter((event) => event.outcome?.kind === "error")).toHaveLength(0);
+
+  // Enrolment and authority are separate now, so losing the seat does not
+  // silently strip the capability that authorised the request.
+  expect(
+    await app.concepts.Roling._hasCapability({
+      user: staff.user,
+      context: "forum",
+      capability: "course:manage",
+    }),
+  ).toEqual({ allowed: true });
 });
 
 afterAll(stopTestDb);

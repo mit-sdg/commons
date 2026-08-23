@@ -1,6 +1,15 @@
 import { activeUser } from "./session.ts";
 import { mayAdminister, mayNotAdminister } from "./policy.ts";
-import { compute, each, former, now, reaction, when, where } from "@mit-sdg/sync-engine/language";
+import {
+  compute,
+  each,
+  former,
+  now,
+  reaction,
+  view,
+  when,
+  where,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { computations, concepts } from "../../concepts.ts";
 
@@ -21,6 +30,13 @@ export const theInvitations = former(
       }),
     ).form({ invitation, channel, address, createdAt, lastInvitedAt, inviteCount, user }),
 );
+
+/** Has this address already been invited? */
+export const theInvitationFor = view(
+  "the invitation for (address)",
+  ({ address }, { invitation }, _bindings) =>
+    where(Inviting._getInvitationByAddress({ channel: "email", address }).is({ invitation })),
+).optional();
 
 export const Invite = endpoint(
   "/invitations/invite",

@@ -6,6 +6,7 @@ import { Link } from "@/components/link";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { StudentNotes } from "@/components/lms/student-notes";
 import { PageContainer } from "@/components/page";
+import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@/hooks/use-query";
@@ -19,7 +20,7 @@ import {
   loadSubmissionsForStudent,
 } from "@/lib/lms";
 
-export default function StudentDetailPage({
+function StudentDetailPageContent({
   params,
 }: {
   params: Promise<{ user: string }>;
@@ -107,7 +108,7 @@ export default function StudentDetailPage({
 
       <div className="mb-6">
         <h1 className="font-display text-3xl font-semibold tracking-tight">
-          {seat?.rosterName ?? user}
+          {seat?.email ?? user}
         </h1>
         <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
           <Link
@@ -244,5 +245,15 @@ export default function StudentDetailPage({
         </div>
       </div>
     </PageContainer>
+  );
+}
+
+export default function StudentDetailPage(props: {
+  params: Promise<{ user: string }>;
+}) {
+  return (
+    <RequireCapability capability="student-records">
+      <StudentDetailPageContent {...props} />
+    </RequireCapability>
   );
 }

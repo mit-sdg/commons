@@ -1,17 +1,17 @@
 import { activeUser } from "../access/session.ts";
-import { each, form, former, where } from "@mit-sdg/sync-engine/language";
+import { each, form, former, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
   isNotActiveStudent,
-  mayManageRoster,
-  mayNotManageRoster,
+  mayManageCourse,
+  mayNotManageCourse,
   mayNotViewStaffCalendar,
   mayViewStaffCalendar,
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Assigning, Banking, Itemizing, Rostering } = concepts;
+const { Assigning, Banking, Itemizing, Profiling, Rostering } = concepts;
 /** Which calendar entries fall between these moments? */
 export const theCalendarBetween = former(
   "the calendar between (start) and (end)",
@@ -33,14 +33,12 @@ export const theCalendarBetween = former(
 /** What dashboard seat belongs to this user? */
 export const theDashboardSeatOf = former(
   "the dashboard seat of (user)",
-  ({ user }, { seat, holder, externalKey, email, rosterName, kind, section, status }) =>
+  ({ user }, { seat, holder, email, kind, section, status }) =>
     each(
       Rostering._getSeatByUser({ user }).is({
         seat,
         user: holder,
-        externalKey,
         email,
-        rosterName,
         kind,
         section,
         status,
@@ -48,9 +46,7 @@ export const theDashboardSeatOf = former(
     ).form({
       seat,
       user: holder,
-      externalKey,
       email,
-      rosterName,
       kind,
       section,
       status,
@@ -59,17 +55,17 @@ export const theDashboardSeatOf = former(
 /** What belongs on the staff dashboard? */
 export const theStaffDashboard = former(
   "the staff dashboard ()",
-  (_inputs, { user, seat, kind, section, rosterName, email }) =>
-    each(Rostering._getActiveMembers({}).is({ user, seat, kind, section, rosterName, email })).form(
-      {
+  (_inputs, { user, seat, kind, section, email, displayName }) =>
+    each(Rostering._getActiveMembers({}).is({ user, seat, kind, section, email }))
+      .where(whether(Profiling._getProfileFields({ user }).is({ displayName })))
+      .form({
         user,
         seat,
         kind,
         section,
-        rosterName,
+        displayName,
         email,
-      },
-    ),
+      }),
 );
 /** What coursework counts belong on the staff dashboard? */
 export const theStaffDashboardCounts = former(
@@ -129,10 +125,10 @@ export const LmsStaffDashboard = endpoint(
   "/lms/staff-dashboard",
   ({ session, user }) =>
     receive({ session }).then(
-      where(activeUser({ session }).is({ user }), mayManageRoster({ user }))
+      where(activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(respond({ dashboard: theStaffDashboard({}), counts: theStaffDashboardCounts({}) }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageRoster({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),

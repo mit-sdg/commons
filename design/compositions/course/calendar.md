@@ -3,14 +3,15 @@
 The [calendar former](former:Course.calendar.theCalendarBetween) selects published assignments
 whose availability or due date falls inside a requested inclusive window.
 [Course.calendar.CalendarMe](reaction:Course.calendar.CalendarMe) gives that calendar to an active student, while
-[Course.calendar.CalendarStaff](reaction:Course.calendar.CalendarStaff) gives it to a caller with staff-calendar
-or roster-management capability. Neither result is filtered by a student's
-releases or section.
+[Course.calendar.CalendarStaff](reaction:Course.calendar.CalendarStaff) gives it to a caller holding `administer`,
+`course:manage`, or `grade`. There is no staff-calendar capability of its own any
+more: the staff calendar is a read any of those three reaches. Neither result is
+filtered by a student's releases or section.
 
 [Course.calendar.LmsMe](reaction:Course.calendar.LmsMe) forms
 [the calling student's dashboard seat](former:Course.calendar.theDashboardSeatOf).
-[Course.calendar.LmsStaffDashboard](reaction:Course.calendar.LmsStaffDashboard) instead requires roster-management
-capability and combines [the active-member dashboard](former:Course.calendar.theStaffDashboard)
+[Course.calendar.LmsStaffDashboard](reaction:Course.calendar.LmsStaffDashboard) instead requires `course:manage`
+and combines [the active-member dashboard](former:Course.calendar.theStaffDashboard)
 with [current assignment, grade-item, and late-day counts](former:Course.calendar.theStaffDashboardCounts).
 
 These are read-time joins over Rostering, Assigning, Itemizing, and Banking.

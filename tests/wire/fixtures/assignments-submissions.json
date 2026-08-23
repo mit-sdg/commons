@@ -26,8 +26,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#2",
+        "expiresAt": "<date>",
         "user": "uuid#1"
       }
     },
@@ -39,33 +39,10 @@
       "body": {
         "session": "$loginAdmin.session",
         "name": "course-staff",
-        "capabilities": [
-          "roster:manage",
-          "assignments:manage",
-          "submissions:view-all",
-          "grades:manage",
-          "grades:view-all",
-          "late-days:manage",
-          "student-notes:manage"
-        ]
+        "capabilities": ["course:manage", "grade", "student-records"]
       },
       "response": {
         "role": "uuid#3"
-      }
-    },
-    {
-      "id": "grantAdminStaff",
-      "phase": "setup",
-      "kind": "send",
-      "target": "/roles/grant",
-      "body": {
-        "session": "$loginAdmin.session",
-        "user": "$regAdmin.user",
-        "context": "forum",
-        "role": "$defineCourseStaff.role"
-      },
-      "response": {
-        "grant": "uuid#4"
       }
     },
     {
@@ -82,7 +59,7 @@
       },
       "response": {
         "class": {
-          "_id": "uuid#5",
+          "_id": "uuid#4",
           "code": "CS101",
           "title": "Intro to CS",
           "term": "Fall 2026",
@@ -104,7 +81,7 @@
       },
       "response": {
         "section": {
-          "_id": "uuid#6",
+          "_id": "uuid#5",
           "name": "Section A",
           "location": "Room 101",
           "meetingPattern": "MW 10am",
@@ -125,7 +102,7 @@
       },
       "response": {
         "section": {
-          "_id": "uuid#7",
+          "_id": "uuid#6",
           "name": "Section B",
           "location": "Room 202",
           "meetingPattern": "TR 2pm",
@@ -142,30 +119,22 @@
         "session": "$loginAdmin.session",
         "rows": [
           {
-            "externalKey": "as-stu-1",
             "email": "alice@example.com",
-            "rosterName": "Alice",
             "kind": "STUDENT",
             "section": "$secA.section._id"
           },
           {
-            "externalKey": "as-stu-2",
             "email": "bob@example.com",
-            "rosterName": "Bob",
             "kind": "STUDENT",
             "section": "$secB.section._id"
           },
           {
-            "externalKey": "as-stu-4",
             "email": "dana@example.com",
-            "rosterName": "Dana",
             "kind": "STUDENT",
             "section": "$secB.section._id"
           },
           {
-            "externalKey": "as-stu-5",
             "email": "eve@example.com",
-            "rosterName": "Eve",
             "kind": "STUDENT",
             "section": "$secA.section._id"
           }
@@ -174,39 +143,31 @@
       "response": {
         "created": [
           {
-            "_id": "uuid#8",
-            "externalKey": "as-stu-1",
+            "_id": "uuid#7",
             "email": "alice@example.com",
-            "rosterName": "Alice",
+            "kind": "STUDENT",
+            "section": "uuid#5",
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#8",
+            "email": "bob@example.com",
             "kind": "STUDENT",
             "section": "uuid#6",
             "status": "PENDING"
           },
           {
             "_id": "uuid#9",
-            "externalKey": "as-stu-2",
-            "email": "bob@example.com",
-            "rosterName": "Bob",
+            "email": "dana@example.com",
             "kind": "STUDENT",
-            "section": "uuid#7",
+            "section": "uuid#6",
             "status": "PENDING"
           },
           {
             "_id": "uuid#10",
-            "externalKey": "as-stu-4",
-            "email": "dana@example.com",
-            "rosterName": "Dana",
-            "kind": "STUDENT",
-            "section": "uuid#7",
-            "status": "PENDING"
-          },
-          {
-            "_id": "uuid#11",
-            "externalKey": "as-stu-5",
             "email": "eve@example.com",
-            "rosterName": "Eve",
             "kind": "STUDENT",
-            "section": "uuid#6",
+            "section": "uuid#5",
             "status": "PENDING"
           }
         ],
@@ -225,7 +186,7 @@
         "email": "alice@example.com"
       },
       "response": {
-        "user": "uuid#12"
+        "user": "uuid#11"
       }
     },
     {
@@ -238,30 +199,31 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#12",
         "expiresAt": "<date>",
-        "session": "uuid#13",
-        "user": "uuid#12"
+        "user": "uuid#11"
       }
     },
     {
       "id": "claimAlice",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginAlice.session",
-        "externalKey": "as-stu-1"
+        "session": "$loginAdmin.session",
+        "email": "alice@example.com",
+        "kind": "STUDENT",
+        "section": "$secA.section._id",
+        "user": "$loginAlice.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#8",
-          "externalKey": "as-stu-1",
+          "_id": "uuid#7",
           "email": "alice@example.com",
-          "rosterName": "Alice",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "ACTIVE",
-          "user": "uuid#12"
+          "user": "uuid#11"
         }
       }
     },
@@ -277,7 +239,7 @@
         "email": "bob@example.com"
       },
       "response": {
-        "user": "uuid#14"
+        "user": "uuid#13"
       }
     },
     {
@@ -290,30 +252,31 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#14",
         "expiresAt": "<date>",
-        "session": "uuid#15",
-        "user": "uuid#14"
+        "user": "uuid#13"
       }
     },
     {
       "id": "claimBob",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginBob.session",
-        "externalKey": "as-stu-2"
+        "session": "$loginAdmin.session",
+        "email": "bob@example.com",
+        "kind": "STUDENT",
+        "section": "$secB.section._id",
+        "user": "$loginBob.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#9",
-          "externalKey": "as-stu-2",
+          "_id": "uuid#8",
           "email": "bob@example.com",
-          "rosterName": "Bob",
           "kind": "STUDENT",
-          "section": "uuid#7",
+          "section": "uuid#6",
           "status": "ACTIVE",
-          "user": "uuid#14"
+          "user": "uuid#13"
         }
       }
     },
@@ -329,7 +292,7 @@
         "email": "eve@example.com"
       },
       "response": {
-        "user": "uuid#16"
+        "user": "uuid#15"
       }
     },
     {
@@ -342,30 +305,31 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#16",
         "expiresAt": "<date>",
-        "session": "uuid#17",
-        "user": "uuid#16"
+        "user": "uuid#15"
       }
     },
     {
       "id": "claimEve",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginEve.session",
-        "externalKey": "as-stu-5"
+        "session": "$loginAdmin.session",
+        "email": "eve@example.com",
+        "kind": "STUDENT",
+        "section": "$secA.section._id",
+        "user": "$loginEve.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#11",
-          "externalKey": "as-stu-5",
+          "_id": "uuid#10",
           "email": "eve@example.com",
-          "rosterName": "Eve",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "ACTIVE",
-          "user": "uuid#16"
+          "user": "uuid#15"
         }
       }
     },
@@ -380,14 +344,12 @@
       },
       "response": {
         "seat": {
-          "_id": "uuid#11",
-          "externalKey": "as-stu-5",
+          "_id": "uuid#10",
           "email": "eve@example.com",
-          "rosterName": "Eve",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "DROPPED",
-          "user": "uuid#16"
+          "user": "uuid#15"
         }
       }
     },
@@ -421,7 +383,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#18"
+        "assignment": "uuid#17"
       }
     },
     {
@@ -462,7 +424,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#19"
+        "assignment": "uuid#18"
       }
     },
     {
@@ -529,7 +491,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#18"
+        "assignment": "uuid#17"
       }
     },
     {
@@ -564,7 +526,7 @@
         "assignment": "$createHw1.assignment"
       },
       "response": {
-        "assignment": "uuid#18"
+        "assignment": "uuid#17"
       }
     },
     {
@@ -590,7 +552,7 @@
       },
       "response": [
         {
-          "item": "uuid#18",
+          "item": "uuid#17",
           "label": "Homework 1 (rev)",
           "maxPoints": 100,
           "status": "ACTIVE"
@@ -608,8 +570,8 @@
       "response": {
         "assignments": [
           {
-            "assignment": "uuid#18",
-            "release": "uuid#20",
+            "assignment": "uuid#17",
+            "release": "uuid#19",
             "dueOverride": null,
             "status": "ASSIGNED"
           }
@@ -639,7 +601,7 @@
       },
       "response": {
         "summary": {
-          "assignment": "uuid#18",
+          "assignment": "uuid#17",
           "author": "uuid#1",
           "title": "Homework 1 (rev)",
           "instructions": "Problems 1-6.",
@@ -667,7 +629,7 @@
       },
       "response": {
         "assignment": {
-          "assignment": "uuid#18",
+          "assignment": "uuid#17",
           "author": "uuid#1",
           "title": "Homework 1 (rev)",
           "instructions": "Problems 1-6.",
@@ -702,7 +664,7 @@
         "targets": ["$secA.section._id"]
       },
       "response": {
-        "assignment": "uuid#21"
+        "assignment": "uuid#20"
       }
     },
     {
@@ -715,7 +677,7 @@
         "assignment": "$createHw2.assignment"
       },
       "response": {
-        "assignment": "uuid#21"
+        "assignment": "uuid#20"
       }
     },
     {
@@ -739,8 +701,8 @@
       "response": {
         "assignments": [
           {
-            "assignment": "uuid#18",
-            "release": "uuid#22",
+            "assignment": "uuid#17",
+            "release": "uuid#21",
             "dueOverride": null,
             "status": "ASSIGNED"
           }
@@ -766,7 +728,7 @@
         "targets": ["$secA.section._id", "$secB.section._id"]
       },
       "response": {
-        "assignment": "uuid#21"
+        "assignment": "uuid#20"
       }
     },
     {
@@ -780,14 +742,14 @@
       "response": {
         "assignments": [
           {
-            "assignment": "uuid#18",
-            "release": "uuid#22",
+            "assignment": "uuid#17",
+            "release": "uuid#21",
             "dueOverride": null,
             "status": "ASSIGNED"
           },
           {
-            "assignment": "uuid#21",
-            "release": "uuid#23",
+            "assignment": "uuid#20",
+            "release": "uuid#22",
             "dueOverride": null,
             "status": "ASSIGNED"
           }
@@ -806,7 +768,7 @@
         "email": "dana@example.com"
       },
       "response": {
-        "user": "uuid#24"
+        "user": "uuid#23"
       }
     },
     {
@@ -819,30 +781,31 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#24",
         "expiresAt": "<date>",
-        "session": "uuid#25",
-        "user": "uuid#24"
+        "user": "uuid#23"
       }
     },
     {
       "id": "claimDana",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginDana.session",
-        "externalKey": "as-stu-4"
+        "session": "$loginAdmin.session",
+        "email": "dana@example.com",
+        "kind": "STUDENT",
+        "section": "$secB.section._id",
+        "user": "$loginDana.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#10",
-          "externalKey": "as-stu-4",
+          "_id": "uuid#9",
           "email": "dana@example.com",
-          "rosterName": "Dana",
           "kind": "STUDENT",
-          "section": "uuid#7",
+          "section": "uuid#6",
           "status": "ACTIVE",
-          "user": "uuid#24"
+          "user": "uuid#23"
         }
       }
     },
@@ -855,20 +818,7 @@
         "session": "$loginDana.session"
       },
       "response": {
-        "assignments": [
-          {
-            "assignment": "uuid#18",
-            "release": "uuid#26",
-            "dueOverride": null,
-            "status": "ASSIGNED"
-          },
-          {
-            "assignment": "uuid#21",
-            "release": "uuid#27",
-            "dueOverride": null,
-            "status": "ASSIGNED"
-          }
-        ]
+        "assignments": []
       }
     },
     {
@@ -882,14 +832,12 @@
       },
       "response": {
         "seat": {
-          "_id": "uuid#11",
-          "externalKey": "as-stu-5",
+          "_id": "uuid#10",
           "email": "eve@example.com",
-          "rosterName": "Eve",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "ACTIVE",
-          "user": "uuid#16"
+          "user": "uuid#15"
         }
       }
     },
@@ -904,14 +852,14 @@
       "response": {
         "assignments": [
           {
-            "assignment": "uuid#18",
-            "release": "uuid#28",
+            "assignment": "uuid#17",
+            "release": "uuid#25",
             "dueOverride": null,
             "status": "ASSIGNED"
           },
           {
-            "assignment": "uuid#21",
-            "release": "uuid#29",
+            "assignment": "uuid#20",
+            "release": "uuid#26",
             "dueOverride": null,
             "status": "ASSIGNED"
           }
@@ -930,7 +878,7 @@
         "dueAt": "2026-08-03T01:05:13.783Z"
       },
       "response": {
-        "release": "uuid#20"
+        "release": "uuid#19"
       }
     },
     {
@@ -944,14 +892,14 @@
       "response": {
         "assignments": [
           {
-            "assignment": "uuid#18",
-            "release": "uuid#20",
+            "assignment": "uuid#17",
+            "release": "uuid#19",
             "dueOverride": "<date>",
             "status": "ASSIGNED"
           },
           {
-            "assignment": "uuid#21",
-            "release": "uuid#30",
+            "assignment": "uuid#20",
+            "release": "uuid#27",
             "dueOverride": null,
             "status": "ASSIGNED"
           }
@@ -984,7 +932,7 @@
         "assignee": "$regAlice.user"
       },
       "response": {
-        "release": "uuid#20"
+        "release": "uuid#19"
       }
     },
     {
@@ -998,14 +946,14 @@
       "response": {
         "assignments": [
           {
-            "assignment": "uuid#18",
-            "release": "uuid#20",
+            "assignment": "uuid#17",
+            "release": "uuid#19",
             "dueOverride": null,
             "status": "ASSIGNED"
           },
           {
-            "assignment": "uuid#21",
-            "release": "uuid#30",
+            "assignment": "uuid#20",
+            "release": "uuid#27",
             "dueOverride": null,
             "status": "ASSIGNED"
           }
@@ -1023,7 +971,7 @@
         "content": "My solution, attempt one."
       },
       "response": {
-        "submission": "uuid#31"
+        "submission": "uuid#28"
       }
     },
     {
@@ -1050,7 +998,7 @@
         "content": "My solution, attempt two."
       },
       "response": {
-        "submission": "uuid#32"
+        "submission": "uuid#29"
       }
     },
     {
@@ -1078,47 +1026,40 @@
       "response": {
         "assigned": [
           {
-            "assignee": "uuid#12",
-            "rosterName": "Alice",
-            "release": "uuid#20",
+            "assignee": "uuid#11",
+            "displayName": "Alice",
+            "release": "uuid#19",
             "dueOverride": null,
             "status": "ASSIGNED"
           },
           {
-            "assignee": "uuid#14",
-            "rosterName": "Bob",
-            "release": "uuid#22",
+            "assignee": "uuid#13",
+            "displayName": "Bob",
+            "release": "uuid#21",
             "dueOverride": null,
             "status": "ASSIGNED"
           },
           {
-            "assignee": "uuid#24",
-            "rosterName": "Dana",
-            "release": "uuid#26",
-            "dueOverride": null,
-            "status": "ASSIGNED"
-          },
-          {
-            "assignee": "uuid#16",
-            "rosterName": "Eve",
-            "release": "uuid#28",
+            "assignee": "uuid#15",
+            "displayName": "Eve",
+            "release": "uuid#25",
             "dueOverride": null,
             "status": "ASSIGNED"
           }
         ],
         "submissions": [
           {
-            "submitter": "uuid#12",
+            "submitter": "uuid#11",
             "submitterName": "Alice",
-            "submission": "uuid#31",
+            "submission": "uuid#28",
             "submittedAt": "<date>",
             "number": 1,
             "status": "SUBMITTED"
           },
           {
-            "submitter": "uuid#12",
+            "submitter": "uuid#11",
             "submitterName": "Alice",
-            "submission": "uuid#32",
+            "submission": "uuid#29",
             "submittedAt": "<date>",
             "number": 2,
             "status": "SUBMITTED"
@@ -1182,7 +1123,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#33"
+        "assignment": "uuid#30"
       }
     },
     {
@@ -1195,7 +1136,7 @@
         "assignment": "$createHw3Closed.assignment"
       },
       "response": {
-        "assignment": "uuid#33"
+        "assignment": "uuid#30"
       }
     },
     {
@@ -1209,7 +1150,7 @@
         "content": "Better late."
       },
       "response": {
-        "submission": "uuid#34"
+        "submission": "uuid#31"
       }
     },
     {
@@ -1230,7 +1171,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#35"
+        "assignment": "uuid#32"
       }
     },
     {
@@ -1244,7 +1185,7 @@
         "content": "Submitting to a draft."
       },
       "response": {
-        "submission": "uuid#36"
+        "submission": "uuid#33"
       }
     },
     {
@@ -1258,7 +1199,7 @@
         "content": "Into the void."
       },
       "response": {
-        "submission": "uuid#37"
+        "submission": "uuid#34"
       }
     },
     {
@@ -1284,7 +1225,7 @@
         "submission": "$submitAlice2.submission"
       },
       "response": {
-        "submission": "uuid#32"
+        "submission": "uuid#29"
       }
     },
     {
@@ -1310,7 +1251,7 @@
         "assignment": "$createHw3Closed.assignment"
       },
       "response": {
-        "assignment": "uuid#33"
+        "assignment": "uuid#30"
       }
     },
     {
@@ -1324,14 +1265,14 @@
       "response": {
         "assignments": [
           {
-            "assignment": "uuid#18",
-            "release": "uuid#20",
+            "assignment": "uuid#17",
+            "release": "uuid#19",
             "dueOverride": null,
             "status": "ASSIGNED"
           },
           {
-            "assignment": "uuid#21",
-            "release": "uuid#30",
+            "assignment": "uuid#20",
+            "release": "uuid#27",
             "dueOverride": null,
             "status": "ASSIGNED"
           }

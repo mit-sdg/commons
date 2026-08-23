@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { CalendarView } from "@/components/lms/calendar-view";
 import { PageContainer, PageHeader } from "@/components/page";
+import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
@@ -27,7 +28,7 @@ function getWeekRange(offset: number) {
   };
 }
 
-export default function StaffCalendarPage() {
+function StaffCalendarPageContent() {
   const { session } = useAuth();
   const [weekOffset, setWeekOffset] = useState(0);
   const { start, end, label } = getWeekRange(weekOffset);
@@ -150,5 +151,15 @@ export default function StaffCalendarPage() {
         </div>
       )}
     </PageContainer>
+  );
+}
+
+export default function StaffCalendarPage() {
+  return (
+    <RequireCapability
+      capability={["course:manage", "grade", "student-records"]}
+    >
+      <StaffCalendarPageContent />
+    </RequireCapability>
   );
 }

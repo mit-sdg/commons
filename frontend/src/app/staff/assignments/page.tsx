@@ -6,6 +6,7 @@ import { Link } from "@/components/link";
 import { AssignmentForm } from "@/components/lms/assignment-form";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer, PageHeader } from "@/components/page";
+import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +28,7 @@ const KIND_LABELS: Record<string, string> = {
   ADMIN: "Admin",
 };
 
-export default function StaffAssignmentsPage() {
+function StaffAssignmentsPageContent() {
   const { session } = useAuth();
   const [showCreate, setShowCreate] = useState(false);
   const [filter, setFilter] = useState<string>("all");
@@ -144,5 +145,13 @@ export default function StaffAssignmentsPage() {
         </DialogContent>
       </Dialog>
     </PageContainer>
+  );
+}
+
+export default function StaffAssignmentsPage() {
+  return (
+    <RequireCapability capability="course:manage">
+      <StaffAssignmentsPageContent />
+    </RequireCapability>
   );
 }

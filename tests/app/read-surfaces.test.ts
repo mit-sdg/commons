@@ -129,9 +129,7 @@ describe("composed application reads", () => {
     const { created } = await app.concepts.Rostering.importSeats({
       rows: [
         {
-          externalKey: "learner-1",
           email: "learner@example.edu",
-          rosterName: "Learner One",
           kind: "STUDENT",
           section: section._id,
         },
@@ -144,7 +142,7 @@ describe("composed application reads", () => {
         seat: created[0]._id,
         user: "learner",
         section: section._id,
-        rosterName: "Learner One",
+        email: "learner@example.edu",
       }),
     ]);
   });

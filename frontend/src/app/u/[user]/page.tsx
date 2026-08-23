@@ -17,7 +17,7 @@ import { count } from "@/lib/format";
 import {
   loadPostConversationIndex,
   loadUserOverview,
-  loadUserRoles,
+  loadUserRole,
 } from "@/lib/loaders";
 
 function useResolvedUser(raw: string): {
@@ -83,7 +83,7 @@ export default function UserPage({
   const overview = useQuery(userId ? () => loadUserOverview(userId) : null, [
     userId,
   ]);
-  const roles = useQuery(userId ? () => loadUserRoles(userId) : null, [userId]);
+  const role = useQuery(userId ? () => loadUserRole(userId) : null, [userId]);
   const postIds = overview.data?.postIds ?? [];
   const postIndexKey = postIds.join("\u0000");
   const index = useQuery<Record<string, string>>(
@@ -151,18 +151,12 @@ export default function UserPage({
               No bio yet.
             </p>
           )}
-          {roles.data && roles.data.length > 0 ? (
+          {role.data?.name ? (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {roles.data.map((role) => (
-                <Badge
-                  key={role.name}
-                  variant="secondary"
-                  className="gap-1 capitalize"
-                >
-                  <Shield className="size-3" />
-                  {role.name}
-                </Badge>
-              ))}
+              <Badge variant="secondary" className="gap-1 capitalize">
+                <Shield className="size-3" />
+                {role.data.name}
+              </Badge>
             </div>
           ) : null}
           <p className="mt-2 text-sm text-muted-foreground">

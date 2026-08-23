@@ -26,13 +26,13 @@ export function CategoryAssign({
   current: string | null;
   onChanged: () => void;
 }) {
-  const { session, can } = useAuth();
+  const { session, permissions } = useAuth();
   const { data } = useQuery<{ categories: Category[] }>(
     () => api.categories.list({}),
     [],
   );
 
-  if (!session || !can.moderate) return null;
+  if (!session || !permissions.can("moderate")) return null;
   const categories = data?.categories ?? [];
 
   async function assign(category: string) {

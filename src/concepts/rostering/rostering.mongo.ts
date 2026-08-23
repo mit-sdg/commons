@@ -2,6 +2,7 @@ import type { Collection, Db } from "mongodb";
 import {
   ClassAlreadyConfigured,
   SeatAlreadyActive,
+  SeatAlreadyExists,
   SeatNotActive,
   SeatNotDropped,
   SeatNotFound,
@@ -29,9 +30,7 @@ interface SectionDoc {
 
 interface SeatDoc {
   _id: string;
-  externalKey: string;
   email: string;
-  rosterName: string;
   kind: string;
   section: string | null;
   status: "PENDING" | "ACTIVE" | "DROPPED";
@@ -41,9 +40,7 @@ interface SeatDoc {
 
 interface SeatRow {
   _id: string;
-  externalKey: string;
   email: string;
-  rosterName: string;
   kind: string;
   section: string | null;
   status: string;
@@ -155,9 +152,7 @@ export class MongoRosteringConcept {
     rows,
   }: {
     rows: {
-      externalKey?: string;
       email?: string;
-      rosterName?: string;
       kind?: string;
       section?: string;
     }[];
@@ -165,18 +160,16 @@ export class MongoRosteringConcept {
     const created: SeatRow[] = [];
     const skipped: string[] = [];
     for (const row of rows) {
-      const externalKey = row.externalKey ?? "";
-      if ((await this.seats.findOne({ externalKey })) !== null) {
-        skipped.push(externalKey);
+      const email = (row.email ?? "").trim().toLowerCase();
+      if (email === "" || (await this.seats.findOne({ email })) !== null) {
+        skipped.push(email);
         continue;
       }
       const _id = crypto.randomUUID();
       const seq = await this.#nextSeq("seats");
       const doc: SeatDoc = {
         _id,
-        externalKey,
-        email: row.email ?? "",
-        rosterName: row.rosterName ?? "",
+        email,
         kind: row.kind ?? "STUDENT",
         section: row.section ?? null,
         status: "PENDING",
@@ -187,6 +180,52 @@ export class MongoRosteringConcept {
       created.push(this.#row(doc));
     }
     return { created, skipped };
+  }
+
+  async enrol({
+    email,
+    kind,
+    section,
+    user,
+  }: {
+    email: string;
+    kind: string;
+    section: string | null;
+    user: string;
+  }) {
+    const address = email.trim().toLowerCase();
+    const existing = await this.seats.findOne({ email: address });
+    if (existing !== null && existing.status !== "PENDING") {
+      throw new SeatAlreadyExists(address);
+    }
+    if ((await this.seats.findOne({ user, status: "ACTIVE" })) !== null) {
+      throw new SeatAlreadyActive(user);
+    }
+    // An imported seat is already waiting for this address, so enrolling claims
+    // it rather than creating a second one.
+    if (existing !== null) {
+      await this.seats.updateOne({ _id: existing._id }, { $set: { user, status: "ACTIVE" } });
+      const claimed: SeatDoc = { ...existing, user, status: "ACTIVE" };
+      return {
+        seat: this.#row(claimed),
+        kind: claimed.kind,
+        user,
+        section: claimed.section,
+      };
+    }
+    const _id = crypto.randomUUID();
+    const seq = await this.#nextSeq("seats");
+    const doc: SeatDoc = {
+      _id,
+      email: address,
+      kind: kind || "STUDENT",
+      section: section ?? null,
+      status: "ACTIVE",
+      user,
+      seq,
+    };
+    await this.seats.insertOne(doc);
+    return { seat: this.#row(doc), kind: doc.kind, user, section: doc.section };
   }
 
   async claimSeat({ seat, user }: { seat: string; user: string }) {
@@ -278,8 +317,17 @@ export class MongoRosteringConcept {
     }));
   }
 
-  async _getSeatByExternalKey({ externalKey }: { externalKey: string }) {
-    const seat = await this.seats.findOne({ externalKey });
+  async _getSeatByEmail({ email }: { email: string }) {
+    const seat = await this.seats.findOne({ email: email.trim().toLowerCase() });
+    return seat === null ? [] : [{ seat: seat._id, email: seat.email }];
+  }
+
+  async _getPendingSeatByEmail({ email }: { email: string }) {
+    const seat = await this.seats.findOne({
+      email: email.trim().toLowerCase(),
+      status: "PENDING",
+      user: null,
+    });
     return seat === null ? [] : [{ seat: seat._id, email: seat.email }];
   }
 
@@ -290,9 +338,7 @@ export class MongoRosteringConcept {
       {
         seat: doc._id,
         user: doc.user,
-        externalKey: doc.externalKey,
         email: doc.email,
-        rosterName: doc.rosterName,
         kind: doc.kind,
         section: doc.section,
         status: doc.status,
@@ -308,9 +354,7 @@ export class MongoRosteringConcept {
         detail: {
           seat: doc._id,
           user,
-          externalKey: doc.externalKey,
           email: doc.email,
-          rosterName: doc.rosterName,
           kind: doc.kind,
           section: doc.section,
           status: doc.status,
@@ -326,7 +370,6 @@ export class MongoRosteringConcept {
       seat: doc._id,
       kind: doc.kind,
       section: doc.section,
-      rosterName: doc.rosterName,
       email: doc.email,
     }));
   }
@@ -345,7 +388,6 @@ export class MongoRosteringConcept {
       user: doc.user as string,
       seat: doc._id,
       section: doc.section,
-      rosterName: doc.rosterName,
       email: doc.email,
     }));
   }
@@ -357,9 +399,7 @@ export class MongoRosteringConcept {
       .toArray();
     return docs.map((doc) => ({
       seat: doc._id,
-      externalKey: doc.externalKey,
       email: doc.email,
-      rosterName: doc.rosterName,
       kind: doc.kind,
       section: doc.section,
     }));
@@ -372,7 +412,6 @@ export class MongoRosteringConcept {
       seat: doc._id,
       kind: doc.kind,
       section: doc.section,
-      rosterName: doc.rosterName,
       email: doc.email,
     }));
   }
@@ -385,9 +424,7 @@ export class MongoRosteringConcept {
   #row(doc: SeatDoc): SeatRow {
     return {
       _id: doc._id,
-      externalKey: doc.externalKey,
       email: doc.email,
-      rosterName: doc.rosterName,
       kind: doc.kind,
       section: doc.section,
       status: doc.status,
