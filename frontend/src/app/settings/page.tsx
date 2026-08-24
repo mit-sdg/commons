@@ -62,12 +62,7 @@ function ProfileSettings() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={me?.profile.email ?? ""}
-            disabled
-          />
+          <Input id="email" type="email" value={me?.email ?? ""} disabled />
           <p className="text-xs text-muted-foreground">
             Email is set during registration and cannot be changed here yet.
           </p>

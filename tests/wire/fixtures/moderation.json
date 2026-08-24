@@ -46,8 +46,7 @@
         "profile": {
           "displayName": "Admin",
           "bio": "",
-          "avatar": "",
-          "email": "mod_admin@example.com"
+          "avatar": ""
         }
       }
     },
@@ -96,8 +95,7 @@
         "profile": {
           "displayName": "Member",
           "bio": "",
-          "avatar": "",
-          "email": "mod_member@example.com"
+          "avatar": ""
         }
       }
     },
@@ -935,7 +933,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$meAdmin.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "error": "LAST_ADMINISTRATOR"

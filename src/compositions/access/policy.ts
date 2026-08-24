@@ -1,6 +1,6 @@
 import { no, view, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
-import { ADMINISTER, FORUM } from "./capabilities.ts";
+import { ADMINISTER, COMMONS } from "./capabilities.ts";
 
 const { Archiving, Conversing, Locking, Posting, Roling, Rostering, Trashing } = concepts;
 
@@ -17,13 +17,15 @@ export const isArchived = view("(user) is archived", ({ user }, _outputs, _bindi
 
 export const mayAdminister = view("(user) may administer", ({ user }, _outputs, _bindings) =>
   where(
-    Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({ allowed: true }),
+    Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({ allowed: true }),
   ),
 ).holds();
 
 export const mayNotAdminister = view("(user) may not administer", ({ user }, _outputs, _bindings) =>
   where(
-    Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({ allowed: false }),
+    Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({
+      allowed: false,
+    }),
   ),
 ).holds();
 
@@ -31,7 +33,7 @@ export const isSoleAdministrator = view(
   "(user) is the only administrator",
   ({ user }, _outputs, _bindings) =>
     where(
-      Roling._isSoleCapabilityHolder({ user, context: FORUM, capability: ADMINISTER }).is({
+      Roling._isSoleCapabilityHolder({ user, context: COMMONS, capability: ADMINISTER }).is({
         sole: true,
       }),
     ),
@@ -41,7 +43,7 @@ export const isNotSoleAdministrator = view(
   "(user) is not the only administrator",
   ({ user }, _outputs, _bindings) =>
     where(
-      Roling._isSoleCapabilityHolder({ user, context: FORUM, capability: ADMINISTER }).is({
+      Roling._isSoleCapabilityHolder({ user, context: COMMONS, capability: ADMINISTER }).is({
         sole: false,
       }),
     ),
@@ -63,17 +65,21 @@ export const holdsNoRole = view(
 
 export const mayModerate = view("(user) may moderate", ({ user }, _outputs, _bindings) => [
   where(
-    Roling._hasCapability({ user, context: FORUM, capability: "moderate" }).is({ allowed: true }),
+    Roling._hasCapability({ user, context: COMMONS, capability: "moderate" }).is({ allowed: true }),
   ),
   where(
-    Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({ allowed: true }),
+    Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({ allowed: true }),
   ),
 ]).holds();
 
 export const mayNotModerate = view("(user) may not moderate", ({ user }, _outputs, _bindings) =>
   where(
-    Roling._hasCapability({ user, context: FORUM, capability: "moderate" }).is({ allowed: false }),
-    Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({ allowed: false }),
+    Roling._hasCapability({ user, context: COMMONS, capability: "moderate" }).is({
+      allowed: false,
+    }),
+    Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({
+      allowed: false,
+    }),
   ),
 ).holds();
 
@@ -81,12 +87,14 @@ export const mayManageCourse = view(
   "(user) may manage the course",
   ({ user }, _outputs, _bindings) => [
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: "course:manage" }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: "course:manage" }).is({
         allowed: true,
       }),
     ),
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({ allowed: true }),
+      Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({
+        allowed: true,
+      }),
     ),
   ],
 ).holds();
@@ -95,26 +103,30 @@ export const mayNotManageCourse = view(
   "(user) may not manage the course",
   ({ user }, _outputs, _bindings) =>
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: "course:manage" }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: "course:manage" }).is({
         allowed: false,
       }),
-      Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({
         allowed: false,
       }),
     ),
 ).holds();
 
 export const mayGrade = view("(user) may grade", ({ user }, _outputs, _bindings) => [
-  where(Roling._hasCapability({ user, context: FORUM, capability: "grade" }).is({ allowed: true })),
   where(
-    Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({ allowed: true }),
+    Roling._hasCapability({ user, context: COMMONS, capability: "grade" }).is({ allowed: true }),
+  ),
+  where(
+    Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({ allowed: true }),
   ),
 ]).holds();
 
 export const mayNotGrade = view("(user) may not grade", ({ user }, _outputs, _bindings) =>
   where(
-    Roling._hasCapability({ user, context: FORUM, capability: "grade" }).is({ allowed: false }),
-    Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({ allowed: false }),
+    Roling._hasCapability({ user, context: COMMONS, capability: "grade" }).is({ allowed: false }),
+    Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({
+      allowed: false,
+    }),
   ),
 ).holds();
 
@@ -122,12 +134,14 @@ export const mayManageStudentRecords = view(
   "(user) may manage student records",
   ({ user }, _outputs, _bindings) => [
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: "student-records" }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: "student-records" }).is({
         allowed: true,
       }),
     ),
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({ allowed: true }),
+      Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({
+        allowed: true,
+      }),
     ),
   ],
 ).holds();
@@ -136,10 +150,10 @@ export const mayNotManageStudentRecords = view(
   "(user) may not manage student records",
   ({ user }, _outputs, _bindings) =>
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: "student-records" }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: "student-records" }).is({
         allowed: false,
       }),
-      Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({
         allowed: false,
       }),
     ),
@@ -150,23 +164,27 @@ export const mayViewStaffCalendar = view(
   "(user) may view the staff calendar",
   ({ user }, _outputs, _bindings) => [
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({ allowed: true }),
-    ),
-    where(
-      Roling._hasCapability({ user, context: FORUM, capability: "course:manage" }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({
         allowed: true,
       }),
     ),
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: "grade" }).is({ allowed: true }),
-    ),
-    where(
-      Roling._hasCapability({ user, context: FORUM, capability: "student-records" }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: "course:manage" }).is({
         allowed: true,
       }),
     ),
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: "moderate" }).is({ allowed: true }),
+      Roling._hasCapability({ user, context: COMMONS, capability: "grade" }).is({ allowed: true }),
+    ),
+    where(
+      Roling._hasCapability({ user, context: COMMONS, capability: "student-records" }).is({
+        allowed: true,
+      }),
+    ),
+    where(
+      Roling._hasCapability({ user, context: COMMONS, capability: "moderate" }).is({
+        allowed: true,
+      }),
     ),
   ],
 ).holds();
@@ -175,17 +193,17 @@ export const mayNotViewStaffCalendar = view(
   "(user) may not view the staff calendar",
   ({ user }, _outputs, _bindings) =>
     where(
-      Roling._hasCapability({ user, context: FORUM, capability: ADMINISTER }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: ADMINISTER }).is({
         allowed: false,
       }),
-      Roling._hasCapability({ user, context: FORUM, capability: "course:manage" }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: "course:manage" }).is({
         allowed: false,
       }),
-      Roling._hasCapability({ user, context: FORUM, capability: "grade" }).is({ allowed: false }),
-      Roling._hasCapability({ user, context: FORUM, capability: "student-records" }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: "grade" }).is({ allowed: false }),
+      Roling._hasCapability({ user, context: COMMONS, capability: "student-records" }).is({
         allowed: false,
       }),
-      Roling._hasCapability({ user, context: FORUM, capability: "moderate" }).is({
+      Roling._hasCapability({ user, context: COMMONS, capability: "moderate" }).is({
         allowed: false,
       }),
     ),

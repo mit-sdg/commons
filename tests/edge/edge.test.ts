@@ -30,7 +30,6 @@ async function registerAndLogin(edge: Edge) {
   await edge.application.concepts.Profiling.createProfile({
     user: registered.user,
     displayName: ALICE.displayName,
-    email: ALICE.email,
   });
   const login = await post(edge, "/auth/login", {
     username: ALICE.username,
@@ -88,7 +87,7 @@ describe("deployment routes", () => {
       expect(
         await edge.application.concepts.Roling._hasCapability({
           user,
-          context: "forum",
+          context: "commons",
           capability: "administer",
         }),
       ).toEqual({ allowed: true });
@@ -97,12 +96,16 @@ describe("deployment routes", () => {
       expect(
         await edge.application.concepts.Roling._hasCapability({
           user,
-          context: "forum",
+          context: "commons",
           capability: "course:manage",
         }),
       ).toEqual({ allowed: false });
+      // The profile keeps no address; Authenticating owns the one copy of it.
       expect(await edge.application.concepts.Profiling._getProfile({ user })).toMatchObject([
-        { profile: { displayName: ALICE.displayName, email: ALICE.email } },
+        { profile: { displayName: ALICE.displayName } },
+      ]);
+      expect(await edge.application.concepts.Authenticating._getById({ user })).toEqual([
+        { username: ALICE.username, email: ALICE.email },
       ]);
 
       const initialized = await request(secret);
@@ -131,7 +134,6 @@ describe("deployment routes", () => {
       await edge.application.concepts.Profiling.createProfile({
         user: outsider.user,
         displayName: "Setup outsider",
-        email: "setup-outsider@example.com",
       });
       const outsiderLogin = await post(edge, "/auth/login", {
         username: "setup_outsider",
@@ -173,12 +175,12 @@ describe("deployment routes", () => {
 
       // Only the wildcard is stored, and no repair reaction runs on login.
       expect(
-        await edge.application.concepts.Roling._getRole({ user, context: "forum" }),
+        await edge.application.concepts.Roling._getRole({ user, context: "commons" }),
       ).toHaveLength(1);
       expect(
         await edge.application.concepts.Roling._hasCapability({
           user,
-          context: "forum",
+          context: "commons",
           capability: "course:manage",
         }),
       ).toEqual({ allowed: false });
@@ -262,7 +264,6 @@ describe("HTTP session cookies", () => {
     await edge.application.concepts.Profiling.createProfile({
       user: bob.user,
       displayName: "Bob",
-      email: "bob@example.com",
     });
     const bobLogin = await post(edge, "/auth/login", { username: "bob", password: "pw-bob-123" });
     const bobCookie = bobLogin.headers.get("set-cookie")?.split(";")[0] as string;
@@ -351,7 +352,6 @@ describe("HTTP paths and failures", () => {
     await edge.application.concepts.Profiling.createProfile({
       user: registered.user,
       displayName: ALICE.displayName,
-      email: ALICE.email,
     });
     const viaPrefix = await post(edge, "/api/auth/login", {
       username: ALICE.username,

@@ -4,6 +4,7 @@ import spec from "@design/concepts/Rostering.md" with { type: "text" };
 import { MongoRosteringConcept } from "./rostering.mongo.ts";
 import {
   ClassAlreadyConfigured,
+  ClassNotConfigured,
   SeatAlreadyActive,
   SeatAlreadyExists,
   SeatNotActive,
@@ -18,6 +19,7 @@ export const rostering = registerConcept({
   spec,
   refusals: {
     CLASS_ALREADY_CONFIGURED: ClassAlreadyConfigured,
+    CLASS_NOT_CONFIGURED: ClassNotConfigured,
     SECTION_NOT_FOUND: SectionNotFound,
     SEAT_NOT_FOUND: SeatNotFound,
     SEAT_NOT_PENDING: SeatNotPending,

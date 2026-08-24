@@ -413,7 +413,7 @@
       "target": "/roles/forUser",
       "body": {
         "user": "$loginMara.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "role": null,

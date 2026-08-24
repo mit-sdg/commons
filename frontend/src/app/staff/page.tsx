@@ -1,6 +1,13 @@
 "use client";
 
-import { AlertTriangle, BookOpen, Clock, FileText, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  Clock,
+  FileText,
+  Settings,
+  Users,
+} from "lucide-react";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -161,6 +168,12 @@ function StaffDashboardPageContent() {
               className="flex items-center gap-2 text-sm hover:text-primary"
             >
               <Clock className="size-4" /> Manage late days
+            </Link>
+            <Link
+              href="/staff/class"
+              className="flex items-center gap-2 text-sm hover:text-primary"
+            >
+              <Settings className="size-4" /> Class settings
             </Link>
           </CardContent>
         </Card>

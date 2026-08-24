@@ -58,6 +58,150 @@ for (const [floor, make] of floors) {
       );
     });
 
+    test("updateClass revises the configured class", async () => {
+      const rostering = await make();
+      await rostering.configureClass({
+        code: "6.104",
+        title: "Software Desgin",
+        term: "Fall 2026",
+        timezone: "America/New_York",
+      });
+      const { class: revised } = await rostering.updateClass({
+        code: "6.1040",
+        title: "Software Design",
+        term: "Fall 2026",
+        timezone: "America/Los_Angeles",
+      });
+      expect(revised).toMatchObject({
+        code: "6.1040",
+        title: "Software Design",
+        term: "Fall 2026",
+        timezone: "America/Los_Angeles",
+        status: "ACTIVE",
+      });
+      expect(await rostering._getClass({})).toEqual([
+        {
+          detail: {
+            code: "6.1040",
+            title: "Software Design",
+            term: "Fall 2026",
+            timezone: "America/Los_Angeles",
+            status: "ACTIVE",
+          },
+        },
+      ]);
+      // Revision leaves exactly one class; configuring again is still refused.
+      await expectRefusal(
+        () =>
+          rostering.configureClass({
+            code: "6.1040",
+            title: "Software Design",
+            term: "Fall 2026",
+            timezone: "America/Los_Angeles",
+          }),
+        refusalErrors.ClassAlreadyConfigured,
+      );
+    });
+
+    test("updateClass refuses before the class is configured", async () => {
+      const rostering = await make();
+      expect(await rostering._getClass({})).toEqual([]);
+      await expectRefusal(
+        () =>
+          rostering.updateClass({
+            code: "6.104",
+            title: "Software Design",
+            term: "Fall 2026",
+            timezone: "America/New_York",
+          }),
+        refusalErrors.ClassNotConfigured,
+      );
+      expect(await rostering._getClass({})).toEqual([]);
+    });
+
+    test("removeSeat deletes a pending seat and frees its address", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({ rows: [anaRow] });
+      const seat = created[0]._id;
+      const result = await rostering.removeSeat({ seat });
+      expect(result.email).toBe("ana@example.edu");
+      expect(result.seat).toMatchObject({ _id: seat, email: "ana@example.edu" });
+      expect(await rostering._getUnclaimedSeats({})).toEqual([]);
+      expect(await rostering._getSeatByEmail({ email: "ana@example.edu" })).toEqual([]);
+      expect(await rostering._getPendingSeatByEmail({ email: "ana@example.edu" })).toEqual([]);
+
+      // The address carries no seat, so importing it again creates a fresh one.
+      const again = await rostering.importSeats({ rows: [anaRow] });
+      expect(again.skipped).toEqual([]);
+      expect(again.created).toHaveLength(1);
+      expect(again.created[0]._id).not.toBe(seat);
+    });
+
+    test("removeSeat deletes an active seat, freeing the address to enrol again", async () => {
+      const rostering = await make();
+      const { seat } = await rostering.enrol({
+        email: "ana@example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "ana",
+      });
+      expect(await rostering.removeSeat({ seat: seat._id })).toMatchObject({
+        email: "ana@example.edu",
+      });
+      expect(await rostering._getActiveMembers({})).toEqual([]);
+      expect(await rostering._getSeatByUser({ user: "ana" })).toEqual([]);
+      expect(await rostering._isActiveStudent({ user: "ana" })).toEqual({ active: false });
+
+      const fresh = await rostering.enrol({
+        email: "Ana@Example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "ana",
+      });
+      expect(fresh.seat._id).not.toBe(seat._id);
+      expect(fresh.seat).toMatchObject({ status: "ACTIVE", email: "ana@example.edu" });
+    });
+
+    test("removeSeat deletes a dropped seat", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({ rows: [anaRow] });
+      const seat = created[0]._id;
+      await rostering.claimSeat({ seat, user: "ana" });
+      await rostering.dropSeat({ seat });
+      expect(await rostering._getDroppedSeats({})).toHaveLength(1);
+      const result = await rostering.removeSeat({ seat });
+      expect(result).toEqual({
+        seat: {
+          _id: seat,
+          email: "ana@example.edu",
+          kind: "STUDENT",
+          section: null,
+          status: "DROPPED",
+          user: "ana",
+        },
+        email: "ana@example.edu",
+      });
+      expect(await rostering._getDroppedSeats({})).toEqual([]);
+      expect(await rostering._getSeatDetail({ user: "ana" })).toEqual([]);
+    });
+
+    test("removeSeat leaves other seats alone and refuses an unknown or already removed seat", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({ rows: [anaRow, benRow] });
+      await expectRefusal(
+        () => rostering.removeSeat({ seat: "no-such-seat" }),
+        refusalErrors.SeatNotFound,
+      );
+      await rostering.removeSeat({ seat: created[0]._id });
+      await expectRefusal(
+        () => rostering.removeSeat({ seat: created[0]._id }),
+        refusalErrors.SeatNotFound,
+      );
+      expect(await rostering._getUnclaimedSeats({})).toEqual([
+        { seat: created[1]._id, email: "ben@example.edu", kind: "STUDENT", section: null },
+      ]);
+    });
+
     test("createSection creates; updateSection updates; an unknown section is refused", async () => {
       const rostering = await make();
       const { section } = await rostering.createSection({

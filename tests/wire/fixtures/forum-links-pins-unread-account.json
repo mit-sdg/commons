@@ -417,7 +417,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$loginAlice.user",
-        "context": "forum",
+        "context": "commons",
         "role": "$definePinRole.role"
       },
       "response": {

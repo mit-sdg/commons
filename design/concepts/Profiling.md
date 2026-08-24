@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Keep a display name, bio, avatar, and contact email for each user, so the user
-can be presented by profile details rather than only an identifier.
+Keep a display name, bio, and avatar for each user, so the user can be presented
+by profile details rather than only an identifier.
 
 ## Principle
 
-Priya's profile is created with her display name and email; her bio and avatar
-start empty. A second profile for Priya is refused. She later changes her bio
+Priya's profile is created with her display name; her bio and avatar start
+empty. A second profile for Priya is refused. She later changes her bio
 and avatar. Updating a profile that was never created is refused.
 
 A field never set reads as the empty string.
@@ -28,7 +28,6 @@ a set of Profiles with
   a displayName String
   a bio         String
   an avatar     String
-  an email      String
 
 Rule: each user has at most one profile.
 ```
@@ -36,10 +35,10 @@ Rule: each user has at most one profile.
 ## Actions
 
 ```actions
-createProfile(user: User, displayName: String, email: String) : return (user: User)
+createProfile(user: User, displayName: String) : return (user: User)
   where no profile has user user
   then
-    add a new profile with user, displayName, and email, and with an empty bio and avatar
+    add a new profile with user and displayName, and with an empty bio and avatar
     return user
   where some profile has user user
   then
@@ -80,8 +79,8 @@ _getProfile (user: String) : optional (profile: Profile)
   answers the User's complete Profile nested under profile
   answers no row when the User has no Profile
 
-_getProfileFields (user: String) : optional (displayName: String, bio: String, avatar: String, email: String)
-  answers the User's display name, bio, avatar, and email
+_getProfileFields (user: String) : optional (displayName: String, bio: String, avatar: String)
+  answers the User's display name, bio, and avatar
   answers no row when the User has no Profile
 
 _getProfilesOf (users: Strings) : many (user: String, displayName: String, bio: String, avatar: String)

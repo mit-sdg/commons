@@ -4,6 +4,7 @@ import {
   Clock,
   FileText,
   GraduationCap,
+  Settings,
   Sparkles,
   StickyNote,
   Users,
@@ -56,6 +57,12 @@ const STAFF_NAV: {
     label: "Late Days",
     icon: Clock,
     needs: ["student-records"],
+  },
+  {
+    href: "/staff/class",
+    label: "Class settings",
+    icon: Settings,
+    needs: ["course:manage"],
   },
   {
     href: "/staff/calendar",

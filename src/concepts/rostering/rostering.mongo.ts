@@ -1,6 +1,7 @@
 import type { Collection, Db } from "mongodb";
 import {
   ClassAlreadyConfigured,
+  ClassNotConfigured,
   SeatAlreadyActive,
   SeatAlreadyExists,
   SeatNotActive,
@@ -94,6 +95,25 @@ export class MongoRosteringConcept {
     };
     await this.classes.insertOne(theClass);
     return { class: { ...theClass } };
+  }
+
+  async updateClass({
+    code,
+    title,
+    term,
+    timezone,
+  }: {
+    code: string;
+    title: string;
+    term: string;
+    timezone: string;
+  }) {
+    const existing = await this.classes.findOne({});
+    if (existing === null) {
+      throw new ClassNotConfigured("no class is configured");
+    }
+    await this.classes.updateOne({ _id: existing._id }, { $set: { code, title, term, timezone } });
+    return { class: { ...existing, code, title, term, timezone } };
   }
 
   async createSection({
@@ -277,6 +297,16 @@ export class MongoRosteringConcept {
     await this.seats.updateOne({ _id: seat }, { $set: { status: "ACTIVE" } });
     const updated: SeatDoc = { ...doc, status: "ACTIVE" };
     return { seat: this.#row(updated), kind: doc.kind, user: doc.user, section: doc.section };
+  }
+
+  async removeSeat({ seat }: { seat: string }) {
+    // Deleting the seat outright is what frees its address: after this the
+    // address carries no seat, so it can be imported or enrolled again.
+    const doc = await this.seats.findOneAndDelete({ _id: seat });
+    if (doc === null) {
+      throw new SeatNotFound(seat);
+    }
+    return { seat: this.#row(doc), email: doc.email };
   }
 
   async moveSection({ seat, section }: { seat: string; section: string }) {

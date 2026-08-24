@@ -161,39 +161,39 @@ for (const [floor, make] of floors) {
       expect(
         await roling._isSoleCapabilityHolder({
           user: "mara",
-          context: "forum",
+          context: "course",
           capability: "administer",
         }),
       ).toEqual({ sole: false });
 
-      await roling.assign({ user: "mara", context: "forum", role });
+      await roling.assign({ user: "mara", context: "course", role });
       expect(
         await roling._isSoleCapabilityHolder({
           user: "mara",
-          context: "forum",
+          context: "course",
           capability: "administer",
         }),
       ).toEqual({ sole: true });
 
-      await roling.assign({ user: "noah", context: "forum", role: plain });
+      await roling.assign({ user: "noah", context: "course", role: plain });
       expect(
         await roling._isSoleCapabilityHolder({
           user: "mara",
-          context: "forum",
+          context: "course",
           capability: "administer",
         }),
       ).toEqual({ sole: true });
 
-      await roling.assign({ user: "noah", context: "forum", role });
+      await roling.assign({ user: "noah", context: "course", role });
       expect(
         await roling._isSoleCapabilityHolder({
           user: "mara",
-          context: "forum",
+          context: "course",
           capability: "administer",
         }),
       ).toEqual({ sole: false });
       expect(
-        await roling._hasCapabilityHolder({ context: "forum", capability: "administer" }),
+        await roling._hasCapabilityHolder({ context: "course", capability: "administer" }),
       ).toEqual({ present: true });
     });
 

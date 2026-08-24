@@ -11,7 +11,7 @@ import {
 import { api, unwrap } from "@/lib/api";
 import type { Capability, Me } from "@/lib/models";
 
-export const FORUM_CONTEXT = "forum";
+export const COMMONS_CONTEXT = "commons";
 
 /**
  * Everything the signed-in caller may do, as the server computes it.

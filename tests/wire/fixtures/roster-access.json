@@ -89,8 +89,7 @@
         "profile": {
           "displayName": "Admin",
           "bio": "",
-          "avatar": "",
-          "email": "t2@example.com"
+          "avatar": ""
         }
       }
     },
@@ -101,7 +100,7 @@
       "target": "/roles/forUser",
       "body": {
         "user": "$regAdmin.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "role": "uuid#3",
@@ -171,7 +170,7 @@
       "target": "/roles/forUser",
       "body": {
         "user": "$regMember.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "role": null,
@@ -314,7 +313,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "rb_member",
-        "context": "forum",
+        "context": "commons",
         "role": "helper"
       },
       "response": {
@@ -328,7 +327,7 @@
       "target": "/roles/forUser",
       "body": {
         "user": "rb_member",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "role": "uuid#7",
@@ -356,7 +355,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$regMember.user",
-        "context": "forum",
+        "context": "commons",
         "role": "$roleDefineCourseStaff.role"
       },
       "response": {
@@ -370,7 +369,7 @@
       "target": "/roles/forUser",
       "body": {
         "user": "$regMember.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "role": "uuid#8",
@@ -386,7 +385,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$regMember.user",
-        "context": "forum",
+        "context": "commons",
         "role": "ghost"
       },
       "response": {
@@ -401,7 +400,7 @@
       "body": {
         "session": "$loginMember.session",
         "user": "$regAdmin.user",
-        "context": "forum",
+        "context": "commons",
         "role": "$roleDefineHelper.role"
       },
       "response": {
@@ -455,7 +454,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$regAdmin.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "error": "LAST_ADMINISTRATOR"
@@ -469,7 +468,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$regAdmin.user",
-        "context": "forum",
+        "context": "commons",
         "role": "helper"
       },
       "response": {
@@ -496,7 +495,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$regMember.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "assignment": "uuid#9"
@@ -510,7 +509,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$regMember.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "error": "ASSIGNMENT_NOT_FOUND"
@@ -569,6 +568,22 @@
       },
       "response": {
         "error": "CLASS_ALREADY_CONFIGURED"
+      }
+    },
+    {
+      "id": "updateClassForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/update-class",
+      "body": {
+        "session": "$loginMember.session",
+        "code": "X",
+        "title": "X",
+        "term": "X",
+        "timezone": "UTC"
+      },
+      "response": {
+        "error": "FORBIDDEN"
       }
     },
     {
@@ -1115,7 +1130,7 @@
       "target": "/roles/forUser",
       "body": {
         "user": "$regStaffer.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "role": null,
@@ -1161,7 +1176,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$regStaffer.user",
-        "context": "forum",
+        "context": "commons",
         "role": "$roleDefineCourseStaff.role"
       },
       "response": {
@@ -1234,7 +1249,7 @@
       "target": "/roles/forUser",
       "body": {
         "user": "$regStaffer.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
         "role": "uuid#8",
@@ -1309,6 +1324,112 @@
       },
       "response": {
         "members": []
+      }
+    },
+    {
+      "id": "updateClassByStaffer",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/update-class",
+      "body": {
+        "session": "$loginStaffer.session",
+        "code": "RB101",
+        "title": "Roster Basics, Revised",
+        "term": "Spring 2027",
+        "timezone": "Europe/Berlin"
+      },
+      "response": {
+        "class": {
+          "_id": "uuid#10",
+          "code": "RB101",
+          "title": "Roster Basics, Revised",
+          "term": "Spring 2027",
+          "timezone": "Europe/Berlin",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "classAfterUpdate",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/class",
+      "body": {
+        "session": "$loginStaffer.session"
+      },
+      "response": {
+        "class": {
+          "code": "RB101",
+          "title": "Roster Basics, Revised",
+          "term": "Spring 2027",
+          "timezone": "Europe/Berlin",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "removeSeatForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/remove",
+      "body": {
+        "session": "$loginMember.session",
+        "seat": "$importByStafferAllowed.created.0._id"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "removeSeatByStaffer",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/remove",
+      "body": {
+        "session": "$loginStaffer.session",
+        "seat": "$importByStafferAllowed.created.0._id"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#24",
+          "email": "s9@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "PENDING"
+        },
+        "email": "s9@example.com"
+      }
+    },
+    {
+      "id": "removeSeatAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/remove",
+      "body": {
+        "session": "$loginStaffer.session",
+        "seat": "$importByStafferAllowed.created.0._id"
+      },
+      "response": {
+        "error": "SEAT_NOT_FOUND"
+      }
+    },
+    {
+      "id": "pendingRosterAfterRemove",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/pending",
+      "body": {
+        "session": "$loginStaffer.session"
+      },
+      "response": {
+        "members": [
+          {
+            "seat": "uuid#15",
+            "email": "s2@example.com",
+            "kind": "STUDENT",
+            "section": "uuid#11"
+          }
+        ]
       }
     }
   ]

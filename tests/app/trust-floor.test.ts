@@ -36,7 +36,6 @@ describe("HTTP authorization and privacy", () => {
     await edge.application.concepts.Profiling.createProfile({
       user: made.user,
       displayName: username,
-      email,
     });
     const login = await call("/auth/login", { username, password: "password123" });
     return { user: made.user, cookie: login.cookie as string, email };
@@ -64,21 +63,14 @@ describe("HTTP authorization and privacy", () => {
       },
       admin.cookie,
     );
-    await call(
-      "/roster/enroll",
-      { email: learner.email, kind: "STUDENT", section: "A", user: learner.user },
-      admin.cookie,
-    );
-    await call(
-      "/roster/enroll",
-      {
-        email: limitedStaff.email,
-        kind: "STUDENT",
-        section: "A",
-        user: limitedStaff.user,
-      },
-      admin.cookie,
-    );
+    // Both addresses already have accounts, so the import sweep claims their
+    // seats outright; enrolling them afterwards would only be refused.
+    await edge.application.whenIdle();
+    for (const seated of [learner, limitedStaff]) {
+      expect(
+        await edge.application.concepts.Rostering._getSeatByUser({ user: seated.user }),
+      ).toEqual([expect.objectContaining({ status: "ACTIVE", user: seated.user })]);
+    }
     const limitedRole = await call(
       "/roles/define",
       { name: "limited-staff", capabilities: ["moderate"] },
@@ -86,7 +78,7 @@ describe("HTTP authorization and privacy", () => {
     );
     await call(
       "/roles/assign",
-      { user: limitedStaff.user, context: "forum", role: limitedRole.body.role },
+      { user: limitedStaff.user, context: "commons", role: limitedRole.body.role },
       admin.cookie,
     );
   });
@@ -95,7 +87,7 @@ describe("HTTP authorization and privacy", () => {
     // Removing the only administrator used to leave policy open to everyone.
     const revoked = await call(
       "/roles/revoke",
-      { user: admin.user, context: "forum" },
+      { user: admin.user, context: "commons" },
       admin.cookie,
     );
     expect(revoked).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
@@ -108,7 +100,7 @@ describe("HTTP authorization and privacy", () => {
     expect(lesser.status).toBe(200);
     const moved = await call(
       "/roles/assign",
-      { user: admin.user, context: "forum", role: lesser.body.role },
+      { user: admin.user, context: "commons", role: lesser.body.role },
       admin.cookie,
     );
     expect(moved).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
@@ -131,7 +123,7 @@ describe("HTTP authorization and privacy", () => {
 
   test("archiving an account that holds a role revokes it first, then archives, then ends its sessions", async () => {
     expect(
-      (await call("/roles/forUser", { user: limitedStaff.user, context: "forum" }, admin.cookie))
+      (await call("/roles/forUser", { user: limitedStaff.user, context: "commons" }, admin.cookie))
         .body,
     ).toMatchObject({ name: "limited-staff" });
 
@@ -152,7 +144,7 @@ describe("HTTP authorization and privacy", () => {
     );
 
     expect(
-      (await call("/roles/forUser", { user: limitedStaff.user, context: "forum" }, admin.cookie))
+      (await call("/roles/forUser", { user: limitedStaff.user, context: "commons" }, admin.cookie))
         .body,
     ).toMatchObject({ role: null, name: null, capabilities: [] });
     const listed = await call("/users/list", {}, admin.cookie);
@@ -166,7 +158,7 @@ describe("HTTP authorization and privacy", () => {
 
   test("archiving an account that holds no role archives it without surfacing a refusal", async () => {
     expect(
-      (await call("/roles/forUser", { user: learner.user, context: "forum" }, admin.cookie)).body,
+      (await call("/roles/forUser", { user: learner.user, context: "commons" }, admin.cookie)).body,
     ).toMatchObject({ role: null });
 
     const archived = await call("/users/archive", { user: learner.user }, admin.cookie);
@@ -191,7 +183,7 @@ describe("HTTP authorization and privacy", () => {
     expect(
       await call(
         "/roles/assign",
-        { user: outsider.user, context: "forum", role: "administrator" },
+        { user: outsider.user, context: "commons", role: "administrator" },
         admin.cookie,
       ),
     ).toMatchObject({ status: 200 });
@@ -208,7 +200,7 @@ describe("HTTP authorization and privacy", () => {
     // The archived account can never sign in again, so it no longer counts as a
     // holder: the guard now sees exactly one administrator, the live one.
     expect(
-      await call("/roles/revoke", { user: admin.user, context: "forum" }, admin.cookie),
+      await call("/roles/revoke", { user: admin.user, context: "commons" }, admin.cookie),
     ).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
     const lesser = await call(
       "/roles/define",
@@ -218,7 +210,7 @@ describe("HTTP authorization and privacy", () => {
     expect(
       await call(
         "/roles/assign",
-        { user: admin.user, context: "forum", role: lesser.body.role },
+        { user: admin.user, context: "commons", role: lesser.body.role },
         admin.cookie,
       ),
     ).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
@@ -605,7 +597,6 @@ test("the HTTP edge rejects and clears a cookie at the server-side expiry bounda
   await edge.application.concepts.Profiling.createProfile({
     user: expiring.user,
     displayName: "Expiring",
-    email: "expiring@example.edu",
   });
   const login = await post("/auth/login", { username: "expiring", password: "password123" });
   const cookie = login.headers.get("set-cookie")?.split(";")[0] as string;
@@ -638,7 +629,6 @@ test("dropping the actor's own staff seat returns one response and keeps their c
     await app.concepts.Profiling.createProfile({
       user: registered.user,
       displayName: username,
-      email,
     });
     const login = await send("/auth/login", { username, password: "password123" });
     return { user: registered.user, session: login.session as string };
@@ -652,29 +642,29 @@ test("dropping the actor's own staff seat returns one response and keeps their c
   });
   await app.concepts.Roling.assign({
     user: admin.user,
-    context: "forum",
+    context: "commons",
     role: courseManager,
   });
   await app.concepts.Roling.assign({
     user: staff.user,
-    context: "forum",
+    context: "commons",
     role: courseManager,
   });
   await send("/roster/import", {
     session: admin.session,
     rows: [{ email: "departing_staff@example.edu", kind: "STAFF" }],
   });
-  const [pending] = await app.concepts.Rostering._getPendingSeatByEmail({
-    email: "departing_staff@example.edu",
-  });
-  const claimed = await app.concepts.Rostering.claimSeat({
-    seat: pending.seat,
-    user: staff.user,
-  });
-  const seat = claimed.seat._id;
-  expect(await app.concepts.Rostering._getSeatByUser({ user: staff.user })).toEqual([
-    expect.objectContaining({ seat, status: "ACTIVE" }),
-  ]);
+  // The import sweep resolves the address to the account that already holds it
+  // and claims the seat outright, so nothing is left pending to claim by hand.
+  await app.whenIdle();
+  expect(
+    await app.concepts.Rostering._getPendingSeatByEmail({
+      email: "departing_staff@example.edu",
+    }),
+  ).toEqual([]);
+  const [held] = await app.concepts.Rostering._getSeatByUser({ user: staff.user });
+  const seat = held.seat;
+  expect(held).toEqual(expect.objectContaining({ seat, status: "ACTIVE" }));
 
   const before = inspectAssembly(app).occurrences.length;
   expect(await send("/roster/drop", { session: staff.session, seat })).toEqual({
@@ -692,7 +682,7 @@ test("dropping the actor's own staff seat returns one response and keeps their c
   expect(
     await app.concepts.Roling._hasCapability({
       user: staff.user,
-      context: "forum",
+      context: "commons",
       capability: "course:manage",
     }),
   ).toEqual({ allowed: true });

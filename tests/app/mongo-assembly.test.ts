@@ -22,7 +22,6 @@ async function mongoApp() {
     await app.concepts.Profiling.createProfile({
       user: registered.user,
       displayName: username,
-      email,
     });
     const { session } = (await send("/auth/login", {
       username,
@@ -82,7 +81,12 @@ describe("Commons with every concept on MongoDB", () => {
       name: "course-staff",
       capabilities: ["course:manage"],
     })) as { role: string };
-    const assigned = await send("/roles/assign", { session: admin, user, context: "forum", role });
+    const assigned = await send("/roles/assign", {
+      session: admin,
+      user,
+      context: "commons",
+      role,
+    });
     expect(assigned.error).toBeUndefined();
 
     const imported = await send("/roster/import", {

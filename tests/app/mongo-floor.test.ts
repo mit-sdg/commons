@@ -31,7 +31,6 @@ describe("Commons with Posting on MongoDB", () => {
     await app.concepts.Profiling.createProfile({
       user: registered.user,
       displayName: "Amara",
-      email: "amara@example.com",
     });
     const { session } = (await send("/auth/login", {
       username: "amara",
@@ -69,7 +68,6 @@ describe("Commons with Posting on MongoDB", () => {
       await app.concepts.Profiling.createProfile({
         user: registered.user,
         displayName: username,
-        email: `${username}@example.com`,
       });
     }
     const { session: ada } = (await send("/auth/login", {

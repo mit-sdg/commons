@@ -5,7 +5,14 @@ trusts.
 
 With an unclaimed email invitation and its temporary credential,
 [Access.auth.AcceptInvitation](reaction:Access.auth.AcceptInvitation) verifies the invitation, creates the account
-and profile, and finally claims the invitation. These are ordered actions, not
+and profile, and finally claims the invitation. The account carries the invited
+address, and the profile carries none: Authenticating owns a person's email and
+holds it for one account alone, so accepting an invitation to an address that
+some account already holds is refused with `EMAIL_TAKEN` rather than creating a
+second account on it. That refusal leaves the invitation unclaimed and is the
+loud end of an invitation that should never have been issued; the person signs in
+with the account they already have, and an administrator retracts the invitation
+through Invitations. These are ordered actions, not
 one transaction: if profile creation or claiming fails after registration, the
 new account remains and Commons does not roll it back.
 
@@ -17,7 +24,8 @@ answering `FORBIDDEN`, so a wrong password stays indistinguishable from an
 unknown account. [Access.auth.Logout](reaction:Access.auth.Logout) resolves the caller
 from a live session before ending that session. [Access.auth.Me](reaction:Access.auth.Me) uses the same
 resolved caller to return account and profile data, so a body parameter cannot
-select another account. For a public exact-username lookup, the
+select another account; the email it reports comes from the caller's account,
+which is where Commons keeps an address, and never from the profile. For a public exact-username lookup, the
 [theUserNamed view](view:Access.auth.theUserNamed) relates an exact username to its account.
 [Access.auth.Resolve](reaction:Access.auth.Resolve) returns that identity or `null` without exposing
 credentials or profile fields.
@@ -49,7 +57,7 @@ are not one transaction, so a later failure does not remove the account.
 
 [Access.auth.Permissions](reaction:Access.auth.Permissions) answers everything the signed-in caller may
 do, in one read. Every capability Commons declares is held and enforced in the
-single reserved `forum` context, so this read needs no context of its own: it
+single reserved `commons` context, so this read needs no context of its own: it
 takes the role the caller holds there and answers the whole registry when that
 role carries `administer`, and the role's own capability names otherwise, so the
 browser and the endpoints that enforce policy cannot disagree about what a caller
@@ -63,7 +71,7 @@ Only administrators may archive an account.
 verifies that the caller holds `administer` and is not the account named. An
 archived account can never sign in again, so it must not go on counting as a
 holder of `administer`: archiving refuses `LAST_ADMINISTRATOR` when the named
-account is the only holder of `administer` in the `forum` context, which keeps the
+account is the only holder of `administer` in the `commons` context, which keeps the
 deployment from losing every usable administrator one archive at a time. That
 refusal is a floor rather than an outcome a caller can provoke: while the caller
 holds `administer` themselves and cannot name their own account, the named account
@@ -82,6 +90,13 @@ stays archived while its existing sessions live until they expire.
 [Access.auth.RestoreUser](reaction:Access.auth.RestoreUser) lifts the archive and lets that person sign
 in again; it does not give back the role the account held, because revoking it was
 a separate act, so an administrator assigns one again when the person needs it.
+Archiving keeps the account registered, so it keeps that account's email address
+too: no second account can register the address an archived account holds, and
+restoring is the way it becomes usable again. Commons decides that here rather
+than in Authenticating, which knows nothing of archiving and only ever sees one
+account per address. Holding the address is the point — archiving is reversible,
+and releasing an address would let somebody else take an identity the archived
+account can reclaim.
 Because archiving revokes, every account holding `administer` is an account that
 can still sign in, which is what makes the last-administrator guard on assignment
 and revocation worth checking.

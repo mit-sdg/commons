@@ -1,7 +1,7 @@
 import { activeUser } from "../access/session.ts";
 import { each, form, former, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { FORUM } from "../access/capabilities.ts";
+import { COMMONS } from "../access/capabilities.ts";
 import { isActiveCourseMember, mayManageCourse, mayNotManageCourse } from "../access/policy.ts";
 import { theRoleFaceOf } from "../access/roles.ts";
 import { concepts } from "../../concepts.ts";
@@ -27,7 +27,7 @@ export const theUserPage = former(
   ({ user }, { post, node, conversation }) =>
     form({
       profile: whether(theProfileFaceOf({ user })),
-      role: whether(theRoleFaceOf({ user, context: FORUM })),
+      role: whether(theRoleFaceOf({ user, context: COMMONS })),
       posts: each(Posting._getByAuthor({ author: user }).is({ post }))
         .where(
           intact({ item: post }),

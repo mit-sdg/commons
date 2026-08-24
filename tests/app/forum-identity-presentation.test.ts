@@ -51,7 +51,6 @@ describe("forum identity and lookup presentation", () => {
     await app.concepts.Profiling.createProfile({
       user: actor,
       displayName: "Mara",
-      email: "mara@example.edu",
     });
     const { user: recipient } = await app.concepts.Authenticating.register({
       username: "noah",

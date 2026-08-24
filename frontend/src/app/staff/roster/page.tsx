@@ -1,9 +1,10 @@
 "use client";
 
-import { Pencil, Plus, Settings } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CsvImport } from "@/components/lms/csv-import";
+import { RemoveSeatDialog } from "@/components/lms/remove-seat";
 import { RosterTable } from "@/components/lms/roster-table";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -18,143 +19,11 @@ import type { Output } from "@/lib/api";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
-  loadClassConfiguration,
   loadDroppedRoster,
   loadPendingRoster,
   loadRosterList,
   loadSections,
 } from "@/lib/lms";
-
-function ClassConfig({
-  configuration,
-  onConfigured,
-}: {
-  configuration: {
-    code: string;
-    title: string;
-    term: string;
-    timezone: string;
-    status: string;
-  } | null;
-  onConfigured: () => void;
-}) {
-  const { session } = useAuth();
-  const [code, setCode] = useState(configuration?.code ?? "");
-  const [title, setTitle] = useState(configuration?.title ?? "");
-  const [term, setTerm] = useState(configuration?.term ?? "");
-  const [timezone, setTimezone] = useState(
-    configuration?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
-  );
-  const [loading, setLoading] = useState(false);
-
-  async function configure() {
-    if (!session) return;
-    setLoading(true);
-    const result = await api.roster["configure-class"]({
-      code,
-      title,
-      term,
-      timezone,
-    });
-    setLoading(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Course configured");
-      onConfigured();
-    }
-  }
-
-  if (configuration) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Settings className="size-4" /> Course configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <dt className="text-xs text-muted-foreground">Course code</dt>
-              <dd className="font-medium">{configuration.code}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Title</dt>
-              <dd className="font-medium">{configuration.title}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Term</dt>
-              <dd className="font-medium">{configuration.term}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Timezone</dt>
-              <dd className="font-medium">{configuration.timezone}</dd>
-            </div>
-          </dl>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Course identity is fixed after initial configuration.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <Settings className="size-4" /> Configure course
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cc-code">Course Code</Label>
-            <Input
-              id="cc-code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="CS101"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cc-title">Title</Label>
-            <Input
-              id="cc-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Intro to CS"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cc-term">Term</Label>
-            <Input
-              id="cc-term"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              placeholder="Fall 2026"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cc-tz">Timezone</Label>
-            <Input
-              id="cc-tz"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              placeholder="America/New_York"
-            />
-          </div>
-        </div>
-        <Button
-          onClick={configure}
-          disabled={loading || !code || !title || !term}
-        >
-          Configure Class
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 function SectionManager() {
   const { session } = useAuth();
@@ -429,16 +298,32 @@ function PendingSeats({
                 {member.kind.toLowerCase()} · invitation not accepted yet
               </p>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setLinking(String(member.email));
-                setAccount("");
-              }}
-            >
-              Enrol account
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setLinking(String(member.email));
+                  setAccount("");
+                }}
+              >
+                Enrol account
+              </Button>
+              <RemoveSeatDialog
+                seat={String(member.seat)}
+                person={String(member.email)}
+                onRemoved={onUpdate}
+                trigger={
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="size-3.5" /> Remove
+                  </Button>
+                }
+              />
+            </div>
           </div>
           {linking === String(member.email) ? (
             <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-end">
@@ -521,14 +406,30 @@ function DroppedSeats({
               {member.kind.toLowerCase()}
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => reinstate(String(member.seat))}
-            disabled={busy === String(member.seat)}
-          >
-            {busy === String(member.seat) ? "Reinstating…" : "Reinstate"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => reinstate(String(member.seat))}
+              disabled={busy === String(member.seat)}
+            >
+              {busy === String(member.seat) ? "Reinstating…" : "Reinstate"}
+            </Button>
+            <RemoveSeatDialog
+              seat={String(member.seat)}
+              person={member.displayName ?? String(member.email)}
+              onRemoved={onUpdate}
+              trigger={
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="size-3.5" /> Remove
+                </Button>
+              }
+            />
+          </div>
         </div>
       ))}
     </div>
@@ -544,9 +445,6 @@ function RosterPageContent() {
     refetch,
   } = useQuery(session ? () => loadRosterList() : null, [session]);
 
-  const classQuery = useQuery(session ? () => loadClassConfiguration() : null, [
-    session,
-  ]);
   const pendingQuery = useQuery(session ? () => loadPendingRoster() : null, [
     session,
   ]);
@@ -582,12 +480,12 @@ function RosterPageContent() {
       <PageHeader
         eyebrow="Staff"
         title="Roster management"
-        description="Configure the course, manage sections, and maintain member access."
+        description="Manage sections and enrolment, and maintain member access."
       />
 
-      <Tabs defaultValue="config">
+      <Tabs defaultValue="sections">
         <TabsList>
-          <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="sections">Sections</TabsTrigger>
           <TabsTrigger value="active">
             Active ({activeMembers.length})
           </TabsTrigger>
@@ -600,15 +498,7 @@ function RosterPageContent() {
           <TabsTrigger value="import">CSV import</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="config" className="mt-6 space-y-6">
-          {classQuery.loading ? (
-            <LoadingState label="Loading course configuration…" />
-          ) : (
-            <ClassConfig
-              configuration={classQuery.data?.class ?? null}
-              onConfigured={classQuery.refetch}
-            />
-          )}
+        <TabsContent value="sections" className="mt-6">
           <SectionManager />
         </TabsContent>
 

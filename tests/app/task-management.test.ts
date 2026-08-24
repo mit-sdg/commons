@@ -15,7 +15,6 @@ async function actor(app: App, username: string) {
   await app.concepts.Profiling.createProfile({
     user: registered.user,
     displayName: username,
-    email,
   });
   const login = await app.invoker.invoke("/auth/login", {
     username,

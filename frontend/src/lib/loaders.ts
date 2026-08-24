@@ -1,5 +1,5 @@
 import { api, CommonsError, unwrap } from "@/lib/api";
-import { FORUM_CONTEXT } from "@/lib/auth";
+import { COMMONS_CONTEXT } from "@/lib/auth";
 import type {
   Category,
   ConversationSummary,
@@ -85,5 +85,5 @@ export async function loadPostConversationIndex(
 
 /** One request answers the role and its capabilities; there is no follow-up fetch. */
 export async function loadUserRole(user: string): Promise<RoleOfUser> {
-  return unwrap(await api.roles.forUser({ user, context: FORUM_CONTEXT }));
+  return unwrap(await api.roles.forUser({ user, context: COMMONS_CONTEXT }));
 }

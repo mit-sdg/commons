@@ -1,0 +1,18 @@
+import type { Migration } from "./migration.ts";
+import { roleContextForumToCommons } from "./20260824T000100-role-context-forum-to-commons.ts";
+import { normalizeAccountEmails } from "./20260824T000200-normalize-account-emails.ts";
+import { dropProfileEmail } from "./20260824T000300-drop-profile-email.ts";
+
+export { MigrationBlocked, runMigrations } from "./migration.ts";
+export type { Migration, MigrationOutcome } from "./migration.ts";
+
+/**
+ * Every migration, oldest first. Order is the identifier order and is the order
+ * they are applied in; entries are append-only once released, because a
+ * deployment records what it has already run by identifier.
+ */
+export const commonsMigrations: readonly Migration[] = [
+  roleContextForumToCommons,
+  normalizeAccountEmails,
+  dropProfileEmail,
+];

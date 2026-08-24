@@ -178,7 +178,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$loginStaff.user",
-        "context": "forum",
+        "context": "commons",
         "role": "$defineOps.role"
       },
       "response": {
@@ -1113,7 +1113,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "user": "$loginStaff.user",
-        "context": "forum",
+        "context": "commons",
         "role": "$defineCalRole.role"
       },
       "response": {

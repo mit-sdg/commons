@@ -1,6 +1,7 @@
 import type { Collection, Db } from "mongodb";
 import {
   EmailInvalid,
+  EmailTaken,
   InvalidCredentials,
   PasswordInvalidLength,
   UsernameInvalidChars,
@@ -10,6 +11,25 @@ import {
 import { derivePasswordVerifier, passwordMatchesVerifier } from "./password-verifier.ts";
 
 const USERNAME_ALLOWED_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
+const DUPLICATE_KEY = 11_000;
+
+// An address is trimmed and lower-cased before it is stored or matched, so
+// addresses differing only in surrounding space or letter case name the same
+// account.
+function normalizeEmail(email: string): string {
+  return (email ?? "").trim().toLowerCase();
+}
+
+// An address looks like one when it contains exactly one @.
+function looksLikeAddress(email: string): boolean {
+  return email.split("@").length === 2;
+}
+
+function isDuplicateKey(error: unknown): boolean {
+  return (
+    typeof error === "object" && error !== null && "code" in error && error.code === DUPLICATE_KEY
+  );
+}
 
 interface UserDoc {
   _id: string;
@@ -20,6 +40,7 @@ interface UserDoc {
 
 export class MongoAuthenticatingConcept {
   private readonly users: Collection<UserDoc>;
+  private index: Promise<string> | undefined;
 
   constructor(db: Db) {
     this.users = db.collection<UserDoc>("authenticating.users");
@@ -34,8 +55,9 @@ export class MongoAuthenticatingConcept {
     password: string;
     email: string;
   }) {
-    if (!email?.includes("@")) {
-      throw new EmailInvalid("email must contain @");
+    const address = normalizeEmail(email);
+    if (!looksLikeAddress(address)) {
+      throw new EmailInvalid("The email address is not well formed.");
     }
     if (username.length < 3 || username.length > 32) {
       throw new UsernameInvalidLength(username);
@@ -46,13 +68,24 @@ export class MongoAuthenticatingConcept {
     if (password.length < 8 || password.length > 128) {
       throw new PasswordInvalidLength("Must be 8-128 characters");
     }
+    await (this.index ??= this.users.createIndex({ email: 1 }, { unique: true }));
     const existing = await this.users.findOne({ username });
     if (existing !== null) {
       throw new UsernameTaken(username);
     }
+    if ((await this.users.findOne({ email: address })) !== null) {
+      throw new EmailTaken(address);
+    }
     const user = crypto.randomUUID();
     const passwordVerifier = await derivePasswordVerifier(password);
-    await this.users.insertOne({ _id: user, username, passwordVerifier, email });
+    try {
+      await this.users.insertOne({ _id: user, username, passwordVerifier, email: address });
+    } catch (error) {
+      // The unique index is the authority: a racing registration for the same
+      // address loses here rather than creating a second account for it.
+      if (!isDuplicateKey(error)) throw error;
+      throw new EmailTaken(address);
+    }
     return { user };
   }
 
@@ -89,6 +122,11 @@ export class MongoAuthenticatingConcept {
   async _getById({ user }: { user: string }) {
     const doc = await this.users.findOne({ _id: user });
     return doc === null ? [] : [{ username: doc.username, email: doc.email }];
+  }
+
+  async _getByEmail({ email }: { email: string }) {
+    const doc = await this.users.findOne({ email: normalizeEmail(email) });
+    return doc === null ? [] : [{ user: doc._id }];
   }
 
   async _getByUsername({ username }: { username: string }) {

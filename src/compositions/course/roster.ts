@@ -12,10 +12,10 @@ import {
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { theInvitationFor } from "../access/invitations.ts";
-import { mayManageCourse, mayNotManageCourse } from "../access/policy.ts";
+import { isArchived, mayManageCourse, mayNotManageCourse } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Inviting, Profiling, Rostering } = concepts;
+const { Authenticating, Inviting, Profiling, Rostering } = concepts;
 
 /** Which sections exist? */
 export const theSections = former(
@@ -84,16 +84,62 @@ export const theSeatOf = view("the seat of (user)", ({ user }, { seat }, _bindin
   where(Rostering._getSeatByUser({ user }).is({ seat, status: "ACTIVE" })),
 ).optional();
 /**
+ * Which account holds this address? Authenticating owns a person's email and
+ * holds it for one account alone, so this answers at most one account. Every
+ * side normalizes an address the same way, so the row that was imported and the
+ * address an account holds are one string.
+ */
+export const theAccountAt = view("the account at (email)", ({ email }, { user }, _bindings) =>
+  where(Authenticating._getByEmail({ email }).is({ user })),
+).optional();
+
+/**
+ * Which account that can still sign in holds this address? An archived account
+ * holds its address but can never sign in, so it answers `theAccountAt` and not
+ * this: a seat at that address is neither invited nor claimed.
+ */
+export const theLiveAccountAt = view(
+  "the live account at (email)",
+  ({ email }, { user }, _bindings) =>
+    where(Authenticating._getByEmail({ email }).is({ user }), no(isArchived({ user }))),
+).optional();
+
+/**
+ * A pending seat whose address already answers a live account is claimed for it
+ * at once, so somebody who already has an account is enrolled rather than sent
+ * an invitation to register a second time — an invitation nobody could accept.
+ *
+ * It reaches the active seat through `claimSeat` rather than `enrol`
+ * deliberately: a claim is the transition Assignments watches, so an
+ * immediately enrolled student receives the work already published to their
+ * section, while the same seat reached by enrolling would leave them holding
+ * none.
+ *
+ * The sweep reads every pending seat rather than only the rows this import just
+ * created, which is what makes importing an address a second time a repair.
+ */
+export const ImportedSeatClaimsItsAccount = reaction(({ seat, email, user }) =>
+  when(Rostering.importSeats({}).responds({}))
+    .where(
+      Rostering._getUnclaimedSeats({}).is({ seat, email }),
+      theLiveAccountAt({ email }).is({ user }),
+    )
+    .then(Rostering.claimSeat({ seat, user })),
+);
+
+/**
  * An imported seat invites its address, so a CSV import and an invitation are
  * the same act rather than two records that later have to be reconciled.
- * Addresses that have already been invited are left alone, which keeps a repeat
- * import from resending mail.
+ * Addresses that already answer an account — live or archived — are left to the
+ * claim above or to nothing at all, and addresses that have already been invited
+ * are left alone, which keeps a repeat import from resending mail.
  */
 export const ImportedSeatInvitesItsAddress = reaction(({ email, at }) =>
   when(Rostering.importSeats({}).responds({}))
     .where(
       now(at),
       Rostering._getUnclaimedSeats({}).is({ email }),
+      no(theAccountAt({ email })),
       no(theInvitationFor({ address: email })),
     )
     .then(Inviting.invite({ channel: "email", address: email, at })),
@@ -118,6 +164,25 @@ export const ConfigureClass = endpoint(
         .then(
           Rostering.configureClass({ code, title, term, timezone }).responds({ class: classDoc }),
         )
+        .then(respond({ class: classDoc }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+
+/**
+ * Establishing the class and correcting it stay separate acts: `configureClass`
+ * keeps its `CLASS_ALREADY_CONFIGURED` guard, and this refuses
+ * `CLASS_NOT_CONFIGURED` while there is no class to revise.
+ */
+export const UpdateClass = endpoint(
+  "/roster/update-class",
+  ({ session, code, title, term, timezone, user, class: classDoc }) =>
+    receive({ session, code, title, term, timezone }).then(
+      where(activeUser({ session }).is({ user }), mayManageCourse({ user }))
+        .then(Rostering.updateClass({ code, title, term, timezone }).responds({ class: classDoc }))
         .then(respond({ class: classDoc }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
@@ -293,6 +358,25 @@ export const ReinstateSeat = endpoint("/roster/reinstate", ({ session, seat, use
     where(activeUser({ session }).is({ user }), mayManageCourse({ user }))
       .then(Rostering.reinstateSeat({ seat }).responds({ seat: reinstated }))
       .then(respond({ seat: reinstated }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
+/**
+ * Removal is the destructive counterpart to dropping: it deletes the seat in
+ * whichever state it is and nothing else. The account stays registered and able
+ * to sign in, it keeps whatever role it holds, and every course record keyed to
+ * it is retained. The response carries the address the removal freed, because
+ * once the seat is gone no read can report it.
+ */
+export const RemoveSeat = endpoint("/roster/remove", ({ session, seat, user, removed, email }) =>
+  receive({ session, seat }).then(
+    where(activeUser({ session }).is({ user }), mayManageCourse({ user }))
+      .then(Rostering.removeSeat({ seat }).responds({ seat: removed, email }))
+      .then(respond({ seat: removed, email }))
       .named("success"),
     where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
       .then(respond({ error: "FORBIDDEN" }))

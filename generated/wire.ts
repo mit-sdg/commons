@@ -174,7 +174,7 @@ export type CommonsWire = {
     output: {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["claim"]>[0], ["user"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "INVALID_BODY" | "INVALID_INPUT" | "INVITATION_INVALID" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "RELEASE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "EMAIL_TAKEN" | "INVALID_BODY" | "INVALID_INPUT" | "INVITATION_INVALID" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "RELEASE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
   };
   "/auth/changePassword": {
     input: {
@@ -1237,7 +1237,7 @@ export type CommonsWire = {
         "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>>;
         "bio": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["bio"]>>;
         "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
-        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["email"]>>;
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
       } | null;
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
@@ -1542,7 +1542,7 @@ export type CommonsWire = {
       "created": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["importSeats"]>>, ["created"]>>;
       "skipped": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["importSeats"]>>, ["skipped"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVITATION_ALREADY_CLAIMED" | "MAIL_RECIPIENT_INVALID" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "INVITATION_ALREADY_CLAIMED" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" };
   };
   "/roster/import-preview": {
     input: {
@@ -1613,6 +1613,17 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_DROPPED" | "SEAT_NOT_FOUND" };
   };
+  "/roster/remove": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["removeSeat"]>[0], ["seat"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "email": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["removeSeat"]>>, ["email"]>>;
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["removeSeat"]>>, ["seat"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SEAT_NOT_FOUND" };
+  };
   "/roster/sections/create": {
     input: {
       "location"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["createSection"]>[0], ["location"]>>;
@@ -1651,10 +1662,23 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SECTION_NOT_FOUND" };
   };
+  "/roster/update-class": {
+    input: {
+      "code": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>[0], ["code"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "term": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>[0], ["term"]>>;
+      "timezone": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>[0], ["timezone"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>[0], ["title"]>>;
+    };
+    output: {
+      "class": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>>, ["class"]>>;
+    };
+    error: { error: AppWideError | "CLASS_NOT_CONFIGURED" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
   "/setup/register-admin": {
     input: {
       "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
-      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["register"]>[0], ["email"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["createProfile"]>[0], ["email"]>]>>;
+      "email": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["register"]>[0], ["email"]>>;
       "password": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["register"]>[0], ["password"]>>;
       "setupSecret": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["setupSecretMatches"]["fn"]>[0], ["secret"]>>;
       "username": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["register"]>[0], ["username"]>>;
@@ -1662,7 +1686,7 @@ export type CommonsWire = {
     output: {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["createProfile"]>[0], ["user"]>>;
     };
-    error: { error: AppWideError | "CONFLICT" | "INVALID_BODY" | "INVALID_INPUT" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "UNAUTHORIZED" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
+    error: { error: AppWideError | "CONFLICT" | "EMAIL_TAKEN" | "INVALID_BODY" | "INVALID_INPUT" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "UNAUTHORIZED" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
   };
   "/students/detail": {
     input: {
@@ -3703,7 +3727,7 @@ export type CommonsWireHttp = {
         "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["avatar"]>>;
         "bio": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["bio"]>>;
         "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
-        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["email"]>>;
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
       } | null;
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
@@ -3989,7 +4013,7 @@ export type CommonsWireHttp = {
       "created": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["importSeats"]>>, ["created"]>>;
       "skipped": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["importSeats"]>>, ["skipped"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/roster/import-preview": {
     input: {
@@ -4052,6 +4076,16 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
+  "/roster/remove": {
+    input: {
+      "seat": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["removeSeat"]>[0], ["seat"]>>;
+    };
+    output: {
+      "email": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["removeSeat"]>>, ["email"]>>;
+      "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["removeSeat"]>>, ["seat"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
   "/roster/sections/create": {
     input: {
       "location"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["createSection"]>[0], ["location"]>>;
@@ -4088,10 +4122,22 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
+  "/roster/update-class": {
+    input: {
+      "code": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>[0], ["code"]>>;
+      "term": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>[0], ["term"]>>;
+      "timezone": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>[0], ["timezone"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>[0], ["title"]>>;
+    };
+    output: {
+      "class": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>>, ["class"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
   "/setup/register-admin": {
     input: {
       "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
-      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["register"]>[0], ["email"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["createProfile"]>[0], ["email"]>]>>;
+      "email": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["register"]>[0], ["email"]>>;
       "password": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["register"]>[0], ["password"]>>;
       "setupSecret": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["setupSecretMatches"]["fn"]>[0], ["secret"]>>;
       "username": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["register"]>[0], ["username"]>>;

@@ -2,8 +2,9 @@
 
 ## Purpose
 
-Keep one class configuration, its sections, and the pending, active, or dropped
-seats held by its members.
+Keep one class configuration, revisable after it is made, together with its
+sections and the pending, active, or dropped seats held by its members, each seat
+removable outright.
 
 ## Principle
 
@@ -14,7 +15,11 @@ address is trimmed and lower-cased before it is stored or matched. Ana claims he
 seat and becomes active. Ben cannot claim another seat while he already holds an
 active one. Ana's seat may be dropped, reinstated, or moved to another section.
 Once dropped, Ana's seat is reinstated rather than enrolled again: enrolling her
-address once more is refused, because the seat still exists.
+address once more is refused, because the seat still exists. Removing that seat
+is what changes the answer — it is deleted outright, so her address identifies no
+seat and enrolling or importing it again creates a fresh one. The class is
+revised later to correct its title and timezone; revising a class that was never
+configured is refused.
 
 ## Types
 
@@ -53,6 +58,7 @@ Rule: the class is absent until it is configured, and it is configured at most o
 Rule: an import row carries an email, a kind, and optionally a section.
 Rule: an address is trimmed and lower-cased before it is stored on a seat or matched against one, so addresses differing only in surrounding space or letter case name the same seat.
 Rule: an address identifies at most one seat.
+Rule: removing a seat deletes it, so the address it carried identifies no seat afterwards and is free for a later import or enrolment.
 ```
 
 ## Actions
@@ -66,6 +72,15 @@ configureClass(code: String, title: String, term: String, timezone: String) : re
   where a class is already configured
   then
     refuse CLASS_ALREADY_CONFIGURED "The class has already been configured."
+
+updateClass(code: String, title: String, term: String, timezone: String) : return (class: Class)
+  where a class is configured
+  then
+    set the class's code, title, term, and timezone
+    return class
+  where no class is configured
+  then
+    refuse CLASS_NOT_CONFIGURED "The class has not been configured."
 
 createSection(name: String, location: String, meetingPattern: String) : return (section: Section)
   where true
@@ -155,6 +170,16 @@ reinstateSeat(seat: Seat) : return (seat: Seat, kind: String, user: User, sectio
   where seat in dropped and its holder holds another seat in active
   then
     refuse SEAT_ALREADY_ACTIVE "This user already holds an active seat."
+removeSeat(seat: Seat) : return (seat: Seat, email: String)
+  where seat in seats
+  then
+    take that seat's own email as email
+    remove seat from whichever of pending, active, and dropped holds it
+    delete the seat
+    return seat, email
+  where seat not in seats
+  then
+    refuse SEAT_NOT_FOUND "No such seat exists."
 moveSection(seat: Seat, section: Section) : return (seat: Seat)
   where seat in seats
   then

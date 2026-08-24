@@ -175,11 +175,13 @@ without taking ownership of it. Conversing separately owns conversation
 identities; subscriptions, unread scopes, pins, role contexts, and locks can use
 a conversation. Locking also accepts a post directly, so its target role has two
 valid owners. Roling also receives the reserved application-wide context
-`forum`; because that value is a Commons constant rather than a concept-owned
-identity, it has no second type binding. Every capability Commons declares is
-held and enforced in that one context, and the caller's permissions read answers
-for it. Role-management endpoints can store other opaque context strings, but
-built-in policy interprets only `forum` and conversation identities. The reserved
+`commons`; because that value is a Commons constant rather than a concept-owned
+identity, it has no second type binding, and it names the deployment as a whole
+rather than any one area of it, so no capability held there belongs to the forum
+in particular. Every capability Commons declares is held and enforced in that one
+context, and the caller's permissions read answers for it. Role-management
+endpoints can store other opaque context strings, but built-in policy interprets
+only `commons` and conversation identities. The reserved
 `administer` wildcard is a Commons decision in the same way: Roling stores only
 the capability names a role was defined with and answers plain containment, so
 every enforcing endpoint accepts either the capability it requires or

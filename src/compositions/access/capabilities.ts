@@ -9,14 +9,20 @@
  * every capability check rather than a capability in its own right. An
  * administrator therefore gains new capabilities automatically as they are added.
  */
-export const FORUM = "forum";
+/**
+ * The one reserved role context. It names the deployment as a whole rather than
+ * any one area of it, so no capability held there belongs to the forum in
+ * particular. Roling stores it as an opaque string.
+ */
+export const COMMONS = "commons";
 
 export const ADMINISTER = "administer";
 
 export const CAPABILITIES = {
-  moderate: "Lock threads, trash posts, pin items, and manage categories.",
+  moderate:
+    "Lock threads, trash posts, pin items, resolve flags, read post revisions, and assign posts to categories. Creating or deleting a category needs administer.",
   "course:manage":
-    "Create and revise assignments, manage sections and enrolment, and configure the class.",
+    "Create and revise assignments, manage sections and enrolment, and set up or revise the class.",
   grade: "Enter grades, view the gradebook, and view every submission.",
   "student-records": "Manage late days and staff notes about individual students.",
 } as const;

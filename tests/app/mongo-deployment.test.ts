@@ -442,7 +442,16 @@ describe("the Commons process with MongoDB", () => {
       );
       expect(imported.response.status).toBe(200);
       const learnerMe = await post(edge.origin, "/api/auth/me", {}, learnerCookie);
-      const claimed = await post(
+      // The address already belongs to an account, so the import sweep claimed
+      // the seat for it outright rather than inviting somebody who is already
+      // registered. Enrolling the same address afterwards is refused, because
+      // the seat is no longer pending.
+      const rosterList = await post(edge.origin, "/api/roster/list", {}, operatorCookie);
+      expect(rosterList.response.status).toBe(200);
+      expect(
+        (rosterList.body.members as Array<Record<string, unknown>>).map((member) => member.user),
+      ).toContain(String(learnerMe.body.user));
+      const reEnrolled = await post(
         edge.origin,
         "/api/roster/enroll",
         {
@@ -453,7 +462,8 @@ describe("the Commons process with MongoDB", () => {
         },
         operatorCookie,
       );
-      expect(claimed.response.status).toBe(200);
+      expect(reEnrolled.response.status).toBe(409);
+      expect(reEnrolled.body).toEqual({ error: "CONFLICT" });
 
       const now = Date.now();
       const assignmentResult = await post(

@@ -24,7 +24,6 @@ describe("MongoDB authorization and privacy", () => {
       await app.concepts.Profiling.createProfile({
         user: made.user,
         displayName: username,
-        email,
       });
       const login = await send("/auth/login", { username, password: "password123" });
       return { user: made.user as string, session: login.session as string };

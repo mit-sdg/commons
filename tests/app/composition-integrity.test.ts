@@ -20,7 +20,6 @@ async function actor(
   await app.concepts.Profiling.createProfile({
     user: registered.user,
     displayName: username,
-    email,
   });
   const login = await app.invoker.invoke("/auth/login", {
     username,
@@ -47,11 +46,13 @@ describe("course staff composition", () => {
     const staff = await actor(app, "staff_one", "one@example.edu");
     await app.concepts.Rostering.claimSeat({ seat: created[0]._id, user: staff.user });
 
-    expect(await app.concepts.Roling._getRole({ user: staff.user, context: "forum" })).toEqual([]);
+    expect(await app.concepts.Roling._getRole({ user: staff.user, context: "commons" })).toEqual(
+      [],
+    );
     expect(
       await app.concepts.Roling._hasCapability({
         user: staff.user,
-        context: "forum",
+        context: "commons",
         capability: "course:manage",
       }),
     ).toEqual({ allowed: false });
@@ -65,7 +66,7 @@ describe("course staff composition", () => {
       name: "course-staff",
       capabilities: ["course:manage"],
     });
-    await app.concepts.Roling.assign({ user: staff.user, context: "forum", role });
+    await app.concepts.Roling.assign({ user: staff.user, context: "commons", role });
     const { created } = await app.concepts.Rostering.importSeats({
       rows: [{ email: "custom@example.edu", kind: "STAFF" }],
     });
@@ -74,7 +75,7 @@ describe("course staff composition", () => {
     expect(
       await app.concepts.Roling._hasCapability({
         user: staff.user,
-        context: "forum",
+        context: "commons",
         capability: "course:manage",
       }),
     ).toEqual({ allowed: true });
@@ -84,7 +85,7 @@ describe("course staff composition", () => {
     expect(
       await app.concepts.Roling._hasCapability({
         user: staff.user,
-        context: "forum",
+        context: "commons",
         capability: "course:manage",
       }),
     ).toEqual({ allowed: true });

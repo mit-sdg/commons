@@ -1,8 +1,14 @@
 "use client";
 
-import { ArrowLeftRight, MoreHorizontal, UserMinus } from "lucide-react";
+import {
+  ArrowLeftRight,
+  MoreHorizontal,
+  Trash2,
+  UserMinus,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { RemoveSeatDialog } from "@/components/lms/remove-seat";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +69,10 @@ interface RosterTableProps {
 export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
   const { session } = useAuth();
   const [moveSeat, setMoveSeat] = useState<{
+    seat: string;
+    name: string;
+  } | null>(null);
+  const [removeSeat, setRemoveSeat] = useState<{
     seat: string;
     name: string;
   } | null>(null);
@@ -162,6 +172,17 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                           >
                             <ArrowLeftRight className="size-4" /> Move Section
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() =>
+                              setRemoveSeat({
+                                seat: m.seat,
+                                name: m.displayName ?? m.email,
+                              })
+                            }
+                          >
+                            <Trash2 className="size-4" /> Remove from roster…
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -172,6 +193,18 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
           </TableBody>
         </Table>
       </div>
+
+      {removeSeat ? (
+        <RemoveSeatDialog
+          seat={removeSeat.seat}
+          person={removeSeat.name}
+          open
+          onOpenChange={(next) => {
+            if (!next) setRemoveSeat(null);
+          }}
+          onRemoved={onUpdate}
+        />
+      ) : null}
 
       <Dialog open={!!moveSeat} onOpenChange={() => setMoveSeat(null)}>
         <DialogContent>

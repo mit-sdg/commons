@@ -24,14 +24,14 @@ import {
 } from "./policy.ts";
 import { theRoleFaceOf, theRoleOf } from "./roles.ts";
 import { computations, concepts } from "../../concepts.ts";
-import { ADMIN_ROLE, ADMINISTER, FORUM, INITIAL_ADMIN_CAPABILITIES } from "./capabilities.ts";
+import { ADMIN_ROLE, ADMINISTER, COMMONS, INITIAL_ADMIN_CAPABILITIES } from "./capabilities.ts";
 
 const { Archiving, Authenticating, Inviting, Profiling, Roling, Sessioning } = concepts;
 export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
   when(Authenticating.register({}).responds({ user }))
     .where(
       Authenticating._getUserCount({}).is({ count: 1 }),
-      Roling._hasCapabilityHolder({ context: FORUM, capability: "administer" }).is({
+      Roling._hasCapabilityHolder({ context: COMMONS, capability: "administer" }).is({
         present: false,
       }),
     )
@@ -40,14 +40,14 @@ export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
         role,
       }),
     )
-    .then(Roling.assign({ user, context: FORUM, role })),
+    .then(Roling.assign({ user, context: COMMONS, role })),
 );
 
 export const BootstrapAdminOnLogin = reaction(({ user, role }) =>
   when(Authenticating.authenticate({}).responds({ user }))
     .where(
       Authenticating._getUserCount({}).is({ count: 1 }),
-      Roling._hasCapabilityHolder({ context: FORUM, capability: "administer" }).is({
+      Roling._hasCapabilityHolder({ context: COMMONS, capability: "administer" }).is({
         present: false,
       }),
     )
@@ -56,7 +56,7 @@ export const BootstrapAdminOnLogin = reaction(({ user, role }) =>
         role,
       }),
     )
-    .then(Roling.assign({ user, context: FORUM, role })),
+    .then(Roling.assign({ user, context: COMMONS, role })),
 );
 
 export const RegisterInitialAdmin = endpoint(
@@ -67,7 +67,7 @@ export const RegisterInitialAdmin = endpoint(
       .then(
         where(is.among(valid, [true]), Authenticating._getUserCount({}).is({ count: 0 }))
           .then(Authenticating.register({ username, password, email }).responds({ user }))
-          .then(Profiling.createProfile({ user, displayName, email }))
+          .then(Profiling.createProfile({ user, displayName }))
           .then(respond({ user }))
           .named("success"),
         where(is.among(valid, [false]))
@@ -93,7 +93,7 @@ export const AcceptInvitation = endpoint(
         }),
       )
       .then(Authenticating.register({ username, password, email }).responds({ user }))
-      .then(Profiling.createProfile({ user, displayName, email }))
+      .then(Profiling.createProfile({ user, displayName }))
       .then(Inviting.claim({ invitation, credential: temporaryPassword, user }))
       .then(respond({ user })),
 );
@@ -151,12 +151,12 @@ export const Permissions = endpoint(
       .where(activeUser({ session }).is({ user }))
       .then(
         where(
-          theRoleOf({ user, context: FORUM }).is({ capabilities }),
+          theRoleOf({ user, context: COMMONS }).is({ capabilities }),
           compute(computations.effectiveCapabilities, { capabilities }, effective),
         )
           .then(respond({ capabilities: effective }))
           .named("assigned"),
-        where(no(theRoleOf({ user, context: FORUM })))
+        where(no(theRoleOf({ user, context: COMMONS })))
           .then(respond({ capabilities: [] }))
           .named("none"),
       ),
@@ -196,7 +196,7 @@ export const theRegisteredUsers = former(
         displayName,
         avatar,
         archived,
-        role: whether(theRoleFaceOf({ user, context: FORUM })),
+        role: whether(theRoleFaceOf({ user, context: COMMONS })),
       }),
 );
 
@@ -227,13 +227,13 @@ export const ArchiveUser = endpoint("/users/archive", ({ session, user, actor, a
         mayAdminister({ user: actor }),
         activeUser({ session }).is.not({ user }),
         isNotSoleAdministrator({ user }),
-        holdsARole({ user, context: FORUM }),
+        holdsARole({ user, context: COMMONS }),
       )
         // The caller's authority is confirmed against Roling itself before the
         // ordered effects begin, which is also what carries the resolved caller
         // past the revocation and into the archive that records them.
-        .then(Roling.requireCapability({ user: actor, context: FORUM, capability: ADMINISTER }))
-        .then(Roling.revoke({ user, context: FORUM }))
+        .then(Roling.requireCapability({ user: actor, context: COMMONS, capability: ADMINISTER }))
+        .then(Roling.revoke({ user, context: COMMONS }))
         .then(Archiving.trash({ item: user, by: actor, at }))
         .then(Sessioning.endAllForUser({ user }))
         .then(respond({ user }))
@@ -242,7 +242,7 @@ export const ArchiveUser = endpoint("/users/archive", ({ session, user, actor, a
         mayAdminister({ user: actor }),
         activeUser({ session }).is.not({ user }),
         isNotSoleAdministrator({ user }),
-        holdsNoRole({ user, context: FORUM }),
+        holdsNoRole({ user, context: COMMONS }),
       )
         .then(Archiving.trash({ item: user, by: actor, at }))
         .then(Sessioning.endAllForUser({ user }))

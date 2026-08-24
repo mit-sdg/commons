@@ -19,6 +19,17 @@ describe("Commons navigation", () => {
     expect(assignments?.href).toBe("/assignments");
   });
 
+  test("class settings is offered only to a course manager", () => {
+    const manager = lmsNavigation(
+      true,
+      (capability) => capability === "course:manage",
+    );
+    expect(manager.some(({ href }) => href === "/staff/class")).toBe(true);
+
+    const grader = lmsNavigation(true, (capability) => capability === "grade");
+    expect(grader.some(({ href }) => href === "/staff/class")).toBe(false);
+  });
+
   test("a seat identifier and assignment capability identify course staff", () => {
     expect(lmsAccess("seat-1", true)).toEqual({
       hasRosterSeat: true,

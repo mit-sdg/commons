@@ -13,7 +13,6 @@ async function actor(app: ReturnType<typeof assembleCommons>, username: string) 
   await app.concepts.Profiling.createProfile({
     user: registered.user,
     displayName: username,
-    email: `${username}@example.edu`,
   });
   const login = await app.invoker.invoke("/auth/login", {
     username,

@@ -2,7 +2,9 @@
 
 A role is a named bundle of capabilities, and each account holds exactly one of
 them in a context. Policy reads that single assignment whenever an operation
-runs.
+runs. Commons reserves one context for the deployment as a whole, named
+`commons`, and every capability below is held and enforced there; the name is
+Commons's own constant, and Roling stores it as an opaque string like any other.
 
 Commons declares four capabilities — `moderate`, `course:manage`, `grade`, and
 `student-records` — plus the reserved `administer` wildcard, which names no power

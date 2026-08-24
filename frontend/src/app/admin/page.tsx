@@ -4,7 +4,6 @@ import {
   Archive,
   ArchiveRestore,
   Check,
-  FolderPlus,
   List,
   Mail,
   MailPlus,
@@ -20,7 +19,6 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
-import { CategoryDot } from "@/components/forum/badges";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
@@ -33,10 +31,9 @@ import { UserName } from "@/components/user-name";
 import type { QueryState } from "@/hooks/use-query";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
-import { FORUM_CONTEXT, useAuth } from "@/lib/auth";
+import { COMMONS_CONTEXT, useAuth } from "@/lib/auth";
 import { fullTime, relativeTime } from "@/lib/format";
 import type {
-  Category,
   Invitation,
   MailMessage,
   RegisteredUser,
@@ -53,9 +50,10 @@ import { cn } from "@/lib/utils";
 const CAPABILITY_INFO: Record<string, string> = {
   administer:
     "Everything. A role carrying this satisfies every permission check, now and as new ones are added.",
-  moderate: "Lock threads, trash posts, pin items, and manage categories.",
+  moderate:
+    "Lock threads, trash posts, pin items, resolve flags, read post revisions, and assign posts to categories. Creating or deleting a category needs administer.",
   "course:manage":
-    "Create and revise assignments, manage sections and enrolment, and configure the class.",
+    "Create and revise assignments, manage sections and enrolment, and set up or revise the class.",
   grade: "Enter grades, view the gradebook, and view every submission.",
   "student-records":
     "Manage late days and staff notes about individual students.",
@@ -592,124 +590,6 @@ function UsersAndInvitationsAdmin({
   );
 }
 
-function CategoryAdmin() {
-  const { session } = useAuth();
-  const { data, refetch } = useQuery<{ categories: Category[] }>(
-    () => api.categories.list({}),
-    [],
-  );
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-
-  async function create() {
-    if (!session || !name.trim()) return;
-    const result = await api.categories.create({
-      name: name.trim(),
-      description: description.trim(),
-    });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Category created");
-      setName("");
-      setDescription("");
-      refetch();
-    }
-  }
-
-  async function remove(category: string) {
-    if (!session) return;
-    const result = await api.categories.delete({ category });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Category deleted");
-      refetch();
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
-          <FolderPlus className="size-5" />
-          New category
-        </h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cat-name">Name</Label>
-            <Input
-              id="cat-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Announcements"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cat-desc">Description</Label>
-            <Input
-              id="cat-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What belongs here?"
-            />
-          </div>
-        </div>
-        <Button className="mt-4" onClick={create} disabled={!name.trim()}>
-          Create category
-        </Button>
-      </section>
-
-      <section>
-        <h3 className="eyebrow mb-3">Existing categories</h3>
-        {!data || data.categories.length === 0 ? (
-          <EmptyState
-            title="No categories"
-            description="Create your first category above."
-          />
-        ) : (
-          <div className="divide-y divide-border rounded-xl border border-border bg-card">
-            {data.categories.map((category) => (
-              <div
-                key={String(category.category)}
-                className="flex items-center justify-between gap-3 p-4"
-              >
-                <div className="flex items-center gap-2.5">
-                  <CategoryDot
-                    id={String(category.category)}
-                    className="size-3.5"
-                  />
-                  <div>
-                    <p className="font-medium">{category.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {category.description || "No description"}
-                    </p>
-                  </div>
-                </div>
-                <ConfirmAction
-                  title={`Delete ${category.name}?`}
-                  description="This removes the category. Discussions and posts are not deleted."
-                  confirmLabel="Delete category"
-                  destructive
-                  onConfirm={() => remove(String(category.category))}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 text-destructive"
-                      aria-label={`Delete ${category.name}`}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  }
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
 function RoleAdmin({
   initialInspectUser,
   roleList,
@@ -779,7 +659,7 @@ function RoleAdmin({
     setBusy(true);
     const result = await api.roles.assign({
       user: assignUser,
-      context: FORUM_CONTEXT,
+      context: COMMONS_CONTEXT,
       role: assignRole,
     });
     setBusy(false);
@@ -792,7 +672,7 @@ function RoleAdmin({
 
   async function revoke(user: string, onDone: () => void) {
     if (!session) return;
-    const result = await api.roles.revoke({ user, context: FORUM_CONTEXT });
+    const result = await api.roles.revoke({ user, context: COMMONS_CONTEXT });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
       toast.success("Role removed");
@@ -1272,7 +1152,7 @@ export default function AdminPage() {
       <PageHeader
         eyebrow="Console"
         title="Administration"
-        description="Manage users, invitations, categories, roles, and outgoing email."
+        description="Manage users, invitations, roles, and outgoing email."
       />
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full">
@@ -1285,13 +1165,6 @@ export default function AdminPage() {
               Users
             </span>
             <span className="hidden sm:inline">Users & Invitations</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="categories"
-            className="gap-1.5 px-1.5 sm:gap-2 sm:px-2"
-          >
-            <FolderPlus className="size-4 shrink-0" />
-            Categories
           </TabsTrigger>
           <TabsTrigger
             value="roles"
@@ -1318,9 +1191,6 @@ export default function AdminPage() {
             onInspectRoles={handleInspectRoles}
             currentUser={me ? String(me.user) : null}
           />
-        </TabsContent>
-        <TabsContent value="categories" className="mt-6">
-          <CategoryAdmin />
         </TabsContent>
         <TabsContent value="roles" className="mt-6">
           <RoleAdmin
