@@ -158,6 +158,9 @@ instantiate Tracking with
 instantiate Trashing with
   User is Authenticating.User
   Item is Posting.Post
+
+instantiate Vouching with
+  Subject is Authenticating.User
 ```
 
 Authenticating owns the application's person identity. Rostering, profiles,
@@ -168,7 +171,7 @@ Assigning owns assignment identities. Grade items, grades, late-day uses, and
 submissions refer to an assignment rather than creating another copy of it.
 Rostering owns section identities; an assignment's target list contains those
 sections. A grade may cite a Submitting submission as evidence, and a submission
-uses a Posting post as its artifact. Invitation and notification workflows supply the concrete `MailKey` used to deduplicate queued email messages.
+uses a Posting post as its artifact. Invitation, notification, and password-reset workflows supply the concrete `MailKey` used to deduplicate queued email messages. Vouching binds its subject to the account identity: a password-reset voucher entitles its bearer to set that one account's password once.
 
 Posting owns post identities. Forum features attach their own state to a post
 without taking ownership of it. Conversing separately owns conversation
@@ -223,6 +226,15 @@ effectiveCapabilities(capabilities: Strings) : Strings
   Expands a role's stored capabilities for presentation, answering the whole
   registry when the role carries the administer wildcard. Enforcement does not use
   it: an enforcing endpoint checks the capability it requires or the wildcard.
+
+passwordResetExpiry(at: Date) : Date
+  Answers the instant one hour after the request, when a reset voucher lapses.
+
+passwordResetMailText(voucher: String, credential: String, username: String) : String
+  Renders the plain-text password-reset message naming the account.
+
+passwordResetMailHtml(voucher: String, credential: String, username: String) : String
+  Renders the HTML password-reset message naming the account.
 
 setupSecretMatches(secret: String) : Bool
   Reports whether the candidate matches the configured setup-secret verifier.

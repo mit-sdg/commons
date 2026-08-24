@@ -306,6 +306,29 @@ for (const [floor, make] of floors) {
         { user: zoe, username: "zoe", email: "zoe@example.edu" },
       ]);
     });
+
+    test("resetting a password needs no current password and replaces it", async () => {
+      const auth = await make();
+      const { user } = await auth.register(good);
+      expect(await auth.resetPassword({ user, newPassword: "replacement-secret" })).toEqual({
+        user,
+      });
+      expect(
+        await auth.authenticate({ username: "nadia", password: "replacement-secret" }),
+      ).toEqual({ user });
+      await expectRefusal(
+        () => auth.authenticate({ username: "nadia", password: good.password }),
+        refusalErrors.InvalidCredentials,
+      );
+      await expectRefusal(
+        () => auth.resetPassword({ user: "missing-user", newPassword: "replacement-secret" }),
+        refusalErrors.InvalidCredentials,
+      );
+      await expectRefusal(
+        () => auth.resetPassword({ user, newPassword: "short" }),
+        refusalErrors.PasswordInvalidLength,
+      );
+    });
   });
 }
 

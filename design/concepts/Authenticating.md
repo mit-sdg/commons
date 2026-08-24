@@ -41,6 +41,7 @@ Rule: an email looks like an address when it contains exactly one @, and the pas
 Rule: an address identifies at most one user.
 Rule: registration reports a malformed input before a conflict, and a taken username before a taken address, because a username can simply be chosen again while a taken address means the person already has an account.
 Rule: changing a password requires the current password, a failed check does not say whether the account or password was wrong, and the new password follows the same length rule as registration.
+Rule: resetting a password replaces the verifier without the current password; the application must separately establish that the request comes from the account's owner before asking for it.
 ```
 
 ## Actions
@@ -86,6 +87,18 @@ changePassword(user: User, oldPassword: String, newPassword: String) : return (u
   where the user does not exist or oldPassword does not match its passwordVerifier
   then
     refuse INVALID_CREDENTIALS "The current password is wrong."
+  where newPassword is not within password length
+  then
+    refuse PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
+
+resetPassword(user: User, newPassword: String) : return (user: User)
+  where the user exists and newPassword is within password length
+  then
+    set the user's passwordVerifier to one derived from newPassword
+    return user
+  where the user does not exist
+  then
+    refuse INVALID_CREDENTIALS "There is no such account."
   where newPassword is not within password length
   then
     refuse PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."

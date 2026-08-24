@@ -37,6 +37,9 @@ export function validateDeploymentConfiguration(env: NodeJS.ProcessEnv = process
   if (env.INVITATION_SECRET === undefined) {
     throw new Error("commons: INVITATION_SECRET is required in production.");
   }
+  if (env.VOUCHER_SECRET === undefined) {
+    throw new Error("commons: VOUCHER_SECRET is required in production.");
+  }
   if (mongodbUrl === undefined) {
     throw new Error("commons: MONGODB_URI or MONGODB_URL is required in production.");
   }

@@ -5,6 +5,7 @@ const productionEnvironment = (overrides: NodeJS.ProcessEnv = {}): NodeJS.Proces
   NODE_ENV: "production",
   PUBLIC_ORIGIN: "https://class.mit-sdg.dev",
   INVITATION_SECRET: "test-invitation-secret",
+  VOUCHER_SECRET: "test-voucher-secret",
   ...overrides,
 });
 
@@ -40,6 +41,14 @@ describe("deployment MongoDB configuration", () => {
     expect(message).not.toContain(platform);
     expect(message).not.toContain(legacy);
     expect(message).not.toContain("secret");
+  });
+
+  test("requires the voucher secret in production", () => {
+    const environment = productionEnvironment({ MONGODB_URI: "mongodb://platform/class" });
+    delete environment.VOUCHER_SECRET;
+    expect(() => validateDeploymentConfiguration(environment)).toThrow(
+      "commons: VOUCHER_SECRET is required in production.",
+    );
   });
 
   test("requires one MongoDB setting in production", () => {

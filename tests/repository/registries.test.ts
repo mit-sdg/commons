@@ -134,6 +134,7 @@ describe("application-owned design integration", () => {
       "Roling.Context is Conversing.Conversation",
       "Subscribing.Target is Conversing.Conversation",
       "Tracking.Scope is Conversing.Conversation",
+      "Vouching.Subject is Authenticating.User",
     ].sort();
     const source = readFileSync(join(root, "design/application.md"), "utf8");
     const inventory = source.match(/^```instances\n([\s\S]*?)^```$/m)?.[1] ?? "";

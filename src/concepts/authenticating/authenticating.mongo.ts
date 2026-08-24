@@ -119,6 +119,19 @@ export class MongoAuthenticatingConcept {
     return { user };
   }
 
+  async resetPassword({ user, newPassword }: { user: string; newPassword: string }) {
+    const doc = await this.users.findOne({ _id: user });
+    if (doc === null) {
+      throw new InvalidCredentials("There is no such account.");
+    }
+    if (newPassword.length < 8 || newPassword.length > 128) {
+      throw new PasswordInvalidLength("Must be 8-128 characters");
+    }
+    const passwordVerifier = await derivePasswordVerifier(newPassword);
+    await this.users.updateOne({ _id: user }, { $set: { passwordVerifier } });
+    return { user };
+  }
+
   async _getById({ user }: { user: string }) {
     const doc = await this.users.findOne({ _id: user });
     return doc === null ? [] : [{ username: doc.username, email: doc.email }];
