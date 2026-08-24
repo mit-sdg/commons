@@ -77,7 +77,7 @@ export function ForgotPasswordForm() {
               </CardDescription>
             </CardHeader>
             <CardFooter>
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="w-full text-center text-sm text-muted-foreground">
                 <Link
                   href="/login"
                   className="font-medium text-primary hover:underline"
@@ -154,13 +154,15 @@ export function ResetPasswordForm() {
             ? "That reset link is invalid or has expired. Request a new one."
             : publicErrorMessage(result.error),
         );
+        setBusy(false);
         return;
       }
       toast.success("Password reset. Sign in with your new password.");
+      // The voucher is spent. Stay busy until the sign-in page replaces this
+      // form, so a second click cannot report a failure that did not happen.
       router.push("/login");
     } catch {
       toast.error(publicErrorMessage("INTERNAL_ERROR"));
-    } finally {
       setBusy(false);
     }
   }
@@ -176,7 +178,7 @@ export function ResetPasswordForm() {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="w-full text-center text-sm text-muted-foreground">
               <Link
                 href="/forgot-password"
                 className="font-medium text-primary hover:underline"
