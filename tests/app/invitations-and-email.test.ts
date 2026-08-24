@@ -336,6 +336,8 @@ describe("invitations and email", () => {
     expect([...edge.publicPaths].sort()).toEqual([
       "/auth/accept-invitation",
       "/auth/login",
+      "/auth/request-password-reset",
+      "/auth/reset-password",
       "/setup/register-admin",
     ]);
     const response = await edge.fetch(

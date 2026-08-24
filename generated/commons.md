@@ -989,11 +989,11 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Queries
 
-- `_getForSubject(subject: Subject) : many (voucher: String, issuedAt: Date, expiresAt: Date)`
+- `_getIssuedSince(subject: Subject, since: Date) : many (voucher: String, issuedAt: Date, expiresAt: Date)`
 
 #### Instances
 
-- `Vouching` — instance of `Vouching` — [Commons application](../design/application.md), line 162.
+- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 162.
   - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 163.
 
 ## Application types
@@ -1012,16 +1012,17 @@ Concrete types:
 - `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 209.
 - `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 218.
 - `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 215.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 230.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 236.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 233.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 239.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 248.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 242.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 245.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 257.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 251.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 254.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 230.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 235.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 241.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 238.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 244.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 253.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 247.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 250.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 262.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 256.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 259.
 
 ## Views
 
@@ -3791,10 +3792,10 @@ then
 ### Access.recovery.PasswordResetQueuesMail
 
 Authored path: `Access.recovery.PasswordResetQueuesMail`.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 12.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 17.
 
 ```reaction
-when Vouching.issue (at, credential, subject: user, voucher)
+when PasswordResetVouching.issue (at, credential, subject: user, voucher)
 where
   Authenticating._getById (user) has (email, username)
   text is passwordResetMailText (credential, username, voucher)
@@ -3807,7 +3808,7 @@ then
 
 Authored path: `Access.recovery.RequestPasswordReset`.
 - Covered by [Recovery](../design/compositions/access/recovery.md), line 4.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 30.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 41.
 
 ```reaction
 when RequestBoundary.request (email, path: "/auth/request-password-reset", requestId)
@@ -3821,7 +3822,7 @@ then
 
 Authored path: `Access.recovery.RequestPasswordReset`.
 - Covered by [Recovery](../design/compositions/access/recovery.md), line 4.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 30.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 41.
 
 ```reaction
 when Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.recovery.RequestPasswordReset:accepted
@@ -3835,40 +3836,42 @@ then
 
 Authored path: `Access.recovery.RequestPasswordReset`.
 - Covered by [Recovery](../design/compositions/access/recovery.md), line 4.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 30.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 41.
 
 ```reaction
 when RequestBoundary.request (email, path: "/auth/request-password-reset", requestId)
 where
   at is the current flow's instant
   Authenticating._getByEmail (email) has (user)
+  quietSince is passwordResetCooldownStart (at)
+  no PasswordResetVouching._getIssuedSince (since: quietSince, subject: user)
   expiresAt is passwordResetExpiry (at)
 then
-  Vouching.issue (at, expiresAt, subject: user)
+  PasswordResetVouching.issue (at, expiresAt, subject: user)
 ```
 
 ### Access.recovery.ResetPassword
 
 Authored path: `Access.recovery.ResetPassword`.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 20.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 31.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
 
 ```reaction
 when RequestBoundary.request (credential, newPassword, path: "/auth/reset-password", requestId, voucher)
 where
   at is the current flow's instant
 then
-  Vouching.verify (at, credential, voucher)
+  PasswordResetVouching.verify (at, credential, voucher)
 ```
 
 ### Access.recovery.ResetPassword#2
 
 Authored path: `Access.recovery.ResetPassword`.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 20.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 31.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
 
 ```reaction
-when Vouching.verify (at, credential, voucher, subject: user), asked by Access.recovery.ResetPassword
+when PasswordResetVouching.verify (at, credential, voucher, subject: user), asked by Access.recovery.ResetPassword
 where
   earlier, RequestBoundary.request (credential, newPassword, path: "/auth/reset-password", requestId, voucher)
 then
@@ -3878,27 +3881,27 @@ then
 ### Access.recovery.ResetPassword#3
 
 Authored path: `Access.recovery.ResetPassword`.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 20.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 31.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
 
 ```reaction
 when Authenticating.resetPassword (newPassword, user), asked by Access.recovery.ResetPassword#2
 where
-  earlier, Vouching.verify (at, credential, voucher, subject: user), asked by Access.recovery.ResetPassword
+  earlier, PasswordResetVouching.verify (at, credential, voucher, subject: user), asked by Access.recovery.ResetPassword
 then
-  Vouching.redeem (at, credential, voucher)
+  PasswordResetVouching.redeem (at, credential, voucher)
 ```
 
 ### Access.recovery.ResetPassword#4
 
 Authored path: `Access.recovery.ResetPassword`.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 20.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 31.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
 
 ```reaction
-when Vouching.redeem (at, credential, voucher), asked by Access.recovery.ResetPassword#3
+when PasswordResetVouching.redeem (at, credential, voucher), asked by Access.recovery.ResetPassword#3
 where
-  earlier, Vouching.verify (at, credential, voucher, subject: user), asked by Access.recovery.ResetPassword
+  earlier, PasswordResetVouching.verify (at, credential, voucher, subject: user), asked by Access.recovery.ResetPassword
 then
   Sessioning.endAllForUser (user)
 ```
@@ -3906,8 +3909,8 @@ then
 ### Access.recovery.ResetPassword#5
 
 Authored path: `Access.recovery.ResetPassword`.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 20.
-- Covered by [Recovery](../design/compositions/access/recovery.md), line 31.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.recovery.ResetPassword#4

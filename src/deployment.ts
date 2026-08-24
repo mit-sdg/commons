@@ -27,6 +27,22 @@ export function configuredAdminSetupSecretVerifier(
   return verifier;
 }
 
+/** The documented floor for a derivation secret: 32 random bytes, hex or base64. */
+const SECRET_MINIMUM_CHARACTERS = 32;
+
+function configuredDerivationSecret(env: NodeJS.ProcessEnv, name: string): string {
+  const secret = env[name];
+  if (secret === undefined || secret === "") {
+    throw new Error(`commons: ${name} is required in production.`);
+  }
+  if (secret.length < SECRET_MINIMUM_CHARACTERS) {
+    throw new Error(
+      `commons: ${name} must carry at least ${SECRET_MINIMUM_CHARACTERS} characters of random data.`,
+    );
+  }
+  return secret;
+}
+
 export function validateDeploymentConfiguration(env: NodeJS.ProcessEnv = process.env): void {
   configuredAdminSetupSecretVerifier(env);
   const mongodbUrl = configuredMongodbUrl(env);
@@ -34,11 +50,10 @@ export function validateDeploymentConfiguration(env: NodeJS.ProcessEnv = process
   if (env.PUBLIC_ORIGIN === undefined) {
     throw new Error("commons: PUBLIC_ORIGIN is required in production.");
   }
-  if (env.INVITATION_SECRET === undefined) {
-    throw new Error("commons: INVITATION_SECRET is required in production.");
-  }
-  if (env.VOUCHER_SECRET === undefined) {
-    throw new Error("commons: VOUCHER_SECRET is required in production.");
+  const invitationSecret = configuredDerivationSecret(env, "INVITATION_SECRET");
+  const voucherSecret = configuredDerivationSecret(env, "VOUCHER_SECRET");
+  if (voucherSecret === invitationSecret) {
+    throw new Error("commons: VOUCHER_SECRET must differ from INVITATION_SECRET.");
   }
   if (mongodbUrl === undefined) {
     throw new Error("commons: MONGODB_URI or MONGODB_URL is required in production.");

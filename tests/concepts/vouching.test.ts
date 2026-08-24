@@ -51,19 +51,27 @@ for (const [floor, make] of floors) {
       await expectRefusal(() => vouching.redeem({ ...issued, at: beforeExpiry }), VoucherInvalid);
     });
 
-    test("redeeming discards the subject's other vouchers but nobody else's", async () => {
+    test("issuing supersedes the subject's voucher but nobody else's", async () => {
       const vouching = await make();
       const first = await vouching.issue({ subject: "user-1", at: issuedAt, expiresAt });
-      const second = await vouching.issue({ subject: "user-1", at: beforeExpiry, expiresAt });
       const other = await vouching.issue({ subject: "user-2", at: issuedAt, expiresAt });
+      const second = await vouching.issue({ subject: "user-1", at: beforeExpiry, expiresAt });
 
-      await vouching.redeem({ ...second, at: beforeExpiry });
-      await expectRefusal(() => vouching.redeem({ ...first, at: beforeExpiry }), VoucherInvalid);
-      expect(await vouching._getForSubject({ subject: "user-1" })).toEqual([]);
+      await expectRefusal(() => vouching.verify({ ...first, at: beforeExpiry }), VoucherInvalid);
+      expect(await vouching.verify({ ...second, at: beforeExpiry })).toEqual({
+        voucher: second.voucher,
+        subject: "user-1",
+      });
       expect(await vouching.verify({ ...other, at: beforeExpiry })).toEqual({
         voucher: other.voucher,
         subject: "user-2",
       });
+
+      await vouching.redeem({ ...second, at: beforeExpiry });
+      expect(await vouching._getIssuedSince({ subject: "user-1", since: issuedAt })).toEqual([]);
+      expect(await vouching._getIssuedSince({ subject: "user-2", since: issuedAt })).toHaveLength(
+        1,
+      );
     });
 
     test("a wrong credential and a lapsed voucher receive the same refusal", async () => {
@@ -78,7 +86,7 @@ for (const [floor, make] of floors) {
       await expectRefusal(() => vouching.redeem({ ...issued, at: afterExpiry }), VoucherInvalid);
     });
 
-    test("issuing prunes the subject's expired vouchers", async () => {
+    test("issuing leaves one voucher behind, expired or not", async () => {
       const vouching = await make();
       const stale = await vouching.issue({ subject: "user-1", at: issuedAt, expiresAt });
       const laterExpiry = new Date("2026-01-01T03:00:00Z");
@@ -88,25 +96,24 @@ for (const [floor, make] of floors) {
         expiresAt: laterExpiry,
       });
 
-      const remaining = await vouching._getForSubject({ subject: "user-1" });
+      const remaining = await vouching._getIssuedSince({ subject: "user-1", since: issuedAt });
       expect(remaining).toEqual([
         { voucher: fresh.voucher, issuedAt: afterExpiry, expiresAt: laterExpiry },
       ]);
       expect(remaining.map((row) => row.voucher)).not.toContain(stale.voucher);
     });
 
-    test("vouchers list newest first without credentials", async () => {
+    test("a voucher issued before the given instant is not answered", async () => {
       const vouching = await make();
-      const first = await vouching.issue({ subject: "user-1", at: issuedAt, expiresAt });
-      const second = await vouching.issue({
-        subject: "user-1",
-        at: beforeExpiry,
-        expiresAt,
-      });
-      expect(await vouching._getForSubject({ subject: "user-1" })).toEqual([
-        { voucher: second.voucher, issuedAt: beforeExpiry, expiresAt },
-        { voucher: first.voucher, issuedAt: issuedAt, expiresAt },
+      const issued = await vouching.issue({ subject: "user-1", at: issuedAt, expiresAt });
+
+      expect(await vouching._getIssuedSince({ subject: "user-1", since: issuedAt })).toEqual([
+        { voucher: issued.voucher, issuedAt, expiresAt },
       ]);
+      expect(await vouching._getIssuedSince({ subject: "user-1", since: beforeExpiry })).toEqual(
+        [],
+      );
+      expect(await vouching._getIssuedSince({ subject: "user-2", since: issuedAt })).toEqual([]);
     });
   });
 }

@@ -36,6 +36,7 @@ import { vouching } from "./concepts/vouching/registry.ts";
 import { setupSecretMatches } from "./computations/admin-setup.ts";
 import { capabilitiesAreKnown, effectiveCapabilities } from "./computations/capabilities.ts";
 import {
+  passwordResetCooldownStart,
   passwordResetExpiry,
   passwordResetMailHtml,
   passwordResetMailText,
@@ -72,6 +73,7 @@ const registrations = {
   Mailing: mailing,
   Notifying: notifying,
   Noting: noting,
+  PasswordResetVouching: vouching,
   Pinning: pinning,
   Posting: posting,
   Profiling: profiling,
@@ -88,7 +90,6 @@ const registrations = {
   Tasking: tasking,
   Tracking: tracking,
   Trashing: trashing,
-  Vouching: vouching,
 };
 
 export const learningConcepts = conceptSet(registrations, {
@@ -98,6 +99,7 @@ export const learningConcepts = conceptSet(registrations, {
   invitationMailText,
   notificationMailHtml,
   notificationMailText,
+  passwordResetCooldownStart,
   passwordResetExpiry,
   passwordResetMailHtml,
   passwordResetMailText,

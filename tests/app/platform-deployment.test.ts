@@ -84,7 +84,7 @@ describe("the managed-platform deployment", () => {
       NODE_ENV: "development",
       MONGODB_URI: "mongodb://platform/commons",
       PUBLIC_ORIGIN: "https://commons.example.edu",
-      INVITATION_SECRET: "production-invitation-secret",
+      INVITATION_SECRET: "production-invitation-secret-0123456789",
     });
     expect(() => validateDeploymentConfiguration(withInvitationSecret.backend)).toThrow(
       "commons: VOUCHER_SECRET is required in production.",
@@ -94,8 +94,8 @@ describe("the managed-platform deployment", () => {
       NODE_ENV: "development",
       MONGODB_URI: "mongodb://platform/commons",
       PUBLIC_ORIGIN: "https://commons.example.edu",
-      INVITATION_SECRET: "production-invitation-secret",
-      VOUCHER_SECRET: "production-voucher-secret",
+      INVITATION_SECRET: "production-invitation-secret-0123456789",
+      VOUCHER_SECRET: "production-voucher-secret-0123456789",
     });
     expect(() => validateDeploymentConfiguration(complete.backend)).not.toThrow();
   });

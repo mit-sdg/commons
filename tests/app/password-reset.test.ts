@@ -5,6 +5,15 @@ import { createEdge } from "../../src/edge.ts";
 
 afterAll(stopTestDb);
 
+const post = (edge: ReturnType<typeof createEdge>, path: string, body: unknown) =>
+  edge.fetch(
+    new Request(`http://edge/api${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
+
 const password = "original-password";
 
 async function registeredUser(
@@ -19,6 +28,12 @@ async function registeredUser(
   });
   if ("error" in registered) throw new Error(String(registered.error));
   return registered.user;
+}
+
+async function onlyUser(edge: ReturnType<typeof createEdge>, username: string): Promise<string> {
+  const [row] = await edge.application.concepts.Authenticating._getByUsername({ username });
+  if (row === undefined) throw new Error(`no account named ${username}`);
+  return row.user;
 }
 
 function resetCodeIn(text: string): string {
@@ -161,11 +176,63 @@ describe("password reset", () => {
     expect(pending[0].text).toContain("first_holder");
   });
 
+  test("a second request inside the cooldown queues no further mail", async () => {
+    const edge = createEdge(mongoImplementations(await testDb()));
+    await registeredUser(edge, "eager_member", "eager@example.edu");
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const requested = await edge.gateway.invoke("/auth/request-password-reset", {
+        email: "eager@example.edu",
+      });
+      expect(requested.ok).toBe(true);
+      await edge.application.whenIdle();
+    }
+
+    const pending = await edge.application.concepts.Mailing._getPending({});
+    expect(pending).toHaveLength(1);
+    const voucher = pending[0].key as string;
+    expect(
+      await edge.application.concepts.PasswordResetVouching._getIssuedSince({
+        subject: await onlyUser(edge, "eager_member"),
+        since: new Date(0),
+      }),
+    ).toEqual([expect.objectContaining({ voucher })]);
+  });
+
+  test("the HTTP boundary serves both endpoints without a session", async () => {
+    const edge = createEdge(mongoImplementations(await testDb()));
+    await registeredUser(edge, "signed_out_member", "signed.out@example.edu");
+
+    const requested = await post(edge, "/auth/request-password-reset", {
+      email: "signed.out@example.edu",
+    });
+    expect(requested.status).toBe(200);
+    expect(await requested.json()).toEqual({ ok: true });
+    await edge.application.whenIdle();
+
+    const pending = await edge.application.concepts.Mailing._getPending({});
+    expect(pending).toHaveLength(1);
+    const reset = await post(edge, "/auth/reset-password", {
+      voucher: pending[0].key,
+      credential: resetCodeIn(pending[0].text),
+      newPassword: "replacement-password",
+    });
+    expect(reset.status).toBe(200);
+    expect(await reset.json()).toEqual({ ok: true });
+
+    const refused = await post(edge, "/auth/reset-password", {
+      voucher: pending[0].key,
+      credential: resetCodeIn(pending[0].text),
+      newPassword: "third-password",
+    });
+    expect(refused.status).toBe(401);
+  });
+
   test("a lapsed voucher is refused", async () => {
     const edge = createEdge(mongoImplementations(await testDb()));
     const user = await registeredUser(edge, "late_member", "late@example.edu");
 
-    const issued = await edge.application.concepts.Vouching.issue({
+    const issued = await edge.application.concepts.PasswordResetVouching.issue({
       subject: user,
       at: new Date("2020-01-01T00:00:00Z"),
       expiresAt: new Date("2020-01-01T01:00:00Z"),

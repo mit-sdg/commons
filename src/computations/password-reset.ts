@@ -3,6 +3,10 @@ import { configuredPublicOrigin } from "../deployment.ts";
 // The mail bodies below promise "one hour" in prose; keep them in step with this value.
 const RESET_VALIDITY_MS = 60 * 60 * 1000;
 
+// A second request inside this window reuses nothing and sends nothing, so a
+// stranger cannot turn the public endpoint into a mail cannon.
+const RESET_COOLDOWN_MS = 5 * 60 * 1000;
+
 const escapeHtml = (value: string) =>
   value
     .replaceAll("&", "&amp;")
@@ -13,6 +17,10 @@ const escapeHtml = (value: string) =>
 
 export function passwordResetExpiry({ at }: { at: Date }): Date {
   return new Date(at.getTime() + RESET_VALIDITY_MS);
+}
+
+export function passwordResetCooldownStart({ at }: { at: Date }): Date {
+  return new Date(at.getTime() - RESET_COOLDOWN_MS);
 }
 
 function resetLink(voucher: string): string {

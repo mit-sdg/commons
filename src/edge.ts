@@ -5,7 +5,13 @@ import { assembleCommons } from "./assembly/application.ts";
 import { commonsHttpPolicy } from "./assembly/http-policy.ts";
 import { configuredPublicOrigin } from "./deployment.ts";
 
-const PUBLIC_PATHS = new Set(["/auth/login", "/auth/accept-invitation", "/setup/register-admin"]);
+const PUBLIC_PATHS = new Set([
+  "/auth/login",
+  "/auth/accept-invitation",
+  "/auth/request-password-reset",
+  "/auth/reset-password",
+  "/setup/register-admin",
+]);
 
 function sessionFrom(request: Request): string | undefined {
   const sessions = (request.headers.get("cookie") ?? "")

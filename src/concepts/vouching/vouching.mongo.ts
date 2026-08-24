@@ -13,8 +13,9 @@ export class MongoVouchingConcept {
   private readonly vouchers: Collection<VoucherDoc>;
   private index: Promise<string> | undefined;
 
-  constructor(db: Db) {
-    this.vouchers = db.collection<VoucherDoc>("vouching.vouchers");
+  constructor(db: Db, instance = "Vouching") {
+    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
+    this.vouchers = db.collection<VoucherDoc>(`${prefix}.vouchers`);
   }
 
   async issue({ subject, at, expiresAt }: { subject: string; at: Date; expiresAt: Date }) {
@@ -22,7 +23,7 @@ export class MongoVouchingConcept {
     if (expiresAt.getTime() <= at.getTime()) {
       throw new VoucherExpiryInvalid(subject);
     }
-    await this.vouchers.deleteMany({ subject, expiresAt: { $lte: at } });
+    await this.vouchers.deleteMany({ subject });
     const voucher = crypto.randomUUID();
     await this.vouchers.insertOne({ _id: voucher, subject, issuedAt: at, expiresAt });
     return { voucher, subject, credential: voucherCredential(voucher) };
@@ -43,15 +44,15 @@ export class MongoVouchingConcept {
     }
     const doc = await this.vouchers.findOneAndDelete({ _id: voucher, expiresAt: { $gt: at } });
     if (doc === null) throw new VoucherInvalid(voucher);
-    await this.vouchers.deleteMany({ subject: doc.subject });
     return { voucher, subject: doc.subject };
   }
 
-  async _getForSubject({ subject }: { subject: string }) {
-    return (await this.vouchers.find({ subject }).sort({ issuedAt: -1 }).toArray()).map((doc) => ({
-      voucher: doc._id,
-      issuedAt: doc.issuedAt,
-      expiresAt: doc.expiresAt,
-    }));
+  async _getIssuedSince({ subject, since }: { subject: string; since: Date }) {
+    return (
+      await this.vouchers
+        .find({ subject, issuedAt: { $gte: since } })
+        .sort({ issuedAt: -1 })
+        .toArray()
+    ).map((doc) => ({ voucher: doc._id, issuedAt: doc.issuedAt, expiresAt: doc.expiresAt }));
   }
 }

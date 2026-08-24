@@ -159,7 +159,7 @@ instantiate Trashing with
   User is Authenticating.User
   Item is Posting.Post
 
-instantiate Vouching with
+instantiate Vouching as PasswordResetVouching with
   Subject is Authenticating.User
 ```
 
@@ -171,7 +171,7 @@ Assigning owns assignment identities. Grade items, grades, late-day uses, and
 submissions refer to an assignment rather than creating another copy of it.
 Rostering owns section identities; an assignment's target list contains those
 sections. A grade may cite a Submitting submission as evidence, and a submission
-uses a Posting post as its artifact. Invitation, notification, and password-reset workflows supply the concrete `MailKey` used to deduplicate queued email messages. Vouching binds its subject to the account identity: a password-reset voucher entitles its bearer to set that one account's password once.
+uses a Posting post as its artifact. Invitation, notification, and password-reset workflows supply the concrete `MailKey` used to deduplicate queued email messages. PasswordResetVouching is the single registered instance of the generic Vouching concept; it binds its subject to the account identity, so one of its vouchers entitles its bearer to set that one account's password once. Naming the instance for its errand keeps a later second instance — an address confirmation, say — from inheriting the password-reset mail.
 
 Posting owns post identities. Forum features attach their own state to a post
 without taking ownership of it. Conversing separately owns conversation
@@ -226,6 +226,11 @@ effectiveCapabilities(capabilities: Strings) : Strings
   Expands a role's stored capabilities for presentation, answering the whole
   registry when the role carries the administer wildcard. Enforcement does not use
   it: an enforcing endpoint checks the capability it requires or the wildcard.
+
+passwordResetCooldownStart(at: Date) : Date
+  Answers the instant five minutes before the request. A voucher issued at or after
+  it means the account was already sent a reset mail recently, so the request issues
+  no second voucher and sends no second message.
 
 passwordResetExpiry(at: Date) : Date
   Answers the instant one hour after the request, when a reset voucher lapses.

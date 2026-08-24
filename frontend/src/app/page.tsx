@@ -108,25 +108,23 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-lg font-semibold">
-              You are not on the course roster
+              You are not enrolled in this course
             </h2>
             {canManageCourse ? (
               <>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  A seat records enrolment, not what you may do — your role
-                  already gives you the course tools. Enrol yourself to see the
-                  course the way a member does.
+                  You keep every staff tool either way. Add yourself to the
+                  roster only if you also want the course to look the way it
+                  looks to a student.
                 </p>
                 <Button asChild size="sm" variant="outline" className="mt-3">
-                  <Link href="/staff/roster">Open roster management</Link>
+                  <Link href="/staff/roster">Add yourself to the roster</Link>
                 </Button>
               </>
             ) : (
               <p className="mt-1 text-sm text-muted-foreground">
-                Course staff add people by importing a roster, which sends an
-                invitation, or by enrolling an existing account. Ask them to add
-                you and your assignments, grades, and course tools will appear
-                here.
+                Ask course staff to add you. Once they do, your assignments,
+                grades, and course tools show up here.
               </p>
             )}
           </div>

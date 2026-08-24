@@ -242,9 +242,9 @@ export type CommonsWire = {
   };
   "/auth/reset-password": {
     input: {
-      "credential": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Vouching"]["verify"]>[0], ["credential"]>>;
+      "credential": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PasswordResetVouching"]["verify"]>[0], ["credential"]>>;
       "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["resetPassword"]>[0], ["newPassword"]>>;
-      "voucher": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Vouching"]["verify"]>[0], ["voucher"]>>;
+      "voucher": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PasswordResetVouching"]["verify"]>[0], ["voucher"]>>;
     };
     output: {
       "ok": true;
@@ -2833,9 +2833,9 @@ export type CommonsWireHttp = {
   };
   "/auth/reset-password": {
     input: {
-      "credential": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Vouching"]["verify"]>[0], ["credential"]>>;
+      "credential": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PasswordResetVouching"]["verify"]>[0], ["credential"]>>;
       "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["resetPassword"]>[0], ["newPassword"]>>;
-      "voucher": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Vouching"]["verify"]>[0], ["voucher"]>>;
+      "voucher": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PasswordResetVouching"]["verify"]>[0], ["voucher"]>>;
     };
     output: {
       "ok": true;

@@ -11,5 +11,8 @@ export const vouching = registerConcept({
     VOUCHER_INVALID: VoucherInvalid,
     VOUCHER_EXPIRY_INVALID: VoucherExpiryInvalid,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoVouchingConcept(database) },
+  floors: {
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoVouchingConcept(database, instance),
+  },
 });

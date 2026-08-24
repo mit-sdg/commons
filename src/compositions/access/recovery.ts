@@ -1,12 +1,12 @@
-import { compute, now, reaction, when, where } from "@mit-sdg/sync-engine/language";
+import { compute, no, now, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { computations, concepts } from "../../concepts.ts";
 
-const { Authenticating, Mailing, Sessioning, Vouching } = concepts;
+const { Authenticating, Mailing, PasswordResetVouching, Sessioning } = concepts;
 
 export const RequestPasswordReset = endpoint(
   "/auth/request-password-reset",
-  ({ email, recipient, user, at, expiresAt }) =>
+  ({ email, recipient, user, at, quietSince, expiresAt }) =>
     receive({ email }).then(
       where(now(at))
         .then(Mailing.normalizeRecipient({ recipient: email }).responds({ recipient }))
@@ -15,9 +15,11 @@ export const RequestPasswordReset = endpoint(
       where(
         now(at),
         Authenticating._getByEmail({ email }).is({ user }),
+        compute(computations.passwordResetCooldownStart, { at }, quietSince),
+        no(PasswordResetVouching._getIssuedSince({ subject: user, since: quietSince })),
         compute(computations.passwordResetExpiry, { at }, expiresAt),
       )
-        .then(Vouching.issue({ subject: user, at, expiresAt }))
+        .then(PasswordResetVouching.issue({ subject: user, at, expiresAt }))
         .named("issued"),
     ),
   { input: { required: ["email"] } },
@@ -25,7 +27,7 @@ export const RequestPasswordReset = endpoint(
 
 export const PasswordResetQueuesMail = reaction(
   ({ voucher, user, credential, at, username, email, text, html, message }) =>
-    when(Vouching.issue({ at }).responds({ voucher, subject: user, credential }))
+    when(PasswordResetVouching.issue({ at }).responds({ voucher, subject: user, credential }))
       .where(
         Authenticating._getById({ user }).is({ username, email }),
         compute(computations.passwordResetMailText, { voucher, credential, username }, text),
@@ -48,9 +50,9 @@ export const ResetPassword = endpoint(
   ({ voucher, credential, newPassword, user, at }) =>
     receive({ voucher, credential, newPassword })
       .where(now(at))
-      .then(Vouching.verify({ voucher, credential, at }).responds({ subject: user }))
+      .then(PasswordResetVouching.verify({ voucher, credential, at }).responds({ subject: user }))
       .then(Authenticating.resetPassword({ user, newPassword }))
-      .then(Vouching.redeem({ voucher, credential, at }))
+      .then(PasswordResetVouching.redeem({ voucher, credential, at }))
       .then(Sessioning.endAllForUser({ user }))
       .then(respond({ ok: true })),
   { input: { required: ["voucher", "credential", "newPassword"] } },
