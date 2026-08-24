@@ -1,8 +1,13 @@
 import { activeUser } from "./session.ts";
-import { each, former, where } from "@mit-sdg/sync-engine/language";
+import { compute, each, former, is, no, view, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { concepts } from "../../concepts.ts";
-import { mayAdminister, mayNotAdminister } from "./policy.ts";
+import { computations, concepts } from "../../concepts.ts";
+import {
+  isNotSoleAdministrator,
+  isSoleAdministrator,
+  mayAdminister,
+  mayNotAdminister,
+} from "./policy.ts";
 
 const { Authenticating, Roling } = concepts;
 
@@ -17,18 +22,64 @@ export const theDefinedRoles = former(
     }),
 );
 
-/** Which roles does this user hold in this context? */
-export const theRolesHeldBy = former(
-  "the roles held by (user) in (context)",
-  ({ user, context }, { role }) =>
-    each(Roling._getRoles({ user, context }).is({ role })).form({ role }),
+/**
+ * The same answer in the two shapes the assembly needs: a formed value to embed
+ * in a larger read, and a view to branch an endpoint on.
+ */
+export const theRoleFaceOf = former(
+  "the role face of (user) in (context)",
+  ({ user, context }, { role, name, capabilities }) =>
+    where(
+      Roling._getRole({ user, context }).is({ role }),
+      Roling._getRoleDetail({ role }).is({ name, capabilities }),
+    ).form({ role, name, capabilities }),
+).optional();
+
+export const theRoleOf = view(
+  "the role of (user) in (context)",
+  ({ user, context }, { role, name, capabilities }, _bindings) =>
+    where(
+      Roling._getRole({ user, context }).is({ role }),
+      Roling._getRoleDetail({ role }).is({ name, capabilities }),
+    ),
+).optional();
+
+export const DefineRole = endpoint(
+  "/roles/define",
+  ({ session, name, capabilities, user, known, role }) =>
+    receive({ session, name, capabilities })
+      .where(compute(computations.capabilitiesAreKnown, { capabilities }, known))
+      .then(
+        where(
+          activeUser({ session }).is({ user }),
+          mayAdminister({ user }),
+          is.among(known, [true]),
+        )
+          .then(Roling.defineRole({ name, capabilities }).responds({ role }))
+          .then(respond({ role }))
+          .named("success"),
+        where(
+          activeUser({ session }).is({ user }),
+          mayAdminister({ user }),
+          is.among(known, [false]),
+        )
+          .then(respond({ error: "UNKNOWN_CAPABILITY" }))
+          .named("unknown-capability"),
+        where(activeUser({ session }).is({ user }), mayNotAdminister({ user }))
+          .then(respond({ error: "FORBIDDEN" }))
+          .named("forbidden"),
+      ),
 );
 
-export const DefineRole = endpoint("/roles/define", ({ session, name, capabilities, user, role }) =>
-  receive({ session, name, capabilities }).then(
-    where(activeUser({ session }).is({ user }), mayAdminister({ user }))
-      .then(Roling.defineRole({ name, capabilities }).responds({ role }))
-      .then(respond({ role }))
+export const DeleteRole = endpoint("/roles/delete", ({ session, role, user, resolved }) =>
+  receive({ session, role }).then(
+    where(
+      activeUser({ session }).is({ user }),
+      mayAdminister({ user }),
+      Roling._denotedRole({ ref: role }).is({ role: resolved }),
+    )
+      .then(Roling.deleteRole({ role: resolved }).responds({ role: resolved }))
+      .then(respond({ role: resolved }))
       .named("success"),
     where(activeUser({ session }).is({ user }), mayNotAdminister({ user }))
       .then(respond({ error: "FORBIDDEN" }))
@@ -36,19 +87,33 @@ export const DefineRole = endpoint("/roles/define", ({ session, name, capabiliti
   ),
 );
 
-export const GrantRole = endpoint(
-  "/roles/grant",
-  ({ session, user, context, role, actor, subject, resolved, grant }) =>
+/**
+ * Assigning replaces whatever role the subject already held, so a person always
+ * carries exactly one. Moving the last administrator onto another role is
+ * refused, otherwise the deployment would be left with nobody who can administer.
+ */
+export const AssignRole = endpoint(
+  "/roles/assign",
+  ({ session, user, context, role, actor, subject, resolved, assignment }) =>
     receive({ session, user, context, role }).then(
       where(
         activeUser({ session }).is({ user: actor }),
         mayAdminister({ user: actor }),
         Authenticating._denotedUser({ ref: user }).is({ user: subject }),
+        isNotSoleAdministrator({ user: subject }),
         Roling._denotedRole({ ref: role }).is({ role: resolved }),
       )
-        .then(Roling.grant({ user: subject, context, role: resolved }).responds({ grant }))
-        .then(respond({ grant }))
+        .then(Roling.assign({ user: subject, context, role: resolved }).responds({ assignment }))
+        .then(respond({ assignment }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user: actor }),
+        mayAdminister({ user: actor }),
+        Authenticating._denotedUser({ ref: user }).is({ user: subject }),
+        isSoleAdministrator({ user: subject }),
+      )
+        .then(respond({ error: "LAST_ADMINISTRATOR" }))
+        .named("last-administrator"),
       where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -57,33 +122,45 @@ export const GrantRole = endpoint(
 
 export const RevokeRole = endpoint(
   "/roles/revoke",
-  ({ session, user, context, role, actor, subject, resolved, grant }) =>
-    receive({ session, user, context, role }).then(
+  ({ session, user, context, actor, subject, assignment }) =>
+    receive({ session, user, context }).then(
       where(
         activeUser({ session }).is({ user: actor }),
         mayAdminister({ user: actor }),
         Authenticating._denotedUser({ ref: user }).is({ user: subject }),
-        Roling._denotedRole({ ref: role }).is({ role: resolved }),
+        isNotSoleAdministrator({ user: subject }),
       )
-        .then(Roling.revoke({ user: subject, context, role: resolved }).responds({ grant }))
-        .then(respond({ grant }))
+        .then(Roling.revoke({ user: subject, context }).responds({ assignment }))
+        .then(respond({ assignment }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user: actor }),
+        mayAdminister({ user: actor }),
+        Authenticating._denotedUser({ ref: user }).is({ user: subject }),
+        isSoleAdministrator({ user: subject }),
+      )
+        .then(respond({ error: "LAST_ADMINISTRATOR" }))
+        .named("last-administrator"),
       where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
 );
 
-export const RolesForUser = endpoint("/roles/forUser", ({ user, context, subject }) =>
-  receive({ user, context })
-    .where(Authenticating._denotedUser({ ref: user }).is({ user: subject }))
-    .then(respond({ roles: theRolesHeldBy({ user: subject, context }) })),
-);
-
-export const RoleCan = endpoint("/roles/can", ({ user, context, capability, allowed }) =>
-  receive({ user, context, capability })
-    .where(Roling._hasCapability({ user, context, capability }).is({ allowed }))
-    .then(respond({ allowed })),
+/** One read answers the subject's role and what it carries, with no follow-up fetch. */
+export const RoleForUser = endpoint(
+  "/roles/forUser",
+  ({ user, context, subject, role, name, capabilities }) =>
+    receive({ user, context })
+      .where(Authenticating._denotedUser({ ref: user }).is({ user: subject }))
+      .then(
+        where(theRoleOf({ user: subject, context }).is({ role, name, capabilities }))
+          .then(respond({ role, name, capabilities }))
+          .named("held"),
+        where(no(theRoleOf({ user: subject, context })))
+          .then(respond({ role: null, name: null, capabilities: [] }))
+          .named("none"),
+      ),
 );
 
 export const RoleGet = endpoint("/roles/get", ({ role, name, capabilities }) =>

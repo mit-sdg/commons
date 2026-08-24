@@ -198,7 +198,6 @@ describe("invitations and email", () => {
     await edge.application.concepts.Profiling.createProfile({
       user: adminReg.user,
       displayName: "Admin Two",
-      email: "admin2@example.edu",
     });
     await edge.application.whenIdle();
 

@@ -1,27 +1,38 @@
-export const FORUM = "forum";
+/**
+ * The application's capability registry.
+ *
+ * This is the single source of truth for what a role may carry. Policy views in
+ * `policy.ts`, the role endpoints in `roles.ts`, and the admin console all read
+ * from it, so the three cannot drift apart.
+ *
+ * `administer` is deliberately not listed here: it is a wildcard that satisfies
+ * every capability check rather than a capability in its own right. An
+ * administrator therefore gains new capabilities automatically as they are added.
+ */
+/**
+ * The one reserved role context. It names the deployment as a whole rather than
+ * any one area of it, so no capability held there belongs to the forum in
+ * particular. Roling stores it as an opaque string.
+ */
+export const COMMONS = "commons";
+
+export const ADMINISTER = "administer";
+
+export const CAPABILITIES = {
+  moderate:
+    "Lock threads, trash posts, pin items, resolve flags, read post revisions, and assign posts to categories. Creating or deleting a category needs administer.",
+  "course:manage":
+    "Create and revise assignments, manage sections and enrolment, and set up or revise the class.",
+  grade: "Enter grades, view the gradebook, and view every submission.",
+  "student-records": "Manage late days and staff notes about individual students.",
+} as const;
+
+export type Capability = keyof typeof CAPABILITIES;
+
+export const CAPABILITY_NAMES = Object.keys(CAPABILITIES) as Capability[];
+
+/** Every capability an administrator reaches, for presentation only. */
+export const ALL_CAPABILITIES = [ADMINISTER, ...CAPABILITY_NAMES];
 
 export const ADMIN_ROLE = "administrator";
-export const INITIAL_ADMIN_CAPABILITIES = [
-  "administer",
-  "moderate",
-  "pin",
-  "roster:manage",
-  "late-days:manage",
-  "calendar:view-staff",
-  "student-notes:manage",
-];
-
-export const INITIAL_ROSTER_BOOTSTRAP_ROLE = "initial-roster-bootstrap";
-export const INITIAL_ROSTER_BOOTSTRAP_CAPABILITIES = ["roster:manage"];
-
-export const COURSE_STAFF_ROLE = "course-staff";
-export const STAFF_CAPABILITIES = [
-  "roster:manage",
-  "assignments:manage",
-  "submissions:view-all",
-  "grades:manage",
-  "grades:view-all",
-  "late-days:manage",
-  "student-notes:manage",
-  "calendar:view-staff",
-];
+export const INITIAL_ADMIN_CAPABILITIES = [ADMINISTER];

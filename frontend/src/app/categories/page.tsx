@@ -1,8 +1,9 @@
 "use client";
 
-import { FolderOpen, FolderPlus, Loader2 } from "lucide-react";
+import { FolderOpen, FolderPlus, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { CategoryDot } from "@/components/forum/badges";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
@@ -16,7 +17,7 @@ import { useAuth } from "@/lib/auth";
 import type { Category } from "@/lib/models";
 
 export default function CategoriesPage() {
-  const { session, can } = useAuth();
+  const { session, permissions } = useAuth();
   const { data, error, loading, refetch } = useQuery<{
     categories: Category[];
   }>(() => api.categories.list({}), []);
@@ -24,6 +25,10 @@ export default function CategoriesPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // Creation and deletion are the same power: `administer` is what the
+  // endpoints behind both controls enforce.
+  const canAdminister = permissions.can("administer");
 
   async function create() {
     if (!session || !name.trim()) return;
@@ -42,6 +47,16 @@ export default function CategoriesPage() {
     }
   }
 
+  async function remove(category: string) {
+    if (!session) return;
+    const result = await api.categories.delete({ category });
+    if ("error" in result) toast.error(publicErrorMessage(result.error));
+    else {
+      toast.success("Category deleted");
+      refetch();
+    }
+  }
+
   return (
     <PageContainer>
       <PageHeader
@@ -50,7 +65,7 @@ export default function CategoriesPage() {
         description="Topics grouped by the spaces they belong to."
       />
 
-      {can.administer ? (
+      {canAdminister ? (
         <section className="mb-6 rounded-xl border border-border bg-card p-5">
           <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
             <FolderPlus className="size-5" />
@@ -100,24 +115,44 @@ export default function CategoriesPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {data.categories.map((category) => (
-            <Link
+            <div
               key={String(category.category)}
-              href={`/c/${category.category}`}
-              className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:border-primary/40"
+              className="group relative rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:border-primary/40"
             >
-              <div className="mb-2 flex items-center gap-2.5">
-                <CategoryDot
-                  id={String(category.category)}
-                  className="size-3.5"
+              <Link href={`/c/${category.category}`} className="block">
+                <div className="mb-2 flex items-center gap-2.5 pr-10">
+                  <CategoryDot
+                    id={String(category.category)}
+                    className="size-3.5"
+                  />
+                  <h2 className="font-display text-xl font-semibold group-hover:text-primary">
+                    {category.name}
+                  </h2>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {category.description || "No description provided."}
+                </p>
+              </Link>
+              {canAdminister ? (
+                <ConfirmAction
+                  title={`Delete ${category.name}?`}
+                  description="This removes the category. Discussions and posts are not deleted."
+                  confirmLabel="Delete category"
+                  destructive
+                  onConfirm={() => remove(String(category.category))}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-3 top-3 size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      aria-label={`Delete ${category.name}`}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  }
                 />
-                <h2 className="font-display text-xl font-semibold group-hover:text-primary">
-                  {category.name}
-                </h2>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {category.description || "No description provided."}
-              </p>
-            </Link>
+              ) : null}
+            </div>
           ))}
         </div>
       )}

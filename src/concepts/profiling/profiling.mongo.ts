@@ -6,7 +6,6 @@ interface ProfileDoc {
   displayName: string;
   bio: string;
   avatar: string;
-  email: string;
 }
 
 export class MongoProfilingConcept {
@@ -16,22 +15,15 @@ export class MongoProfilingConcept {
     this.profiles = db.collection<ProfileDoc>("profiling.profiles");
   }
 
-  async createProfile({
-    user,
-    displayName,
-    email,
-  }: {
-    user: string;
-    displayName: string;
-    email: string;
-  }) {
+  async createProfile({ user, displayName }: { user: string; displayName: string }) {
     const existing = await this.profiles.findOne({ _id: user });
     if (existing !== null) {
       throw new ProfileAlreadyExists(user);
     }
-    await this.profiles.insertOne({ _id: user, displayName, bio: "", avatar: "", email });
+    await this.profiles.insertOne({ _id: user, displayName, bio: "", avatar: "" });
     return { user };
   }
+
   async setDisplayName({ user, displayName }: { user: string; displayName: string }) {
     const updated = await this.profiles.updateOne({ _id: user }, { $set: { displayName } });
     if (updated.matchedCount === 0) {
@@ -66,7 +58,6 @@ export class MongoProfilingConcept {
               displayName: doc.displayName,
               bio: doc.bio,
               avatar: doc.avatar,
-              email: doc.email,
             },
           },
         ];
@@ -81,7 +72,6 @@ export class MongoProfilingConcept {
             displayName: doc.displayName,
             bio: doc.bio,
             avatar: doc.avatar,
-            email: doc.email,
           },
         ];
   }

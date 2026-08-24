@@ -4,6 +4,7 @@ import spec from "@design/concepts/Authenticating.md" with { type: "text" };
 import { MongoAuthenticatingConcept } from "./authenticating.mongo.ts";
 import {
   EmailInvalid,
+  EmailTaken,
   InvalidCredentials,
   PasswordInvalidLength,
   UsernameInvalidChars,
@@ -20,6 +21,7 @@ export const authenticating = registerConcept({
     USERNAME_INVALID_CHARS: UsernameInvalidChars,
     PASSWORD_INVALID_LENGTH: PasswordInvalidLength,
     USERNAME_TAKEN: UsernameTaken,
+    EMAIL_TAKEN: EmailTaken,
     INVALID_CREDENTIALS: InvalidCredentials,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoAuthenticatingConcept(database) },

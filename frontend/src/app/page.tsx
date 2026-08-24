@@ -9,7 +9,6 @@ import {
   StickyNote,
 } from "lucide-react";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
 import { CategoryDot } from "@/components/forum/badges";
 import { TopicRow } from "@/components/forum/topic-row";
 import { Link } from "@/components/link";
@@ -17,10 +16,8 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useQuery } from "@/hooks/use-query";
-import { api, publicErrorMessage } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
   loadAssignments,
@@ -69,26 +66,13 @@ function CategoriesCard() {
   );
 }
 
-function LmsDashboard({
-  mayManageAssignments,
-  permissionLoading,
-}: {
-  mayManageAssignments: boolean | undefined;
-  permissionLoading: boolean;
-}) {
-  const { session, me } = useAuth();
-  const {
-    data: rosterData,
-    loading: rosterLoading,
-    refetch: refetchRoster,
-  } = useQuery<{ seat: unknown }>(session ? () => loadRosterMe() : null, [
-    session,
-  ]);
-  const [externalKey, setExternalKey] = useState("");
-  const [claiming, setClaiming] = useState(false);
-
-  const learnerReady =
-    Boolean(session && rosterData?.seat) && mayManageAssignments === false;
+function LmsDashboard({ isStaff }: { isStaff: boolean }) {
+  const { session, me, permissions } = useAuth();
+  const canManageCourse = permissions.can("course:manage");
+  const { data: rosterData, loading: rosterLoading } = useQuery<{
+    seat: unknown;
+  }>(session ? () => loadRosterMe() : null, [session]);
+  const learnerReady = Boolean(session && rosterData?.seat) && !isStaff;
 
   const { data: assignmentsData } = useQuery(
     learnerReady && session ? () => loadAssignments() : null,
@@ -114,22 +98,7 @@ function LmsDashboard({
 
   const hasSeat = rosterData?.seat && !("error" in rosterData);
 
-  async function claimSeat() {
-    if (!session || !externalKey.trim()) return;
-    setClaiming(true);
-    const result = await api.roster["claim-seat"]({
-      externalKey: externalKey.trim(),
-    });
-    setClaiming(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Course seat claimed");
-      setExternalKey("");
-      refetchRoster();
-    }
-  }
-
-  if (rosterLoading || permissionLoading) return null;
+  if (rosterLoading) return null;
   if (!hasSeat) {
     return (
       <div className="rounded-xl border border-border bg-card p-5">
@@ -139,36 +108,34 @@ function LmsDashboard({
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-lg font-semibold">
-              Join the course
+              You are not on the course roster
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              If course staff imported a seat for you, enter its roster key to
-              connect assignments, grades, and course tools to your account.
-            </p>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
-              <div className="flex-1 space-y-1.5">
-                <Label htmlFor="roster-key">Roster key</Label>
-                <Input
-                  id="roster-key"
-                  value={externalKey}
-                  onChange={(event) => setExternalKey(event.target.value)}
-                  placeholder="Your course roster key"
-                />
-              </div>
-              <Button
-                onClick={claimSeat}
-                disabled={claiming || !externalKey.trim()}
-              >
-                {claiming ? "Connecting…" : "Connect course"}
-              </Button>
-            </div>
+            {canManageCourse ? (
+              <>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  A seat records enrolment, not what you may do — your role
+                  already gives you the course tools. Enrol yourself to see the
+                  course the way a member does.
+                </p>
+                <Button asChild size="sm" variant="outline" className="mt-3">
+                  <Link href="/staff/roster">Open roster management</Link>
+                </Button>
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Course staff add people by importing a roster, which sends an
+                invitation, or by enrolling an existing account. Ask them to add
+                you and your assignments, grades, and course tools will appear
+                here.
+              </p>
+            )}
           </div>
         </div>
       </div>
     );
   }
 
-  if (mayManageAssignments) {
+  if (isStaff) {
     return (
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
         <h3 className="font-display text-lg font-semibold tracking-tight flex items-center gap-2">
@@ -354,21 +321,7 @@ export default function HomePage() {
     useCallback(() => loadFeed(sort), [sort]),
     [sort],
   );
-  const { me } = useAuth();
-
-  const { data: staffPermission, loading: staffPermissionLoading } = useQuery<{
-    allowed: boolean;
-  }>(
-    me
-      ? () =>
-          api.roles.can({
-            user: String(me.user),
-            context: "forum",
-            capability: "assignments:manage",
-          })
-      : null,
-    [me],
-  );
+  const { me, permissions } = useAuth();
 
   const showLms = me !== null;
 
@@ -377,10 +330,7 @@ export default function HomePage() {
       <section className="min-w-0">
         {showLms && (
           <div className="mb-8">
-            <LmsDashboard
-              mayManageAssignments={staffPermission?.allowed}
-              permissionLoading={staffPermissionLoading}
-            />
+            <LmsDashboard isStaff={permissions.isStaff} />
           </div>
         )}
 

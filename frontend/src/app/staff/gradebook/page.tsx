@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Link } from "@/components/link";
 import { GradeInput } from "@/components/lms/grade-input";
 import { PageContainer, PageHeader } from "@/components/page";
+import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import {
   Dialog,
@@ -26,7 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { loadGradebook } from "@/lib/lms";
 import { cn } from "@/lib/utils";
 
-export default function GradebookPage() {
+function GradebookPageContent() {
   const { session } = useAuth();
   const [grading, setGrading] = useState<{
     learner: string;
@@ -113,7 +114,7 @@ export default function GradebookPage() {
                       href={`/staff/students/${learner.learner}`}
                       className="text-sm font-medium hover:text-primary"
                     >
-                      {learner.rosterName}
+                      {learner.displayName}
                     </Link>
                     <span className="block text-xs text-muted-foreground">
                       {learner.email}
@@ -142,11 +143,11 @@ export default function GradebookPage() {
                               "text-purple-700 dark:text-purple-300",
                             !status && "text-muted-foreground",
                           )}
-                          aria-label={`Grade ${learner.rosterName} for ${item.label}`}
+                          aria-label={`Grade ${learner.displayName ?? learner.email} for ${item.label}`}
                           onClick={() =>
                             setGrading({
                               learner: String(learner.learner),
-                              learnerName: learner.rosterName,
+                              learnerName: learner.displayName ?? learner.email,
                               item: String(item.item),
                               itemLabel: item.label,
                             })
@@ -203,5 +204,13 @@ export default function GradebookPage() {
         </DialogContent>
       </Dialog>
     </PageContainer>
+  );
+}
+
+export default function GradebookPage() {
+  return (
+    <RequireCapability capability="grade">
+      <GradebookPageContent />
+    </RequireCapability>
   );
 }

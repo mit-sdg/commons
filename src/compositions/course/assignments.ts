@@ -14,8 +14,8 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
   isNotActiveStudent,
-  mayManageAssignments,
-  mayNotManageAssignments,
+  mayManageCourse,
+  mayNotManageCourse,
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
@@ -185,7 +185,7 @@ export const CreateDraft = endpoint(
       audience,
       targets,
     }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(
           Assigning.createDraft({
             author: user,
@@ -203,7 +203,7 @@ export const CreateDraft = endpoint(
         )
         .then(respond({ assignment }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -255,7 +255,7 @@ export const Revise = endpoint(
       audience,
       targets,
     }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(
           Assigning.revise({
             assignment,
@@ -273,7 +273,7 @@ export const Revise = endpoint(
         )
         .then(respond({ assignment: revised }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -299,11 +299,11 @@ export const Publish = endpoint(
   "/assignments/publish",
   ({ session, assignment, user, at, published }) =>
     receive({ session, assignment }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(Assigning.publish({ assignment, at }).responds({ assignment: published }))
         .then(respond({ assignment: published }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -313,11 +313,11 @@ export const Archive = endpoint(
   "/assignments/archive",
   ({ session, assignment, user, at, archived }) =>
     receive({ session, assignment }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(Assigning.archive({ assignment, at }).responds({ assignment: archived }))
         .then(respond({ assignment: archived }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -372,19 +372,19 @@ export const StaffSummary = endpoint(
     receive({ session, assignment }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayManageAssignments({ user }),
+        mayManageCourse({ user }),
         theAssignment({ assignment }).is({ detail }),
       )
         .then(respond({ summary: detail }))
         .named("found"),
       where(
         activeUser({ session }).is({ user }),
-        mayManageAssignments({ user }),
+        mayManageCourse({ user }),
         no(theAssignment({ assignment })),
       )
         .then(respond({ summary: null }))
         .named("missing"),
-      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -392,10 +392,10 @@ export const StaffSummary = endpoint(
 
 export const StaffList = endpoint("/assignments/staff-list", ({ session, user }) =>
   receive({ session }).then(
-    where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+    where(activeUser({ session }).is({ user }), mayManageCourse({ user }))
       .then(respond({ assignments: theStaffAssignments({}) }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+    where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
   ),
@@ -405,11 +405,11 @@ export const SetDueOverride = endpoint(
   "/assignments/set-due-override",
   ({ session, assignment, assignee, dueAt, user, release }) =>
     receive({ session, assignment, assignee, dueAt }).then(
-      where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+      where(activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(Assigning.setDueOverride({ assignment, assignee, dueAt }).responds({ release }))
         .then(respond({ release }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -419,11 +419,11 @@ export const ClearDueOverride = endpoint(
   "/assignments/clear-due-override",
   ({ session, assignment, assignee, user, release }) =>
     receive({ session, assignment, assignee }).then(
-      where(activeUser({ session }).is({ user }), mayManageAssignments({ user }))
+      where(activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(Assigning.clearDueOverride({ assignment, assignee }).responds({ release }))
         .then(respond({ release }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageAssignments({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),

@@ -6,6 +6,12 @@ export interface CommonsConceptFloor {
   name: string;
   instances: ReturnType<typeof mongoImplementations>;
   resources: readonly string[];
+  /**
+   * The database the instances store state in. Exposed so the process can apply
+   * migrations to stored state before it serves; concepts reach their own state
+   * through their instances rather than through this handle.
+   */
+  database: Db;
   close(): Promise<void>;
 }
 
@@ -102,6 +108,7 @@ export async function constructConceptFloor(
     name: "mongo",
     instances,
     resources: [`MongoDB database ${database.databaseName}`],
+    database,
     async close() {
       if (closed) return;
       closed = true;

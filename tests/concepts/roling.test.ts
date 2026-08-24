@@ -47,6 +47,18 @@ for (const [floor, make] of floors) {
       ]);
     });
 
+    test("deleteRole removes an unheld role and refuses one still assigned", async () => {
+      const roling = await make();
+      const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
+      await roling.assign({ user: "maya", context: "course", role });
+      await expectRefusal(() => roling.deleteRole({ role }), refusalErrors.RoleInUse);
+
+      await roling.revoke({ user: "maya", context: "course" });
+      expect(await roling.deleteRole({ role })).toEqual({ role });
+      expect(await roling._getRoleDetail({ role })).toEqual([]);
+      await expectRefusal(() => roling.deleteRole({ role }), refusalErrors.RoleNotFound);
+    });
+
     test("denoted roles always resolve to one identity", async () => {
       const roling = await make();
       const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
@@ -56,19 +68,15 @@ for (const [floor, make] of floors) {
       expect(await roling._denotedRole({ ref: "opaque-role" })).toEqual({ role: "opaque-role" });
     });
 
-    test("grant records a holding; unknown role and duplicate grant are refused", async () => {
+    test("assign records the holding and refuses an unknown role", async () => {
       const roling = await make();
       const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
-      const { grant } = await roling.grant({ user: "maya", context: "course", role });
-      expect(grant).toBeDefined();
-      expect(await roling._getRoles({ user: "maya", context: "course" })).toEqual([{ role }]);
+      const { assignment } = await roling.assign({ user: "maya", context: "course", role });
+      expect(assignment).toBeDefined();
+      expect(await roling._getRole({ user: "maya", context: "course" })).toEqual([{ role }]);
       await expectRefusal(
-        () => roling.grant({ user: "maya", context: "course", role: "no-such-role" }),
+        () => roling.assign({ user: "maya", context: "course", role: "no-such-role" }),
         refusalErrors.RoleNotFound,
-      );
-      await expectRefusal(
-        () => roling.grant({ user: "maya", context: "course", role }),
-        refusalErrors.GrantAlreadyExists,
       );
       expect(
         await roling._holdsRoleNamed({ user: "maya", context: "course", name: "instructor" }),
@@ -78,60 +86,125 @@ for (const [floor, make] of floors) {
       ).toEqual({ held: false });
     });
 
-    test("revoke removes the holding; revoking an absent grant is refused", async () => {
+    test("assigning again replaces the role rather than adding a second", async () => {
       const roling = await make();
-      const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
-      await roling.grant({ user: "maya", context: "course", role });
-      expect(
-        await roling._hasCapability({ user: "maya", context: "course", capability: "grade" }),
-      ).toEqual({ allowed: true });
-      await roling.revoke({ user: "maya", context: "course", role });
+      const { role: instructor } = await roling.defineRole({
+        name: "instructor",
+        capabilities: ["grade"],
+      });
+      const { role: grader } = await roling.defineRole({
+        name: "grader",
+        capabilities: ["grade:only"],
+      });
+      const first = await roling.assign({ user: "maya", context: "course", role: instructor });
+      const second = await roling.assign({ user: "maya", context: "course", role: grader });
+
+      expect(second.assignment).toBe(first.assignment);
+      expect(await roling._getRole({ user: "maya", context: "course" })).toEqual([
+        { role: grader },
+      ]);
       expect(
         await roling._hasCapability({ user: "maya", context: "course", capability: "grade" }),
       ).toEqual({ allowed: false });
+      expect(
+        await roling._hasCapability({ user: "maya", context: "course", capability: "grade:only" }),
+      ).toEqual({ allowed: true });
+    });
+
+    test("assigning in another context leaves the first context untouched", async () => {
+      const roling = await make();
+      const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
+      await roling.assign({ user: "maya", context: "course-1", role });
+      await roling.assign({ user: "maya", context: "course-2", role });
+
+      expect(await roling._getRole({ user: "maya", context: "course-1" })).toEqual([{ role }]);
+      expect(await roling._getRole({ user: "maya", context: "course-2" })).toEqual([{ role }]);
+    });
+
+    test("revoke removes the holding; revoking an absent assignment is refused", async () => {
+      const roling = await make();
+      const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
+      await roling.assign({ user: "maya", context: "course", role });
+      expect(
+        await roling._hasCapability({ user: "maya", context: "course", capability: "grade" }),
+      ).toEqual({ allowed: true });
+      await roling.revoke({ user: "maya", context: "course" });
+      expect(
+        await roling._hasCapability({ user: "maya", context: "course", capability: "grade" }),
+      ).toEqual({ allowed: false });
+      expect(await roling._getRole({ user: "maya", context: "course" })).toEqual([]);
       await expectRefusal(
-        () => roling.revoke({ user: "maya", context: "course", role }),
-        refusalErrors.GrantNotFound,
+        () => roling.revoke({ user: "maya", context: "course" }),
+        refusalErrors.AssignmentNotFound,
       );
     });
 
-    test("requireCapability accepts a granted capability and refuses its absence", async () => {
+    test("requireCapability accepts a held capability and refuses its absence", async () => {
       const roling = await make();
       const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
-      await roling.grant({ user: "maya", context: "course", role });
+      await roling.assign({ user: "maya", context: "course", role });
       expect(
         await roling.requireCapability({ user: "maya", context: "course", capability: "grade" }),
       ).toEqual({ allowed: true });
-      await roling.revoke({ user: "maya", context: "course", role });
+      await roling.revoke({ user: "maya", context: "course" });
       await expectRefusal(
         () => roling.requireCapability({ user: "maya", context: "course", capability: "grade" }),
         refusalErrors.CapabilityRequired,
       );
     });
 
-    test("ensureGrant reaches the existing grant, adds a missing one, and refuses an unknown role", async () => {
+    test("sole-holder reads distinguish the last holder from one of several", async () => {
       const roling = await make();
-      const { role } = await roling.defineRole({ name: "member", capabilities: ["tasks:manage"] });
-      const { grant } = await roling.grant({ user: "mara", context: "list-1", role });
-      expect(await roling.ensureGrant({ user: "mara", context: "list-1", role })).toEqual({
-        grant,
-      });
-      const added = await roling.ensureGrant({ user: "noah", context: "list-1", role });
-      expect(added.grant).not.toBe(grant);
-      await expectRefusal(
-        () => roling.ensureGrant({ user: "mara", context: "list-1", role: "ghost" }),
-        refusalErrors.RoleNotFound,
-      );
+      const { role } = await roling.defineRole({ name: "admin", capabilities: ["administer"] });
+      const { role: plain } = await roling.defineRole({ name: "member", capabilities: [] });
+
+      expect(
+        await roling._isSoleCapabilityHolder({
+          user: "mara",
+          context: "course",
+          capability: "administer",
+        }),
+      ).toEqual({ sole: false });
+
+      await roling.assign({ user: "mara", context: "course", role });
+      expect(
+        await roling._isSoleCapabilityHolder({
+          user: "mara",
+          context: "course",
+          capability: "administer",
+        }),
+      ).toEqual({ sole: true });
+
+      await roling.assign({ user: "noah", context: "course", role: plain });
+      expect(
+        await roling._isSoleCapabilityHolder({
+          user: "mara",
+          context: "course",
+          capability: "administer",
+        }),
+      ).toEqual({ sole: true });
+
+      await roling.assign({ user: "noah", context: "course", role });
+      expect(
+        await roling._isSoleCapabilityHolder({
+          user: "mara",
+          context: "course",
+          capability: "administer",
+        }),
+      ).toEqual({ sole: false });
+      expect(
+        await roling._hasCapabilityHolder({ context: "course", capability: "administer" }),
+      ).toEqual({ present: true });
     });
 
     test("named-role reads answer a context's holders and a holder's contexts", async () => {
       const roling = await make();
       const { role: member } = await roling.defineRole({ name: "member", capabilities: [] });
       const { role: other } = await roling.defineRole({ name: "other", capabilities: [] });
-      await roling.grant({ user: "mara", context: "list-1", role: member });
-      await roling.grant({ user: "noah", context: "list-1", role: member });
-      await roling.grant({ user: "mara", context: "list-2", role: member });
-      await roling.grant({ user: "mara", context: "list-3", role: other });
+      await roling.assign({ user: "mara", context: "list-1", role: member });
+      await roling.assign({ user: "noah", context: "list-1", role: member });
+      await roling.assign({ user: "mara", context: "list-2", role: member });
+      await roling.assign({ user: "mara", context: "list-3", role: other });
 
       expect(await roling._getHoldersOfRoleNamed({ context: "list-1", name: "member" })).toEqual([
         { user: "mara" },
@@ -147,12 +220,12 @@ for (const [floor, make] of floors) {
       );
     });
 
-    test("a second instance keeps its roles and grants in its own store", async () => {
+    test("a second instance keeps its roles and assignments in its own store", async () => {
       const database = await testDb();
       const course = new MongoRolingConcept(database);
       const lists = new MongoRolingConcept(database, "TaskListMembership");
       const { role } = await lists.ensureRole({ name: "member", capabilities: ["tasks:manage"] });
-      await lists.grant({ user: "mara", context: "list-1", role });
+      await lists.assign({ user: "mara", context: "list-1", role });
 
       expect(await course._getRoleByName({ name: "member" })).toEqual([]);
       expect(

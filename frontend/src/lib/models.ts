@@ -39,9 +39,12 @@ export type Subscription = ArrayElement<
 export type Revision = ArrayElement<Output<"/revisions/list">["revisions"]>;
 export type LockedTarget = ArrayElement<Output<"/locks/list">["locked"]>;
 export type PinnedItem = ArrayElement<Output<"/pins/forScope">["pinned"]>;
-export type RoleRow = ArrayElement<Output<"/roles/forUser">["roles"]>;
+export type RoleOfUser = Output<"/roles/forUser">;
 export type RoleDetail = Output<"/roles/get">;
 export type RoleSummary = ArrayElement<Output<"/roles/list">["roles"]>;
+export type Capability = ArrayElement<
+  Output<"/auth/permissions">["capabilities"]
+>;
 
 export type TaskList = ArrayElement<Output<"/tasklists/mine">["lists"]>;
 export type TaskListDetail = NonNullable<Output<"/tasklists/get">["list"]>;

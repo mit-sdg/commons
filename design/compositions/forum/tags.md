@@ -2,8 +2,9 @@
 
 Any logged-in account creates a unique shared label through
 [Forum.tags.CreateTag](reaction:Forum.tags.CreateTag). [Forum.tags.AddTag](reaction:Forum.tags.AddTag) applies an existing label to a
-readable post. [Forum.tags.RemoveTag](reaction:Forum.tags.RemoveTag) removes that tag application from the readable post. No
-administrator or moderator capability is required. Tagging retains its own
+readable post. [Forum.tags.RemoveTag](reaction:Forum.tags.RemoveTag) removes that tag application from the readable post. None
+of these checks a capability at all: what may be tagged depends only on whether
+the post is readable, and moderation governs that elsewhere. Tagging retains its own
 unknown-tag, duplicate-application, and missing-application refusals, while a
 missing or trashed post is hidden as `NOT_FOUND`.
 

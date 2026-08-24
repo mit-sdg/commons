@@ -10,6 +10,7 @@ import { GradeInput } from "@/components/lms/grade-input";
 import { GradeSetup } from "@/components/lms/grade-setup";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
+import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -111,7 +112,7 @@ function DueDateOverride({
   );
 }
 
-export default function StaffAssignmentDetailPage({
+function StaffAssignmentDetailPageContent({
   params,
 }: {
   params: Promise<{ assignment: string }>;
@@ -136,14 +137,14 @@ export default function StaffAssignmentDetailPage({
   const { data: subsData, refetch: refetchSubmissions } = useQuery<{
     assigned: {
       assignee: string;
-      rosterName: string;
+      displayName: string | null;
       release: string;
       dueOverride: string | null;
       status: string;
     }[];
     submissions: {
       submitter: string;
-      submitterName: string;
+      submitterName: string | null;
       submission: string;
       submittedAt: string;
       number: number;
@@ -381,7 +382,7 @@ export default function StaffAssignmentDetailPage({
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="font-medium">{learner.rosterName}</p>
+                          <p className="font-medium">{learner.displayName}</p>
                           <p className="text-xs text-muted-foreground">
                             {latest
                               ? `${count(attempts.length, "attempt")} · Latest ${relativeTime(latest.submittedAt)}`
@@ -419,7 +420,7 @@ export default function StaffAssignmentDetailPage({
                       <DueDateOverride
                         assignment={assignment}
                         assignee={learnerId}
-                        learnerName={learner.rosterName}
+                        learnerName={learner.displayName ?? learner.assignee}
                         courseDueAt={detail.dueAt}
                         currentDueAt={learner.dueOverride}
                         onUpdate={refetchSubmissions}
@@ -467,5 +468,15 @@ export default function StaffAssignmentDetailPage({
         )}
       </div>
     </PageContainer>
+  );
+}
+
+export default function StaffAssignmentDetailPage(props: {
+  params: Promise<{ assignment: string }>;
+}) {
+  return (
+    <RequireCapability capability="course:manage">
+      <StaffAssignmentDetailPageContent {...props} />
+    </RequireCapability>
   );
 }

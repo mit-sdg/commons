@@ -3,7 +3,7 @@
 import {
   Archive,
   ArchiveRestore,
-  FolderPlus,
+  Check,
   List,
   Mail,
   MailPlus,
@@ -16,10 +16,9 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
-import { CategoryDot } from "@/components/forum/badges";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
@@ -32,62 +31,49 @@ import { UserName } from "@/components/user-name";
 import type { QueryState } from "@/hooks/use-query";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
-import { FORUM_CONTEXT, useAuth } from "@/lib/auth";
-import { fullTime, relativeTime, shortId } from "@/lib/format";
+import { COMMONS_CONTEXT, useAuth } from "@/lib/auth";
+import { fullTime, relativeTime } from "@/lib/format";
 import type {
-  Category,
   Invitation,
   MailMessage,
   RegisteredUser,
-  RoleDetail,
-  RoleRow,
   RoleSummary,
 } from "@/lib/models";
 import { cn } from "@/lib/utils";
 
+/**
+ * The capabilities a role may carry, in the order the server declares them.
+ *
+ * `administer` is a wildcard rather than a power of its own: a role carrying it
+ * satisfies every check, including capabilities added later.
+ */
 const CAPABILITY_INFO: Record<string, string> = {
   administer:
-    "Full administrative access — manage roles, categories, and forum configuration.",
+    "Everything. A role carrying this satisfies every permission check, now and as new ones are added.",
   moderate:
-    "Content moderation — lock threads, trash posts, and manage categories.",
-  pin: "Pin threads to the top of category listings.",
+    "Lock threads, trash posts, pin items, resolve flags, read post revisions, and assign posts to categories. Creating or deleting a category needs administer.",
+  "course:manage":
+    "Create and revise assignments, manage sections and enrolment, and set up or revise the class.",
+  grade: "Enter grades, view the gradebook, and view every submission.",
+  "student-records":
+    "Manage late days and staff notes about individual students.",
 };
 
-function UserRoleBadges({
-  roles,
-  rolesMap,
-}: {
-  roles?: { role: string }[];
-  rolesMap: Record<string, RoleSummary>;
-}) {
-  if (!roles || roles.length === 0) {
+function UserRoleBadge({ role }: { role?: { name: string | null } | null }) {
+  if (!role?.name) {
     return (
       <Badge
         variant="outline"
         className="text-xs text-muted-foreground font-normal"
       >
-        Member
+        No role
       </Badge>
     );
   }
-
   return (
-    <div className="flex flex-wrap gap-1">
-      {roles.map((r) => {
-        const roleKey = String(r.role);
-        const roleSummary = rolesMap[roleKey];
-        const roleName = roleSummary?.name ?? shortId(roleKey);
-        return (
-          <Badge
-            key={roleKey}
-            variant="secondary"
-            className="text-xs font-medium capitalize"
-          >
-            {roleName}
-          </Badge>
-        );
-      })}
-    </div>
+    <Badge variant="secondary" className="text-xs font-medium capitalize">
+      {role.name}
+    </Badge>
   );
 }
 
@@ -170,12 +156,10 @@ function InviteMembersSection({ onInvited }: { onInvited: () => void }) {
 function RegisteredUsersView({
   usersQuery,
   onInspectRoles,
-  rolesMap,
   currentUser,
 }: {
   usersQuery: QueryState<{ users: RegisteredUser[] }>;
-  onInspectRoles: (username: string) => void;
-  rolesMap: Record<string, RoleSummary>;
+  onInspectRoles: (user: string) => void;
   currentUser: string | null;
 }) {
   const [search, setSearch] = useState("");
@@ -315,15 +299,15 @@ function RegisteredUsersView({
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end">
-                  <UserRoleBadges roles={u.roles} rolesMap={rolesMap} />
+                  <UserRoleBadge role={u.role} />
                   <Button
                     variant="outline"
                     size="sm"
                     className="gap-1.5 text-xs"
-                    onClick={() => onInspectRoles(u.username)}
+                    onClick={() => onInspectRoles(String(u.user))}
                   >
                     <Shield className="size-3.5" />
-                    Inspect roles
+                    Change role
                   </Button>
                   {u.archived ? (
                     <Button
@@ -522,11 +506,9 @@ function PendingInvitationsView({
 
 function UsersAndInvitationsAdmin({
   onInspectRoles,
-  rolesMap,
   currentUser,
 }: {
-  onInspectRoles: (username: string) => void;
-  rolesMap: Record<string, RoleSummary>;
+  onInspectRoles: (user: string) => void;
   currentUser: string | null;
 }) {
   const [subView, setSubView] = useState<"users" | "invitations">("users");
@@ -595,7 +577,6 @@ function UsersAndInvitationsAdmin({
             <RegisteredUsersView
               usersQuery={usersQuery}
               onInspectRoles={onInspectRoles}
-              rolesMap={rolesMap}
               currentUser={currentUser}
             />
           </TabsContent>
@@ -609,174 +590,46 @@ function UsersAndInvitationsAdmin({
   );
 }
 
-function CategoryAdmin() {
-  const { session } = useAuth();
-  const { data, refetch } = useQuery<{ categories: Category[] }>(
-    () => api.categories.list({}),
-    [],
-  );
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-
-  async function create() {
-    if (!session || !name.trim()) return;
-    const result = await api.categories.create({
-      name: name.trim(),
-      description: description.trim(),
-    });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Category created");
-      setName("");
-      setDescription("");
-      refetch();
-    }
-  }
-
-  async function remove(category: string) {
-    if (!session) return;
-    const result = await api.categories.delete({ category });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Category deleted");
-      refetch();
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
-          <FolderPlus className="size-5" />
-          New category
-        </h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cat-name">Name</Label>
-            <Input
-              id="cat-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Announcements"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cat-desc">Description</Label>
-            <Input
-              id="cat-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What belongs here?"
-            />
-          </div>
-        </div>
-        <Button className="mt-4" onClick={create} disabled={!name.trim()}>
-          Create category
-        </Button>
-      </section>
-
-      <section>
-        <h3 className="eyebrow mb-3">Existing categories</h3>
-        {!data || data.categories.length === 0 ? (
-          <EmptyState
-            title="No categories"
-            description="Create your first category above."
-          />
-        ) : (
-          <div className="divide-y divide-border rounded-xl border border-border bg-card">
-            {data.categories.map((category) => (
-              <div
-                key={String(category.category)}
-                className="flex items-center justify-between gap-3 p-4"
-              >
-                <div className="flex items-center gap-2.5">
-                  <CategoryDot
-                    id={String(category.category)}
-                    className="size-3.5"
-                  />
-                  <div>
-                    <p className="font-medium">{category.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {category.description || "No description"}
-                    </p>
-                  </div>
-                </div>
-                <ConfirmAction
-                  title={`Delete ${category.name}?`}
-                  description="This removes the category. Discussions and posts are not deleted."
-                  confirmLabel="Delete category"
-                  destructive
-                  onConfirm={() => remove(String(category.category))}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 text-destructive"
-                      aria-label={`Delete ${category.name}`}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  }
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
 function RoleAdmin({
   initialInspectUser,
   roleList,
+  users,
 }: {
   initialInspectUser?: string | null;
   roleList: QueryState<{ roles: RoleSummary[] }>;
+  users: RegisteredUser[];
 }) {
   const { session } = useAuth();
   const [roleName, setRoleName] = useState("");
   const [caps, setCaps] = useState<string[]>([]);
-  const [grantUser, setGrantUser] = useState("");
-  const [grantRole, setGrantRole] = useState("");
-  const [lookupUser, setLookupUser] = useState(initialInspectUser ?? "");
-  const [queryUser, setQueryUser] = useState<string | null>(
-    initialInspectUser ?? null,
-  );
-  const [queryUsername, setQueryUsername] = useState<string | null>(
-    initialInspectUser ?? null,
-  );
-  const [roleDetails, setRoleDetails] = useState<Record<string, RoleDetail>>(
-    {},
-  );
-  const fetchedRef = useRef<Set<string>>(new Set());
+  const [assignUser, setAssignUser] = useState(initialInspectUser ?? "");
+  const [assignRole, setAssignRole] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function resetInspection() {
-    setRoleDetails({});
-    fetchedRef.current.clear();
-  }
-
-  const roles = useQuery<{ roles: RoleRow[] }>(
-    queryUser
-      ? () => api.roles.forUser({ user: queryUser, context: FORUM_CONTEXT })
-      : null,
-    [queryUser],
+  // `administer` is a wildcard the built-in administrator role carries, not a
+  // registry entry: the server refuses a role defined with it, so it is
+  // described here rather than offered as a choice.
+  const CAPABILITIES = Object.keys(CAPABILITY_INFO).filter(
+    (cap) => cap !== "administer",
   );
+  const sortedUsers = useMemo(
+    () =>
+      [...users].sort((a, b) =>
+        String(a.username).localeCompare(String(b.username)),
+      ),
+    [users],
+  );
+  const selected = sortedUsers.find((u) => String(u.user) === assignUser);
 
-  useEffect(() => {
-    if (!roles.data) return;
-    Promise.all(
-      roles.data.roles.map(async (r) => {
-        const key = String(r.role);
-        if (fetchedRef.current.has(key)) return;
-        fetchedRef.current.add(key);
-        const result = await api.roles.get({ role: key });
-        if (!("error" in result)) {
-          setRoleDetails((prev) => ({ ...prev, [key]: result }));
-        }
-      }),
-    );
-  }, [roles.data]);
+  // The server refuses to leave the deployment with no administrator. Work that
+  // out here too, so the console can say why instead of failing on click.
+  const administrators = sortedUsers.filter((u) =>
+    u.role?.capabilities?.includes("administer"),
+  );
+  const isLastAdministrator =
+    administrators.length === 1 &&
+    selected !== undefined &&
+    String(administrators[0].user) === String(selected.user);
 
   function toggleCap(cap: string) {
     setCaps((prev) =>
@@ -785,90 +638,290 @@ function RoleAdmin({
   }
 
   async function define() {
-    if (!session || !roleName.trim() || caps.length === 0) return;
+    if (!session || !roleName.trim()) return;
+    setBusy(true);
     const result = await api.roles.define({
       name: roleName.trim(),
       capabilities: caps,
     });
+    setBusy(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success(`Role "${roleName.trim()}" defined`);
+      toast.success(`Role "${roleName.trim()}" created`);
       setRoleName("");
       setCaps([]);
       roleList.refetch();
     }
   }
 
-  async function grant() {
-    if (!session || !grantUser.trim() || !grantRole.trim()) return;
-    const result = await api.roles.grant({
-      user: grantUser.trim(),
-      context: FORUM_CONTEXT,
-      role: grantRole.trim(),
+  async function assign(onDone: () => void) {
+    if (!session || !assignUser || !assignRole) return;
+    setBusy(true);
+    const result = await api.roles.assign({
+      user: assignUser,
+      context: COMMONS_CONTEXT,
+      role: assignRole,
     });
+    setBusy(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("Role granted");
-      setGrantUser("");
-      setGrantRole("");
-      if (queryUser === grantUser.trim()) {
-        resetInspection();
-        roles.refetch();
-      }
+      toast.success("Role assigned");
+      onDone();
     }
   }
 
-  async function revoke(role: string) {
-    if (!session || !queryUser) return;
-    const result = await api.roles.revoke({
-      user: queryUser,
-      context: FORUM_CONTEXT,
-      role,
-    });
+  async function revoke(user: string, onDone: () => void) {
+    if (!session) return;
+    const result = await api.roles.revoke({ user, context: COMMONS_CONTEXT });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("Role revoked");
-      resetInspection();
-      roles.refetch();
+      toast.success("Role removed");
+      onDone();
     }
   }
 
-  const CAPABILITIES = Object.keys(CAPABILITY_INFO);
+  async function remove(role: string) {
+    if (!session) return;
+    const result = await api.roles.delete({ role });
+    if ("error" in result) toast.error(publicErrorMessage(result.error));
+    else {
+      toast.success("Role deleted");
+      roleList.refetch();
+    }
+  }
+
+  const roles = roleList.data?.roles ?? [];
+  const holdersOf = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const u of users) {
+      const name = u.role?.name;
+      if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+    return counts;
+  }, [users]);
 
   return (
     <div className="space-y-6">
       <section className="rounded-xl border border-border bg-card p-5">
+        <h3 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold">
+          <UserCog className="size-5" />
+          Assign a role
+        </h3>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Everyone holds exactly one role. Assigning a new one replaces it.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <div className="space-y-2">
+            <Label htmlFor="assign-user">Person</Label>
+            <select
+              id="assign-user"
+              value={assignUser}
+              onChange={(e) => setAssignUser(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+            >
+              <option value="">Select someone…</option>
+              {sortedUsers.map((u) => (
+                <option key={String(u.user)} value={String(u.user)}>
+                  {u.displayName ?? u.username} (@{u.username})
+                  {u.role?.name ? ` — ${u.role.name}` : " — no role"}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="assign-role">Role</Label>
+            <select
+              id="assign-role"
+              value={assignRole}
+              onChange={(e) => setAssignRole(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+            >
+              <option value="">Select a role…</option>
+              {roles.map((r) => (
+                <option key={String(r.role)} value={String(r.role)}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => assign(() => setAssignRole(""))}
+              disabled={
+                busy || !assignUser || !assignRole || isLastAdministrator
+              }
+            >
+              Assign
+            </Button>
+            {selected?.role?.name && !isLastAdministrator ? (
+              <ConfirmAction
+                trigger={
+                  <Button variant="outline" className="text-destructive">
+                    Remove
+                  </Button>
+                }
+                title={`Remove ${selected.role.name}?`}
+                description={`@${selected.username} will hold no role and keep only what everyone can do.`}
+                confirmLabel="Remove role"
+                destructive
+                onConfirm={() => revoke(assignUser, () => setAssignRole(""))}
+              />
+            ) : null}
+          </div>
+        </div>
+        {isLastAdministrator ? (
+          <p className="mt-3 text-sm text-amber-600 dark:text-amber-400">
+            @{selected?.username} is the only administrator, so their role
+            cannot be changed or removed. Give somebody else an administrator
+            role first.
+          </p>
+        ) : null}
+        {selected ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            @{selected.username} currently holds{" "}
+            {selected.role?.name ? (
+              <span className="font-medium text-foreground capitalize">
+                {selected.role.name}
+              </span>
+            ) : (
+              "no role"
+            )}
+            {selected.role?.capabilities?.length
+              ? ` (${selected.role.capabilities.join(", ")})`
+              : ""}
+            .
+          </p>
+        ) : null}
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-5">
+        <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
+          <List className="size-5" />
+          Roles
+        </h3>
+        {roleList.loading ? (
+          <LoadingState />
+        ) : roles.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No roles yet. Create one below.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {roles.map((r) => {
+              const held = holdersOf.get(String(r.name)) ?? 0;
+              return (
+                <div
+                  key={String(r.role)}
+                  className="flex items-start justify-between gap-3 rounded-lg border border-border px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium capitalize">{r.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {held === 0
+                        ? "Held by nobody"
+                        : held === 1
+                          ? "Held by 1 person"
+                          : `Held by ${held} people`}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {r.capabilities.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">
+                          No capabilities — a label only
+                        </span>
+                      ) : (
+                        r.capabilities.map((cap: string) => (
+                          <Badge
+                            key={cap}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {cap}
+                          </Badge>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  {held > 0 ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-muted-foreground shrink-0"
+                      disabled
+                      title="Assign these people another role before deleting this one."
+                      aria-label={`Cannot delete ${r.name} while somebody holds it`}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  ) : (
+                    <ConfirmAction
+                      trigger={
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive shrink-0"
+                          aria-label={`Delete ${r.name}`}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      }
+                      title={`Delete "${r.name}"?`}
+                      description="Nobody holds this role, so deleting it changes what no one can do."
+                      confirmLabel="Delete role"
+                      destructive
+                      onConfirm={() => remove(String(r.role))}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-5">
         <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
           <Shield className="size-5" />
-          Define a role
+          Create a role
         </h3>
         <div className="space-y-2">
-          <Label htmlFor="role-name">Role name</Label>
+          <Label htmlFor="role-name">Name</Label>
           <Input
             id="role-name"
             value={roleName}
             onChange={(e) => setRoleName(e.target.value)}
-            placeholder="e.g. moderator"
+            placeholder="e.g. teaching assistant"
           />
         </div>
         <div className="mt-4 space-y-3">
-          <Label>Capabilities</Label>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <Label>What it can do</Label>
+          <p className="text-xs text-muted-foreground">
+            <span className="font-mono">administer</span> is a wildcard the
+            built-in administrator role carries. It cannot be added here.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
             {CAPABILITIES.map((cap) => {
-              const selected = caps.includes(cap);
+              const isSelected = caps.includes(cap);
               return (
                 <button
                   key={cap}
                   type="button"
                   onClick={() => toggleCap(cap)}
+                  aria-pressed={isSelected}
                   className={
                     "rounded-lg border p-3 text-left transition-colors " +
-                    (selected
+                    (isSelected
                       ? "border-primary bg-primary/10 text-foreground"
                       : "border-border text-muted-foreground hover:bg-muted")
                   }
                 >
-                  <p className="text-sm font-medium capitalize">{cap}</p>
+                  <p className="flex items-center gap-1.5 text-sm font-medium">
+                    {isSelected ? (
+                      <Check className="size-4 shrink-0 text-primary" />
+                    ) : (
+                      <span className="size-4 shrink-0 rounded-sm border border-current opacity-40" />
+                    )}
+                    {cap}
+                  </p>
                   <p className="mt-0.5 text-xs leading-relaxed opacity-70">
                     {CAPABILITY_INFO[cap]}
                   </p>
@@ -880,194 +933,10 @@ function RoleAdmin({
         <Button
           className="mt-4"
           onClick={define}
-          disabled={!roleName.trim() || caps.length === 0}
+          disabled={busy || !roleName.trim()}
         >
-          Define role
+          Create role
         </Button>
-      </section>
-
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
-          <UserCog className="size-5" />
-          Grant a role
-        </h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="grant-user">Username</Label>
-            <Input
-              id="grant-user"
-              value={grantUser}
-              onChange={(e) => setGrantUser(e.target.value)}
-              placeholder="username"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="grant-role">Role (name or ID)</Label>
-            <Input
-              id="grant-role"
-              value={grantRole}
-              onChange={(e) => setGrantRole(e.target.value)}
-              placeholder="e.g. moderator"
-              list="grant-role-suggestions"
-            />
-            {roleList.data && roleList.data.roles.length > 0 ? (
-              <datalist id="grant-role-suggestions">
-                {roleList.data.roles.map((r) => (
-                  <option key={String(r.role)} value={r.name} />
-                ))}
-              </datalist>
-            ) : null}
-          </div>
-        </div>
-        <Button
-          className="mt-4"
-          onClick={grant}
-          disabled={!grantUser.trim() || !grantRole.trim()}
-        >
-          Grant role
-        </Button>
-      </section>
-
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
-          <List className="size-5" />
-          Defined roles
-        </h3>
-        {roleList.loading ? (
-          <LoadingState />
-        ) : !roleList.data || roleList.data.roles.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No roles defined yet. Create one above.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {roleList.data.roles.map((r) => (
-              <div
-                key={String(r.role)}
-                className="flex items-start justify-between gap-3 rounded-lg border border-border px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium capitalize">{r.name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground font-mono">
-                    {shortId(String(r.role))}
-                  </p>
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {r.capabilities.map((cap: string) => (
-                      <Badge
-                        key={cap}
-                        variant="secondary"
-                        className="text-xs capitalize"
-                      >
-                        {cap}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 font-display text-lg font-semibold">
-          Inspect a user&apos;s roles
-        </h3>
-        <div className="flex gap-2">
-          <Input
-            value={lookupUser}
-            onChange={(e) => setLookupUser(e.target.value)}
-            placeholder="username"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const name = lookupUser.trim();
-                if (name) {
-                  setQueryUser(name);
-                  setQueryUsername(name);
-                  resetInspection();
-                }
-              }
-            }}
-          />
-          <Button
-            variant="outline"
-            onClick={() => {
-              const name = lookupUser.trim();
-              if (name) {
-                setQueryUser(name);
-                setQueryUsername(name);
-                resetInspection();
-              }
-            }}
-            disabled={!lookupUser.trim()}
-          >
-            Look up
-          </Button>
-        </div>
-        {queryUser ? (
-          <div className="mt-4">
-            <p className="mb-2 text-sm text-muted-foreground">
-              Roles for{" "}
-              <UserName user={queryUser} className="text-foreground" /> (
-              {queryUsername ?? shortId(queryUser)})
-            </p>
-            {roles.loading ? (
-              <LoadingState />
-            ) : !roles.data || roles.data.roles.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No roles in this context.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {roles.data.roles.map((r) => {
-                  const detail = roleDetails[String(r.role)];
-                  return (
-                    <li
-                      key={String(r.role)}
-                      className="flex items-start justify-between rounded-lg border border-border px-4 py-3"
-                    >
-                      <div className="min-w-0">
-                        {detail ? (
-                          <>
-                            <p className="font-medium capitalize">
-                              {detail.name}
-                            </p>
-                            <p className="mt-0.5 text-xs text-muted-foreground font-mono">
-                              {shortId(String(r.role))}
-                            </p>
-                            <div className="mt-1.5 flex flex-wrap gap-1">
-                              {detail.capabilities.map((cap: string) => (
-                                <Badge
-                                  key={cap}
-                                  variant="secondary"
-                                  className="text-xs capitalize"
-                                >
-                                  {cap}
-                                </Badge>
-                              ))}
-                            </div>
-                          </>
-                        ) : (
-                          <span className="font-mono text-sm">
-                            {shortId(String(r.role))}
-                          </span>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive shrink-0"
-                        onClick={() => revoke(String(r.role))}
-                      >
-                        Revoke
-                      </Button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        ) : null}
       </section>
     </div>
   );
@@ -1233,7 +1102,7 @@ function MailAdmin({
 }
 
 export default function AdminPage() {
-  const { loading, can, me } = useAuth();
+  const { loading, permissions, me } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("users");
   const [inspectUser, setInspectUser] = useState<string | null>(null);
 
@@ -1245,24 +1114,18 @@ export default function AdminPage() {
     () => api.mail.list({}),
     [],
   );
+  const usersQuery = useQuery<{ users: RegisteredUser[] }>(
+    () => api.users.list({}),
+    [],
+  );
 
   const failingMail = useMemo(
     () => (mailQuery.data?.messages ?? []).filter(isFailing).length,
     [mailQuery.data],
   );
 
-  const rolesMap = useMemo(() => {
-    const map: Record<string, RoleSummary> = {};
-    if (roleList.data?.roles) {
-      for (const r of roleList.data.roles) {
-        map[String(r.role)] = r;
-      }
-    }
-    return map;
-  }, [roleList.data]);
-
-  function handleInspectRoles(username: string) {
-    setInspectUser(username);
+  function handleInspectRoles(user: string) {
+    setInspectUser(user);
     setActiveTab("roles");
   }
 
@@ -1273,7 +1136,7 @@ export default function AdminPage() {
       </PageContainer>
     );
 
-  if (!can.administer)
+  if (!permissions.can("administer"))
     return (
       <PageContainer>
         <EmptyState
@@ -1289,7 +1152,7 @@ export default function AdminPage() {
       <PageHeader
         eyebrow="Console"
         title="Administration"
-        description="Manage users, invitations, categories, roles, and outgoing email."
+        description="Manage users, invitations, roles, and outgoing email."
       />
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full">
@@ -1302,13 +1165,6 @@ export default function AdminPage() {
               Users
             </span>
             <span className="hidden sm:inline">Users & Invitations</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="categories"
-            className="gap-1.5 px-1.5 sm:gap-2 sm:px-2"
-          >
-            <FolderPlus className="size-4 shrink-0" />
-            Categories
           </TabsTrigger>
           <TabsTrigger
             value="roles"
@@ -1333,18 +1189,15 @@ export default function AdminPage() {
         <TabsContent value="users" className="mt-6">
           <UsersAndInvitationsAdmin
             onInspectRoles={handleInspectRoles}
-            rolesMap={rolesMap}
             currentUser={me ? String(me.user) : null}
           />
-        </TabsContent>
-        <TabsContent value="categories" className="mt-6">
-          <CategoryAdmin />
         </TabsContent>
         <TabsContent value="roles" className="mt-6">
           <RoleAdmin
             key={inspectUser ?? "default"}
             initialInspectUser={inspectUser}
             roleList={roleList}
+            users={usersQuery.data?.users ?? []}
           />
         </TabsContent>
         <TabsContent value="mail" className="mt-6">

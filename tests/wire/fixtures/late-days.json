@@ -26,8 +26,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#2",
+        "expiresAt": "<date>",
         "user": "uuid#1"
       }
     },
@@ -56,8 +56,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#4",
+        "expiresAt": "<date>",
         "user": "uuid#3"
       }
     },
@@ -86,8 +86,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#6",
+        "expiresAt": "<date>",
         "user": "uuid#5"
       }
     },
@@ -116,8 +116,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#8",
+        "expiresAt": "<date>",
         "user": "uuid#7"
       }
     },
@@ -129,7 +129,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "name": "u5-lms-admin",
-        "capabilities": ["roster:manage", "assignments:manage"]
+        "capabilities": ["course:manage", "grade", "student-records"]
       },
       "response": {
         "role": "uuid#9"
@@ -139,15 +139,15 @@
       "id": "grantLmsAdmin",
       "phase": "setup",
       "kind": "send",
-      "target": "/roles/grant",
+      "target": "/roles/assign",
       "body": {
         "session": "$loginAdmin.session",
-        "user": "$regAdmin.user",
-        "context": "forum",
+        "user": "$loginStaff.user",
+        "context": "commons",
         "role": "$defineLmsAdmin.role"
       },
       "response": {
-        "grant": "uuid#10"
+        "assignment": "uuid#10"
       }
     },
     {
@@ -203,22 +203,16 @@
         "session": "$loginAdmin.session",
         "rows": [
           {
-            "externalKey": "u5-staff-1",
             "email": "u5_staff@example.com",
-            "rosterName": "Staff",
             "kind": "STAFF"
           },
           {
-            "externalKey": "u5-stu-1",
             "email": "u5_alice@example.com",
-            "rosterName": "Alice",
             "kind": "STUDENT",
             "section": "$secA.section._id"
           },
           {
-            "externalKey": "u5-stu-2",
             "email": "u5_bob@example.com",
-            "rosterName": "Bob",
             "kind": "STUDENT",
             "section": "$secA.section._id"
           }
@@ -228,27 +222,21 @@
         "created": [
           {
             "_id": "uuid#13",
-            "externalKey": "u5-staff-1",
             "email": "u5_staff@example.com",
-            "rosterName": "Staff",
             "kind": "STAFF",
             "section": null,
             "status": "PENDING"
           },
           {
             "_id": "uuid#14",
-            "externalKey": "u5-stu-1",
             "email": "u5_alice@example.com",
-            "rosterName": "Alice",
             "kind": "STUDENT",
             "section": "uuid#12",
             "status": "PENDING"
           },
           {
             "_id": "uuid#15",
-            "externalKey": "u5-stu-2",
             "email": "u5_bob@example.com",
-            "rosterName": "Bob",
             "kind": "STUDENT",
             "section": "uuid#12",
             "status": "PENDING"
@@ -261,66 +249,48 @@
       "id": "claimStaff",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginStaff.session",
-        "externalKey": "u5-staff-1"
+        "session": "$loginAdmin.session",
+        "email": "u5_staff@example.com",
+        "kind": "STAFF",
+        "section": null,
+        "user": "$loginStaff.user"
       },
       "response": {
-        "seat": {
-          "_id": "uuid#13",
-          "externalKey": "u5-staff-1",
-          "email": "u5_staff@example.com",
-          "rosterName": "Staff",
-          "kind": "STAFF",
-          "section": null,
-          "status": "ACTIVE",
-          "user": "uuid#3"
-        }
+        "error": "SEAT_ALREADY_EXISTS"
       }
     },
     {
       "id": "claimAlice",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginAlice.session",
-        "externalKey": "u5-stu-1"
+        "session": "$loginAdmin.session",
+        "email": "u5_alice@example.com",
+        "kind": "STUDENT",
+        "section": "$secA.section._id",
+        "user": "$loginAlice.user"
       },
       "response": {
-        "seat": {
-          "_id": "uuid#14",
-          "externalKey": "u5-stu-1",
-          "email": "u5_alice@example.com",
-          "rosterName": "Alice",
-          "kind": "STUDENT",
-          "section": "uuid#12",
-          "status": "ACTIVE",
-          "user": "uuid#5"
-        }
+        "error": "SEAT_ALREADY_EXISTS"
       }
     },
     {
       "id": "claimBob",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginBob.session",
-        "externalKey": "u5-stu-2"
+        "session": "$loginAdmin.session",
+        "email": "u5_bob@example.com",
+        "kind": "STUDENT",
+        "section": "$secA.section._id",
+        "user": "$loginBob.user"
       },
       "response": {
-        "seat": {
-          "_id": "uuid#15",
-          "externalKey": "u5-stu-2",
-          "email": "u5_bob@example.com",
-          "rosterName": "Bob",
-          "kind": "STUDENT",
-          "section": "uuid#12",
-          "status": "ACTIVE",
-          "user": "uuid#7"
-        }
+        "error": "SEAT_ALREADY_EXISTS"
       }
     },
     {

@@ -20,7 +20,6 @@ async function actor(
   await app.concepts.Profiling.createProfile({
     user: registered.user,
     displayName: username,
-    email,
   });
   const login = await app.invoker.invoke("/auth/login", {
     username,
@@ -34,68 +33,62 @@ async function actor(
 }
 
 describe("course staff composition", () => {
-  test("every claimed staff seat grants the course-staff role", async () => {
+  test("a claimed staff seat confers no capability of its own", async () => {
     const app = assembleCommons(mongoImplementations(await testDb()));
+    // The first account registered becomes the bootstrap administrator, so the
+    // staff account under test must not be it.
+    await actor(app, "bootstrap_admin");
     const { created } = await app.concepts.Rostering.importSeats({
-      rows: [
-        { externalKey: "staff-1", email: "one@example.edu", rosterName: "One", kind: "STAFF" },
-        { externalKey: "staff-2", email: "two@example.edu", rosterName: "Two", kind: "STAFF" },
-      ],
+      rows: [{ email: "one@example.edu", kind: "STAFF" }],
     });
-    expect(created).toHaveLength(2);
+    expect(created).toHaveLength(1);
 
-    for (const number of [1, 2]) {
-      const staff = await actor(
-        app,
-        `staff_${number}`,
-        `${number === 1 ? "one" : "two"}@example.edu`,
-      );
-      const claim = await app.invoker.invoke("/roster/claim-seat", {
-        session: staff.session,
-        externalKey: `staff-${number}`,
-      } as never);
-      expect(claim.ok).toBe(true);
-      expect(
-        await app.concepts.Roling._holdsRoleNamed({
-          user: staff.user,
-          context: "forum",
-          name: "course-staff",
-        }),
-      ).toEqual({ held: true });
-    }
+    const staff = await actor(app, "staff_one", "one@example.edu");
+    await app.concepts.Rostering.claimSeat({ seat: created[0]._id, user: staff.user });
+
+    expect(await app.concepts.Roling._getRole({ user: staff.user, context: "commons" })).toEqual(
+      [],
+    );
+    expect(
+      await app.concepts.Roling._hasCapability({
+        user: staff.user,
+        context: "commons",
+        capability: "course:manage",
+      }),
+    ).toEqual({ allowed: false });
   });
 
-  test("a custom roster role does not suppress the course-staff grant", async () => {
+  test("an assigned role is what confers capability, and dropping a seat leaves it alone", async () => {
     const app = assembleCommons(mongoImplementations(await testDb()));
+    await actor(app, "bootstrap_admin");
     const staff = await actor(app, "custom_staff", "custom@example.edu");
     const { role } = await app.concepts.Roling.defineRole({
-      name: "roster-helper",
-      capabilities: ["roster:manage"],
+      name: "course-staff",
+      capabilities: ["course:manage"],
     });
-    await app.concepts.Roling.grant({ user: staff.user, context: "forum", role });
-    await app.concepts.Rostering.importSeats({
-      rows: [
-        {
-          externalKey: "custom-staff",
-          email: "custom@example.edu",
-          rosterName: "Course Staff",
-          kind: "STAFF",
-        },
-      ],
+    await app.concepts.Roling.assign({ user: staff.user, context: "commons", role });
+    const { created } = await app.concepts.Rostering.importSeats({
+      rows: [{ email: "custom@example.edu", kind: "STAFF" }],
     });
+    await app.concepts.Rostering.claimSeat({ seat: created[0]._id, user: staff.user });
 
-    const claim = await app.invoker.invoke("/roster/claim-seat", {
-      session: staff.session,
-      externalKey: "custom-staff",
-    } as never);
-    expect(claim.ok).toBe(true);
     expect(
-      await app.concepts.Roling._holdsRoleNamed({
+      await app.concepts.Roling._hasCapability({
         user: staff.user,
-        context: "forum",
-        name: "course-staff",
+        context: "commons",
+        capability: "course:manage",
       }),
-    ).toEqual({ held: true });
+    ).toEqual({ allowed: true });
+
+    await app.concepts.Rostering.dropSeat({ seat: created[0]._id });
+
+    expect(
+      await app.concepts.Roling._hasCapability({
+        user: staff.user,
+        context: "commons",
+        capability: "course:manage",
+      }),
+    ).toEqual({ allowed: true });
   });
 
   test("the staff dashboard counts active course work", async () => {
@@ -120,14 +113,7 @@ describe("course staff composition", () => {
       maxPoints: 100,
     });
     const { created } = await app.concepts.Rostering.importSeats({
-      rows: [
-        {
-          externalKey: "student-1",
-          email: "student@example.edu",
-          rosterName: "Student One",
-          kind: "STUDENT",
-        },
-      ],
+      rows: [{ email: "student@example.edu", kind: "STUDENT" }],
     });
     await app.concepts.Rostering.claimSeat({ seat: created[0]._id, user: "learner" });
     await app.concepts.Banking.setTerms({ allowance: 2, perItemLimit: 5, unitHours: 24 });

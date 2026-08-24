@@ -26,8 +26,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#2",
+        "expiresAt": "<date>",
         "user": "uuid#1"
       }
     },
@@ -39,33 +39,10 @@
       "body": {
         "session": "$loginAdmin.session",
         "name": "course-staff",
-        "capabilities": [
-          "roster:manage",
-          "assignments:manage",
-          "submissions:view-all",
-          "grades:manage",
-          "grades:view-all",
-          "late-days:manage",
-          "student-notes:manage"
-        ]
+        "capabilities": ["course:manage", "grade", "student-records"]
       },
       "response": {
         "role": "uuid#3"
-      }
-    },
-    {
-      "id": "grantAdminStaff",
-      "phase": "setup",
-      "kind": "send",
-      "target": "/roles/grant",
-      "body": {
-        "session": "$loginAdmin.session",
-        "user": "$regAdmin.user",
-        "context": "forum",
-        "role": "$defineCourseStaff.role"
-      },
-      "response": {
-        "grant": "uuid#4"
       }
     },
     {
@@ -82,7 +59,7 @@
       },
       "response": {
         "class": {
-          "_id": "uuid#5",
+          "_id": "uuid#4",
           "code": "CS101",
           "title": "Intro to CS",
           "term": "Fall 2026",
@@ -104,7 +81,7 @@
       },
       "response": {
         "section": {
-          "_id": "uuid#6",
+          "_id": "uuid#5",
           "name": "Section A",
           "location": "Room 101",
           "meetingPattern": "MW 10am",
@@ -121,16 +98,12 @@
         "session": "$loginAdmin.session",
         "rows": [
           {
-            "externalKey": "gb-stu-1",
             "email": "gb_alice@example.com",
-            "rosterName": "Alice",
             "kind": "STUDENT",
             "section": "$secA.section._id"
           },
           {
-            "externalKey": "gb-stu-2",
             "email": "gb_bob@example.com",
-            "rosterName": "Bob",
             "kind": "STUDENT",
             "section": "$secA.section._id"
           }
@@ -139,21 +112,17 @@
       "response": {
         "created": [
           {
-            "_id": "uuid#7",
-            "externalKey": "gb-stu-1",
+            "_id": "uuid#6",
             "email": "gb_alice@example.com",
-            "rosterName": "Alice",
             "kind": "STUDENT",
-            "section": "uuid#6",
+            "section": "uuid#5",
             "status": "PENDING"
           },
           {
-            "_id": "uuid#8",
-            "externalKey": "gb-stu-2",
+            "_id": "uuid#7",
             "email": "gb_bob@example.com",
-            "rosterName": "Bob",
             "kind": "STUDENT",
-            "section": "uuid#6",
+            "section": "uuid#5",
             "status": "PENDING"
           }
         ],
@@ -172,7 +141,7 @@
         "email": "gb_alice@example.com"
       },
       "response": {
-        "user": "uuid#9"
+        "user": "uuid#8"
       }
     },
     {
@@ -185,30 +154,31 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#9",
         "expiresAt": "<date>",
-        "session": "uuid#10",
-        "user": "uuid#9"
+        "user": "uuid#8"
       }
     },
     {
       "id": "claimAlice",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginAlice.session",
-        "externalKey": "gb-stu-1"
+        "session": "$loginAdmin.session",
+        "email": "gb_alice@example.com",
+        "kind": "STUDENT",
+        "section": "$secA.section._id",
+        "user": "$loginAlice.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#7",
-          "externalKey": "gb-stu-1",
+          "_id": "uuid#6",
           "email": "gb_alice@example.com",
-          "rosterName": "Alice",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "ACTIVE",
-          "user": "uuid#9"
+          "user": "uuid#8"
         }
       }
     },
@@ -224,7 +194,7 @@
         "email": "gb_bob@example.com"
       },
       "response": {
-        "user": "uuid#11"
+        "user": "uuid#10"
       }
     },
     {
@@ -237,30 +207,31 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#11",
         "expiresAt": "<date>",
-        "session": "uuid#12",
-        "user": "uuid#11"
+        "user": "uuid#10"
       }
     },
     {
       "id": "claimBob",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginBob.session",
-        "externalKey": "gb-stu-2"
+        "session": "$loginAdmin.session",
+        "email": "gb_bob@example.com",
+        "kind": "STUDENT",
+        "section": "$secA.section._id",
+        "user": "$loginBob.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#8",
-          "externalKey": "gb-stu-2",
+          "_id": "uuid#7",
           "email": "gb_bob@example.com",
-          "rosterName": "Bob",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "ACTIVE",
-          "user": "uuid#11"
+          "user": "uuid#10"
         }
       }
     },
@@ -282,7 +253,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#13"
+        "assignment": "uuid#12"
       }
     },
     {
@@ -295,7 +266,7 @@
         "assignment": "$createHw1.assignment"
       },
       "response": {
-        "assignment": "uuid#13"
+        "assignment": "uuid#12"
       }
     },
     {
@@ -316,7 +287,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#14"
+        "assignment": "uuid#13"
       }
     },
     {
@@ -329,7 +300,7 @@
         "assignment": "$createHw2.assignment"
       },
       "response": {
-        "assignment": "uuid#14"
+        "assignment": "uuid#13"
       }
     },
     {
@@ -342,7 +313,7 @@
       },
       "response": [
         {
-          "item": "uuid#13",
+          "item": "uuid#12",
           "label": "Homework 1",
           "maxPoints": 100,
           "status": "ACTIVE"
@@ -368,7 +339,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#14"
+        "assignment": "uuid#13"
       }
     },
     {
@@ -381,7 +352,7 @@
       },
       "response": [
         {
-          "item": "uuid#14",
+          "item": "uuid#13",
           "label": "Homework 2",
           "maxPoints": 100,
           "status": "ACTIVE"
@@ -402,7 +373,7 @@
         "feedback": "x"
       },
       "response": {
-        "grade": "uuid#15"
+        "grade": "uuid#14"
       }
     },
     {
@@ -417,7 +388,7 @@
         "maxPoints": 50
       },
       "response": {
-        "gradeItem": "uuid#16"
+        "gradeItem": "uuid#15"
       }
     },
     {
@@ -463,7 +434,7 @@
         "position": 0
       },
       "response": {
-        "criterion": "uuid#17"
+        "criterion": "uuid#16"
       }
     },
     {
@@ -479,7 +450,7 @@
         "position": 1
       },
       "response": {
-        "criterion": "uuid#18"
+        "criterion": "uuid#17"
       }
     },
     {
@@ -508,13 +479,13 @@
       },
       "response": [
         {
-          "criterion": "uuid#17",
+          "criterion": "uuid#16",
           "name": "Correctness",
           "maxPoints": 30,
           "position": 0
         },
         {
-          "criterion": "uuid#18",
+          "criterion": "uuid#17",
           "name": "Style",
           "maxPoints": 20,
           "position": 1
@@ -535,7 +506,7 @@
         "feedback": "Solid work"
       },
       "response": {
-        "grade": "uuid#19"
+        "grade": "uuid#18"
       }
     },
     {
@@ -551,7 +522,7 @@
         "feedback": "No evidence attached"
       },
       "response": {
-        "grade": "uuid#20"
+        "grade": "uuid#19"
       }
     },
     {
@@ -585,7 +556,7 @@
         "feedback": "Good effort"
       },
       "response": {
-        "grade": "uuid#20"
+        "grade": "uuid#19"
       }
     },
     {
@@ -602,7 +573,7 @@
         "feedback": "Clean"
       },
       "response": {
-        "criterionScore": "uuid#21"
+        "criterionScore": "uuid#20"
       }
     },
     {
@@ -634,7 +605,7 @@
         "maxPoints": 100
       },
       "response": {
-        "gradeItem": "uuid#22"
+        "gradeItem": "uuid#21"
       }
     },
     {
@@ -650,7 +621,7 @@
         "position": 0
       },
       "response": {
-        "criterion": "uuid#23"
+        "criterion": "uuid#22"
       }
     },
     {
@@ -683,7 +654,7 @@
         "position": 1
       },
       "response": {
-        "criterion": "uuid#18"
+        "criterion": "uuid#17"
       }
     },
     {
@@ -696,7 +667,7 @@
         "criterion": "$addCritStyle.criterion"
       },
       "response": {
-        "criterion": "uuid#18"
+        "criterion": "uuid#17"
       }
     },
     {
@@ -721,7 +692,7 @@
         "item": "$createHw1.assignment"
       },
       "response": {
-        "grade": "uuid#19"
+        "grade": "uuid#18"
       }
     },
     {
@@ -754,7 +725,7 @@
         "position": 2
       },
       "response": {
-        "criterion": "uuid#24"
+        "criterion": "uuid#23"
       }
     },
     {
@@ -785,7 +756,7 @@
         "item": "$createHw1.assignment"
       },
       "response": {
-        "grade": "uuid#19"
+        "grade": "uuid#18"
       }
     },
     {
@@ -813,7 +784,7 @@
         "item": "$createHw1.assignment"
       },
       "response": {
-        "grade": "uuid#19"
+        "grade": "uuid#18"
       }
     },
     {
@@ -828,7 +799,7 @@
         "feedback": "Medical"
       },
       "response": {
-        "grade": "uuid#20"
+        "grade": "uuid#19"
       }
     },
     {
@@ -874,7 +845,7 @@
         "maxPoints": 10
       },
       "response": {
-        "gradeItem": "uuid#25"
+        "gradeItem": "uuid#24"
       }
     },
     {
@@ -891,7 +862,7 @@
         "feedback": ""
       },
       "response": {
-        "grade": "uuid#26"
+        "grade": "uuid#25"
       }
     },
     {
@@ -908,7 +879,7 @@
         "feedback": ""
       },
       "response": {
-        "grade": "uuid#27"
+        "grade": "uuid#26"
       }
     },
     {
@@ -921,8 +892,8 @@
       },
       "response": [
         {
-          "item": "uuid#13",
-          "grade": "uuid#20",
+          "item": "uuid#12",
+          "grade": "uuid#19",
           "score": 0,
           "outOf": 50,
           "status": "EXCUSED",
@@ -930,7 +901,7 @@
         },
         {
           "item": "quiz-x",
-          "grade": "uuid#27",
+          "grade": "uuid#26",
           "score": 7,
           "outOf": 10,
           "status": "DRAFT",
@@ -950,12 +921,12 @@
       "response": {
         "released": [
           {
-            "learner": "uuid#9",
-            "grade": "uuid#26"
+            "learner": "uuid#8",
+            "grade": "uuid#25"
           },
           {
-            "learner": "uuid#11",
-            "grade": "uuid#27"
+            "learner": "uuid#10",
+            "grade": "uuid#26"
           }
         ]
       }
@@ -970,14 +941,14 @@
       },
       "response": [
         {
-          "learner": "uuid#9",
-          "grade": "uuid#26",
+          "learner": "uuid#8",
+          "grade": "uuid#25",
           "score": 9,
           "status": "RELEASED"
         },
         {
-          "learner": "uuid#11",
-          "grade": "uuid#27",
+          "learner": "uuid#10",
+          "grade": "uuid#26",
           "score": 7,
           "status": "RELEASED"
         }
@@ -1007,8 +978,8 @@
       "response": {
         "grades": [
           {
-            "item": "uuid#13",
-            "grade": "uuid#19",
+            "item": "uuid#12",
+            "grade": "uuid#18",
             "score": 42,
             "maxPoints": 50,
             "status": "RELEASED",
@@ -1017,7 +988,7 @@
           },
           {
             "item": "quiz-x",
-            "grade": "uuid#26",
+            "grade": "uuid#25",
             "score": 9,
             "maxPoints": 10,
             "status": "RELEASED",
@@ -1039,8 +1010,8 @@
       "response": {
         "grades": [
           {
-            "item": "uuid#14",
-            "grade": "uuid#15",
+            "item": "uuid#13",
+            "grade": "uuid#14",
             "score": 10,
             "maxPoints": 100,
             "status": "DRAFT",
@@ -1048,8 +1019,8 @@
             "label": "Homework 2"
           },
           {
-            "item": "uuid#13",
-            "grade": "uuid#19",
+            "item": "uuid#12",
+            "grade": "uuid#18",
             "score": 42,
             "maxPoints": 50,
             "status": "RELEASED",
@@ -1058,7 +1029,7 @@
           },
           {
             "item": "quiz-x",
-            "grade": "uuid#26",
+            "grade": "uuid#25",
             "score": 9,
             "maxPoints": 10,
             "status": "RELEASED",
@@ -1080,14 +1051,14 @@
       "response": {
         "grades": [
           {
-            "learner": "uuid#9",
-            "grade": "uuid#19",
+            "learner": "uuid#8",
+            "grade": "uuid#18",
             "score": 42,
             "status": "RELEASED"
           },
           {
-            "learner": "uuid#11",
-            "grade": "uuid#20",
+            "learner": "uuid#10",
+            "grade": "uuid#19",
             "score": 0,
             "status": "EXCUSED"
           }
@@ -1106,12 +1077,12 @@
         "gradebook": {
           "items": [
             {
-              "item": "uuid#13",
+              "item": "uuid#12",
               "label": "Homework 1",
               "maxPoints": 50
             },
             {
-              "item": "uuid#14",
+              "item": "uuid#13",
               "label": "Homework 2",
               "maxPoints": 100
             },
@@ -1128,20 +1099,20 @@
           ],
           "learners": [
             {
-              "learner": "uuid#9",
-              "rosterName": "Alice",
+              "learner": "uuid#8",
+              "displayName": "Alice",
               "email": "gb_alice@example.com",
-              "section": "uuid#6",
+              "section": "uuid#5",
               "cells": [
                 {
-                  "item": "uuid#13",
-                  "grade": "uuid#19",
+                  "item": "uuid#12",
+                  "grade": "uuid#18",
                   "score": 42,
                   "status": "RELEASED"
                 },
                 {
-                  "item": "uuid#14",
-                  "grade": "uuid#15",
+                  "item": "uuid#13",
+                  "grade": "uuid#14",
                   "score": 10,
                   "status": "DRAFT"
                 },
@@ -1153,26 +1124,26 @@
                 },
                 {
                   "item": "quiz-x",
-                  "grade": "uuid#26",
+                  "grade": "uuid#25",
                   "score": 9,
                   "status": "RELEASED"
                 }
               ]
             },
             {
-              "learner": "uuid#11",
-              "rosterName": "Bob",
+              "learner": "uuid#10",
+              "displayName": "Bob",
               "email": "gb_bob@example.com",
-              "section": "uuid#6",
+              "section": "uuid#5",
               "cells": [
                 {
-                  "item": "uuid#13",
-                  "grade": "uuid#20",
+                  "item": "uuid#12",
+                  "grade": "uuid#19",
                   "score": 0,
                   "status": "EXCUSED"
                 },
                 {
-                  "item": "uuid#14",
+                  "item": "uuid#13",
                   "grade": null,
                   "score": null,
                   "status": null
@@ -1185,7 +1156,7 @@
                 },
                 {
                   "item": "quiz-x",
-                  "grade": "uuid#27",
+                  "grade": "uuid#26",
                   "score": 7,
                   "status": "RELEASED"
                 }

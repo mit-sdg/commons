@@ -16,15 +16,11 @@ const expectRefusal = async (fn: () => unknown, Refusal: RefusalClass) => {
 };
 
 const anaRow = {
-  externalKey: "ana-1",
   email: "ana@example.edu",
-  rosterName: "Ana",
   kind: "STUDENT",
 };
 const benRow = {
-  externalKey: "ben-1",
   email: "ben@example.edu",
-  rosterName: "Ben",
   kind: "STUDENT",
 };
 
@@ -62,6 +58,150 @@ for (const [floor, make] of floors) {
       );
     });
 
+    test("updateClass revises the configured class", async () => {
+      const rostering = await make();
+      await rostering.configureClass({
+        code: "6.104",
+        title: "Software Desgin",
+        term: "Fall 2026",
+        timezone: "America/New_York",
+      });
+      const { class: revised } = await rostering.updateClass({
+        code: "6.1040",
+        title: "Software Design",
+        term: "Fall 2026",
+        timezone: "America/Los_Angeles",
+      });
+      expect(revised).toMatchObject({
+        code: "6.1040",
+        title: "Software Design",
+        term: "Fall 2026",
+        timezone: "America/Los_Angeles",
+        status: "ACTIVE",
+      });
+      expect(await rostering._getClass({})).toEqual([
+        {
+          detail: {
+            code: "6.1040",
+            title: "Software Design",
+            term: "Fall 2026",
+            timezone: "America/Los_Angeles",
+            status: "ACTIVE",
+          },
+        },
+      ]);
+      // Revision leaves exactly one class; configuring again is still refused.
+      await expectRefusal(
+        () =>
+          rostering.configureClass({
+            code: "6.1040",
+            title: "Software Design",
+            term: "Fall 2026",
+            timezone: "America/Los_Angeles",
+          }),
+        refusalErrors.ClassAlreadyConfigured,
+      );
+    });
+
+    test("updateClass refuses before the class is configured", async () => {
+      const rostering = await make();
+      expect(await rostering._getClass({})).toEqual([]);
+      await expectRefusal(
+        () =>
+          rostering.updateClass({
+            code: "6.104",
+            title: "Software Design",
+            term: "Fall 2026",
+            timezone: "America/New_York",
+          }),
+        refusalErrors.ClassNotConfigured,
+      );
+      expect(await rostering._getClass({})).toEqual([]);
+    });
+
+    test("removeSeat deletes a pending seat and frees its address", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({ rows: [anaRow] });
+      const seat = created[0]._id;
+      const result = await rostering.removeSeat({ seat });
+      expect(result.email).toBe("ana@example.edu");
+      expect(result.seat).toMatchObject({ _id: seat, email: "ana@example.edu" });
+      expect(await rostering._getUnclaimedSeats({})).toEqual([]);
+      expect(await rostering._getSeatByEmail({ email: "ana@example.edu" })).toEqual([]);
+      expect(await rostering._getPendingSeatByEmail({ email: "ana@example.edu" })).toEqual([]);
+
+      // The address carries no seat, so importing it again creates a fresh one.
+      const again = await rostering.importSeats({ rows: [anaRow] });
+      expect(again.skipped).toEqual([]);
+      expect(again.created).toHaveLength(1);
+      expect(again.created[0]._id).not.toBe(seat);
+    });
+
+    test("removeSeat deletes an active seat, freeing the address to enrol again", async () => {
+      const rostering = await make();
+      const { seat } = await rostering.enrol({
+        email: "ana@example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "ana",
+      });
+      expect(await rostering.removeSeat({ seat: seat._id })).toMatchObject({
+        email: "ana@example.edu",
+      });
+      expect(await rostering._getActiveMembers({})).toEqual([]);
+      expect(await rostering._getSeatByUser({ user: "ana" })).toEqual([]);
+      expect(await rostering._isActiveStudent({ user: "ana" })).toEqual({ active: false });
+
+      const fresh = await rostering.enrol({
+        email: "Ana@Example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "ana",
+      });
+      expect(fresh.seat._id).not.toBe(seat._id);
+      expect(fresh.seat).toMatchObject({ status: "ACTIVE", email: "ana@example.edu" });
+    });
+
+    test("removeSeat deletes a dropped seat", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({ rows: [anaRow] });
+      const seat = created[0]._id;
+      await rostering.claimSeat({ seat, user: "ana" });
+      await rostering.dropSeat({ seat });
+      expect(await rostering._getDroppedSeats({})).toHaveLength(1);
+      const result = await rostering.removeSeat({ seat });
+      expect(result).toEqual({
+        seat: {
+          _id: seat,
+          email: "ana@example.edu",
+          kind: "STUDENT",
+          section: null,
+          status: "DROPPED",
+          user: "ana",
+        },
+        email: "ana@example.edu",
+      });
+      expect(await rostering._getDroppedSeats({})).toEqual([]);
+      expect(await rostering._getSeatDetail({ user: "ana" })).toEqual([]);
+    });
+
+    test("removeSeat leaves other seats alone and refuses an unknown or already removed seat", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({ rows: [anaRow, benRow] });
+      await expectRefusal(
+        () => rostering.removeSeat({ seat: "no-such-seat" }),
+        refusalErrors.SeatNotFound,
+      );
+      await rostering.removeSeat({ seat: created[0]._id });
+      await expectRefusal(
+        () => rostering.removeSeat({ seat: created[0]._id }),
+        refusalErrors.SeatNotFound,
+      );
+      expect(await rostering._getUnclaimedSeats({})).toEqual([
+        { seat: created[1]._id, email: "ben@example.edu", kind: "STUDENT", section: null },
+      ]);
+    });
+
     test("createSection creates; updateSection updates; an unknown section is refused", async () => {
       const rostering = await make();
       const { section } = await rostering.createSection({
@@ -89,36 +229,123 @@ for (const [floor, make] of floors) {
       );
     });
 
-    test("importSeats creates pending seats and reports a duplicate row as skipped", async () => {
+    test("importSeats creates pending seats and reports a repeated address as skipped", async () => {
       const rostering = await make();
       const first = await rostering.importSeats({ rows: [anaRow, benRow] });
       expect(first.created).toHaveLength(2);
       expect(first.skipped).toEqual([]);
       expect(first.created[0]).toMatchObject({
-        externalKey: "ana-1",
+        email: "ana@example.edu",
         status: "PENDING",
         section: null,
       });
       const second = await rostering.importSeats({
-        rows: [anaRow, { externalKey: "cai-1", email: "cai@example.edu", rosterName: "Cai" }],
+        rows: [anaRow, { email: "cai@example.edu" }],
       });
       expect(second.created).toHaveLength(1);
-      expect(second.created[0]).toMatchObject({ externalKey: "cai-1", kind: "STUDENT" });
-      expect(second.skipped).toEqual(["ana-1"]);
-      expect(await rostering._getSeatByExternalKey({ externalKey: "ana-1" })).toEqual([
+      expect(second.created[0]).toMatchObject({ email: "cai@example.edu", kind: "STUDENT" });
+      expect(second.skipped).toEqual(["ana@example.edu"]);
+      expect(await rostering._getSeatByEmail({ email: "ana@example.edu" })).toEqual([
         { seat: first.created[0]._id, email: "ana@example.edu" },
       ]);
       expect(await rostering._getUnclaimedSeats({})).toHaveLength(3);
+    });
+
+    test("importSeats matches an address regardless of the case it arrives in", async () => {
+      const rostering = await make();
+      await rostering.importSeats({ rows: [anaRow] });
+      const again = await rostering.importSeats({ rows: [{ email: "Ana@Example.edu" }] });
+      expect(again.created).toEqual([]);
+      expect(again.skipped).toEqual(["ana@example.edu"]);
+    });
+
+    test("importSeats skips a row carrying no address", async () => {
+      const rostering = await make();
+      const result = await rostering.importSeats({ rows: [{ kind: "STUDENT" }] });
+      expect(result.created).toEqual([]);
+      expect(result.skipped).toEqual([""]);
+    });
+
+    test("enrol seats somebody who already has an account", async () => {
+      const rostering = await make();
+      const result = await rostering.enrol({
+        email: "cai@example.edu",
+        kind: "STAFF",
+        section: null,
+        user: "cai",
+      });
+      expect(result).toMatchObject({ kind: "STAFF", user: "cai" });
+      expect(result.seat).toMatchObject({ status: "ACTIVE", email: "cai@example.edu" });
+      expect(await rostering._getSeatByUser({ user: "cai" })).toEqual([
+        {
+          seat: result.seat._id,
+          user: "cai",
+          email: "cai@example.edu",
+          kind: "STAFF",
+          section: null,
+          status: "ACTIVE",
+        },
+      ]);
+    });
+
+    test("enrol claims a seat already waiting for that address", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({ rows: [anaRow] });
+      const result = await rostering.enrol({
+        email: "ana@example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "ana",
+      });
+      expect(result.seat._id).toBe(created[0]._id);
+      expect(result.seat).toMatchObject({ status: "ACTIVE", user: "ana" });
+      expect(await rostering._getUnclaimedSeats({})).toEqual([]);
+    });
+
+    test("enrol refuses an address already actively seated, and an already-seated person", async () => {
+      const rostering = await make();
+      await rostering.enrol({
+        email: "ana@example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "ana",
+      });
+      await expectRefusal(
+        () =>
+          rostering.enrol({
+            email: "ana@example.edu",
+            kind: "STUDENT",
+            section: null,
+            user: "someone-else",
+          }),
+        refusalErrors.SeatAlreadyExists,
+      );
+      await rostering.enrol({
+        email: "cai@example.edu",
+        kind: "STUDENT",
+        section: null,
+        user: "cai",
+      });
+      await expectRefusal(
+        () =>
+          rostering.enrol({
+            email: "dan@example.edu",
+            kind: "STUDENT",
+            section: null,
+            user: "cai",
+          }),
+        refusalErrors.SeatAlreadyActive,
+      );
     });
 
     test("previewImport names rows from the CSV header", async () => {
       const rostering = await make();
       expect(
         await rostering.previewImport({
-          csv: "externalKey,email,rosterName\nana-1,ana@example.edu,Ana",
+          csv: "email,kind\nana@example.edu,STUDENT",
         }),
       ).toEqual({
-        rows: [{ externalKey: "ana-1", email: "ana@example.edu", rosterName: "Ana" }],
+        rows: [{ email: "ana@example.edu", kind: "STUDENT" }],
       });
     });
 
@@ -169,7 +396,6 @@ for (const [floor, make] of floors) {
           seat,
           kind: "STUDENT",
           section: null,
-          rosterName: "Ana",
           email: "ana@example.edu",
         },
       ]);
@@ -190,7 +416,7 @@ for (const [floor, make] of floors) {
       expect(result).toMatchObject({ kind: "STUDENT", user: "ana", section: null });
       expect(result.seat).toMatchObject({ status: "ACTIVE" });
       expect(await rostering._getActiveStudents({})).toEqual([
-        { user: "ana", seat, section: null, rosterName: "Ana", email: "ana@example.edu" },
+        { user: "ana", seat, section: null, email: "ana@example.edu" },
       ]);
       await rostering.dropSeat({ seat });
       await rostering.claimSeat({ seat: created[1]._id, user: "ana" });
@@ -214,9 +440,7 @@ for (const [floor, make] of floors) {
           detail: {
             seat,
             user: "ana",
-            externalKey: "ana-1",
             email: "ana@example.edu",
-            rosterName: "Ana",
             kind: "STUDENT",
             section: section._id,
             status: "ACTIVE",

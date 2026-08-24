@@ -114,7 +114,6 @@ export async function runWireFixture(fixture: WireFixture) {
           await app.concepts.Profiling.createProfile({
             user: registered.user,
             displayName: String(body.displayName),
-            email: String(body.email),
           });
           response = registered;
         }

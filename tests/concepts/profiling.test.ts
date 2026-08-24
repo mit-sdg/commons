@@ -19,28 +19,34 @@ for (const [floor, make] of floors) {
   describe(`Profiling ${floor}`, () => {
     test("createProfile records the face with an empty bio and avatar", async () => {
       const profiling = await make();
-      const result = await profiling.createProfile({
-        user: "priya",
-        displayName: "Priya",
-        email: "priya@example.edu",
-      });
+      const result = await profiling.createProfile({ user: "priya", displayName: "Priya" });
       expect(result).toEqual({ user: "priya" });
       expect(await profiling._getProfile({ user: "priya" })).toEqual([
-        { profile: { displayName: "Priya", bio: "", avatar: "", email: "priya@example.edu" } },
+        { profile: { displayName: "Priya", bio: "", avatar: "" } },
       ]);
     });
 
     test("a second profile for the same user is refused", async () => {
       const profiling = await make();
-      await profiling.createProfile({
-        user: "priya",
-        displayName: "Priya",
-        email: "priya@example.edu",
-      });
+      await profiling.createProfile({ user: "priya", displayName: "Priya" });
       await expectRefusal(
-        () => profiling.createProfile({ user: "priya", displayName: "P.", email: "p@example.edu" }),
+        () => profiling.createProfile({ user: "priya", displayName: "P." }),
         refusalErrors.ProfileAlreadyExists,
       );
+    });
+
+    test("a profile keeps no email: Authenticating owns the address", async () => {
+      const profiling = await make();
+      await profiling.createProfile({ user: "priya", displayName: "Priya" });
+      const stored = await (
+        profiling as unknown as {
+          profiles: { findOne(query: unknown): Promise<Record<string, unknown> | null> };
+        }
+      ).profiles.findOne({ _id: "priya" });
+      expect(stored).not.toHaveProperty("email");
+      expect(await profiling._getProfileFields({ user: "priya" })).toEqual([
+        { displayName: "Priya", bio: "", avatar: "" },
+      ]);
     });
 
     test("an unknown user has no profile to read", async () => {
@@ -50,11 +56,7 @@ for (const [floor, make] of floors) {
 
     test("the three setters update one profile and return the user", async () => {
       const profiling = await make();
-      await profiling.createProfile({
-        user: "priya",
-        displayName: "Priya",
-        email: "priya@example.edu",
-      });
+      await profiling.createProfile({ user: "priya", displayName: "Priya" });
       expect(await profiling.setDisplayName({ user: "priya", displayName: "Priya V." })).toEqual({
         user: "priya",
       });
@@ -72,7 +74,6 @@ for (const [floor, make] of floors) {
             displayName: "Priya V.",
             bio: "Ports engines by day.",
             avatar: "https://example.com/p.png",
-            email: "priya@example.edu",
           },
         },
       ]);
@@ -80,16 +81,12 @@ for (const [floor, make] of floors) {
 
     test("an empty display name is accepted", async () => {
       const profiling = await make();
-      await profiling.createProfile({
-        user: "priya",
-        displayName: "Priya",
-        email: "priya@example.edu",
-      });
+      await profiling.createProfile({ user: "priya", displayName: "Priya" });
       expect(await profiling.setDisplayName({ user: "priya", displayName: "" })).toEqual({
         user: "priya",
       });
       expect(await profiling._getProfileFields({ user: "priya" })).toEqual([
-        { displayName: "", bio: "", avatar: "", email: "priya@example.edu" },
+        { displayName: "", bio: "", avatar: "" },
       ]);
     });
 
@@ -111,13 +108,9 @@ for (const [floor, make] of floors) {
 
     test("the flat profile question answers the same fields or no row", async () => {
       const profiling = await make();
-      await profiling.createProfile({
-        user: "priya",
-        displayName: "Priya",
-        email: "priya@example.edu",
-      });
+      await profiling.createProfile({ user: "priya", displayName: "Priya" });
       expect(await profiling._getProfileFields({ user: "priya" })).toEqual([
-        { displayName: "Priya", bio: "", avatar: "", email: "priya@example.edu" },
+        { displayName: "Priya", bio: "", avatar: "" },
       ]);
       expect(await profiling._getProfileFields({ user: "nobody" })).toEqual([]);
     });
@@ -125,11 +118,7 @@ for (const [floor, make] of floors) {
     test("named profiles answer in the order asked, without unknown or repeated names", async () => {
       const profiling = await make();
       for (const name of ["priya", "omar"]) {
-        await profiling.createProfile({
-          user: name,
-          displayName: name.toUpperCase(),
-          email: `${name}@example.edu`,
-        });
+        await profiling.createProfile({ user: name, displayName: name.toUpperCase() });
       }
       expect(
         await profiling._getProfilesOf({ users: ["omar", "nobody", "priya", "omar"] }),

@@ -331,7 +331,6 @@ describe("the Commons process with MongoDB", () => {
 
       const operatorMe = await post(edge.origin, "/api/auth/me", {}, operatorCookie);
       expect(operatorMe.body.username).toBe("operator");
-      const operator = String(operatorMe.body.user);
 
       const threadResult = await post(
         edge.origin,
@@ -412,18 +411,13 @@ describe("the Commons process with MongoDB", () => {
       const roleResult = await post(
         edge.origin,
         "/api/roles/define",
-        { name: "course-operator", capabilities: ["roster:manage", "assignments:manage"] },
+        { name: "course-operator", capabilities: ["course:manage"] },
         operatorCookie,
       );
-      const role = String(roleResult.body.role);
       expect(roleResult.response.status).toBe(200);
-      const granted = await post(
-        edge.origin,
-        "/api/roles/grant",
-        { role, user: operator, context: "forum" },
-        operatorCookie,
-      );
-      expect(granted.response.status).toBe(200);
+      // The operator is the initial administrator, so the wildcard already
+      // carries course authority; the defined role is here to be listed, not
+      // assigned to them.
 
       const configured = await post(
         edge.origin,
@@ -443,27 +437,33 @@ describe("the Commons process with MongoDB", () => {
       const imported = await post(
         edge.origin,
         "/api/roster/import",
-        {
-          rows: [
-            {
-              externalKey: "learner-1",
-              email: "learner@example.com",
-              rosterName: "Local Learner",
-              kind: "STUDENT",
-              section,
-            },
-          ],
-        },
+        { rows: [{ email: "learner@example.com", kind: "STUDENT", section }] },
         operatorCookie,
       );
       expect(imported.response.status).toBe(200);
-      const claimed = await post(
+      const learnerMe = await post(edge.origin, "/api/auth/me", {}, learnerCookie);
+      // The address already belongs to an account, so the import sweep claimed
+      // the seat for it outright rather than inviting somebody who is already
+      // registered. Enrolling the same address afterwards is refused, because
+      // the seat is no longer pending.
+      const rosterList = await post(edge.origin, "/api/roster/list", {}, operatorCookie);
+      expect(rosterList.response.status).toBe(200);
+      expect(
+        (rosterList.body.members as Array<Record<string, unknown>>).map((member) => member.user),
+      ).toContain(String(learnerMe.body.user));
+      const reEnrolled = await post(
         edge.origin,
-        "/api/roster/claim-seat",
-        { externalKey: "learner-1" },
-        learnerCookie,
+        "/api/roster/enroll",
+        {
+          email: "learner@example.com",
+          kind: "STUDENT",
+          section,
+          user: String(learnerMe.body.user),
+        },
+        operatorCookie,
       );
-      expect(claimed.response.status).toBe(200);
+      expect(reEnrolled.response.status).toBe(409);
+      expect(reEnrolled.body).toEqual({ error: "CONFLICT" });
 
       const now = Date.now();
       const assignmentResult = await post(

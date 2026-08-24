@@ -1,11 +1,14 @@
 # Grades
 
-Staff with grade-management capability use
+Staff holding `grade` use
 [Course.grades.GradesConfigureItem](reaction:Course.grades.GradesConfigureItem) to create or update an active grade item's
-label and maximum. A caller with grade-view capability can inspect that item and
+label and maximum. A caller holding the same capability can inspect that item and
 [its ordered criteria](former:Course.grades.theCriteriaOf) through
 [Course.grades.GradesItem](reaction:Course.grades.GradesItem); a missing item is
-reported explicitly rather than returned as an empty item.
+reported explicitly rather than returned as an empty item. Managing grades and
+reading somebody else's are deliberately one capability now rather than two:
+`grade` covers both, so anybody trusted to read another learner's grades can also
+configure items and record scores.
 
 [Course.grades.GradesAddCriterion](reaction:Course.grades.GradesAddCriterion) adds an ordered scoring criterion to an
 active item. [Course.grades.GradesReviseCriterion](reaction:Course.grades.GradesReviseCriterion) changes that criterion's
@@ -35,16 +38,18 @@ state-specific refusals.
 An active student sees only
 [their released and excused results](former:Course.grades.theReleasedGradesOf) through
 [Course.grades.GradesForMe](reaction:Course.grades.GradesForMe).
-[Course.grades.GradesForStudent](reaction:Course.grades.GradesForStudent) gives grade viewers
+[Course.grades.GradesForStudent](reaction:Course.grades.GradesForStudent) gives callers holding `grade`
 [all grades for one learner](former:Course.grades.theGradesOf).
-[Course.grades.GradesForItem](reaction:Course.grades.GradesForItem) gives grade viewers
+[Course.grades.GradesForItem](reaction:Course.grades.GradesForItem) gives the same callers
 [every recorded grade on one item](former:Course.grades.theGradesOn).
 [Course.grades.GradesGradebook](reaction:Course.grades.GradesGradebook) builds
 [the current gradebook](former:Course.grades.theGradebook) from active students, active grade
 items, and any grade cells at read time rather than storing a snapshot. The narrower
-[theGradebookLearners former](former:Course.grades.theGradebookLearners) exposes the roster identities and
-presentation fields available to gradebook-oriented reads.
-[Course.grades.GradesExport](reaction:Course.grades.GradesExport) has the same staff guard but is currently a
+[theGradebookLearners former](former:Course.grades.theGradebookLearners) exposes the learners a
+gradebook-oriented read covers: the account behind each active seat, presented
+through that account's own profile fields, since a seat records no name of its
+own.
+[Course.grades.GradesExport](reaction:Course.grades.GradesExport) has the same `grade` guard but is currently a
 placeholder that returns an empty CSV string.
 
 ```endpoints

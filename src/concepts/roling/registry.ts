@@ -3,10 +3,10 @@ import type { Db } from "mongodb";
 import spec from "@design/concepts/Roling.md" with { type: "text" };
 import { MongoRolingConcept } from "./roling.mongo.ts";
 import {
+  AssignmentNotFound,
   CapabilityRequired,
-  GrantAlreadyExists,
-  GrantNotFound,
   RoleAlreadyExists,
+  RoleInUse,
   RoleNotFound,
 } from "./errors.ts";
 
@@ -17,8 +17,8 @@ export const roling = registerConcept({
     FORBIDDEN: CapabilityRequired,
     ROLE_ALREADY_EXISTS: RoleAlreadyExists,
     ROLE_NOT_FOUND: RoleNotFound,
-    GRANT_ALREADY_EXISTS: GrantAlreadyExists,
-    GRANT_NOT_FOUND: GrantNotFound,
+    ROLE_IN_USE: RoleInUse,
+    ASSIGNMENT_NOT_FOUND: AssignmentNotFound,
   },
   floors: {
     mongo: ({ database }: { database: Db }, instance: string) =>

@@ -1,11 +1,19 @@
 # Invitations
 
-Only a caller who may administer Commons can issue an invitation.
-[Access.invitations.Invite](reaction:Access.invitations.Invite) resolves that caller from the session, normalizes
-the email address, captures the current time, and asks Inviting to create or
-resend its durable, single-use invitation. Resending the same unclaimed address
-keeps the invitation and credential and increments its send count; a claimed
-invitation is refused.
+Only a caller holding `administer` can issue an invitation.
+[Access.invitations.Invite](reaction:Access.invitations.Invite) resolves that caller from the session, verifies
+that they hold `administer` and otherwise returns `FORBIDDEN`, normalizes the
+email address, captures the current time, and asks Inviting to create or
+resend its durable, single-use invitation. Normalizing trims the address and
+lower-cases it, and refuses one that does not contain a single `@` as
+`MAIL_RECIPIENT_INVALID`, the refusal Mailing's recipient normalization owns, so
+an address invited twice in different spellings is one invitation. Resending the same
+unclaimed address keeps the invitation and credential and increments its send
+count; a claimed invitation is refused.
+
+[The invitation for an address](view:Access.invitations.theInvitationFor) reads whether an address has
+already been invited, so a caller that invites in bulk can leave existing
+invitations untouched rather than resending them.
 
 Each successful email invitation triggers
 [Access.invitations.EmailInvitationQueuesMail](reaction:Access.invitations.EmailInvitationQueuesMail), which renders the

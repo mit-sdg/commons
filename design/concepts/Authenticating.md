@@ -2,18 +2,23 @@
 
 ## Purpose
 
-Let a person create an account with a username and password, then use those
-credentials to identify themselves later.
+Let a person create an account with a username, a password, and an email address
+that no other account holds, then use those credentials to identify themselves
+later and be found again by that address.
 
 ## Principle
 
-Nadia registers with the username nadia, a password, and her email address. A
-user now exists for her. Later she authenticates with that username and
-password and is recognized as the same user.
+Nadia registers with the username nadia, a password, and the email address
+`Nadia@Example.com` typed with a stray space on each side. A user now exists for
+her, holding the address `nadia@example.com`. Later she authenticates with that
+username and password and is recognized as the same user, and looking the address
+up in any spelling answers her account.
 
-When Omar tries to register the username nadia, it is refused as taken. When
-he tries to authenticate with a guessed password, he is turned away without
-learning whether the username or the password was wrong.
+When Omar tries to register the username nadia, it is refused as taken. When he
+registers the username omar with the address `NADIA@example.com`, that is refused
+too, because the address is already Nadia's. When he tries to authenticate with a
+guessed password, he is turned away without learning whether the username or the
+password was wrong.
 
 ## Types
 
@@ -31,7 +36,10 @@ a set of Users with
 
 Rule: registration checks its inputs with these computations: a username is within name length when it is 3 to 32 characters long, it is well-formed when it starts with a letter and contains only letters, digits, hyphens, and underscores, and a password is within password length when it is 8 to 128 characters long.
 Rule: Authenticating derives each verifier with scrypt using N=16384, r=8, p=1, and maxmem 32 MiB, a random 16-byte salt, and a 32-byte derived key; a password matches when the same derivation and a constant-time key comparison succeed.
-Rule: an email looks like an address when it contains an @, and the password itself is never retained.
+Rule: an email is trimmed and lower-cased before it is stored on a user or matched against one, so addresses differing only in surrounding space or letter case name the same account.
+Rule: an email looks like an address when it contains exactly one @, and the password itself is never retained.
+Rule: an address identifies at most one user.
+Rule: registration reports a malformed input before a conflict, and a taken username before a taken address, because a username can simply be chosen again while a taken address means the person already has an account.
 Rule: changing a password requires the current password, a failed check does not say whether the account or password was wrong, and the new password follows the same length rule as registration.
 ```
 
@@ -39,9 +47,9 @@ Rule: changing a password requires the current password, a failed check does not
 
 ```actions
 register(username: String, password: String, email: String) : return (user: User)
-  where email looks like an address, username is within name length, username is well-formed, password is within password length, and no user has username username
+  where email looks like an address, username is within name length, username is well-formed, password is within password length, no user has username username, and no user holds the normalized email
   then
-    add a new user with username, a passwordVerifier derived from password, and email
+    add a new user with username, a passwordVerifier derived from password, and the normalized email
     return user
   where email does not look like an address
   then
@@ -58,6 +66,9 @@ register(username: String, password: String, email: String) : return (user: User
   where some user has username username
   then
     refuse USERNAME_TAKEN "That username is already taken."
+  where some user holds the normalized email
+  then
+    refuse EMAIL_TAKEN "That email address already has an account."
 
 authenticate(username: String, password: String) : return (user: User)
   where some user has username username and password matches its passwordVerifier
@@ -86,6 +97,10 @@ changePassword(user: User, oldPassword: String, newPassword: String) : return (u
 _getById (user: String) : optional (username: String, email: String)
   answers the username and email of the User
   answers no row when the User does not exist
+
+_getByEmail (email: String) : optional (user: String)
+  answers the User holding the address, compared after trimming and lower-casing both sides
+  answers no row when no User holds it
 
 _getByUsername (username: String) : optional (user: String)
   answers the User with the exact username

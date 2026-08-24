@@ -59,7 +59,7 @@ function buildThreadTree(nodes: ThreadNode[]): ThreadBranch[] {
 }
 
 export function ThreadView({ conversation }: { conversation: string }) {
-  const { session, can } = useAuth();
+  const { session, permissions } = useAuth();
   const { data, error, loading, refetch } = useQuery<ThreadPage>(
     () => loadThreadPage(conversation),
     [conversation],
@@ -186,7 +186,7 @@ export function ThreadView({ conversation }: { conversation: string }) {
               current={category ? String(category.category) : null}
               onChanged={refetch}
             />
-            {session && can.moderate ? (
+            {session && permissions.can("moderate") ? (
               <Button
                 variant="outline"
                 size="sm"

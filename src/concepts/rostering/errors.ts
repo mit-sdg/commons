@@ -1,5 +1,7 @@
 export class ClassAlreadyConfigured extends Error {}
+export class ClassNotConfigured extends Error {}
 export class SeatAlreadyActive extends Error {}
+export class SeatAlreadyExists extends Error {}
 export class SeatNotActive extends Error {}
 export class SeatNotDropped extends Error {}
 export class SeatNotFound extends Error {}

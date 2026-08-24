@@ -163,7 +163,7 @@
       "body": {
         "session": "$loginMara.session",
         "post": "$t1Create.post",
-        "content": "P1 v2 — see [[$t2Create.post]], hello @u3_noah and @u3_mara"
+        "content": "P1 v2 \u2014 see [[$t2Create.post]], hello @u3_noah and @u3_mara"
       },
       "response": {
         "post": "uuid#7"
@@ -180,10 +180,10 @@
       "response": {
         "post": {
           "author": "uuid#3",
-          "content": "P1 v2 — see [[uuid#12]], hello @u3_noah and @u3_mara",
+          "content": "P1 v2 \u2014 see [[uuid#12]], hello @u3_noah and @u3_mara",
           "createdAt": "<date>",
           "editedAt": "<date>",
-          "rendered": "<p>P1 v2 — see [[uuid#12]], hello <a href=\"/u/u3_noah\">@u3_noah</a> and <a href=\"/u/u3_mara\">@u3_mara</a></p>\n"
+          "rendered": "<p>P1 v2 \u2014 see [[uuid#12]], hello <a href=\"/u/u3_noah\">@u3_noah</a> and <a href=\"/u/u3_mara\">@u3_mara</a></p>\n"
         }
       }
     },
@@ -257,7 +257,7 @@
           {
             "revision": "uuid#17",
             "number": 2,
-            "content": "P1 v2 — see [[uuid#12]], hello @u3_noah and @u3_mara",
+            "content": "P1 v2 \u2014 see [[uuid#12]], hello @u3_noah and @u3_mara",
             "savedAt": "<date>"
           },
           {
@@ -300,7 +300,7 @@
       "response": {
         "revision": [
           {
-            "content": "P1 v2 — see [[uuid#12]], hello @u3_noah and @u3_mara",
+            "content": "P1 v2 \u2014 see [[uuid#12]], hello @u3_noah and @u3_mara",
             "savedAt": "<date>"
           }
         ]

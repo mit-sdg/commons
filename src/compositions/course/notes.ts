@@ -4,8 +4,8 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
   isNotActiveStudent,
-  mayManageStudentNotes,
-  mayNotManageStudentNotes,
+  mayManageStudentRecords,
+  mayNotManageStudentRecords,
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
@@ -96,7 +96,7 @@ export const Write = endpoint(
   "/students/notes/write",
   ({ session, learner, body, visibility, tags, followUpAt, user, at, note }) =>
     receive({ session, learner, body, visibility, tags, followUpAt }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageStudentNotes({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageStudentRecords({ user }))
         .then(
           Noting.write({ author: user, learner, body, visibility, tags, followUpAt, at }).responds({
             note,
@@ -104,7 +104,7 @@ export const Write = endpoint(
         )
         .then(respond({ note }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageStudentNotes({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -115,11 +115,11 @@ export const Revise = endpoint(
   "/students/notes/revise",
   ({ session, note, body, visibility, tags, followUpAt, user, at }) =>
     receive({ session, note, body, visibility, tags, followUpAt }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageStudentNotes({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageStudentRecords({ user }))
         .then(Noting.revise({ note, body, visibility, tags, followUpAt, at }).responds({ note }))
         .then(respond({ note }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageStudentNotes({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -130,11 +130,11 @@ export const Resolve = endpoint(
   "/students/notes/resolve",
   ({ session, note, user, at }) =>
     receive({ session, note }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageStudentNotes({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageStudentRecords({ user }))
         .then(Noting.resolve({ note, at }).responds({ note }))
         .then(respond({ note }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageStudentNotes({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -145,11 +145,11 @@ export const Archive = endpoint(
   "/students/notes/archive",
   ({ session, note, user, at }) =>
     receive({ session, note }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageStudentNotes({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageStudentRecords({ user }))
         .then(Noting.archive({ note, at }).responds({ note }))
         .then(respond({ note }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageStudentNotes({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -160,11 +160,11 @@ export const Restore = endpoint(
   "/students/notes/restore",
   ({ session, note, user, at }) =>
     receive({ session, note }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayManageStudentNotes({ user }))
+      where(now(at), activeUser({ session }).is({ user }), mayManageStudentRecords({ user }))
         .then(Noting.restore({ note, at }).responds({ note }))
         .then(respond({ note }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageStudentNotes({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -190,10 +190,10 @@ export const NotesList = endpoint(
   "/students/notes/list",
   ({ session, learner, user }) =>
     receive({ session, learner }).then(
-      where(activeUser({ session }).is({ user }), mayManageStudentNotes({ user }))
+      where(activeUser({ session }).is({ user }), mayManageStudentRecords({ user }))
         .then(respond({ notes: theStaffNotesOn({ learner }) }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotManageStudentNotes({ user }))
+      where(activeUser({ session }).is({ user }), mayNotManageStudentRecords({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -220,21 +220,21 @@ export const StudentsDetail = endpoint(
     receive({ session, user: target }).then(
       where(
         activeUser({ session }).is({ user: caller }),
-        mayManageStudentNotes({ user: caller }),
+        mayManageStudentRecords({ user: caller }),
         theSeatDetailOf({ user: target }).is({ detail }),
       )
         .then(respond({ detail }))
         .named("found"),
       where(
         activeUser({ session }).is({ user: caller }),
-        mayManageStudentNotes({ user: caller }),
+        mayManageStudentRecords({ user: caller }),
         no(theSeatDetailOf({ user: target })),
       )
         .then(respond({ detail: null }))
         .named("missing"),
       where(
         activeUser({ session }).is({ user: caller }),
-        mayNotManageStudentNotes({ user: caller }),
+        mayNotManageStudentRecords({ user: caller }),
       )
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),

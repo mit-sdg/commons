@@ -56,8 +56,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#2",
+        "expiresAt": "<date>",
         "user": "uuid#1"
       }
     },
@@ -89,65 +89,23 @@
         "profile": {
           "displayName": "Admin",
           "bio": "",
-          "avatar": "",
-          "email": "t2@example.com"
+          "avatar": ""
         }
       }
     },
     {
-      "id": "logoutAdmin",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/auth/logout",
-      "body": {
-        "session": "$loginAdmin.session"
-      },
-      "response": {
-        "ok": true
-      }
-    },
-    {
-      "id": "logoutTwice",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/auth/logout",
-      "body": {
-        "session": "$loginAdmin.session"
-      },
-      "response": {
-        "error": "UNAUTHORIZED"
-      }
-    },
-    {
-      "id": "loginAdmin2",
-      "phase": "setup",
-      "kind": "send",
-      "target": "/auth/login",
-      "body": {
-        "username": "rb_admin",
-        "password": "password123"
-      },
-      "response": {
-        "expiresAt": "<date>",
-        "session": "uuid#3",
-        "user": "uuid#1"
-      }
-    },
-    {
-      "id": "rolesForAdmin",
+      "id": "roleForAdmin",
       "phase": "assert",
       "kind": "send",
       "target": "/roles/forUser",
       "body": {
         "user": "$regAdmin.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
-        "roles": [
-          {
-            "role": "uuid#4"
-          }
-        ]
+        "role": "uuid#3",
+        "name": "administrator",
+        "capabilities": ["administer"]
       }
     },
     {
@@ -156,66 +114,23 @@
       "kind": "send",
       "target": "/roles/get",
       "body": {
-        "role": "$rolesForAdmin.roles.0.role"
+        "role": "$roleForAdmin.role"
       },
       "response": {
         "name": "administrator",
-        "capabilities": [
-          "administer",
-          "moderate",
-          "pin",
-          "roster:manage",
-          "late-days:manage",
-          "calendar:view-staff",
-          "student-notes:manage"
-        ]
+        "capabilities": ["administer"]
       }
     },
     {
-      "id": "revokeOwnAdmin",
+      "id": "permissionsAdmin",
       "phase": "assert",
       "kind": "send",
-      "target": "/roles/revoke",
+      "target": "/auth/permissions",
       "body": {
-        "session": "$loginAdmin2.session",
-        "user": "$regAdmin.user",
-        "context": "forum",
-        "role": "$rolesForAdmin.roles.0.role"
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "grant": "uuid#5"
-      }
-    },
-    {
-      "id": "loginBackfill",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/auth/login",
-      "body": {
-        "username": "rb_admin",
-        "password": "password123"
-      },
-      "response": {
-        "expiresAt": "<date>",
-        "session": "uuid#6",
-        "user": "uuid#1"
-      }
-    },
-    {
-      "id": "rolesAfterBackfill",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roles/forUser",
-      "body": {
-        "user": "$regAdmin.user",
-        "context": "forum"
-      },
-      "response": {
-        "roles": [
-          {
-            "role": "uuid#4"
-          }
-        ]
+        "capabilities": ["administer", "moderate", "course:manage", "grade", "student-records"]
       }
     },
     {
@@ -227,28 +142,15 @@
         "username": "rb_member",
         "password": "password123",
         "displayName": "Member",
-        "email": "s1@example.com"
+        "email": "m@example.com"
       },
       "response": {
-        "user": "uuid#7"
-      }
-    },
-    {
-      "id": "rolesForMemberEmpty",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roles/forUser",
-      "body": {
-        "user": "$regMember.user",
-        "context": "forum"
-      },
-      "response": {
-        "roles": []
+        "user": "uuid#4"
       }
     },
     {
       "id": "loginMember",
-      "phase": "setup",
+      "phase": "assert",
       "kind": "send",
       "target": "/auth/login",
       "body": {
@@ -256,9 +158,36 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#5",
         "expiresAt": "<date>",
-        "session": "uuid#8",
-        "user": "uuid#7"
+        "user": "uuid#4"
+      }
+    },
+    {
+      "id": "roleForMemberEmpty",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/forUser",
+      "body": {
+        "user": "$regMember.user",
+        "context": "commons"
+      },
+      "response": {
+        "role": null,
+        "name": null,
+        "capabilities": []
+      }
+    },
+    {
+      "id": "permissionsMember",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/permissions",
+      "body": {
+        "session": "$loginMember.session"
+      },
+      "response": {
+        "capabilities": []
       }
     },
     {
@@ -276,17 +205,73 @@
       }
     },
     {
+      "id": "roleDefineUnknownCap",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "typo-role",
+        "capabilities": ["gradez:manag"]
+      },
+      "response": {
+        "error": "UNKNOWN_CAPABILITY"
+      }
+    },
+    {
+      "id": "roleDefineNoCapsAllowed",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "empty-role",
+        "capabilities": []
+      },
+      "response": {
+        "role": "uuid#6"
+      }
+    },
+    {
       "id": "roleDefineHelper",
       "phase": "assert",
       "kind": "send",
       "target": "/roles/define",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "name": "helper",
-        "capabilities": ["helper-cap"]
+        "capabilities": ["moderate"]
       },
       "response": {
-        "role": "uuid#9"
+        "role": "uuid#7"
+      }
+    },
+    {
+      "id": "roleDefineDuplicate",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "helper",
+        "capabilities": ["grade"]
+      },
+      "response": {
+        "error": "ROLE_ALREADY_EXISTS"
+      }
+    },
+    {
+      "id": "roleDefineCourseStaff",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "course-staff",
+        "capabilities": ["course:manage", "grade", "student-records"]
+      },
+      "response": {
+        "role": "uuid#8"
       }
     },
     {
@@ -298,115 +283,236 @@
       "response": {
         "roles": [
           {
-            "role": "uuid#4",
+            "role": "uuid#3",
             "name": "administrator",
-            "capabilities": [
-              "administer",
-              "moderate",
-              "pin",
-              "roster:manage",
-              "late-days:manage",
-              "calendar:view-staff",
-              "student-notes:manage"
-            ]
+            "capabilities": ["administer"]
           },
           {
-            "role": "uuid#9",
+            "role": "uuid#6",
+            "name": "empty-role",
+            "capabilities": []
+          },
+          {
+            "role": "uuid#7",
             "name": "helper",
-            "capabilities": ["helper-cap"]
+            "capabilities": ["moderate"]
+          },
+          {
+            "role": "uuid#8",
+            "name": "course-staff",
+            "capabilities": ["course:manage", "grade", "student-records"]
           }
         ]
       }
     },
     {
-      "id": "grantByNames",
+      "id": "assignByNames",
       "phase": "assert",
       "kind": "send",
-      "target": "/roles/grant",
+      "target": "/roles/assign",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "user": "rb_member",
-        "context": "forum",
+        "context": "commons",
         "role": "helper"
       },
       "response": {
-        "grant": "uuid#10"
+        "assignment": "uuid#9"
       }
     },
     {
-      "id": "roleCanMemberHelperCap",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roles/can",
-      "body": {
-        "user": "$regMember.user",
-        "context": "forum",
-        "capability": "helper-cap"
-      },
-      "response": {
-        "allowed": true
-      }
-    },
-    {
-      "id": "forUserByUsername",
+      "id": "roleForMemberHelper",
       "phase": "assert",
       "kind": "send",
       "target": "/roles/forUser",
       "body": {
         "user": "rb_member",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
-        "roles": [
-          {
-            "role": "uuid#9"
-          }
-        ]
+        "role": "uuid#7",
+        "name": "helper",
+        "capabilities": ["moderate"]
       }
     },
     {
-      "id": "revokeUiPath",
+      "id": "permissionsMemberHelper",
       "phase": "assert",
       "kind": "send",
-      "target": "/roles/revoke",
+      "target": "/auth/permissions",
       "body": {
-        "session": "$loginBackfill.session",
-        "user": "rb_member",
-        "context": "forum",
+        "session": "$loginMember.session"
+      },
+      "response": {
+        "capabilities": ["moderate"]
+      }
+    },
+    {
+      "id": "assignReplaces",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$regMember.user",
+        "context": "commons",
+        "role": "$roleDefineCourseStaff.role"
+      },
+      "response": {
+        "assignment": "uuid#9"
+      }
+    },
+    {
+      "id": "roleForMemberReplaced",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/forUser",
+      "body": {
+        "user": "$regMember.user",
+        "context": "commons"
+      },
+      "response": {
+        "role": "uuid#8",
+        "name": "course-staff",
+        "capabilities": ["course:manage", "grade", "student-records"]
+      }
+    },
+    {
+      "id": "assignUnknownRole",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$regMember.user",
+        "context": "commons",
+        "role": "ghost"
+      },
+      "response": {
+        "error": "ROLE_NOT_FOUND"
+      }
+    },
+    {
+      "id": "assignByMemberForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginMember.session",
+        "user": "$regAdmin.user",
+        "context": "commons",
         "role": "$roleDefineHelper.role"
       },
       "response": {
-        "grant": "uuid#10"
+        "error": "FORBIDDEN"
       }
     },
     {
-      "id": "revokeByName",
+      "id": "deleteRoleInUse",
       "phase": "assert",
       "kind": "send",
-      "target": "/roles/revoke",
+      "target": "/roles/delete",
       "body": {
-        "session": "$loginBackfill.session",
-        "user": "$regMember.user",
-        "context": "forum",
+        "session": "$loginAdmin.session",
+        "role": "$roleDefineCourseStaff.role"
+      },
+      "response": {
+        "error": "ROLE_IN_USE"
+      }
+    },
+    {
+      "id": "deleteTypoRole",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/delete",
+      "body": {
+        "session": "$loginAdmin.session",
+        "role": "empty-role"
+      },
+      "response": {
+        "role": "uuid#6"
+      }
+    },
+    {
+      "id": "deleteRoleByMember",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/delete",
+      "body": {
+        "session": "$loginMember.session",
         "role": "helper"
       },
       "response": {
-        "error": "GRANT_NOT_FOUND"
+        "error": "FORBIDDEN"
       }
     },
     {
-      "id": "revokeByIds",
+      "id": "revokeOwnAdmin",
       "phase": "assert",
       "kind": "send",
       "target": "/roles/revoke",
       "body": {
-        "session": "$loginBackfill.session",
-        "user": "$regMember.user",
-        "context": "forum",
-        "role": "$roleDefineHelper.role"
+        "session": "$loginAdmin.session",
+        "user": "$regAdmin.user",
+        "context": "commons"
       },
       "response": {
-        "error": "GRANT_NOT_FOUND"
+        "error": "LAST_ADMINISTRATOR"
+      }
+    },
+    {
+      "id": "reassignLastAdmin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$regAdmin.user",
+        "context": "commons",
+        "role": "helper"
+      },
+      "response": {
+        "error": "LAST_ADMINISTRATOR"
+      }
+    },
+    {
+      "id": "adminStillAdministers",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/auth/permissions",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "capabilities": ["administer", "moderate", "course:manage", "grade", "student-records"]
+      }
+    },
+    {
+      "id": "revokeMember",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/revoke",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$regMember.user",
+        "context": "commons"
+      },
+      "response": {
+        "assignment": "uuid#9"
+      }
+    },
+    {
+      "id": "revokeMemberAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/revoke",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$regMember.user",
+        "context": "commons"
+      },
+      "response": {
+        "error": "ASSIGNMENT_NOT_FOUND"
       }
     },
     {
@@ -416,50 +522,13 @@
       "target": "/roster/configure-class",
       "body": {
         "session": "$loginMember.session",
-        "code": "CS101",
-        "title": "Intro",
-        "term": "Fall 2026",
-        "timezone": "America/New_York"
+        "code": "X",
+        "title": "X",
+        "term": "X",
+        "timezone": "UTC"
       },
       "response": {
         "error": "FORBIDDEN"
-      }
-    },
-    {
-      "id": "roleDefineCourseStaff",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roles/define",
-      "body": {
-        "session": "$loginBackfill.session",
-        "name": "course-staff",
-        "capabilities": [
-          "roster:manage",
-          "assignments:manage",
-          "submissions:view-all",
-          "grades:manage",
-          "grades:view-all",
-          "late-days:manage",
-          "student-notes:manage"
-        ]
-      },
-      "response": {
-        "role": "uuid#11"
-      }
-    },
-    {
-      "id": "grantCourseStaffAdmin",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roles/grant",
-      "body": {
-        "session": "$loginBackfill.session",
-        "user": "$regAdmin.user",
-        "context": "forum",
-        "role": "$roleDefineCourseStaff.role"
-      },
-      "response": {
-        "grant": "uuid#12"
       }
     },
     {
@@ -468,17 +537,17 @@
       "kind": "send",
       "target": "/roster/configure-class",
       "body": {
-        "session": "$loginBackfill.session",
-        "code": "CS101",
-        "title": "Intro to CS",
+        "session": "$loginAdmin.session",
+        "code": "RB101",
+        "title": "Roster Basics",
         "term": "Fall 2026",
         "timezone": "America/New_York"
       },
       "response": {
         "class": {
-          "_id": "uuid#13",
-          "code": "CS101",
-          "title": "Intro to CS",
+          "_id": "uuid#10",
+          "code": "RB101",
+          "title": "Roster Basics",
           "term": "Fall 2026",
           "timezone": "America/New_York",
           "status": "ACTIVE"
@@ -491,9 +560,9 @@
       "kind": "send",
       "target": "/roster/configure-class",
       "body": {
-        "session": "$loginBackfill.session",
-        "code": "CS102",
-        "title": "Second Class",
+        "session": "$loginAdmin.session",
+        "code": "RB102",
+        "title": "Again",
         "term": "Fall 2026",
         "timezone": "America/New_York"
       },
@@ -502,22 +571,38 @@
       }
     },
     {
+      "id": "updateClassForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/update-class",
+      "body": {
+        "session": "$loginMember.session",
+        "code": "X",
+        "title": "X",
+        "term": "X",
+        "timezone": "UTC"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
       "id": "sectionsCreateA",
       "phase": "assert",
       "kind": "send",
       "target": "/roster/sections/create",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "name": "Section A",
-        "location": "Room 101",
-        "meetingPattern": "MW 10am"
+        "location": "Room 1",
+        "meetingPattern": "MW 9am"
       },
       "response": {
         "section": {
-          "_id": "uuid#14",
+          "_id": "uuid#11",
           "name": "Section A",
-          "location": "Room 101",
-          "meetingPattern": "MW 10am",
+          "location": "Room 1",
+          "meetingPattern": "MW 9am",
           "status": "ACTIVE"
         }
       }
@@ -528,17 +613,17 @@
       "kind": "send",
       "target": "/roster/sections/create",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "name": "Section B",
-        "location": "Room 202",
-        "meetingPattern": "TR 2pm"
+        "location": "Room 2",
+        "meetingPattern": "TT 9am"
       },
       "response": {
         "section": {
-          "_id": "uuid#15",
+          "_id": "uuid#12",
           "name": "Section B",
-          "location": "Room 202",
-          "meetingPattern": "TR 2pm",
+          "location": "Room 2",
+          "meetingPattern": "TT 9am",
           "status": "ACTIVE"
         }
       }
@@ -549,12 +634,12 @@
       "kind": "send",
       "target": "/roster/sections/create",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "name": "Section C"
       },
       "response": {
         "section": {
-          "_id": "uuid#16",
+          "_id": "uuid#13",
           "name": "Section C",
           "location": null,
           "meetingPattern": null,
@@ -568,18 +653,18 @@
       "kind": "send",
       "target": "/roster/sections/update",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "section": "$sectionsCreateA.section._id",
-        "name": "Section A+",
-        "location": "Room 103",
-        "meetingPattern": "MW 11am"
+        "name": "Section A1",
+        "location": "Room 11",
+        "meetingPattern": "MW 10am"
       },
       "response": {
         "section": {
-          "_id": "uuid#14",
-          "name": "Section A+",
-          "location": "Room 103",
-          "meetingPattern": "MW 11am",
+          "_id": "uuid#11",
+          "name": "Section A1",
+          "location": "Room 11",
+          "meetingPattern": "MW 10am",
           "status": "ACTIVE"
         }
       }
@@ -590,7 +675,7 @@
       "kind": "send",
       "target": "/roster/sections/update",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "section": "no-such-section",
         "name": "X",
         "location": "Y",
@@ -609,21 +694,21 @@
       "response": {
         "sections": [
           {
-            "section": "uuid#14",
-            "name": "Section A+",
-            "location": "Room 103",
-            "meetingPattern": "MW 11am",
+            "section": "uuid#11",
+            "name": "Section A1",
+            "location": "Room 11",
+            "meetingPattern": "MW 10am",
             "status": "ACTIVE"
           },
           {
-            "section": "uuid#15",
+            "section": "uuid#12",
             "name": "Section B",
-            "location": "Room 202",
-            "meetingPattern": "TR 2pm",
+            "location": "Room 2",
+            "meetingPattern": "TT 9am",
             "status": "ACTIVE"
           },
           {
-            "section": "uuid#16",
+            "section": "uuid#13",
             "name": "Section C",
             "location": null,
             "meetingPattern": null,
@@ -638,21 +723,13 @@
       "kind": "send",
       "target": "/roster/import-preview",
       "body": {
-        "csv": "externalKey,email,rosterName,kind\nstu-1,s1@example.com,Student One,STUDENT\nstaff-1,t1@example.com,Staff One,STAFF\n"
+        "csv": "email,kind\ns1@example.com,STUDENT"
       },
       "response": {
         "rows": [
           {
-            "externalKey": "stu-1",
             "email": "s1@example.com",
-            "rosterName": "Student One",
             "kind": "STUDENT"
-          },
-          {
-            "externalKey": "staff-1",
-            "email": "t1@example.com",
-            "rosterName": "Staff One",
-            "kind": "STAFF"
           }
         ]
       }
@@ -663,7 +740,7 @@
       "kind": "send",
       "target": "/roster/import-preview",
       "body": {
-        "csv": "externalKey,email,rosterName,kind"
+        "csv": "email,kind"
       },
       "response": {
         "rows": []
@@ -675,57 +752,45 @@
       "kind": "send",
       "target": "/roster/import",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "rows": [
           {
-            "externalKey": "staff-1",
+            "email": "s1@example.com",
+            "kind": "STUDENT",
+            "section": "$sectionsCreateA.section._id"
+          },
+          {
+            "email": "s2@example.com",
+            "kind": "STUDENT",
+            "section": "$sectionsCreateA.section._id"
+          },
+          {
             "email": "t1@example.com",
-            "rosterName": "Staff One",
             "kind": "STAFF"
-          },
-          {
-            "externalKey": "stu-1",
-            "email": "s1@example.com",
-            "rosterName": "Student One",
-            "kind": "STUDENT",
-            "section": "$sectionsCreateA.section._id"
-          },
-          {
-            "externalKey": "stu-2",
-            "email": "s1@example.com",
-            "rosterName": "Student Two",
-            "kind": "STUDENT",
-            "section": "$sectionsCreateA.section._id"
           }
         ]
       },
       "response": {
         "created": [
           {
-            "_id": "uuid#17",
-            "externalKey": "staff-1",
+            "_id": "uuid#14",
+            "email": "s1@example.com",
+            "kind": "STUDENT",
+            "section": "uuid#11",
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#15",
+            "email": "s2@example.com",
+            "kind": "STUDENT",
+            "section": "uuid#11",
+            "status": "PENDING"
+          },
+          {
+            "_id": "uuid#16",
             "email": "t1@example.com",
-            "rosterName": "Staff One",
             "kind": "STAFF",
             "section": null,
-            "status": "PENDING"
-          },
-          {
-            "_id": "uuid#18",
-            "externalKey": "stu-1",
-            "email": "s1@example.com",
-            "rosterName": "Student One",
-            "kind": "STUDENT",
-            "section": "uuid#14",
-            "status": "PENDING"
-          },
-          {
-            "_id": "uuid#19",
-            "externalKey": "stu-2",
-            "email": "s1@example.com",
-            "rosterName": "Student Two",
-            "kind": "STUDENT",
-            "section": "uuid#14",
             "status": "PENDING"
           }
         ],
@@ -738,35 +803,17 @@
       "kind": "send",
       "target": "/roster/import",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "rows": [
           {
-            "externalKey": "stu-1",
             "email": "s1@example.com",
-            "rosterName": "Student One",
-            "kind": "STUDENT"
-          },
-          {
-            "externalKey": "stu-3",
-            "email": "s3@example.com",
-            "rosterName": "Student Three",
             "kind": "STUDENT"
           }
         ]
       },
       "response": {
-        "created": [
-          {
-            "_id": "uuid#20",
-            "externalKey": "stu-3",
-            "email": "s3@example.com",
-            "rosterName": "Student Three",
-            "kind": "STUDENT",
-            "section": null,
-            "status": "PENDING"
-          }
-        ],
-        "skipped": ["stu-1"]
+        "created": [],
+        "skipped": ["s1@example.com"]
       }
     },
     {
@@ -775,7 +822,7 @@
       "kind": "send",
       "target": "/roster/import",
       "body": {
-        "session": "$loginBackfill.session",
+        "session": "$loginAdmin.session",
         "rows": []
       },
       "response": {
@@ -784,147 +831,165 @@
       }
     },
     {
-      "id": "claimStu1",
+      "id": "importForbidden",
       "phase": "assert",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/import",
       "body": {
         "session": "$loginMember.session",
-        "externalKey": "stu-1"
+        "rows": [
+          {
+            "email": "nope@example.com",
+            "kind": "STUDENT"
+          }
+        ]
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "invitationsAfterImport",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/invitations/list",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "invitations": [
+          {
+            "invitation": "uuid#17",
+            "channel": "email",
+            "address": "s1@example.com",
+            "createdAt": "<date>",
+            "lastInvitedAt": "<date>",
+            "inviteCount": 1,
+            "user": null
+          },
+          {
+            "invitation": "uuid#18",
+            "channel": "email",
+            "address": "s2@example.com",
+            "createdAt": "<date>",
+            "lastInvitedAt": "<date>",
+            "inviteCount": 1,
+            "user": null
+          },
+          {
+            "invitation": "uuid#19",
+            "channel": "email",
+            "address": "t1@example.com",
+            "createdAt": "<date>",
+            "lastInvitedAt": "<date>",
+            "inviteCount": 1,
+            "user": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "regStu1",
+      "phase": "assert",
+      "kind": "setup",
+      "target": "register-user",
+      "body": {
+        "username": "rb_stu1",
+        "password": "password123",
+        "displayName": "Stu One",
+        "email": "s1@example.com"
+      },
+      "response": {
+        "user": "uuid#20"
+      }
+    },
+    {
+      "id": "enrolStu1",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/enroll",
+      "body": {
+        "session": "$loginAdmin.session",
+        "email": "s1@example.com",
+        "kind": "STUDENT",
+        "section": "$sectionsCreateA.section._id",
+        "user": "$regStu1.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#18",
-          "externalKey": "stu-1",
+          "_id": "uuid#14",
           "email": "s1@example.com",
-          "rosterName": "Student One",
           "kind": "STUDENT",
-          "section": "uuid#14",
+          "section": "uuid#11",
           "status": "ACTIVE",
-          "user": "uuid#7"
+          "user": "uuid#20"
         }
       }
     },
     {
-      "id": "claimStu2Again",
+      "id": "enrolStu1Again",
       "phase": "assert",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginMember.session",
-        "externalKey": "stu-2"
+        "session": "$loginAdmin.session",
+        "email": "s1@example.com",
+        "kind": "STUDENT",
+        "section": "$sectionsCreateA.section._id",
+        "user": "$regStu1.user"
       },
       "response": {
-        "error": "SEAT_ALREADY_ACTIVE"
+        "error": "SEAT_ALREADY_EXISTS"
       }
     },
     {
-      "id": "claimUnknown",
+      "id": "enrolForbidden",
       "phase": "assert",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
         "session": "$loginMember.session",
-        "externalKey": "nope"
+        "email": "s2@example.com",
+        "kind": "STUDENT",
+        "section": null,
+        "user": "$regMember.user"
       },
       "response": {
-        "error": "SEAT_NOT_FOUND"
+        "error": "FORBIDDEN"
       }
     },
     {
-      "id": "rosterMeMember",
+      "id": "rosterMeAdminNoSeat",
       "phase": "assert",
       "kind": "send",
       "target": "/roster/me",
       "body": {
-        "session": "$loginMember.session"
-      },
-      "response": {
-        "seat": "uuid#18"
-      }
-    },
-    {
-      "id": "rosterMeAdmin",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roster/me",
-      "body": {
-        "session": "$loginBackfill.session"
+        "session": "$loginAdmin.session"
       },
       "response": {
         "seat": null
       }
     },
     {
-      "id": "regLinked",
-      "phase": "setup",
-      "kind": "setup",
-      "target": "register-user",
-      "body": {
-        "username": "rb_linked",
-        "password": "password123",
-        "displayName": "Linked",
-        "email": "rb_linked@example.com"
-      },
-      "response": {
-        "user": "uuid#21"
-      }
-    },
-    {
       "id": "unclaimedSeats",
-      "phase": "setup",
+      "phase": "assert",
       "kind": "concept",
       "target": "Rostering._getUnclaimedSeats",
       "body": {},
       "response": [
         {
-          "seat": "uuid#17",
-          "externalKey": "staff-1",
+          "seat": "uuid#15",
+          "email": "s2@example.com",
+          "kind": "STUDENT",
+          "section": "uuid#11"
+        },
+        {
+          "seat": "uuid#16",
           "email": "t1@example.com",
-          "rosterName": "Staff One",
           "kind": "STAFF",
-          "section": null
-        },
-        {
-          "seat": "uuid#19",
-          "externalKey": "stu-2",
-          "email": "s1@example.com",
-          "rosterName": "Student Two",
-          "kind": "STUDENT",
-          "section": "uuid#14"
-        },
-        {
-          "seat": "uuid#20",
-          "externalKey": "stu-3",
-          "email": "s3@example.com",
-          "rosterName": "Student Three",
-          "kind": "STUDENT",
           "section": null
         }
       ]
-    },
-    {
-      "id": "linkUserStu3",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roster/link-user",
-      "body": {
-        "session": "$loginBackfill.session",
-        "seat": "$unclaimedSeats.2.seat",
-        "user": "$regLinked.user"
-      },
-      "response": {
-        "seat": {
-          "_id": "uuid#20",
-          "externalKey": "stu-3",
-          "email": "s3@example.com",
-          "rosterName": "Student Three",
-          "kind": "STUDENT",
-          "section": null,
-          "status": "ACTIVE",
-          "user": "uuid#21"
-        }
-      }
     },
     {
       "id": "moveStu1toB",
@@ -932,20 +997,18 @@
       "kind": "send",
       "target": "/roster/move-section",
       "body": {
-        "session": "$loginBackfill.session",
-        "seat": "$claimStu1.seat._id",
+        "session": "$loginAdmin.session",
+        "seat": "$enrolStu1.seat._id",
         "section": "$sectionsCreateB.section._id"
       },
       "response": {
         "seat": {
-          "_id": "uuid#18",
-          "externalKey": "stu-1",
+          "_id": "uuid#14",
           "email": "s1@example.com",
-          "rosterName": "Student One",
           "kind": "STUDENT",
-          "section": "uuid#15",
+          "section": "uuid#12",
           "status": "ACTIVE",
-          "user": "uuid#7"
+          "user": "uuid#20"
         }
       }
     },
@@ -955,89 +1018,49 @@
       "kind": "send",
       "target": "/roster/list",
       "body": {
-        "session": "$loginBackfill.session"
+        "session": "$loginAdmin.session"
       },
       "response": {
         "members": [
           {
-            "user": "uuid#7",
-            "seat": "uuid#18",
+            "user": "uuid#20",
+            "seat": "uuid#14",
             "kind": "STUDENT",
-            "section": "uuid#15",
-            "rosterName": "Student One",
-            "email": "s1@example.com"
-          },
-          {
-            "user": "uuid#21",
-            "seat": "uuid#20",
-            "kind": "STUDENT",
-            "section": null,
-            "rosterName": "Student Three",
-            "email": "s3@example.com"
+            "section": "uuid#12",
+            "email": "s1@example.com",
+            "displayName": "Stu One"
           }
         ]
       }
     },
     {
-      "id": "dropStu3",
+      "id": "pendingRoster",
       "phase": "assert",
       "kind": "send",
-      "target": "/roster/drop",
+      "target": "/roster/pending",
       "body": {
-        "session": "$loginBackfill.session",
-        "seat": "$unclaimedSeats.2.seat"
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "seat": {
-          "_id": "uuid#20",
-          "externalKey": "stu-3",
-          "email": "s3@example.com",
-          "rosterName": "Student Three",
-          "kind": "STUDENT",
-          "section": null,
-          "status": "DROPPED",
-          "user": "uuid#21"
-        }
-      }
-    },
-    {
-      "id": "reinstateStu3",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roster/reinstate",
-      "body": {
-        "session": "$loginBackfill.session",
-        "seat": "$unclaimedSeats.2.seat"
-      },
-      "response": {
-        "seat": {
-          "_id": "uuid#20",
-          "externalKey": "stu-3",
-          "email": "s3@example.com",
-          "rosterName": "Student Three",
-          "kind": "STUDENT",
-          "section": null,
-          "status": "ACTIVE",
-          "user": "uuid#21"
-        }
-      }
-    },
-    {
-      "id": "dropNotActive",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roster/drop",
-      "body": {
-        "session": "$loginBackfill.session",
-        "seat": "$importSeats.created.0._id"
-      },
-      "response": {
-        "error": "SEAT_NOT_ACTIVE"
+        "members": [
+          {
+            "seat": "uuid#15",
+            "email": "s2@example.com",
+            "kind": "STUDENT",
+            "section": "uuid#11"
+          },
+          {
+            "seat": "uuid#16",
+            "email": "t1@example.com",
+            "kind": "STAFF",
+            "section": null
+          }
+        ]
       }
     },
     {
       "id": "regStaffer",
-      "phase": "setup",
+      "phase": "assert",
       "kind": "setup",
       "target": "register-user",
       "body": {
@@ -1047,12 +1070,12 @@
         "email": "t1@example.com"
       },
       "response": {
-        "user": "uuid#22"
+        "user": "uuid#21"
       }
     },
     {
       "id": "loginStaffer",
-      "phase": "setup",
+      "phase": "assert",
       "kind": "send",
       "target": "/auth/login",
       "body": {
@@ -1060,62 +1083,71 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#22",
         "expiresAt": "<date>",
-        "session": "uuid#23",
-        "user": "uuid#22"
+        "user": "uuid#21"
       }
     },
     {
-      "id": "claimStaffSeat",
+      "id": "enrolStaffer",
       "phase": "assert",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginStaffer.session",
-        "externalKey": "staff-1"
+        "session": "$loginAdmin.session",
+        "email": "t1@example.com",
+        "kind": "STAFF",
+        "section": null,
+        "user": "$regStaffer.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#17",
-          "externalKey": "staff-1",
+          "_id": "uuid#16",
           "email": "t1@example.com",
-          "rosterName": "Staff One",
           "kind": "STAFF",
           "section": null,
           "status": "ACTIVE",
-          "user": "uuid#22"
+          "user": "uuid#21"
         }
       }
     },
     {
-      "id": "rolesForStaffer",
+      "id": "rosterMeStafferSeated",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/me",
+      "body": {
+        "session": "$loginStaffer.session"
+      },
+      "response": {
+        "seat": "uuid#16"
+      }
+    },
+    {
+      "id": "roleForStaffer",
       "phase": "assert",
       "kind": "send",
       "target": "/roles/forUser",
       "body": {
         "user": "$regStaffer.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
-        "roles": [
-          {
-            "role": "uuid#11"
-          }
-        ]
+        "role": null,
+        "name": null,
+        "capabilities": []
       }
     },
     {
-      "id": "canStafferRosterManage",
+      "id": "permissionsStaffer",
       "phase": "assert",
       "kind": "send",
-      "target": "/roles/can",
+      "target": "/auth/permissions",
       "body": {
-        "user": "$regStaffer.user",
-        "context": "forum",
-        "capability": "roster:manage"
+        "session": "$loginStaffer.session"
       },
       "response": {
-        "allowed": true
+        "capabilities": []
       }
     },
     {
@@ -1127,9 +1159,40 @@
         "session": "$loginStaffer.session",
         "rows": [
           {
-            "externalKey": "stu-4",
-            "email": "s4@example.com",
-            "rosterName": "Student Four",
+            "email": "s9@example.com",
+            "kind": "STUDENT"
+          }
+        ]
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "assignStafferCourseStaff",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$regStaffer.user",
+        "context": "commons",
+        "role": "$roleDefineCourseStaff.role"
+      },
+      "response": {
+        "assignment": "uuid#23"
+      }
+    },
+    {
+      "id": "importByStafferAllowed",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/import",
+      "body": {
+        "session": "$loginStaffer.session",
+        "rows": [
+          {
+            "email": "s9@example.com",
             "kind": "STUDENT"
           }
         ]
@@ -1138,9 +1201,7 @@
         "created": [
           {
             "_id": "uuid#24",
-            "externalKey": "stu-4",
-            "email": "s4@example.com",
-            "rosterName": "Student Four",
+            "email": "s9@example.com",
             "kind": "STUDENT",
             "section": null,
             "status": "PENDING"
@@ -1155,167 +1216,220 @@
       "kind": "send",
       "target": "/roster/drop",
       "body": {
-        "session": "$loginBackfill.session",
-        "seat": "$claimStaffSeat.seat._id"
+        "session": "$loginAdmin.session",
+        "seat": "$enrolStaffer.seat._id"
       },
       "response": {
         "seat": {
-          "_id": "uuid#17",
-          "externalKey": "staff-1",
+          "_id": "uuid#16",
           "email": "t1@example.com",
-          "rosterName": "Staff One",
           "kind": "STAFF",
           "section": null,
           "status": "DROPPED",
-          "user": "uuid#22"
+          "user": "uuid#21"
         }
       }
     },
     {
-      "id": "rolesForStafferAfterDrop",
+      "id": "rosterMeStafferDropped",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/me",
+      "body": {
+        "session": "$loginStaffer.session"
+      },
+      "response": {
+        "seat": null
+      }
+    },
+    {
+      "id": "roleForStafferAfterDrop",
       "phase": "assert",
       "kind": "send",
       "target": "/roles/forUser",
       "body": {
         "user": "$regStaffer.user",
-        "context": "forum"
+        "context": "commons"
       },
       "response": {
-        "roles": []
+        "role": "uuid#8",
+        "name": "course-staff",
+        "capabilities": ["course:manage", "grade", "student-records"]
       }
     },
     {
-      "id": "canStafferAfterDrop",
+      "id": "permissionsStafferAfterDrop",
       "phase": "assert",
       "kind": "send",
-      "target": "/roles/can",
+      "target": "/auth/permissions",
       "body": {
-        "user": "$regStaffer.user",
-        "context": "forum",
-        "capability": "roster:manage"
+        "session": "$loginStaffer.session"
       },
       "response": {
-        "allowed": false
+        "capabilities": ["course:manage", "grade", "student-records"]
       }
     },
     {
-      "id": "importStaff2",
-      "phase": "setup",
-      "kind": "send",
-      "target": "/roster/import",
-      "body": {
-        "session": "$loginBackfill.session",
-        "rows": [
-          {
-            "externalKey": "staff-2",
-            "email": "t2@example.com",
-            "rosterName": "Staff Two",
-            "kind": "STAFF"
-          }
-        ]
-      },
-      "response": {
-        "created": [
-          {
-            "_id": "uuid#25",
-            "externalKey": "staff-2",
-            "email": "t2@example.com",
-            "rosterName": "Staff Two",
-            "kind": "STAFF",
-            "section": null,
-            "status": "PENDING"
-          }
-        ],
-        "skipped": []
-      }
-    },
-    {
-      "id": "claimStaff2Admin",
-      "phase": "assert",
-      "kind": "send",
-      "target": "/roster/claim-seat",
-      "body": {
-        "session": "$loginBackfill.session",
-        "externalKey": "staff-2"
-      },
-      "response": {
-        "seat": {
-          "_id": "uuid#25",
-          "externalKey": "staff-2",
-          "email": "t2@example.com",
-          "rosterName": "Staff Two",
-          "kind": "STAFF",
-          "section": null,
-          "status": "ACTIVE",
-          "user": "uuid#1"
-        }
-      }
-    },
-    {
-      "id": "dropAdminSeat",
+      "id": "dropNotActive",
       "phase": "assert",
       "kind": "send",
       "target": "/roster/drop",
       "body": {
-        "session": "$loginBackfill.session",
-        "seat": "$claimStaff2Admin.seat._id"
+        "session": "$loginAdmin.session",
+        "seat": "$enrolStaffer.seat._id"
+      },
+      "response": {
+        "error": "SEAT_NOT_ACTIVE"
+      }
+    },
+    {
+      "id": "reinstateStaffer",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/reinstate",
+      "body": {
+        "session": "$loginAdmin.session",
+        "seat": "$enrolStaffer.seat._id"
       },
       "response": {
         "seat": {
-          "_id": "uuid#25",
-          "externalKey": "staff-2",
-          "email": "t2@example.com",
-          "rosterName": "Staff Two",
+          "_id": "uuid#16",
+          "email": "t1@example.com",
           "kind": "STAFF",
           "section": null,
-          "status": "DROPPED",
-          "user": "uuid#1"
+          "status": "ACTIVE",
+          "user": "uuid#21"
         }
       }
     },
     {
-      "id": "rolesForAdminAfterDrop",
+      "id": "rosterMeStafferReinstated",
       "phase": "assert",
       "kind": "send",
-      "target": "/roles/forUser",
+      "target": "/roster/me",
       "body": {
-        "user": "$regAdmin.user",
-        "context": "forum"
+        "session": "$loginStaffer.session"
       },
       "response": {
-        "roles": [
-          {
-            "role": "uuid#4"
-          }
-        ]
+        "seat": "uuid#16"
       }
     },
     {
-      "id": "canAdminAdministerAfterDrop",
+      "id": "droppedRoster",
       "phase": "assert",
       "kind": "send",
-      "target": "/roles/can",
+      "target": "/roster/dropped",
       "body": {
-        "user": "$regAdmin.user",
-        "context": "forum",
-        "capability": "administer"
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "allowed": true
+        "members": []
       }
     },
     {
-      "id": "defineInRecovery",
+      "id": "updateClassByStaffer",
       "phase": "assert",
       "kind": "send",
-      "target": "/roles/define",
+      "target": "/roster/update-class",
+      "body": {
+        "session": "$loginStaffer.session",
+        "code": "RB101",
+        "title": "Roster Basics, Revised",
+        "term": "Spring 2027",
+        "timezone": "Europe/Berlin"
+      },
+      "response": {
+        "class": {
+          "_id": "uuid#10",
+          "code": "RB101",
+          "title": "Roster Basics, Revised",
+          "term": "Spring 2027",
+          "timezone": "Europe/Berlin",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "classAfterUpdate",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/class",
+      "body": {
+        "session": "$loginStaffer.session"
+      },
+      "response": {
+        "class": {
+          "code": "RB101",
+          "title": "Roster Basics, Revised",
+          "term": "Spring 2027",
+          "timezone": "Europe/Berlin",
+          "status": "ACTIVE"
+        }
+      }
+    },
+    {
+      "id": "removeSeatForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/remove",
       "body": {
         "session": "$loginMember.session",
-        "name": "recovery-role",
-        "capabilities": ["administer"]
+        "seat": "$importByStafferAllowed.created.0._id"
       },
       "response": {
         "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "removeSeatByStaffer",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/remove",
+      "body": {
+        "session": "$loginStaffer.session",
+        "seat": "$importByStafferAllowed.created.0._id"
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#24",
+          "email": "s9@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "PENDING"
+        },
+        "email": "s9@example.com"
+      }
+    },
+    {
+      "id": "removeSeatAgain",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/remove",
+      "body": {
+        "session": "$loginStaffer.session",
+        "seat": "$importByStafferAllowed.created.0._id"
+      },
+      "response": {
+        "error": "SEAT_NOT_FOUND"
+      }
+    },
+    {
+      "id": "pendingRosterAfterRemove",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/pending",
+      "body": {
+        "session": "$loginStaffer.session"
+      },
+      "response": {
+        "members": [
+          {
+            "seat": "uuid#15",
+            "email": "s2@example.com",
+            "kind": "STUDENT",
+            "section": "uuid#11"
+          }
+        ]
       }
     }
   ]

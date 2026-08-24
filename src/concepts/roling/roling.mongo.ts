@@ -1,9 +1,9 @@
 import type { Collection, Db } from "mongodb";
 import {
+  AssignmentNotFound,
   CapabilityRequired,
-  GrantAlreadyExists,
-  GrantNotFound,
   RoleAlreadyExists,
+  RoleInUse,
   RoleNotFound,
 } from "./errors.ts";
 
@@ -14,7 +14,7 @@ interface RoleDoc {
   seq: number;
 }
 
-interface GrantDoc {
+interface AssignmentDoc {
   _id: string;
   user: string;
   context: string;
@@ -24,13 +24,13 @@ interface GrantDoc {
 
 export class MongoRolingConcept {
   private readonly roles: Collection<RoleDoc>;
-  private readonly grants: Collection<GrantDoc>;
+  private readonly assignments: Collection<AssignmentDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 
   constructor(db: Db, instance = "Roling") {
     const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
     this.roles = db.collection<RoleDoc>(`${prefix}.roles`);
-    this.grants = db.collection<GrantDoc>(`${prefix}.grants`);
+    this.assignments = db.collection<AssignmentDoc>(`${prefix}.assignments`);
     this.counters = db.collection(`${prefix}.counters`);
   }
 
@@ -41,6 +41,14 @@ export class MongoRolingConcept {
       { upsert: true, returnDocument: "after" },
     );
     return counter?.value ?? 0;
+  }
+
+  /** Which capabilities does this user reach in this context? */
+  async #capabilitiesOf(user: string, context: string): Promise<string[]> {
+    const assignment = await this.assignments.findOne({ user, context });
+    if (assignment === null) return [];
+    const role = await this.roles.findOne({ _id: assignment.role });
+    return role === null ? [] : role.capabilities;
   }
 
   async defineRole({ name, capabilities }: { name: string; capabilities: string[] }) {
@@ -63,41 +71,42 @@ export class MongoRolingConcept {
     return { role };
   }
 
-  async grant({ user, context, role }: { user: string; context: string; role: string }) {
-    const roleDoc = await this.roles.findOne({ _id: role });
-    if (roleDoc === null) {
-      throw new RoleNotFound(`No role named ${role}`);
-    }
-    const existing = await this.grants.findOne({ user, context, role });
-    if (existing !== null) {
-      throw new GrantAlreadyExists(`${user} already holds ${role}`);
-    }
-    const grant = crypto.randomUUID();
-    const seq = await this.#nextSeq("grants");
-    await this.grants.insertOne({ _id: grant, user, context, role, seq });
-    return { grant };
-  }
-
-  async ensureGrant({ user, context, role }: { user: string; context: string; role: string }) {
-    const roleDoc = await this.roles.findOne({ _id: role });
-    if (roleDoc === null) {
-      throw new RoleNotFound(`No role named ${role}`);
-    }
-    const existing = await this.grants.findOne({ user, context, role });
-    if (existing !== null) return { grant: existing._id };
-    const grant = crypto.randomUUID();
-    const seq = await this.#nextSeq("grants");
-    await this.grants.insertOne({ _id: grant, user, context, role, seq });
-    return { grant };
-  }
-
-  async revoke({ user, context, role }: { user: string; context: string; role: string }) {
-    const doc = await this.grants.findOne({ user, context, role });
+  async deleteRole({ role }: { role: string }) {
+    const doc = await this.roles.findOne({ _id: role });
     if (doc === null) {
-      throw new GrantNotFound(`${user} holds no ${role} in ${context}`);
+      throw new RoleNotFound(`No role named ${role}`);
     }
-    await this.grants.deleteOne({ _id: doc._id });
-    return { grant: doc._id };
+    const held = await this.assignments.findOne({ role });
+    if (held !== null) {
+      throw new RoleInUse(`${doc.name} is still assigned`);
+    }
+    await this.roles.deleteOne({ _id: role });
+    return { role };
+  }
+
+  async assign({ user, context, role }: { user: string; context: string; role: string }) {
+    const roleDoc = await this.roles.findOne({ _id: role });
+    if (roleDoc === null) {
+      throw new RoleNotFound(`No role named ${role}`);
+    }
+    const existing = await this.assignments.findOne({ user, context });
+    if (existing !== null) {
+      await this.assignments.updateOne({ _id: existing._id }, { $set: { role } });
+      return { assignment: existing._id };
+    }
+    const assignment = crypto.randomUUID();
+    const seq = await this.#nextSeq("assignments");
+    await this.assignments.insertOne({ _id: assignment, user, context, role, seq });
+    return { assignment };
+  }
+
+  async revoke({ user, context }: { user: string; context: string }) {
+    const doc = await this.assignments.findOne({ user, context });
+    if (doc === null) {
+      throw new AssignmentNotFound(`${user} holds no role in ${context}`);
+    }
+    await this.assignments.deleteOne({ _id: doc._id });
+    return { assignment: doc._id };
   }
 
   async requireCapability({
@@ -123,45 +132,63 @@ export class MongoRolingConcept {
     context: string;
     capability: string;
   }) {
-    const grants = await this.grants.find({ user, context }).toArray();
-    if (grants.length === 0) return { allowed: false };
-    const roleIds = grants.map((doc) => doc.role);
+    const capabilities = await this.#capabilitiesOf(user, context);
+    return { allowed: capabilities.includes(capability) };
+  }
+
+  async #holdersOf(context: string, capability: string): Promise<string[]> {
+    const assignments = await this.assignments.find({ context }).toArray();
+    if (assignments.length === 0) return [];
+    const roleIds = [...new Set(assignments.map((doc) => doc.role))];
     const roles = await this.roles.find({ _id: { $in: roleIds } }).toArray();
-    const allowed = roles.some((doc) => doc.capabilities.includes(capability));
-    return { allowed };
+    const carrying = new Set(
+      roles.filter((doc) => doc.capabilities.includes(capability)).map((doc) => doc._id),
+    );
+    return assignments.filter((doc) => carrying.has(doc.role)).map((doc) => doc.user);
   }
 
   async _hasCapabilityHolder({ context, capability }: { context: string; capability: string }) {
-    const grants = await this.grants.find({ context }).toArray();
-    if (grants.length === 0) return { present: false };
-    const roleIds = grants.map((doc) => doc.role);
-    const roles = await this.roles.find({ _id: { $in: roleIds } }).toArray();
-    const present = roles.some((doc) => doc.capabilities.includes(capability));
-    return { present };
+    return { present: (await this.#holdersOf(context, capability)).length > 0 };
+  }
+
+  async _isSoleCapabilityHolder({
+    user,
+    context,
+    capability,
+  }: {
+    user: string;
+    context: string;
+    capability: string;
+  }) {
+    const holders = await this.#holdersOf(context, capability);
+    return { sole: holders.length === 1 && holders[0] === user };
   }
 
   async _holdsRoleNamed({ user, context, name }: { user: string; context: string; name: string }) {
     const role = await this.roles.findOne({ name });
     if (role === null) return { held: false };
-    return { held: (await this.grants.findOne({ user, context, role: role._id })) !== null };
+    return { held: (await this.assignments.findOne({ user, context, role: role._id })) !== null };
   }
 
-  async _getRoles({ user, context }: { user: string; context: string }) {
-    const docs = await this.grants.find({ user, context }).sort({ seq: 1 }).toArray();
-    return docs.map((doc) => ({ role: doc.role }));
+  async _getRole({ user, context }: { user: string; context: string }) {
+    const doc = await this.assignments.findOne({ user, context });
+    return doc === null ? [] : [{ role: doc.role }];
   }
 
   async _getContextsOfRoleNamed({ user, name }: { user: string; name: string }) {
     const role = await this.roles.findOne({ name });
     if (role === null) return [];
-    const docs = await this.grants.find({ user, role: role._id }).sort({ seq: 1 }).toArray();
+    const docs = await this.assignments.find({ user, role: role._id }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ context: doc.context }));
   }
 
   async _getHoldersOfRoleNamed({ context, name }: { context: string; name: string }) {
     const role = await this.roles.findOne({ name });
     if (role === null) return [];
-    const docs = await this.grants.find({ context, role: role._id }).sort({ seq: 1 }).toArray();
+    const docs = await this.assignments
+      .find({ context, role: role._id })
+      .sort({ seq: 1 })
+      .toArray();
     return docs.map((doc) => ({ user: doc.user }));
   }
 

@@ -26,8 +26,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#2",
+        "expiresAt": "<date>",
         "user": "uuid#1"
       }
     },
@@ -39,25 +39,10 @@
       "body": {
         "session": "$loginAdmin.session",
         "name": "u6-ops",
-        "capabilities": ["roster:manage", "assignments:manage"]
+        "capabilities": ["course:manage", "grade", "student-records"]
       },
       "response": {
         "role": "uuid#3"
-      }
-    },
-    {
-      "id": "grantOps",
-      "phase": "setup",
-      "kind": "send",
-      "target": "/roles/grant",
-      "body": {
-        "session": "$loginAdmin.session",
-        "user": "$loginAdmin.user",
-        "context": "forum",
-        "role": "$defineOps.role"
-      },
-      "response": {
-        "grant": "uuid#4"
       }
     },
     {
@@ -74,7 +59,7 @@
       },
       "response": {
         "class": {
-          "_id": "uuid#5",
+          "_id": "uuid#4",
           "code": "CS101",
           "title": "Intro to CS",
           "term": "Fall 2026",
@@ -96,7 +81,7 @@
       },
       "response": {
         "section": {
-          "_id": "uuid#6",
+          "_id": "uuid#5",
           "name": "Section A",
           "location": "Room 101",
           "meetingPattern": "MW 10am",
@@ -113,22 +98,16 @@
         "session": "$loginAdmin.session",
         "rows": [
           {
-            "externalKey": "u6-staff-1",
             "email": "u6_staff@example.com",
-            "rosterName": "Staff One",
             "kind": "STAFF"
           },
           {
-            "externalKey": "u6-stu-1",
             "email": "u6_alice@example.com",
-            "rosterName": "Alice",
             "kind": "STUDENT",
             "section": "$secA.section._id"
           },
           {
-            "externalKey": "u6-stu-2",
             "email": "u6_bob@example.com",
-            "rosterName": "Bob",
             "kind": "STUDENT",
             "section": "$secA.section._id"
           }
@@ -137,30 +116,24 @@
       "response": {
         "created": [
           {
-            "_id": "uuid#7",
-            "externalKey": "u6-staff-1",
+            "_id": "uuid#6",
             "email": "u6_staff@example.com",
-            "rosterName": "Staff One",
             "kind": "STAFF",
             "section": null,
             "status": "PENDING"
           },
           {
-            "_id": "uuid#8",
-            "externalKey": "u6-stu-1",
+            "_id": "uuid#7",
             "email": "u6_alice@example.com",
-            "rosterName": "Alice",
             "kind": "STUDENT",
-            "section": "uuid#6",
+            "section": "uuid#5",
             "status": "PENDING"
           },
           {
-            "_id": "uuid#9",
-            "externalKey": "u6-stu-2",
+            "_id": "uuid#8",
             "email": "u6_bob@example.com",
-            "rosterName": "Bob",
             "kind": "STUDENT",
-            "section": "uuid#6",
+            "section": "uuid#5",
             "status": "PENDING"
           }
         ],
@@ -179,7 +152,7 @@
         "email": "u6_staff@example.com"
       },
       "response": {
-        "user": "uuid#10"
+        "user": "uuid#9"
       }
     },
     {
@@ -192,30 +165,46 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#10",
         "expiresAt": "<date>",
-        "session": "uuid#11",
-        "user": "uuid#10"
+        "user": "uuid#9"
+      }
+    },
+    {
+      "id": "grantOps",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$loginStaff.user",
+        "context": "commons",
+        "role": "$defineOps.role"
+      },
+      "response": {
+        "assignment": "uuid#11"
       }
     },
     {
       "id": "claimStaff",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginStaff.session",
-        "externalKey": "u6-staff-1"
+        "session": "$loginAdmin.session",
+        "email": "u6_staff@example.com",
+        "kind": "STAFF",
+        "section": null,
+        "user": "$loginStaff.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#7",
-          "externalKey": "u6-staff-1",
+          "_id": "uuid#6",
           "email": "u6_staff@example.com",
-          "rosterName": "Staff One",
           "kind": "STAFF",
           "section": null,
           "status": "ACTIVE",
-          "user": "uuid#10"
+          "user": "uuid#9"
         }
       }
     },
@@ -244,8 +233,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#13",
+        "expiresAt": "<date>",
         "user": "uuid#12"
       }
     },
@@ -253,19 +242,20 @@
       "id": "claimAlice",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginAlice.session",
-        "externalKey": "u6-stu-1"
+        "session": "$loginAdmin.session",
+        "email": "u6_alice@example.com",
+        "kind": "STUDENT",
+        "section": "$secA.section._id",
+        "user": "$loginAlice.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#8",
-          "externalKey": "u6-stu-1",
+          "_id": "uuid#7",
           "email": "u6_alice@example.com",
-          "rosterName": "Alice",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "ACTIVE",
           "user": "uuid#12"
         }
@@ -296,8 +286,8 @@
         "password": "password123"
       },
       "response": {
-        "expiresAt": "<date>",
         "session": "uuid#15",
+        "expiresAt": "<date>",
         "user": "uuid#14"
       }
     },
@@ -305,19 +295,20 @@
       "id": "claimBob",
       "phase": "setup",
       "kind": "send",
-      "target": "/roster/claim-seat",
+      "target": "/roster/enroll",
       "body": {
-        "session": "$loginBob.session",
-        "externalKey": "u6-stu-2"
+        "session": "$loginAdmin.session",
+        "email": "u6_bob@example.com",
+        "kind": "STUDENT",
+        "section": "$secA.section._id",
+        "user": "$loginBob.user"
       },
       "response": {
         "seat": {
-          "_id": "uuid#9",
-          "externalKey": "u6-stu-2",
+          "_id": "uuid#8",
           "email": "u6_bob@example.com",
-          "rosterName": "Bob",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "ACTIVE",
           "user": "uuid#14"
         }
@@ -508,7 +499,7 @@
       "response": [
         {
           "note": "uuid#22",
-          "author": "uuid#10",
+          "author": "uuid#9",
           "learner": "uuid#14",
           "body": "Missed two sections.",
           "visibility": "STAFF_ONLY",
@@ -601,7 +592,7 @@
         "notes": [
           {
             "note": "uuid#20",
-            "author": "uuid#10",
+            "author": "uuid#9",
             "learner": "uuid#12",
             "body": "Great progress on unit tests.",
             "visibility": "LEARNER_VISIBLE",
@@ -614,7 +605,7 @@
           },
           {
             "note": "uuid#21",
-            "author": "uuid#10",
+            "author": "uuid#9",
             "learner": "uuid#12",
             "body": "Struggling; discuss at staff meeting.",
             "visibility": "STAFF_ONLY",
@@ -653,7 +644,7 @@
         "notes": [
           {
             "note": "uuid#20",
-            "author": "uuid#10",
+            "author": "uuid#9",
             "learner": "uuid#12",
             "body": "Great progress on unit tests.",
             "status": "OPEN",
@@ -690,7 +681,7 @@
       "response": [
         {
           "note": "uuid#20",
-          "author": "uuid#10",
+          "author": "uuid#9",
           "learner": "uuid#12",
           "body": "Great progress on unit tests.",
           "visibility": "LEARNER_VISIBLE",
@@ -770,7 +761,7 @@
       "response": [
         {
           "note": "uuid#20",
-          "author": "uuid#10",
+          "author": "uuid#9",
           "learner": "uuid#12",
           "body": "Great progress on unit tests.",
           "visibility": "STAFF_ONLY",
@@ -864,7 +855,7 @@
       "response": [
         {
           "note": "uuid#21",
-          "author": "uuid#10",
+          "author": "uuid#9",
           "learner": "uuid#12",
           "body": "Struggling; discuss at staff meeting.",
           "visibility": "STAFF_ONLY",
@@ -983,13 +974,11 @@
       },
       "response": {
         "detail": {
-          "seat": "uuid#8",
+          "seat": "uuid#7",
           "user": "uuid#12",
-          "externalKey": "u6-stu-1",
           "email": "u6_alice@example.com",
-          "rosterName": "Alice",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "ACTIVE"
         }
       }
@@ -1110,7 +1099,7 @@
       "body": {
         "session": "$loginAdmin.session",
         "name": "u6-calendar",
-        "capabilities": ["calendar:view-staff"]
+        "capabilities": ["course:manage", "grade", "student-records"]
       },
       "response": {
         "role": "uuid#25"
@@ -1120,15 +1109,15 @@
       "id": "grantCalRole",
       "phase": "setup",
       "kind": "send",
-      "target": "/roles/grant",
+      "target": "/roles/assign",
       "body": {
         "session": "$loginAdmin.session",
         "user": "$loginStaff.user",
-        "context": "forum",
+        "context": "commons",
         "role": "$defineCalRole.role"
       },
       "response": {
-        "grant": "uuid#26"
+        "assignment": "uuid#11"
       }
     },
     {
@@ -1209,13 +1198,11 @@
       "response": {
         "dashboard": [
           {
-            "seat": "uuid#8",
+            "seat": "uuid#7",
             "user": "uuid#12",
-            "externalKey": "u6-stu-1",
             "email": "u6_alice@example.com",
-            "rosterName": "Alice",
             "kind": "STUDENT",
-            "section": "uuid#6",
+            "section": "uuid#5",
             "status": "ACTIVE"
           }
         ]
@@ -1244,27 +1231,27 @@
       "response": {
         "dashboard": [
           {
-            "user": "uuid#10",
-            "seat": "uuid#7",
+            "user": "uuid#9",
+            "seat": "uuid#6",
             "kind": "STAFF",
             "section": null,
-            "rosterName": "Staff One",
+            "displayName": "Staff",
             "email": "u6_staff@example.com"
           },
           {
             "user": "uuid#12",
-            "seat": "uuid#8",
+            "seat": "uuid#7",
             "kind": "STUDENT",
-            "section": "uuid#6",
-            "rosterName": "Alice",
+            "section": "uuid#5",
+            "displayName": "Alice",
             "email": "u6_alice@example.com"
           },
           {
             "user": "uuid#14",
-            "seat": "uuid#9",
+            "seat": "uuid#8",
             "kind": "STUDENT",
-            "section": "uuid#6",
-            "rosterName": "Bob",
+            "section": "uuid#5",
+            "displayName": "Bob",
             "email": "u6_bob@example.com"
           }
         ],
@@ -1347,7 +1334,7 @@
       "response": [
         {
           "note": "uuid#20",
-          "author": "uuid#10",
+          "author": "uuid#9",
           "learner": "uuid#12",
           "body": "Great progress on unit tests.",
           "followUpAt": "<date>",
@@ -1355,7 +1342,7 @@
         },
         {
           "note": "uuid#21",
-          "author": "uuid#10",
+          "author": "uuid#9",
           "learner": "uuid#12",
           "body": "Struggling; discuss at staff meeting.",
           "followUpAt": "<date>",
@@ -1363,7 +1350,7 @@
         },
         {
           "note": "uuid#22",
-          "author": "uuid#10",
+          "author": "uuid#9",
           "learner": "uuid#14",
           "body": "Missed two sections.",
           "followUpAt": "",
@@ -1407,13 +1394,11 @@
       },
       "response": [
         {
-          "seat": "uuid#8",
+          "seat": "uuid#7",
           "user": "uuid#12",
-          "externalKey": "u6-stu-1",
           "email": "u6_alice@example.com",
-          "rosterName": "Alice",
           "kind": "STUDENT",
-          "section": "uuid#6",
+          "section": "uuid#5",
           "status": "ACTIVE"
         }
       ]

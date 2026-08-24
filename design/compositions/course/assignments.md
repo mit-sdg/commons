@@ -1,6 +1,6 @@
 # Assignments
 
-Staff with assignment-management capability use
+Staff holding `course:manage` use
 [Course.assignments.CreateDraft](reaction:Course.assignments.CreateDraft) to create an authored draft.
 [Course.assignments.Revise](reaction:Course.assignments.Revise) replaces its authored fields while it remains
 revisable. [Course.assignments.Publish](reaction:Course.assignments.Publish) moves a draft into its published, releasable
@@ -36,8 +36,8 @@ An active student reads
 [theAssignment view](view:Course.assignments.theAssignment) relates one release to its current
 published assignment, so [Course.assignments.GetAssignment](reaction:Course.assignments.GetAssignment) returns detail
 only when that student has a release and the assignment is still published;
-unassigned and unpublished work appears as `null`. [Course.assignments.StaffSummary](reaction:Course.assignments.StaffSummary) gives assignment managers the detail for
-one assignment. [Course.assignments.StaffList](reaction:Course.assignments.StaffList) gives assignment managers
+unassigned and unpublished work appears as `null`. [Course.assignments.StaffSummary](reaction:Course.assignments.StaffSummary) gives callers holding `course:manage` the detail for
+one assignment. [Course.assignments.StaffList](reaction:Course.assignments.StaffList) gives the same callers
 [all assignments](former:Course.assignments.theStaffAssignments), including drafts and archived work.
 
 [Course.assignments.Submit](reaction:Course.assignments.Submit) creates a Posting post as the artifact and then

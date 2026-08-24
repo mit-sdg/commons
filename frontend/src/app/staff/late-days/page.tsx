@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { PageContainer, PageHeader } from "@/components/page";
+import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -199,7 +200,7 @@ function LateUseRow({
   );
 }
 
-export default function LateDaysAdminPage() {
+function LateDaysAdminPageContent() {
   const { session } = useAuth();
 
   const { data: rosterData } = useQuery(
@@ -303,7 +304,7 @@ export default function LateDaysAdminPage() {
   }
 
   const learnerNames = new Map(
-    students.map((student) => [student.user, student.rosterName]),
+    students.map((student) => [student.user, student.displayName]),
   );
   const assignmentTitles = new Map(
     assignments.map((assignment) => [
@@ -392,7 +393,9 @@ export default function LateDaysAdminPage() {
                       className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div>
-                        <p className="font-medium">{student.rosterName}</p>
+                        <p className="font-medium">
+                          {student.displayName ?? student.email}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {student.email}
                         </p>
@@ -434,7 +437,7 @@ export default function LateDaysAdminPage() {
                           onClick={() =>
                             setGrantDialog({
                               learner: student.user,
-                              name: student.rosterName,
+                              name: student.displayName ?? student.email,
                             })
                           }
                         >
@@ -494,5 +497,13 @@ export default function LateDaysAdminPage() {
         </DialogContent>
       </Dialog>
     </PageContainer>
+  );
+}
+
+export default function LateDaysAdminPage() {
+  return (
+    <RequireCapability capability="student-records">
+      <LateDaysAdminPageContent />
+    </RequireCapability>
   );
 }

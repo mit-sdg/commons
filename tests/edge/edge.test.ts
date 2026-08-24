@@ -30,7 +30,6 @@ async function registerAndLogin(edge: Edge) {
   await edge.application.concepts.Profiling.createProfile({
     user: registered.user,
     displayName: ALICE.displayName,
-    email: ALICE.email,
   });
   const login = await post(edge, "/auth/login", {
     username: ALICE.username,
@@ -88,19 +87,25 @@ describe("deployment routes", () => {
       expect(
         await edge.application.concepts.Roling._hasCapability({
           user,
-          context: "forum",
+          context: "commons",
           capability: "administer",
         }),
       ).toEqual({ allowed: true });
+      // The administrator role stores only the wildcard; course authority comes
+      // from policy expanding it, not from a stored capability.
       expect(
         await edge.application.concepts.Roling._hasCapability({
           user,
-          context: "forum",
-          capability: "roster:manage",
+          context: "commons",
+          capability: "course:manage",
         }),
-      ).toEqual({ allowed: true });
+      ).toEqual({ allowed: false });
+      // The profile keeps no address; Authenticating owns the one copy of it.
       expect(await edge.application.concepts.Profiling._getProfile({ user })).toMatchObject([
-        { profile: { displayName: ALICE.displayName, email: ALICE.email } },
+        { profile: { displayName: ALICE.displayName } },
+      ]);
+      expect(await edge.application.concepts.Authenticating._getById({ user })).toEqual([
+        { username: ALICE.username, email: ALICE.email },
       ]);
 
       const initialized = await request(secret);
@@ -129,7 +134,6 @@ describe("deployment routes", () => {
       await edge.application.concepts.Profiling.createProfile({
         user: outsider.user,
         displayName: "Setup outsider",
-        email: "setup-outsider@example.com",
       });
       const outsiderLogin = await post(edge, "/auth/login", {
         username: "setup_outsider",
@@ -156,27 +160,28 @@ describe("deployment routes", () => {
     }
   });
 
-  test("repairs roster bootstrap capability for a sole administrator created with the legacy role bundle", async () => {
+  test("the initial administrator reaches course routes with no capability repair", async () => {
     const previousVerifier = process.env.ADMIN_SETUP_SECRET_HASH;
-    const secret = "a-legacy-setup-secret-that-is-at-least-32-characters";
+    const secret = "a-wildcard-setup-secret-that-is-at-least-32-characters";
     process.env.ADMIN_SETUP_SECRET_HASH = await derivePasswordVerifier(secret);
     try {
       const edge = createEdge(mongoImplementations(await testDb()));
-      await edge.application.concepts.Roling.defineRole({
-        name: "administrator",
-        capabilities: ["administer", "moderate"],
-      });
       const registered = await post(edge, "/setup/register-admin", {
         setupSecret: secret,
         ...ALICE,
       });
       expect(registered.status).toBe(200);
       const { user } = (await registered.json()) as { user: string };
+
+      // Only the wildcard is stored, and no repair reaction runs on login.
+      expect(
+        await edge.application.concepts.Roling._getRole({ user, context: "commons" }),
+      ).toHaveLength(1);
       expect(
         await edge.application.concepts.Roling._hasCapability({
           user,
-          context: "forum",
-          capability: "roster:manage",
+          context: "commons",
+          capability: "course:manage",
         }),
       ).toEqual({ allowed: false });
 
@@ -185,18 +190,18 @@ describe("deployment routes", () => {
         password: ALICE.password,
       });
       expect(login.status).toBe(200);
-      expect(
-        await edge.application.concepts.Roling._hasCapability({
-          user,
-          context: "forum",
-          capability: "roster:manage",
-        }),
-      ).toEqual({ allowed: true });
       const cookie = login.headers.get("set-cookie")?.split(";")[0] as string;
+
+      // The wildcard is what carries them through a course-managing route.
+      const permissions = await post(edge, "/auth/permissions", {}, cookie);
+      expect(permissions.status).toBe(200);
+      expect(await permissions.json()).toEqual({
+        capabilities: ["administer", "moderate", "course:manage", "grade", "student-records"],
+      });
       const configured = await post(
         edge,
         "/roster/configure-class",
-        { code: "LEGACY-101", title: "Legacy repair", term: "Fall", timezone: "UTC" },
+        { code: "WILDCARD-101", title: "No repair needed", term: "Fall", timezone: "UTC" },
         cookie,
       );
       expect(configured.status).toBe(200);
@@ -259,7 +264,6 @@ describe("HTTP session cookies", () => {
     await edge.application.concepts.Profiling.createProfile({
       user: bob.user,
       displayName: "Bob",
-      email: "bob@example.com",
     });
     const bobLogin = await post(edge, "/auth/login", { username: "bob", password: "pw-bob-123" });
     const bobCookie = bobLogin.headers.get("set-cookie")?.split(";")[0] as string;
@@ -348,7 +352,6 @@ describe("HTTP paths and failures", () => {
     await edge.application.concepts.Profiling.createProfile({
       user: registered.user,
       displayName: ALICE.displayName,
-      email: ALICE.email,
     });
     const viaPrefix = await post(edge, "/api/auth/login", {
       username: ALICE.username,

@@ -1,11 +1,13 @@
 "use client";
 
-import { Pencil, Plus, Settings } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CsvImport } from "@/components/lms/csv-import";
+import { RemoveSeatDialog } from "@/components/lms/remove-seat";
 import { RosterTable } from "@/components/lms/roster-table";
 import { PageContainer, PageHeader } from "@/components/page";
+import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,143 +19,11 @@ import type { Output } from "@/lib/api";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
-  loadClassConfiguration,
   loadDroppedRoster,
   loadPendingRoster,
   loadRosterList,
   loadSections,
 } from "@/lib/lms";
-
-function ClassConfig({
-  configuration,
-  onConfigured,
-}: {
-  configuration: {
-    code: string;
-    title: string;
-    term: string;
-    timezone: string;
-    status: string;
-  } | null;
-  onConfigured: () => void;
-}) {
-  const { session } = useAuth();
-  const [code, setCode] = useState(configuration?.code ?? "");
-  const [title, setTitle] = useState(configuration?.title ?? "");
-  const [term, setTerm] = useState(configuration?.term ?? "");
-  const [timezone, setTimezone] = useState(
-    configuration?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
-  );
-  const [loading, setLoading] = useState(false);
-
-  async function configure() {
-    if (!session) return;
-    setLoading(true);
-    const result = await api.roster["configure-class"]({
-      code,
-      title,
-      term,
-      timezone,
-    });
-    setLoading(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Course configured");
-      onConfigured();
-    }
-  }
-
-  if (configuration) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Settings className="size-4" /> Course configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <dt className="text-xs text-muted-foreground">Course code</dt>
-              <dd className="font-medium">{configuration.code}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Title</dt>
-              <dd className="font-medium">{configuration.title}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Term</dt>
-              <dd className="font-medium">{configuration.term}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Timezone</dt>
-              <dd className="font-medium">{configuration.timezone}</dd>
-            </div>
-          </dl>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Course identity is fixed after initial configuration.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <Settings className="size-4" /> Configure course
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cc-code">Course Code</Label>
-            <Input
-              id="cc-code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="CS101"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cc-title">Title</Label>
-            <Input
-              id="cc-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Intro to CS"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cc-term">Term</Label>
-            <Input
-              id="cc-term"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              placeholder="Fall 2026"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cc-tz">Timezone</Label>
-            <Input
-              id="cc-tz"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              placeholder="America/New_York"
-            />
-          </div>
-        </div>
-        <Button
-          onClick={configure}
-          disabled={loading || !code || !title || !term}
-        >
-          Configure Class
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 function SectionManager() {
   const { session } = useAuth();
@@ -384,14 +254,21 @@ function PendingSeats({
       toast.error(publicErrorMessage(resolved.error));
       return;
     }
-    const result = await api.roster["link-user"]({
-      seat: linking,
+    const result = await api.roster.enroll({
+      email: linking,
       user: String(resolved.user),
     });
     setBusy(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success(`Linked @${resolved.username}`);
+    if ("error" in result) {
+      // The edge answers a bare CONFLICT here, and on this form it means one of
+      // two things worth naming rather than "that change cannot be made".
+      toast.error(
+        result.error === "CONFLICT"
+          ? `@${resolved.username} already holds a seat on this roster.`
+          : publicErrorMessage(result.error),
+      );
+    } else {
+      toast.success(`Enrolled @${resolved.username}`);
       setLinking(null);
       setAccount("");
       onUpdate();
@@ -416,24 +293,39 @@ function PendingSeats({
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-medium">{member.rosterName}</p>
-              <p className="text-sm text-muted-foreground">{member.email}</p>
+              <p className="font-medium">{member.email}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {member.kind.toLowerCase()} · Key {member.externalKey}
+                {member.kind.toLowerCase()} · invitation not accepted yet
               </p>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setLinking(String(member.seat));
-                setAccount("");
-              }}
-            >
-              Link account
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setLinking(String(member.email));
+                  setAccount("");
+                }}
+              >
+                Enrol account
+              </Button>
+              <RemoveSeatDialog
+                seat={String(member.seat)}
+                person={String(member.email)}
+                onRemoved={onUpdate}
+                trigger={
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="size-3.5" /> Remove
+                  </Button>
+                }
+              />
+            </div>
           </div>
-          {linking === String(member.seat) ? (
+          {linking === String(member.email) ? (
             <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-1.5">
                 <Label htmlFor={`link-account-${member.seat}`}>
@@ -453,7 +345,7 @@ function PendingSeats({
                   onClick={link}
                   disabled={busy || !account.trim()}
                 >
-                  {busy ? "Linking…" : "Link"}
+                  {busy ? "Enrolling…" : "Enrol"}
                 </Button>
                 <Button
                   size="sm"
@@ -508,27 +400,43 @@ function DroppedSeats({
           className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
         >
           <div>
-            <p className="font-medium">{member.rosterName}</p>
+            <p className="font-medium">{member.displayName ?? member.email}</p>
             <p className="text-sm text-muted-foreground">{member.email}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {member.kind.toLowerCase()}
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => reinstate(String(member.seat))}
-            disabled={busy === String(member.seat)}
-          >
-            {busy === String(member.seat) ? "Reinstating…" : "Reinstate"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => reinstate(String(member.seat))}
+              disabled={busy === String(member.seat)}
+            >
+              {busy === String(member.seat) ? "Reinstating…" : "Reinstate"}
+            </Button>
+            <RemoveSeatDialog
+              seat={String(member.seat)}
+              person={member.displayName ?? String(member.email)}
+              onRemoved={onUpdate}
+              trigger={
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="size-3.5" /> Remove
+                </Button>
+              }
+            />
+          </div>
         </div>
       ))}
     </div>
   );
 }
 
-export default function RosterPage() {
+function RosterPageContent() {
   const { session } = useAuth();
   const {
     data: rosterData,
@@ -537,9 +445,6 @@ export default function RosterPage() {
     refetch,
   } = useQuery(session ? () => loadRosterList() : null, [session]);
 
-  const classQuery = useQuery(session ? () => loadClassConfiguration() : null, [
-    session,
-  ]);
   const pendingQuery = useQuery(session ? () => loadPendingRoster() : null, [
     session,
   ]);
@@ -575,12 +480,12 @@ export default function RosterPage() {
       <PageHeader
         eyebrow="Staff"
         title="Roster management"
-        description="Configure the course, manage sections, and maintain member access."
+        description="Manage sections and enrolment, and maintain member access."
       />
 
-      <Tabs defaultValue="config">
+      <Tabs defaultValue="sections">
         <TabsList>
-          <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="sections">Sections</TabsTrigger>
           <TabsTrigger value="active">
             Active ({activeMembers.length})
           </TabsTrigger>
@@ -593,15 +498,7 @@ export default function RosterPage() {
           <TabsTrigger value="import">CSV import</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="config" className="mt-6 space-y-6">
-          {classQuery.loading ? (
-            <LoadingState label="Loading course configuration…" />
-          ) : (
-            <ClassConfig
-              configuration={classQuery.data?.class ?? null}
-              onConfigured={classQuery.refetch}
-            />
-          )}
+        <TabsContent value="sections" className="mt-6">
           <SectionManager />
         </TabsContent>
 
@@ -614,7 +511,7 @@ export default function RosterPage() {
             <EmptyState
               icon={Plus}
               title="No active members"
-              description="Import seats, then let members claim them or link an account."
+              description="Import a roster to invite people, or enrol somebody who already has an account."
             />
           ) : (
             <RosterTable
@@ -661,7 +558,7 @@ export default function RosterPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
-                Import Roster from CSV
+                Import a roster from CSV
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -671,5 +568,13 @@ export default function RosterPage() {
         </TabsContent>
       </Tabs>
     </PageContainer>
+  );
+}
+
+export default function RosterPage() {
+  return (
+    <RequireCapability capability="course:manage">
+      <RosterPageContent />
+    </RequireCapability>
   );
 }

@@ -289,7 +289,7 @@ function TrashBin() {
 }
 
 export default function ModerationPage() {
-  const { loading, can } = useAuth();
+  const { loading, permissions } = useAuth();
 
   if (loading)
     return (
@@ -298,7 +298,7 @@ export default function ModerationPage() {
       </PageContainer>
     );
 
-  if (!can.moderate)
+  if (!permissions.can("moderate"))
     return (
       <PageContainer>
         <EmptyState

@@ -17,14 +17,14 @@ export function PinControl({
   scope: string;
   onChanged?: () => void;
 }) {
-  const { session, can } = useAuth();
+  const { session, permissions } = useAuth();
   const { data, refetch } = useQuery<{ pinned: boolean }>(
     () => api.pins.isPinned({ item, scope }),
     [item, scope],
   );
   const pinned = data?.pinned ?? false;
 
-  if (!session || !can.pin) {
+  if (!session || !permissions.can("moderate")) {
     return pinned ? (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
         <Pin className="size-3.5" />

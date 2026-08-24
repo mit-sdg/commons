@@ -1,8 +1,14 @@
 "use client";
 
-import { ArrowLeftRight, MoreHorizontal, UserMinus } from "lucide-react";
+import {
+  ArrowLeftRight,
+  MoreHorizontal,
+  Trash2,
+  UserMinus,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { RemoveSeatDialog } from "@/components/lms/remove-seat";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +47,7 @@ interface Member {
   seat: string;
   kind: string;
   section: string | null;
-  rosterName: string;
+  displayName: string | null;
   email: string;
   status?: string;
 }
@@ -63,6 +69,10 @@ interface RosterTableProps {
 export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
   const { session } = useAuth();
   const [moveSeat, setMoveSeat] = useState<{
+    seat: string;
+    name: string;
+  } | null>(null);
+  const [removeSeat, setRemoveSeat] = useState<{
     seat: string;
     name: string;
   } | null>(null);
@@ -122,7 +132,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                 return (
                   <TableRow key={m.seat}>
                     <TableCell className="font-medium text-sm">
-                      {m.rosterName}
+                      {m.displayName}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {m.email}
@@ -143,7 +153,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                             variant="ghost"
                             size="icon"
                             className="size-8"
-                            aria-label={`Actions for ${m.rosterName}`}
+                            aria-label={`Actions for ${m.displayName}`}
                           >
                             <MoreHorizontal className="size-4" />
                           </Button>
@@ -154,10 +164,24 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() =>
-                              setMoveSeat({ seat: m.seat, name: m.rosterName })
+                              setMoveSeat({
+                                seat: m.seat,
+                                name: m.displayName ?? m.email,
+                              })
                             }
                           >
                             <ArrowLeftRight className="size-4" /> Move Section
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() =>
+                              setRemoveSeat({
+                                seat: m.seat,
+                                name: m.displayName ?? m.email,
+                              })
+                            }
+                          >
+                            <Trash2 className="size-4" /> Remove from roster…
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -169,6 +193,18 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
           </TableBody>
         </Table>
       </div>
+
+      {removeSeat ? (
+        <RemoveSeatDialog
+          seat={removeSeat.seat}
+          person={removeSeat.name}
+          open
+          onOpenChange={(next) => {
+            if (!next) setRemoveSeat(null);
+          }}
+          onRemoved={onUpdate}
+        />
+      ) : null}
 
       <Dialog open={!!moveSeat} onOpenChange={() => setMoveSeat(null)}>
         <DialogContent>

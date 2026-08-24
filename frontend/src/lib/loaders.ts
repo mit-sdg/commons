@@ -1,10 +1,10 @@
 import { api, CommonsError, unwrap } from "@/lib/api";
-import { FORUM_CONTEXT } from "@/lib/auth";
+import { COMMONS_CONTEXT } from "@/lib/auth";
 import type {
   Category,
   ConversationSummary,
   Profile,
-  RoleDetail,
+  RoleOfUser,
   Tag,
   ThreadNode,
 } from "@/lib/models";
@@ -83,14 +83,7 @@ export async function loadPostConversationIndex(
   return index;
 }
 
-export async function loadUserRoles(user: string): Promise<RoleDetail[]> {
-  const { roles } = unwrap(
-    await api.roles.forUser({ user, context: FORUM_CONTEXT }),
-  );
-  const details = await Promise.all(
-    roles.map(async (r) =>
-      unwrap(await api.roles.get({ role: String(r.role) })),
-    ),
-  );
-  return details;
+/** One request answers the role and its capabilities; there is no follow-up fetch. */
+export async function loadUserRole(user: string): Promise<RoleOfUser> {
+  return unwrap(await api.roles.forUser({ user, context: COMMONS_CONTEXT }));
 }

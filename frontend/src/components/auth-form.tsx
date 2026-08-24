@@ -80,7 +80,7 @@ export function AuthForm({
             <CardTitle>Account details</CardTitle>
             <CardDescription>
               {isRegister
-                ? "Use the temporary password from your invitation email, then choose your account details."
+                ? "Use the temporary password from your invitation email. It becomes your password — change it in Settings once you are in."
                 : "Enter your username and password to continue."}
             </CardDescription>
           </CardHeader>

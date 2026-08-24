@@ -1,9 +1,9 @@
-import { RequireCourseStaff } from "@/components/require-course-staff";
-
 export default function StaffLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <RequireCourseStaff>{children}</RequireCourseStaff>;
+  // Each staff page declares the capability it needs; there is no blanket gate,
+  // because the roster, the gradebook, and late days are different powers.
+  return <>{children}</>;
 }

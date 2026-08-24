@@ -175,10 +175,17 @@ without taking ownership of it. Conversing separately owns conversation
 identities; subscriptions, unread scopes, pins, role contexts, and locks can use
 a conversation. Locking also accepts a post directly, so its target role has two
 valid owners. Roling also receives the reserved application-wide context
-`forum`; because that value is a Commons constant rather than a concept-owned
-identity, it has no second type binding. Role-management endpoints can store
-other opaque context strings, but built-in policy interprets only `forum` and
-conversation identities. Sessioning evaluates session expiry against the current instant.
+`commons`; because that value is a Commons constant rather than a concept-owned
+identity, it has no second type binding, and it names the deployment as a whole
+rather than any one area of it, so no capability held there belongs to the forum
+in particular. Every capability Commons declares is held and enforced in that one
+context, and the caller's permissions read answers for it. Role-management
+endpoints can store other opaque context strings, but built-in policy interprets
+only `commons` and conversation identities. The reserved
+`administer` wildcard is a Commons decision in the same way: Roling stores only
+the capability names a role was defined with and answers plain containment, so
+every enforcing endpoint accepts either the capability it requires or
+`administer`, and no concept expands the wildcard. Sessioning evaluates session expiry against the current instant.
 
 Grouping owns task list group identities. A task list is a Grouping group whose
 members are Authenticating users. Tasking owns task identities within a list
@@ -207,6 +214,15 @@ notificationMailText(notification: String) : String
 
 notificationMailHtml(notification: String) : String
   Renders the HTML notification message.
+
+capabilitiesAreKnown(capabilities: Strings) : Bool
+  Reports whether every named capability appears in the application's registry,
+  which holds the four granted capabilities and not the administer wildcard.
+
+effectiveCapabilities(capabilities: Strings) : Strings
+  Expands a role's stored capabilities for presentation, answering the whole
+  registry when the role carries the administer wildcard. Enforcement does not use
+  it: an enforcing endpoint checks the capability it requires or the wildcard.
 
 setupSecretMatches(secret: String) : Bool
   Reports whether the candidate matches the configured setup-secret verifier.

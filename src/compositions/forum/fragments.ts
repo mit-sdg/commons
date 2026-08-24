@@ -2,7 +2,7 @@ import { each, form, former, view, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
 import { intact } from "./threads.ts";
 
-const { Conversing, Posting, Profiling } = concepts;
+const { Authenticating, Conversing, Posting, Profiling } = concepts;
 
 /** What profile face belongs to this user? */
 export const theProfileFaceOf = former(
@@ -15,10 +15,19 @@ export const theProfileFaceOf = former(
     }),
 ).optional();
 
+/**
+ * The private tier of a profile still reports an address, but a profile no
+ * longer stores one: Authenticating holds a person's email for the account, and
+ * this read joins it to the profile face as it forms its answer, so Commons
+ * keeps one address per account and no second copy to reconcile.
+ */
 export const thePrivateProfileOf = former(
   "the private profile of (user)",
   ({ user }, { displayName, bio, avatar, email }) =>
-    where(Profiling._getProfileFields({ user }).is({ displayName, bio, avatar, email })).form({
+    where(
+      Profiling._getProfileFields({ user }).is({ displayName, bio, avatar }),
+      Authenticating._getById({ user }).is({ email }),
+    ).form({
       displayName,
       bio,
       avatar,

@@ -1,15 +1,10 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, no, view, where } from "@mit-sdg/sync-engine/language";
+import { each, former, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import {
-  isActiveStudent,
-  isNotActiveStudent,
-  mayNotViewAllSubmissions,
-  mayViewAllSubmissions,
-} from "../access/policy.ts";
+import { isActiveStudent, isNotActiveStudent, mayGrade, mayNotGrade } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Assigning, Rostering, Submitting } = concepts;
+const { Assigning, Profiling, Submitting } = concepts;
 
 /** What is this learner's latest submission for this assignment? */
 export const theLatestSubmission = view(
@@ -46,17 +41,21 @@ export const theSubmissionsForAssignment = former(
         status,
       }),
     )
-      .where(Rostering._getSeatByUser({ user: submitter }).is({ rosterName: submitterName }))
+      .where(
+        whether(
+          Profiling._getProfileFields({ user: submitter }).is({ displayName: submitterName }),
+        ),
+      )
       .form({ submitter, submitterName, submission, submittedAt, number, status }),
 );
 
 /** Who was assigned this assignment? */
 export const theAssignedPopulationForAssignment = former(
   "the assigned population for (assignment)",
-  ({ assignment }, { assignee, rosterName, release, dueOverride, releaseStatus }) =>
+  ({ assignment }, { assignee, displayName, release, dueOverride, releaseStatus }) =>
     each(Assigning._getAssignees({ assignment }).is({ assignee }))
       .where(
-        Rostering._getSeatByUser({ user: assignee }).is({ rosterName }),
+        whether(Profiling._getProfileFields({ user: assignee }).is({ displayName })),
         Assigning._getAssigned({ assignee }).is({
           assignment,
           release,
@@ -64,7 +63,7 @@ export const theAssignedPopulationForAssignment = former(
           status: releaseStatus,
         }),
       )
-      .form({ assignee, rosterName, release, dueOverride, status: releaseStatus }),
+      .form({ assignee, displayName, release, dueOverride, status: releaseStatus }),
 );
 
 /** Which submissions belong to this learner? */
@@ -102,7 +101,7 @@ export const Latest = endpoint(
         .named("self-missing"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayViewAllSubmissions({ user }),
+        mayGrade({ user }),
         isActiveStudent({ user: submitter }),
         theLatestSubmission({ assignment, submitter }).is({ latest }),
       )
@@ -110,16 +109,13 @@ export const Latest = endpoint(
         .named("staff-found"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayViewAllSubmissions({ user }),
+        mayGrade({ user }),
         isActiveStudent({ user: submitter }),
         no(theLatestSubmission({ assignment, submitter })),
       )
         .then(respond({ submission: null }))
         .named("staff-missing"),
-      where(
-        activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayNotViewAllSubmissions({ user }),
-      )
+      where(activeUser({ session }).is({ user }).is.not({ user: submitter }), mayNotGrade({ user }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("latest-hidden"),
       where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
@@ -137,15 +133,12 @@ export const Attempts = endpoint(
         .named("attempts"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayViewAllSubmissions({ user }),
+        mayGrade({ user }),
         isActiveStudent({ user: submitter }),
       )
         .then(respond({ attempts: theAttempts({ assignment, submitter }) }))
         .named("staff-attempts"),
-      where(
-        activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayNotViewAllSubmissions({ user }),
-      )
+      where(activeUser({ session }).is({ user }).is.not({ user: submitter }), mayNotGrade({ user }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("attempts-hidden"),
       where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
@@ -158,7 +151,7 @@ export const ForAssignment = endpoint(
   "/submissions/for-assignment",
   ({ session, assignment, user }) =>
     receive({ session, assignment }).then(
-      where(activeUser({ session }).is({ user }), mayViewAllSubmissions({ user }))
+      where(activeUser({ session }).is({ user }), mayGrade({ user }))
         .then(
           respond({
             assigned: theAssignedPopulationForAssignment({ assignment }),
@@ -166,7 +159,7 @@ export const ForAssignment = endpoint(
           }),
         )
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotViewAllSubmissions({ user }))
+      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -179,15 +172,12 @@ export const ForStudent = endpoint("/submissions/for-student", ({ session, submi
       .named("for-student"),
     where(
       activeUser({ session }).is({ user }).is.not({ user: submitter }),
-      mayViewAllSubmissions({ user }),
+      mayGrade({ user }),
       isActiveStudent({ user: submitter }),
     )
       .then(respond({ submissions: theSubmissionsBy({ submitter }) }))
       .named("staff-for-student"),
-    where(
-      activeUser({ session }).is({ user }).is.not({ user: submitter }),
-      mayNotViewAllSubmissions({ user }),
-    )
+    where(activeUser({ session }).is({ user }).is.not({ user: submitter }), mayNotGrade({ user }))
       .then(respond({ error: "NOT_FOUND" }))
       .named("for-student-hidden"),
     where(activeUser({ session }), isNotActiveStudent({ user: submitter }))

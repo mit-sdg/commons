@@ -96,6 +96,10 @@ _getAvailable (invitation: String, credential: String) : optional (channel: Stri
   answers the channel and address only while the Invitation is unclaimed and credential matches
   answers no row otherwise
 
+_getInvitationByAddress (channel: String, address: String) : optional (invitation: String, user: User|Null)
+  answers the Invitation issued to the channel and address
+  answers no row when the address has never been invited
+
 _getInvitations () : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: User|Null)
   answers every Invitation without its credential
   orders rows by creation from newest to oldest

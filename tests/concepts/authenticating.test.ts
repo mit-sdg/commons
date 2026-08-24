@@ -37,12 +37,79 @@ for (const [floor, make] of floors) {
       expect(JSON.stringify(stored)).not.toContain(good.password);
     });
 
-    test("register refuses an email without an @", async () => {
+    test("register refuses an address without exactly one @", async () => {
       const auth = await make();
       await expectRefusal(
         () => auth.register({ ...good, email: "not-an-address" }),
         refusalErrors.EmailInvalid,
       );
+      await expectRefusal(
+        () => auth.register({ ...good, email: "nadia@example@edu" }),
+        refusalErrors.EmailInvalid,
+      );
+      await expectRefusal(() => auth.register({ ...good, email: "" }), refusalErrors.EmailInvalid);
+      await expectRefusal(
+        () => auth.register({ ...good, email: "  nadia at example.edu  " }),
+        refusalErrors.EmailInvalid,
+      );
+    });
+
+    test("register stores the address trimmed and lower-cased", async () => {
+      const auth = await make();
+      const { user } = await auth.register({ ...good, email: "  Nadia@Example.COM " });
+      expect(await auth._getById({ user })).toEqual([
+        { username: "nadia", email: "nadia@example.com" },
+      ]);
+      expect(await auth._getUsers({})).toEqual([
+        { user, username: "nadia", email: "nadia@example.com" },
+      ]);
+    });
+
+    test("register refuses a taken address, in any spelling", async () => {
+      const auth = await make();
+      await auth.register({ ...good, email: " Nadia@Example.com " });
+      await expectRefusal(
+        () => auth.register({ ...good, username: "omar", email: "NADIA@example.com" }),
+        refusalErrors.EmailTaken,
+      );
+      await expectRefusal(
+        () => auth.register({ ...good, username: "omar", email: "  nadia@example.com  " }),
+        refusalErrors.EmailTaken,
+      );
+      expect(await auth._getUserCount({})).toEqual({ count: 1 });
+    });
+
+    test("register reports a malformed input before a conflict, and a taken username before a taken address", async () => {
+      const auth = await make();
+      await auth.register(good);
+      // Both the username and the address are taken; the username is reported.
+      await expectRefusal(() => auth.register(good), refusalErrors.UsernameTaken);
+      // A malformed address outranks the taken username.
+      await expectRefusal(
+        () => auth.register({ ...good, email: "not-an-address" }),
+        refusalErrors.EmailInvalid,
+      );
+      // A malformed password outranks both conflicts.
+      await expectRefusal(
+        () => auth.register({ ...good, password: "short" }),
+        refusalErrors.PasswordInvalidLength,
+      );
+      // Only the address is taken, so the address is reported.
+      await expectRefusal(
+        () => auth.register({ ...good, username: "omar" }),
+        refusalErrors.EmailTaken,
+      );
+    });
+
+    test("_getByEmail answers the account holding the address, in any spelling", async () => {
+      const auth = await make();
+      expect(await auth._getByEmail({ email: "nobody@example.edu" })).toEqual([]);
+      const { user } = await auth.register({ ...good, email: " Nadia@Example.com " });
+      expect(await auth._getByEmail({ email: "nadia@example.com" })).toEqual([{ user }]);
+      expect(await auth._getByEmail({ email: "  NADIA@Example.COM  " })).toEqual([{ user }]);
+      expect(await auth._getByEmail({ email: "Nadia@Example.com" })).toEqual([{ user }]);
+      expect(await auth._getByEmail({ email: "omar@example.com" })).toEqual([]);
+      expect(await auth._getByEmail({ email: "" })).toEqual([]);
     });
 
     test("register refuses a username outside 3-32 characters", async () => {

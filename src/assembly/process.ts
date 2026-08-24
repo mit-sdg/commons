@@ -1,6 +1,7 @@
 import { createEdge } from "../edge.ts";
 import type { MailConfiguration } from "../email/configuration.ts";
 import { startMailWorker } from "../email/worker.ts";
+import { commonsMigrations, runMigrations } from "../migrations/index.ts";
 import { constructConceptFloor } from "./concept-floor.ts";
 
 export interface CommonsProcessConfiguration {
@@ -26,6 +27,20 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
   }
 
   const floor = await constructConceptFloor(mongodbUrl);
+
+  // Stored state is brought up to the current contracts before anything reads or
+  // writes it: before the bootstrap registration below, which would otherwise
+  // build the unique email index over addresses a migration is about to
+  // normalize, and before the server accepts a request that could observe
+  // half-migrated state. A blocked migration stops startup with its diagnostic
+  // rather than serving a database the application cannot use correctly.
+  try {
+    await runMigrations(floor.database, commonsMigrations);
+  } catch (error) {
+    await floor.close().catch(() => undefined);
+    throw error;
+  }
+
   let edge: ReturnType<typeof createEdge>;
   try {
     edge = createEdge(floor.instances);
@@ -43,7 +58,6 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
       await edge.application.concepts.Profiling.createProfile({
         user: registered.user,
         displayName: bootstrap.displayName,
-        email: bootstrap.email,
       });
     }
   }

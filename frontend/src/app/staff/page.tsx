@@ -1,8 +1,16 @@
 "use client";
 
-import { AlertTriangle, BookOpen, Clock, FileText, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  Clock,
+  FileText,
+  Settings,
+  Users,
+} from "lucide-react";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
+import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +18,7 @@ import { useQuery } from "@/hooks/use-query";
 import { useAuth } from "@/lib/auth";
 import { loadStaffDashboard } from "@/lib/lms";
 
-export default function StaffDashboardPage() {
+function StaffDashboardPageContent() {
   const { session } = useAuth();
 
   const {
@@ -105,7 +113,7 @@ export default function StaffDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Users className="size-4" /> Roster Summary
+              <Users className="size-4" /> Roster summary
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -133,7 +141,7 @@ export default function StaffDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="size-4" /> Quick Actions
+              <AlertTriangle className="size-4" /> Quick actions
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -161,9 +169,23 @@ export default function StaffDashboardPage() {
             >
               <Clock className="size-4" /> Manage late days
             </Link>
+            <Link
+              href="/staff/class"
+              className="flex items-center gap-2 text-sm hover:text-primary"
+            >
+              <Settings className="size-4" /> Class settings
+            </Link>
           </CardContent>
         </Card>
       </div>
     </PageContainer>
+  );
+}
+
+export default function StaffDashboardPage() {
+  return (
+    <RequireCapability capability="course:manage">
+      <StaffDashboardPageContent />
+    </RequireCapability>
   );
 }
