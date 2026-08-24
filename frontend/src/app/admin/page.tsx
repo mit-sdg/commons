@@ -39,6 +39,13 @@ import type {
   RegisteredUser,
   RoleSummary,
 } from "@/lib/models";
+import type { RoleSubjectAccount } from "@/lib/role-subjects";
+import {
+  isLastAdministrator,
+  matchRoleSubject,
+  roleSubjectRefusal,
+  roleSubjectSuggestions,
+} from "@/lib/role-subjects";
 import { cn } from "@/lib/utils";
 
 /**
@@ -593,16 +600,18 @@ function UsersAndInvitationsAdmin({
 function RoleAdmin({
   initialInspectUser,
   roleList,
-  users,
+  usersQuery,
 }: {
   initialInspectUser?: string | null;
   roleList: QueryState<{ roles: RoleSummary[] }>;
-  users: RegisteredUser[];
+  usersQuery: QueryState<{ users: RegisteredUser[] }>;
 }) {
   const { session } = useAuth();
   const [roleName, setRoleName] = useState("");
   const [caps, setCaps] = useState<string[]>([]);
-  const [assignUser, setAssignUser] = useState(initialInspectUser ?? "");
+  const [typedUser, setTypedUser] = useState<string | null>(null);
+  const [suggesting, setSuggesting] = useState(false);
+  const [cursor, setCursor] = useState(0);
   const [assignRole, setAssignRole] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -612,24 +621,79 @@ function RoleAdmin({
   const CAPABILITIES = Object.keys(CAPABILITY_INFO).filter(
     (cap) => cap !== "administer",
   );
-  const sortedUsers = useMemo(
+
+  // This one list answers what the named person holds, how many people hold
+  // each role, and who the administrators are, so a role change has to refresh
+  // it or the form contradicts the toast it just showed.
+  const users = useMemo(() => usersQuery.data?.users ?? [], [usersQuery.data]);
+
+  // The endpoints interpret the subject themselves. This list is the same one
+  // the console already loaded, read only to say what the named person holds
+  // and to keep the last administrator from being stranded before the click.
+  const accounts: RoleSubjectAccount[] = useMemo(
     () =>
-      [...users].sort((a, b) =>
-        String(a.username).localeCompare(String(b.username)),
-      ),
+      [...users]
+        .map((u) => {
+          const name = u.role?.name;
+          return {
+            user: String(u.user),
+            username: String(u.username),
+            email: String(u.email),
+            displayName: u.displayName ? String(u.displayName) : null,
+            archived: Boolean(u.archived),
+            roleName: name ? String(name) : null,
+            capabilities: u.role?.capabilities ?? [],
+          };
+        })
+        .sort((a, b) => a.username.localeCompare(b.username)),
     [users],
   );
-  const selected = sortedUsers.find((u) => String(u.user) === assignUser);
 
-  // The server refuses to leave the deployment with no administrator. Work that
-  // out here too, so the console can say why instead of failing on click.
-  const administrators = sortedUsers.filter((u) =>
-    u.role?.capabilities?.includes("administer"),
-  );
-  const isLastAdministrator =
-    administrators.length === 1 &&
-    selected !== undefined &&
-    String(administrators[0].user) === String(selected.user);
+  // A page that arrives with somebody preselected names them by account
+  // identifier; show the username instead once the list can resolve it, and
+  // leave the field editable from the first keystroke.
+  const preselected = useMemo(() => {
+    if (!initialInspectUser) return "";
+    const match = matchRoleSubject(initialInspectUser, accounts);
+    return match ? match.username : initialInspectUser;
+  }, [initialInspectUser, accounts]);
+  const assignUser = typedUser ?? preselected;
+
+  const selected = matchRoleSubject(assignUser, accounts);
+  const strandsLastAdministrator = isLastAdministrator(selected, accounts);
+  const suggestions = roleSubjectSuggestions(assignUser, accounts);
+  const showSuggestions =
+    suggesting &&
+    suggestions.length > 0 &&
+    !(selected !== null && suggestions.length === 1);
+  const active = Math.min(cursor, Math.max(suggestions.length - 1, 0));
+
+  function pickSubject(account: RoleSubjectAccount) {
+    setTypedUser(account.username);
+    setSuggesting(false);
+    setCursor(0);
+  }
+
+  function onSubjectKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setSuggesting(false);
+      return;
+    }
+    if (!showSuggestions) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setCursor(Math.min(active + 1, suggestions.length - 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setCursor(Math.max(active - 1, 0));
+    } else if (event.key === "Enter") {
+      const choice = suggestions[active];
+      if (choice) {
+        event.preventDefault();
+        pickSubject(choice);
+      }
+    }
+  }
 
   function toggleCap(cap: string) {
     setCaps((prev) =>
@@ -655,27 +719,47 @@ function RoleAdmin({
   }
 
   async function assign(onDone: () => void) {
-    if (!session || !assignUser || !assignRole) return;
+    const subject = assignUser.trim();
+    if (!session || !subject || !assignRole) return;
     setBusy(true);
     const result = await api.roles.assign({
-      user: assignUser,
+      user: subject,
       context: COMMONS_CONTEXT,
       role: assignRole,
     });
     setBusy(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
+    if ("error" in result)
+      toast.error(
+        roleSubjectRefusal(result.error, {
+          subject,
+          action: "assign",
+          matched: selected,
+        }),
+      );
     else {
-      toast.success("Role assigned");
+      toast.success(`Role assigned to ${selected?.username ?? subject}`);
+      usersQuery.refetch();
       onDone();
     }
   }
 
-  async function revoke(user: string, onDone: () => void) {
-    if (!session) return;
-    const result = await api.roles.revoke({ user, context: COMMONS_CONTEXT });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
+  async function revoke(subject: string, onDone: () => void) {
+    if (!session || !subject.trim()) return;
+    const result = await api.roles.revoke({
+      user: subject.trim(),
+      context: COMMONS_CONTEXT,
+    });
+    if ("error" in result)
+      toast.error(
+        roleSubjectRefusal(result.error, {
+          subject,
+          action: "revoke",
+          matched: selected,
+        }),
+      );
     else {
       toast.success("Role removed");
+      usersQuery.refetch();
       onDone();
     }
   }
@@ -708,25 +792,69 @@ function RoleAdmin({
           Assign a role
         </h3>
         <p className="mb-4 text-sm text-muted-foreground">
-          Everyone holds exactly one role. Assigning a new one replaces it.
+          Assigning a role replaces the current role.
         </p>
         <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
           <div className="space-y-2">
             <Label htmlFor="assign-user">Person</Label>
-            <select
-              id="assign-user"
-              value={assignUser}
-              onChange={(e) => setAssignUser(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
-            >
-              <option value="">Select someone…</option>
-              {sortedUsers.map((u) => (
-                <option key={String(u.user)} value={String(u.user)}>
-                  {u.displayName ?? u.username} (@{u.username})
-                  {u.role?.name ? ` — ${u.role.name}` : " — no role"}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <Input
+                id="assign-user"
+                value={assignUser}
+                onChange={(e) => {
+                  setTypedUser(e.target.value);
+                  setSuggesting(true);
+                  setCursor(0);
+                }}
+                onFocus={() => setSuggesting(true)}
+                onBlur={() => setSuggesting(false)}
+                onKeyDown={onSubjectKeyDown}
+                placeholder="Username or email address"
+                autoComplete="off"
+                spellCheck={false}
+                aria-expanded={showSuggestions}
+                aria-controls="assign-user-suggestions"
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  showSuggestions ? `assign-user-option-${active}` : undefined
+                }
+              />
+              {showSuggestions ? (
+                <div
+                  id="assign-user-suggestions"
+                  // The list is filtered by what has been typed, so the person
+                  // being named is a row or two down rather than somewhere in
+                  // a roll of every registered account.
+                  className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-md border border-border bg-popover shadow-md"
+                >
+                  {suggestions.map((account, index) => (
+                    <button
+                      key={account.user}
+                      id={`assign-user-option-${index}`}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseEnter={() => setCursor(index)}
+                      onClick={() => pickSubject(account)}
+                      className={cn(
+                        "flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left",
+                        index === active ? "bg-muted" : "",
+                      )}
+                    >
+                      <span className="text-sm font-medium">
+                        {account.displayName ?? account.username}
+                        <span className="ml-1.5 font-normal text-muted-foreground">
+                          @{account.username}
+                        </span>
+                      </span>
+                      <span className="text-xs text-muted-foreground break-all">
+                        {account.email} · {account.roleName ?? "no role"}
+                        {account.archived ? " · archived" : ""}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="assign-role">Role</Label>
@@ -748,19 +876,22 @@ function RoleAdmin({
             <Button
               onClick={() => assign(() => setAssignRole(""))}
               disabled={
-                busy || !assignUser || !assignRole || isLastAdministrator
+                busy ||
+                !assignUser.trim() ||
+                !assignRole ||
+                strandsLastAdministrator
               }
             >
               Assign
             </Button>
-            {selected?.role?.name && !isLastAdministrator ? (
+            {selected?.roleName && !strandsLastAdministrator ? (
               <ConfirmAction
                 trigger={
                   <Button variant="outline" className="text-destructive">
                     Remove
                   </Button>
                 }
-                title={`Remove ${selected.role.name}?`}
+                title={`Remove ${selected.roleName}?`}
                 description={`@${selected.username} will hold no role and keep only what everyone can do.`}
                 confirmLabel="Remove role"
                 destructive
@@ -769,27 +900,30 @@ function RoleAdmin({
             ) : null}
           </div>
         </div>
-        {isLastAdministrator ? (
+        {strandsLastAdministrator ? (
           <p className="mt-3 text-sm text-amber-600 dark:text-amber-400">
-            @{selected?.username} is the only administrator, so their role
-            cannot be changed or removed. Give somebody else an administrator
-            role first.
+            @{selected?.username} is the only administrator. Assign another
+            administrator before changing this role.
           </p>
         ) : null}
         {selected ? (
           <p className="mt-3 text-sm text-muted-foreground">
             @{selected.username} currently holds{" "}
-            {selected.role?.name ? (
+            {selected.roleName ? (
               <span className="font-medium text-foreground capitalize">
-                {selected.role.name}
+                {selected.roleName}
               </span>
             ) : (
               "no role"
             )}
-            {selected.role?.capabilities?.length
-              ? ` (${selected.role.capabilities.join(", ")})`
+            {selected.capabilities.length
+              ? ` (${selected.capabilities.join(", ")})`
               : ""}
             .
+          </p>
+        ) : assignUser.trim() ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            No account matches. Enter an exact username or email.
           </p>
         ) : null}
       </section>
@@ -1197,7 +1331,7 @@ export default function AdminPage() {
             key={inspectUser ?? "default"}
             initialInspectUser={inspectUser}
             roleList={roleList}
-            users={usersQuery.data?.users ?? []}
+            usersQuery={usersQuery}
           />
         </TabsContent>
         <TabsContent value="mail" className="mt-6">

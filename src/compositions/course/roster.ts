@@ -1,5 +1,6 @@
 import { activeUser } from "../access/session.ts";
 import {
+  compute,
   each,
   former,
   no,
@@ -13,7 +14,7 @@ import {
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { theInvitationFor } from "../access/invitations.ts";
 import { isArchived, mayManageCourse, mayNotManageCourse } from "../access/policy.ts";
-import { concepts } from "../../concepts.ts";
+import { computations, concepts } from "../../concepts.ts";
 
 const { Authenticating, Inviting, Profiling, Rostering } = concepts;
 
@@ -52,12 +53,13 @@ export const theRoster = former(
 /** Which seats are still waiting for their invitation to be accepted? */
 export const thePendingRoster = former(
   "the pending roster ()",
-  (_inputs, { seat, email, kind, section }) =>
-    each(Rostering._getUnclaimedSeats({}).is({ seat, email, kind, section })).form({
+  (_inputs, { seat, email, kind, section, displayName }) =>
+    each(Rostering._getUnclaimedSeats({}).is({ seat, email, kind, section, displayName })).form({
       seat,
       email,
       kind,
       section,
+      displayName,
     }),
 );
 /** Which seats have been dropped? */
@@ -102,6 +104,17 @@ export const theLiveAccountAt = view(
   "the live account at (email)",
   ({ email }, { user }, _bindings) =>
     where(Authenticating._getByEmail({ email }).is({ user }), no(isArchived({ user }))),
+).optional();
+
+/**
+ * Which seat already stands at this address? Rostering holds at most one seat
+ * for an address, so this answers that seat in whichever state it is. Adding a
+ * person by hand branches on it: an active or dropped seat is refused, while a
+ * still-pending seat is the one a second add refreshes and sends back through
+ * the sweep.
+ */
+export const theSeatAt = view("the seat at (email)", ({ email }, { seat }, _bindings) =>
+  where(Rostering._getSeatByEmail({ email }).is({ seat })),
 ).optional();
 
 /**
@@ -282,6 +295,122 @@ export const ImportSeats = endpoint("/roster/import", ({ session, rows, user, cr
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
   ),
+);
+
+/**
+ * Add one person to the roster by hand, from the staff roster page and without
+ * writing CSV.
+ *
+ * The form's fields compose one import row, and the seat is created through the
+ * very import action a one-row CSV would reach, so the sweep that claims a seat
+ * whose address already has an account — releasing the work already published to
+ * that section — and invites one whose address has none follows a hand-add
+ * exactly as it follows an import. That is why this form does not enrol:
+ * `Enrol` reaches an active seat without that release fan-out.
+ *
+ * An address that already carries an active or dropped seat is refused
+ * `SEAT_ALREADY_EXISTS`, because reinstating or removing that seat is the repair
+ * there. A still-pending seat is not refused: no second seat is created, the
+ * seat keeps the kind and section it was created with, only its display name is
+ * refreshed, and it re-enters the sweep — exactly the repair re-importing the
+ * row performs.
+ *
+ * The answer reports only what this request can see for itself: whether it
+ * created a seat at that address or found one already standing there, and what
+ * the account at that address answers while the request is still running — an
+ * account that can still sign in, an archived one, or none at all. It never
+ * reports what the sweep will have done, because the claim and the invitation
+ * commit after this answer is formed; the active, pending, and dropped rosters
+ * are the durable answer, and a staff surface reads them again rather than
+ * trusting this response.
+ */
+export const AddPerson = endpoint(
+  "/roster/add-person",
+  ({ session, email, kind, section, displayName, user, rows }) =>
+    receive({ session, email, kind, section, displayName }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageCourse({ user }),
+        theSeatAt({ email }),
+        no(Rostering._getPendingSeatByEmail({ email })),
+      )
+        .then(respond({ error: "SEAT_ALREADY_EXISTS" }))
+        .named("seat-already-exists"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageCourse({ user }),
+        compute(computations.singleImportRow, { email, kind, section, displayName }, rows),
+        theSeatAt({ email }),
+        Rostering._getPendingSeatByEmail({ email }),
+        theLiveAccountAt({ email }),
+      )
+        .then(Rostering.importSeats({ rows }))
+        .then(respond({ created: false, account: "LIVE" }))
+        .named("standing-seat-live-account"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageCourse({ user }),
+        compute(computations.singleImportRow, { email, kind, section, displayName }, rows),
+        theSeatAt({ email }),
+        Rostering._getPendingSeatByEmail({ email }),
+        theAccountAt({ email }),
+        no(theLiveAccountAt({ email })),
+      )
+        .then(Rostering.importSeats({ rows }))
+        .then(respond({ created: false, account: "ARCHIVED" }))
+        .named("standing-seat-archived-account"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageCourse({ user }),
+        compute(computations.singleImportRow, { email, kind, section, displayName }, rows),
+        theSeatAt({ email }),
+        Rostering._getPendingSeatByEmail({ email }),
+        no(theAccountAt({ email })),
+      )
+        .then(Rostering.importSeats({ rows }))
+        .then(respond({ created: false, account: "NONE" }))
+        .named("standing-seat-without-account"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageCourse({ user }),
+        compute(computations.singleImportRow, { email, kind, section, displayName }, rows),
+        no(theSeatAt({ email })),
+        theLiveAccountAt({ email }),
+      )
+        .then(Rostering.importSeats({ rows }))
+        .then(respond({ created: true, account: "LIVE" }))
+        .named("new-seat-live-account"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageCourse({ user }),
+        compute(computations.singleImportRow, { email, kind, section, displayName }, rows),
+        no(theSeatAt({ email })),
+        theAccountAt({ email }),
+        no(theLiveAccountAt({ email })),
+      )
+        .then(Rostering.importSeats({ rows }))
+        .then(respond({ created: true, account: "ARCHIVED" }))
+        .named("new-seat-archived-account"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageCourse({ user }),
+        compute(computations.singleImportRow, { email, kind, section, displayName }, rows),
+        no(theSeatAt({ email })),
+        no(theAccountAt({ email })),
+      )
+        .then(Rostering.importSeats({ rows }))
+        .then(respond({ created: true, account: "NONE" }))
+        .named("new-seat-without-account"),
+      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  {
+    input: {
+      required: ["session", "email"],
+      defaults: { kind: "STUDENT", section: "", displayName: "" },
+    },
+  },
 );
 
 /**

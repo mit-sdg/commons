@@ -44,6 +44,23 @@ export const theRoleOf = view(
     ),
 ).optional();
 
+/**
+ * Which account holds this address? A subject holding an `@` is read as an
+ * address and never as a username: Authenticating accepts only letters, digits,
+ * hyphens, and underscores in a username, so no valid username can be mistaken
+ * for one. The address is matched the way Authenticating matches one, trimmed
+ * and lower-cased, so surrounding space and letter case do not change who is
+ * named.
+ *
+ * Only the two writes below read it. No public role read resolves an address, so
+ * no caller can use Commons to learn which addresses have accounts.
+ */
+export const theAccountForAddress = view(
+  "the account for (address)",
+  ({ address }, { user }, _bindings) =>
+    where(Authenticating._getByEmail({ email: address }).is({ user })),
+).optional();
+
 export const DefineRole = endpoint(
   "/roles/define",
   ({ session, name, capabilities, user, known, role }) =>
@@ -94,57 +111,120 @@ export const DeleteRole = endpoint("/roles/delete", ({ session, role, user, reso
  */
 export const AssignRole = endpoint(
   "/roles/assign",
-  ({ session, user, context, role, actor, subject, resolved, assignment }) =>
-    receive({ session, user, context, role }).then(
-      where(
-        activeUser({ session }).is({ user: actor }),
-        mayAdminister({ user: actor }),
-        Authenticating._denotedUser({ ref: user }).is({ user: subject }),
-        isNotSoleAdministrator({ user: subject }),
-        Roling._denotedRole({ ref: role }).is({ role: resolved }),
-      )
-        .then(Roling.assign({ user: subject, context, role: resolved }).responds({ assignment }))
-        .then(respond({ assignment }))
-        .named("success"),
-      where(
-        activeUser({ session }).is({ user: actor }),
-        mayAdminister({ user: actor }),
-        Authenticating._denotedUser({ ref: user }).is({ user: subject }),
-        isSoleAdministrator({ user: subject }),
-      )
-        .then(respond({ error: "LAST_ADMINISTRATOR" }))
-        .named("last-administrator"),
-      where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
+  ({ session, user, context, role, actor, subject, resolved, assignment, byAddress }) =>
+    receive({ session, user, context, role })
+      .where(compute(computations.subjectIsAddress, { subject: user }, byAddress))
+      .then(
+        where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
+          .then(respond({ error: "FORBIDDEN" }))
+          .named("forbidden"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [true]),
+          no(theAccountForAddress({ address: user })),
+        )
+          .then(respond({ error: "SUBJECT_NOT_FOUND" }))
+          .named("subject-not-found"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [true]),
+          theAccountForAddress({ address: user }).is({ user: subject }),
+          isNotSoleAdministrator({ user: subject }),
+          Roling._denotedRole({ ref: role }).is({ role: resolved }),
+        )
+          .then(Roling.assign({ user: subject, context, role: resolved }).responds({ assignment }))
+          .then(respond({ assignment }))
+          .named("success-by-address"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [true]),
+          theAccountForAddress({ address: user }).is({ user: subject }),
+          isSoleAdministrator({ user: subject }),
+        )
+          .then(respond({ error: "LAST_ADMINISTRATOR" }))
+          .named("last-administrator-by-address"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [false]),
+          Authenticating._denotedUser({ ref: user }).is({ user: subject }),
+          isNotSoleAdministrator({ user: subject }),
+          Roling._denotedRole({ ref: role }).is({ role: resolved }),
+        )
+          .then(Roling.assign({ user: subject, context, role: resolved }).responds({ assignment }))
+          .then(respond({ assignment }))
+          .named("success"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [false]),
+          Authenticating._denotedUser({ ref: user }).is({ user: subject }),
+          isSoleAdministrator({ user: subject }),
+        )
+          .then(respond({ error: "LAST_ADMINISTRATOR" }))
+          .named("last-administrator"),
+      ),
 );
 
 export const RevokeRole = endpoint(
   "/roles/revoke",
-  ({ session, user, context, actor, subject, assignment }) =>
-    receive({ session, user, context }).then(
-      where(
-        activeUser({ session }).is({ user: actor }),
-        mayAdminister({ user: actor }),
-        Authenticating._denotedUser({ ref: user }).is({ user: subject }),
-        isNotSoleAdministrator({ user: subject }),
-      )
-        .then(Roling.revoke({ user: subject, context }).responds({ assignment }))
-        .then(respond({ assignment }))
-        .named("success"),
-      where(
-        activeUser({ session }).is({ user: actor }),
-        mayAdminister({ user: actor }),
-        Authenticating._denotedUser({ ref: user }).is({ user: subject }),
-        isSoleAdministrator({ user: subject }),
-      )
-        .then(respond({ error: "LAST_ADMINISTRATOR" }))
-        .named("last-administrator"),
-      where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
+  ({ session, user, context, actor, subject, assignment, byAddress }) =>
+    receive({ session, user, context })
+      .where(compute(computations.subjectIsAddress, { subject: user }, byAddress))
+      .then(
+        where(activeUser({ session }).is({ user: actor }), mayNotAdminister({ user: actor }))
+          .then(respond({ error: "FORBIDDEN" }))
+          .named("forbidden"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [true]),
+          no(theAccountForAddress({ address: user })),
+        )
+          .then(respond({ error: "SUBJECT_NOT_FOUND" }))
+          .named("subject-not-found"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [true]),
+          theAccountForAddress({ address: user }).is({ user: subject }),
+          isNotSoleAdministrator({ user: subject }),
+        )
+          .then(Roling.revoke({ user: subject, context }).responds({ assignment }))
+          .then(respond({ assignment }))
+          .named("success-by-address"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [true]),
+          theAccountForAddress({ address: user }).is({ user: subject }),
+          isSoleAdministrator({ user: subject }),
+        )
+          .then(respond({ error: "LAST_ADMINISTRATOR" }))
+          .named("last-administrator-by-address"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [false]),
+          Authenticating._denotedUser({ ref: user }).is({ user: subject }),
+          isNotSoleAdministrator({ user: subject }),
+        )
+          .then(Roling.revoke({ user: subject, context }).responds({ assignment }))
+          .then(respond({ assignment }))
+          .named("success"),
+        where(
+          activeUser({ session }).is({ user: actor }),
+          mayAdminister({ user: actor }),
+          is.among(byAddress, [false]),
+          Authenticating._denotedUser({ ref: user }).is({ user: subject }),
+          isSoleAdministrator({ user: subject }),
+        )
+          .then(respond({ error: "LAST_ADMINISTRATOR" }))
+          .named("last-administrator"),
+      ),
 );
 
 /** One read answers the subject's role and what it carries, with no follow-up fetch. */

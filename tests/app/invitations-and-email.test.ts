@@ -335,6 +335,9 @@ describe("invitations and email", () => {
     const edge = createEdge(mongoImplementations(await testDb()));
     expect([...edge.publicPaths].sort()).toEqual([
       "/auth/accept-invitation",
+      // The invited person has no account yet, so the read that hands their
+      // display name to the registration form answers without a session.
+      "/auth/invitation",
       "/auth/login",
       "/auth/request-password-reset",
       "/auth/reset-password",

@@ -751,13 +751,13 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 - `_getClass() : optional (detail: Class)`
 - `_getSections() : many (section: String, name: String, location: String, meetingPattern: String, status: String)`
 - `_getSeatByEmail(email: String) : optional (seat: String, email: String)`
-- `_getPendingSeatByEmail(email: String) : optional (seat: String, email: String)`
+- `_getPendingSeatByEmail(email: String) : optional (seat: String, email: String, displayName: String)`
 - `_getSeatByUser(user: String) : optional (seat: String, user: String | Null, email: String, kind: String, section: String | Null, status: String)`
 - `_getSeatDetail(user: String) : optional (detail: Seat)`
 - `_getActiveMembers() : many (user: String | Null, seat: String, kind: String, section: String | Null, email: String)`
 - `_isActiveStudent(user: String) : one (active: Boolean)`
 - `_getActiveStudents() : many (user: String, seat: String, section: String | Null, email: String)`
-- `_getUnclaimedSeats() : many (seat: String, email: String, kind: String, section: String | Null)`
+- `_getUnclaimedSeats() : many (seat: String, email: String, kind: String, section: String | Null, displayName: String)`
 - `_getDroppedSeats() : many (user: String | Null, seat: String, kind: String, section: String | Null, email: String)`
 
 #### Instances
@@ -1017,12 +1017,14 @@ Concrete types:
 - `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 241.
 - `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 238.
 - `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 244.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 253.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 247.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 250.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 262.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 256.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 259.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 247.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 253.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 263.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 257.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 260.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 272.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 266.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 269.
 
 ## Views
 
@@ -1373,6 +1375,16 @@ the account at (email) — inputs (email); outputs (user); bindings () — answe
   where Authenticating._getByEmail (email) has (user)
 ```
 
+### the account for (address)
+
+Authored path: `Access.roles.theAccountForAddress`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 41.
+
+```view
+the account for (address) — inputs (address); outputs (user); bindings () — answers at most one (user)
+  where Authenticating._getByEmail (email: address) has (user)
+```
+
 ### the active user of (session)
 
 Authored path: `Access.session.activeUser`.
@@ -1386,7 +1398,7 @@ the active user of (session) — inputs (session); outputs (user); bindings () �
 ### the archived user named (username)
 
 Authored path: `Access.auth.theArchivedUserNamed`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 47.
 
 ```view
 the archived user named (username) — inputs (username); outputs (user); bindings () — answers at most one (user)
@@ -1469,7 +1481,7 @@ the list title behind (subject) of kind (kind) for (reader) at (at) — inputs (
 ### the live account at (email)
 
 Authored path: `Course.roster.theLiveAccountAt`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 32.
+- Covered by [Roster](../design/compositions/course/roster.md), line 34.
 
 ```view
 the live account at (email) — inputs (email); outputs (user); bindings () — answers at most one (user)
@@ -1538,13 +1550,23 @@ the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bin
 ### the role of (user) in (context)
 
 Authored path: `Access.roles.theRoleOf`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 68.
+- Covered by [Roles](../design/compositions/access/roles.md), line 100.
 
 ```view
 the role of (user) in (context) — inputs (user, context); outputs (role, name, capabilities); bindings () — answers at most one (role, name, capabilities)
   where
     Roling._getRole (context, user) has (role)
     Roling._getRoleDetail (role) has (capabilities, name)
+```
+
+### the seat at (email)
+
+Authored path: `Course.roster.theSeatAt`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 110.
+
+```view
+the seat at (email) — inputs (email); outputs (seat); bindings () — answers at most one (seat)
+  where Rostering._getSeatByEmail (email) has (seat)
 ```
 
 ### the seat detail of (user)
@@ -1560,7 +1582,7 @@ the seat detail of (user) — inputs (user); outputs (detail); bindings () — a
 ### the seat of (user)
 
 Authored path: `Course.roster.theSeatOf`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 95.
+- Covered by [Roster](../design/compositions/course/roster.md), line 168.
 
 ```view
 the seat of (user) — inputs (user); outputs (seat); bindings () — answers at most one (seat)
@@ -1604,7 +1626,7 @@ the task notification mail of kind (kind) about (subject) for (recipient) at (at
 ### the user named (username)
 
 Authored path: `Access.auth.theUserNamed`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 29.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 55.
 
 ```view
 the user named (username) — inputs (username); outputs (user); bindings () — answers at most one (user)
@@ -1816,7 +1838,7 @@ Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder,
 ### the defined roles ()
 
 Authored path: `Access.roles.theDefinedRoles`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 65.
+- Covered by [Roles](../design/compositions/access/roles.md), line 97.
 
 ```former
 Former "the defined roles ()" — inputs (); bindings (role, name, capabilities); promises exactly one record — forms:
@@ -1830,7 +1852,7 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
 ### the dropped roster ()
 
 Authored path: `Course.roster.theDroppedRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 104.
+- Covered by [Roster](../design/compositions/course/roster.md), line 179.
 
 ```former
 Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, section, email, displayName); promises exactly one record — forms:
@@ -2063,6 +2085,20 @@ Former "the inbox of (user)" — inputs (user); bindings (notification, kind, li
       … former "the notification presentation of (item)" with (item: link), with blank leaves if absent
 ```
 
+### the invitation details of (invitation) with (credential)
+
+Authored path: `Access.auth.theInvitationDetails`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 23.
+
+```former
+Former "the invitation details of (invitation) with (credential)" — inputs (invitation, credential); bindings (address, displayName); promises at most one record — forms:
+  a record of
+    where Inviting._getAvailable (credential, invitation) has (address, channel: "email")
+    where Rostering._getPendingSeatByEmail (email: address) has (displayName)
+    displayName
+    email: address
+```
+
 ### the invitations ()
 
 Authored path: `Access.invitations.theInvitations`.
@@ -2272,12 +2308,13 @@ Former "the open flags ()" — inputs (); bindings (target, count); promises exa
 ### the pending roster ()
 
 Authored path: `Course.roster.thePendingRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 100.
+- Covered by [Roster](../design/compositions/course/roster.md), line 173.
 
 ```former
-Former "the pending roster ()" — inputs (); bindings (seat, email, kind, section); promises exactly one record — forms:
-  each Rostering._getUnclaimedSeats () has (email, kind, seat, section)
+Former "the pending roster ()" — inputs (); bindings (seat, email, kind, section, displayName); promises exactly one record — forms:
+  each Rostering._getUnclaimedSeats () has (displayName, email, kind, seat, section)
     form a record of
+      displayName
       email
       kind
       seat
@@ -2381,7 +2418,7 @@ Former "the reactions on (target)" — inputs (target); bindings (reaction, reac
 ### the role face of (user) in (context)
 
 Authored path: `Access.roles.theRoleFaceOf`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 61.
+- Covered by [Roles](../design/compositions/access/roles.md), line 93.
 
 ```former
 Former "the role face of (user) in (context)" — inputs (user, context); bindings (role, name, capabilities); promises at most one record — forms:
@@ -2396,7 +2433,7 @@ Former "the role face of (user) in (context)" — inputs (user, context); bindin
 ### the registered users ()
 
 Authored path: `Access.auth.theRegisteredUsers`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 107.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 133.
 
 ```former
 Former "the registered users ()" — inputs (); bindings (user, username, email, displayName, avatar, archived); promises exactly one record — forms:
@@ -2479,7 +2516,7 @@ Former "the revision numbered (number) of (item)" — inputs (number, item); bin
 ### the roster ()
 
 Authored path: `Course.roster.theRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 98.
+- Covered by [Roster](../design/compositions/course/roster.md), line 171.
 
 ```former
 Former "the roster ()" — inputs (); bindings (user, seat, kind, section, email, displayName); promises exactly one record — forms:
@@ -2961,7 +2998,7 @@ Former "the watched threads of (user)" — inputs (user); bindings (target, subs
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 110.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 136.
 
 ```reaction
 when RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
@@ -2973,7 +3010,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 110.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 136.
 
 ```reaction
 when Inviting.verify (channel: "email", credential: temporaryPassword, invitation, address: email), asked by Access.auth.AcceptInvitation
@@ -2987,7 +3024,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 110.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 136.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.AcceptInvitation#2
@@ -3001,7 +3038,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 110.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 136.
 
 ```reaction
 when Profiling.createProfile (displayName, user), asked by Access.auth.AcceptInvitation#3
@@ -3015,7 +3052,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 110.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 136.
 
 ```reaction
 when Inviting.claim (credential: temporaryPassword, invitation, user), asked by Access.auth.AcceptInvitation#4
@@ -3028,8 +3065,8 @@ then
 ### Access.auth.ArchiveUser:forbidden
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -3044,8 +3081,8 @@ then
 ### Access.auth.ArchiveUser:last-administrator
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -3062,8 +3099,8 @@ then
 ### Access.auth.ArchiveUser:self
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -3079,8 +3116,8 @@ then
 ### Access.auth.ArchiveUser:success
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -3098,8 +3135,8 @@ then
 ### Access.auth.ArchiveUser:success#2
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when Roling.requireCapability (capability: "administer", context: "commons", user: actor), asked by Access.auth.ArchiveUser:success
@@ -3112,8 +3149,8 @@ then
 ### Access.auth.ArchiveUser:success#3
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when Roling.revoke (context: "commons", user), asked by Access.auth.ArchiveUser:success#2
@@ -3127,8 +3164,8 @@ then
 ### Access.auth.ArchiveUser:success#4
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when Archiving.trash (at, by: actor, item: user), asked by Access.auth.ArchiveUser:success#3
@@ -3139,8 +3176,8 @@ then
 ### Access.auth.ArchiveUser:success#5
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ArchiveUser:success#4
@@ -3153,8 +3190,8 @@ then
 ### Access.auth.ArchiveUser:success-without-role
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -3172,8 +3209,8 @@ then
 ### Access.auth.ArchiveUser:success-without-role#2
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when Archiving.trash (at, by: actor, item: user), asked by Access.auth.ArchiveUser:success-without-role
@@ -3184,8 +3221,8 @@ then
 ### Access.auth.ArchiveUser:success-without-role#3
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 70.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 111.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 96.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ArchiveUser:success-without-role#2
@@ -3198,7 +3235,7 @@ then
 ### Access.auth.BootstrapAdminOnLogin
 
 Authored path: `Access.auth.BootstrapAdminOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 41.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 67.
 
 ```reaction
 when Authenticating.authenticate (user)
@@ -3212,7 +3249,7 @@ then
 ### Access.auth.BootstrapAdminOnLogin#2
 
 Authored path: `Access.auth.BootstrapAdminOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 41.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 67.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["administer"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnLogin
@@ -3225,7 +3262,7 @@ then
 ### Access.auth.BootstrapAdminOnRegister
 
 Authored path: `Access.auth.BootstrapAdminOnRegister`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 39.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 65.
 
 ```reaction
 when Authenticating.register (user)
@@ -3239,7 +3276,7 @@ then
 ### Access.auth.BootstrapAdminOnRegister#2
 
 Authored path: `Access.auth.BootstrapAdminOnRegister`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 39.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 65.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["administer"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnRegister
@@ -3252,8 +3289,8 @@ then
 ### Access.auth.ChangePassword
 
 Authored path: `Access.auth.ChangePassword`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 112.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 59.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 138.
 
 ```reaction
 when RequestBoundary.request (newPassword, oldPassword, path: "/auth/changePassword", requestId, session)
@@ -3266,8 +3303,8 @@ then
 ### Access.auth.ChangePassword#2
 
 Authored path: `Access.auth.ChangePassword`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 112.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 59.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 138.
 
 ```reaction
 when Authenticating.changePassword (newPassword, oldPassword, user), asked by Access.auth.ChangePassword
@@ -3278,8 +3315,8 @@ then
 ### Access.auth.ChangePassword#3
 
 Authored path: `Access.auth.ChangePassword`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 33.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 112.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 59.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 138.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ChangePassword#2
@@ -3289,11 +3326,55 @@ then
   RequestBoundary.respond (requestId, user)
 ```
 
+### Access.auth.InvitationDetails:invalid
+
+Authored path: `Access.auth.InvitationDetails`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 139.
+
+```reaction
+when RequestBoundary.request (invitation, path: "/auth/invitation", requestId, temporaryPassword)
+where
+  no Inviting._getAvailable (credential: temporaryPassword, invitation)
+then
+  RequestBoundary.respond (error: "INVITATION_INVALID", requestId)
+```
+
+### Access.auth.InvitationDetails:seated
+
+Authored path: `Access.auth.InvitationDetails`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 139.
+
+```reaction
+when RequestBoundary.request (invitation, path: "/auth/invitation", requestId, temporaryPassword)
+where
+  Inviting._getAvailable (credential: temporaryPassword, invitation) has (address: email)
+  Rostering._getPendingSeatByEmail (email)
+then
+  RequestBoundary.respond (invitation: former "the invitation details of (invitation) with (credential)" with (credential: temporaryPassword, invitation), requestId)
+```
+
+### Access.auth.InvitationDetails:unseated
+
+Authored path: `Access.auth.InvitationDetails`.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 21.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 139.
+
+```reaction
+when RequestBoundary.request (invitation, path: "/auth/invitation", requestId, temporaryPassword)
+where
+  Inviting._getAvailable (credential: temporaryPassword, invitation) has (address: email)
+  no Rostering._getPendingSeatByEmail (email)
+then
+  RequestBoundary.respond (invitation: (displayName: "", email), requestId)
+```
+
 ### Access.auth.ListUsers:forbidden
 
 Authored path: `Access.auth.ListUsers`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 105.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 113.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 131.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 140.
 
 ```reaction
 when RequestBoundary.request (path: "/users/list", requestId, session)
@@ -3307,8 +3388,8 @@ then
 ### Access.auth.ListUsers:success
 
 Authored path: `Access.auth.ListUsers`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 105.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 113.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 131.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 140.
 
 ```reaction
 when RequestBoundary.request (path: "/users/list", requestId, session)
@@ -3322,8 +3403,8 @@ then
 ### Access.auth.Login:archived
 
 Authored path: `Access.auth.Login`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 19.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 114.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 45.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
@@ -3336,8 +3417,8 @@ then
 ### Access.auth.Login:archived#2
 
 Authored path: `Access.auth.Login`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 19.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 114.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 45.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when Authenticating.authenticate (password, username), asked by Access.auth.Login:archived
@@ -3350,8 +3431,8 @@ then
 ### Access.auth.Login:success
 
 Authored path: `Access.auth.Login`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 19.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 114.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 45.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
@@ -3365,8 +3446,8 @@ then
 ### Access.auth.Login:success#2
 
 Authored path: `Access.auth.Login`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 19.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 114.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 45.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when Authenticating.authenticate (password, username, user), asked by Access.auth.Login:success
@@ -3379,8 +3460,8 @@ then
 ### Access.auth.Login:success#3
 
 Authored path: `Access.auth.Login`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 19.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 114.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 45.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when Sessioning.start (at, user, expiresAt, session), asked by Access.auth.Login:success#2
@@ -3393,8 +3474,8 @@ then
 ### Access.auth.Logout
 
 Authored path: `Access.auth.Logout`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 24.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 116.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 50.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 143.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/logout", requestId, session)
@@ -3407,8 +3488,8 @@ then
 ### Access.auth.Logout#2
 
 Authored path: `Access.auth.Logout`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 24.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 116.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 50.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 143.
 
 ```reaction
 when Sessioning.end (session), asked by Access.auth.Logout
@@ -3421,8 +3502,8 @@ then
 ### Access.auth.Me
 
 Authored path: `Access.auth.Me`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 25.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 117.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 51.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 144.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/me", requestId, session)
@@ -3437,8 +3518,8 @@ then
 ### Access.auth.Permissions:assigned
 
 Authored path: `Access.auth.Permissions`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 58.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 115.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 84.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/permissions", requestId, session)
@@ -3453,8 +3534,8 @@ then
 ### Access.auth.Permissions:none
 
 Authored path: `Access.auth.Permissions`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 58.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 115.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 84.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/permissions", requestId, session)
@@ -3468,8 +3549,8 @@ then
 ### Access.auth.RegisterInitialAdmin:initialized
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 46.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 118.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3484,8 +3565,8 @@ then
 ### Access.auth.RegisterInitialAdmin:success
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 46.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 118.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3500,8 +3581,8 @@ then
 ### Access.auth.RegisterInitialAdmin:success#2
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 46.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 118.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.RegisterInitialAdmin:success
@@ -3514,8 +3595,8 @@ then
 ### Access.auth.RegisterInitialAdmin:success#3
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 46.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 118.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when Profiling.createProfile (displayName, user), asked by Access.auth.RegisterInitialAdmin:success#2
@@ -3528,8 +3609,8 @@ then
 ### Access.auth.RegisterInitialAdmin:unauthorized
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 46.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 118.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 72.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -3543,8 +3624,8 @@ then
 ### Access.auth.Resolve:absent
 
 Authored path: `Access.auth.Resolve`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 30.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 119.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 146.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -3557,8 +3638,8 @@ then
 ### Access.auth.Resolve:found
 
 Authored path: `Access.auth.Resolve`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 30.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 119.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 56.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 146.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -3571,8 +3652,8 @@ then
 ### Access.auth.RestoreUser:forbidden
 
 Authored path: `Access.auth.RestoreUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 90.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 120.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 116.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 147.
 
 ```reaction
 when RequestBoundary.request (path: "/users/restore", requestId, session, user)
@@ -3586,8 +3667,8 @@ then
 ### Access.auth.RestoreUser:success
 
 Authored path: `Access.auth.RestoreUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 90.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 120.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 116.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 147.
 
 ```reaction
 when RequestBoundary.request (path: "/users/restore", requestId, session, user)
@@ -3601,8 +3682,8 @@ then
 ### Access.auth.RestoreUser:success#2
 
 Authored path: `Access.auth.RestoreUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 90.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 120.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 116.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 147.
 
 ```reaction
 when Archiving.restore (item: user), asked by Access.auth.RestoreUser:success
@@ -3924,11 +4005,12 @@ then
 
 Authored path: `Access.roles.AssignRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 75.
+- Covered by [Roles](../design/compositions/access/roles.md), line 107.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
 where
+  byAddress is subjectIsAddress (subject: user)
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may not administer" with (user: actor)
 then
@@ -3939,30 +4021,71 @@ then
 
 Authored path: `Access.roles.AssignRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 75.
+- Covered by [Roles](../design/compositions/access/roles.md), line 107.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
 where
+  byAddress is subjectIsAddress (subject: user)
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
+  byAddress is among [false]
   Authenticating._denotedUser (ref: user) has (user: subject)
   view "(user) is the only administrator" with (user: subject)
 then
   RequestBoundary.respond (error: "LAST_ADMINISTRATOR", requestId)
 ```
 
-### Access.roles.AssignRole:success
+### Access.roles.AssignRole:last-administrator-by-address
 
 Authored path: `Access.roles.AssignRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 75.
+- Covered by [Roles](../design/compositions/access/roles.md), line 107.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
 where
+  byAddress is subjectIsAddress (subject: user)
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
+  byAddress is among [true]
+  view "the account for (address)" with (address: user) has (user: subject)
+  view "(user) is the only administrator" with (user: subject)
+then
+  RequestBoundary.respond (error: "LAST_ADMINISTRATOR", requestId)
+```
+
+### Access.roles.AssignRole:subject-not-found
+
+Authored path: `Access.roles.AssignRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 30.
+- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
+where
+  byAddress is subjectIsAddress (subject: user)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  byAddress is among [true]
+  no view "the account for (address)" with (address: user)
+then
+  RequestBoundary.respond (error: "SUBJECT_NOT_FOUND", requestId)
+```
+
+### Access.roles.AssignRole:success
+
+Authored path: `Access.roles.AssignRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 30.
+- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
+where
+  byAddress is subjectIsAddress (subject: user)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  byAddress is among [false]
   Authenticating._denotedUser (ref: user) has (user: subject)
   view "(user) is not the only administrator" with (user: subject)
   Roling._denotedRole (ref: role) has (role: resolved)
@@ -3974,10 +4097,44 @@ then
 
 Authored path: `Access.roles.AssignRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 75.
+- Covered by [Roles](../design/compositions/access/roles.md), line 107.
 
 ```reaction
 when Roling.assign (context, role: resolved, user: subject, assignment), asked by Access.roles.AssignRole:success
+where
+  earlier, RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
+then
+  RequestBoundary.respond (assignment, requestId)
+```
+
+### Access.roles.AssignRole:success-by-address
+
+Authored path: `Access.roles.AssignRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 30.
+- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
+where
+  byAddress is subjectIsAddress (subject: user)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  byAddress is among [true]
+  view "the account for (address)" with (address: user) has (user: subject)
+  view "(user) is not the only administrator" with (user: subject)
+  Roling._denotedRole (ref: role) has (role: resolved)
+then
+  Roling.assign (context, role: resolved, user: subject)
+```
+
+### Access.roles.AssignRole:success-by-address#2
+
+Authored path: `Access.roles.AssignRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 30.
+- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+
+```reaction
+when Roling.assign (context, role: resolved, user: subject, assignment), asked by Access.roles.AssignRole:success-by-address
 where
   earlier, RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
 then
@@ -3988,7 +4145,7 @@ then
 
 Authored path: `Access.roles.DefineRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 20.
-- Covered by [Roles](../design/compositions/access/roles.md), line 73.
+- Covered by [Roles](../design/compositions/access/roles.md), line 105.
 
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
@@ -4004,7 +4161,7 @@ then
 
 Authored path: `Access.roles.DefineRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 20.
-- Covered by [Roles](../design/compositions/access/roles.md), line 73.
+- Covered by [Roles](../design/compositions/access/roles.md), line 105.
 
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
@@ -4021,7 +4178,7 @@ then
 
 Authored path: `Access.roles.DefineRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 20.
-- Covered by [Roles](../design/compositions/access/roles.md), line 73.
+- Covered by [Roles](../design/compositions/access/roles.md), line 105.
 
 ```reaction
 when Roling.defineRole (capabilities, name, role), asked by Access.roles.DefineRole:success
@@ -4035,7 +4192,7 @@ then
 
 Authored path: `Access.roles.DefineRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 20.
-- Covered by [Roles](../design/compositions/access/roles.md), line 73.
+- Covered by [Roles](../design/compositions/access/roles.md), line 105.
 
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
@@ -4052,7 +4209,7 @@ then
 
 Authored path: `Access.roles.DeleteRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 27.
-- Covered by [Roles](../design/compositions/access/roles.md), line 74.
+- Covered by [Roles](../design/compositions/access/roles.md), line 106.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/delete", requestId, role, session)
@@ -4067,7 +4224,7 @@ then
 
 Authored path: `Access.roles.DeleteRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 27.
-- Covered by [Roles](../design/compositions/access/roles.md), line 74.
+- Covered by [Roles](../design/compositions/access/roles.md), line 106.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/delete", requestId, role, session)
@@ -4083,7 +4240,7 @@ then
 
 Authored path: `Access.roles.DeleteRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 27.
-- Covered by [Roles](../design/compositions/access/roles.md), line 74.
+- Covered by [Roles](../design/compositions/access/roles.md), line 106.
 
 ```reaction
 when Roling.deleteRole (role: resolved), asked by Access.roles.DeleteRole:success
@@ -4097,11 +4254,12 @@ then
 
 Authored path: `Access.roles.RevokeRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 76.
+- Covered by [Roles](../design/compositions/access/roles.md), line 108.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
 where
+  byAddress is subjectIsAddress (subject: user)
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may not administer" with (user: actor)
 then
@@ -4112,30 +4270,71 @@ then
 
 Authored path: `Access.roles.RevokeRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 76.
+- Covered by [Roles](../design/compositions/access/roles.md), line 108.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
 where
+  byAddress is subjectIsAddress (subject: user)
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
+  byAddress is among [false]
   Authenticating._denotedUser (ref: user) has (user: subject)
   view "(user) is the only administrator" with (user: subject)
 then
   RequestBoundary.respond (error: "LAST_ADMINISTRATOR", requestId)
 ```
 
-### Access.roles.RevokeRole:success
+### Access.roles.RevokeRole:last-administrator-by-address
 
 Authored path: `Access.roles.RevokeRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 76.
+- Covered by [Roles](../design/compositions/access/roles.md), line 108.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
 where
+  byAddress is subjectIsAddress (subject: user)
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
+  byAddress is among [true]
+  view "the account for (address)" with (address: user) has (user: subject)
+  view "(user) is the only administrator" with (user: subject)
+then
+  RequestBoundary.respond (error: "LAST_ADMINISTRATOR", requestId)
+```
+
+### Access.roles.RevokeRole:subject-not-found
+
+Authored path: `Access.roles.RevokeRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 33.
+- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
+where
+  byAddress is subjectIsAddress (subject: user)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  byAddress is among [true]
+  no view "the account for (address)" with (address: user)
+then
+  RequestBoundary.respond (error: "SUBJECT_NOT_FOUND", requestId)
+```
+
+### Access.roles.RevokeRole:success
+
+Authored path: `Access.roles.RevokeRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 33.
+- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
+where
+  byAddress is subjectIsAddress (subject: user)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  byAddress is among [false]
   Authenticating._denotedUser (ref: user) has (user: subject)
   view "(user) is not the only administrator" with (user: subject)
 then
@@ -4146,7 +4345,7 @@ then
 
 Authored path: `Access.roles.RevokeRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 76.
+- Covered by [Roles](../design/compositions/access/roles.md), line 108.
 
 ```reaction
 when Roling.revoke (context, user: subject, assignment), asked by Access.roles.RevokeRole:success
@@ -4156,11 +4355,44 @@ then
   RequestBoundary.respond (assignment, requestId)
 ```
 
+### Access.roles.RevokeRole:success-by-address
+
+Authored path: `Access.roles.RevokeRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 33.
+- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+
+```reaction
+when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
+where
+  byAddress is subjectIsAddress (subject: user)
+  view "the active user of (session)" with (session) has (user: actor)
+  view "(user) may administer" with (user: actor)
+  byAddress is among [true]
+  view "the account for (address)" with (address: user) has (user: subject)
+  view "(user) is not the only administrator" with (user: subject)
+then
+  Roling.revoke (context, user: subject)
+```
+
+### Access.roles.RevokeRole:success-by-address#2
+
+Authored path: `Access.roles.RevokeRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 33.
+- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+
+```reaction
+when Roling.revoke (context, user: subject, assignment), asked by Access.roles.RevokeRole:success-by-address
+where
+  earlier, RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
+then
+  RequestBoundary.respond (assignment, requestId)
+```
+
 ### Access.roles.RoleForUser:held
 
 Authored path: `Access.roles.RoleForUser`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 60.
-- Covered by [Roles](../design/compositions/access/roles.md), line 77.
+- Covered by [Roles](../design/compositions/access/roles.md), line 92.
+- Covered by [Roles](../design/compositions/access/roles.md), line 109.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/forUser", requestId, user)
@@ -4174,8 +4406,8 @@ then
 ### Access.roles.RoleForUser:none
 
 Authored path: `Access.roles.RoleForUser`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 60.
-- Covered by [Roles](../design/compositions/access/roles.md), line 77.
+- Covered by [Roles](../design/compositions/access/roles.md), line 92.
+- Covered by [Roles](../design/compositions/access/roles.md), line 109.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/forUser", requestId, user)
@@ -4189,8 +4421,8 @@ then
 ### Access.roles.RoleGet
 
 Authored path: `Access.roles.RoleGet`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 63.
-- Covered by [Roles](../design/compositions/access/roles.md), line 78.
+- Covered by [Roles](../design/compositions/access/roles.md), line 95.
+- Covered by [Roles](../design/compositions/access/roles.md), line 110.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/get", requestId, role)
@@ -4203,8 +4435,8 @@ then
 ### Access.roles.RoleList
 
 Authored path: `Access.roles.RoleList`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 64.
-- Covered by [Roles](../design/compositions/access/roles.md), line 79.
+- Covered by [Roles](../design/compositions/access/roles.md), line 96.
+- Covered by [Roles](../design/compositions/access/roles.md), line 111.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/list", requestId)
@@ -6597,10 +6829,239 @@ then
   RequestBoundary.respond (note, requestId)
 ```
 
+### Course.roster.AddPerson:forbidden
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the course" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.roster.AddPerson:new-seat-archived-account
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  rows is singleImportRow (displayName, email, kind, section)
+  no view "the seat at (email)" with (email)
+  view "the account at (email)" with (email)
+  no view "the live account at (email)" with (email)
+then
+  Rostering.importSeats (rows)
+```
+
+### Course.roster.AddPerson:new-seat-archived-account#2
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when Rostering.importSeats (rows), asked by Course.roster.AddPerson:new-seat-archived-account
+where
+  earlier, RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+then
+  RequestBoundary.respond (account: "ARCHIVED", created: true, requestId)
+```
+
+### Course.roster.AddPerson:new-seat-live-account
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  rows is singleImportRow (displayName, email, kind, section)
+  no view "the seat at (email)" with (email)
+  view "the live account at (email)" with (email)
+then
+  Rostering.importSeats (rows)
+```
+
+### Course.roster.AddPerson:new-seat-live-account#2
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when Rostering.importSeats (rows), asked by Course.roster.AddPerson:new-seat-live-account
+where
+  earlier, RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+then
+  RequestBoundary.respond (account: "LIVE", created: true, requestId)
+```
+
+### Course.roster.AddPerson:new-seat-without-account
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  rows is singleImportRow (displayName, email, kind, section)
+  no view "the seat at (email)" with (email)
+  no view "the account at (email)" with (email)
+then
+  Rostering.importSeats (rows)
+```
+
+### Course.roster.AddPerson:new-seat-without-account#2
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when Rostering.importSeats (rows), asked by Course.roster.AddPerson:new-seat-without-account
+where
+  earlier, RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+then
+  RequestBoundary.respond (account: "NONE", created: true, requestId)
+```
+
+### Course.roster.AddPerson:seat-already-exists
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  view "the seat at (email)" with (email)
+  no Rostering._getPendingSeatByEmail (email)
+then
+  RequestBoundary.respond (error: "SEAT_ALREADY_EXISTS", requestId)
+```
+
+### Course.roster.AddPerson:standing-seat-archived-account
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  rows is singleImportRow (displayName, email, kind, section)
+  view "the seat at (email)" with (email)
+  Rostering._getPendingSeatByEmail (email)
+  view "the account at (email)" with (email)
+  no view "the live account at (email)" with (email)
+then
+  Rostering.importSeats (rows)
+```
+
+### Course.roster.AddPerson:standing-seat-archived-account#2
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when Rostering.importSeats (rows), asked by Course.roster.AddPerson:standing-seat-archived-account
+where
+  earlier, RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+then
+  RequestBoundary.respond (account: "ARCHIVED", created: false, requestId)
+```
+
+### Course.roster.AddPerson:standing-seat-live-account
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  rows is singleImportRow (displayName, email, kind, section)
+  view "the seat at (email)" with (email)
+  Rostering._getPendingSeatByEmail (email)
+  view "the live account at (email)" with (email)
+then
+  Rostering.importSeats (rows)
+```
+
+### Course.roster.AddPerson:standing-seat-live-account#2
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when Rostering.importSeats (rows), asked by Course.roster.AddPerson:standing-seat-live-account
+where
+  earlier, RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+then
+  RequestBoundary.respond (account: "LIVE", created: false, requestId)
+```
+
+### Course.roster.AddPerson:standing-seat-without-account
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  rows is singleImportRow (displayName, email, kind, section)
+  view "the seat at (email)" with (email)
+  Rostering._getPendingSeatByEmail (email)
+  no view "the account at (email)" with (email)
+then
+  Rostering.importSeats (rows)
+```
+
+### Course.roster.AddPerson:standing-seat-without-account#2
+
+Authored path: `Course.roster.AddPerson`.
+- Covered by [Roster](../design/compositions/course/roster.md), line 97.
+- Covered by [Roster](../design/compositions/course/roster.md), line 226.
+
+```reaction
+when Rostering.importSeats (rows), asked by Course.roster.AddPerson:standing-seat-without-account
+where
+  earlier, RequestBoundary.request (displayName, email, kind, path: "/roster/add-person", requestId, section, session)
+then
+  RequestBoundary.respond (account: "NONE", created: false, requestId)
+```
+
 ### Course.roster.ClaimedInvitationClaimsItsSeat
 
 Authored path: `Course.roster.ClaimedInvitationClaimsItsSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 49.
+- Covered by [Roster](../design/compositions/course/roster.md), line 51.
 
 ```reaction
 when Inviting.claim (user, address, channel: "email")
@@ -6614,7 +7075,7 @@ then
 
 Authored path: `Course.roster.ClassConfiguration`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 6.
-- Covered by [Roster](../design/compositions/course/roster.md), line 151.
+- Covered by [Roster](../design/compositions/course/roster.md), line 227.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
@@ -6630,7 +7091,7 @@ then
 
 Authored path: `Course.roster.ClassConfiguration`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 6.
-- Covered by [Roster](../design/compositions/course/roster.md), line 151.
+- Covered by [Roster](../design/compositions/course/roster.md), line 227.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
@@ -6645,7 +7106,7 @@ then
 
 Authored path: `Course.roster.ClassConfiguration`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 6.
-- Covered by [Roster](../design/compositions/course/roster.md), line 151.
+- Covered by [Roster](../design/compositions/course/roster.md), line 227.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
@@ -6661,7 +7122,7 @@ then
 
 Authored path: `Course.roster.ConfigureClass`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 4.
-- Covered by [Roster](../design/compositions/course/roster.md), line 152.
+- Covered by [Roster](../design/compositions/course/roster.md), line 228.
 
 ```reaction
 when RequestBoundary.request (code, path: "/roster/configure-class", requestId, session, term, timezone, title)
@@ -6676,7 +7137,7 @@ then
 
 Authored path: `Course.roster.ConfigureClass`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 4.
-- Covered by [Roster](../design/compositions/course/roster.md), line 152.
+- Covered by [Roster](../design/compositions/course/roster.md), line 228.
 
 ```reaction
 when RequestBoundary.request (code, path: "/roster/configure-class", requestId, session, term, timezone, title)
@@ -6691,7 +7152,7 @@ then
 
 Authored path: `Course.roster.ConfigureClass`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 4.
-- Covered by [Roster](../design/compositions/course/roster.md), line 152.
+- Covered by [Roster](../design/compositions/course/roster.md), line 228.
 
 ```reaction
 when Rostering.configureClass (code, term, timezone, title, class), asked by Course.roster.ConfigureClass:success
@@ -6704,8 +7165,8 @@ then
 ### Course.roster.DropSeat:forbidden
 
 Authored path: `Course.roster.DropSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 107.
-- Covered by [Roster](../design/compositions/course/roster.md), line 153.
+- Covered by [Roster](../design/compositions/course/roster.md), line 182.
+- Covered by [Roster](../design/compositions/course/roster.md), line 229.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/drop", requestId, seat, session)
@@ -6719,8 +7180,8 @@ then
 ### Course.roster.DropSeat:success
 
 Authored path: `Course.roster.DropSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 107.
-- Covered by [Roster](../design/compositions/course/roster.md), line 153.
+- Covered by [Roster](../design/compositions/course/roster.md), line 182.
+- Covered by [Roster](../design/compositions/course/roster.md), line 229.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/drop", requestId, seat, session)
@@ -6734,8 +7195,8 @@ then
 ### Course.roster.DropSeat:success#2
 
 Authored path: `Course.roster.DropSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 107.
-- Covered by [Roster](../design/compositions/course/roster.md), line 153.
+- Covered by [Roster](../design/compositions/course/roster.md), line 182.
+- Covered by [Roster](../design/compositions/course/roster.md), line 229.
 
 ```reaction
 when Rostering.dropSeat (seat, result.seat: dropped), asked by Course.roster.DropSeat:success
@@ -6748,8 +7209,8 @@ then
 ### Course.roster.DroppedRoster:forbidden
 
 Authored path: `Course.roster.DroppedRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 103.
-- Covered by [Roster](../design/compositions/course/roster.md), line 154.
+- Covered by [Roster](../design/compositions/course/roster.md), line 178.
+- Covered by [Roster](../design/compositions/course/roster.md), line 230.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/dropped", requestId, session)
@@ -6763,8 +7224,8 @@ then
 ### Course.roster.DroppedRoster:success
 
 Authored path: `Course.roster.DroppedRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 103.
-- Covered by [Roster](../design/compositions/course/roster.md), line 154.
+- Covered by [Roster](../design/compositions/course/roster.md), line 178.
+- Covered by [Roster](../design/compositions/course/roster.md), line 230.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/dropped", requestId, session)
@@ -6778,8 +7239,8 @@ then
 ### Course.roster.Enrol:forbidden
 
 Authored path: `Course.roster.Enrol`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 82.
-- Covered by [Roster](../design/compositions/course/roster.md), line 155.
+- Covered by [Roster](../design/compositions/course/roster.md), line 84.
+- Covered by [Roster](../design/compositions/course/roster.md), line 231.
 
 ```reaction
 when RequestBoundary.request (email, kind, path: "/roster/enroll", requestId, section, session, user)
@@ -6793,8 +7254,8 @@ then
 ### Course.roster.Enrol:success
 
 Authored path: `Course.roster.Enrol`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 82.
-- Covered by [Roster](../design/compositions/course/roster.md), line 155.
+- Covered by [Roster](../design/compositions/course/roster.md), line 84.
+- Covered by [Roster](../design/compositions/course/roster.md), line 231.
 
 ```reaction
 when RequestBoundary.request (email, kind, path: "/roster/enroll", requestId, section, session, user)
@@ -6808,8 +7269,8 @@ then
 ### Course.roster.Enrol:success#2
 
 Authored path: `Course.roster.Enrol`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 82.
-- Covered by [Roster](../design/compositions/course/roster.md), line 155.
+- Covered by [Roster](../design/compositions/course/roster.md), line 84.
+- Covered by [Roster](../design/compositions/course/roster.md), line 231.
 
 ```reaction
 when Rostering.enrol (email, kind, section, user, seat), asked by Course.roster.Enrol:success
@@ -6823,7 +7284,7 @@ then
 
 Authored path: `Course.roster.ImportPreview`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 17.
-- Covered by [Roster](../design/compositions/course/roster.md), line 156.
+- Covered by [Roster](../design/compositions/course/roster.md), line 232.
 
 ```reaction
 when RequestBoundary.request (csv, path: "/roster/import-preview", requestId)
@@ -6835,7 +7296,7 @@ then
 
 Authored path: `Course.roster.ImportPreview`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 17.
-- Covered by [Roster](../design/compositions/course/roster.md), line 156.
+- Covered by [Roster](../design/compositions/course/roster.md), line 232.
 
 ```reaction
 when Rostering.previewImport (csv, rows), asked by Course.roster.ImportPreview
@@ -6849,7 +7310,7 @@ then
 
 Authored path: `Course.roster.ImportSeats`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 19.
-- Covered by [Roster](../design/compositions/course/roster.md), line 157.
+- Covered by [Roster](../design/compositions/course/roster.md), line 233.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/import", requestId, rows, session)
@@ -6864,7 +7325,7 @@ then
 
 Authored path: `Course.roster.ImportSeats`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 19.
-- Covered by [Roster](../design/compositions/course/roster.md), line 157.
+- Covered by [Roster](../design/compositions/course/roster.md), line 233.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/import", requestId, rows, session)
@@ -6879,7 +7340,7 @@ then
 
 Authored path: `Course.roster.ImportSeats`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 19.
-- Covered by [Roster](../design/compositions/course/roster.md), line 157.
+- Covered by [Roster](../design/compositions/course/roster.md), line 233.
 
 ```reaction
 when Rostering.importSeats (rows, created, skipped), asked by Course.roster.ImportSeats:success
@@ -6892,7 +7353,7 @@ then
 ### Course.roster.ImportedSeatClaimsItsAccount
 
 Authored path: `Course.roster.ImportedSeatClaimsItsAccount`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 31.
+- Covered by [Roster](../design/compositions/course/roster.md), line 33.
 
 ```reaction
 when Rostering.importSeats ()
@@ -6906,7 +7367,7 @@ then
 ### Course.roster.ImportedSeatInvitesItsAddress
 
 Authored path: `Course.roster.ImportedSeatInvitesItsAddress`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 41.
+- Covered by [Roster](../design/compositions/course/roster.md), line 43.
 
 ```reaction
 when Rostering.importSeats ()
@@ -6922,8 +7383,8 @@ then
 ### Course.roster.MoveSection:forbidden
 
 Authored path: `Course.roster.MoveSection`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 109.
-- Covered by [Roster](../design/compositions/course/roster.md), line 158.
+- Covered by [Roster](../design/compositions/course/roster.md), line 184.
+- Covered by [Roster](../design/compositions/course/roster.md), line 234.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/move-section", requestId, seat, section, session)
@@ -6937,8 +7398,8 @@ then
 ### Course.roster.MoveSection:success
 
 Authored path: `Course.roster.MoveSection`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 109.
-- Covered by [Roster](../design/compositions/course/roster.md), line 158.
+- Covered by [Roster](../design/compositions/course/roster.md), line 184.
+- Covered by [Roster](../design/compositions/course/roster.md), line 234.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/move-section", requestId, seat, section, session)
@@ -6952,8 +7413,8 @@ then
 ### Course.roster.MoveSection:success#2
 
 Authored path: `Course.roster.MoveSection`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 109.
-- Covered by [Roster](../design/compositions/course/roster.md), line 158.
+- Covered by [Roster](../design/compositions/course/roster.md), line 184.
+- Covered by [Roster](../design/compositions/course/roster.md), line 234.
 
 ```reaction
 when Rostering.moveSection (seat, section, result.seat: moved), asked by Course.roster.MoveSection:success
@@ -6966,8 +7427,8 @@ then
 ### Course.roster.PendingRoster:forbidden
 
 Authored path: `Course.roster.PendingRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 99.
-- Covered by [Roster](../design/compositions/course/roster.md), line 159.
+- Covered by [Roster](../design/compositions/course/roster.md), line 172.
+- Covered by [Roster](../design/compositions/course/roster.md), line 235.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/pending", requestId, session)
@@ -6981,8 +7442,8 @@ then
 ### Course.roster.PendingRoster:success
 
 Authored path: `Course.roster.PendingRoster`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 99.
-- Covered by [Roster](../design/compositions/course/roster.md), line 159.
+- Covered by [Roster](../design/compositions/course/roster.md), line 172.
+- Covered by [Roster](../design/compositions/course/roster.md), line 235.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/pending", requestId, session)
@@ -6996,8 +7457,8 @@ then
 ### Course.roster.ReinstateSeat:forbidden
 
 Authored path: `Course.roster.ReinstateSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 108.
-- Covered by [Roster](../design/compositions/course/roster.md), line 160.
+- Covered by [Roster](../design/compositions/course/roster.md), line 183.
+- Covered by [Roster](../design/compositions/course/roster.md), line 236.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/reinstate", requestId, seat, session)
@@ -7011,8 +7472,8 @@ then
 ### Course.roster.ReinstateSeat:success
 
 Authored path: `Course.roster.ReinstateSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 108.
-- Covered by [Roster](../design/compositions/course/roster.md), line 160.
+- Covered by [Roster](../design/compositions/course/roster.md), line 183.
+- Covered by [Roster](../design/compositions/course/roster.md), line 236.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/reinstate", requestId, seat, session)
@@ -7026,8 +7487,8 @@ then
 ### Course.roster.ReinstateSeat:success#2
 
 Authored path: `Course.roster.ReinstateSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 108.
-- Covered by [Roster](../design/compositions/course/roster.md), line 160.
+- Covered by [Roster](../design/compositions/course/roster.md), line 183.
+- Covered by [Roster](../design/compositions/course/roster.md), line 236.
 
 ```reaction
 when Rostering.reinstateSeat (seat, result.seat: reinstated), asked by Course.roster.ReinstateSeat:success
@@ -7040,8 +7501,8 @@ then
 ### Course.roster.RemoveSeat:forbidden
 
 Authored path: `Course.roster.RemoveSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 111.
-- Covered by [Roster](../design/compositions/course/roster.md), line 161.
+- Covered by [Roster](../design/compositions/course/roster.md), line 186.
+- Covered by [Roster](../design/compositions/course/roster.md), line 237.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/remove", requestId, seat, session)
@@ -7055,8 +7516,8 @@ then
 ### Course.roster.RemoveSeat:success
 
 Authored path: `Course.roster.RemoveSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 111.
-- Covered by [Roster](../design/compositions/course/roster.md), line 161.
+- Covered by [Roster](../design/compositions/course/roster.md), line 186.
+- Covered by [Roster](../design/compositions/course/roster.md), line 237.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/remove", requestId, seat, session)
@@ -7070,8 +7531,8 @@ then
 ### Course.roster.RemoveSeat:success#2
 
 Authored path: `Course.roster.RemoveSeat`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 111.
-- Covered by [Roster](../design/compositions/course/roster.md), line 161.
+- Covered by [Roster](../design/compositions/course/roster.md), line 186.
+- Covered by [Roster](../design/compositions/course/roster.md), line 237.
 
 ```reaction
 when Rostering.removeSeat (seat, email, result.seat: removed), asked by Course.roster.RemoveSeat:success
@@ -7084,8 +7545,8 @@ then
 ### Course.roster.RosterList:forbidden
 
 Authored path: `Course.roster.RosterList`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 97.
-- Covered by [Roster](../design/compositions/course/roster.md), line 162.
+- Covered by [Roster](../design/compositions/course/roster.md), line 170.
+- Covered by [Roster](../design/compositions/course/roster.md), line 238.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/list", requestId, session)
@@ -7099,8 +7560,8 @@ then
 ### Course.roster.RosterList:success
 
 Authored path: `Course.roster.RosterList`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 97.
-- Covered by [Roster](../design/compositions/course/roster.md), line 162.
+- Covered by [Roster](../design/compositions/course/roster.md), line 170.
+- Covered by [Roster](../design/compositions/course/roster.md), line 238.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/list", requestId, session)
@@ -7114,8 +7575,8 @@ then
 ### Course.roster.RosterMe:absent
 
 Authored path: `Course.roster.RosterMe`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 96.
-- Covered by [Roster](../design/compositions/course/roster.md), line 163.
+- Covered by [Roster](../design/compositions/course/roster.md), line 169.
+- Covered by [Roster](../design/compositions/course/roster.md), line 239.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/me", requestId, session)
@@ -7129,8 +7590,8 @@ then
 ### Course.roster.RosterMe:found
 
 Authored path: `Course.roster.RosterMe`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 96.
-- Covered by [Roster](../design/compositions/course/roster.md), line 163.
+- Covered by [Roster](../design/compositions/course/roster.md), line 169.
+- Covered by [Roster](../design/compositions/course/roster.md), line 239.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/me", requestId, session)
@@ -7145,7 +7606,7 @@ then
 
 Authored path: `Course.roster.SectionsCreate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 13.
-- Covered by [Roster](../design/compositions/course/roster.md), line 164.
+- Covered by [Roster](../design/compositions/course/roster.md), line 240.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/create", requestId, session)
@@ -7160,7 +7621,7 @@ then
 
 Authored path: `Course.roster.SectionsCreate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 13.
-- Covered by [Roster](../design/compositions/course/roster.md), line 164.
+- Covered by [Roster](../design/compositions/course/roster.md), line 240.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/create", requestId, session)
@@ -7175,7 +7636,7 @@ then
 
 Authored path: `Course.roster.SectionsCreate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 13.
-- Covered by [Roster](../design/compositions/course/roster.md), line 164.
+- Covered by [Roster](../design/compositions/course/roster.md), line 240.
 
 ```reaction
 when Rostering.createSection (location, meetingPattern, name, section), asked by Course.roster.SectionsCreate:success
@@ -7189,7 +7650,7 @@ then
 
 Authored path: `Course.roster.SectionsList`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 11.
-- Covered by [Roster](../design/compositions/course/roster.md), line 165.
+- Covered by [Roster](../design/compositions/course/roster.md), line 241.
 
 ```reaction
 when RequestBoundary.request (path: "/roster/sections/list", requestId)
@@ -7201,7 +7662,7 @@ then
 
 Authored path: `Course.roster.SectionsUpdate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 14.
-- Covered by [Roster](../design/compositions/course/roster.md), line 166.
+- Covered by [Roster](../design/compositions/course/roster.md), line 242.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/update", requestId, section, session)
@@ -7216,7 +7677,7 @@ then
 
 Authored path: `Course.roster.SectionsUpdate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 14.
-- Covered by [Roster](../design/compositions/course/roster.md), line 166.
+- Covered by [Roster](../design/compositions/course/roster.md), line 242.
 
 ```reaction
 when RequestBoundary.request (location, meetingPattern, name, path: "/roster/sections/update", requestId, section, session)
@@ -7231,7 +7692,7 @@ then
 
 Authored path: `Course.roster.SectionsUpdate`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 14.
-- Covered by [Roster](../design/compositions/course/roster.md), line 166.
+- Covered by [Roster](../design/compositions/course/roster.md), line 242.
 
 ```reaction
 when Rostering.updateSection (location, meetingPattern, name, section, result.section: updated), asked by Course.roster.SectionsUpdate:success
@@ -7245,7 +7706,7 @@ then
 
 Authored path: `Course.roster.UpdateClass`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 7.
-- Covered by [Roster](../design/compositions/course/roster.md), line 167.
+- Covered by [Roster](../design/compositions/course/roster.md), line 243.
 
 ```reaction
 when RequestBoundary.request (code, path: "/roster/update-class", requestId, session, term, timezone, title)
@@ -7260,7 +7721,7 @@ then
 
 Authored path: `Course.roster.UpdateClass`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 7.
-- Covered by [Roster](../design/compositions/course/roster.md), line 167.
+- Covered by [Roster](../design/compositions/course/roster.md), line 243.
 
 ```reaction
 when RequestBoundary.request (code, path: "/roster/update-class", requestId, session, term, timezone, title)
@@ -7275,7 +7736,7 @@ then
 
 Authored path: `Course.roster.UpdateClass`.
 - Covered by [Roster](../design/compositions/course/roster.md), line 7.
-- Covered by [Roster](../design/compositions/course/roster.md), line 167.
+- Covered by [Roster](../design/compositions/course/roster.md), line 243.
 
 ```reaction
 when Rostering.updateClass (code, term, timezone, title, class), asked by Course.roster.UpdateClass:success
@@ -12350,6 +12811,7 @@ not listed here have no explicit input contract.
 - `/assignments/submit` — requires `assignment`, `content`, `session`
 - `/auth/accept-invitation` — requires `displayName`, `invitation`, `password`, `temporaryPassword`, `username`
 - `/auth/changePassword` — requires `session`, `oldPassword`, `newPassword`
+- `/auth/invitation` — requires `invitation`, `temporaryPassword`
 - `/auth/login` — requires `password`, `username`
 - `/auth/logout` — requires `session`
 - `/auth/me` — requires `session`
@@ -12451,6 +12913,7 @@ not listed here have no explicit input contract.
 - `/roles/forUser` — requires `context`, `user`
 - `/roles/get` — requires `role`
 - `/roles/revoke` — requires `context`, `session`, `user`
+- `/roster/add-person` — requires `session`, `email`; fills `displayName` with "" when absent; fills `kind` with "STUDENT" when absent; fills `section` with "" when absent
 - `/roster/class` — requires `session`
 - `/roster/configure-class` — requires `code`, `session`, `term`, `timezone`, `title`
 - `/roster/drop` — requires `seat`, `session`

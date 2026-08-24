@@ -26,7 +26,7 @@ import { theRoleFaceOf, theRoleOf } from "./roles.ts";
 import { computations, concepts } from "../../concepts.ts";
 import { ADMIN_ROLE, ADMINISTER, COMMONS, INITIAL_ADMIN_CAPABILITIES } from "./capabilities.ts";
 
-const { Archiving, Authenticating, Inviting, Profiling, Roling, Sessioning } = concepts;
+const { Archiving, Authenticating, Inviting, Profiling, Roling, Rostering, Sessioning } = concepts;
 export const BootstrapAdminOnRegister = reaction(({ user, role }) =>
   when(Authenticating.register({}).responds({ user }))
     .where(
@@ -96,6 +96,60 @@ export const AcceptInvitation = endpoint(
       .then(Profiling.createProfile({ user, displayName }))
       .then(Inviting.claim({ invitation, credential: temporaryPassword, user }))
       .then(respond({ user })),
+);
+
+/**
+ * What does an invitation already know about the person it was issued to?
+ *
+ * The credential is the secret the mail carried to that one address, so a holder
+ * of both learns nothing here they do not already hold: the address the
+ * invitation was issued to, and the name a course manager typed for that same
+ * address. The name comes from the pending seat the roster holds for the
+ * address. A seat carrying no name and no seat at all answer alike as an empty
+ * name, so a holder learns nothing about the roster from the difference.
+ */
+export const theInvitationDetails = former(
+  "the invitation details of (invitation) with (credential)",
+  ({ invitation, credential }, { address, displayName }) =>
+    where(
+      Inviting._getAvailable({ invitation, credential }).is({ channel: "email", address }),
+      Rostering._getPendingSeatByEmail({ email: address }).is({ displayName }),
+    ).form({ email: address, displayName }),
+).optional();
+
+/**
+ * An invited person reaches the registration form before they have an account,
+ * so the form asks Commons what the invitation already knows.
+ */
+export const InvitationDetails = endpoint(
+  "/auth/invitation",
+  ({ invitation, temporaryPassword, email }) =>
+    receive({ invitation, temporaryPassword }).then(
+      where(
+        Inviting._getAvailable({ invitation, credential: temporaryPassword }).is({
+          address: email,
+        }),
+        Rostering._getPendingSeatByEmail({ email }),
+      )
+        .then(
+          respond({
+            invitation: theInvitationDetails({ invitation, credential: temporaryPassword }),
+          }),
+        )
+        .named("seated"),
+      where(
+        Inviting._getAvailable({ invitation, credential: temporaryPassword }).is({
+          address: email,
+        }),
+        no(Rostering._getPendingSeatByEmail({ email })),
+      )
+        .then(respond({ invitation: { email, displayName: "" } }))
+        .named("unseated"),
+      where(no(Inviting._getAvailable({ invitation, credential: temporaryPassword })))
+        .then(respond({ error: "INVITATION_INVALID" }))
+        .named("invalid"),
+    ),
+  { input: { required: ["invitation", "temporaryPassword"] } },
 );
 
 export const theArchivedUserNamed = view(

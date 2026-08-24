@@ -16,6 +16,32 @@ through Invitations. These are ordered actions, not
 one transaction: if profile creation or claiming fails after registration, the
 new account remains and Commons does not roll it back.
 
+An invited person reaches that form before they have an account, so the form asks
+Commons what the invitation already knows.
+[Access.auth.InvitationDetails](reaction:Access.auth.InvitationDetails) takes an invitation and its
+temporary credential and answers one invitation record holding
+[the address it was issued to and the name held for that address](former:Access.auth.theInvitationDetails),
+so the form arrives holding a display name its reader may edit before registering,
+the way it already arrives bound to the invited address. The frontend also
+suggests the part of that address before `@` as the username and leaves it
+editable. It discloses nothing a holder of that invitation and credential does
+not already hold: the credential is
+the secret the mail carried to that one address, and the name is the one a course
+manager typed for that same address. An invitation that is unknown, already
+claimed, or presented with the wrong credential is refused `INVITATION_INVALID`,
+saying only that the invitation is not valid, and the three cases are deliberately
+indistinguishable, exactly as they are when it is accepted.
+
+The name comes from the pending seat the roster holds for the address, which is
+where Roster explains it belongs. A seat carrying no name, and no seat at all —
+because none was ever imported, or because the seat was removed while the
+invitation stayed live — answer alike as an empty name, so a holder learns nothing
+about the roster from the difference and registration continues either way.
+Accepting is unchanged: the display name the person submits is the one their
+profile is created with, prefilled or typed. Because a person who has no account
+cannot hold a session, this read answers without one, and `src/edge.ts` lists its
+path among those its session gate lets through, beside the acceptance it precedes.
+
 [Access.auth.Login](reaction:Access.auth.Login) verifies a username and password, captures the current
 time, and starts a timed session. An archived account cannot sign in: the
 [theArchivedUserNamed view](view:Access.auth.theArchivedUserNamed) relates an exact username to an
@@ -110,6 +136,7 @@ session, verifies that the caller holds `administer`, and gives administrators
 Access.auth.AcceptInvitation at /auth/accept-invitation
 Access.auth.ArchiveUser at /users/archive
 Access.auth.ChangePassword at /auth/changePassword
+Access.auth.InvitationDetails at /auth/invitation
 Access.auth.ListUsers at /users/list
 Access.auth.Login at /auth/login
 Access.auth.Permissions at /auth/permissions

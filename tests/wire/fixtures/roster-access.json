@@ -981,13 +981,15 @@
           "seat": "uuid#15",
           "email": "s2@example.com",
           "kind": "STUDENT",
-          "section": "uuid#11"
+          "section": "uuid#11",
+          "displayName": ""
         },
         {
           "seat": "uuid#16",
           "email": "t1@example.com",
           "kind": "STAFF",
-          "section": null
+          "section": null,
+          "displayName": ""
         }
       ]
     },
@@ -1047,13 +1049,15 @@
             "seat": "uuid#15",
             "email": "s2@example.com",
             "kind": "STUDENT",
-            "section": "uuid#11"
+            "section": "uuid#11",
+            "displayName": ""
           },
           {
             "seat": "uuid#16",
             "email": "t1@example.com",
             "kind": "STAFF",
-            "section": null
+            "section": null,
+            "displayName": ""
           }
         ]
       }
@@ -1427,9 +1431,291 @@
             "seat": "uuid#15",
             "email": "s2@example.com",
             "kind": "STUDENT",
-            "section": "uuid#11"
+            "section": "uuid#11",
+            "displayName": ""
           }
         ]
+      }
+    },
+    {
+      "id": "assignMemberByAddress",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "  M@Example.com ",
+        "context": "commons",
+        "role": "helper"
+      },
+      "response": {
+        "assignment": "uuid#25"
+      }
+    },
+    {
+      "id": "roleForMemberAfterAddressAssign",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/forUser",
+      "body": {
+        "user": "$regMember.user",
+        "context": "commons"
+      },
+      "response": {
+        "role": "uuid#7",
+        "name": "helper",
+        "capabilities": ["moderate"]
+      }
+    },
+    {
+      "id": "roleForUserByAddress",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/forUser",
+      "body": {
+        "user": "m@example.com",
+        "context": "commons"
+      },
+      "response": {
+        "role": null,
+        "name": null,
+        "capabilities": []
+      }
+    },
+    {
+      "id": "revokeMemberByAddress",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/revoke",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "M@EXAMPLE.COM",
+        "context": "commons"
+      },
+      "response": {
+        "assignment": "uuid#25"
+      }
+    },
+    {
+      "id": "roleForMemberAfterAddressRevoke",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/forUser",
+      "body": {
+        "user": "$regMember.user",
+        "context": "commons"
+      },
+      "response": {
+        "role": null,
+        "name": null,
+        "capabilities": []
+      }
+    },
+    {
+      "id": "assignByAddressForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginMember.session",
+        "user": "t2@example.com",
+        "context": "commons",
+        "role": "helper"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "addPersonNewAddress",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/add-person",
+      "body": {
+        "session": "$loginAdmin.session",
+        "email": " W1@Example.com ",
+        "kind": "STUDENT",
+        "displayName": "Wren One"
+      },
+      "response": {
+        "created": true,
+        "account": "NONE"
+      }
+    },
+    {
+      "id": "pendingAfterAddPerson",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/pending",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "members": [
+          {
+            "seat": "uuid#15",
+            "email": "s2@example.com",
+            "kind": "STUDENT",
+            "section": "uuid#11",
+            "displayName": ""
+          },
+          {
+            "seat": "uuid#26",
+            "email": "w1@example.com",
+            "kind": "STUDENT",
+            "section": null,
+            "displayName": "Wren One"
+          }
+        ]
+      }
+    },
+    {
+      "id": "addPersonAgainRefreshesName",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/add-person",
+      "body": {
+        "session": "$loginAdmin.session",
+        "email": "w1@example.com",
+        "kind": "STAFF",
+        "displayName": "Wren Uno"
+      },
+      "response": {
+        "created": false,
+        "account": "NONE"
+      }
+    },
+    {
+      "id": "pendingAfterSecondAdd",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/pending",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "members": [
+          {
+            "seat": "uuid#15",
+            "email": "s2@example.com",
+            "kind": "STUDENT",
+            "section": "uuid#11",
+            "displayName": ""
+          },
+          {
+            "seat": "uuid#26",
+            "email": "w1@example.com",
+            "kind": "STUDENT",
+            "section": null,
+            "displayName": "Wren Uno"
+          }
+        ]
+      }
+    },
+    {
+      "id": "addPersonWithAccount",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/add-person",
+      "body": {
+        "session": "$loginAdmin.session",
+        "email": "m@example.com"
+      },
+      "response": {
+        "created": true,
+        "account": "LIVE"
+      }
+    },
+    {
+      "id": "rosterListAfterAddPerson",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/list",
+      "body": {
+        "session": "$loginAdmin.session"
+      },
+      "response": {
+        "members": [
+          {
+            "user": "uuid#20",
+            "seat": "uuid#14",
+            "kind": "STUDENT",
+            "section": "uuid#12",
+            "email": "s1@example.com",
+            "displayName": "Stu One"
+          },
+          {
+            "user": "uuid#21",
+            "seat": "uuid#16",
+            "kind": "STAFF",
+            "section": null,
+            "email": "t1@example.com",
+            "displayName": "Staffer"
+          },
+          {
+            "user": "uuid#4",
+            "seat": "uuid#27",
+            "kind": "STUDENT",
+            "section": null,
+            "email": "m@example.com",
+            "displayName": "Member"
+          }
+        ]
+      }
+    },
+    {
+      "id": "addPersonSeatExists",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/add-person",
+      "body": {
+        "session": "$loginAdmin.session",
+        "email": "m@example.com"
+      },
+      "response": {
+        "error": "SEAT_ALREADY_EXISTS"
+      }
+    },
+    {
+      "id": "addPersonForbidden",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roster/add-person",
+      "body": {
+        "session": "$loginMember.session",
+        "email": "w2@example.com"
+      },
+      "response": {
+        "error": "FORBIDDEN"
+      }
+    },
+    {
+      "id": "assignSubjectNotFound",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "ghost@example.com",
+        "context": "commons",
+        "role": "helper"
+      },
+      "response": {
+        "error": "SUBJECT_NOT_FOUND"
+      }
+    },
+    {
+      "id": "revokeSubjectNotFound",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/roles/revoke",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "ghost@example.com",
+        "context": "commons"
+      },
+      "response": {
+        "error": "SUBJECT_NOT_FOUND"
       }
     }
   ]

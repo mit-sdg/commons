@@ -244,6 +244,16 @@ passwordResetMailHtml(voucher: String, credential: String, username: String) : S
 setupSecretMatches(secret: String) : Bool
   Reports whether the candidate matches the configured setup-secret verifier.
 
+singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows
+  Composes the single import row that adding one person by hand carries into the
+  roster import. An empty section or display name means the row carries none, the
+  way an omitted CSV field does, so a person added by hand reads back exactly as
+  the same person imported.
+
+subjectIsAddress(subject: String) : Bool
+  Reports whether a role subject holds an `@` and is therefore written as an email
+  address rather than as an account identifier or a username.
+
 taskListMailSubject(kind: String, listTitle: String) : String
   Renders the subject line for a task-list membership notification of that kind.
 
@@ -263,7 +273,15 @@ taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: Strin
   Renders the HTML task message, saying which change occurred and naming the task, its list, and its deadline.
 ```
 
-These pure computations render Commons-specific email bodies. Compositions pass
+Two of these decide rather than render. `singleImportRow` composes the one row a
+single-person add carries, so adding one person and importing one CSV line reach
+Rostering through the same import rather than through two seat-creating routes
+whose consequences would then have to be kept in step. `subjectIsAddress` answers
+whether a role subject was written as an address, which is what lets the role
+endpoints refuse an address no account holds while leaving every other unmatched
+reference opaque.
+
+The rest render Commons-specific email bodies. Compositions pass
 the rendered text and HTML to Mailing, which queues the finished message for the
 mail worker to transport. The task renderers take resolved content rather than
 an identity, because a task email is a snapshot: it must still read on its own

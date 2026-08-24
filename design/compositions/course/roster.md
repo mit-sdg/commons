@@ -26,7 +26,9 @@ makes importing an address a second time a repair rather than a duplicate.
 Importing, resolving, and inviting are one act rather than records to reconcile
 later. Every successful import sweeps each pending seat — not only the rows it
 just created — and reads [the account at that seat's address](view:Course.roster.theAccountAt)
-to send the seat down exactly one of three paths.
+to send the seat down exactly one of three paths. Adding one person by hand
+reaches the seat through that same import, so the same sweep follows it and the
+three paths below describe both routes.
 
 [Course.roster.ImportedSeatClaimsItsAccount](reaction:Course.roster.ImportedSeatClaimsItsAccount) takes each pending seat whose
 address answers [a live account](view:Course.roster.theLiveAccountAt) and claims that seat for
@@ -92,6 +94,77 @@ already hold published work owns that follow-up, and publishing or revising an
 assignment later is what reaches them. Importing the address instead leaves the
 releases to the sweep.
 
+[Course.roster.AddPerson](reaction:Course.roster.AddPerson) is how a course manager adds one
+person from the staff roster page, on the same tab as the CSV import and without
+writing CSV. It requires `course:manage`, [composes the one row](computation:singleImportRow) the
+form describes, and creates the seat through the same import action a one-row CSV
+would, so a hand-typed person ends holding what an import of that row would leave
+them holding: the sweep claims the seat when an
+account already holds the address, which releases the work already published to
+that section, and invites the address when no account holds it. That is why the
+form does not enrol. `Enrol` reaches an active seat without the release fan-out,
+which is right for a course manager who deliberately wants the seat alone and
+wrong for a form whose promise is that adding one person and importing one row
+end the same way.
+
+[The seat standing at an address](view:Course.roster.theSeatAt) decides which of the two
+answers a repeated address gets. An address that already carries an active or
+dropped seat is refused `SEAT_ALREADY_EXISTS`, the state `Enrol` refuses as well,
+because the repair there is reinstating or removing that seat rather than adding
+the person again. A still-pending seat is not refused: the hand-add creates no
+second seat, refreshes the seat's display name when the form supplies one, and
+re-enters the sweep, which is exactly the repair re-importing the row performs.
+That seat keeps the kind and section it was created with and leaves the supplied
+ones unused, as completing a pending seat through `Enrol` does, so the only thing
+a second add changes about a seat already standing is its name. Keeping that door
+open is the point — dropping a conflicting seat and adding the address again, or
+restoring an archived account and adding it again, are the repairs this page
+already depends on, and refusing every address that carries a seat would leave
+them reachable only by pasting one line of CSV into the import box beside the
+form.
+
+The answer reports what the request can see for itself, never what the sweep will
+have done with it. It says whether this call created a seat at that address or
+found one already standing there, and what the account at that seat's address
+answers while the request is still running — a live account, an archived account,
+or no account at all — which is the same reading the sweep takes to choose the
+seat's path. A staff surface can therefore say that the person already has an
+account and is being enrolled now, or that an invitation is on its way to that
+address, and both remain honest: the claim and the invitation are consequences
+that run after the seat commits, so neither is decided when this answer is
+formed. The active, pending, and dropped rosters are the only durable answer to
+what became of the seat, and a surface reads them again rather than trusting this
+response; behavioral evidence that a hand-added person becomes active, or becomes
+pending and invited, asserts against `/roster/list`, `/roster/pending`, and the
+outbox for the same reason. It says nothing about the other seats the same sweep
+touched: because the sweep reads every pending seat, adding one person can invite
+an address an earlier import left uninvited, and that invitation shows up in the
+pending roster and in the outbox rather than being attributed to this call, which
+was asked to add one person and answers for that person.
+
+The same form is how a course manager gives themselves a seat. The home page's
+affordance opens it holding the caller's own address and display name with a
+STAFF kind, and adds nobody by being followed: only submitting the form adds
+anyone, so the caller confirms what is about to happen to the roster. Seat kind
+still confers nothing, so staff who add themselves change what the course looks
+like to them rather than what they may do.
+
+An import row may carry a display name beside the address, kind, and section, and
+so may the single-person form; either way the seat keeps it. The seat is where it
+belongs: until somebody accepts an invitation there is no account and no profile
+to hold a name, and the seat is the only durable row Commons keeps for that
+address. Inviting is left alone — it issues a directed offer and has no business
+knowing what its recipient is called — and the invitation mail and its link are
+unchanged, so the name never travels in a URL; Authentication describes the
+credentialed read that hands it to the registration form instead. A row carrying
+no name leaves the seat's name empty and behaves exactly as rows behave today. A
+row repeated with a different name corrects a still-pending seat's name, and one
+carrying no name never clears a name already stored, so a correction is made by
+importing or adding the address again. Once a seat has a holder the name is
+neither written nor read again: Profiling owns what that person is called from
+registration onward, and a name typed by staff must not outlive the one the
+person chose for themselves.
+
 The [theSeatOf view](view:Course.roster.theSeatOf) relates an account to its active seat, so
 [Course.roster.RosterMe](reaction:Course.roster.RosterMe) can return the caller's seat or `null`.
 [Course.roster.RosterList](reaction:Course.roster.RosterList) gives course managers
@@ -99,7 +172,9 @@ The [theSeatOf view](view:Course.roster.theSeatOf) relates an account to its act
 [Course.roster.PendingRoster](reaction:Course.roster.PendingRoster) gives them
 [every seat still waiting to be claimed](former:Course.roster.thePendingRoster) — the invited seats
 nobody has accepted yet, the seats held for an archived account, and the seats
-whose claim was refused — while
+whose claim was refused — each carrying the display name it was listed under, or
+an empty one when it was listed without a name, so the staff surface can show a
+person's name where it otherwise shows only an address, while
 [Course.roster.DroppedRoster](reaction:Course.roster.DroppedRoster) gives them
 [the seats removed from the active roster](former:Course.roster.theDroppedRoster). Callers without
 `course:manage` receive `FORBIDDEN`.
@@ -148,6 +223,7 @@ faults, the roster transition remains and there is no shared transaction; a late
 qualifying transition is needed to trigger the rule again.
 
 ```endpoints
+Course.roster.AddPerson at /roster/add-person
 Course.roster.ClassConfiguration at /roster/class
 Course.roster.ConfigureClass at /roster/configure-class
 Course.roster.DropSeat at /roster/drop
