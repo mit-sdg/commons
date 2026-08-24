@@ -22,8 +22,10 @@ Commons what the invitation already knows.
 temporary credential and answers one invitation record holding
 [the address it was issued to and the name held for that address](former:Access.auth.theInvitationDetails),
 so the form arrives holding a display name its reader may edit before registering,
-the way it already arrives bound to the invited address. It discloses nothing a
-holder of that invitation and credential does not already hold: the credential is
+the way it already arrives bound to the invited address. The frontend also
+suggests the part of that address before `@` as the username and leaves it
+editable. It discloses nothing a holder of that invitation and credential does
+not already hold: the credential is
 the secret the mail carried to that one address, and the name is the one a course
 manager typed for that same address. An invitation that is unknown, already
 claimed, or presented with the wrong credential is refused `INVITATION_INVALID`,

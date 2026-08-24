@@ -39,6 +39,7 @@ export function AuthForm({
   const askedFor = useRef<string | null>(null);
   const currentCredential = useRef("");
   const nameWasEdited = useRef(false);
+  const usernameWasEdited = useRef(false);
 
   const isRegister = mode === "register";
   const invitation = invitationProp ?? searchParams.get("invitation") ?? "";
@@ -73,7 +74,12 @@ export function AuthForm({
       }
       const details = result.invitation;
       if (!details) return;
-      if (details.email) setInvitedEmail(String(details.email));
+      if (details.email) {
+        const email = String(details.email);
+        setInvitedEmail(email);
+        if (!usernameWasEdited.current)
+          setUsername(email.split("@", 1)[0] ?? "");
+      }
       if (details.displayName && !nameWasEdited.current) {
         setDisplayName(String(details.displayName));
         setNamePrefilled(true);
@@ -145,7 +151,10 @@ export function AuthForm({
                 id="username"
                 autoComplete="username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  usernameWasEdited.current = true;
+                  setUsername(e.target.value);
+                }}
                 placeholder="ada"
                 required
               />
