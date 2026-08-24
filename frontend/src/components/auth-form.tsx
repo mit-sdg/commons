@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
 import { Spinner } from "@/components/states";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CommonsError, publicErrorMessage } from "@/lib/api";
+import { api, CommonsError, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export function AuthForm({
@@ -34,9 +34,54 @@ export function AuthForm({
   const [temporaryPassword, setTemporaryPassword] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [invitedEmail, setInvitedEmail] = useState<string | null>(null);
+  const [namePrefilled, setNamePrefilled] = useState(false);
+  const askedFor = useRef<string | null>(null);
+  const currentCredential = useRef("");
+  const nameWasEdited = useRef(false);
 
   const isRegister = mode === "register";
   const invitation = invitationProp ?? searchParams.get("invitation") ?? "";
+
+  /**
+   * The link carries the invitation; the temporary password is typed from the
+   * email, so the invitation can only be read once both are in hand. What comes
+   * back fills the display name in and names the address the invitation was
+   * sent to. It is a courtesy on the way to registering: a refusal here is
+   * never shown and never blocks the form, which still succeeds on its own
+   * terms.
+   */
+  async function readInvitation() {
+    const credential = temporaryPassword.trim();
+    if (!isRegister || invitation === "" || credential === "") return;
+    const requestKey = `${invitation}:${credential}`;
+    if (askedFor.current === requestKey) return;
+    askedFor.current = requestKey;
+    try {
+      const result = await api.auth.invitation({
+        invitation,
+        temporaryPassword: credential,
+      });
+      if (
+        askedFor.current !== requestKey ||
+        currentCredential.current.trim() !== credential
+      )
+        return;
+      if ("error" in result) {
+        askedFor.current = null;
+        return;
+      }
+      const details = result.invitation;
+      if (!details) return;
+      if (details.email) setInvitedEmail(String(details.email));
+      if (details.displayName && !nameWasEdited.current) {
+        setDisplayName(String(details.displayName));
+        setNamePrefilled(true);
+      }
+    } catch {
+      if (askedFor.current === requestKey) askedFor.current = null;
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,11 +125,20 @@ export function AuthForm({
             <CardTitle>Account details</CardTitle>
             <CardDescription>
               {isRegister
-                ? "Use the temporary password from your invitation email. It becomes your password — change it in Settings once you are in."
-                : "Enter your username and password to continue."}
+                ? "Enter the temporary password from your invitation. You can change it later."
+                : "Enter your username and password."}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
+            {isRegister && invitedEmail ? (
+              <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                Invitation for{" "}
+                <span className="font-medium text-foreground break-all">
+                  {invitedEmail}
+                </span>
+                .
+              </p>
+            ) : null}
             <div className="flex flex-col gap-2.5">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -99,25 +153,39 @@ export function AuthForm({
             {isRegister ? (
               <>
                 <div className="flex flex-col gap-2.5">
-                  <Label htmlFor="displayName">Display name</Label>
-                  <Input
-                    id="displayName"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Ada Lovelace"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2.5">
                   <Label htmlFor="temporary-password">Temporary password</Label>
                   <Input
                     id="temporary-password"
                     type="password"
                     autoComplete="one-time-code"
                     value={temporaryPassword}
-                    onChange={(e) => setTemporaryPassword(e.target.value)}
+                    onChange={(e) => {
+                      currentCredential.current = e.target.value;
+                      askedFor.current = null;
+                      setTemporaryPassword(e.target.value);
+                    }}
+                    onBlur={readInvitation}
                     required
                   />
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  <Label htmlFor="displayName">Display name</Label>
+                  <Input
+                    id="displayName"
+                    value={displayName}
+                    onChange={(e) => {
+                      nameWasEdited.current = true;
+                      setDisplayName(e.target.value);
+                      setNamePrefilled(false);
+                    }}
+                    placeholder="Ada Lovelace"
+                    required
+                  />
+                  {namePrefilled ? (
+                    <p className="text-sm text-muted-foreground">
+                      Added from your invitation. You can change it.
+                    </p>
+                  ) : null}
                 </div>
               </>
             ) : null}

@@ -27,6 +27,7 @@ import {
   loadVisibleNotes,
 } from "@/lib/lms";
 import { loadFeed } from "@/lib/loaders";
+import { SELF_ADD_HREF } from "@/lib/roster-people";
 
 function CategoriesCard() {
   const { data } = useQuery<{
@@ -113,12 +114,11 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
             {canManageCourse ? (
               <>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  You keep every staff tool either way. Add yourself to the
-                  roster only if you also want the course to look the way it
-                  looks to a student.
+                  Add yourself as staff to preview the student experience.
+                  Review your details before confirming.
                 </p>
                 <Button asChild size="sm" variant="outline" className="mt-3">
-                  <Link href="/staff/roster">Add yourself to the roster</Link>
+                  <Link href={SELF_ADD_HREF}>Add yourself to the roster</Link>
                 </Button>
               </>
             ) : (

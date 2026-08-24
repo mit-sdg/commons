@@ -187,6 +187,24 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "INVALID_CREDENTIALS" | "INVALID_INPUT" | "PASSWORD_INVALID_LENGTH" };
   };
+  "/auth/invitation": {
+    input: {
+      "invitation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["_getAvailable"]>[0], ["invitation"]>>;
+      "temporaryPassword": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["_getAvailable"]>[0], ["credential"]>>;
+    };
+    output: {
+      "invitation": {
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getPendingSeatByEmail"]>>>, ["displayName"]>>;
+        "email": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getPendingSeatByEmail"]>[0], ["email"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Inviting"]["_getAvailable"]>>>, ["address"]>]>>;
+      } | null;
+    } | {
+      "invitation": {
+        "displayName": "";
+        "email": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getPendingSeatByEmail"]>[0], ["email"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Inviting"]["_getAvailable"]>>>, ["address"]>]>>;
+      };
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVITATION_INVALID" };
+  };
   "/auth/login": {
     input: {
       "password": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["password"]>>;
@@ -1416,12 +1434,14 @@ export type CommonsWire = {
       "context": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["assign"]>[0], ["context"]>>;
       "role": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_denotedRole"]>[0], ["ref"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["subjectIsAddress"]["fn"]>[0], ["subject"]>>;
     };
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["assign"]>>, ["assignment"]>>;
+    } | {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["assign"]>>, ["assignment"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "LAST_ADMINISTRATOR" | "ROLE_NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "LAST_ADMINISTRATOR" | "ROLE_NOT_FOUND" | "SUBJECT_NOT_FOUND" };
   };
   "/roles/define": {
     input: {
@@ -1485,12 +1505,43 @@ export type CommonsWire = {
     input: {
       "context": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["revoke"]>[0], ["context"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["subjectIsAddress"]["fn"]>[0], ["subject"]>>;
     };
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["revoke"]>>, ["assignment"]>>;
+    } | {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["revoke"]>>, ["assignment"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "LAST_ADMINISTRATOR" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "LAST_ADMINISTRATOR" | "SUBJECT_NOT_FOUND" };
+  };
+  "/roster/add-person": {
+    input: {
+      "displayName"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["singleImportRow"]["fn"]>[0], ["displayName"]>>;
+      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["singleImportRow"]["fn"]>[0], ["email"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getPendingSeatByEmail"]>[0], ["email"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByEmail"]>[0], ["email"]>]>]>>;
+      "kind"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["singleImportRow"]["fn"]>[0], ["kind"]>>;
+      "section"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["singleImportRow"]["fn"]>[0], ["section"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "account": "ARCHIVED";
+      "created": true;
+    } | {
+      "account": "LIVE";
+      "created": true;
+    } | {
+      "account": "NONE";
+      "created": true;
+    } | {
+      "account": "ARCHIVED";
+      "created": false;
+    } | {
+      "account": "LIVE";
+      "created": false;
+    } | {
+      "account": "NONE";
+      "created": false;
+    };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "INVITATION_ALREADY_CLAIMED" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_ALREADY_EXISTS" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" };
   };
   "/roster/class": {
     input: {
@@ -1615,6 +1666,7 @@ export type CommonsWire = {
     };
     output: {
       "members": {
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["displayName"]>>;
         "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["email"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["kind"]>>;
         "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["seat"]>>;
@@ -2786,6 +2838,24 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
+  "/auth/invitation": {
+    input: {
+      "invitation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["_getAvailable"]>[0], ["invitation"]>>;
+      "temporaryPassword": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["_getAvailable"]>[0], ["credential"]>>;
+    };
+    output: {
+      "invitation": {
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getPendingSeatByEmail"]>>>, ["displayName"]>>;
+        "email": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getPendingSeatByEmail"]>[0], ["email"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Inviting"]["_getAvailable"]>>>, ["address"]>]>>;
+      } | null;
+    } | {
+      "invitation": {
+        "displayName": "";
+        "email": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getPendingSeatByEmail"]>[0], ["email"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Inviting"]["_getAvailable"]>>>, ["address"]>]>>;
+      };
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
   "/auth/login": {
     input: {
       "password": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["password"]>>;
@@ -3918,9 +3988,11 @@ export type CommonsWireHttp = {
     input: {
       "context": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["assign"]>[0], ["context"]>>;
       "role": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_denotedRole"]>[0], ["ref"]>>;
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["subjectIsAddress"]["fn"]>[0], ["subject"]>>;
     };
     output: {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["assign"]>>, ["assignment"]>>;
+    } | {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["assign"]>>, ["assignment"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
@@ -3984,10 +4056,40 @@ export type CommonsWireHttp = {
   "/roles/revoke": {
     input: {
       "context": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["revoke"]>[0], ["context"]>>;
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_denotedUser"]>[0], ["ref"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["subjectIsAddress"]["fn"]>[0], ["subject"]>>;
     };
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["revoke"]>>, ["assignment"]>>;
+    } | {
+      "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["revoke"]>>, ["assignment"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roster/add-person": {
+    input: {
+      "displayName"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["singleImportRow"]["fn"]>[0], ["displayName"]>>;
+      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["singleImportRow"]["fn"]>[0], ["email"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getPendingSeatByEmail"]>[0], ["email"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByEmail"]>[0], ["email"]>]>]>>;
+      "kind"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["singleImportRow"]["fn"]>[0], ["kind"]>>;
+      "section"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["singleImportRow"]["fn"]>[0], ["section"]>>;
+    };
+    output: {
+      "account": "ARCHIVED";
+      "created": true;
+    } | {
+      "account": "LIVE";
+      "created": true;
+    } | {
+      "account": "NONE";
+      "created": true;
+    } | {
+      "account": "ARCHIVED";
+      "created": false;
+    } | {
+      "account": "LIVE";
+      "created": false;
+    } | {
+      "account": "NONE";
+      "created": false;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
@@ -4099,6 +4201,7 @@ export type CommonsWireHttp = {
     input: Record<string, never>;
     output: {
       "members": {
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["displayName"]>>;
         "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["email"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["kind"]>>;
         "seat": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getUnclaimedSeats"]>>>, ["seat"]>>;

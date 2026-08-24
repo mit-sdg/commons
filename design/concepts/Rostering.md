@@ -4,7 +4,8 @@
 
 Keep one class configuration, revisable after it is made, together with its
 sections and the pending, active, or dropped seats held by its members, each seat
-removable outright.
+removable outright, and let a seat still waiting for a holder carry the name its
+address was listed under.
 
 ## Principle
 
@@ -14,6 +15,10 @@ address, and a row reading `Ana@Example.com` repeats it too, because every
 address is trimmed and lower-cased before it is stored or matched. Ana claims her
 seat and becomes active. Ben cannot claim another seat while he already holds an
 active one. Ana's seat may be dropped, reinstated, or moved to another section.
+Ben's row also carries the name `Ben Ortiz`, which his seat keeps while it waits
+for him; importing that row again as `Benjamin Ortiz` corrects the name, a later
+row carrying none leaves it alone, and once Ben claims the seat no read answers
+that name again.
 Once dropped, Ana's seat is reinstated rather than enrolled again: enrolling her
 address once more is refused, because the seat still exists. Removing that seat
 is what changes the answer — it is deleted outright, so her address identifies no
@@ -45,17 +50,22 @@ a set of Sections with
   a status         String
 
 a set of Seats with
-  an email             String
-  a kind               String
-  an optional section  Section
-  an optional holder   User
+  an email                 String
+  a kind                   String
+  an optional section      Section
+  an optional holder       User
+  an optional displayName  String
 
 a Pending set of Seats
 an Active set of Seats
 a Dropped set of Seats
 
 Rule: the class is absent until it is configured, and it is configured at most once.
-Rule: an import row carries an email, a kind, and optionally a section.
+Rule: an import row carries an email, a kind, and optionally a section and a display name.
+Rule: a display name is an uninterpreted string recorded for the address a seat carries, not for whoever eventually holds it.
+Rule: a display name is written when a pending seat is created and refreshed only while that seat is pending; a seat with a holder is never written, and no read of a held seat answers a display name.
+Rule: refreshing the display name of a seat that already exists creates no seat, so the row that carried it is still reported as skipped.
+Rule: rows are read in the order they are given, so when several rows of one import carry the same address the seat is created from the first of them and the last row carrying a display name decides the name it keeps.
 Rule: an address is trimmed and lower-cased before it is stored on a seat or matched against one, so addresses differing only in surrounding space or letter case name the same seat.
 Rule: an address identifies at most one seat.
 Rule: removing a seat deletes it, so the address it carried identifies no seat afterwards and is free for a later import or enrolment.
@@ -107,8 +117,10 @@ importSeats(rows: Rows) : return (created: Seats, skipped: Strings)
   where true
   then
     for each row whose email no seat already carries:
-      add a new seat with the row's email, kind, and section, and no holder
+      add a new seat with the row's email, kind, section, and display name, and no holder
       add the seat to pending
+    for each row carrying a display name whose email any seat in pending carries, including a seat this import has just created:
+      set that seat's displayName to the row's display name
     return created, skipped
 
 enrol(email: String, kind: String, section: Section, user: User) : return (seat: Seat, kind: String, user: User, section: Section)
@@ -205,8 +217,8 @@ _getSeatByEmail (email: String) : optional (seat: String, email: String)
   answers the Seat carrying the address, compared after trimming and lower-casing both sides
   answers no row when no Seat matches
 
-_getPendingSeatByEmail (email: String) : optional (seat: String, email: String)
-  answers the pending, unclaimed Seat carrying the address, compared the same way
+_getPendingSeatByEmail (email: String) : optional (seat: String, email: String, displayName: String)
+  answers the pending, unclaimed Seat carrying the address, compared the same way, with the display name it carries or the empty string when it carries none
   answers no row when no pending Seat matches
 
 _getSeatByUser (user: String) : optional (seat: String, user: String|Null, email: String, kind: String, section: String|Null, status: String)
@@ -214,7 +226,7 @@ _getSeatByUser (user: String) : optional (seat: String, user: String|Null, email
   answers no row when the User holds no Seat
 
 _getSeatDetail (user: String) : optional (detail: Seat)
-  answers the complete active Seat when one exists, otherwise the User's most recently created held Seat
+  answers the active Seat when one exists, otherwise the User's most recently created held Seat, with every field it carries except its displayName, which no read of a held Seat answers
   answers no row when the User holds no Seat
 
 _getActiveMembers () : many (user: String|Null, seat: String, kind: String, section: String|Null, email: String)
@@ -228,8 +240,8 @@ _getActiveStudents () : many (user: String, seat: String, section: String|Null, 
   answers linked active student seats in creation order
   answers no rows when none match
 
-_getUnclaimedSeats () : many (seat: String, email: String, kind: String, section: String|Null)
-  answers pending unclaimed seats in creation order
+_getUnclaimedSeats () : many (seat: String, email: String, kind: String, section: String|Null, displayName: String)
+  answers pending unclaimed seats in creation order, each with the display name it carries or the empty string when it carries none
   answers no rows when none match
 
 _getDroppedSeats () : many (user: String|Null, seat: String, kind: String, section: String|Null, email: String)

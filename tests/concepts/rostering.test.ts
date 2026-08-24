@@ -198,7 +198,13 @@ for (const [floor, make] of floors) {
         refusalErrors.SeatNotFound,
       );
       expect(await rostering._getUnclaimedSeats({})).toEqual([
-        { seat: created[1]._id, email: "ben@example.edu", kind: "STUDENT", section: null },
+        {
+          seat: created[1]._id,
+          email: "ben@example.edu",
+          kind: "STUDENT",
+          section: null,
+          displayName: "",
+        },
       ]);
     });
 
@@ -470,6 +476,195 @@ for (const [floor, make] of floors) {
       await rostering.dropSeat({ seat: second });
       expect(await rostering._getSeatByUser({ user: "ana" })).toEqual([
         expect.objectContaining({ seat: second, status: "DROPPED" }),
+      ]);
+    });
+
+    test("importSeats keeps a row's display name and leaves a nameless row without one", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({
+        rows: [{ ...benRow, displayName: "Ben Ortiz" }, anaRow],
+      });
+      expect(created).toHaveLength(2);
+      expect(await rostering._getUnclaimedSeats({})).toEqual([
+        {
+          seat: created[0]._id,
+          email: "ben@example.edu",
+          kind: "STUDENT",
+          section: null,
+          displayName: "Ben Ortiz",
+        },
+        {
+          seat: created[1]._id,
+          email: "ana@example.edu",
+          kind: "STUDENT",
+          section: null,
+          displayName: "",
+        },
+      ]);
+      expect(await rostering._getPendingSeatByEmail({ email: "Ben@Example.edu" })).toEqual([
+        { seat: created[0]._id, email: "ben@example.edu", displayName: "Ben Ortiz" },
+      ]);
+      expect(await rostering._getPendingSeatByEmail({ email: "ana@example.edu" })).toEqual([
+        { seat: created[1]._id, email: "ana@example.edu", displayName: "" },
+      ]);
+    });
+
+    test("a repeated row corrects the name of a still-pending seat and is still skipped", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({
+        rows: [{ ...benRow, displayName: "Ben Ortiz" }],
+      });
+      const seat = created[0]._id;
+      const again = await rostering.importSeats({
+        rows: [{ ...benRow, displayName: "Benjamin Ortiz" }],
+      });
+      // Refreshing the name creates nothing, so the row is reported as skipped.
+      expect(again.created).toEqual([]);
+      expect(again.skipped).toEqual(["ben@example.edu"]);
+      expect(await rostering._getPendingSeatByEmail({ email: "ben@example.edu" })).toEqual([
+        { seat, email: "ben@example.edu", displayName: "Benjamin Ortiz" },
+      ]);
+    });
+
+    test("a repeated row carrying no name leaves a stored name alone", async () => {
+      const rostering = await make();
+      await rostering.importSeats({ rows: [{ ...benRow, displayName: "Ben Ortiz" }] });
+      await rostering.importSeats({ rows: [benRow, { ...benRow, displayName: "" }] });
+      expect(await rostering._getPendingSeatByEmail({ email: "ben@example.edu" })).toEqual([
+        expect.objectContaining({ displayName: "Ben Ortiz" }),
+      ]);
+    });
+
+    test("within one import the seat comes from the first row and the last name wins", async () => {
+      const rostering = await make();
+      const { section } = await rostering.createSection({
+        name: "A",
+        location: "26-100",
+        meetingPattern: "MWF 10",
+      });
+      const result = await rostering.importSeats({
+        rows: [
+          { email: "ben@example.edu", kind: "STAFF", section: section._id, displayName: "Ben O." },
+          { email: "Ben@Example.edu", kind: "STUDENT", displayName: "Benjamin Ortiz" },
+        ],
+      });
+      expect(result.created).toHaveLength(1);
+      expect(result.skipped).toEqual(["ben@example.edu"]);
+      // The first row made the seat, so its kind and section stand.
+      expect(await rostering._getUnclaimedSeats({})).toEqual([
+        {
+          seat: result.created[0]._id,
+          email: "ben@example.edu",
+          kind: "STAFF",
+          section: section._id,
+          displayName: "Benjamin Ortiz",
+        },
+      ]);
+    });
+
+    test("a later row never writes the name of a seat somebody already holds", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({
+        rows: [{ ...benRow, displayName: "Ben Ortiz" }],
+      });
+      const seat = created[0]._id;
+      await rostering.claimSeat({ seat, user: "ben" });
+      const again = await rostering.importSeats({
+        rows: [{ ...benRow, displayName: "Somebody Else" }],
+      });
+      expect(again.created).toEqual([]);
+      expect(again.skipped).toEqual(["ben@example.edu"]);
+      // The seat is held, so no read answers a name for it at all.
+      expect(await rostering._getPendingSeatByEmail({ email: "ben@example.edu" })).toEqual([]);
+      expect(await rostering._getUnclaimedSeats({})).toEqual([]);
+      // Dropping the seat does not put it back within reach of an import either.
+      await rostering.dropSeat({ seat });
+      const third = await rostering.importSeats({
+        rows: [{ ...benRow, displayName: "Somebody Else" }],
+      });
+      expect(third.created).toEqual([]);
+      expect(await rostering._getUnclaimedSeats({})).toEqual([]);
+    });
+
+    test("only _getUnclaimedSeats and _getPendingSeatByEmail answer a display name", async () => {
+      const rostering = await make();
+      const { created } = await rostering.importSeats({
+        rows: [{ ...benRow, displayName: "Ben Ortiz" }],
+      });
+      const seat = created[0]._id;
+      // While the seat waits, exactly two reads carry the name.
+      expect(await rostering._getUnclaimedSeats({})).toEqual([
+        expect.objectContaining({ displayName: "Ben Ortiz" }),
+      ]);
+      expect(await rostering._getPendingSeatByEmail({ email: "ben@example.edu" })).toEqual([
+        expect.objectContaining({ displayName: "Ben Ortiz" }),
+      ]);
+      // No other read carries it, pending or held.
+      expect(await rostering._getSeatByEmail({ email: "ben@example.edu" })).toEqual([
+        { seat, email: "ben@example.edu" },
+      ]);
+      expect(created[0]).not.toHaveProperty("displayName");
+
+      await rostering.claimSeat({ seat, user: "ben" });
+      expect(await rostering._getSeatByUser({ user: "ben" })).toEqual([
+        {
+          seat,
+          user: "ben",
+          email: "ben@example.edu",
+          kind: "STUDENT",
+          section: null,
+          status: "ACTIVE",
+        },
+      ]);
+      expect(await rostering._getSeatDetail({ user: "ben" })).toEqual([
+        {
+          detail: {
+            seat,
+            user: "ben",
+            email: "ben@example.edu",
+            kind: "STUDENT",
+            section: null,
+            status: "ACTIVE",
+          },
+        },
+      ]);
+      expect(await rostering._getActiveMembers({})).toEqual([
+        {
+          user: "ben",
+          seat,
+          kind: "STUDENT",
+          section: null,
+          email: "ben@example.edu",
+        },
+      ]);
+      expect(await rostering._getActiveStudents({})).toEqual([
+        { user: "ben", seat, section: null, email: "ben@example.edu" },
+      ]);
+      await rostering.dropSeat({ seat });
+      expect(await rostering._getDroppedSeats({})).toEqual([
+        {
+          user: "ben",
+          seat,
+          kind: "STUDENT",
+          section: null,
+          email: "ben@example.edu",
+        },
+      ]);
+    });
+
+    test("previewImport carries a display-name column through to importSeats", async () => {
+      const rostering = await make();
+      const { rows } = await rostering.previewImport({
+        csv: "email,kind,displayName\nben@example.edu,STUDENT,Ben Ortiz\nana@example.edu,STUDENT,",
+      });
+      expect(rows).toEqual([
+        { email: "ben@example.edu", kind: "STUDENT", displayName: "Ben Ortiz" },
+        { email: "ana@example.edu", kind: "STUDENT", displayName: "" },
+      ]);
+      await rostering.importSeats({ rows });
+      expect(await rostering._getUnclaimedSeats({})).toEqual([
+        expect.objectContaining({ email: "ben@example.edu", displayName: "Ben Ortiz" }),
+        expect.objectContaining({ email: "ana@example.edu", displayName: "" }),
       ]);
     });
 

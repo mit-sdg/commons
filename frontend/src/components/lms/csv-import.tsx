@@ -57,8 +57,8 @@ export function CsvImport({ onComplete }: CsvImportProps) {
     const people = `${created} ${created === 1 ? "person" : "people"}`;
     toast.success(
       skipped === 0
-        ? `Invited ${people}`
-        : `Invited ${people}; ${skipped} already had a seat`,
+        ? `Added ${people}`
+        : `Added ${people}; skipped ${skipped} existing ${skipped === 1 ? "seat" : "seats"}`,
     );
     onComplete();
   }
@@ -68,12 +68,17 @@ export function CsvImport({ onComplete }: CsvImportProps) {
       <div className="space-y-2">
         <Label htmlFor="roster-csv">Paste CSV (with header row)</Label>
         <p className="text-sm text-muted-foreground">
-          Each address is invited by email. Accepting the invitation creates the
-          account and takes the seat, so nothing has to be enrolled by hand. An
-          address that already has a seat is skipped rather than invited again.
+          Existing accounts are enrolled. Everyone else gets an email
+          invitation. Existing seats are skipped.
         </p>
-        <pre className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs font-mono leading-relaxed text-muted-foreground">
-          email,kind,section{"\n"}jdoe@school.edu,STUDENT,sec01
+        <p className="text-sm text-muted-foreground">
+          Optional fourth column: <span className="font-mono">displayName</span>
+          . It prefills registration. For names with commas, use the form above.
+        </p>
+        <pre className="overflow-x-auto rounded-md border border-border bg-muted/40 px-3 py-2 text-xs font-mono leading-relaxed text-muted-foreground">
+          {
+            "email,kind,section,displayName\njdoe@school.edu,STUDENT,sec01,Jamie Doe"
+          }
         </pre>
         <Textarea
           id="roster-csv"

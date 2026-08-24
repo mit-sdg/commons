@@ -36,6 +36,9 @@ interface SeatDoc {
   section: string | null;
   status: "PENDING" | "ACTIVE" | "DROPPED";
   user: string | null;
+  // The name the address was listed under, kept only while the seat waits for a
+  // holder. Null means the seat carries no name; reads answer the empty string.
+  displayName: string | null;
   seq: number;
 }
 
@@ -47,6 +50,13 @@ interface SeatRow {
   status: string;
   user?: string;
 }
+
+// A row carries a name only when it holds a non-empty one; anything else leaves
+// whatever name the seat already carries alone.
+const nameCarriedBy = (row: { displayName?: string }): string | null => {
+  const name = row.displayName ?? "";
+  return name === "" ? null : name;
+};
 
 export class MongoRosteringConcept {
   private readonly classes: Collection<ClassDoc>;
@@ -175,6 +185,7 @@ export class MongoRosteringConcept {
       email?: string;
       kind?: string;
       section?: string;
+      displayName?: string;
     }[];
   }) {
     const created: SeatRow[] = [];
@@ -194,10 +205,24 @@ export class MongoRosteringConcept {
         section: row.section ?? null,
         status: "PENDING",
         user: null,
+        displayName: nameCarriedBy(row),
         seq,
       };
       await this.seats.insertOne(doc);
       created.push(this.#row(doc));
+    }
+    // A second pass in row order refreshes the name of a seat still waiting for
+    // a holder, including one this import just created, so the last row
+    // carrying a name decides the name kept. A row carrying none writes
+    // nothing, and the filter keeps a claimed seat from ever being written.
+    for (const row of rows) {
+      const email = (row.email ?? "").trim().toLowerCase();
+      const displayName = nameCarriedBy(row);
+      if (email === "" || displayName === null) continue;
+      await this.seats.updateOne(
+        { email, status: "PENDING", user: null },
+        { $set: { displayName } },
+      );
     }
     return { created, skipped };
   }
@@ -242,6 +267,7 @@ export class MongoRosteringConcept {
       section: section ?? null,
       status: "ACTIVE",
       user,
+      displayName: null,
       seq,
     };
     await this.seats.insertOne(doc);
@@ -358,7 +384,9 @@ export class MongoRosteringConcept {
       status: "PENDING",
       user: null,
     });
-    return seat === null ? [] : [{ seat: seat._id, email: seat.email }];
+    return seat === null
+      ? []
+      : [{ seat: seat._id, email: seat.email, displayName: seat.displayName ?? "" }];
   }
 
   async _getSeatByUser({ user }: { user: string }) {
@@ -432,6 +460,7 @@ export class MongoRosteringConcept {
       email: doc.email,
       kind: doc.kind,
       section: doc.section,
+      displayName: doc.displayName ?? "",
     }));
   }
 

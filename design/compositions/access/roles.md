@@ -27,18 +27,50 @@ holds it.
 [Access.roles.DeleteRole](reaction:Access.roles.DeleteRole) removes a role that nobody currently holds and
 refuses one that is still assigned.
 
-[Access.roles.AssignRole](reaction:Access.roles.AssignRole) interprets a known account identifier or exact
-username and a known role identifier or name, then replaces whatever role the
-subject already held, so a person never accumulates two.
-[Access.roles.RevokeRole](reaction:Access.roles.RevokeRole) performs the same interpretation before removing
-that assignment. Both refuse with `LAST_ADMINISTRATOR` when the change would
-leave the deployment with nobody holding `administer`; the very first
-administrator is instead established at registration, while the account count is
-still one. The holders that guard counts are exactly the accounts that can still
+[Access.roles.AssignRole](reaction:Access.roles.AssignRole) interprets a known account identifier, an
+exact username, or an exact email address, together with a known role identifier
+or name, then replaces whatever role the subject already held, so a person never
+accumulates two. [Access.roles.RevokeRole](reaction:Access.roles.RevokeRole) performs the same interpretation
+before removing that assignment. Both resolve the caller from the session and
+refuse `FORBIDDEN` before they interpret the subject at all, so a caller who does
+not hold `administer` receives the same answer whatever address they type. A
+subject [holding an `@`](computation:subjectIsAddress) is read as an address and never as a
+username: Authenticating accepts only letters, digits, hyphens, and underscores
+in a username, so a subject holding one cannot be a username anybody could have
+registered.
+[The account holding an address](view:Access.roles.theAccountForAddress) answers such a subject the
+way Authenticating matches an address, trimmed and lower-cased, so surrounding
+space and letter case do not change who is named. An address that no account
+holds is refused `SUBJECT_NOT_FOUND`, saying that no account holds that address,
+and the refusal lands before the guard below is read and before Roling is asked
+for anything: typing an address nobody holds is a mistake in the name, not an
+instruction to give a role to a string. Both refuse with `LAST_ADMINISTRATOR`
+when the change would leave the deployment with nobody holding `administer`; the
+very first administrator is instead established at registration, while the
+account count is still one. The holders that guard counts are exactly the accounts that can still
 sign in, because archiving an account revokes the role it held before the archive
-commits, as Authentication describes. An unknown account reference is passed to
-Roling as an opaque user identity rather than checked against Authenticating; an
-unknown role is refused by Roling. Unauthorized changes return `FORBIDDEN`.
+commits, as Authentication describes. Any other unknown account reference is
+still passed to Roling as an opaque user identity rather than checked against
+Authenticating; an unknown role is refused by Roling. Unauthorized changes return
+`FORBIDDEN`.
+
+Reading an address is therefore the one subject shape these two endpoints settle,
+and Commons accepts what that costs. An assignment already keyed to a literal
+address string can no longer be named here, because the same text now answers the
+account that holds the address or is refused; such an assignment still counts as a
+holder of whatever capability it carries, and correcting it is out of band through
+deployment access to the stored role state, the same way a lost guard race is
+corrected. Both endpoints already require `administer`, so only an administrator
+can tell an address nobody holds from an address whose account holds no role.
+
+The refusal stays on those two writes. No public role read resolves an address:
+the reads below are approved as reads that expose authorization structure without
+authorizing anyone, and an address handed to one of them is an unmatched string
+like any other, so no caller — signed in or not — can use Commons to learn which
+addresses have accounts. An administrative console showing what the
+person it is naming currently holds answers that from the administrator-gated list
+of registered accounts it already loads, not from a public read, and the refusal
+must not be moved onto a read to save it the trouble.
 
 That guard is a composition-level read taken before a separate Roling action, and
 Roling declares no such refusal, so the check and the change are not atomic. Two

@@ -1,8 +1,10 @@
 "use client";
 
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { AddPersonForm } from "@/components/lms/add-person";
 import { CsvImport } from "@/components/lms/csv-import";
 import { RemoveSeatDialog } from "@/components/lms/remove-seat";
 import { RosterTable } from "@/components/lms/roster-table";
@@ -10,7 +12,13 @@ import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +32,11 @@ import {
   loadRosterList,
   loadSections,
 } from "@/lib/lms";
+import {
+  isSelfAddRequest,
+  SELF_ADD_PARAM,
+  seatKindOptions,
+} from "@/lib/roster-people";
 
 function SectionManager() {
   const { session } = useAuth();
@@ -292,10 +305,21 @@ function PendingSeats({
           className="rounded-xl border border-border bg-card p-4"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-medium">{member.email}</p>
+            <div className="min-w-0">
+              {/* A seat carries the name staff typed for it until somebody
+                  accepts and a profile owns what they are called. */}
+              {member.displayName ? (
+                <>
+                  <p className="font-medium">{member.displayName}</p>
+                  <p className="text-sm text-muted-foreground break-all">
+                    {member.email}
+                  </p>
+                </>
+              ) : (
+                <p className="font-medium break-all">{member.email}</p>
+              )}
               <p className="mt-1 text-xs text-muted-foreground">
-                {member.kind.toLowerCase()} · invitation not accepted yet
+                {member.kind.toLowerCase()} · invitation pending
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -437,7 +461,11 @@ function DroppedSeats({
 }
 
 function RosterPageContent() {
-  const { session } = useAuth();
+  const { session, me } = useAuth();
+  const searchParams = useSearchParams();
+  const selfAdd = isSelfAddRequest(searchParams.get(SELF_ADD_PARAM));
+  const [tab, setTab] = useState(selfAdd ? "add" : "sections");
+  const refreshTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const {
     data: rosterData,
     loading,
@@ -468,12 +496,48 @@ function RosterPageContent() {
       member.user !== null,
   );
   const sections = sectionsData?.sections ?? [];
+  const pendingMembers = pendingQuery.data?.members ?? [];
+  const droppedMembers = droppedQuery.data?.members ?? [];
+  const kinds = seatKindOptions([
+    ...members.map((member) => String(member.kind)),
+    ...pendingMembers.map((member) => String(member.kind)),
+    ...droppedMembers.map((member) => String(member.kind)),
+  ]);
+  // The affordance carries only the intent to add oneself; the address and the
+  // name come from the session read, so a shared link adds nobody and fills in
+  // whoever follows it.
+  const prefill = selfAdd
+    ? {
+        email: String(me?.email ?? ""),
+        displayName: String(me?.profile.displayName ?? ""),
+        kind: "STAFF",
+        self: true,
+      }
+    : null;
 
   function refetchRoster() {
     refetch();
     pendingQuery.refetch();
     droppedQuery.refetch();
   }
+
+  function refreshRosterAfterAdd() {
+    for (const timer of refreshTimers.current) clearTimeout(timer);
+    refreshTimers.current = [];
+    refetchRoster();
+    // Claiming a live account's seat runs after AddPerson answers. Refresh until
+    // that consequence has had time to move the seat out of Pending.
+    for (const delay of [200, 750, 2_000]) {
+      refreshTimers.current.push(setTimeout(refetchRoster, delay));
+    }
+  }
+
+  useEffect(
+    () => () => {
+      for (const timer of refreshTimers.current) clearTimeout(timer);
+    },
+    [],
+  );
 
   return (
     <PageContainer>
@@ -483,19 +547,19 @@ function RosterPageContent() {
         description="Manage sections and enrolment, and maintain member access."
       />
 
-      <Tabs defaultValue="sections">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="sections">Sections</TabsTrigger>
           <TabsTrigger value="active">
             Active ({activeMembers.length})
           </TabsTrigger>
           <TabsTrigger value="pending">
-            Pending ({pendingQuery.data?.members.length ?? 0})
+            Pending ({pendingMembers.length})
           </TabsTrigger>
           <TabsTrigger value="dropped">
-            Dropped ({droppedQuery.data?.members.length ?? 0})
+            Dropped ({droppedMembers.length})
           </TabsTrigger>
-          <TabsTrigger value="import">CSV import</TabsTrigger>
+          <TabsTrigger value="add">Add people</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sections" className="mt-6">
@@ -511,7 +575,7 @@ function RosterPageContent() {
             <EmptyState
               icon={Plus}
               title="No active members"
-              description="Import a roster to invite people, or enrol somebody who already has an account."
+              description="Add or import people from the Add people tab."
             />
           ) : (
             <RosterTable
@@ -531,10 +595,7 @@ function RosterPageContent() {
               onRetry={pendingQuery.refetch}
             />
           ) : (
-            <PendingSeats
-              members={pendingQuery.data?.members ?? []}
-              onUpdate={refetchRoster}
-            />
+            <PendingSeats members={pendingMembers} onUpdate={refetchRoster} />
           )}
         </TabsContent>
 
@@ -547,24 +608,55 @@ function RosterPageContent() {
               onRetry={droppedQuery.refetch}
             />
           ) : (
-            <DroppedSeats
-              members={droppedQuery.data?.members ?? []}
-              onUpdate={refetchRoster}
-            />
+            <DroppedSeats members={droppedMembers} onUpdate={refetchRoster} />
           )}
         </TabsContent>
 
-        <TabsContent value="import" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">
-                Import a roster from CSV
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CsvImport onComplete={refetchRoster} />
-            </CardContent>
-          </Card>
+        <TabsContent value="add" className="mt-6">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Add one person</CardTitle>
+                <CardDescription>
+                  Add one person without preparing a CSV.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AddPersonForm
+                  kinds={kinds}
+                  sections={sections}
+                  seats={{
+                    active: members.map((member) => String(member.email)),
+                    dropped: droppedMembers.map((member) =>
+                      String(member.email),
+                    ),
+                    pending: pendingMembers.map((member) => ({
+                      email: String(member.email),
+                      kind: String(member.kind),
+                      section:
+                        member.section === null ? null : String(member.section),
+                    })),
+                  }}
+                  prefill={prefill}
+                  onAdded={refreshRosterAfterAdd}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  Import a roster from CSV
+                </CardTitle>
+                <CardDescription>
+                  Add multiple people from a CSV.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CsvImport onComplete={refetchRoster} />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </PageContainer>
@@ -574,7 +666,9 @@ function RosterPageContent() {
 export default function RosterPage() {
   return (
     <RequireCapability capability="course:manage">
-      <RosterPageContent />
+      <Suspense fallback={<LoadingState label="Loading roster…" />}>
+        <RosterPageContent />
+      </Suspense>
     </RequireCapability>
   );
 }
