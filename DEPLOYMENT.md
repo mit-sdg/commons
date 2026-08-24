@@ -26,7 +26,8 @@ facilities:
 | ------------------------- | ------------------------------------------------------------------------------------------ |
 | `MONGODB_URI`             | Required scoped MongoDB connection, including a database name and any required TLS options |
 | `PUBLIC_ORIGIN`           | Required exact browser origin, without a trailing slash                                    |
-| `INVITATION_SECRET`       | Required stable secret of at least 32 random bytes                                         |
+| `INVITATION_SECRET`       | Required stable secret of at least 32 characters; startup refuses a shorter one            |
+| `VOUCHER_SECRET`          | Required stable secret of at least 32 characters, distinct from `INVITATION_SECRET`        |
 | `ADMIN_SETUP_SECRET_HASH` | Optional one-time initial-administrator verifier; remove it after setup                    |
 | `SMTP_*`                  | Optional existing SMTP configuration described below                                       |
 

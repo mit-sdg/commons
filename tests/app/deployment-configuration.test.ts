@@ -4,7 +4,8 @@ import { configuredMongodbUrl, validateDeploymentConfiguration } from "../../src
 const productionEnvironment = (overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv => ({
   NODE_ENV: "production",
   PUBLIC_ORIGIN: "https://class.mit-sdg.dev",
-  INVITATION_SECRET: "test-invitation-secret",
+  INVITATION_SECRET: "test-invitation-secret-0123456789abcdef",
+  VOUCHER_SECRET: "test-voucher-secret-0123456789abcdef",
   ...overrides,
 });
 
@@ -40,6 +41,47 @@ describe("deployment MongoDB configuration", () => {
     expect(message).not.toContain(platform);
     expect(message).not.toContain(legacy);
     expect(message).not.toContain("secret");
+  });
+
+  test("requires the voucher secret in production", () => {
+    const environment = productionEnvironment({ MONGODB_URI: "mongodb://platform/class" });
+    delete environment.VOUCHER_SECRET;
+    expect(() => validateDeploymentConfiguration(environment)).toThrow(
+      "commons: VOUCHER_SECRET is required in production.",
+    );
+    expect(() =>
+      validateDeploymentConfiguration(
+        productionEnvironment({ MONGODB_URI: "mongodb://platform/class", VOUCHER_SECRET: "" }),
+      ),
+    ).toThrow("commons: VOUCHER_SECRET is required in production.");
+  });
+
+  test("requires each derivation secret to be long and distinct", () => {
+    expect(() =>
+      validateDeploymentConfiguration(
+        productionEnvironment({
+          MONGODB_URI: "mongodb://platform/class",
+          VOUCHER_SECRET: "too-short",
+        }),
+      ),
+    ).toThrow("commons: VOUCHER_SECRET must carry at least 32 characters of random data.");
+    expect(() =>
+      validateDeploymentConfiguration(
+        productionEnvironment({
+          MONGODB_URI: "mongodb://platform/class",
+          INVITATION_SECRET: "too-short",
+        }),
+      ),
+    ).toThrow("commons: INVITATION_SECRET must carry at least 32 characters of random data.");
+    expect(() =>
+      validateDeploymentConfiguration(
+        productionEnvironment({
+          MONGODB_URI: "mongodb://platform/class",
+          VOUCHER_SECRET: "one-secret-for-both-0123456789abcdef",
+          INVITATION_SECRET: "one-secret-for-both-0123456789abcdef",
+        }),
+      ),
+    ).toThrow("commons: VOUCHER_SECRET must differ from INVITATION_SECRET.");
   });
 
   test("requires one MongoDB setting in production", () => {

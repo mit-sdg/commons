@@ -231,6 +231,26 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" };
   };
+  "/auth/request-password-reset": {
+    input: {
+      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Mailing"]["normalizeRecipient"]>[0], ["recipient"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getByEmail"]>[0], ["email"]>]>>;
+    };
+    output: {
+      "ok": true;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "VOUCHER_EXPIRY_INVALID" };
+  };
+  "/auth/reset-password": {
+    input: {
+      "credential": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PasswordResetVouching"]["verify"]>[0], ["credential"]>>;
+      "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["resetPassword"]>[0], ["newPassword"]>>;
+      "voucher": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PasswordResetVouching"]["verify"]>[0], ["voucher"]>>;
+    };
+    output: {
+      "ok": true;
+    };
+    error: { error: AppWideError | "INVALID_CREDENTIALS" | "INVALID_INPUT" | "PASSWORD_INVALID_LENGTH" | "VOUCHER_INVALID" };
+  };
   "/auth/resolve": {
     input: {
       "username": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getByUsername"]>[0], ["username"]>>;
@@ -2801,6 +2821,26 @@ export type CommonsWireHttp = {
       "capabilities": never[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/auth/request-password-reset": {
+    input: {
+      "email": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Mailing"]["normalizeRecipient"]>[0], ["recipient"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getByEmail"]>[0], ["email"]>]>>;
+    };
+    output: {
+      "ok": true;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/auth/reset-password": {
+    input: {
+      "credential": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PasswordResetVouching"]["verify"]>[0], ["credential"]>>;
+      "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["resetPassword"]>[0], ["newPassword"]>>;
+      "voucher": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PasswordResetVouching"]["verify"]>[0], ["voucher"]>>;
+    };
+    output: {
+      "ok": true;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
   "/auth/resolve": {
     input: {

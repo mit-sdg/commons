@@ -8,6 +8,11 @@ describe("public frontend routes", () => {
     expect(isPublicPath("/setup")).toBe(true);
   });
 
+  test("serves password recovery signed out, because that is who needs it", () => {
+    expect(isPublicPath("/forgot-password")).toBe(true);
+    expect(isPublicPath("/reset-password")).toBe(true);
+  });
+
   test("keeps application pages behind authentication", () => {
     expect(isPublicPath("/")).toBe(false);
     expect(isPublicPath("/admin")).toBe(false);

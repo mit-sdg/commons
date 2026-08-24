@@ -32,8 +32,15 @@ import { tagging } from "./concepts/tagging/registry.ts";
 import { tasking } from "./concepts/tasking/registry.ts";
 import { tracking } from "./concepts/tracking/registry.ts";
 import { trashing } from "./concepts/trashing/registry.ts";
+import { vouching } from "./concepts/vouching/registry.ts";
 import { setupSecretMatches } from "./computations/admin-setup.ts";
 import { capabilitiesAreKnown, effectiveCapabilities } from "./computations/capabilities.ts";
+import {
+  passwordResetCooldownStart,
+  passwordResetExpiry,
+  passwordResetMailHtml,
+  passwordResetMailText,
+} from "./computations/password-reset.ts";
 import {
   invitationMailHtml,
   invitationMailText,
@@ -66,6 +73,7 @@ const registrations = {
   Mailing: mailing,
   Notifying: notifying,
   Noting: noting,
+  PasswordResetVouching: vouching,
   Pinning: pinning,
   Posting: posting,
   Profiling: profiling,
@@ -91,6 +99,10 @@ export const learningConcepts = conceptSet(registrations, {
   invitationMailText,
   notificationMailHtml,
   notificationMailText,
+  passwordResetCooldownStart,
+  passwordResetExpiry,
+  passwordResetMailHtml,
+  passwordResetMailText,
   setupSecretMatches,
   taskListMailHtml,
   taskListMailSubject,

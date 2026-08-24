@@ -73,6 +73,9 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 - `changePassword(user: User, oldPassword: String, newPassword: String) : return (user: User)`
   - Refuses `INVALID_CREDENTIALS`: The current password is wrong.
   - Refuses `PASSWORD_INVALID_LENGTH`: The password must be 8 to 128 characters long.
+- `resetPassword(user: User, newPassword: String) : return (user: User)`
+  - Refuses `INVALID_CREDENTIALS`: There is no such account.
+  - Refuses `PASSWORD_INVALID_LENGTH`: The password must be 8 to 128 characters long.
 
 #### Queries
 
@@ -971,6 +974,28 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
   - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 160.
   - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 159.
 
+### Vouching
+
+Defined in [Vouching](../design/concepts/Vouching.md), line 1.
+
+#### Actions
+
+- `issue(subject: Subject, at: Date, expiresAt: Date) : return (voucher: Voucher, subject: Subject, credential: String)`
+  - Refuses `VOUCHER_EXPIRY_INVALID`: The voucher expiry must come after its issue time.
+- `verify(voucher: Voucher, credential: String, at: Date) : return (voucher: Voucher, subject: Subject)`
+  - Refuses `VOUCHER_INVALID`: That voucher is not valid.
+- `redeem(voucher: Voucher, credential: String, at: Date) : return (voucher: Voucher, subject: Subject)`
+  - Refuses `VOUCHER_INVALID`: That voucher is not valid.
+
+#### Queries
+
+- `_getIssuedSince(subject: Subject, since: Date) : many (voucher: String, issuedAt: Date, expiresAt: Date)`
+
+#### Instances
+
+- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 162.
+  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 163.
+
 ## Application types
 
 Concrete types:
@@ -981,19 +1006,23 @@ Concrete types:
 
 ## Computations
 
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 218.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 222.
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 209.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 206.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 215.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 212.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 227.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 236.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 230.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 233.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 245.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 239.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 242.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 221.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 225.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 212.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 209.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 218.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 215.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 230.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 235.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 241.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 238.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 244.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 253.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 247.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 250.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 262.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 256.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 259.
 
 ## Views
 
@@ -3758,6 +3787,137 @@ where
   view "(user) may administer" with (user: actor)
 then
   RequestBoundary.respond (messages: former "the mail messages ()", requestId)
+```
+
+### Access.recovery.PasswordResetQueuesMail
+
+Authored path: `Access.recovery.PasswordResetQueuesMail`.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 17.
+
+```reaction
+when PasswordResetVouching.issue (at, credential, subject: user, voucher)
+where
+  Authenticating._getById (user) has (email, username)
+  text is passwordResetMailText (credential, username, voucher)
+  html is passwordResetMailHtml (credential, username, voucher)
+then
+  Mailing.enqueue (at, html, key: voucher, recipient: email, subject: "Reset your Commons password", text)
+```
+
+### Access.recovery.RequestPasswordReset:accepted
+
+Authored path: `Access.recovery.RequestPasswordReset`.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 4.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 41.
+
+```reaction
+when RequestBoundary.request (email, path: "/auth/request-password-reset", requestId)
+where
+  at is the current flow's instant
+then
+  Mailing.normalizeRecipient (recipient: email)
+```
+
+### Access.recovery.RequestPasswordReset:accepted#2
+
+Authored path: `Access.recovery.RequestPasswordReset`.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 4.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 41.
+
+```reaction
+when Mailing.normalizeRecipient (recipient: email, result.recipient), asked by Access.recovery.RequestPasswordReset:accepted
+where
+  earlier, RequestBoundary.request (email, path: "/auth/request-password-reset", requestId)
+then
+  RequestBoundary.respond (ok: true, requestId)
+```
+
+### Access.recovery.RequestPasswordReset:issued
+
+Authored path: `Access.recovery.RequestPasswordReset`.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 4.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 41.
+
+```reaction
+when RequestBoundary.request (email, path: "/auth/request-password-reset", requestId)
+where
+  at is the current flow's instant
+  Authenticating._getByEmail (email) has (user)
+  quietSince is passwordResetCooldownStart (at)
+  no PasswordResetVouching._getIssuedSince (since: quietSince, subject: user)
+  expiresAt is passwordResetExpiry (at)
+then
+  PasswordResetVouching.issue (at, expiresAt, subject: user)
+```
+
+### Access.recovery.ResetPassword
+
+Authored path: `Access.recovery.ResetPassword`.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
+
+```reaction
+when RequestBoundary.request (credential, newPassword, path: "/auth/reset-password", requestId, voucher)
+where
+  at is the current flow's instant
+then
+  PasswordResetVouching.verify (at, credential, voucher)
+```
+
+### Access.recovery.ResetPassword#2
+
+Authored path: `Access.recovery.ResetPassword`.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
+
+```reaction
+when PasswordResetVouching.verify (at, credential, voucher, subject: user), asked by Access.recovery.ResetPassword
+where
+  earlier, RequestBoundary.request (credential, newPassword, path: "/auth/reset-password", requestId, voucher)
+then
+  Authenticating.resetPassword (newPassword, user)
+```
+
+### Access.recovery.ResetPassword#3
+
+Authored path: `Access.recovery.ResetPassword`.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
+
+```reaction
+when Authenticating.resetPassword (newPassword, user), asked by Access.recovery.ResetPassword#2
+where
+  earlier, PasswordResetVouching.verify (at, credential, voucher, subject: user), asked by Access.recovery.ResetPassword
+then
+  PasswordResetVouching.redeem (at, credential, voucher)
+```
+
+### Access.recovery.ResetPassword#4
+
+Authored path: `Access.recovery.ResetPassword`.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
+
+```reaction
+when PasswordResetVouching.redeem (at, credential, voucher), asked by Access.recovery.ResetPassword#3
+where
+  earlier, PasswordResetVouching.verify (at, credential, voucher, subject: user), asked by Access.recovery.ResetPassword
+then
+  Sessioning.endAllForUser (user)
+```
+
+### Access.recovery.ResetPassword#5
+
+Authored path: `Access.recovery.ResetPassword`.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 27.
+- Covered by [Recovery](../design/compositions/access/recovery.md), line 42.
+
+```reaction
+when Sessioning.endAllForUser (user), asked by Access.recovery.ResetPassword#4
+where
+  earlier, RequestBoundary.request (credential, newPassword, path: "/auth/reset-password", requestId, voucher)
+then
+  RequestBoundary.respond (ok: true, requestId)
 ```
 
 ### Access.roles.AssignRole:forbidden
@@ -12194,6 +12354,8 @@ not listed here have no explicit input contract.
 - `/auth/logout` — requires `session`
 - `/auth/me` — requires `session`
 - `/auth/permissions` — requires `session`
+- `/auth/request-password-reset` — requires `email`
+- `/auth/reset-password` — requires `voucher`, `credential`, `newPassword`
 - `/auth/resolve` — requires `username`
 - `/bookmarks/isSaved` — requires `item`, `session`
 - `/bookmarks/list` — requires `session`
