@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -173,18 +180,26 @@ function NoteCard({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor={`${fieldPrefix}-visibility`}>Visibility</Label>
-              <select
-                id={`${fieldPrefix}-visibility`}
+              <Select
                 value={visibility}
-                onChange={(event) =>
-                  setVisibility(event.target.value as typeof visibility)
+                onValueChange={(value) =>
+                  setVisibility(value as typeof visibility)
                 }
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 disabled={loading}
               >
-                <option value="STAFF_ONLY">Staff only</option>
-                <option value="LEARNER_VISIBLE">Learner visible</option>
-              </select>
+                <SelectTrigger
+                  id={`${fieldPrefix}-visibility`}
+                  className="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STAFF_ONLY">Staff only</SelectItem>
+                  <SelectItem value="LEARNER_VISIBLE">
+                    Learner visible
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${fieldPrefix}-follow-up`}>Follow-up date</Label>
@@ -380,18 +395,23 @@ function WriteNoteForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor={`${prefix}-visibility`}>Visibility</Label>
-          <select
-            id={`${prefix}-visibility`}
+          <Select
             value={visibility}
-            onChange={(event) =>
-              setVisibility(event.target.value as typeof visibility)
+            onValueChange={(value) =>
+              setVisibility(value as typeof visibility)
             }
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
             disabled={loading}
           >
-            <option value="STAFF_ONLY">Staff only</option>
-            <option value="LEARNER_VISIBLE">Learner visible</option>
-          </select>
+            <SelectTrigger id={`${prefix}-visibility`} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="STAFF_ONLY">Staff only</SelectItem>
+              <SelectItem value="LEARNER_VISIBLE">
+                Learner visible
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`${prefix}-follow-up`}>Follow-up date</Label>

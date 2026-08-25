@@ -25,6 +25,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/user-avatar";
 import { UserName } from "@/components/user-name";
@@ -858,19 +865,18 @@ function RoleAdmin({
           </div>
           <div className="space-y-2">
             <Label htmlFor="assign-role">Role</Label>
-            <select
-              id="assign-role"
-              value={assignRole}
-              onChange={(e) => setAssignRole(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
-            >
-              <option value="">Select a role…</option>
-              {roles.map((r) => (
-                <option key={String(r.role)} value={String(r.role)}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+            <Select value={assignRole} onValueChange={setAssignRole}>
+              <SelectTrigger id="assign-role" className="w-full">
+                <SelectValue placeholder="Select a role…" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((r) => (
+                  <SelectItem key={String(r.role)} value={String(r.role)}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex gap-2">
             <Button
