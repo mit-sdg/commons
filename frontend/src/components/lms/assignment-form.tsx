@@ -74,7 +74,10 @@ export function AssignmentForm({
     () => existing?.targets?.map(String) ?? [],
   );
   const [loading, setLoading] = useState(false);
-  const { data: sectionsData } = useQuery(() => loadSections(), []);
+  const { data: sectionsData, loading: sectionsLoading } = useQuery(
+    () => loadSections(),
+    [],
+  );
   const sections = (sectionsData?.sections ?? []).filter(
     (section) => section.status === "ACTIVE",
   );
@@ -209,7 +212,9 @@ export function AssignmentForm({
           <legend className="px-1 text-sm font-medium">
             Assigned sections
           </legend>
-          {sections.length === 0 ? (
+          {sectionsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading sections…</p>
+          ) : sections.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Create a course section before targeting an assignment.
             </p>
