@@ -309,6 +309,11 @@ export class MongoDraftingConcept {
     return doc === null || doc.origin === null ? [] : [{ origin: doc.origin }];
   }
 
+  async _basisOf({ brief }: { brief: string }) {
+    const doc = await this.briefs.findOne({ _id: brief });
+    return doc === null || doc.basis === null ? [] : [{ basis: doc.basis }];
+  }
+
   async _clarifications({ brief }: { brief: string }) {
     const docs = await this.clarifications.find({ brief }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({

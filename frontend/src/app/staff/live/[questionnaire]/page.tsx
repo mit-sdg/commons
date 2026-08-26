@@ -2,7 +2,7 @@
 
 import { ArrowLeft, ClipboardList, Lock, Plus, Sparkles } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
 import {
@@ -11,6 +11,7 @@ import {
   disclosureHint,
   FormBadge,
   isDisclosure,
+  RUN_OPEN_MESSAGE,
 } from "@/components/live/quiz-meta";
 import {
   type EditableQuestion,
@@ -49,7 +50,7 @@ function report(result: unknown): boolean {
   if (!isApiError(result)) return true;
   toast.error(
     result.error === "CONFLICT"
-      ? "A run is open, so this questionnaire cannot be changed."
+      ? RUN_OPEN_MESSAGE
       : publicErrorMessage(result.error),
   );
   return false;
@@ -110,6 +111,9 @@ function QuestionnaireEditorContent() {
   );
 }
 
+/** How often the desk re-reads while a run is open, so closing it elsewhere unlocks without a reload. */
+const LOCK_POLL_MS = 5_000;
+
 function QuestionnaireDesk({
   sheet,
   onChanged,
@@ -126,6 +130,13 @@ function QuestionnaireDesk({
   const openRun = sheet.runs.find((run) => run.open) ?? null;
   const locked = openRun !== null || sheet.retired;
   const questions = sheet.questions;
+  const runOpen = openRun !== null;
+
+  useEffect(() => {
+    if (!runOpen) return;
+    const timer = setInterval(onChanged, LOCK_POLL_MS);
+    return () => clearInterval(timer);
+  }, [runOpen, onChanged]);
 
   const answerable = questions.some(
     (question) => question.expected.trim() !== "",

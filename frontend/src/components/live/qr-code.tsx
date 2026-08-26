@@ -16,6 +16,7 @@ export function JoinCode({ url }: { url: string }) {
         aria-label={`QR code for ${url}`}
         role="img"
         className="w-full max-w-70 rounded-xl bg-white p-3 shadow-sm [&>svg]:h-auto [&>svg]:w-full"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is drawn locally by uqr from a same-origin URL this app builds, never from user content.
         dangerouslySetInnerHTML={{ __html: svg }}
       />
       <figcaption className="select-all break-all text-center font-mono text-lg">

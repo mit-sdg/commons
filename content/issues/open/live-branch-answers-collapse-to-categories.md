@@ -12,13 +12,15 @@ concepts:
 
 The live composition answers several designed cases with authored words:
 `RUN_OPEN` when editing a questionnaire whose run is open, `NOT_QUIZ_READY`
-when launching a quiz that proposes no answers, `CLOSED`, `NOT_PART`,
-`INCOMPLETE`, and `NOT_SUBMITTED` on the participation endpoints. The HTTP
-profile projects every error into its public category, so all of these reach
-the browser as `CONFLICT` or `INVALID_REQUEST`. The frontend keeps the
-distinctions by deciding them client-side from data it already holds — it
-disables Launch while no question proposes an answer, disables Hand in until a
-quiz is whole, and reads the run's open flag from the face — so the collapsed
+when launching a quiz that proposes no answers, `AT_EDGE` when moving a
+question past its end, `FORM_FIXED` when adopting a refinement that proposes
+the other form, and `CLOSED`, `NOT_PART`, `INCOMPLETE`, and `NOT_SUBMITTED` on
+the participation endpoints. The HTTP profile projects every error into its
+public category, so all of these reach the browser as `CONFLICT` or
+`INVALID_REQUEST`. The frontend keeps the distinctions by deciding them
+client-side from data it already holds — it disables Launch while no question
+proposes an answer, disables Hand in until a quiz is whole, disables the edge
+move buttons, and reads the run's open flag from the face — so the collapsed
 categories are backstops rather than the user's experience.
 
 ## Unresolved decision

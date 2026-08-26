@@ -3972,7 +3972,7 @@ export type CommonsWireHttp = {
     } | {
       "candidate": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>>, ["candidate"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/drafts/clarify": {
     input: {
@@ -4233,7 +4233,7 @@ export type CommonsWireHttp = {
     output: {
       "question": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/quizzes/raise-question": {
     input: {
@@ -4242,7 +4242,7 @@ export type CommonsWireHttp = {
     output: {
       "question": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/quizzes/remove-question": {
     input: {

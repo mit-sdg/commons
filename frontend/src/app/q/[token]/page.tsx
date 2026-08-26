@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckCircle2, CircleSlash, Loader2 } from "lucide-react";
+import { CheckCircle2, CircleSlash } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { EmptyState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,10 +15,25 @@ type Face = NonNullable<Output<"/live/p/arrive">["face"]>;
 type Question = Face["questions"][number];
 type Outcome = Output<"/live/p/outcome">;
 
-type FormedOutcome = Extract<Outcome, { outcome: unknown }>["outcome"];
+/**
+ * The outcome payload varies with what the run discloses: a bare score, a score
+ * with the key, or the key plus explanations. A distributive conditional keeps
+ * every shape — an indexed access would reduce the richer ones away — so the
+ * page reads them off the generated types instead of asserting a shape.
+ */
+type OutcomeShapeOf<T> = T extends { outcome: infer Formed } ? Formed : never;
+type FormedOutcome = OutcomeShapeOf<Outcome>;
+type ScoredOutcome = NonNullable<FormedOutcome>;
+type OutcomeItem = Extract<ScoredOutcome, { items: unknown }>["items"][number];
 
 const formedOutcomeOf = (result: Outcome): FormedOutcome | undefined =>
   "outcome" in result ? result.outcome : undefined;
+
+const itemsOf = (formed: ScoredOutcome): OutcomeItem[] | undefined =>
+  "items" in formed ? formed.items : undefined;
+
+const explanationOf = (item: OutcomeItem): string | undefined =>
+  "explanation" in item ? item.explanation : undefined;
 
 const FACE_POLL_MS = 5_000;
 const OUTCOME_POLL_MS = 1_500;
@@ -106,36 +122,43 @@ export default function ParticipantPage() {
     void loadFace();
   }, [loadFace]);
 
-  // While answering, watch for the run closing under us.
+  // While answering, watch for the run closing under us. The effect keys on the
+  // booleans it actually needs, so a fresh face object each tick does not tear
+  // the interval down and rebuild it.
+  const arrived = face !== null;
+  const open = face?.open ?? false;
   useEffect(() => {
-    if (face === null || !face.open || submitted) return;
+    if (!arrived || !open || submitted) return;
     const timer = setInterval(() => void loadFace(), FACE_POLL_MS);
     return () => clearInterval(timer);
-  }, [face, submitted, loadFace]);
+  }, [arrived, open, submitted, loadFace]);
 
   // After hand-in, poll the outcome until the grade lands (surveys answer at once).
   useEffect(() => {
     if (!submitted || response === null) return;
-    let stopped = false;
+    let cancelled = false;
+    // The handle exists before the first poll runs, so neither the poll nor the
+    // cleanup closes over a binding that does not exist yet.
+    const handle: { timer?: ReturnType<typeof setInterval> } = {};
+    const stop = () => {
+      cancelled = true;
+      if (handle.timer !== undefined) clearInterval(handle.timer);
+    };
     const poll = async () => {
       const result = await api["/live/p/outcome"]({ response });
-      if (stopped || isApiError(result)) return;
+      if (cancelled || isApiError(result)) return;
       setOutcome(result);
       const formed = formedOutcomeOf(result);
       if (
         !("outcome" in result) ||
         (formed?.score !== null && formed?.score !== undefined)
       ) {
-        stopped = true;
-        clearInterval(timer);
+        stop();
       }
     };
     void poll();
-    const timer = setInterval(() => void poll(), OUTCOME_POLL_MS);
-    return () => {
-      stopped = true;
-      clearInterval(timer);
-    };
+    handle.timer = setInterval(() => void poll(), OUTCOME_POLL_MS);
+    return stop;
   }, [submitted, response]);
 
   const begin = useCallback(async () => {
@@ -202,9 +225,11 @@ export default function ParticipantPage() {
   if (missing) {
     return (
       <Shell>
-        <Notice icon={CircleSlash} title="Nothing is shared here">
-          Check the address or scan the code again.
-        </Notice>
+        <EmptyState
+          icon={CircleSlash}
+          title="Nothing is shared here"
+          description="Check the address or scan the code again."
+        />
       </Shell>
     );
   }
@@ -212,9 +237,7 @@ export default function ParticipantPage() {
   if (face === null) {
     return (
       <Shell>
-        <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" /> Opening…
-        </div>
+        <LoadingState label="Opening…" />
       </Shell>
     );
   }
@@ -230,9 +253,11 @@ export default function ParticipantPage() {
   if (!face.open) {
     return (
       <Shell title={face.title}>
-        <Notice icon={CircleSlash} title="This has closed">
-          Participation ended before you could hand in.
-        </Notice>
+        <EmptyState
+          icon={CircleSlash}
+          title="This has closed"
+          description="Participation ended before you could hand in."
+        />
       </Shell>
     );
   }
@@ -240,9 +265,16 @@ export default function ParticipantPage() {
   if (alreadyIn) {
     return (
       <Shell title={face.title}>
-        <Notice icon={CheckCircle2} title="Already handed in">
-          This device already handed in a response to this {face.form}.
-        </Notice>
+        <EmptyState
+          icon={CheckCircle2}
+          title="Already handed in"
+          // Signed-in participation is bound to the account, not the handset.
+          description={
+            me
+              ? "You already handed in from this account."
+              : `This device already handed in a response to this ${face.form}.`
+          }
+        />
       </Shell>
     );
   }
@@ -314,24 +346,6 @@ function Shell({
   );
 }
 
-function Notice({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: typeof CircleSlash;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 py-16 text-center">
-      <Icon className="size-10 text-muted-foreground" />
-      <h2 className="font-display text-xl font-semibold">{title}</h2>
-      <p className="text-muted-foreground">{children}</p>
-    </div>
-  );
-}
-
 function QuestionCard({
   index,
   question,
@@ -343,17 +357,11 @@ function QuestionCard({
   value: string;
   onAnswer: (value: string) => void;
 }) {
-  const [draft, setDraft] = useState(value);
-  const [committed, setCommitted] = useState(value);
-  if (value !== committed) {
-    setCommitted(value);
-    setDraft(value);
-  }
-  const choices = question.choices as string[];
+  const choices = question.choices;
 
   return (
     <Card>
-      <CardContent className="flex flex-col gap-3 pt-6">
+      <CardContent className="flex flex-col gap-3">
         <p className="font-medium">
           <span className="mr-2 text-muted-foreground">{index + 1}.</span>
           {question.prompt}
@@ -377,13 +385,16 @@ function QuestionCard({
             ))}
           </div>
         ) : (
+          // The field owns the draft and commits on blur, so nothing has to be
+          // synced from props into state during render.
           <Input
-            value={draft}
+            defaultValue={value}
             placeholder="Your answer"
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={() => {
-              if (draft.trim() !== "" && draft !== value)
-                onAnswer(draft.trim());
+            onBlur={(event) => {
+              const next = event.currentTarget.value.trim();
+              if (next === "") return;
+              event.currentTarget.value = next;
+              if (next !== value) onAnswer(next);
             }}
           />
         )}
@@ -401,36 +412,19 @@ function OutcomeView({
 }) {
   if (!isQuiz || (outcome !== null && !("outcome" in outcome))) {
     return (
-      <Notice icon={CheckCircle2} title="Handed in">
-        Thanks — your response was received.
-      </Notice>
+      <EmptyState
+        icon={CheckCircle2}
+        title="Handed in"
+        description="Thanks — your response was received."
+      />
     );
   }
-  const formed = (outcome === null ? undefined : formedOutcomeOf(outcome)) as
-    | {
-        score: number | null;
-        outOf: number | null;
-        items?: {
-          item: string;
-          prompt: string;
-          expected: string;
-          explanation?: string;
-          value: string | null;
-        }[];
-      }
-    | null
-    | undefined;
-  if (
-    formed === null ||
-    formed?.score === null ||
-    formed?.score === undefined
-  ) {
-    return (
-      <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" /> Handed in — scoring…
-      </div>
-    );
+  const formed = outcome === null ? undefined : formedOutcomeOf(outcome);
+  if (formed === null || formed === undefined || formed.score === null) {
+    return <LoadingState label="Handed in — scoring…" />;
   }
+  // Disclosure decides whether the key travels back with the score at all.
+  const items = itemsOf(formed);
   return (
     <div className="flex flex-col gap-4">
       <div className="py-6 text-center">
@@ -443,13 +437,14 @@ function OutcomeView({
           </span>
         </p>
       </div>
-      {formed.items !== undefined && (
+      {items !== undefined && (
         <div className="flex flex-col gap-3">
-          {formed.items.map((item) => {
+          {items.map((item) => {
             const right = item.value !== null && item.value === item.expected;
+            const explanation = explanationOf(item);
             return (
               <Card key={item.item}>
-                <CardContent className="flex flex-col gap-1 pt-6 text-sm">
+                <CardContent className="flex flex-col gap-1 text-sm">
                   <p className="font-medium">{item.prompt}</p>
                   <p
                     className={cn(
@@ -465,12 +460,9 @@ function OutcomeView({
                       Expected: {item.expected}
                     </p>
                   )}
-                  {item.explanation !== undefined &&
-                    item.explanation !== "" && (
-                      <p className="text-muted-foreground">
-                        {item.explanation}
-                      </p>
-                    )}
+                  {explanation !== undefined && explanation !== "" && (
+                    <p className="text-muted-foreground">{explanation}</p>
+                  )}
                 </CardContent>
               </Card>
             );

@@ -193,6 +193,10 @@ _originOf (brief: String) : optional (origin: String)
   answers what the brief's line was opened from
   answers no row when the brief has no origin or does not exist
 
+_basisOf (brief: String) : optional (basis: String)
+  answers the candidate the brief corrects
+  answers no row when the brief is not a correction or does not exist
+
 _clarifications (brief: String) : many (clarification: String, question: String, answer: String|Null)
   answers the brief's clarifications in asking order
   answers no rows when none match

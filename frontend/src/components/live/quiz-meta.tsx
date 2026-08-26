@@ -38,17 +38,19 @@ export function isDisclosure(value: string): value is Disclosure {
   return DISCLOSURE_OPTIONS.some((option) => option.value === value);
 }
 
-export function disclosureLabel(value: string): string {
-  return (
-    DISCLOSURE_OPTIONS.find((option) => option.value === value)?.label ?? value
-  );
-}
-
 export function disclosureHint(value: string): string {
   return (
     DISCLOSURE_OPTIONS.find((option) => option.value === value)?.hint ?? ""
   );
 }
+
+/**
+ * What a refusal means once a run is open: the questionnaire is frozen for as
+ * long as the room is answering it. Every surface that can meet that conflict
+ * says it the same way.
+ */
+export const RUN_OPEN_MESSAGE =
+  "A run is open, so this questionnaire cannot be changed.";
 
 export function FormBadge({
   form,

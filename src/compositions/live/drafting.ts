@@ -64,8 +64,10 @@ export const ClarifiedBriefAsksReasoner = reaction(
 
 /**
  * A reply meets its reading: a draft is proposed, a question is asked, and
- * anything else is stood upon. The three readings partition every reply, so
- * exactly one of these fires per answered ask.
+ * anything else is stood upon. The readings partition every reply, so exactly
+ * one of these fires per answered ask — and a clarifying question may only
+ * answer a brief that begins a line, because a correction's form was settled
+ * when the line began, so a question there is unusable and is stood upon.
  */
 export const ReplyDraftProposes = reaction(({ asking, reply, brief, kind, form, material }) =>
   when(Reasoning.answer({ asking, reply }).responds())
@@ -85,9 +87,29 @@ export const ReplyQuestionAsks = reaction(({ asking, reply, brief, kind, questio
       Reasoning._asking({ asking }).is({ about: brief }),
       compute(computations.parseKind, { reply }, kind),
       is.among(kind, ["question"]),
+      no(Drafting._basisOf({ brief })),
       compute(computations.parsedQuestion, { reply }, question),
     )
     .then(Drafting.ask({ brief, question })),
+);
+
+export const CorrectionQuestionComplains = reaction(({ asking, reply, brief, kind }) =>
+  when(Reasoning.answer({ asking, reply }).responds())
+    .where(
+      Reasoning._asking({ asking }).is({ about: brief }),
+      compute(computations.parseKind, { reply }, kind),
+      is.among(kind, ["question"]),
+      Drafting._basisOf({ brief }),
+    )
+    .then(
+      Insisting.complain({
+        aim: brief,
+        patience: PATIENCE,
+        offering: reply,
+        account:
+          "A correction takes no clarifying question — the form was already settled. Deliver the whole revised draft.",
+      }),
+    ),
 );
 
 export const ReplyNeitherComplains = reaction(({ asking, reply, brief, kind, reason }) =>

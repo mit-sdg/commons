@@ -2,7 +2,7 @@
 
 import { Radio } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api, isApiError, publicErrorMessage } from "@/lib/api";
@@ -29,8 +29,9 @@ export function RunLaunchButton({
   /** Why the button is unavailable, shown on hover. */
   hint?: string;
   label?: string;
-  size?: "sm" | "default" | "lg";
-  variant?: "default" | "outline" | "secondary";
+  /** Passed straight through, so the button looks like any other Button. */
+  size?: ComponentProps<typeof Button>["size"];
+  variant?: ComponentProps<typeof Button>["variant"];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);

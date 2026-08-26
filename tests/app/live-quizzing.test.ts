@@ -453,6 +453,32 @@ describe("the drafting loop with a scripted reasoner", () => {
     expect(line[0].items[0].prompt).toContain("Clarified quiz");
   });
 
+  test("a clarifying question answering a correction is repaired without author action", async () => {
+    const described = await json(
+      await post(edge, "/live/drafts/describe", { request: "A short quiz about tides" }, cookie),
+    );
+    const brief = described.brief as string;
+    await serveReasoner(edge);
+    let line = await lineOf(brief);
+    expect(line[0].candidate).not.toBeNull();
+
+    // The correction provokes a clarifying question; the form was settled when
+    // the line began, so the composition stands on the reply and the repair
+    // loop returns a draft with no author involvement.
+    await post(
+      edge,
+      "/live/drafts/correct",
+      { candidate: line[0].candidate, request: "make it ambiguous somehow" },
+      cookie,
+    );
+    await serveReasoner(edge);
+    line = await lineOf(brief);
+    expect(line).toHaveLength(2);
+    expect(line[1].clarifying).toBe(false);
+    expect(line[1].candidate).not.toBeNull();
+    expect(line[1].items[0].prompt).toContain("Repaired quiz");
+  });
+
   test("an unreadable reply is repaired without any creator action", async () => {
     const described = await json(
       await post(edge, "/live/drafts/describe", { request: "unreadable nonsense probe" }, cookie),
@@ -553,14 +579,14 @@ describe("questions stand contiguously", () => {
       { question: questions[0].question },
       cookie,
     );
-    expect(atTop.status).toBeGreaterThanOrEqual(400);
+    expect(atTop.status).toBe(409);
     const atBottom = await post(
       edge,
       "/live/quizzes/lower-question",
       { question: questions[1].question },
       cookie,
     );
-    expect(atBottom.status).toBeGreaterThanOrEqual(400);
+    expect(atBottom.status).toBe(409);
 
     const lowered = await post(
       edge,
@@ -581,7 +607,7 @@ describe("questions stand contiguously", () => {
       { question: "no-such" },
       cookie,
     );
-    expect(missing.status).toBeGreaterThanOrEqual(400);
+    expect(missing.status).toBe(404);
   });
 
   test("retitling and moving are refused while a run is open", async () => {
@@ -743,7 +769,7 @@ describe("the refining line with a scripted reasoner", () => {
     line = await lineOf(refined.brief as string);
     expect(line[1].items[0].prompt).toContain("Corrected survey");
     const denied = await post(edge, "/live/drafts/adopt", { candidate: line[1].candidate }, cookie);
-    expect(denied.status).toBeGreaterThanOrEqual(400);
+    expect(denied.status).toBe(409);
 
     // The questionnaire is untouched, and the line stays open to correct again.
     expect(await questionsOf(questionnaire)).toHaveLength(2);
@@ -768,13 +794,13 @@ describe("the refining line with a scripted reasoner", () => {
     const questionnaire = await buildQuiz(edge, cookie, "score");
     const launch = await json(await post(edge, "/live/runs/launch", { questionnaire }, cookie));
     const midRun = await post(edge, "/live/drafts/refine", { questionnaire }, cookie);
-    expect(midRun.status).toBeGreaterThanOrEqual(400);
+    expect(midRun.status).toBe(409);
     await post(edge, "/live/runs/close", { run: launch.run }, cookie);
     await post(edge, "/live/quizzes/retire", { questionnaire }, cookie);
     const retired = await post(edge, "/live/drafts/refine", { questionnaire }, cookie);
-    expect(retired.status).toBeGreaterThanOrEqual(400);
+    expect(retired.status).toBe(409);
     const missing = await post(edge, "/live/drafts/refine", { questionnaire: "no-such" }, cookie);
-    expect(missing.status).toBeGreaterThanOrEqual(400);
+    expect(missing.status).toBe(404);
   });
 });
 
@@ -825,9 +851,9 @@ describe("many participants at once", () => {
     const results = await until(
       async () => {
         const read = await json(await post(edge, "/live/runs/results", { run }, cookie));
-        return read as {
-          board: { started: number; handedIn: number };
-          scores: { results: { score: number }[] } | undefined;
+        return {
+          board: read.board as { started: number; handedIn: number },
+          scores: read.scores as { results: { score: number }[] } | undefined,
         };
       },
       (read) => (read.scores?.results.length ?? 0) === 40,

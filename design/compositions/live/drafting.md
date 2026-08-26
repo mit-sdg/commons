@@ -24,7 +24,12 @@ clarifying question, or neither.
 [Live.drafting.ReplyDraftProposes](reaction:Live.drafting.ReplyDraftProposes)
 turns a draft reply into the brief's candidate;
 [Live.drafting.ReplyQuestionAsks](reaction:Live.drafting.ReplyQuestionAsks)
-records the clarifying question and sets the brief waiting; and
+records the clarifying question and sets the brief waiting — but only on a
+brief that begins a line, because a correction's form was settled when the
+line began, so
+[Live.drafting.CorrectionQuestionComplains](reaction:Live.drafting.CorrectionQuestionComplains)
+stands on a question that answers a correction as it would on any unusable
+reply; and
 [Live.drafting.ReplyNeitherComplains](reaction:Live.drafting.ReplyNeitherComplains)
 stands on an unusable reply, opening an insistence of three complaints.
 [Live.drafting.ComplaintRetriesTheAsk](reaction:Live.drafting.ComplaintRetriesTheAsk)

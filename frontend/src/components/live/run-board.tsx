@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 type Results = Output<"/live/runs/results">;
 
 /** The board of one run: what was asked, and every value handed in. */
-export type RunBoardView = NonNullable<Results["board"]>;
+type RunBoardView = NonNullable<Results["board"]>;
 export type RunBoardQuestion = RunBoardView["questions"][number];
 /** Scores ride along only for a keyed run; a survey's board arrives alone. */
 export type RunScoresView = NonNullable<
@@ -17,7 +17,7 @@ export function scoresOf(result: Results): RunScoresView | null {
   return "scores" in result ? result.scores : null;
 }
 
-export interface ChoiceTally {
+interface ChoiceTally {
   label: string;
   count: number;
   /** A value nobody was offered — a written answer to a question that changed. */
@@ -29,10 +29,7 @@ export interface ChoiceTally {
  * matches no choice is gathered under one heading rather than dropped, so the
  * bars always add up to the answers actually given.
  */
-export function tallyChoices(
-  choices: string[],
-  values: string[],
-): ChoiceTally[] {
+function tallyChoices(choices: string[], values: string[]): ChoiceTally[] {
   const counts = new Map<string, number>();
   for (const choice of choices) counts.set(choice, 0);
   let other = 0;
@@ -51,13 +48,13 @@ export function tallyChoices(
     : [...rows, { label: "Something else", count: other, other: true }];
 }
 
-export interface ScoreBand {
+interface ScoreBand {
   score: number;
   count: number;
 }
 
 /** Every score that was earned, low to high, with how many earned it. */
-export function scoreDistribution(
+function scoreDistribution(
   results: { score: number; outOf: number }[],
 ): ScoreBand[] {
   const counts = new Map<number, number>();
