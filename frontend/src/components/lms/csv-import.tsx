@@ -29,6 +29,7 @@ export function CsvImport({ onComplete }: CsvImportProps) {
   const { session } = useAuth();
   const [csv, setCsv] = useState("");
   const [rows, setRows] = useState<CsvRow[] | null>(null);
+  const [previewSource, setPreviewSource] = useState("");
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
 
@@ -40,7 +41,10 @@ export function CsvImport({ onComplete }: CsvImportProps) {
     });
     setLoading(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else setRows(result.rows ?? []);
+    else {
+      setRows(result.rows ?? []);
+      setPreviewSource(csv.trim());
+    }
   }
 
   async function doImport() {
@@ -83,10 +87,15 @@ export function CsvImport({ onComplete }: CsvImportProps) {
         <Textarea
           id="roster-csv"
           value={csv}
-          onChange={(e) => setCsv(e.target.value)}
+          onChange={(e) => {
+            setCsv(e.target.value);
+            setRows(null);
+            setPreviewSource("");
+          }}
           placeholder="Paste the rows here"
           rows={6}
-          className="font-mono text-sm"
+          spellCheck={false}
+          className="font-mono text-sm whitespace-pre-wrap break-words"
         />
         <Button
           size="sm"
@@ -107,7 +116,9 @@ export function CsvImport({ onComplete }: CsvImportProps) {
             <Button
               size="sm"
               onClick={doImport}
-              disabled={importing || rows.length === 0}
+              disabled={
+                importing || rows.length === 0 || previewSource !== csv.trim()
+              }
             >
               <Upload className="size-4 mr-1" />
               {importing
