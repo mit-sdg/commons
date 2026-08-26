@@ -178,10 +178,10 @@ export default function AssignmentDetailPage({
         </Link>
       </div>
 
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="font-display text-3xl font-semibold tracking-tight">
+      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h1 className="min-w-0 break-words font-display text-3xl font-semibold tracking-tight">
               {detail.title}
             </h1>
             <Badge variant="secondary">
@@ -190,7 +190,7 @@ export default function AssignmentDetailPage({
             <StatusBadge status={detail.status} />
           </div>
         </div>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href="/grades">
             <GraduationCap className="size-4 mr-1" /> View grades
           </Link>
