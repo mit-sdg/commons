@@ -1764,6 +1764,28 @@ Former "the calendar between (start) and (end)" — inputs (start, end); binding
       title
 ```
 
+### the calendar of (student) between (start) and (end)
+
+Authored path: `Course.calendar.theCalendarOf`.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
+
+```former
+Former "the calendar of (student) between (start) and (end)" — inputs (student, start, end); bindings (assignment, release, dueOverride, title, kind, availableAt, dueAt, closeAt, status); promises exactly one record — forms:
+  each Assigning._getAssigned (assignee: student) has (assignment, dueOverride, release)
+    where Assigning._getPublishedInWindow (end, start) has (assignment)
+    where Assigning._getAssignments () has (assignment, availableAt, closeAt, dueAt, kind, status, title)
+    form a record of
+      assignment
+      availableAt
+      closeAt
+      dueAt
+      dueOverride
+      kind
+      release
+      status
+      title
+```
+
 ### the categories ()
 
 Authored path: `Forum.categories.theCategories`.
@@ -1826,7 +1848,7 @@ Former "the criterion scores of (learner) on (item)" — inputs (learner, item);
 ### the dashboard seat of (user)
 
 Authored path: `Course.calendar.theDashboardSeatOf`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 12.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 8.
 
 ```former
 Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder, email, kind, section, status); promises exactly one record — forms:
@@ -2584,7 +2606,7 @@ Former "the staff assignments ()" — inputs (); bindings (assignment, author, t
 ### the staff dashboard ()
 
 Authored path: `Course.calendar.theStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 14.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 10.
 
 ```former
 Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, section, email, displayName); promises exactly one record — forms:
@@ -2602,7 +2624,7 @@ Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, secti
 ### the staff dashboard counts ()
 
 Authored path: `Course.calendar.theStaffDashboardCounts`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 15.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
 
 ```former
 Former "the staff dashboard counts ()" — inputs (); bindings (assignment, item, learner, use); promises exactly one record — forms:
@@ -5092,7 +5114,7 @@ then
 
 Authored path: `Course.calendar.CalendarMe`.
 - Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 22.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 18.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
@@ -5107,7 +5129,7 @@ then
 
 Authored path: `Course.calendar.CalendarMe`.
 - Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 22.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 18.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
@@ -5115,14 +5137,14 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
 then
-  RequestBoundary.respond (events: former "the calendar between (start) and (end)" with (end, start), requestId)
+  RequestBoundary.respond (events: former "the calendar of (student) between (start) and (end)" with (end, start, student: user), requestId)
 ```
 
 ### Course.calendar.CalendarStaff:forbidden
 
 Authored path: `Course.calendar.CalendarStaff`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 6.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 23.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 19.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
@@ -5136,8 +5158,8 @@ then
 ### Course.calendar.CalendarStaff:success
 
 Authored path: `Course.calendar.CalendarStaff`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 6.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 23.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 19.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
@@ -5151,8 +5173,8 @@ then
 ### Course.calendar.LmsMe:forbidden
 
 Authored path: `Course.calendar.LmsMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 24.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 7.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 20.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
@@ -5166,8 +5188,8 @@ then
 ### Course.calendar.LmsMe:success
 
 Authored path: `Course.calendar.LmsMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 24.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 7.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 20.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
@@ -5181,8 +5203,8 @@ then
 ### Course.calendar.LmsStaffDashboard:forbidden
 
 Authored path: `Course.calendar.LmsStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 13.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 25.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 9.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 21.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)
@@ -5196,8 +5218,8 @@ then
 ### Course.calendar.LmsStaffDashboard:success
 
 Authored path: `Course.calendar.LmsStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 13.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 25.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 9.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 21.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)

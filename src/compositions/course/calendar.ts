@@ -30,6 +30,54 @@ export const theCalendarBetween = former(
       )
       .form({ assignment, title, kind, availableAt, dueAt, closeAt, status }),
 );
+/** Which calendar entries and individual dates belong to this learner? */
+export const theCalendarOf = former(
+  "the calendar of (student) between (start) and (end)",
+  (
+    { student, start, end },
+    {
+      assignment,
+      release,
+      dueOverride,
+      title,
+      kind,
+      availableAt,
+      dueAt,
+      closeAt,
+      status,
+    },
+  ) =>
+    each(
+      Assigning._getAssigned({ assignee: student }).is({
+        assignment,
+        release,
+        dueOverride,
+      }),
+    )
+      .where(
+        Assigning._getPublishedInWindow({ start, end }).is({ assignment }),
+        Assigning._getAssignments({}).is({
+          assignment,
+          title,
+          kind,
+          availableAt,
+          dueAt,
+          closeAt,
+          status,
+        }),
+      )
+      .form({
+        assignment,
+        release,
+        title,
+        kind,
+        availableAt,
+        dueAt,
+        dueOverride,
+        closeAt,
+        status,
+      }),
+);
 /** What dashboard seat belongs to this user? */
 export const theDashboardSeatOf = former(
   "the dashboard seat of (user)",
@@ -84,7 +132,9 @@ export const CalendarMe = endpoint(
   ({ session, start, end, user }) =>
     receive({ session, start, end }).then(
       where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-        .then(respond({ events: theCalendarBetween({ start, end }) }))
+        .then(
+          respond({ events: theCalendarOf({ student: user, start, end }) }),
+        )
         .named("success"),
       where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
         .then(respond({ error: "FORBIDDEN" }))
