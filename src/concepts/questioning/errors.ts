@@ -1,0 +1,14 @@
+export class UnknownForm extends Error {}
+export class UnknownDisclosure extends Error {}
+export class InvalidTitle extends Error {}
+export class QuestionnaireNotFound extends Error {}
+export class QuestionnaireRetired extends Error {}
+export class QuestionLimitReached extends Error {}
+export class QuestionNotFound extends Error {}
+export class InvalidPrompt extends Error {}
+export class InvalidChoices extends Error {}
+export class DuplicateChoices extends Error {}
+export class InvalidExpected extends Error {}
+export class InvalidReference extends Error {}
+export class InvalidExplanation extends Error {}
+export class NotSiblings extends Error {}

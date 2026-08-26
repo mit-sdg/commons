@@ -21,7 +21,7 @@ const compositionDesigns = () => {
 const typedLinks = (source: string) =>
   [
     ...source.matchAll(
-      /\]\((reaction|view|former):((?:Access|Course|Forum|Tasks)\.[A-Za-z0-9.]+)\)/g,
+      /\]\((reaction|view|former):((?:Access|Course|Forum|Live|Tasks)\.[A-Za-z0-9.]+)\)/g,
     ),
   ].map(([, kind, name]) => ({ kind, name }));
 
@@ -135,6 +135,28 @@ describe("application-owned design integration", () => {
       "Subscribing.Target is Conversing.Conversation",
       "Tracking.Scope is Conversing.Conversation",
       "PasswordResetVouching.Subject is Authenticating.User",
+      "AdoptLinking.Source is Drafting.Brief",
+      "AdoptLinking.Target is Questioning.Questionnaire",
+      "Drafting.Author is Authenticating.User",
+      "Drafting.Origin is Questioning.Questionnaire",
+      "DraftTrashing.Item is Drafting.Brief",
+      "DraftTrashing.User is Authenticating.User",
+      "Insisting.Aim is Drafting.Brief",
+      "Locating.Subject is Publishing.Edition",
+      "Publishing.Author is Authenticating.User",
+      "Publishing.Material is Questioning.Questionnaire",
+      "Questioning.Author is Authenticating.User",
+      "Reasoning.Reasoner is LiveReasoner",
+      "Reasoning.Subject is Drafting.Brief",
+      "Responding.Item is Questioning.Question",
+      "Responding.Participant is LiveParticipant",
+      "Responding.Subject is Publishing.Edition",
+      "Scoring.Item is Questioning.Question",
+      "Scoring.Subject is Publishing.Edition",
+      "Scoring.Submission is Responding.Response",
+      "Sharing.Subject is Publishing.Edition",
+      "RunSnapshotting.Subject is Publishing.Edition",
+      "RunSnapshotting.Value is LiveRunSnapshot",
     ].sort();
     const source = readFileSync(join(root, "design/application.md"), "utf8");
     const inventory = source.match(/^```instances\n([\s\S]*?)^```$/m)?.[1] ?? "";
@@ -216,7 +238,7 @@ describe("application-owned design integration", () => {
       }
     }
 
-    for (const group of ["Access", "Course", "Forum", "Tasks"]) {
+    for (const group of ["Access", "Course", "Forum", "Live", "Tasks"]) {
       expect(readFileSync(join(compositionsRoot, "index.ts"), "utf8"), group).toContain(
         `import * as ${group} from "./${group}.ts"`,
       );
@@ -234,7 +256,7 @@ describe("application-owned design integration", () => {
       ...new Set(
         inspected.reactions
           .map(({ name }) => name.replace(/[:#].*$/, ""))
-          .filter((name) => /^(Access|Course|Forum|Tasks)\./.test(name))
+          .filter((name) => /^(Access|Course|Forum|Live|Tasks)\./.test(name))
           .map((name) => `reaction:${name}`),
       ),
       ...inspected.views.flatMap(({ authored }) =>

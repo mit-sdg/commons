@@ -5,6 +5,7 @@ import {
   BookOpen,
   Clock,
   FileText,
+  Radio,
   Settings,
   Users,
 } from "lucide-react";
@@ -19,7 +20,7 @@ import { useAuth } from "@/lib/auth";
 import { loadStaffDashboard } from "@/lib/lms";
 
 function StaffDashboardPageContent() {
-  const { session } = useAuth();
+  const { session, permissions } = useAuth();
 
   const {
     data: dashData,
@@ -175,6 +176,15 @@ function StaffDashboardPageContent() {
             >
               <Settings className="size-4" /> Class settings
             </Link>
+            {permissions.can("live:host") ? (
+              <Link
+                href="/staff/live"
+                className="flex items-center gap-2 text-sm hover:text-primary"
+              >
+                <Radio className="size-4" /> Run quizzes &amp; surveys in the
+                room
+              </Link>
+            ) : null}
           </CardContent>
         </Card>
       </div>

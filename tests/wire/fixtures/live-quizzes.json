@@ -1,0 +1,474 @@
+{
+  "name": "live quiz loop",
+  "steps": [
+    {
+      "id": "regAdmin",
+      "phase": "setup",
+      "kind": "setup",
+      "target": "register-user",
+      "body": {
+        "username": "lq_admin",
+        "password": "password123",
+        "displayName": "Admin",
+        "email": "lq_admin@example.com"
+      },
+      "response": {
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "loginAdmin",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "lq_admin",
+        "password": "password123"
+      },
+      "response": {
+        "session": "uuid#2",
+        "expiresAt": "<date>",
+        "user": "uuid#1"
+      }
+    },
+    {
+      "id": "regHost",
+      "phase": "setup",
+      "kind": "setup",
+      "target": "register-user",
+      "body": {
+        "username": "lq_host",
+        "password": "password123",
+        "displayName": "Professor Lee",
+        "email": "lq_host@example.com"
+      },
+      "response": {
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "loginHost",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/auth/login",
+      "body": {
+        "username": "lq_host",
+        "password": "password123"
+      },
+      "response": {
+        "session": "uuid#4",
+        "expiresAt": "<date>",
+        "user": "uuid#3"
+      }
+    },
+    {
+      "id": "defineLiveHost",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/define",
+      "body": {
+        "session": "$loginAdmin.session",
+        "name": "lq-live-host",
+        "capabilities": ["live:host"]
+      },
+      "response": {
+        "role": "uuid#5"
+      }
+    },
+    {
+      "id": "grantLiveHost",
+      "phase": "setup",
+      "kind": "send",
+      "target": "/roles/assign",
+      "body": {
+        "session": "$loginAdmin.session",
+        "user": "$loginHost.user",
+        "context": "commons",
+        "role": "$defineLiveHost.role"
+      },
+      "response": {
+        "assignment": "uuid#6"
+      }
+    },
+    {
+      "id": "createQuiz",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/quizzes/create",
+      "body": {
+        "session": "$loginHost.session",
+        "title": "Photosynthesis check",
+        "form": "quiz",
+        "disclosure": "answers"
+      },
+      "response": {
+        "questionnaire": "uuid#7"
+      }
+    },
+    {
+      "id": "addChoiceQuestion",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/quizzes/add-question",
+      "body": {
+        "session": "$loginHost.session",
+        "questionnaire": "$createQuiz.questionnaire",
+        "prompt": "Which gas do plants take in?",
+        "choices": ["Oxygen", "Carbon dioxide"],
+        "expected": "Carbon dioxide",
+        "explanation": "Photosynthesis fixes carbon."
+      },
+      "response": {
+        "question": "uuid#8"
+      }
+    },
+    {
+      "id": "addWrittenQuestion",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/quizzes/add-question",
+      "body": {
+        "session": "$loginHost.session",
+        "questionnaire": "$createQuiz.questionnaire",
+        "prompt": "Name the light-capturing pigment.",
+        "choices": [],
+        "expected": "Chlorophyll",
+        "explanation": ""
+      },
+      "response": {
+        "question": "uuid#9"
+      }
+    },
+    {
+      "id": "listQuizzes",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/quizzes/list",
+      "body": {
+        "session": "$loginHost.session"
+      },
+      "response": {
+        "questionnaires": [
+          {
+            "questionnaire": "uuid#7",
+            "title": "Photosynthesis check",
+            "form": "quiz",
+            "disclosure": "answers",
+            "createdAt": "<date>",
+            "retired": false,
+            "openRun": null,
+            "token": null,
+            "questions": 2,
+            "proposes": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "getQuiz",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/quizzes/get",
+      "body": {
+        "session": "$loginHost.session",
+        "questionnaire": "$createQuiz.questionnaire"
+      },
+      "response": {
+        "questionnaire": {
+          "questionnaire": "uuid#7",
+          "title": "Photosynthesis check",
+          "form": "quiz",
+          "disclosure": "answers",
+          "createdAt": "<date>",
+          "retired": false,
+          "questions": [
+            {
+              "question": "uuid#8",
+              "prompt": "Which gas do plants take in?",
+              "choices": ["Oxygen", "Carbon dioxide"],
+              "expected": "Carbon dioxide",
+              "explanation": "Photosynthesis fixes carbon.",
+              "position": 1
+            },
+            {
+              "question": "uuid#9",
+              "prompt": "Name the light-capturing pigment.",
+              "choices": [],
+              "expected": "Chlorophyll",
+              "explanation": "",
+              "position": 2
+            }
+          ],
+          "runs": []
+        }
+      }
+    },
+    {
+      "id": "launchRun",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/runs/launch",
+      "body": {
+        "session": "$loginHost.session",
+        "questionnaire": "$createQuiz.questionnaire"
+      },
+      "response": {
+        "run": "uuid#10",
+        "token": "uuid#11",
+        "code": "location#1"
+      }
+    },
+    {
+      "id": "openRuns",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/runs/open",
+      "body": {
+        "session": "$loginHost.session"
+      },
+      "response": {
+        "runs": [
+          {
+            "run": "uuid#10",
+            "questionnaire": "uuid#7",
+            "title": "Photosynthesis check",
+            "form": "quiz",
+            "openedAt": "<date>",
+            "token": "uuid#11",
+            "code": "location#1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "retitleWhileOpen",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/quizzes/retitle",
+      "body": {
+        "session": "$loginHost.session",
+        "questionnaire": "$createQuiz.questionnaire",
+        "title": "Mid-run title"
+      },
+      "response": {
+        "error": "RUN_OPEN"
+      }
+    },
+    {
+      "id": "arrive",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/p/arrive",
+      "body": {
+        "token": "$launchRun.token"
+      },
+      "response": {
+        "face": {
+          "run": "uuid#10",
+          "title": "Photosynthesis check",
+          "form": "quiz",
+          "open": true,
+          "questions": [
+            {
+              "question": "uuid#8",
+              "prompt": "Which gas do plants take in?",
+              "choices": ["Oxygen", "Carbon dioxide"],
+              "position": 1
+            },
+            {
+              "question": "uuid#9",
+              "prompt": "Name the light-capturing pigment.",
+              "choices": [],
+              "position": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "begin",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/p/begin",
+      "body": {
+        "token": "$launchRun.token",
+        "device": "phone-1"
+      },
+      "response": {
+        "response": "uuid#12",
+        "participant": "phone-1"
+      }
+    },
+    {
+      "id": "answerChoice",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/p/answer",
+      "body": {
+        "response": "$begin.response",
+        "question": "$arrive.face.questions.0.question",
+        "value": "Carbon dioxide"
+      },
+      "response": {
+        "response": "uuid#12"
+      }
+    },
+    {
+      "id": "answerWritten",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/p/answer",
+      "body": {
+        "response": "$begin.response",
+        "question": "$arrive.face.questions.1.question",
+        "value": "Chlorophyll"
+      },
+      "response": {
+        "response": "uuid#12"
+      }
+    },
+    {
+      "id": "submit",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/p/submit",
+      "body": {
+        "response": "$begin.response"
+      },
+      "response": {
+        "response": "uuid#12"
+      }
+    },
+    {
+      "id": "outcome",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/p/outcome",
+      "body": {
+        "response": "$begin.response"
+      },
+      "response": {
+        "received": true,
+        "outcome": {
+          "response": "uuid#12",
+          "disclosure": "answers",
+          "score": 1,
+          "outOf": 1,
+          "receipt": [
+            {
+              "item": "uuid#8",
+              "kind": "graded",
+              "prompt": "Which gas do plants take in?",
+              "standard": "Carbon dioxide",
+              "value": "Carbon dioxide"
+            },
+            {
+              "item": "uuid#9",
+              "kind": "reference",
+              "prompt": "Name the light-capturing pigment.",
+              "standard": "Chlorophyll",
+              "value": "Chlorophyll"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "results",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/runs/results",
+      "body": {
+        "session": "$loginHost.session",
+        "run": "$launchRun.run"
+      },
+      "response": {
+        "board": {
+          "run": "uuid#10",
+          "questionnaire": "uuid#7",
+          "title": "Photosynthesis check",
+          "form": "quiz",
+          "open": true,
+          "openedAt": "<date>",
+          "closedAt": null,
+          "token": "uuid#11",
+          "code": "location#1",
+          "started": 1,
+          "handedIn": 1,
+          "questions": [
+            {
+              "question": "uuid#8",
+              "prompt": "Which gas do plants take in?",
+              "choices": ["Oxygen", "Carbon dioxide"],
+              "expected": "Carbon dioxide",
+              "explanation": "Photosynthesis fixes carbon.",
+              "position": 1,
+              "values": [
+                {
+                  "participant": "phone-1",
+                  "response": "uuid#12",
+                  "value": "Carbon dioxide"
+                }
+              ]
+            },
+            {
+              "question": "uuid#9",
+              "prompt": "Name the light-capturing pigment.",
+              "choices": [],
+              "expected": "Chlorophyll",
+              "explanation": "",
+              "position": 2,
+              "values": [
+                {
+                  "participant": "phone-1",
+                  "response": "uuid#12",
+                  "value": "Chlorophyll"
+                }
+              ]
+            }
+          ]
+        },
+        "scores": {
+          "run": "uuid#10",
+          "disclosure": "answers",
+          "results": [
+            {
+              "submission": "uuid#12",
+              "participant": "phone-1",
+              "name": null,
+              "score": 1,
+              "outOf": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "closeRun",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/runs/close",
+      "body": {
+        "session": "$loginHost.session",
+        "run": "$launchRun.run"
+      },
+      "response": {
+        "run": "uuid#10"
+      }
+    },
+    {
+      "id": "retitleAfterClose",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/live/quizzes/retitle",
+      "body": {
+        "session": "$loginHost.session",
+        "questionnaire": "$createQuiz.questionnaire",
+        "title": "Photosynthesis check (revised)"
+      },
+      "response": {
+        "questionnaire": "uuid#7"
+      }
+    }
+  ]
+}

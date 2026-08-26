@@ -60,6 +60,8 @@ const edgePort = portFrom("PORT", "4000");
 const webPort = portFrom("WEB_PORT", "3000");
 const edgeOrigin = `http://127.0.0.1:${edgePort}`;
 const webOrigin = `http://127.0.0.1:${webPort}`;
+const publicOrigin = process.env.PUBLIC_ORIGIN ?? webOrigin;
+const webHost = process.env.WEB_HOST ?? (process.env.PUBLIC_ORIGIN ? "0.0.0.0" : "127.0.0.1");
 const defaultBootstrap = JSON.stringify({
   username: "mara",
   password: "password123",
@@ -74,7 +76,7 @@ const edge = spawnPiped(["bun", "src/start.ts"], {
       COMMONS_TEST_BOOTSTRAP: process.env.COMMONS_TEST_BOOTSTRAP ?? defaultBootstrap,
       ...process.env,
     },
-    webOrigin,
+    publicOrigin,
   ),
 });
 let edgeExitCode: number | undefined;
@@ -114,7 +116,7 @@ try {
 
     const webEnv = { ...process.env };
     delete webEnv.PORT;
-    web = spawnPiped(["bun", "run", "dev", "--", "--hostname", "127.0.0.1", "--port", webPort], {
+    web = spawnPiped(["bun", "run", "dev", "--", "--hostname", webHost, "--port", webPort], {
       cwd: `${root}/frontend`,
       env: {
         ...webEnv,
@@ -125,7 +127,7 @@ try {
     });
     webExited = web.exited;
     relays.push(relay(web.stdout, "[web]"), relay(web.stderr, "[web]"));
-    console.log(`[stack] frontend starting at ${webOrigin}`);
+    console.log(`[stack] frontend starting at ${publicOrigin}`);
 
     const first = await Promise.race([
       signaled.then(() => ({ source: "signal" as const, code: 0 })),

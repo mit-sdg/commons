@@ -4,6 +4,7 @@ import {
   Clock,
   FileText,
   GraduationCap,
+  Radio,
   Settings,
   Sparkles,
   StickyNote,
@@ -63,6 +64,12 @@ const STAFF_NAV: {
     label: "Class settings",
     icon: Settings,
     needs: ["course:manage"],
+  },
+  {
+    href: "/staff/live",
+    label: "Live",
+    icon: Radio,
+    needs: ["live:host"],
   },
   {
     href: "/staff/calendar",

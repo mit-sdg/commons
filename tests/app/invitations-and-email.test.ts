@@ -341,6 +341,14 @@ describe("invitations and email", () => {
       "/auth/login",
       "/auth/request-password-reset",
       "/auth/reset-password",
+      // A participant reached a live run through a share token; the token is
+      // the whole address, so the participation routes take no session.
+      "/live/p/answer",
+      "/live/p/arrive",
+      "/live/p/begin",
+      "/live/p/locate",
+      "/live/p/outcome",
+      "/live/p/submit",
       "/setup/register-admin",
     ]);
     const response = await edge.fetch(
