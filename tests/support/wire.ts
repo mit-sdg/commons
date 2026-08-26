@@ -19,6 +19,11 @@ export interface WireFixture {
 
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+const LIVE_LOCATION_CODE = /^[A-HJ-NP-Z2-9]{6}$/;
+
+interface WireNormalization {
+  liveLocationCodes?: boolean;
+}
 
 const atPath = (value: unknown, path: string[], reference: string): unknown => {
   let found = value;
@@ -59,8 +64,9 @@ export function resolveWireValue(value: unknown, responses: Record<string, unkno
   return value;
 }
 
-export function wireNormalizer() {
+export function wireNormalizer({ liveLocationCodes = false }: WireNormalization = {}) {
   const ids = new Map<string, string>();
+  const locations = new Map<string, string>();
   const normalize = (value: unknown): unknown => {
     if (typeof value === "string") {
       const withStableIds = value.replace(UUID, (id) => {
@@ -71,7 +77,16 @@ export function wireNormalizer() {
         }
         return label;
       });
-      return ISO_DATE.test(withStableIds) ? "<date>" : withStableIds;
+      if (ISO_DATE.test(withStableIds)) return "<date>";
+      if (liveLocationCodes && LIVE_LOCATION_CODE.test(withStableIds)) {
+        let label = locations.get(withStableIds);
+        if (label === undefined) {
+          label = `location#${locations.size + 1}`;
+          locations.set(withStableIds, label);
+        }
+        return label;
+      }
+      return withStableIds;
     }
     if (Array.isArray(value)) return value.map(normalize);
     if (value !== null && typeof value === "object") {
@@ -87,14 +102,14 @@ export function wireNormalizer() {
   return normalize;
 }
 
-export async function runWireFixture(fixture: WireFixture) {
+export async function runWireFixture(fixture: WireFixture, normalization: WireNormalization = {}) {
   const app = assembleCommons(mongoImplementations(await testDb()));
   const concepts = app.concepts as unknown as Record<
     string,
     Record<string, (input: Record<string, unknown>) => Promise<unknown>>
   >;
   const responses: Record<string, unknown> = {};
-  const normalize = wireNormalizer();
+  const normalize = wireNormalizer(normalization);
   const observed: unknown[] = [];
 
   for (const step of fixture.steps) {
@@ -138,11 +153,11 @@ export async function runWireFixture(fixture: WireFixture) {
   return observed;
 }
 
-export function wireScenario(name: string, fixtureUrl: URL) {
+export function wireScenario(name: string, fixtureUrl: URL, normalization: WireNormalization = {}) {
   describe(name, () => {
     test("serves every declared response", async () => {
       const fixture = JSON.parse(readFileSync(fixtureUrl, "utf8")) as WireFixture;
-      const observed = await runWireFixture(fixture);
+      const observed = await runWireFixture(fixture, normalization);
       fixture.steps.forEach((step, index) => {
         expect(observed[index], `${step.id} (${step.target})`).toEqual(step.response);
       });

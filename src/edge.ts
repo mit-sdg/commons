@@ -7,6 +7,12 @@ import { configuredPublicOrigin } from "./deployment.ts";
 
 const PUBLIC_PATHS = new Set([
   "/auth/login",
+  "/live/p/answer",
+  "/live/p/arrive",
+  "/live/p/begin",
+  "/live/p/locate",
+  "/live/p/outcome",
+  "/live/p/submit",
   "/auth/accept-invitation",
   "/auth/invitation",
   "/auth/request-password-reset",

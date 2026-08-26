@@ -19,13 +19,25 @@ export function useQuery<T>(
   const [loading, setLoading] = useState<boolean>(loader !== null);
   const [nonce, setNonce] = useState(0);
   const reqId = useRef(0);
+  const inFlight = useRef(false);
+  const queued = useRef(false);
 
-  const refetch = useCallback(() => setNonce((n) => n + 1), []);
+  // Polling callers may ask again before a slow request returns. Coalesce
+  // those ticks into one follow-up instead of starting a newer request that
+  // makes the useful response in flight look stale forever.
+  const refetch = useCallback(() => {
+    if (inFlight.current) {
+      queued.current = true;
+      return;
+    }
+    setNonce((n) => n + 1);
+  }, []);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: callers provide the dependency list that controls loader refreshes; nonce intentionally forces refetch.
   useEffect(() => {
     if (!loader) return;
     const id = ++reqId.current;
+    inFlight.current = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching hook, loading/error set before async call
     setLoading(true);
     setError(null);
@@ -47,7 +59,13 @@ export function useQuery<T>(
         );
       })
       .finally(() => {
-        if (id === reqId.current) setLoading(false);
+        if (id !== reqId.current) return;
+        inFlight.current = false;
+        setLoading(false);
+        if (queued.current) {
+          queued.current = false;
+          setNonce((n) => n + 1);
+        }
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, nonce]);

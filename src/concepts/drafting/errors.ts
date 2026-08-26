@@ -1,0 +1,9 @@
+export class BriefNotFound extends Error {}
+export class CandidateNotFound extends Error {}
+export class ClarificationNotFound extends Error {}
+export class AlreadyDrafted extends Error {}
+export class AlreadyAdopted extends Error {}
+export class AlreadyAnswered extends Error {}
+export class AwaitingClarification extends Error {}
+export class RequestStalled extends Error {}
+export class NotAwaitingDraft extends Error {}

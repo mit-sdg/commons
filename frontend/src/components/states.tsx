@@ -40,7 +40,7 @@ export function EmptyState({
         <Icon className="size-6" />
       </div>
       <div className="space-y-1">
-        <p className="font-display text-lg font-semibold">{title}</p>
+        <h2 className="font-display text-lg font-semibold">{title}</h2>
         {description ? (
           <p className="mx-auto max-w-sm text-sm text-muted-foreground">
             {description}
@@ -60,8 +60,14 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center">
+    <div
+      role="alert"
+      className="flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center"
+    >
       <AlertTriangle className="size-6 text-destructive" />
+      <h2 className="font-display text-lg font-semibold">
+        Something went wrong
+      </h2>
       <p className="text-sm text-destructive">{message}</p>
       {onRetry ? (
         <button

@@ -1,6 +1,7 @@
 import { runCommonsProcess } from "./assembly/process.ts";
 import { configuredMongodbUrl, validateDeploymentConfiguration } from "./deployment.ts";
 import { mailConfigurationFromEnv } from "./email/configuration.ts";
+import { reasonerConfigurationFromEnv } from "./reasoning/configuration.ts";
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const host = process.env.HOST ?? "127.0.0.1";
@@ -14,11 +15,13 @@ try {
   validateDeploymentConfiguration();
   const mongodbUrl = configuredMongodbUrl();
   const mail = mailConfigurationFromEnv();
+  const reasoner = reasonerConfigurationFromEnv();
   const running = await runCommonsProcess({
     host,
     port,
     ...(mongodbUrl === undefined ? {} : { mongodbUrl }),
     ...(mail === undefined ? {} : { mail }),
+    ...(reasoner === undefined ? {} : { reasoner }),
     ...(process.env.COMMONS_TEST_BOOTSTRAP === undefined
       ? {}
       : { bootstrap: JSON.parse(process.env.COMMONS_TEST_BOOTSTRAP) }),

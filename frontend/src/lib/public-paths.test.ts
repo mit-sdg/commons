@@ -13,6 +13,11 @@ describe("public frontend routes", () => {
     expect(isPublicPath("/reset-password")).toBe(true);
   });
 
+  test("lets participants enter a room code or follow a run token signed out", () => {
+    expect(isPublicPath("/join")).toBe(true);
+    expect(isPublicPath("/q/example-token")).toBe(true);
+  });
+
   test("keeps application pages behind authentication", () => {
     expect(isPublicPath("/")).toBe(false);
     expect(isPublicPath("/admin")).toBe(false);

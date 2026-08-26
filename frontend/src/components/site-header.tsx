@@ -99,6 +99,13 @@ export function SiteHeader() {
     setMobileOpen(false);
   }
 
+  // A participant page reached from a scanned code stands alone: no product
+  // chrome between the phone and the questions. The projected join page stands
+  // alone the same way — a wall shows the room only the invitation.
+  if (pathname === "/join" || pathname.startsWith("/q/")) return null;
+  if (pathname.startsWith("/staff/live/run/") && pathname.endsWith("/project"))
+    return null;
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">

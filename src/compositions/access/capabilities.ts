@@ -24,6 +24,8 @@ export const CAPABILITIES = {
   "course:manage":
     "Create and revise assignments, manage sections and enrolment, and set up or revise the class.",
   grade: "Enter grades, view the gradebook, and view every submission.",
+  "live:host":
+    "Create quizzes and surveys, draft them with the reasoner, launch and close live runs, and read their results.",
   "student-records": "Manage late days and staff notes about individual students.",
 } as const;
 

@@ -9,9 +9,9 @@ describe("the rendered application specification", () => {
   test("renders every declared construction and computation", async () => {
     const ir = inspectAssembly(assembleCommons(mongoImplementations(await testDb()))).app;
     expect(ir.unlowered ?? []).toEqual([]);
-    expect(JSON.stringify(ir).match(/"op":"compute"/g)).toHaveLength(39);
-    expect(ir.views).toHaveLength(61);
-    expect(ir.formers).toHaveLength(80);
+    expect(JSON.stringify(ir).match(/"op":"compute"/g)).toHaveLength(74);
+    expect(ir.views).toHaveLength(74);
+    expect(ir.formers).toHaveLength(92);
   });
 
   test("every concept's purpose and principle are authored — zero unwritten stubs", async () => {
