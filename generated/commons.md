@@ -50,10 +50,10 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Instances
 
-- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 37.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 39.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 38.
-  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 40.
+- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 46.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 48.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 47.
+  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 49.
 
 ### Authenticating
 
@@ -90,7 +90,7 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 42.
+- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 51.
 
 ### Banking
 
@@ -125,9 +125,9 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Instances
 
-- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 44.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 46.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 45.
+- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 53.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 55.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 54.
 
 ### Bookmarking
 
@@ -148,9 +148,9 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Instances
 
-- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 48.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 50.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 49.
+- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 57.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 59.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 58.
 
 ### Categorizing
 
@@ -181,8 +181,8 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 
 #### Instances
 
-- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 52.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 53.
+- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 61.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 62.
 
 ### Conversing
 
@@ -212,8 +212,54 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Instances
 
-- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 55.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 56.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 64.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 65.
+
+### Drafting
+
+Defined in [Drafting](../design/concepts/Drafting.md), line 1.
+
+#### Actions
+
+- `describe(author: Author, request: String, at: Date) : return (brief: Brief)`
+- `correct(author: Author, candidate: Candidate, request: String, at: Date) : return (brief: Brief)`
+  - Refuses `CANDIDATE_NOT_FOUND`: There is no such draft to correct.
+  - Refuses `ALREADY_ADOPTED`: This draft was already adopted; edit it directly instead.
+- `propose(brief: Brief, form: String, material: Seq) : return (candidate: Candidate)`
+  - Refuses `BRIEF_NOT_FOUND`: There is no such request.
+  - Refuses `ALREADY_DRAFTED`: This request was already drafted; correct the draft instead.
+  - Refuses `AWAITING_CLARIFICATION`: This request is waiting on the author's clarification.
+  - Refuses `REQUEST_STALLED`: This request stalled; describe it again.
+- `ask(brief: Brief, question: String) : return (clarification: Clarification)`
+  - Refuses `BRIEF_NOT_FOUND`: There is no such request.
+  - Refuses `ALREADY_DRAFTED`: This request was already drafted; correct the draft instead.
+  - Refuses `REQUEST_STALLED`: This request stalled; describe it again.
+- `stall(brief: Brief, reason: String) : return (brief: Brief)`
+  - Refuses `BRIEF_NOT_FOUND`: There is no such request.
+  - Refuses `NOT_AWAITING_DRAFT`: This request is not waiting on a draft.
+- `clarify(clarification: Clarification, answer: String) : return (clarification: Clarification, brief: Brief)`
+  - Refuses `CLARIFICATION_NOT_FOUND`: There is no such question.
+  - Refuses `ALREADY_ANSWERED`: This question was already answered.
+- `adopt(candidate: Candidate) : return (candidate: Candidate)`
+  - Refuses `CANDIDATE_NOT_FOUND`: There is no such draft.
+  - Refuses `ALREADY_ADOPTED`: This draft was already adopted.
+
+#### Queries
+
+- `_brief(brief: String) : optional (author: String, request: String, createdAt: Date, basis: String | Null)`
+- `_briefs(author: String) : many (brief: String, request: String, createdAt: Date, basis: String | Null)`
+- `_standing(brief: String) : optional (clarifying: Boolean, stalled: Boolean)`
+- `_clarifications(brief: String) : many (clarification: String, question: String, answer: String | Null)`
+- `_candidateOf(brief: String) : optional (candidate: String, form: String, adopted: Boolean)`
+- `_candidate(candidate: String) : optional (brief: String, form: String, adopted: Boolean)`
+- `_items(candidate: String) : many (item: String, prompt: String, choices: Seq, expected: String, explanation: String, position: Number)`
+- `_material(candidate: String) : optional (form: String, material: Seq)`
+- `_line(brief: String) : many (brief: String, request: String, basis: String | Null, candidate: String | Null, form: String | Null, adopted: Boolean)`
+
+#### Instances
+
+- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 67.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 68.
 
 ### Flagging
 
@@ -235,9 +281,9 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Instances
 
-- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 58.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 60.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 59.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 70.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 72.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 71.
 
 ### Formatting
 
@@ -254,8 +300,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Instances
 
-- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 62.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 63.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 74.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 75.
 
 ### Grading
 
@@ -290,12 +336,12 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Instances
 
-- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 65.
-  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 69.
-  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 70.
-  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 66.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 68.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 67.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 77.
+  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 81.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 82.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 78.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 80.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 79.
 
 ### Grouping
 
@@ -330,8 +376,35 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Instances
 
-- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 72.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 73.
+- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 84.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 85.
+
+### Insisting
+
+Defined in [Insisting](../design/concepts/Insisting.md), line 1.
+
+#### Actions
+
+- `complain(aim: Aim, patience: Number, offering: String, account: String) : return (complaint: Complaint, insistence: Insistence, remaining: Number)`
+  - Refuses `NO_PATIENCE`: Insisting takes at least one complaint.
+  - Refuses `PATIENCE_SPENT`: This aim has had every complaint it was given.
+- `giveUp(aim: Aim) : return (insistence: Insistence)`
+  - Refuses `NOT_INSISTING`: Nothing is being insisted on for this aim.
+- `satisfy(aim: Aim) : return (insistence: Insistence)`
+  - Refuses `NOT_INSISTING`: Nothing is being insisted on for this aim.
+
+#### Queries
+
+- `_unsettledFor(aim: String) : optional (insistence: String, patience: Number, remaining: Number)`
+- `_standingFor(aim: String) : optional (insistence: String, remaining: Number)`
+- `_spentFor(aim: String) : optional (insistence: String, complaints: Number)`
+- `_for(aim: String) : many (insistence: String, patience: Number, settled: Boolean, satisfied: Boolean, exhausted: Boolean, remaining: Number)`
+- `_complaints(insistence: String) : many (complaint: String, offering: String, account: String)`
+
+#### Instances
+
+- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 87.
+  - `Aim` is `Drafting.Brief` — [Commons application](../design/application.md), line 88.
 
 ### Inviting
 
@@ -357,8 +430,8 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Instances
 
-- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 75.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 76.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 90.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 91.
 
 ### Itemizing
 
@@ -387,8 +460,8 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Instances
 
-- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 78.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 79.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 93.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 94.
 
 ### Linking
 
@@ -408,9 +481,9 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Instances
 
-- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 81.
-  - `Source` is `Posting.Post` — [Commons application](../design/application.md), line 82.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 83.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 96.
+  - `Source` is `Posting.Post` — [Commons application](../design/application.md), line 97.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 98.
 
 ### Locking
 
@@ -430,8 +503,8 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Instances
 
-- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 85.
-  - `Target` is `Lockable` — [Commons application](../design/application.md), line 86.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 100.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 101.
 
 ### Mailing
 
@@ -456,8 +529,8 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Instances
 
-- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 88.
-  - `Key` is `MailKey` — [Commons application](../design/application.md), line 89.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 103.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 104.
 
 ### Notifying
 
@@ -481,14 +554,14 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Instances
 
-- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 91.
-  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 94.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 92.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 93.
-- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 96.
-  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 99.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 97.
-  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 98.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 106.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 109.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 107.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 108.
+- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 111.
+  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 114.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 112.
+  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 113.
 
 ### Noting
 
@@ -526,9 +599,9 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Instances
 
-- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 101.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 102.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 103.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 116.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 117.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 118.
 
 ### Pinning
 
@@ -551,9 +624,9 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Instances
 
-- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 105.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 106.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 107.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 120.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 121.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 122.
 
 ### Posting
 
@@ -576,8 +649,8 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Instances
 
-- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 109.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 110.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 124.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 125.
 
 ### Profiling
 
@@ -602,8 +675,76 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Instances
 
-- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 112.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 113.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 127.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 128.
+
+### Publishing
+
+Defined in [Publishing](../design/concepts/Publishing.md), line 1.
+
+#### Actions
+
+- `publish(author: Author, material: Material, at: Date) : return (edition: Edition)`
+  - Refuses `MATERIAL_ALREADY_SHARED`: This is already running; close the open run first.
+- `close(edition: Edition, at: Date) : return (edition: Edition)`
+  - Refuses `EDITION_NOT_FOUND`: There is no such edition.
+  - Refuses `ALREADY_CLOSED`: This edition is already closed.
+
+#### Queries
+
+- `_edition(edition: String) : optional (author: String, material: String, open: Boolean, openedAt: Date, closedAt: Date | Null)`
+- `_hasOpenEditionFor(material: String) : one (open: Boolean)`
+- `_editionsFor(material: String) : many (edition: String, open: Boolean, openedAt: Date, closedAt: Date | Null)`
+- `_openEditions() : many (edition: String, author: String, material: String, openedAt: Date)`
+
+#### Instances
+
+- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 130.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 131.
+  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 132.
+
+### Questioning
+
+Defined in [Questioning](../design/concepts/Questioning.md), line 1.
+
+#### Actions
+
+- `compose(author: Author, title: String, form: String, disclosure: String, at: Date) : return (questionnaire: Questionnaire)`
+  - Refuses `UNKNOWN_FORM`: A questionnaire is a quiz or a survey.
+  - Refuses `UNKNOWN_DISCLOSURE`: That is not a disclosure level.
+- `setDisclosure(questionnaire: Questionnaire, disclosure: String) : return (questionnaire: Questionnaire)`
+  - Refuses `QUESTIONNAIRE_NOT_FOUND`: There is no such questionnaire.
+  - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
+  - Refuses `UNKNOWN_DISCLOSURE`: That is not a disclosure level.
+- `retitle(questionnaire: Questionnaire, title: String) : return (questionnaire: Questionnaire)`
+  - Refuses `QUESTIONNAIRE_NOT_FOUND`: There is no such questionnaire.
+  - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
+- `addQuestion(questionnaire: Questionnaire, prompt: String, choices: Seq, expected: String, explanation: String, position: Number) : return (question: Question)`
+  - Refuses `QUESTIONNAIRE_NOT_FOUND`: There is no such questionnaire.
+  - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
+- `reviseQuestion(question: Question, prompt: String, choices: Seq, expected: String, explanation: String, position: Number) : return (question: Question)`
+  - Refuses `QUESTION_NOT_FOUND`: There is no such question.
+  - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
+- `removeQuestion(question: Question) : return (question: Question)`
+  - Refuses `QUESTION_NOT_FOUND`: There is no such question.
+  - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
+- `retire(questionnaire: Questionnaire) : return (questionnaire: Questionnaire)`
+  - Refuses `QUESTIONNAIRE_NOT_FOUND`: There is no such questionnaire.
+  - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
+
+#### Queries
+
+- `_getQuestionnaire(questionnaire: String) : optional (author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)`
+- `_getQuestionnaires() : many (questionnaire: String, author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)`
+- `_getQuestions(questionnaire: String) : many (question: String, prompt: String, choices: Seq, expected: String, explanation: String, position: Number)`
+- `_getQuestion(question: String) : optional (questionnaire: String, prompt: String, choices: Seq, expected: String, explanation: String, position: Number)`
+- `_proposesAnswers(questionnaire: String) : one (proposes: Boolean)`
+- `_expectedAnswers(questionnaire: String) : optional (expectations: Seq)`
+
+#### Instances
+
+- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 134.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 135.
 
 ### Reacting
 
@@ -626,9 +767,37 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Instances
 
-- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 115.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 116.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 117.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 137.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 138.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 139.
+
+### Reasoning
+
+Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
+
+#### Actions
+
+- `ask(reasoner: Reasoner, about: Subject, passage: String, at: Date) : return (asking: Asking)`
+- `answer(asking: Asking, reply: String, at: Date) : return (asking: Asking, reply: String)`
+  - Refuses `ASKING_NOT_FOUND`: There is no such ask.
+  - Refuses `ALREADY_SETTLED`: This ask was already settled.
+- `fail(asking: Asking, account: String, at: Date) : return (asking: Asking)`
+  - Refuses `ASKING_NOT_FOUND`: There is no such ask.
+  - Refuses `ALREADY_SETTLED`: This ask was already settled.
+
+#### Queries
+
+- `_pending() : many (asking: String, reasoner: String, about: String, passage: String, askedAt: Date)`
+- `_asking(asking: String) : optional (reasoner: String, about: String, passage: String, askedAt: Date, pending: Boolean)`
+- `_replyOf(asking: String) : optional (reply: String, answeredAt: Date)`
+- `_failureOf(asking: String) : optional (account: String, failedAt: Date)`
+- `_repliesAbout(about: String) : many (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)`
+
+#### Instances
+
+- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 141.
+  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 142.
+  - `Subject` is `Drafting.Brief` — [Commons application](../design/application.md), line 143.
 
 ### Resolving
 
@@ -648,10 +817,41 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Instances
 
-- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 119.
-  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 122.
-  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 121.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 120.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 150.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 153.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 152.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 151.
+
+### Responding
+
+Defined in [Responding](../design/concepts/Responding.md), line 1.
+
+#### Actions
+
+- `begin(participant: Participant, subject: Subject, at: Date) : return (response: Response)`
+  - Refuses `ALREADY_SUBMITTED`: This was already handed in.
+- `answer(response: Response, item: Item, value: String) : return (response: Response)`
+  - Refuses `RESPONSE_NOT_FOUND`: There is no such response.
+  - Refuses `ALREADY_SUBMITTED`: This was already handed in.
+- `submit(response: Response, at: Date) : return (response: Response)`
+  - Refuses `RESPONSE_NOT_FOUND`: There is no such response.
+  - Refuses `ALREADY_SUBMITTED`: This was already handed in.
+
+#### Queries
+
+- `_response(response: String) : optional (subject: String, participant: String, submitted: Boolean, startedAt: Date, submittedAt: Date | Null)`
+- `_responseFor(subject: String, participant: String) : optional (response: String, submitted: Boolean)`
+- `_responsesFor(subject: String) : many (response: String, participant: String, submitted: Boolean, startedAt: Date, submittedAt: Date | Null)`
+- `_answers(response: String) : many (item: String, value: String)`
+- `_valuesFor(subject: String, item: String) : many (response: String, participant: String, value: String)`
+- `_collectedAnswers(response: String) : optional (answers: Seq)`
+
+#### Instances
+
+- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 145.
+  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 148.
+  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 147.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 146.
 
 ### Revising
 
@@ -670,8 +870,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Instances
 
-- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 124.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 125.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 155.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 156.
 
 ### Roling
 
@@ -708,9 +908,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Instances
 
-- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 127.
-  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 129.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 128.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 158.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 160.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 159.
 
 ### Rostering
 
@@ -762,8 +962,36 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Instances
 
-- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 131.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 132.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 162.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 163.
+
+### Scoring
+
+Defined in [Scoring](../design/concepts/Scoring.md), line 1.
+
+#### Actions
+
+- `establish(subject: Subject, disclosure: String, expectations: Seq) : return (key: Key)`
+  - Refuses `KEY_EXISTS`: This already has a key.
+  - Refuses `UNKNOWN_DISCLOSURE`: That is not a disclosure level.
+- `grade(key: Key, submission: Submission, answers: Seq) : return (result: Result, score: Number)`
+  - Refuses `KEY_NOT_FOUND`: There is no such key.
+  - Refuses `ALREADY_GRADED`: This submission was already graded.
+
+#### Queries
+
+- `_keyFor(subject: String) : optional (key: String, disclosure: String)`
+- `_key(key: String) : optional (subject: String, disclosure: String)`
+- `_expectations(key: String) : many (item: String, expected: String, explanation: String)`
+- `_resultFor(key: String, submission: String) : optional (result: String, score: Number, outOf: Number)`
+- `_results(key: String) : many (result: String, submission: String, score: Number, outOf: Number)`
+
+#### Instances
+
+- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 165.
+  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 167.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 166.
+  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 168.
 
 ### Sessioning
 
@@ -783,8 +1011,28 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 134.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 135.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 170.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 171.
+
+### Sharing
+
+Defined in [Sharing](../design/concepts/Sharing.md), line 1.
+
+#### Actions
+
+- `issue(subject: Subject) : return (share: Share, token: String)`
+- `open(token: String) : return (subject: Subject)`
+  - Refuses `NOTHING_SHARED`: Nothing is shared here.
+
+#### Queries
+
+- `_share(token: String) : optional (share: String, subject: String)`
+- `_sharesFor(subject: String) : many (share: String, token: String)`
+
+#### Instances
+
+- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 173.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 174.
 
 ### Submitting
 
@@ -809,10 +1057,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 137.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 140.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 139.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 138.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 176.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 179.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 178.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 177.
 
 ### Subscribing
 
@@ -834,9 +1082,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 142.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 143.
-  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 144.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 181.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 182.
+  - `Target` is `Conversing.Conversation` — [Commons application](../design/application.md), line 183.
 
 ### Tagging
 
@@ -864,8 +1112,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 146.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 147.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 185.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 186.
 
 ### Tasking
 
@@ -916,9 +1164,9 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 149.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 151.
-  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 150.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 188.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 190.
+  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 189.
 
 ### Tracking
 
@@ -942,10 +1190,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 153.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 155.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 156.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 154.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 192.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 194.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 195.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 193.
 
 ### Trashing
 
@@ -967,12 +1215,12 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Instances
 
-- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 33.
-  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 35.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 34.
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 158.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 160.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 159.
+- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 42.
+  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 44.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 43.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 197.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 199.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 198.
 
 ### Vouching
 
@@ -993,38 +1241,50 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Instances
 
-- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 162.
-  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 163.
+- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 201.
+  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 202.
 
 ## Application types
 
 Concrete types:
 
+- `LiveParticipant` — [Commons application](../design/application.md), line 24.
+- `LiveReasoner` — [Commons application](../design/application.md), line 29.
 - `Lockable` — [Commons application](../design/application.md), line 18.
 - `MailKey` — [Commons application](../design/application.md), line 15.
 - `TaskSubject` — [Commons application](../design/application.md), line 21.
 
 ## Computations
 
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 221.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 225.
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 212.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 209.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 218.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 215.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 230.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 235.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 241.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 238.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 244.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 247.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 253.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 263.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 257.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 260.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 272.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 266.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 269.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 276.
+- `clarifiedPassage(request: String, question: String, answer: String) : String` — [Commons application](../design/application.md), line 342.
+- `draftTitle(request: String) : String` — [Commons application](../design/application.md), line 330.
+- `draftingPassage(request: String) : String` — [Commons application](../design/application.md), line 334.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 280.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 267.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 264.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 273.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 270.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 350.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 354.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 357.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 361.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 365.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 285.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 290.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 296.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 293.
+- `repairPassage(request: String, offering: String, account: String) : String` — [Commons application](../design/application.md), line 346.
+- `revisionPassage(request: String, form: String, material: Json) : String` — [Commons application](../design/application.md), line 338.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 299.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 302.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 308.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 318.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 312.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 315.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 327.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 321.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 324.
 
 ## Views
 
@@ -1082,6 +1342,77 @@ Authored path: `Forum.posts.readable`.
   where
     Posting._getPost (post)
     Trashing._isTrashed (item: post) has (trashed: false)
+```
+
+### (question) belongs to (run)
+
+```view
+(question) belongs to (run) — inputs (question, run); outputs (); bindings (questionnaire)
+  where
+    Publishing._edition (edition: run) has (material: questionnaire)
+    Questioning._getQuestion (question) has (questionnaire)
+```
+
+### (question) is not part of (run)
+
+```view
+(question) is not part of (run) — inputs (question, run); outputs (); bindings (questionnaire)
+  where no Questioning._getQuestion (question)
+  where
+    Publishing._edition (edition: run) has (material: questionnaire)
+    Questioning._getQuestion (question) and not (questionnaire)
+```
+
+### (questionnaire) has an open run
+
+```view
+(questionnaire) has an open run — inputs (questionnaire); outputs (); bindings ()
+  where Publishing._hasOpenEditionFor (material: questionnaire) has (open: true)
+```
+
+### (questionnaire) has no open run
+
+```view
+(questionnaire) has no open run — inputs (questionnaire); outputs (); bindings ()
+  where Publishing._hasOpenEditionFor (material: questionnaire) has (open: false)
+```
+
+### (response) answers every question
+
+```view
+(response) answers every question — inputs (response); outputs (); bindings (run, questionnaire, answered, total)
+  where
+    Responding._response (response) has (subject: run)
+    Publishing._edition (edition: run) has (material: questionnaire)
+    answered is the count of Responding._answers (response)
+    total is the count of Questioning._getQuestions (questionnaire)
+    answered is at least total
+```
+
+### (response) leaves a question unanswered
+
+```view
+(response) leaves a question unanswered — inputs (response); outputs (); bindings (run, questionnaire, answered, total)
+  where
+    Responding._response (response) has (subject: run)
+    Publishing._edition (edition: run) has (material: questionnaire)
+    answered is the count of Responding._answers (response)
+    total is the count of Questioning._getQuestions (questionnaire)
+    answered is less than total
+```
+
+### (run) is closed
+
+```view
+(run) is closed — inputs (run); outputs (); bindings ()
+  where Publishing._edition (edition: run) has (open: false)
+```
+
+### (run) is open to participation
+
+```view
+(run) is open to participation — inputs (run); outputs (); bindings ()
+  where Publishing._edition (edition: run) has (open: true)
 ```
 
 ### (target) is public
@@ -1239,6 +1570,14 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
 ```
 
+### (user) may host live runs
+
+```view
+(user) may host live runs — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "live:host", context: "commons", user) has (allowed: true)
+  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
+```
+
 ### (user) may manage student records
 
 ```view
@@ -1301,6 +1640,15 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 (user) may not grade — inputs (user); outputs (); bindings ()
   where
     Roling._hasCapability (capability: "grade", context: "commons", user) has (allowed: false)
+    Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: false)
+```
+
+### (user) may not host live runs
+
+```view
+(user) may not host live runs — inputs (user); outputs (); bindings ()
+  where
+    Roling._hasCapability (capability: "live:host", context: "commons", user) has (allowed: false)
     Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: false)
 ```
 
@@ -1638,6 +1986,31 @@ the user named (username) — inputs (username); outputs (user); bindings () —
 _Formers name result shapes evaluated when asked. The source former owns_
 _the authored explanation; this section records the generated shape._
 
+### the answers outcome of (response)
+
+Authored path: `Live.participation.theAnswersOutcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 41.
+
+```former
+Former "the answers outcome of (response)" — inputs (response); bindings (run, key, disclosure, score, outOf, item, expected, prompt, value); promises at most one record — forms:
+  a record of
+    where Responding._response (response) has (subject: run, submitted: true)
+    where Scoring._keyFor (subject: run) has (disclosure, key)
+    where whether Scoring._resultFor (key, submission: response) has (outOf, score)
+    disclosure
+    items: each Scoring._expectations (key) has (expected, item)
+      where Questioning._getQuestion (question: item) has (prompt)
+      where whether Responding._answers (response) has (item, value)
+      form a record of
+        expected
+        item
+        prompt
+        value
+    outOf
+    response
+    score
+```
+
 ### the assigned population for (assignment)
 
 Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
@@ -1699,6 +2072,38 @@ Former "the backlinks of (target)" — inputs (target); bindings (source); promi
     where view "(post) is readable" with (post: source)
     form a record of
       source
+```
+
+### the board of (run)
+
+Authored path: `Live.runs.theRunBoard`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 33.
+
+```former
+Former "the board of (run)" — inputs (run); bindings (questionnaire, title, form, open, openedAt, closedAt, token, started, handedIn, question, prompt, choices, position, participant, value); promises at most one record — forms:
+  a record of
+    where Publishing._edition (edition: run) has (closedAt, material: questionnaire, open, openedAt)
+    where Questioning._getQuestionnaire (questionnaire) has (form, title)
+    closedAt
+    form
+    handedIn: the count of Responding._responsesFor (subject: run) has (response: handedIn, submitted: true)
+    open
+    openedAt
+    questionnaire
+    questions: each Questioning._getQuestions (questionnaire) has (choices, position, prompt, question)
+      form a record of
+        choices
+        position
+        prompt
+        question
+        values: each Responding._valuesFor (item: question, subject: run) has (participant, value)
+          form a record of
+            participant
+            value
+    run
+    started: the count of Responding._responsesFor (subject: run) has (response: started)
+    title
+    token: the token of the first Sharing._sharesFor (subject: run) has (token)
 ```
 
 ### the post summary of (item)
@@ -1849,6 +2254,38 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
       role
 ```
 
+### the drafting line of (brief)
+
+Authored path: `Live.drafting.theDraftLine`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 45.
+
+```former
+Former "the drafting line of (brief)" — inputs (brief); bindings (step, request, basis, candidate, form, adopted, clarifying, stalled, clarification, question, answer, prompt, choices, expected, explanation, position); promises exactly one record — forms:
+  each Drafting._line (brief) has (adopted, basis, brief: step, candidate, form, request)
+    where Drafting._standing (brief: step) has (clarifying, stalled)
+    form a record of
+      adopted
+      basis
+      candidate
+      clarifications: each Drafting._clarifications (brief: step) has (answer, clarification, question)
+        form a record of
+          answer
+          clarification
+          question
+      clarifying
+      form
+      items: each Drafting._items (candidate) has (choices, expected, explanation, position, prompt)
+        form a record of
+          choices
+          expected
+          explanation
+          position
+          prompt
+      request
+      stalled
+      step
+```
+
 ### the dropped roster ()
 
 Authored path: `Course.roster.theDroppedRoster`.
@@ -1865,6 +2302,54 @@ Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, sectio
       seat
       section
       user
+```
+
+### the explained outcome of (response)
+
+Authored path: `Live.participation.theExplanationsOutcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 42.
+
+```former
+Former "the explained outcome of (response)" — inputs (response); bindings (run, key, disclosure, score, outOf, item, expected, explanation, prompt, value); promises at most one record — forms:
+  a record of
+    where Responding._response (response) has (subject: run, submitted: true)
+    where Scoring._keyFor (subject: run) has (disclosure, key)
+    where whether Scoring._resultFor (key, submission: response) has (outOf, score)
+    disclosure
+    items: each Scoring._expectations (key) has (expected, explanation, item)
+      where Questioning._getQuestion (question: item) has (prompt)
+      where whether Responding._answers (response) has (item, value)
+      form a record of
+        expected
+        explanation
+        item
+        prompt
+        value
+    outOf
+    response
+    score
+```
+
+### the face of (run)
+
+Authored path: `Live.participation.theParticipantFace`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 12.
+
+```former
+Former "the face of (run)" — inputs (run); bindings (questionnaire, title, form, open, question, prompt, choices, position); promises at most one record — forms:
+  a record of
+    where Publishing._edition (edition: run) has (material: questionnaire, open)
+    where Questioning._getQuestionnaire (questionnaire) has (form, title)
+    form
+    open
+    questions: each Questioning._getQuestions (questionnaire) has (choices, position, prompt, question)
+      form a record of
+        choices
+        position
+        prompt
+        question
+    run
+    title
 ```
 
 ### the flags on (target)
@@ -2305,6 +2790,25 @@ Former "the open flags ()" — inputs (); bindings (target, count); promises exa
       target
 ```
 
+### the open runs
+
+Authored path: `Live.runs.theOpenRuns`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 30.
+
+```former
+Former "the open runs" — inputs (); bindings (run, questionnaire, title, form, openedAt, token); promises exactly one record — forms:
+  each Publishing._openEditions () has (edition: run, material: questionnaire, openedAt)
+    where Questioning._getQuestionnaire (questionnaire) has (form, title)
+    where whether Sharing._sharesFor (subject: run) has (token)
+    form a record of
+      form
+      openedAt
+      questionnaire
+      run
+      title
+      token
+```
+
 ### the pending roster ()
 
 Authored path: `Course.roster.thePendingRoster`.
@@ -2386,6 +2890,60 @@ Former "the public posts of (author)" — inputs (author); bindings (post); prom
   each view "the public posts by (author)" with (author) has (post)
     form a record of
       post
+```
+
+### the questionnaire (questionnaire)
+
+Authored path: `Live.quizzes.theQuestionnaire`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 35.
+
+```former
+Former "the questionnaire (questionnaire)" — inputs (questionnaire); bindings (title, form, disclosure, createdAt, retired, question, prompt, choices, expected, explanation, position, run, open, openedAt, closedAt, token); promises at most one record — forms:
+  a record of
+    where Questioning._getQuestionnaire (questionnaire) has (createdAt, disclosure, form, retired, title)
+    createdAt
+    disclosure
+    form
+    questionnaire
+    questions: each Questioning._getQuestions (questionnaire) has (choices, expected, explanation, position, prompt, question)
+      form a record of
+        choices
+        expected
+        explanation
+        position
+        prompt
+        question
+    retired
+    runs: each Publishing._editionsFor (material: questionnaire) has (closedAt, edition: run, open, openedAt)
+      where whether Sharing._sharesFor (subject: run) has (token)
+      form a record of
+        closedAt
+        open
+        openedAt
+        run
+        token
+    title
+```
+
+### the questionnaires
+
+Authored path: `Live.quizzes.theQuestionnaires`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 32.
+
+```former
+Former "the questionnaires" — inputs (); bindings (questionnaire, title, form, disclosure, createdAt, retired, run, token); promises exactly one record — forms:
+  each Questioning._getQuestionnaires () has (createdAt, disclosure, form, questionnaire, retired, title)
+    where whether Publishing._editionsFor (material: questionnaire) has (edition: run, open: true)
+    where whether Sharing._sharesFor (subject: run) has (token)
+    form a record of
+      createdAt
+      disclosure
+      form
+      openRun: run
+      questionnaire
+      retired
+      title
+      token
 ```
 
 ### the reaction counts on (target)
@@ -2529,6 +3087,41 @@ Former "the roster ()" — inputs (); bindings (user, seat, kind, section, email
       seat
       section
       user
+```
+
+### the score outcome of (response)
+
+Authored path: `Live.participation.theScoreOutcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 40.
+
+```former
+Former "the score outcome of (response)" — inputs (response); bindings (run, key, disclosure, score, outOf); promises at most one record — forms:
+  a record of
+    where Responding._response (response) has (subject: run, submitted: true)
+    where Scoring._keyFor (subject: run) has (disclosure, key)
+    where whether Scoring._resultFor (key, submission: response) has (outOf, score)
+    disclosure
+    outOf
+    response
+    score
+```
+
+### the scores of (run)
+
+Authored path: `Live.runs.theRunScores`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 36.
+
+```former
+Former "the scores of (run)" — inputs (run); bindings (key, disclosure, submission, score, outOf); promises at most one record — forms:
+  a record of
+    where Scoring._keyFor (subject: run) has (disclosure, key)
+    disclosure
+    results: each Scoring._results (key) has (outOf, score, submission)
+      form a record of
+        outOf
+        score
+        submission
+    run
 ```
 
 ### the sections ()
@@ -11638,6 +12231,1549 @@ then
   RequestBoundary.respond (items: former "the unread of (user) in (scope)" with (scope, user), requestId)
 ```
 
+### Live.drafting.Adopt:forbidden
+
+Authored path: `Live.drafting.Adopt`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 50.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 59.
+
+```reaction
+when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.Adopt:success
+
+Authored path: `Live.drafting.Adopt`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 50.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 59.
+
+```reaction
+when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  Drafting.adopt (candidate)
+```
+
+### Live.drafting.Adopt:success#2
+
+Authored path: `Live.drafting.Adopt`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 50.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 59.
+
+```reaction
+when Drafting.adopt (candidate, result.candidate: adopted), asked by Live.drafting.Adopt:success
+where
+  earlier, RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
+then
+  RequestBoundary.respond (candidate: adopted, requestId)
+```
+
+### Live.drafting.AdoptedCandidateComposesQuestionnaire
+
+Authored path: `Live.drafting.AdoptedCandidateComposesQuestionnaire`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 52.
+
+```reaction
+when Drafting.adopt (candidate)
+where
+  at is the current flow's instant
+  Drafting._candidate (candidate) has (brief, form)
+  Drafting._brief (brief) has (author, request)
+  title is draftTitle (request)
+then
+  Questioning.compose (at, author, disclosure: "score", form, title)
+```
+
+### Live.drafting.AdoptedCandidateComposesQuestionnaire#2
+
+Authored path: `Live.drafting.AdoptedCandidateComposesQuestionnaire`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 52.
+
+```reaction
+when Questioning.compose (at, author, disclosure: "score", form, title, questionnaire), asked by Live.drafting.AdoptedCandidateComposesQuestionnaire
+where
+  earlier, Drafting.adopt (candidate)
+  Drafting._items (candidate) has (choices, expected, explanation, position, prompt)
+then
+  Questioning.addQuestion (choices, expected, explanation, position, prompt, questionnaire)
+```
+
+### Live.drafting.AskedQuestionSatisfiesInsistence
+
+Authored path: `Live.drafting.AskedQuestionSatisfiesInsistence`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 35.
+
+```reaction
+when Drafting.ask (brief)
+where
+  Insisting._unsettledFor (aim: brief)
+then
+  Insisting.satisfy (aim: brief)
+```
+
+### Live.drafting.ClarifiedBriefAsksReasoner
+
+Authored path: `Live.drafting.ClarifiedBriefAsksReasoner`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 16.
+
+```reaction
+when Drafting.clarify (answer, clarification, brief)
+where
+  at is the current flow's instant
+  Drafting._clarifications (brief) has (clarification, question)
+  Drafting._brief (brief) has (request)
+  passage is clarifiedPassage (answer, question, request)
+then
+  Reasoning.ask (about: brief, at, passage, reasoner: "gemini-flash")
+```
+
+### Live.drafting.Clarify:forbidden
+
+Authored path: `Live.drafting.Clarify`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 60.
+
+```reaction
+when RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.Clarify:success
+
+Authored path: `Live.drafting.Clarify`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 60.
+
+```reaction
+when RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  Drafting.clarify (answer, clarification)
+```
+
+### Live.drafting.Clarify:success#2
+
+Authored path: `Live.drafting.Clarify`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 60.
+
+```reaction
+when Drafting.clarify (answer, clarification, brief, result.clarification: clarified), asked by Live.drafting.Clarify:success
+where
+  earlier, RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
+then
+  RequestBoundary.respond (brief, clarification: clarified, requestId)
+```
+
+### Live.drafting.ComplaintRetriesTheAsk
+
+Authored path: `Live.drafting.ComplaintRetriesTheAsk`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 30.
+
+```reaction
+when Insisting.complain (account, aim: brief, offering)
+where
+  at is the current flow's instant
+  Insisting._standingFor (aim: brief)
+  Drafting._brief (brief) has (request)
+  passage is repairPassage (account, offering, request)
+then
+  Reasoning.ask (about: brief, at, passage, reasoner: "gemini-flash")
+```
+
+### Live.drafting.Correct:forbidden
+
+Authored path: `Live.drafting.Correct`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 43.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 61.
+
+```reaction
+when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.Correct:success
+
+Authored path: `Live.drafting.Correct`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 43.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 61.
+
+```reaction
+when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  Drafting.correct (at, author: user, candidate, request)
+```
+
+### Live.drafting.Correct:success#2
+
+Authored path: `Live.drafting.Correct`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 43.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 61.
+
+```reaction
+when Drafting.correct (at, author: user, candidate, request, brief), asked by Live.drafting.Correct:success
+where
+  earlier, RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
+then
+  RequestBoundary.respond (brief, requestId)
+```
+
+### Live.drafting.CorrectedBriefAsksReasoner
+
+Authored path: `Live.drafting.CorrectedBriefAsksReasoner`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 13.
+
+```reaction
+when Drafting.correct (candidate, request, brief)
+where
+  at is the current flow's instant
+  Drafting._material (candidate) has (form, material)
+  passage is revisionPassage (form, material, request)
+then
+  Reasoning.ask (about: brief, at, passage, reasoner: "gemini-flash")
+```
+
+### Live.drafting.Describe:forbidden
+
+Authored path: `Live.drafting.Describe`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 62.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.Describe:success
+
+Authored path: `Live.drafting.Describe`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 62.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  Drafting.describe (at, author: user, request)
+```
+
+### Live.drafting.Describe:success#2
+
+Authored path: `Live.drafting.Describe`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 62.
+
+```reaction
+when Drafting.describe (at, author: user, request, brief), asked by Live.drafting.Describe:success
+where
+  earlier, RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
+then
+  RequestBoundary.respond (brief, requestId)
+```
+
+### Live.drafting.DescribedBriefAsksReasoner
+
+Authored path: `Live.drafting.DescribedBriefAsksReasoner`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 11.
+
+```reaction
+when Drafting.describe (request, brief)
+where
+  at is the current flow's instant
+  passage is draftingPassage (request)
+then
+  Reasoning.ask (about: brief, at, passage, reasoner: "gemini-flash")
+```
+
+### Live.drafting.FailedAskStallsTheBrief:give-up
+
+Authored path: `Live.drafting.FailedAskStallsTheBrief`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 40.
+
+```reaction
+when Reasoning.fail (asking)
+where
+  Reasoning._asking (asking) has (about: brief)
+  Insisting._unsettledFor (aim: brief)
+then
+  Insisting.giveUp (aim: brief)
+```
+
+### Live.drafting.FailedAskStallsTheBrief:stall
+
+Authored path: `Live.drafting.FailedAskStallsTheBrief`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 40.
+
+```reaction
+when Reasoning.fail (asking)
+where
+  Reasoning._asking (asking) has (about: brief)
+  Reasoning._failureOf (asking) has (account)
+  Drafting._standing (brief) has (stalled: false)
+then
+  Drafting.stall (brief, reason: account)
+```
+
+### Live.drafting.Line:forbidden
+
+Authored path: `Live.drafting.Line`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 44.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 63.
+
+```reaction
+when RequestBoundary.request (brief, path: "/live/drafts/line", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.Line:success
+
+Authored path: `Live.drafting.Line`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 44.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 63.
+
+```reaction
+when RequestBoundary.request (brief, path: "/live/drafts/line", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  RequestBoundary.respond (line: former "the drafting line of (brief)" with (brief), requestId)
+```
+
+### Live.drafting.ProposedDraftSatisfiesInsistence
+
+Authored path: `Live.drafting.ProposedDraftSatisfiesInsistence`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 33.
+
+```reaction
+when Drafting.propose (brief)
+where
+  Insisting._unsettledFor (aim: brief)
+then
+  Insisting.satisfy (aim: brief)
+```
+
+### Live.drafting.ReplyDraftProposes
+
+Authored path: `Live.drafting.ReplyDraftProposes`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 24.
+
+```reaction
+when Reasoning.answer (asking, reply)
+where
+  Reasoning._asking (asking) has (about: brief)
+  kind is parseKind (reply)
+  kind is among ["draft"]
+  form is parsedForm (reply)
+  material is parsedMaterial (reply)
+then
+  Drafting.propose (brief, form, material)
+```
+
+### Live.drafting.ReplyNeitherComplains
+
+Authored path: `Live.drafting.ReplyNeitherComplains`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 28.
+
+```reaction
+when Reasoning.answer (asking, reply)
+where
+  Reasoning._asking (asking) has (about: brief)
+  kind is parseKind (reply)
+  kind is among ["neither"]
+  reason is parsedReason (reply)
+then
+  Insisting.complain (account: reason, aim: brief, offering: reply, patience: 3)
+```
+
+### Live.drafting.ReplyQuestionAsks
+
+Authored path: `Live.drafting.ReplyQuestionAsks`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 26.
+
+```reaction
+when Reasoning.answer (asking, reply)
+where
+  Reasoning._asking (asking) has (about: brief)
+  kind is parseKind (reply)
+  kind is among ["question"]
+  question is parsedQuestion (reply)
+then
+  Drafting.ask (brief, question)
+```
+
+### Live.drafting.SpentPatienceStallsTheBrief
+
+Authored path: `Live.drafting.SpentPatienceStallsTheBrief`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 37.
+
+```reaction
+when Insisting.complain (aim: brief)
+where
+  Insisting._spentFor (aim: brief)
+then
+  Drafting.stall (brief, reason: "The reply could not be read, and standing on it did not help.")
+```
+
+### Live.drafting.SpentPatienceStallsTheBrief#2
+
+Authored path: `Live.drafting.SpentPatienceStallsTheBrief`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 37.
+
+```reaction
+when Drafting.stall (brief, reason: "The reply could not be read, and standing on it did not help."), asked by Live.drafting.SpentPatienceStallsTheBrief
+then
+  Insisting.giveUp (aim: brief)
+```
+
+### Live.participation.Answer:closed
+
+Authored path: `Live.participation.Answer`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 26.
+- Covered by [Participation](../design/compositions/live/participation.md), line 47.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
+where
+  Responding._response (response) has (subject: run)
+  view "(run) is closed" with (run)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.participation.Answer:not-part
+
+Authored path: `Live.participation.Answer`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 26.
+- Covered by [Participation](../design/compositions/live/participation.md), line 47.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
+where
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  view "(question) is not part of (run)" with (question, run)
+then
+  RequestBoundary.respond (error: "NOT_PART", requestId)
+```
+
+### Live.participation.Answer:success
+
+Authored path: `Live.participation.Answer`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 26.
+- Covered by [Participation](../design/compositions/live/participation.md), line 47.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
+where
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  view "(question) belongs to (run)" with (question, run)
+then
+  Responding.answer (item: question, response, value)
+```
+
+### Live.participation.Answer:success#2
+
+Authored path: `Live.participation.Answer`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 26.
+- Covered by [Participation](../design/compositions/live/participation.md), line 47.
+
+```reaction
+when Responding.answer (item: question, response, value, result.response: answered), asked by Live.participation.Answer:success
+where
+  earlier, RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
+then
+  RequestBoundary.respond (requestId, response: answered)
+```
+
+### Live.participation.Arrive
+
+Authored path: `Live.participation.Arrive`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 10.
+- Covered by [Participation](../design/compositions/live/participation.md), line 48.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/arrive", requestId, token)
+then
+  Sharing.open (token)
+```
+
+### Live.participation.Arrive#2
+
+Authored path: `Live.participation.Arrive`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 10.
+- Covered by [Participation](../design/compositions/live/participation.md), line 48.
+
+```reaction
+when Sharing.open (token, subject: run), asked by Live.participation.Arrive
+where
+  earlier, RequestBoundary.request (path: "/live/p/arrive", requestId, token)
+then
+  RequestBoundary.respond (face: former "the face of (run)" with (run), requestId)
+```
+
+### Live.participation.Begin
+
+Authored path: `Live.participation.Begin`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 17.
+- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+
+```reaction
+when RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
+then
+  Sharing.open (token)
+```
+
+### Live.participation.Begin:closed#2
+
+Authored path: `Live.participation.Begin`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 17.
+- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+
+```reaction
+when Sharing.open (token, subject: run), asked by Live.participation.Begin
+where
+  view "(run) is closed" with (run)
+  earlier, RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.participation.Begin:open#2
+
+Authored path: `Live.participation.Begin`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 17.
+- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+
+```reaction
+when Sharing.open (token, subject: run), asked by Live.participation.Begin
+where
+  at is the current flow's instant
+  view "(run) is open to participation" with (run)
+  earlier, RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
+then
+  Responding.begin (at, participant: device, subject: run)
+```
+
+### Live.participation.Begin:open#3
+
+Authored path: `Live.participation.Begin`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 17.
+- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+
+```reaction
+when Responding.begin (at, participant: device, subject: run, response), asked by Live.participation.Begin:open#2
+where
+  earlier, RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
+then
+  RequestBoundary.respond (participant: device, requestId, response)
+```
+
+### Live.participation.BeginSigned
+
+Authored path: `Live.participation.BeginSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 19.
+- Covered by [Participation](../design/compositions/live/participation.md), line 50.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/begin-signed", requestId, session, token)
+then
+  Sharing.open (token)
+```
+
+### Live.participation.BeginSigned:closed#2
+
+Authored path: `Live.participation.BeginSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 19.
+- Covered by [Participation](../design/compositions/live/participation.md), line 50.
+
+```reaction
+when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
+where
+  view "(run) is closed" with (run)
+  earlier, RequestBoundary.request (path: "/live/p/begin-signed", requestId, session, token)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.participation.BeginSigned:open#2
+
+Authored path: `Live.participation.BeginSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 19.
+- Covered by [Participation](../design/compositions/live/participation.md), line 50.
+
+```reaction
+when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
+where
+  at is the current flow's instant
+  view "(run) is open to participation" with (run)
+  earlier, RequestBoundary.request (path: "/live/p/begin-signed", requestId, session, token)
+  view "the active user of (session)" with (session) has (user)
+then
+  Responding.begin (at, participant: user, subject: run)
+```
+
+### Live.participation.BeginSigned:open#3
+
+Authored path: `Live.participation.BeginSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 19.
+- Covered by [Participation](../design/compositions/live/participation.md), line 50.
+
+```reaction
+when Responding.begin (at, participant: user, subject: run, response), asked by Live.participation.BeginSigned:open#2
+where
+  earlier, RequestBoundary.request (path: "/live/p/begin-signed", requestId, session, token)
+then
+  RequestBoundary.respond (participant: user, requestId, response)
+```
+
+### Live.participation.Outcome:answers
+
+Authored path: `Live.participation.Outcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 37.
+- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
+where
+  Responding._response (response) has (subject: run, submitted: true)
+  Scoring._keyFor (subject: run) has (disclosure: "answers")
+then
+  RequestBoundary.respond (outcome: former "the answers outcome of (response)" with (response), received: true, requestId)
+```
+
+### Live.participation.Outcome:explanations
+
+Authored path: `Live.participation.Outcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 37.
+- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
+where
+  Responding._response (response) has (subject: run, submitted: true)
+  Scoring._keyFor (subject: run) has (disclosure: "explanations")
+then
+  RequestBoundary.respond (outcome: former "the explained outcome of (response)" with (response), received: true, requestId)
+```
+
+### Live.participation.Outcome:in-progress
+
+Authored path: `Live.participation.Outcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 37.
+- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
+where
+  Responding._response (response) has (submitted: false)
+then
+  RequestBoundary.respond (error: "NOT_SUBMITTED", requestId)
+```
+
+### Live.participation.Outcome:score
+
+Authored path: `Live.participation.Outcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 37.
+- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
+where
+  Responding._response (response) has (subject: run, submitted: true)
+  Scoring._keyFor (subject: run) has (disclosure: "score")
+then
+  RequestBoundary.respond (outcome: former "the score outcome of (response)" with (response), received: true, requestId)
+```
+
+### Live.participation.Outcome:survey
+
+Authored path: `Live.participation.Outcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 37.
+- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
+where
+  Responding._response (response) has (subject: run, submitted: true)
+  no Scoring._keyFor (subject: run)
+then
+  RequestBoundary.respond (received: true, requestId)
+```
+
+### Live.participation.Submit:closed
+
+Authored path: `Live.participation.Submit`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 29.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit", requestId, response)
+where
+  Responding._response (response) has (subject: run)
+  view "(run) is closed" with (run)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.participation.Submit:quiz-incomplete
+
+Authored path: `Live.participation.Submit`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 29.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit", requestId, response)
+where
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  Publishing._edition (edition: run) has (material: questionnaire)
+  Questioning._getQuestionnaire (questionnaire) has (form: "quiz")
+  view "(response) leaves a question unanswered" with (response)
+then
+  RequestBoundary.respond (error: "INCOMPLETE", requestId)
+```
+
+### Live.participation.Submit:quiz-whole
+
+Authored path: `Live.participation.Submit`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 29.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit", requestId, response)
+where
+  at is the current flow's instant
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  Publishing._edition (edition: run) has (material: questionnaire)
+  Questioning._getQuestionnaire (questionnaire) has (form: "quiz")
+  view "(response) answers every question" with (response)
+then
+  Responding.submit (at, response)
+```
+
+### Live.participation.Submit:quiz-whole#2
+
+Authored path: `Live.participation.Submit`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 29.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+
+```reaction
+when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:quiz-whole
+where
+  earlier, RequestBoundary.request (path: "/live/p/submit", requestId, response)
+then
+  RequestBoundary.respond (requestId, response: submitted)
+```
+
+### Live.participation.Submit:survey
+
+Authored path: `Live.participation.Submit`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 29.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit", requestId, response)
+where
+  at is the current flow's instant
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  Publishing._edition (edition: run) has (material: questionnaire)
+  Questioning._getQuestionnaire (questionnaire) has (form: "survey")
+then
+  Responding.submit (at, response)
+```
+
+### Live.participation.Submit:survey#2
+
+Authored path: `Live.participation.Submit`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 29.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+
+```reaction
+when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:survey
+where
+  earlier, RequestBoundary.request (path: "/live/p/submit", requestId, response)
+then
+  RequestBoundary.respond (requestId, response: submitted)
+```
+
+### Live.participation.SubmittedResponseIsGraded
+
+Authored path: `Live.participation.SubmittedResponseIsGraded`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 35.
+
+```reaction
+when Responding.submit (response)
+where
+  Responding._response (response) has (subject: run)
+  Scoring._keyFor (subject: run) has (key)
+  Responding._collectedAnswers (response) has (answers)
+then
+  Scoring.grade (answers, key, submission: response)
+```
+
+### Live.quizzes.AddQuestion:forbidden
+
+Authored path: `Live.quizzes.AddQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 40.
+
+```reaction
+when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", position, prompt, questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.quizzes.AddQuestion:run-open
+
+Authored path: `Live.quizzes.AddQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 40.
+
+```reaction
+when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", position, prompt, questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(questionnaire) has an open run" with (questionnaire)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
+```
+
+### Live.quizzes.AddQuestion:success
+
+Authored path: `Live.quizzes.AddQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 40.
+
+```reaction
+when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", position, prompt, questionnaire, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(questionnaire) has no open run" with (questionnaire)
+then
+  Questioning.addQuestion (choices, expected, explanation, position, prompt, questionnaire)
+```
+
+### Live.quizzes.AddQuestion:success#2
+
+Authored path: `Live.quizzes.AddQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 40.
+
+```reaction
+when Questioning.addQuestion (choices, expected, explanation, position, prompt, questionnaire, question), asked by Live.quizzes.AddQuestion:success
+where
+  earlier, RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", position, prompt, questionnaire, requestId, session)
+then
+  RequestBoundary.respond (question, requestId)
+```
+
+### Live.quizzes.Create:forbidden
+
+Authored path: `Live.quizzes.Create`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 9.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 41.
+
+```reaction
+when RequestBoundary.request (disclosure, form, path: "/live/quizzes/create", requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.quizzes.Create:success
+
+Authored path: `Live.quizzes.Create`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 9.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 41.
+
+```reaction
+when RequestBoundary.request (disclosure, form, path: "/live/quizzes/create", requestId, session, title)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  Questioning.compose (at, author: user, disclosure, form, title)
+```
+
+### Live.quizzes.Create:success#2
+
+Authored path: `Live.quizzes.Create`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 9.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 41.
+
+```reaction
+when Questioning.compose (at, author: user, disclosure, form, title, questionnaire), asked by Live.quizzes.Create:success
+where
+  earlier, RequestBoundary.request (disclosure, form, path: "/live/quizzes/create", requestId, session, title)
+then
+  RequestBoundary.respond (questionnaire, requestId)
+```
+
+### Live.quizzes.Get:forbidden
+
+Authored path: `Live.quizzes.Get`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 34.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 42.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/get", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.quizzes.Get:success
+
+Authored path: `Live.quizzes.Get`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 34.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 42.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/get", questionnaire, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  RequestBoundary.respond (questionnaire: former "the questionnaire (questionnaire)" with (questionnaire), requestId)
+```
+
+### Live.quizzes.List:forbidden
+
+Authored path: `Live.quizzes.List`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 31.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 43.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.quizzes.List:success
+
+Authored path: `Live.quizzes.List`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 31.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 43.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/list", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  RequestBoundary.respond (questionnaires: former "the questionnaires", requestId)
+```
+
+### Live.quizzes.RemoveQuestion:forbidden
+
+Authored path: `Live.quizzes.RemoveQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 22.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.quizzes.RemoveQuestion:run-open
+
+Authored path: `Live.quizzes.RemoveQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 22.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestion (question) has (questionnaire)
+  view "(questionnaire) has an open run" with (questionnaire)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
+```
+
+### Live.quizzes.RemoveQuestion:success
+
+Authored path: `Live.quizzes.RemoveQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 22.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestion (question) has (questionnaire)
+  view "(questionnaire) has no open run" with (questionnaire)
+then
+  Questioning.removeQuestion (question)
+```
+
+### Live.quizzes.RemoveQuestion:success#2
+
+Authored path: `Live.quizzes.RemoveQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 22.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 44.
+
+```reaction
+when Questioning.removeQuestion (question, result.question: removed), asked by Live.quizzes.RemoveQuestion:success
+where
+  earlier, RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
+then
+  RequestBoundary.respond (question: removed, requestId)
+```
+
+### Live.quizzes.Retire:forbidden
+
+Authored path: `Live.quizzes.Retire`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 17.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 45.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.quizzes.Retire:run-open
+
+Authored path: `Live.quizzes.Retire`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 17.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 45.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(questionnaire) has an open run" with (questionnaire)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
+```
+
+### Live.quizzes.Retire:success
+
+Authored path: `Live.quizzes.Retire`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 17.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 45.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(questionnaire) has no open run" with (questionnaire)
+then
+  Questioning.retire (questionnaire)
+```
+
+### Live.quizzes.Retire:success#2
+
+Authored path: `Live.quizzes.Retire`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 17.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 45.
+
+```reaction
+when Questioning.retire (questionnaire, result.questionnaire: retired), asked by Live.quizzes.Retire:success
+where
+  earlier, RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
+then
+  RequestBoundary.respond (questionnaire: retired, requestId)
+```
+
+### Live.quizzes.Retitle:forbidden
+
+Authored path: `Live.quizzes.Retitle`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 15.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 46.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.quizzes.Retitle:success
+
+Authored path: `Live.quizzes.Retitle`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 15.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 46.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  Questioning.retitle (questionnaire, title)
+```
+
+### Live.quizzes.Retitle:success#2
+
+Authored path: `Live.quizzes.Retitle`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 15.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 46.
+
+```reaction
+when Questioning.retitle (questionnaire, title, result.questionnaire: retitled), asked by Live.quizzes.Retitle:success
+where
+  earlier, RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
+then
+  RequestBoundary.respond (questionnaire: retitled, requestId)
+```
+
+### Live.quizzes.ReviseQuestion:forbidden
+
+Authored path: `Live.quizzes.ReviseQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 21.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 47.
+
+```reaction
+when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", position, prompt, question, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.quizzes.ReviseQuestion:run-open
+
+Authored path: `Live.quizzes.ReviseQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 21.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 47.
+
+```reaction
+when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", position, prompt, question, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestion (question) has (questionnaire)
+  view "(questionnaire) has an open run" with (questionnaire)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
+```
+
+### Live.quizzes.ReviseQuestion:success
+
+Authored path: `Live.quizzes.ReviseQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 21.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 47.
+
+```reaction
+when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", position, prompt, question, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestion (question) has (questionnaire)
+  view "(questionnaire) has no open run" with (questionnaire)
+then
+  Questioning.reviseQuestion (choices, expected, explanation, position, prompt, question)
+```
+
+### Live.quizzes.ReviseQuestion:success#2
+
+Authored path: `Live.quizzes.ReviseQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 21.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 47.
+
+```reaction
+when Questioning.reviseQuestion (choices, expected, explanation, position, prompt, question, result.question: revised), asked by Live.quizzes.ReviseQuestion:success
+where
+  earlier, RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", position, prompt, question, requestId, session)
+then
+  RequestBoundary.respond (question: revised, requestId)
+```
+
+### Live.quizzes.SetDisclosure:forbidden
+
+Authored path: `Live.quizzes.SetDisclosure`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 16.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 48.
+
+```reaction
+when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.quizzes.SetDisclosure:run-open
+
+Authored path: `Live.quizzes.SetDisclosure`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 16.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 48.
+
+```reaction
+when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(questionnaire) has an open run" with (questionnaire)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
+```
+
+### Live.quizzes.SetDisclosure:success
+
+Authored path: `Live.quizzes.SetDisclosure`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 16.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 48.
+
+```reaction
+when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(questionnaire) has no open run" with (questionnaire)
+then
+  Questioning.setDisclosure (disclosure, questionnaire)
+```
+
+### Live.quizzes.SetDisclosure:success#2
+
+Authored path: `Live.quizzes.SetDisclosure`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 16.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 48.
+
+```reaction
+when Questioning.setDisclosure (disclosure, questionnaire, result.questionnaire: changed), asked by Live.quizzes.SetDisclosure:success
+where
+  earlier, RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
+then
+  RequestBoundary.respond (questionnaire: changed, requestId)
+```
+
+### Live.runs.Close:forbidden
+
+Authored path: `Live.runs.Close`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 25.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 41.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.runs.Close:success
+
+Authored path: `Live.runs.Close`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 25.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 41.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  Publishing.close (at, edition: run)
+```
+
+### Live.runs.Close:success#2
+
+Authored path: `Live.runs.Close`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 25.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 41.
+
+```reaction
+when Publishing.close (at, edition: run, result.edition: closed), asked by Live.runs.Close:success
+where
+  earlier, RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
+then
+  RequestBoundary.respond (requestId, run: closed)
+```
+
+### Live.runs.Launch:forbidden
+
+Authored path: `Live.runs.Launch`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 7.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.runs.Launch:quiz
+
+Authored path: `Live.runs.Launch`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 7.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestionnaire (questionnaire) has (form: "quiz")
+  Questioning._proposesAnswers (questionnaire) has (proposes: true)
+then
+  Publishing.publish (at, author: user, material: questionnaire)
+```
+
+### Live.runs.Launch:quiz#2
+
+Authored path: `Live.runs.Launch`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 7.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+
+```reaction
+when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:quiz
+then
+  Sharing.issue (subject: run)
+```
+
+### Live.runs.Launch:quiz#3
+
+Authored path: `Live.runs.Launch`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 7.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+
+```reaction
+when Sharing.issue (subject: run, token), asked by Live.runs.Launch:quiz#2
+where
+  earlier, RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
+then
+  RequestBoundary.respond (requestId, run, token)
+```
+
+### Live.runs.Launch:quiz-not-ready
+
+Authored path: `Live.runs.Launch`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 7.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestionnaire (questionnaire) has (form: "quiz")
+  Questioning._proposesAnswers (questionnaire) has (proposes: false)
+then
+  RequestBoundary.respond (error: "NOT_QUIZ_READY", requestId)
+```
+
+### Live.runs.Launch:survey
+
+Authored path: `Live.runs.Launch`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 7.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestionnaire (questionnaire) has (form: "survey")
+then
+  Publishing.publish (at, author: user, material: questionnaire)
+```
+
+### Live.runs.Launch:survey#2
+
+Authored path: `Live.runs.Launch`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 7.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+
+```reaction
+when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:survey
+then
+  Sharing.issue (subject: run)
+```
+
+### Live.runs.Launch:survey#3
+
+Authored path: `Live.runs.Launch`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 7.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+
+```reaction
+when Sharing.issue (subject: run, token), asked by Live.runs.Launch:survey#2
+where
+  earlier, RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
+then
+  RequestBoundary.respond (requestId, run, token)
+```
+
+### Live.runs.OpenRuns:forbidden
+
+Authored path: `Live.runs.OpenRuns`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 29.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/open", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.runs.OpenRuns:success
+
+Authored path: `Live.runs.OpenRuns`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 29.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/open", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  RequestBoundary.respond (requestId, runs: former "the open runs")
+```
+
+### Live.runs.PublishedQuizEstablishesKey
+
+Authored path: `Live.runs.PublishedQuizEstablishesKey`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 17.
+
+```reaction
+when Publishing.publish (material: questionnaire, edition: run)
+where
+  Questioning._getQuestionnaire (questionnaire) has (disclosure, form: "quiz")
+  Questioning._expectedAnswers (questionnaire) has (expectations)
+then
+  Scoring.establish (disclosure, expectations, subject: run)
+```
+
+### Live.runs.Results:forbidden
+
+Authored path: `Live.runs.Results`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 32.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.runs.Results:quiz
+
+Authored path: `Live.runs.Results`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 32.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Scoring._keyFor (subject: run)
+then
+  RequestBoundary.respond (board: former "the board of (run)" with (run), requestId, scores: former "the scores of (run)" with (run))
+```
+
+### Live.runs.Results:survey
+
+Authored path: `Live.runs.Results`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 32.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Scoring._keyFor (subject: run)
+then
+  RequestBoundary.respond (board: former "the board of (run)" with (run), requestId)
+```
+
 ### Tasks.lists.AddMember:profile-not-found
 
 Authored path: `Tasks.lists.AddMember`.
@@ -12868,6 +15004,30 @@ not listed here have no explicit input contract.
 - `/late-days/staff-change` — requires `session`, `learner`, `assignment`, `days`
 - `/links/backlinks` — requires `target`
 - `/links/forward` — requires `source`
+- `/live/drafts/adopt` — requires `session`, `candidate`
+- `/live/drafts/clarify` — requires `session`, `clarification`, `answer`
+- `/live/drafts/correct` — requires `session`, `candidate`, `request`
+- `/live/drafts/describe` — requires `session`, `request`
+- `/live/drafts/line` — requires `session`, `brief`
+- `/live/p/answer` — requires `response`, `question`, `value`
+- `/live/p/arrive` — requires `token`
+- `/live/p/begin` — requires `token`, `device`
+- `/live/p/begin-signed` — requires `token`, `session`
+- `/live/p/outcome` — requires `response`
+- `/live/p/submit` — requires `response`
+- `/live/quizzes/add-question` — requires `session`, `questionnaire`, `prompt`, `position`; fills `choices` with [] when absent; fills `expected` with "" when absent; fills `explanation` with "" when absent
+- `/live/quizzes/create` — requires `session`, `form`; fills `disclosure` with "score" when absent; fills `title` with "Untitled" when absent
+- `/live/quizzes/get` — requires `questionnaire`, `session`
+- `/live/quizzes/list` — requires `session`
+- `/live/quizzes/remove-question` — requires `session`, `question`
+- `/live/quizzes/retire` — requires `session`, `questionnaire`
+- `/live/quizzes/retitle` — requires `session`, `questionnaire`, `title`
+- `/live/quizzes/revise-question` — requires `session`, `question`, `prompt`, `position`; fills `choices` with [] when absent; fills `expected` with "" when absent; fills `explanation` with "" when absent
+- `/live/quizzes/set-disclosure` — requires `session`, `questionnaire`, `disclosure`
+- `/live/runs/close` — requires `session`, `run`
+- `/live/runs/launch` — requires `session`, `questionnaire`
+- `/live/runs/open` — requires `session`
+- `/live/runs/results` — requires `session`, `run`
 - `/lms/me` — requires `session`
 - `/lms/staff-dashboard` — requires `session`
 - `/locks/isLocked` — requires `target`

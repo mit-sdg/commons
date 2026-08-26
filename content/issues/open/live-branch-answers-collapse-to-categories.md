@@ -1,0 +1,37 @@
+---
+milestone: later
+concepts:
+  - Questioning
+  - Publishing
+  - Responding
+---
+
+# Distinguish the live domain's designed branch answers over HTTP
+
+## Current behavior
+
+The live composition answers several designed cases with authored words:
+`RUN_OPEN` when editing a questionnaire whose run is open, `NOT_QUIZ_READY`
+when launching a quiz that proposes no answers, `CLOSED`, `NOT_PART`,
+`INCOMPLETE`, and `NOT_SUBMITTED` on the participation endpoints. The HTTP
+profile projects every error into its public category, so all of these reach
+the browser as `CONFLICT` or `INVALID_REQUEST`. The frontend keeps the
+distinctions by deciding them client-side from data it already holds — it
+disables Launch while no question proposes an answer, disables Hand in until a
+quiz is whole, and reads the run's open flag from the face — so the collapsed
+categories are backstops rather than the user's experience.
+
+## Unresolved decision
+
+Decide whether these cases should remain error envelopes at all, or become
+designed success answers carrying their own words (`{ handedIn: false, reason }`),
+which would survive the category projection and let the participant screen
+speak the composition's own sentences without duplicating the rules
+client-side.
+
+## Acceptance condition
+
+Either the participation endpoints answer these cases as designed data whose
+words reach the browser unchanged, with wire and browser tests reading them, or
+a recorded decision keeps the category backstops and names the client-side
+rules as the one home of each distinction.

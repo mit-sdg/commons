@@ -20,6 +20,15 @@ concrete Lockable
 
 concrete TaskSubject
   A task-list group or task identity that a task-domain notification is about and links to.
+
+concrete LiveParticipant
+  A live-run participant identity: an Authenticating user when the participant
+  was signed in, or the device-minted identifier an anonymous participant
+  presents.
+
+concrete LiveReasoner
+  The name of the reasoner the floor's worker serves; the deployment configures
+  which model answers it.
 ```
 
 ## Instances
@@ -55,6 +64,9 @@ instantiate Categorizing with
 instantiate Conversing with
   Item is Posting.Post
 
+instantiate Drafting with
+  Author is Authenticating.User
+
 instantiate Flagging with
   User is Authenticating.User
   Target is Posting.Post
@@ -71,6 +83,9 @@ instantiate Grading with
 
 instantiate Grouping with
   Person is Authenticating.User
+
+instantiate Insisting with
+  Aim is Drafting.Brief
 
 instantiate Inviting with
   User is Authenticating.User
@@ -112,9 +127,25 @@ instantiate Posting with
 instantiate Profiling with
   User is Authenticating.User
 
+instantiate Publishing with
+  Author is Authenticating.User
+  Material is Questioning.Questionnaire
+
+instantiate Questioning with
+  Author is Authenticating.User
+
 instantiate Reacting with
   Person is Authenticating.User
   Target is Posting.Post
+
+instantiate Reasoning with
+  Reasoner is LiveReasoner
+  Subject is Drafting.Brief
+
+instantiate Responding with
+  Subject is Publishing.Edition
+  Participant is LiveParticipant
+  Item is Questioning.Question
 
 instantiate Resolving with
   User is Authenticating.User
@@ -131,8 +162,16 @@ instantiate Roling with
 instantiate Rostering with
   User is Authenticating.User
 
+instantiate Scoring with
+  Subject is Publishing.Edition
+  Item is Questioning.Question
+  Submission is Responding.Response
+
 instantiate Sessioning with
   User is Authenticating.User
+
+instantiate Sharing with
+  Subject is Publishing.Edition
 
 instantiate Submitting with
   Submitter is Authenticating.User
@@ -199,6 +238,22 @@ holds equal power over the group and the tasks scoped to it.
 task-list membership event, and a Tasking task for an assignment or a change to
 an assigned task. TaskNotifying uses that identity as both the subject and the
 link of an entry.
+
+The live domain runs quizzes and surveys during a meeting. Questioning owns
+questionnaire and question identities; Publishing fixes an open edition of one
+questionnaire, and Sharing's token is the only address a participant needs.
+Responding and Scoring both use the edition as their subject and Questioning's
+questions as their items, so an answer, an expectation, and a result all name
+the same question identity. `LiveParticipant` has two valid owners in the same
+way `Lockable` does: an Authenticating user for a signed-in participant, and an
+opaque device-minted identifier for an anonymous one — the participation
+endpoints decide which a caller presents. Drafting owns brief and candidate
+identities for the natural-language route into Questioning; Reasoning's asks
+are about a Drafting brief, Insisting stands on the same brief when a yield
+comes back unusable, and `LiveReasoner` names the mind the floor's worker
+serves. Adopting a candidate is what turns drafted material into an ordinary
+editable questionnaire; nothing else crosses from the drafting line into the
+live domain.
 
 These bindings record application meaning. They do not copy state, validate an
 identity at runtime, or make one concept depend on another.
@@ -271,6 +326,45 @@ taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: Strin
 
 taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String
   Renders the HTML task message, saying which change occurred and naming the task, its list, and its deadline.
+
+draftTitle(request: String) : String
+  Renders the title an adopted draft's questionnaire starts with: the request,
+  collapsed and shortened.
+
+draftingPassage(request: String) : String
+  Renders the passage that asks the reasoner to draft a questionnaire from a
+  creator's plain-language request.
+
+revisionPassage(request: String, form: String, material: Json) : String
+  Renders the passage that asks the reasoner to revise existing material,
+  changing only what the correction asks.
+
+clarifiedPassage(request: String, question: String, answer: String) : String
+  Renders the passage that resumes drafting from the original request, the
+  clarifying question, and the creator's answer.
+
+repairPassage(request: String, offering: String, account: String) : String
+  Renders the passage that stands on a request: the original ask, the exact
+  reply that came back, and the account of what was wrong with it.
+
+parseKind(reply: String) : String
+  Reads a reasoner's reply and answers `draft`, `question`, or `neither` —
+  the three-way partition every drafting reaction branches on.
+
+parsedForm(reply: String) : String
+  Answers the drafted form of a `draft` reply, and an empty string otherwise.
+
+parsedMaterial(reply: String) : Json
+  Answers the drafted material entries of a `draft` reply, and an empty
+  sequence otherwise.
+
+parsedQuestion(reply: String) : String
+  Answers the clarifying question of a `question` reply, and an empty string
+  otherwise.
+
+parsedReason(reply: String) : String
+  Answers the account of why a reply could not be read, and an empty string
+  when it could.
 ```
 
 Two of these decide rather than render. `singleImportRow` composes the one row a

@@ -1,0 +1,64 @@
+# Drafting with the reasoner
+
+A staff member holding `live:host` can begin a questionnaire by describing it
+in plain language. The reasoner drafts it whole; the author reads, corrects in
+the same plain language, answers a clarifying question when one comes back,
+and finally adopts the candidate — at which point it becomes an ordinary
+editable questionnaire and nothing else ever crosses from the drafting line
+into the live domain.
+
+[Live.drafting.Describe](reaction:Live.drafting.Describe) records the brief.
+[Live.drafting.DescribedBriefAsksReasoner](reaction:Live.drafting.DescribedBriefAsksReasoner)
+renders the drafting passage and puts it before the reasoner;
+[Live.drafting.CorrectedBriefAsksReasoner](reaction:Live.drafting.CorrectedBriefAsksReasoner)
+does the same for a correction, carrying the prior material so only what the
+correction asks may change, and
+[Live.drafting.ClarifiedBriefAsksReasoner](reaction:Live.drafting.ClarifiedBriefAsksReasoner)
+resumes from the whole exchange once
+[Live.drafting.Clarify](reaction:Live.drafting.Clarify) records the author's
+answer. The reasoner itself is a name — a worker on the floor serves it, and
+which model answers is deployment configuration.
+
+Every reply meets a three-way reading that partitions it: a draft, a
+clarifying question, or neither.
+[Live.drafting.ReplyDraftProposes](reaction:Live.drafting.ReplyDraftProposes)
+turns a draft reply into the brief's candidate;
+[Live.drafting.ReplyQuestionAsks](reaction:Live.drafting.ReplyQuestionAsks)
+records the clarifying question and sets the brief waiting; and
+[Live.drafting.ReplyNeitherComplains](reaction:Live.drafting.ReplyNeitherComplains)
+stands on an unusable reply, opening an insistence of three complaints.
+[Live.drafting.ComplaintRetriesTheAsk](reaction:Live.drafting.ComplaintRetriesTheAsk)
+sends the exchange back — the original request, the exact reply, and the
+account of what was wrong — while patience remains;
+[Live.drafting.ProposedDraftSatisfiesInsistence](reaction:Live.drafting.ProposedDraftSatisfiesInsistence)
+and
+[Live.drafting.AskedQuestionSatisfiesInsistence](reaction:Live.drafting.AskedQuestionSatisfiesInsistence)
+settle the insistence the moment a usable reply lands; and
+[Live.drafting.SpentPatienceStallsTheBrief](reaction:Live.drafting.SpentPatienceStallsTheBrief)
+stalls the brief honestly once patience is spent, closing the insistence. A
+reasoner that could not be reached at all leaves nothing waiting silently:
+[Live.drafting.FailedAskStallsTheBrief](reaction:Live.drafting.FailedAskStallsTheBrief)
+stalls the brief with the failure's own account.
+
+[Live.drafting.Correct](reaction:Live.drafting.Correct) opens the next step of
+the line, and [Live.drafting.Line](reaction:Live.drafting.Line) forms
+[the drafting line whole](former:Live.drafting.theDraftLine) — every step with
+its request, its candidate's items, its open clarifications, and whether it
+waits, stalled, or stands adopted — which the drafting surface polls while a
+reply is out.
+
+[Live.drafting.Adopt](reaction:Live.drafting.Adopt) marks the candidate
+adopted, and
+[Live.drafting.AdoptedCandidateComposesQuestionnaire](reaction:Live.drafting.AdoptedCandidateComposesQuestionnaire)
+composes the questionnaire from it — the request as its starting title, the
+drafted form, `score` as the starting disclosure — and adds each drafted item
+as a question in order. From there the quizzes page owns it: revision happens
+by hand, and correcting an adopted candidate is refused by Drafting itself.
+
+```endpoints
+Live.drafting.Adopt at /live/drafts/adopt
+Live.drafting.Clarify at /live/drafts/clarify
+Live.drafting.Correct at /live/drafts/correct
+Live.drafting.Describe at /live/drafts/describe
+Live.drafting.Line at /live/drafts/line
+```

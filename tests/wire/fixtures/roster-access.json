@@ -130,7 +130,14 @@
         "session": "$loginAdmin.session"
       },
       "response": {
-        "capabilities": ["administer", "moderate", "course:manage", "grade", "student-records"]
+        "capabilities": [
+          "administer",
+          "moderate",
+          "course:manage",
+          "grade",
+          "live:host",
+          "student-records"
+        ]
       }
     },
     {
@@ -484,7 +491,14 @@
         "session": "$loginAdmin.session"
       },
       "response": {
-        "capabilities": ["administer", "moderate", "course:manage", "grade", "student-records"]
+        "capabilities": [
+          "administer",
+          "moderate",
+          "course:manage",
+          "grade",
+          "live:host",
+          "student-records"
+        ]
       }
     },
     {

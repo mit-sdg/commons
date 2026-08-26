@@ -196,7 +196,14 @@ describe("deployment routes", () => {
       const permissions = await post(edge, "/auth/permissions", {}, cookie);
       expect(permissions.status).toBe(200);
       expect(await permissions.json()).toEqual({
-        capabilities: ["administer", "moderate", "course:manage", "grade", "student-records"],
+        capabilities: [
+          "administer",
+          "moderate",
+          "course:manage",
+          "grade",
+          "live:host",
+          "student-records",
+        ],
       });
       const configured = await post(
         edge,

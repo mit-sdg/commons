@@ -1,0 +1,73 @@
+"use client";
+
+import { Loader2, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
+const EXAMPLE =
+  "A five-question multiple-choice quiz on photosynthesis for an intro biology lecture — one right answer each, with a short explanation of why it is right.";
+
+/**
+ * The opening of the drafting line: one plain-language request, in the
+ * author's own words. Everything the reasoner writes descends from what is
+ * typed here, so the box is large and the example shows the grain of a
+ * request that drafts well.
+ */
+export function DraftDescribe({
+  submitting,
+  onSubmit,
+}: {
+  submitting: boolean;
+  onSubmit: (request: string) => void;
+}) {
+  const [request, setRequest] = useState("");
+  const ready = request.trim().length > 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Sparkles className="size-4" />
+          Describe the quiz or survey you want
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Say what it should cover, roughly how many questions, and whether it
+          is a quiz with right answers or a survey that only asks. The reasoner
+          drafts the whole thing; you can correct it in the same plain language
+          before anything becomes a questionnaire.
+        </p>
+
+        <div className="space-y-2">
+          <Label htmlFor="draft-request">Your description</Label>
+          <Textarea
+            id="draft-request"
+            value={request}
+            onChange={(event) => setRequest(event.target.value)}
+            placeholder={EXAMPLE}
+            rows={6}
+            className="min-h-40 resize-y"
+          />
+          <p className="text-xs text-muted-foreground">
+            If the request could go either way, the reasoner asks you one
+            clarifying question rather than guessing.
+          </p>
+        </div>
+
+        <Button
+          onClick={() => {
+            if (ready && !submitting) onSubmit(request.trim());
+          }}
+          disabled={!ready || submitting}
+        >
+          {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
+          Draft it
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}

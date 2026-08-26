@@ -34,6 +34,7 @@ const NO_PERMISSIONS: Permissions = {
 const STAFF_CAPABILITIES: Capability[] = [
   "course:manage",
   "grade",
+  "live:host",
   "student-records",
 ];
 
