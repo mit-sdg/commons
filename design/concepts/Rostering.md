@@ -118,10 +118,11 @@ previewImport(csv: String) : return (rows: Rows)
   then
     read the first newline-delimited line as comma-delimited headers
     read each later newline-delimited line as comma-delimited values, without quoting or escaping
+    resolve each non-empty section name or identifier to one active section and mark unknown or ambiguous sections invalid
     return rows
 
 importSeats(rows: Rows) : return (created: Seats, skipped: Strings)
-  where true
+  where every non-empty section identifies an active section
   then
     for each row whose email no seat already carries:
       add a new seat with the row's email, kind, section, and display name, and no holder
@@ -129,6 +130,9 @@ importSeats(rows: Rows) : return (created: Seats, skipped: Strings)
     for each row carrying a display name whose email any seat in pending carries, including a seat this import has just created:
       set that seat's displayName to the row's display name
     return created, skipped
+  where a non-empty section does not identify an active section
+  then
+    refuse SECTION_NOT_FOUND "No such section exists."
 
 enrol(email: String, kind: String, section: Section, user: User) : return (seat: Seat, kind: String, user: User, section: Section)
   where a seat not in pending carries email

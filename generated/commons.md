@@ -734,6 +734,7 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
   - Refuses `SECTION_NOT_FOUND`: No such section exists.
 - `previewImport(csv: String) : return (rows: Rows)`
 - `importSeats(rows: Rows) : return (created: Seats, skipped: Strings)`
+  - Refuses `SECTION_NOT_FOUND`: No such section exists.
 - `enrol(email: String, kind: String, section: Section, user: User) : return (seat: Seat, kind: String, user: User, section: Section)`
   - Refuses `SEAT_ALREADY_EXISTS`: A seat already exists for this address.
   - Refuses `SEAT_ALREADY_ACTIVE`: This user already holds an active seat.

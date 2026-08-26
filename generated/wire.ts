@@ -1570,7 +1570,7 @@ export type CommonsWire = {
       "account": "NONE";
       "created": false;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "INVITATION_ALREADY_CLAIMED" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_ALREADY_EXISTS" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "INVITATION_ALREADY_CLAIMED" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_ALREADY_EXISTS" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" | "SECTION_NOT_FOUND" };
   };
   "/roster/class": {
     input: {
@@ -1642,7 +1642,7 @@ export type CommonsWire = {
       "created": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["importSeats"]>>, ["created"]>>;
       "skipped": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["importSeats"]>>, ["skipped"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "INVITATION_ALREADY_CLAIMED" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "INVITATION_ALREADY_CLAIMED" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" | "SECTION_NOT_FOUND" };
   };
   "/roster/import-preview": {
     input: {
