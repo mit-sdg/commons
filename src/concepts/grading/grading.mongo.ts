@@ -2,6 +2,7 @@ import type { Collection, Db } from "mongodb";
 import {
   GradeAlreadyReleased,
   GradeDraftNotFound,
+  GradeExcusedNotFound,
   GradeNotFound,
   GradeReleasedNotFound,
   LearnerExcused,
@@ -196,6 +197,18 @@ export class MongoGradingConcept {
     return { grade: existing._id };
   }
 
+  async restoreExcused({ learner, item, at }: { learner: string; item: string; at: Date }) {
+    const existing = await this.#recordOf(learner, item);
+    if (existing === null || existing.status !== "EXCUSED") {
+      throw new GradeExcusedNotFound(`${learner}/${item}`);
+    }
+    await this.records.updateOne(
+      { _id: existing._id },
+      { $set: { status: "DRAFT", releasedAt: null, updatedAt: at } },
+    );
+    return { grade: existing._id };
+  }
+
   async excuse({
     learner,
     item,
@@ -215,7 +228,7 @@ export class MongoGradingConcept {
     }
     await this.records.updateOne(
       { _id: existing._id },
-      { $set: { status: "EXCUSED", score: 0, grader, feedback, releasedAt: null, updatedAt: at } },
+      { $set: { status: "EXCUSED", grader, feedback, releasedAt: null, updatedAt: at } },
     );
     return { grade: existing._id };
   }

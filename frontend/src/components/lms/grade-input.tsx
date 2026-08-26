@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,9 @@ import { cn } from "@/lib/utils";
 
 interface GradeInputProps {
   learner: string;
+  learnerLabel?: string;
   item: string;
+  itemLabel?: string;
   currentScore?: number;
   currentFeedback?: string;
   currentStatus?: string;
@@ -25,7 +28,9 @@ interface GradeInputProps {
 
 export function GradeInput({
   learner,
+  learnerLabel,
   item,
+  itemLabel,
   currentScore,
   currentFeedback,
   currentStatus,
@@ -94,6 +99,18 @@ export function GradeInput({
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
       toast.success("Grade retracted to draft");
+      onSaved();
+    }
+  }
+
+  async function restoreExcused() {
+    if (!session) return;
+    setLoading(true);
+    const result = await api.grades["restore-excused"]({ learner, item });
+    setLoading(false);
+    if ("error" in result) toast.error(publicErrorMessage(result.error));
+    else {
+      toast.success("Excused grade restored to draft");
       onSaved();
     }
   }
@@ -188,9 +205,20 @@ export function GradeInput({
           </Button>
         </div>
       ) : currentStatus === "EXCUSED" ? (
-        <p className="text-sm text-muted-foreground">
-          This learner is excused. Excused grades cannot currently be changed.
-        </p>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            This learner is excused. Restore the grade to draft before editing
+            it.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={restoreExcused}
+            disabled={loading}
+          >
+            Restore to draft
+          </Button>
+        </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={save} disabled={loading}>
@@ -204,15 +232,22 @@ export function GradeInput({
           >
             Release
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-destructive"
-            onClick={excuse}
-            disabled={loading || !currentStatus}
-          >
-            Excuse
-          </Button>
+          <ConfirmAction
+            title={`Excuse ${learnerLabel ?? learner}?`}
+            description={`${itemLabel ?? item} will be marked excused with the feedback currently shown: ${feedback || "Excused"}`}
+            confirmLabel="Excuse learner"
+            onConfirm={excuse}
+            trigger={
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive"
+                disabled={loading || !currentStatus}
+              >
+                Excuse
+              </Button>
+            }
+          />
         </div>
       )}
     </div>

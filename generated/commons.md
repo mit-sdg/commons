@@ -277,6 +277,8 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 - `releaseItem(item: Item, at: Date) : return (released: Grades)`
 - `retract(learner: Learner, item: Item, at: Date) : return (grade: Grade)`
   - Refuses `GRADE_RELEASED_NOT_FOUND`: There is no released grade for this learner and item.
+- `restoreExcused(learner: Learner, item: Item, at: Date) : return (grade: Grade)`
+  - Refuses `GRADE_EXCUSED_NOT_FOUND`: There is no excused grade for this learner and item.
 - `excuse(learner: Learner, item: Item, grader: Grader, feedback: String, at: Date) : return (grade: Grade)`
   - Refuses `GRADE_NOT_FOUND`: There is no grade for this learner and item.
 - `clearCriterionScores(criterion: Criterion) : return (criterion: Criterion)`
@@ -1899,7 +1901,7 @@ Former "the forward links of (source)" — inputs (source); bindings (target); p
 ### the gradebook ()
 
 Authored path: `Course.grades.theGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 46.
+- Covered by [Grades](../design/compositions/course/grades.md), line 44.
 
 ```former
 Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, feedback, status, assigned); promises exactly one record — forms:
@@ -1932,7 +1934,7 @@ Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user,
 ### the gradebook learners ()
 
 Authored path: `Course.grades.theGradebookLearners`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 48.
+- Covered by [Grades](../design/compositions/course/grades.md), line 46.
 
 ```former
 Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, email, displayName); promises exactly one record — forms:
@@ -1949,7 +1951,7 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
 ### the grades of (learner)
 
 Authored path: `Course.grades.theGradesOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 42.
+- Covered by [Grades](../design/compositions/course/grades.md), line 40.
 
 ```former
 Former "the grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -1968,7 +1970,7 @@ Former "the grades of (learner)" — inputs (learner); bindings (item, grade, sc
 ### the grades on (item)
 
 Authored path: `Course.grades.theGradesOn`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 44.
+- Covered by [Grades](../design/compositions/course/grades.md), line 42.
 
 ```former
 Former "the grades on (item)" — inputs (item); bindings (learner, grade, score, feedback, status); promises exactly one record — forms:
@@ -2457,7 +2459,7 @@ Former "the registered users ()" — inputs (); bindings (user, username, email,
 ### the released grades of (learner)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 39.
+- Covered by [Grades](../design/compositions/course/grades.md), line 37.
 
 ```former
 Former "the released grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -5231,7 +5233,7 @@ then
 
 Authored path: `Course.grades.GradesAddCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 13.
-- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+- Covered by [Grades](../design/compositions/course/grades.md), line 54.
 
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
@@ -5246,7 +5248,7 @@ then
 
 Authored path: `Course.grades.GradesAddCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 13.
-- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+- Covered by [Grades](../design/compositions/course/grades.md), line 54.
 
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
@@ -5261,7 +5263,7 @@ then
 
 Authored path: `Course.grades.GradesAddCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 13.
-- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+- Covered by [Grades](../design/compositions/course/grades.md), line 54.
 
 ```reaction
 when Itemizing.addCriterion (item, maxPoints, name, position, criterion), asked by Course.grades.GradesAddCriterion:success
@@ -5275,7 +5277,7 @@ then
 
 Authored path: `Course.grades.GradesConfigureItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 4.
-- Covered by [Grades](../design/compositions/course/grades.md), line 57.
+- Covered by [Grades](../design/compositions/course/grades.md), line 55.
 
 ```reaction
 when RequestBoundary.request (item, label, maxPoints, path: "/grades/configure-item", requestId, session)
@@ -5290,7 +5292,7 @@ then
 
 Authored path: `Course.grades.GradesConfigureItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 4.
-- Covered by [Grades](../design/compositions/course/grades.md), line 57.
+- Covered by [Grades](../design/compositions/course/grades.md), line 55.
 
 ```reaction
 when RequestBoundary.request (item, label, maxPoints, path: "/grades/configure-item", requestId, session)
@@ -5305,7 +5307,7 @@ then
 
 Authored path: `Course.grades.GradesConfigureItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 4.
-- Covered by [Grades](../design/compositions/course/grades.md), line 57.
+- Covered by [Grades](../design/compositions/course/grades.md), line 55.
 
 ```reaction
 when Itemizing.configureItem (item, label, maxPoints, gradeItem), asked by Course.grades.GradesConfigureItem:success
@@ -5319,7 +5321,7 @@ then
 
 Authored path: `Course.grades.GradesCriterionScores`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 20.
-- Covered by [Grades](../design/compositions/course/grades.md), line 58.
+- Covered by [Grades](../design/compositions/course/grades.md), line 56.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
@@ -5334,7 +5336,7 @@ then
 
 Authored path: `Course.grades.GradesCriterionScores`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 20.
-- Covered by [Grades](../design/compositions/course/grades.md), line 58.
+- Covered by [Grades](../design/compositions/course/grades.md), line 56.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
@@ -5349,7 +5351,7 @@ then
 
 Authored path: `Course.grades.GradesExcuse`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 34.
-- Covered by [Grades](../design/compositions/course/grades.md), line 59.
+- Covered by [Grades](../design/compositions/course/grades.md), line 57.
 
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
@@ -5364,7 +5366,7 @@ then
 
 Authored path: `Course.grades.GradesExcuse`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 34.
-- Covered by [Grades](../design/compositions/course/grades.md), line 59.
+- Covered by [Grades](../design/compositions/course/grades.md), line 57.
 
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
@@ -5380,7 +5382,7 @@ then
 
 Authored path: `Course.grades.GradesExcuse`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 34.
-- Covered by [Grades](../design/compositions/course/grades.md), line 59.
+- Covered by [Grades](../design/compositions/course/grades.md), line 57.
 
 ```reaction
 when Grading.excuse (at, feedback, grader: user, item, learner, grade), asked by Course.grades.GradesExcuse:success
@@ -5393,8 +5395,8 @@ then
 ### Course.grades.GradesExport:forbidden
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 52.
-- Covered by [Grades](../design/compositions/course/grades.md), line 60.
+- Covered by [Grades](../design/compositions/course/grades.md), line 50.
+- Covered by [Grades](../design/compositions/course/grades.md), line 58.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -5408,8 +5410,8 @@ then
 ### Course.grades.GradesExport:success
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 52.
-- Covered by [Grades](../design/compositions/course/grades.md), line 60.
+- Covered by [Grades](../design/compositions/course/grades.md), line 50.
+- Covered by [Grades](../design/compositions/course/grades.md), line 58.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -5423,8 +5425,8 @@ then
 ### Course.grades.GradesForItem:forbidden
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 43.
-- Covered by [Grades](../design/compositions/course/grades.md), line 61.
+- Covered by [Grades](../design/compositions/course/grades.md), line 41.
+- Covered by [Grades](../design/compositions/course/grades.md), line 59.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -5438,8 +5440,8 @@ then
 ### Course.grades.GradesForItem:success
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 43.
-- Covered by [Grades](../design/compositions/course/grades.md), line 61.
+- Covered by [Grades](../design/compositions/course/grades.md), line 41.
+- Covered by [Grades](../design/compositions/course/grades.md), line 59.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -5453,8 +5455,8 @@ then
 ### Course.grades.GradesForMe:not-student
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 40.
-- Covered by [Grades](../design/compositions/course/grades.md), line 62.
+- Covered by [Grades](../design/compositions/course/grades.md), line 38.
+- Covered by [Grades](../design/compositions/course/grades.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -5468,8 +5470,8 @@ then
 ### Course.grades.GradesForMe:success
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 40.
-- Covered by [Grades](../design/compositions/course/grades.md), line 62.
+- Covered by [Grades](../design/compositions/course/grades.md), line 38.
+- Covered by [Grades](../design/compositions/course/grades.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -5483,8 +5485,8 @@ then
 ### Course.grades.GradesForStudent:forbidden
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 41.
-- Covered by [Grades](../design/compositions/course/grades.md), line 63.
+- Covered by [Grades](../design/compositions/course/grades.md), line 39.
+- Covered by [Grades](../design/compositions/course/grades.md), line 61.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -5498,8 +5500,8 @@ then
 ### Course.grades.GradesForStudent:success
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 41.
-- Covered by [Grades](../design/compositions/course/grades.md), line 63.
+- Covered by [Grades](../design/compositions/course/grades.md), line 39.
+- Covered by [Grades](../design/compositions/course/grades.md), line 61.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -5513,8 +5515,8 @@ then
 ### Course.grades.GradesGradebook:forbidden
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
-- Covered by [Grades](../design/compositions/course/grades.md), line 64.
+- Covered by [Grades](../design/compositions/course/grades.md), line 43.
+- Covered by [Grades](../design/compositions/course/grades.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -5528,8 +5530,8 @@ then
 ### Course.grades.GradesGradebook:success
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
-- Covered by [Grades](../design/compositions/course/grades.md), line 64.
+- Covered by [Grades](../design/compositions/course/grades.md), line 43.
+- Covered by [Grades](../design/compositions/course/grades.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -5544,7 +5546,7 @@ then
 
 Authored path: `Course.grades.GradesItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 7.
-- Covered by [Grades](../design/compositions/course/grades.md), line 65.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -5559,7 +5561,7 @@ then
 
 Authored path: `Course.grades.GradesItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 7.
-- Covered by [Grades](../design/compositions/course/grades.md), line 65.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -5575,7 +5577,7 @@ then
 
 Authored path: `Course.grades.GradesItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 7.
-- Covered by [Grades](../design/compositions/course/grades.md), line 65.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -5591,7 +5593,7 @@ then
 
 Authored path: `Course.grades.GradesRecord`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -5606,7 +5608,7 @@ then
 
 Authored path: `Course.grades.GradesRecord`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -5622,7 +5624,7 @@ then
 
 Authored path: `Course.grades.GradesRecord`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -5639,7 +5641,7 @@ then
 
 Authored path: `Course.grades.GradesRecord`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -5657,7 +5659,7 @@ then
 
 Authored path: `Course.grades.GradesRecord`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when Grading.record (at, evidence, feedback, grader: user, item, learner, outOf: maxPoints, score, grade), asked by Course.grades.GradesRecord:success
@@ -5671,7 +5673,7 @@ then
 
 Authored path: `Course.grades.GradesRelease`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 30.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 65.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
@@ -5686,7 +5688,7 @@ then
 
 Authored path: `Course.grades.GradesRelease`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 30.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 65.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
@@ -5702,7 +5704,7 @@ then
 
 Authored path: `Course.grades.GradesRelease`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 30.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 65.
 
 ```reaction
 when Grading.release (at, item, learner, grade), asked by Course.grades.GradesRelease:success
@@ -5716,7 +5718,7 @@ then
 
 Authored path: `Course.grades.GradesReleaseItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 31.
-- Covered by [Grades](../design/compositions/course/grades.md), line 68.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -5731,7 +5733,7 @@ then
 
 Authored path: `Course.grades.GradesReleaseItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 31.
-- Covered by [Grades](../design/compositions/course/grades.md), line 68.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -5747,7 +5749,7 @@ then
 
 Authored path: `Course.grades.GradesReleaseItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 31.
-- Covered by [Grades](../design/compositions/course/grades.md), line 68.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when Grading.releaseItem (at, item, released), asked by Course.grades.GradesReleaseItem:success
@@ -5761,7 +5763,7 @@ then
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 15.
-- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+- Covered by [Grades](../design/compositions/course/grades.md), line 67.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
@@ -5776,7 +5778,7 @@ then
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 15.
-- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+- Covered by [Grades](../design/compositions/course/grades.md), line 67.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
@@ -5791,7 +5793,7 @@ then
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 15.
-- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+- Covered by [Grades](../design/compositions/course/grades.md), line 67.
 
 ```reaction
 when Itemizing.removeCriterion (criterion, result.criterion: removed), asked by Course.grades.GradesRemoveCriterion:success
@@ -5801,11 +5803,56 @@ then
   RequestBoundary.respond (criterion: removed, requestId)
 ```
 
+### Course.grades.GradesRestoreExcused:forbidden
+
+Authored path: `Course.grades.GradesRestoreExcused`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 34.
+- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/grades/restore-excused", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.grades.GradesRestoreExcused:success
+
+Authored path: `Course.grades.GradesRestoreExcused`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 34.
+- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/grades/restore-excused", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  Grading.restoreExcused (at, item, learner)
+```
+
+### Course.grades.GradesRestoreExcused:success#2
+
+Authored path: `Course.grades.GradesRestoreExcused`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 34.
+- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+
+```reaction
+when Grading.restoreExcused (at, item, learner, grade), asked by Course.grades.GradesRestoreExcused:success
+where
+  earlier, RequestBoundary.request (item, learner, path: "/grades/restore-excused", requestId, session)
+then
+  RequestBoundary.respond (grade, requestId)
+```
+
 ### Course.grades.GradesRetract:forbidden
 
 Authored path: `Course.grades.GradesRetract`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 32.
-- Covered by [Grades](../design/compositions/course/grades.md), line 70.
+- Covered by [Grades](../design/compositions/course/grades.md), line 68.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
@@ -5820,7 +5867,7 @@ then
 
 Authored path: `Course.grades.GradesRetract`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 32.
-- Covered by [Grades](../design/compositions/course/grades.md), line 70.
+- Covered by [Grades](../design/compositions/course/grades.md), line 68.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
@@ -5836,7 +5883,7 @@ then
 
 Authored path: `Course.grades.GradesRetract`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 32.
-- Covered by [Grades](../design/compositions/course/grades.md), line 70.
+- Covered by [Grades](../design/compositions/course/grades.md), line 68.
 
 ```reaction
 when Grading.retract (at, item, learner, grade), asked by Course.grades.GradesRetract:success
@@ -5850,7 +5897,7 @@ then
 
 Authored path: `Course.grades.GradesReviseCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 14.
-- Covered by [Grades](../design/compositions/course/grades.md), line 71.
+- Covered by [Grades](../design/compositions/course/grades.md), line 70.
 
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
@@ -5865,7 +5912,7 @@ then
 
 Authored path: `Course.grades.GradesReviseCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 14.
-- Covered by [Grades](../design/compositions/course/grades.md), line 71.
+- Covered by [Grades](../design/compositions/course/grades.md), line 70.
 
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
@@ -5880,7 +5927,7 @@ then
 
 Authored path: `Course.grades.GradesReviseCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 14.
-- Covered by [Grades](../design/compositions/course/grades.md), line 71.
+- Covered by [Grades](../design/compositions/course/grades.md), line 70.
 
 ```reaction
 when Itemizing.reviseCriterion (criterion, maxPoints, name, position, result.criterion: revised), asked by Course.grades.GradesReviseCriterion:success
@@ -5894,7 +5941,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -5910,7 +5957,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -5925,7 +5972,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -5941,7 +5988,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -5957,7 +6004,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when Grading.scoreCriterion (criterion, feedback, item, learner, outOf: critMax, points, criterionScore), asked by Course.grades.GradesScoreCriterion:success
@@ -12872,6 +12919,7 @@ not listed here have no explicit input contract.
 - `/grades/release` — requires `item`, `learner`, `session`
 - `/grades/release-item` — requires `item`, `session`
 - `/grades/remove-criterion` — requires `criterion`, `session`
+- `/grades/restore-excused` — requires `item`, `learner`, `session`
 - `/grades/retract` — requires `item`, `learner`, `session`
 - `/grades/revise-criterion` — requires `criterion`, `maxPoints`, `name`, `position`, `session`
 - `/grades/score-criterion` — requires `criterion`, `feedback`, `item`, `learner`, `points`, `session`

@@ -503,7 +503,9 @@ function StaffAssignmentDetailPageContent({
                       {isGrading ? (
                         <GradeInput
                           learner={learnerId}
+                          learnerLabel={learner.displayName ?? learner.assignee}
                           item={assignment}
+                          itemLabel={detail.title}
                           currentScore={grade?.score}
                           currentFeedback={grade?.feedback}
                           currentStatus={grade?.status}

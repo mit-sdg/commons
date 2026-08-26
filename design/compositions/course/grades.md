@@ -31,9 +31,7 @@ item.
 [Course.grades.GradesReleaseItem](reaction:Course.grades.GradesReleaseItem) releases every draft grade currently on an
 item. [Course.grades.GradesRetract](reaction:Course.grades.GradesRetract) returns one released learner-and-item grade
 to draft.
-[Course.grades.GradesExcuse](reaction:Course.grades.GradesExcuse) marks an existing grade excused with staff
-feedback. These transitions use current application time and retain Grading's
-state-specific refusals.
+[Course.grades.GradesExcuse](reaction:Course.grades.GradesExcuse) marks an existing grade excused with staff feedback after the UI confirms the learner and item. [Course.grades.GradesRestoreExcused](reaction:Course.grades.GradesRestoreExcused) returns an excused grade to draft so staff can correct routine mistakes. These transitions use current application time and retain Grading's state-specific refusals.
 
 An active student sees only
 [their released and excused results](former:Course.grades.theReleasedGradesOf) through
@@ -68,6 +66,7 @@ Course.grades.GradesRelease at /grades/release
 Course.grades.GradesReleaseItem at /grades/release-item
 Course.grades.GradesRemoveCriterion at /grades/remove-criterion
 Course.grades.GradesRetract at /grades/retract
+Course.grades.GradesRestoreExcused at /grades/restore-excused
 Course.grades.GradesReviseCriterion at /grades/revise-criterion
 Course.grades.GradesScoreCriterion at /grades/score-criterion
 ```

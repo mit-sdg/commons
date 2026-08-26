@@ -140,12 +140,23 @@ retract(learner: Learner, item: Item, at: Date) : return (grade: Grade)
   then
     refuse GRADE_RELEASED_NOT_FOUND "There is no released grade for this learner and item."
 
+restoreExcused(learner: Learner, item: Item, at: Date) : return (grade: Grade)
+  where the grade of learner and item is in excused
+  then
+    remove grade from excused
+    add grade to draft
+    set grade's releasedAt to none and updatedAt to at
+    return grade
+  where learner has no excused grade for item
+  then
+    refuse GRADE_EXCUSED_NOT_FOUND "There is no excused grade for this learner and item."
+
 excuse(learner: Learner, item: Item, grader: Grader, feedback: String, at: Date) : return (grade: Grade)
   where learner has a grade for item
   then
     remove grade from draft and from released
     add grade to excused
-    set grade's score to 0, grader to grader, feedback to feedback, releasedAt to none, and updatedAt to at
+    keep grade's score for a possible correction, set grader to grader, feedback to feedback, releasedAt to none, and updatedAt to at
     return grade
   where learner has no grade for item
   then

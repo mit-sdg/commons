@@ -5,6 +5,7 @@ import { MongoGradingConcept } from "./grading.mongo.ts";
 import {
   GradeAlreadyReleased,
   GradeDraftNotFound,
+  GradeExcusedNotFound,
   GradeNotFound,
   GradeReleasedNotFound,
   LearnerExcused,
@@ -20,6 +21,7 @@ export const grading = registerConcept({
     LEARNER_EXCUSED: LearnerExcused,
     GRADE_NOT_FOUND: GradeNotFound,
     GRADE_DRAFT_NOT_FOUND: GradeDraftNotFound,
+    GRADE_EXCUSED_NOT_FOUND: GradeExcusedNotFound,
     GRADE_RELEASED_NOT_FOUND: GradeReleasedNotFound,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoGradingConcept(database) },

@@ -401,6 +401,20 @@ export const GradesRetract = endpoint(
     ),
 );
 
+export const GradesRestoreExcused = endpoint(
+  "/grades/restore-excused",
+  ({ session, learner, item, user, at, grade }) =>
+    receive({ session, learner, item }).then(
+      where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
+        .then(Grading.restoreExcused({ learner, item, at }).responds({ grade }))
+        .then(respond({ grade }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+
 export const GradesExcuse = endpoint(
   "/grades/excuse",
   ({ session, learner, item, feedback, user, at, grade }) =>

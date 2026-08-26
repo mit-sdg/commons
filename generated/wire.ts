@@ -691,6 +691,17 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "CRITERION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" };
   };
+  "/grades/restore-excused": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["learner"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>>, ["grade"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_EXCUSED_NOT_FOUND" | "INVALID_INPUT" };
+  };
   "/grades/retract": {
     input: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["retract"]>[0], ["item"]>>;
@@ -3304,6 +3315,16 @@ export type CommonsWireHttp = {
       "criterion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Itemizing"]["removeCriterion"]>>, ["criterion"]>>;
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/restore-excused": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["item"]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["learner"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>>, ["grade"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" };
   };
   "/grades/retract": {
     input: {

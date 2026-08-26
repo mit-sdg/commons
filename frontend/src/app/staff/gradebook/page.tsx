@@ -208,7 +208,9 @@ function GradebookPageContent() {
           {grading ? (
             <GradeInput
               learner={grading.learner}
+              learnerLabel={grading.learnerName}
               item={grading.item}
+              itemLabel={grading.itemLabel}
               currentScore={
                 typeof selectedCell?.score === "number"
                   ? selectedCell.score
