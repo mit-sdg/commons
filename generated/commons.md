@@ -1902,7 +1902,7 @@ Authored path: `Course.grades.theGradebook`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 46.
 
 ```former
-Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, feedback, status); promises exactly one record — forms:
+Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, feedback, status, assigned); promises exactly one record — forms:
   a record of
     items: each Itemizing._getItems () has (item, label, maxPoints)
       form a record of
@@ -1914,8 +1914,10 @@ Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user,
       arranged by displayName
       form a record of
         cells: each Itemizing._getItems () has (item: cellItem)
+          where Assigning._isAssigned (assignee: user, assignment: cellItem) has (assigned)
           where whether Grading._getGrade (item: cellItem, learner: user) has (feedback, grade, score, status)
           form a record of
+            assigned
             feedback
             grade
             item: cellItem
@@ -5616,6 +5618,23 @@ then
   RequestBoundary.respond (error: "GRADE_ITEM_NOT_FOUND", requestId)
 ```
 
+### Course.grades.GradesRecord:not-assigned
+
+Authored path: `Course.grades.GradesRecord`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 24.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+
+```reaction
+when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  Itemizing._getItem (item)
+  Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: false)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Course.grades.GradesRecord:success
 
 Authored path: `Course.grades.GradesRecord`.
@@ -5629,6 +5648,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may grade" with (user)
   Itemizing._getItem (item) has (maxPoints)
+  Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
 then
   Grading.record (at, evidence, feedback, grader: user, item, learner, outOf: maxPoints, score)
 ```

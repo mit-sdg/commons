@@ -611,9 +611,10 @@ export type CommonsWire = {
         }[];
         "learners": ({
           "cells": ({
+            "assigned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>>>, ["assigned"]>>;
             "feedback": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>>>, ["feedback"]>> | null;
             "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>>>, ["grade"]>> | null;
-            "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Itemizing"]["_getItems"]>>>, ["item"]>]>>;
+            "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Itemizing"]["_getItems"]>>>, ["item"]>]>>;
             "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>>>, ["score"]>> | null;
             "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>>>, ["status"]>> | null;
           })[];
@@ -650,14 +651,14 @@ export type CommonsWire = {
       "evidence"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["evidence"]>>;
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["feedback"]>>;
       "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["item"]>]>>;
-      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>]>>;
       "score": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["score"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>>, ["grade"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "GRADE_ALREADY_RELEASED" | "GRADE_ITEM_NOT_FOUND" | "INVALID_INPUT" | "LEARNER_EXCUSED" | "SCORE_OUT_OF_RANGE" };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_ALREADY_RELEASED" | "GRADE_ITEM_NOT_FOUND" | "INVALID_INPUT" | "LEARNER_EXCUSED" | "NOT_FOUND" | "SCORE_OUT_OF_RANGE" };
   };
   "/grades/release": {
     input: {
@@ -3229,9 +3230,10 @@ export type CommonsWireHttp = {
         }[];
         "learners": ({
           "cells": ({
+            "assigned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>>>, ["assigned"]>>;
             "feedback": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>>>, ["feedback"]>> | null;
             "grade": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>>>, ["grade"]>> | null;
-            "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Itemizing"]["_getItems"]>>>, ["item"]>]>>;
+            "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Itemizing"]["_getItems"]>>>, ["item"]>]>>;
             "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>>>, ["score"]>> | null;
             "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>>>, ["status"]>> | null;
           })[];
@@ -3267,7 +3269,7 @@ export type CommonsWireHttp = {
       "evidence"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["evidence"]>>;
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["feedback"]>>;
       "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["item"]>]>>;
-      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>]>>;
       "score": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["score"]>>;
     };
     output: {

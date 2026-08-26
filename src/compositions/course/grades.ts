@@ -15,7 +15,7 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { isActiveStudent, isNotActiveStudent, mayGrade, mayNotGrade } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Grading, Itemizing, Profiling, Rostering } = concepts;
+const { Assigning, Grading, Itemizing, Profiling, Rostering } = concepts;
 
 /** Which released grades belong to this learner? */
 export const theReleasedGradesOf = former(
@@ -112,6 +112,7 @@ export const theGradebook = former(
       score,
       feedback,
       status,
+      assigned,
     },
   ) =>
     form({
@@ -130,6 +131,9 @@ export const theGradebook = former(
           section,
           cells: each(Itemizing._getItems({}).is({ item: cellItem }))
             .where(
+              Assigning._isAssigned({ assignment: cellItem, assignee: user }).is({
+                assigned,
+              }),
               whether(
                 Grading._getGrade({ learner: user, item: cellItem }).is({
                   grade,
@@ -139,7 +143,7 @@ export const theGradebook = former(
                 }),
               ),
             )
-            .form({ item: cellItem, grade, score, feedback, status }),
+            .form({ item: cellItem, assigned, grade, score, feedback, status }),
         }),
     }),
 );
@@ -267,6 +271,9 @@ export const GradesRecord = endpoint(
         activeUser({ session }).is({ user }),
         mayGrade({ user }),
         Itemizing._getItem({ item }).is({ maxPoints }),
+        Assigning._isAssigned({ assignment: item, assignee: learner }).is({
+          assigned: true,
+        }),
       )
         .then(
           Grading.record({
@@ -292,6 +299,16 @@ export const GradesRecord = endpoint(
       )
         .then(respond({ error: "GRADE_ITEM_NOT_FOUND" }))
         .named("missing-item"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayGrade({ user }),
+        Itemizing._getItem({ item }),
+        Assigning._isAssigned({ assignment: item, assignee: learner }).is({
+          assigned: false,
+        }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-assigned"),
     ),
   {
     input: {
