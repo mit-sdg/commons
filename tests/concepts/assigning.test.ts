@@ -187,7 +187,7 @@ for (const [floor, make] of floors) {
     test("_getPublishedInWindow: availability-or-due moments, PUBLISHED only, creation order", async () => {
       const c = await make();
       const mk = async (availableAt: string, dueAt: string) =>
-        (await c.createDraft({ ...draftInput(), availableAt, dueAt })).assignment;
+        (await c.createDraft({ ...draftInput(), availableAt, dueAt, closeAt: dueAt })).assignment;
       const W = { start: "2026-07-06T00:00:00.000Z", end: "2026-07-13T23:59:59.999Z" };
       const hw1 = await mk("2026-07-01T00:00:00.000Z", "2026-07-10T00:00:00.000Z");
       const hw2 = await mk("2026-08-01T00:00:00.000Z", "2026-08-20T00:00:00.000Z");
@@ -215,6 +215,7 @@ for (const [floor, make] of floors) {
           ...draftInput(),
           availableAt: "2026-07-06T00:00:00.000Z",
           dueAt: "2026-07-13T23:59:59.999Z",
+          closeAt: "2026-07-13T23:59:59.999Z",
         })
       ).assignment;
       await c.publish({ assignment: at, at: T1 });

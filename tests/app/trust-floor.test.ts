@@ -53,12 +53,22 @@ describe("HTTP authorization and privacy", () => {
     outsider = await register("outsider");
     // The administrator already reaches every capability through the wildcard,
     // so no staff role has to be assigned to them.
+    const section = await call(
+      "/roster/sections/create",
+      { name: "A", location: "", meetingPattern: "" },
+      admin.cookie,
+    );
+    const sectionId = String((section.body.section as { _id: string })._id);
     await call(
       "/roster/import",
       {
         rows: [
-          { email: learner.email, kind: "STUDENT", section: "A" },
-          { email: limitedStaff.email, kind: "STUDENT", section: "A" },
+          { email: learner.email, kind: "STUDENT", section: sectionId },
+          {
+            email: limitedStaff.email,
+            kind: "STUDENT",
+            section: sectionId,
+          },
         ],
       },
       admin.cookie,
@@ -323,13 +333,40 @@ describe("HTTP authorization and privacy", () => {
         )
       ).status,
     ).toBe(200);
+    const lateAssignments: string[] = [];
+    for (const title of ["work", "staff-work"]) {
+      const created = await edge.application.concepts.Assigning.createDraft({
+        author: admin.user,
+        title,
+        instructions: "",
+        kind: "HOMEWORK",
+        availableAt: "2026-01-01T00:00:00.000Z",
+        dueAt: "2026-01-02T00:00:00.000Z",
+        closeAt: "2026-01-03T00:00:00.000Z",
+        acceptsSubmissions: true,
+        audience: "EVERYONE",
+        targets: [],
+        at: new Date("2026-01-01T00:00:00.000Z"),
+      });
+      await edge.application.concepts.Assigning.publish({
+        assignment: created.assignment,
+        at: new Date(),
+      });
+      await edge.application.concepts.Assigning.assign({
+        assignment: created.assignment,
+        assignee: learner.user,
+        at: new Date(),
+      });
+      lateAssignments.push(created.assignment);
+    }
+    const [work, staffWork] = lateAssignments;
     expect(
-      (await call("/late-days/apply", { assignment: "work", days: 1 }, learner.cookie)).status,
+      (await call("/late-days/apply", { assignment: work, days: 1 }, learner.cookie)).status,
     ).toBe(200);
     expect(
-      (await call("/late-days/change", { assignment: "work", days: 2 }, learner.cookie)).status,
+      (await call("/late-days/change", { assignment: work, days: 2 }, learner.cookie)).status,
     ).toBe(200);
-    expect((await call("/late-days/cancel", { assignment: "work" }, learner.cookie)).status).toBe(
+    expect((await call("/late-days/cancel", { assignment: work }, learner.cookie)).status).toBe(
       200,
     );
 
@@ -347,11 +384,11 @@ describe("HTTP authorization and privacy", () => {
       });
     }
 
-    await call("/late-days/apply", { assignment: "staff-work", days: 1 }, learner.cookie);
+    await call("/late-days/apply", { assignment: staffWork, days: 1 }, learner.cookie);
     expect(
       await call(
         "/late-days/staff-change",
-        { learner: learner.user, assignment: "staff-work", days: 2 },
+        { learner: learner.user, assignment: staffWork, days: 2 },
         limitedStaff.cookie,
       ),
     ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
@@ -359,7 +396,7 @@ describe("HTTP authorization and privacy", () => {
       (
         await call(
           "/late-days/staff-change",
-          { learner: learner.user, assignment: "staff-work", days: 2 },
+          { learner: learner.user, assignment: staffWork, days: 2 },
           admin.cookie,
         )
       ).status,
@@ -368,7 +405,7 @@ describe("HTTP authorization and privacy", () => {
       (
         await call(
           "/late-days/staff-cancel",
-          { learner: learner.user, assignment: "staff-work" },
+          { learner: learner.user, assignment: staffWork },
           admin.cookie,
         )
       ).status,

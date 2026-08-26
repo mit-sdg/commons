@@ -538,7 +538,7 @@
         "days": 1
       },
       "response": {
-        "use": "uuid#19"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -610,7 +610,7 @@
         "reason": "conference travel"
       },
       "response": {
-        "grant": "uuid#20"
+        "grant": "uuid#19"
       }
     },
     {
@@ -638,7 +638,7 @@
         "days": 2
       },
       "response": {
-        "use": "uuid#21"
+        "use": "uuid#20"
       }
     },
     {
@@ -769,7 +769,7 @@
         "assignment": "$createHw2.assignment"
       },
       "response": {
-        "use": "uuid#21"
+        "use": "uuid#20"
       }
     },
     {
@@ -796,7 +796,7 @@
         "days": 1
       },
       "response": {
-        "use": "uuid#22"
+        "use": "uuid#21"
       }
     },
     {
@@ -884,14 +884,14 @@
           "appliedAt": "<date>"
         },
         {
-          "use": "uuid#21",
+          "use": "uuid#20",
           "item": "uuid#17",
           "days": 2,
           "status": "CANCELED",
           "appliedAt": "<date>"
         },
         {
-          "use": "uuid#22",
+          "use": "uuid#21",
           "item": "uuid#17",
           "days": 1,
           "status": "APPLIED",

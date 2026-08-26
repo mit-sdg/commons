@@ -190,7 +190,7 @@ export class MongoRosteringConcept {
     return {
       rows: rows.map((row) => {
         const requested = row.section?.trim();
-        if (!requested) return { ...row, section: "", sectionName: "—" };
+        if (!requested) return row;
         const matches = sections.filter(
           (section) =>
             section._id === requested || section.name.toLowerCase() === requested.toLowerCase(),

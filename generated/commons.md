@@ -5681,23 +5681,6 @@ then
   RequestBoundary.respond (error: "GRADE_ITEM_NOT_FOUND", requestId)
 ```
 
-### Course.grades.GradesRecord:not-assigned
-
-Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 64.
-
-```reaction
-when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may grade" with (user)
-  Itemizing._getItem (item)
-  Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: false)
-then
-  RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
 ### Course.grades.GradesRecord:success
 
 Authored path: `Course.grades.GradesRecord`.
@@ -5711,7 +5694,6 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may grade" with (user)
   Itemizing._getItem (item) has (maxPoints)
-  Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
 then
   Grading.record (at, evidence, feedback, grader: user, item, learner, outOf: maxPoints, score)
 ```
@@ -6101,6 +6083,39 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Course.lateDays.Apply:not-assigned
+
+Authored path: `Course.lateDays.Apply`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 9.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: false)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.lateDays.Apply:not-published
+
+Authored path: `Course.lateDays.Apply`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 9.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  no Assigning._getAssignments () has (assignment, status: "PUBLISHED")
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Course.lateDays.Apply:success
 
 Authored path: `Course.lateDays.Apply`.
@@ -6252,6 +6267,39 @@ where
   view "(user) is not an active student" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.lateDays.Change:not-assigned
+
+Authored path: `Course.lateDays.Change`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 10.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: false)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.lateDays.Change:not-published
+
+Authored path: `Course.lateDays.Change`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 10.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  no Assigning._getAssignments () has (assignment, status: "PUBLISHED")
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### Course.lateDays.Change:success

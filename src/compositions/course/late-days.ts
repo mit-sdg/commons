@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, where, now } from "@mit-sdg/sync-engine/language";
+import { each, former, no, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -113,6 +113,21 @@ export const Apply = endpoint(
         .then(Banking.apply({ learner: user, item: assignment, days, at }).responds({ use }))
         .then(respond({ use }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-assigned"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+        no(Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-published"),
       where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -133,6 +148,21 @@ export const Change = endpoint(
         .then(Banking.change({ learner: user, item: assignment, days }).responds({ use }))
         .then(respond({ use }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-assigned"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+        no(Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-published"),
       where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),

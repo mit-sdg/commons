@@ -664,14 +664,14 @@ export type CommonsWire = {
       "evidence"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["evidence"]>>;
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["feedback"]>>;
       "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["item"]>]>>;
-      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>>;
       "score": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["score"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>>, ["grade"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "GRADE_ALREADY_RELEASED" | "GRADE_ITEM_NOT_FOUND" | "INVALID_INPUT" | "LEARNER_EXCUSED" | "NOT_FOUND" | "SCORE_OUT_OF_RANGE" };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_ALREADY_RELEASED" | "GRADE_ITEM_NOT_FOUND" | "INVALID_INPUT" | "LEARNER_EXCUSED" | "SCORE_OUT_OF_RANGE" };
   };
   "/grades/release": {
     input: {
@@ -794,14 +794,14 @@ export type CommonsWire = {
   };
   "/late-days/apply": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["apply"]>[0], ["item"]>>;
+      "assignment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["apply"]>[0], ["item"]>]>>;
       "days": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["apply"]>[0], ["days"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["apply"]>>, ["use"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INSUFFICIENT_BALANCE" | "INVALID_INPUT" | "LATE_DAYS_EXCEED_MAX" | "LATE_DAYS_MUST_BE_POSITIVE" | "LATE_USE_ALREADY_EXISTS" };
+    error: { error: AppWideError | "FORBIDDEN" | "INSUFFICIENT_BALANCE" | "INVALID_INPUT" | "LATE_DAYS_EXCEED_MAX" | "LATE_DAYS_MUST_BE_POSITIVE" | "LATE_USE_ALREADY_EXISTS" | "NOT_FOUND" };
   };
   "/late-days/balance": {
     input: {
@@ -829,14 +829,14 @@ export type CommonsWire = {
   };
   "/late-days/change": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["change"]>[0], ["item"]>>;
+      "assignment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["change"]>[0], ["item"]>]>>;
       "days": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["change"]>[0], ["days"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["change"]>>, ["use"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INSUFFICIENT_BALANCE" | "INVALID_INPUT" | "LATE_DAYS_EXCEED_MAX" | "LATE_DAYS_NEGATIVE" | "LATE_USE_NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INSUFFICIENT_BALANCE" | "INVALID_INPUT" | "LATE_DAYS_EXCEED_MAX" | "LATE_DAYS_NEGATIVE" | "LATE_USE_NOT_FOUND" | "NOT_FOUND" };
   };
   "/late-days/configure-policy": {
     input: {
@@ -3312,7 +3312,7 @@ export type CommonsWireHttp = {
       "evidence"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["evidence"]>>;
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["feedback"]>>;
       "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Itemizing"]["_getItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["item"]>]>>;
-      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>]>>;
+      "learner": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>>;
       "score": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["score"]>>;
     };
     output: {
@@ -3430,13 +3430,13 @@ export type CommonsWireHttp = {
   };
   "/late-days/apply": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["apply"]>[0], ["item"]>>;
+      "assignment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["apply"]>[0], ["item"]>]>>;
       "days": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["apply"]>[0], ["days"]>>;
     };
     output: {
       "use": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["apply"]>>, ["use"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/late-days/balance": {
     input: {
@@ -3462,7 +3462,7 @@ export type CommonsWireHttp = {
   };
   "/late-days/change": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["change"]>[0], ["item"]>>;
+      "assignment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_isAssigned"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["change"]>[0], ["item"]>]>>;
       "days": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Banking"]["change"]>[0], ["days"]>>;
     };
     output: {

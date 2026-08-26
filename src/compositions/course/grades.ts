@@ -284,9 +284,6 @@ export const GradesRecord = endpoint(
         activeUser({ session }).is({ user }),
         mayGrade({ user }),
         Itemizing._getItem({ item }).is({ maxPoints }),
-        Assigning._isAssigned({ assignment: item, assignee: learner }).is({
-          assigned: true,
-        }),
       )
         .then(
           Grading.record({
@@ -312,16 +309,6 @@ export const GradesRecord = endpoint(
       )
         .then(respond({ error: "GRADE_ITEM_NOT_FOUND" }))
         .named("missing-item"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayGrade({ user }),
-        Itemizing._getItem({ item }),
-        Assigning._isAssigned({ assignment: item, assignee: learner }).is({
-          assigned: false,
-        }),
-      )
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("not-assigned"),
     ),
   {
     input: {

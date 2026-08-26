@@ -894,7 +894,7 @@
         {
           "item": "uuid#12",
           "grade": "uuid#19",
-          "score": 0,
+          "score": 30,
           "outOf": 50,
           "status": "EXCUSED",
           "feedback": "Medical"
@@ -944,12 +944,14 @@
           "learner": "uuid#8",
           "grade": "uuid#25",
           "score": 9,
+          "feedback": "",
           "status": "RELEASED"
         },
         {
           "learner": "uuid#10",
           "grade": "uuid#26",
           "score": 7,
+          "feedback": "",
           "status": "RELEASED"
         }
       ]
@@ -1054,12 +1056,14 @@
             "learner": "uuid#8",
             "grade": "uuid#18",
             "score": 42,
+            "feedback": "Solid work",
             "status": "RELEASED"
           },
           {
             "learner": "uuid#10",
             "grade": "uuid#19",
-            "score": 0,
+            "score": 30,
+            "feedback": "Medical",
             "status": "EXCUSED"
           }
         ]
@@ -1106,26 +1110,34 @@
               "cells": [
                 {
                   "item": "uuid#12",
+                  "assigned": true,
                   "grade": "uuid#18",
                   "score": 42,
+                  "feedback": "Solid work",
                   "status": "RELEASED"
                 },
                 {
                   "item": "uuid#13",
+                  "assigned": true,
                   "grade": "uuid#14",
                   "score": 10,
+                  "feedback": "x",
                   "status": "DRAFT"
                 },
                 {
                   "item": "midterm-x",
+                  "assigned": false,
                   "grade": null,
                   "score": null,
+                  "feedback": null,
                   "status": null
                 },
                 {
                   "item": "quiz-x",
+                  "assigned": false,
                   "grade": "uuid#25",
                   "score": 9,
+                  "feedback": "",
                   "status": "RELEASED"
                 }
               ]
@@ -1138,26 +1150,34 @@
               "cells": [
                 {
                   "item": "uuid#12",
+                  "assigned": true,
                   "grade": "uuid#19",
-                  "score": 0,
+                  "score": 30,
+                  "feedback": "Medical",
                   "status": "EXCUSED"
                 },
                 {
                   "item": "uuid#13",
+                  "assigned": true,
                   "grade": null,
                   "score": null,
+                  "feedback": null,
                   "status": null
                 },
                 {
                   "item": "midterm-x",
+                  "assigned": false,
                   "grade": null,
                   "score": null,
+                  "feedback": null,
                   "status": null
                 },
                 {
                   "item": "quiz-x",
+                  "assigned": false,
                   "grade": "uuid#26",
                   "score": 7,
+                  "feedback": "",
                   "status": "RELEASED"
                 }
               ]

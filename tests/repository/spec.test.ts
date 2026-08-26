@@ -11,7 +11,7 @@ describe("the rendered application specification", () => {
     expect(ir.unlowered ?? []).toEqual([]);
     expect(JSON.stringify(ir).match(/"op":"compute"/g)).toHaveLength(39);
     expect(ir.views).toHaveLength(61);
-    expect(ir.formers).toHaveLength(80);
+    expect(ir.formers).toHaveLength(81);
   });
 
   test("every concept's purpose and principle are authored — zero unwritten stubs", async () => {
