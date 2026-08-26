@@ -3,6 +3,7 @@
 import { CheckCircle2, CircleSlash } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { EmptyState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,19 +71,30 @@ interface LocalProgress {
   submitted: boolean;
 }
 
-function readProgress(token: string): LocalProgress | null {
+function progressKey(token: string, participant: string): string {
+  return `commons-live-${token}:${participant}`;
+}
+
+function readProgress(
+  token: string,
+  participant: string,
+): LocalProgress | null {
   try {
-    const raw = window.localStorage.getItem(`commons-live-${token}`);
+    const raw = window.localStorage.getItem(progressKey(token, participant));
     return raw === null ? null : (JSON.parse(raw) as LocalProgress);
   } catch {
     return null;
   }
 }
 
-function writeProgress(token: string, progress: LocalProgress) {
+function writeProgress(
+  token: string,
+  participant: string,
+  progress: LocalProgress,
+) {
   try {
     window.localStorage.setItem(
-      `commons-live-${token}`,
+      progressKey(token, participant),
       JSON.stringify(progress),
     );
   } catch {
@@ -92,28 +104,49 @@ function writeProgress(token: string, progress: LocalProgress) {
 
 export default function ParticipantPage() {
   const { token } = useParams<{ token: string }>();
-  const { me } = useAuth();
+  const { me, loading: authLoading, logout } = useAuth();
   const [face, setFace] = useState<Face | null>(null);
   const [missing, setMissing] = useState(false);
-  // Progress recovers lazily from this device's storage; until the face loads,
-  // none of it shapes the markup, so hydration stays consistent.
-  const [response, setResponse] = useState<string | null>(() =>
-    typeof window === "undefined"
-      ? null
-      : (readProgress(token)?.response ?? null),
-  );
-  const [answers, setAnswers] = useState<Record<string, string>>(() =>
-    typeof window === "undefined" ? {} : (readProgress(token)?.answers ?? {}),
-  );
-  const [submitted, setSubmitted] = useState(() =>
-    typeof window === "undefined"
-      ? false
-      : (readProgress(token)?.submitted ?? false),
-  );
+  const [participant, setParticipant] = useState<string | null>(null);
+  const [progressReady, setProgressReady] = useState(false);
+  const [response, setResponse] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
   const [alreadyIn, setAlreadyIn] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [busy, setBusy] = useState(false);
   const sent = useRef<Record<string, string>>({});
+  const pending = useRef<Record<string, Promise<boolean>>>({});
+  const signedParticipant = me === null ? null : String(me.user);
+  const progressBelongsToViewer =
+    !authLoading &&
+    participant !== null &&
+    (signedParticipant === null
+      ? participant.startsWith("device:")
+      : participant === `user:${signedParticipant}`);
+
+  // A shared browser can pass from one signed-in participant to another. Wait
+  // for auth before restoring, and keep each account (or anonymous device) in
+  // its own slot so nobody inherits somebody else's response or outcome.
+  useEffect(() => {
+    if (authLoading) return;
+    const identity =
+      signedParticipant === null
+        ? `device:${deviceId()}`
+        : `user:${signedParticipant}`;
+    const stored = readProgress(token, identity);
+    /* eslint-disable react-hooks/set-state-in-effect -- auth selects the participant's persisted response */
+    setParticipant(identity);
+    setResponse(stored?.response ?? null);
+    setAnswers(stored?.answers ?? {});
+    setSubmitted(stored?.submitted ?? false);
+    setAlreadyIn(false);
+    setOutcome(null);
+    setProgressReady(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    sent.current = {};
+    pending.current = {};
+  }, [authLoading, signedParticipant, token]);
 
   const loadFace = useCallback(async () => {
     const result = await api["/live/p/arrive"]({ token });
@@ -171,6 +204,7 @@ export default function ParticipantPage() {
   }, [submitted, response]);
 
   const begin = useCallback(async () => {
+    if (participant === null) return;
     setBusy(true);
     try {
       const result = me
@@ -182,7 +216,7 @@ export default function ParticipantPage() {
         return;
       }
       setResponse(result.response);
-      writeProgress(token, {
+      writeProgress(token, participant, {
         response: result.response,
         answers,
         submitted: false,
@@ -190,63 +224,100 @@ export default function ParticipantPage() {
     } finally {
       setBusy(false);
     }
-  }, [me, token, answers, loadFace]);
+  }, [me, token, participant, answers, loadFace]);
 
   // Typing counts at once — the hand-in button must not stay dead under a
   // finger while a written answer sits uncommitted — but the network only
   // hears committed values: blur, or the hand-in flush.
   const draftAnswer = useCallback(
     (question: string, value: string) => {
-      if (response === null) return;
+      if (response === null || participant === null) return;
       const next = { ...answers, [question]: value };
       setAnswers(next);
-      writeProgress(token, { response, answers: next, submitted: false });
+      writeProgress(token, participant, {
+        response,
+        answers: next,
+        submitted: false,
+      });
     },
-    [response, answers, token],
+    [response, participant, answers, token],
+  );
+
+  const persistAnswer = useCallback(
+    (question: string, value: string): Promise<boolean> => {
+      if (response === null) return Promise.resolve(false);
+      const prior = pending.current[question] ?? Promise.resolve(true);
+      const write = prior.then(async () => {
+        if (sent.current[question] === value) return true;
+        const result = await api["/live/p/answer"]({
+          response,
+          question,
+          value,
+        });
+        if (isApiError(result)) {
+          toast.error("That answer was not saved. Try again.");
+          return false;
+        }
+        sent.current[question] = value;
+        return true;
+      });
+      pending.current[question] = write;
+      return write;
+    },
+    [response],
   );
 
   const answer = useCallback(
-    async (question: string, value: string) => {
-      if (response === null) return;
+    (question: string, value: string) => {
+      if (response === null || participant === null) return;
       const next = { ...answers, [question]: value };
       setAnswers(next);
-      writeProgress(token, { response, answers: next, submitted: false });
-      if (sent.current[question] === value) return;
-      sent.current[question] = value;
-      await api["/live/p/answer"]({ response, question, value });
+      writeProgress(token, participant, {
+        response,
+        answers: next,
+        submitted: false,
+      });
+      void persistAnswer(question, value);
     },
-    [response, answers, token],
+    [response, participant, answers, token, persistAnswer],
   );
 
   const submit = useCallback(async () => {
-    if (response === null) return;
+    if (response === null || participant === null) return;
     setBusy(true);
     try {
       // Hand-in flushes anything typed but not yet committed by a blur.
       for (const [question, value] of Object.entries(answers)) {
         const trimmed = value.trim();
-        if (trimmed === "" || sent.current[question] === trimmed) continue;
-        sent.current[question] = trimmed;
-        await api["/live/p/answer"]({ response, question, value: trimmed });
+        if (trimmed === "") continue;
+        const saved = await persistAnswer(question, trimmed);
+        if (!saved) return;
       }
       const result = await api["/live/p/submit"]({ response });
       if (isApiError(result)) {
+        toast.error(
+          "Could not hand in. Check every answer and make sure the quiz is still open.",
+        );
         await loadFace();
         return;
       }
       setSubmitted(true);
-      writeProgress(token, { response, answers, submitted: true });
+      writeProgress(token, participant, {
+        response,
+        answers,
+        submitted: true,
+      });
     } finally {
       setBusy(false);
     }
-  }, [response, answers, token, loadFace]);
+  }, [response, participant, answers, token, loadFace, persistAnswer]);
 
   const isQuiz = face?.form === "quiz";
   const complete = useMemo(
     () =>
       face !== null &&
       face.questions.every(
-        (question) => (answers[question.question] ?? "") !== "",
+        (question) => (answers[question.question] ?? "").trim() !== "",
       ),
     [face, answers],
   );
@@ -263,7 +334,7 @@ export default function ParticipantPage() {
     );
   }
 
-  if (face === null) {
+  if (face === null || !progressReady || !progressBelongsToViewer) {
     return (
       <Shell>
         <LoadingState label="Opening…" />
@@ -307,6 +378,17 @@ export default function ParticipantPage() {
             {face.questions.length === 1 ? "" : "s"} ·{" "}
             {isQuiz ? "quiz" : "survey"}
           </p>
+          {me !== null ? (
+            <div className="text-center text-sm">
+              <p>
+                Joining as{" "}
+                <span className="font-medium">{me.profile.displayName}</span>
+              </p>
+              <Button variant="link" size="sm" onClick={() => void logout()}>
+                Not you? Sign out
+              </Button>
+            </div>
+          ) : null}
           <Button
             size="lg"
             className="h-11"
@@ -337,8 +419,11 @@ export default function ParticipantPage() {
       <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
           <span className="text-sm text-muted-foreground">
-            {Object.values(answers).filter((value) => value !== "").length} of{" "}
-            {face.questions.length} answered
+            {
+              Object.values(answers).filter((value) => value.trim() !== "")
+                .length
+            }{" "}
+            of {face.questions.length} answered
           </span>
           <Button
             // A thumb-sized target: the default h-9 falls under the 44px floor.

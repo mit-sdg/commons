@@ -192,7 +192,9 @@ function QuestionnaireDesk({
       ? "Add a question first."
       : isQuiz && !answerable
         ? QUIZ_NOT_READY_MESSAGE
-        : undefined;
+        : busy || title.trim() !== sheet.title
+          ? "Save changes before launching."
+          : undefined;
 
   async function retitle() {
     const trimmed = title.trim();

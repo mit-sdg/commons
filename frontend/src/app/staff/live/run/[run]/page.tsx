@@ -101,46 +101,46 @@ function RunDashboardContent() {
         >
           <ArrowLeft className="size-3" /> Back to the questionnaire
         </Link>
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-          <div className="space-y-3">
+        <div className="mt-2 space-y-3">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <h1
               dir="auto"
               className="text-balance font-display text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl"
             >
               {board.title}
             </h1>
-            <div className="flex flex-wrap items-center gap-2">
-              <FormBadge form={board.form} />
-              {open ? (
-                <Badge className="gap-1.5">
-                  <span className="inline-block size-2 animate-pulse rounded-full bg-primary-foreground" />
-                  Open
-                </Badge>
-              ) : (
-                <Badge variant="outline">Closed</Badge>
-              )}
-              <span className="text-muted-foreground text-sm">
-                Opened {fullTime(board.openedAt)}
-                {board.closedAt !== null
-                  ? ` · closed ${fullTime(board.closedAt)}`
-                  : ""}
-              </span>
-            </div>
+            {open ? (
+              <ConfirmAction
+                trigger={
+                  <Button size="lg" variant="destructive">
+                    <Square /> Close run
+                  </Button>
+                }
+                title="Close this run?"
+                description="Nobody can join or hand in after this. The results stay."
+                confirmLabel="Close run"
+                destructive
+                onConfirm={close}
+              />
+            ) : null}
           </div>
-          {open ? (
-            <ConfirmAction
-              trigger={
-                <Button size="lg" variant="destructive">
-                  <Square /> Close run
-                </Button>
-              }
-              title="Close this run?"
-              description="Nobody can join or hand in after this. The results stay."
-              confirmLabel="Close run"
-              destructive
-              onConfirm={close}
-            />
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <FormBadge form={board.form} />
+            {open ? (
+              <Badge className="gap-1.5">
+                <span className="inline-block size-2 animate-pulse rounded-full bg-primary-foreground" />
+                Open
+              </Badge>
+            ) : (
+              <Badge variant="outline">Closed</Badge>
+            )}
+            <span className="text-muted-foreground text-sm">
+              Opened {fullTime(board.openedAt)}
+              {board.closedAt !== null
+                ? ` · closed ${fullTime(board.closedAt)}`
+                : ""}
+            </span>
+          </div>
         </div>
       </header>
 

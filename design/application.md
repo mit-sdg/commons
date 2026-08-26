@@ -332,9 +332,9 @@ taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: Strin
 taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String
   Renders the HTML task message, saying which change occurred and naming the task, its list, and its deadline.
 
-draftTitle(request: String) : String
-  Renders the title an adopted draft's questionnaire starts with: the request,
-  collapsed and shortened.
+draftTitle(form: String) : String
+  Renders a privacy-safe default title for an adopted AI draft from its form,
+  without exposing the author's request to participants.
 
 draftingPassage(request: String) : String
   Renders the passage that asks the reasoner to draft a questionnaire from a
@@ -342,7 +342,7 @@ draftingPassage(request: String) : String
 
 revisionPassage(request: String, form: String, material: Json) : String
   Renders the passage that asks the reasoner to revise existing material,
-  changing only what the correction asks.
+  changing only what the correction asks and otherwise preserving its form.
 
 clarifiedPassage(request: String, question: String, answer: String) : String
   Renders the passage that resumes drafting from the original request, the

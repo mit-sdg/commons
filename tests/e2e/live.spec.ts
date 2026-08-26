@@ -8,11 +8,13 @@ import { expect, type Page, test } from "@playwright/test";
  */
 
 const HOST = { username: "mara", password: "password123" };
+const NOAH = { username: "noah", password: "password123" };
+const PRIYA = { username: "priya", password: "password123" };
 
-async function signIn(page: Page) {
+async function signIn(page: Page, account = HOST) {
   await page.goto("/login");
-  await page.getByRole("textbox", { name: "Username" }).fill(HOST.username);
-  await page.getByRole("textbox", { name: "Password" }).fill(HOST.password);
+  await page.getByRole("textbox", { name: "Username" }).fill(account.username);
+  await page.getByRole("textbox", { name: "Password" }).fill(account.password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL("**/");
 }
@@ -38,6 +40,12 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   // Draft with the scripted reasoner and adopt into an editable questionnaire.
   await draftAndAdopt(page, "A short quiz about photosynthesis for beginners");
   await expect(page.getByText("Scripted quiz: which gas do plants take in?")).toBeVisible();
+  const title = page.getByRole("textbox", { name: "Title" });
+  await expect(title).toHaveValue("AI-generated quiz");
+  await title.fill("Plant check");
+  await expect(page.getByRole("button", { name: "Launch" })).toBeDisabled();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Launch" })).toBeEnabled();
 
   // Launch, landing on the run dashboard with the join address on screen.
   await page.getByRole("button", { name: "Launch" }).first().click();
@@ -49,10 +57,12 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   // A participant joins from another browser entirely — a phone, effectively.
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const participant = await phone.newPage();
+  await signIn(participant, NOAH);
   await participant.goto(address);
   await participant.getByRole("button", { name: "Join" }).click();
 
   // The face conceals the answers; the participant supplies their own.
+  await expect(participant.getByRole("heading", { name: "Plant check" })).toBeVisible();
   await expect(participant.getByText("which gas do plants take in?")).toBeVisible();
   expect(await participant.locator("main").innerText()).not.toContain("Expected");
   await participant.getByRole("button", { name: "Carbon dioxide" }).click();
@@ -65,8 +75,24 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   await expect(participant.getByText("Your score")).toBeVisible({ timeout: 20_000 });
   await expect(participant.locator("main")).toContainText("1 / 1");
 
-  // The staff board reaches the same state live.
-  await expect(page.getByText("1 answer handed in").first()).toBeVisible({ timeout: 20_000 });
+  // A second signed-in student on the same browser profile gets a distinct
+  // response instead of inheriting the first student's submitted outcome.
+  await participant.goto("/");
+  await participant.getByRole("button", { name: "Account menu" }).click();
+  await participant.getByRole("menuitem", { name: "Sign out" }).click();
+  await signIn(participant, PRIYA);
+  await participant.goto(address);
+  await expect(participant.getByRole("button", { name: "Join" })).toBeVisible();
+  await expect(participant.getByText("Your score")).toBeHidden();
+  await participant.getByRole("button", { name: "Join" }).click();
+  await participant.getByRole("button", { name: "Oxygen" }).click();
+  await participant.getByPlaceholder("Your answer").fill("Chlorophyll");
+  await participant.getByRole("button", { name: "Hand in" }).click();
+  await expect(participant.getByText("Your score")).toBeVisible({ timeout: 20_000 });
+  await expect(participant.locator("main")).toContainText("0 / 1");
+
+  // The staff board reaches both participants' state live.
+  await expect(page.getByText("2 answers handed in").first()).toBeVisible({ timeout: 20_000 });
   const board = await page.locator("main").innerText();
   expect(board).toContain("Carbon dioxide");
 
@@ -118,6 +144,10 @@ test("a questionnaire is refined with the reasoner and applied back in place", a
   await expect(page.getByText("Scripted quiz: which gas do plants take in?")).toBeVisible({
     timeout: 20_000,
   });
+  await expect(page.getByRole("link", { name: "Back to the questionnaire" })).toHaveAttribute(
+    "href",
+    new URL(editorUrl).pathname,
+  );
 
   // The opening candidate is the questionnaire itself, so there is nothing to
   // adopt until a correction moves it.
@@ -140,4 +170,22 @@ test("a questionnaire is refined with the reasoner and applied back in place", a
   // The adopted line is spent: the drafting page opens on a fresh description.
   await page.goto("/staff/live/draft");
   await expect(page.getByRole("button", { name: "Draft it" })).toBeVisible({ timeout: 20_000 });
+});
+
+test("an empty quiz can adopt its first AI-generated questions", async ({ page }) => {
+  await signIn(page);
+  await page.goto("/staff/live/new");
+  await page.getByRole("textbox", { name: "Title" }).fill("Empty quiz");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+
+  await page.getByRole("button", { name: "Refine with AI" }).click();
+  await page.getByLabel("Request a change to this draft").fill("Add two questions about plants");
+  await page.getByRole("button", { name: "Request a change" }).click();
+  await expect(page.getByRole("button", { name: "Adopt this draft" })).toBeVisible({
+    timeout: 20_000,
+  });
+  await page.getByRole("button", { name: "Adopt this draft" }).click();
+  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: /Questions \(2\)/ })).toBeVisible();
 });

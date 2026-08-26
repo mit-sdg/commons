@@ -1275,7 +1275,7 @@ Concrete types:
 
 - `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 281.
 - `clarifiedPassage(request: String, question: String, answer: String) : String` — [Commons application](../design/application.md), line 347.
-- `draftTitle(request: String) : String` — [Commons application](../design/application.md), line 335.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 335.
 - `draftingPassage(request: String) : String` — [Commons application](../design/application.md), line 339.
 - `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 285.
 - `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 272.
@@ -2339,7 +2339,7 @@ Former "the drafting line of (brief)" — inputs (brief); bindings (step, reques
 ### the drafting lines of (author)
 
 Authored path: `Live.drafting.theDraftLines`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 90.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
 
 ```former
 Former "the drafting lines of (author)" — inputs (author); bindings (brief, request, createdAt, origin, adopted, stalled, clarifying, refinesTitle, composed, composedTitle); promises exactly one record — forms:
@@ -2363,7 +2363,7 @@ Former "the drafting lines of (author)" — inputs (author); bindings (brief, re
 ### the drafting provenance of (questionnaire)
 
 Authored path: `Live.drafting.theProvenance`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 96.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 95.
 
 ```former
 Former "the drafting provenance of (questionnaire)" — inputs (questionnaire); bindings (composer, composedRequest, composedAt, brief, author, request, createdAt, adopted, stalled, clarifying); promises exactly one record — forms:
@@ -12351,7 +12351,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12366,7 +12366,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12385,7 +12385,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12404,7 +12404,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12420,7 +12420,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12440,7 +12440,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when Drafting.adopt (candidate, result.candidate: adopted), asked by Live.drafting.Adopt:refit
@@ -12454,7 +12454,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12473,7 +12473,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12491,7 +12491,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12509,7 +12509,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 101.
 
 ```reaction
 when Drafting.adopt (candidate, result.candidate: adopted), asked by Live.drafting.Adopt:success
@@ -12531,8 +12531,7 @@ where
   Drafting._candidate (candidate) has (brief, form)
   no Drafting._originOf (brief)
   Drafting._brief (brief) has (author)
-  Drafting._rootOf (brief) has (request)
-  title is draftTitle (request)
+  title is draftTitle (form)
 then
   Questioning.compose (at, author, disclosure: "score", form, title)
 ```
@@ -12569,7 +12568,7 @@ then
 ### Live.drafting.AdoptedRevisionRevisesQuestionnaire:grow
 
 Authored path: `Live.drafting.AdoptedRevisionRevisesQuestionnaire`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 78.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 77.
 
 ```reaction
 when Drafting.adopt (candidate)
@@ -12586,7 +12585,7 @@ then
 ### Live.drafting.AdoptedRevisionRevisesQuestionnaire:revise
 
 Authored path: `Live.drafting.AdoptedRevisionRevisesQuestionnaire`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 78.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 77.
 
 ```reaction
 when Drafting.adopt (candidate)
@@ -12602,7 +12601,7 @@ then
 ### Live.drafting.AdoptedRevisionRevisesQuestionnaire:shed
 
 Authored path: `Live.drafting.AdoptedRevisionRevisesQuestionnaire`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 78.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 77.
 
 ```reaction
 when Drafting.adopt (candidate)
@@ -12649,7 +12648,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 103.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
@@ -12664,7 +12663,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 103.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
@@ -12680,7 +12679,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 103.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when Drafting.clarify (answer, clarification, brief, result.clarification: clarified), asked by Live.drafting.Clarify:success
@@ -12710,7 +12709,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 104.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 103.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
@@ -12725,7 +12724,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 104.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 103.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
@@ -12741,7 +12740,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 104.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 103.
 
 ```reaction
 when Drafting.correct (at, author: user, candidate, request, brief), asked by Live.drafting.Correct:success
@@ -12786,7 +12785,7 @@ then
 
 Authored path: `Live.drafting.Describe`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 105.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
@@ -12801,7 +12800,7 @@ then
 
 Authored path: `Live.drafting.Describe`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 105.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
@@ -12817,7 +12816,7 @@ then
 
 Authored path: `Live.drafting.Describe`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 105.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 104.
 
 ```reaction
 when Drafting.describe (at, author: user, request, brief), asked by Live.drafting.Describe:success
@@ -12874,7 +12873,7 @@ then
 
 Authored path: `Live.drafting.Line`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 49.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 106.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 105.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/line", requestId, session)
@@ -12889,7 +12888,7 @@ then
 
 Authored path: `Live.drafting.Line`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 49.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 106.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 105.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/line", requestId, session)
@@ -12904,8 +12903,8 @@ then
 ### Live.drafting.Lines:forbidden
 
 Authored path: `Live.drafting.Lines`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 107.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 88.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 106.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/lines", requestId, session)
@@ -12919,8 +12918,8 @@ then
 ### Live.drafting.Lines:success
 
 Authored path: `Live.drafting.Lines`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 107.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 88.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 106.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/lines", requestId, session)
@@ -12948,8 +12947,8 @@ then
 ### Live.drafting.Provenance:forbidden
 
 Authored path: `Live.drafting.Provenance`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 95.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 94.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 107.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/provenance", questionnaire, requestId, session)
@@ -12963,8 +12962,8 @@ then
 ### Live.drafting.Provenance:success
 
 Authored path: `Live.drafting.Provenance`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 95.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 94.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 107.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/provenance", questionnaire, requestId, session)
@@ -12979,8 +12978,8 @@ then
 ### Live.drafting.Refine:forbidden
 
 Authored path: `Live.drafting.Refine`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -12994,8 +12993,8 @@ then
 ### Live.drafting.Refine:missing
 
 Authored path: `Live.drafting.Refine`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -13010,8 +13009,8 @@ then
 ### Live.drafting.Refine:retired
 
 Authored path: `Live.drafting.Refine`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -13026,8 +13025,8 @@ then
 ### Live.drafting.Refine:run-open
 
 Authored path: `Live.drafting.Refine`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -13043,8 +13042,8 @@ then
 ### Live.drafting.Refine:success
 
 Authored path: `Live.drafting.Refine`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -13062,8 +13061,8 @@ then
 ### Live.drafting.Refine:success#2
 
 Authored path: `Live.drafting.Refine`.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
 
 ```reaction
 when Drafting.open (at, author: user, form, material, origin: questionnaire, request: title, brief, candidate), asked by Live.drafting.Refine:success

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileQuestion } from "lucide-react";
+import { ArrowLeft, FileQuestion } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -275,11 +275,22 @@ function DraftPageContent() {
   const tip = line.at(-1) ?? null;
   const waiting = isWaiting(line);
   const refining = tip?.refines ?? null;
+  const refiningForm = line.find((step) => step.refines !== null)?.form ?? null;
 
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Live"
+        eyebrow={
+          <Link
+            href={refining !== null ? `/staff/live/${refining}` : "/staff/live"}
+            className="inline-flex items-center gap-1 hover:text-foreground"
+          >
+            <ArrowLeft className="size-3" />
+            {refining !== null
+              ? "Back to the questionnaire"
+              : "Back to quizzes and surveys"}
+          </Link>
+        }
         title={refining !== null ? "Refine with AI" : "Draft with AI"}
         actions={
           brief !== null ? (
@@ -357,6 +368,7 @@ function DraftPageContent() {
               waiting={waiting}
               busy={busy}
               adopting={adopting}
+              refiningForm={refiningForm}
               onClarify={clarify}
               onCorrect={correct}
               onAdopt={adopt}

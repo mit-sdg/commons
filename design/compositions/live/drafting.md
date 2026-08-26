@@ -55,9 +55,8 @@ which the drafting surface polls while a reply is out.
 [Live.drafting.Adopt](reaction:Live.drafting.Adopt) marks the candidate
 adopted, and — for a line that began with a description —
 [Live.drafting.AdoptedCandidateComposesQuestionnaire](reaction:Live.drafting.AdoptedCandidateComposesQuestionnaire)
-composes the questionnaire from it: the line's first request as its starting
-title (corrections refine material, not what the thing is about), the drafted
-form, `score` as the starting disclosure, each drafted item added as a
+composes the questionnaire from it: a privacy-safe generic title based on the
+drafted form, `score` as the starting disclosure, each drafted item added as a
 question in order, and the line's brief linked to what it composed, so the
 drafting surface reads the questionnaire straight off the line rather than
 watching the shelf for something new. From there the quizzes page owns it:

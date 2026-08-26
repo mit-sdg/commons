@@ -237,6 +237,7 @@ export function DraftStep({
   waiting,
   busy,
   adopting,
+  refiningForm,
   onClarify,
   onCorrect,
   onAdopt,
@@ -248,6 +249,7 @@ export function DraftStep({
   waiting: boolean;
   busy: boolean;
   adopting: boolean;
+  refiningForm: DraftLineStep["form"];
   onClarify: (clarification: string, answer: string) => void;
   onCorrect: (candidate: string, request: string) => void;
   onAdopt: (candidate: string) => void;
@@ -265,6 +267,8 @@ export function DraftStep({
   // candidate is that questionnaire verbatim until a correction moves it —
   // adopting it would apply nothing.
   const uncorrected = step.refines !== null && step.basis === null;
+  const changedForm =
+    refiningForm !== null && step.form !== null && step.form !== refiningForm;
 
   return (
     <article className="space-y-3">
@@ -359,7 +363,18 @@ export function DraftStep({
                   </div>
                 ) : (
                   <>
-                    {uncorrected ? null : (
+                    {changedForm ? (
+                      <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                        <p className="flex items-start gap-2">
+                          <CircleAlert className="mt-0.5 size-4 shrink-0" />
+                          <span>
+                            This questionnaire is a {refiningForm}, but this
+                            draft is a {step.form}. Its form cannot be changed
+                            here. Ask AI to keep it as a {refiningForm}.
+                          </span>
+                        </p>
+                      </div>
+                    ) : uncorrected ? null : (
                       <div className="flex flex-wrap items-center gap-3">
                         <Button
                           onClick={() => onAdopt(candidate)}

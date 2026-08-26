@@ -555,7 +555,13 @@ describe("the drafting loop with a scripted reasoner", () => {
     const whole = await json(
       await post(edge, "/live/quizzes/get", { questionnaire: composed }, cookie),
     );
-    const questions = (whole.questionnaire as { questions: { prompt: string }[] }).questions;
+    const adoptedQuestionnaire = whole.questionnaire as {
+      title: string;
+      questions: { prompt: string }[];
+    };
+    expect(adoptedQuestionnaire.title).toBe("AI-generated quiz");
+    expect(adoptedQuestionnaire.title).not.toContain("photosynthesis");
+    const questions = adoptedQuestionnaire.questions;
     expect(questions.length).toBeGreaterThan(0);
 
     // Correcting an adopted candidate is refused; the line marks it adopted.
@@ -903,6 +909,45 @@ describe("the refining line with a scripted reasoner", () => {
     expect(after.map((entry) => entry.position)).toEqual([1, 2]);
   });
 
+  test("an empty questionnaire can adopt its first AI-generated questions", async () => {
+    const created = await json(
+      await post(
+        edge,
+        "/live/quizzes/create",
+        { title: "Empty quiz", form: "quiz", disclosure: "score" },
+        cookie,
+      ),
+    );
+    const questionnaire = created.questionnaire as string;
+
+    const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
+    let line = await lineOf(refined.brief as string);
+    expect(line[0].items).toHaveLength(0);
+
+    await post(
+      edge,
+      "/live/drafts/correct",
+      { candidate: line[0].candidate, request: "Add two questions about photosynthesis" },
+      cookie,
+    );
+    await serveReasoner(edge);
+    line = await lineOf(refined.brief as string);
+    expect(line[1].items).toHaveLength(2);
+
+    const adopted = await post(
+      edge,
+      "/live/drafts/adopt",
+      { candidate: line[1].candidate },
+      cookie,
+    );
+    expect(adopted.status).toBe(200);
+    const after = await until(
+      () => questionsOf(questionnaire),
+      (rows) => rows.length === 2,
+    );
+    expect(after.map((entry) => entry.position)).toEqual([1, 2]);
+  });
+
   test("a refinement keeps the questionnaire's form", async () => {
     const questionnaire = await buildQuiz(edge, cookie, "score");
     const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
@@ -1022,7 +1067,7 @@ describe("a line left can be found again", () => {
     lines = await until(linesOf, (rows) => rows[1]?.composed !== null);
     expect(lines[1]).toMatchObject({
       adopted: true,
-      composedTitle: "A quiz about photosynthesis",
+      composedTitle: "AI-generated quiz",
     });
     expect(lines[0].adopted).toBe(false);
   });

@@ -22,14 +22,8 @@ To ask one clarifying question instead:
 {"kind":"question","question":"..."}
 Ask only when the request could equally be a quiz or a survey and the choice changes what you would write. Never guess the form; otherwise never ask.`;
 
-export function draftTitle({ request }: { request: string }): string {
-  const collapsed = request.replace(/\s+/g, " ").trim();
-  if (collapsed === "") return "Untitled";
-  if (collapsed.length <= 60) return collapsed;
-  // Cut at a word boundary so the title never ends mid-word.
-  const cut = collapsed.slice(0, 59);
-  const boundary = cut.lastIndexOf(" ");
-  return `${boundary > 20 ? cut.slice(0, boundary) : cut}\u2026`;
+export function draftTitle({ form }: { form: string }): string {
+  return form === "survey" ? "AI-generated survey" : "AI-generated quiz";
 }
 
 export function draftingPassage({ request }: { request: string }): string {
@@ -45,7 +39,7 @@ export function revisionPassage({
   form: string;
   material: unknown;
 }): string {
-  return `${CONTRACT}\n\nAn earlier draft exists, as this ${form}:\n${JSON.stringify(material)}\n\nThe correction:\n${request}\n\nDeliver the whole revised draft, changing only what the correction asks.`;
+  return `${CONTRACT}\n\nAn earlier draft exists, as this ${form}:\n${JSON.stringify(material)}\n\nThe correction:\n${request}\n\nKeep "form":"${form}" unless the correction explicitly asks for another form. Deliver the whole revised draft, changing only what the correction asks.`;
 }
 
 export function clarifiedPassage({
