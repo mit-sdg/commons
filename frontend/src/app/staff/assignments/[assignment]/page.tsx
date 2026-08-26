@@ -270,13 +270,19 @@ function StaffAssignmentDetailPageContent({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setEditing(true)}
-            >
-              Edit
-            </Button>
+            {detail.status !== "ARCHIVED" ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                Archived assignments are read-only
+              </span>
+            )}
             {detail.status === "DRAFT" && (
               <Button
                 size="sm"
