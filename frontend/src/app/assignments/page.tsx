@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpDown, BookOpen, Search } from "lucide-react";
+import { BookOpen, ChevronRight, Search } from "lucide-react";
 import { useState } from "react";
 import { Link } from "@/components/link";
 import { StatusBadge } from "@/components/lms/status-badge";
@@ -293,7 +293,7 @@ export default function AssignmentsPage() {
                       Pending
                     </Badge>
                   )}
-                  <ArrowUpDown className="size-4 text-muted-foreground" />
+                  <ChevronRight className="size-4 text-muted-foreground" />
                 </div>
               </Link>
             );
