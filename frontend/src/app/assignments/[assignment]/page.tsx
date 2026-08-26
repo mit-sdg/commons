@@ -3,6 +3,7 @@
 import { ArrowLeft, Clock, GraduationCap, Send } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
+import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { Link } from "@/components/link";
 import { LateDayControls } from "@/components/lms/late-day-controls";
 import { StatusBadge } from "@/components/lms/status-badge";
@@ -85,6 +86,28 @@ export default function AssignmentDetailPage({
       : null,
     [assignment, me, asgnData],
   );
+  const attempts = attemptsData?.attempts ?? [];
+
+  const { data: artifactData } = useQuery<Record<string, string>>(
+    attempts.length > 0
+      ? async () => {
+          const artifacts = [
+            ...new Set(attempts.flatMap((item) => item.artifacts)),
+          ];
+          const entries = await Promise.all(
+            artifacts.map(async (artifact) => {
+              const result = await api.posts.get({ post: artifact });
+              return [
+                artifact,
+                "error" in result ? "" : (result.post?.rendered ?? ""),
+              ] as const;
+            }),
+          );
+          return Object.fromEntries(entries);
+        }
+      : null,
+    [attemptsData],
+  );
 
   const { data: lateBalance, refetch: refetchLate } = useQuery<{
     balance: { granted: number; used: number; remaining: number };
@@ -106,7 +129,6 @@ export default function AssignmentDetailPage({
   const detail =
     asgnData?.assignment && !("error" in asgnData) ? asgnData.assignment : null;
   const latest = subData?.submission;
-  const attempts = attemptsData?.attempts ?? [];
   const balance = lateBalance?.balance ?? null;
   const myGrade = gradesData?.grades?.find((g) => g.item === assignment);
   const appliedLateUse = lateUseData?.uses.find(
@@ -253,22 +275,40 @@ export default function AssignmentDetailPage({
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {[...attempts].reverse().map((a) => (
-                    <div
-                      key={a.submission}
+                  {[...attempts].reverse().map((attempt) => (
+                    <details
+                      key={attempt.submission}
                       className={cn(
-                        "flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm",
-                        a.status === "WITHDRAWN" && "opacity-60",
+                        "rounded-lg border border-border px-3 py-2 text-sm",
+                        attempt.status === "WITHDRAWN" && "opacity-60",
                       )}
                     >
-                      <div>
-                        <span className="font-medium">Attempt #{a.number}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {fullTime(a.submittedAt)}
+                      <summary className="flex cursor-pointer items-center justify-between gap-3">
+                        <span>
+                          <span className="font-medium">
+                            Attempt #{attempt.number}
+                          </span>
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {fullTime(attempt.submittedAt)}
+                          </span>
                         </span>
+                        <StatusBadge status={attempt.status} />
+                      </summary>
+                      <div className="mt-3 border-t border-border pt-3">
+                        {attempt.artifacts.map((artifact) =>
+                          artifactData?.[artifact] ? (
+                            <RenderedMarkdown
+                              key={artifact}
+                              html={artifactData[artifact]}
+                            />
+                          ) : (
+                            <p key={artifact} className="text-muted-foreground">
+                              Submission content is unavailable.
+                            </p>
+                          ),
+                        )}
                       </div>
-                      <StatusBadge status={a.status} />
-                    </div>
+                    </details>
                   ))}
                 </div>
               </CardContent>

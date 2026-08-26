@@ -31,11 +31,15 @@ export const theAttempts = former(
 /** Which submissions belong to this assignment? */
 export const theSubmissionsForAssignment = former(
   "the submissions for (assignment)",
-  ({ assignment }, { submitter, submitterName, submission, submittedAt, number, status }) =>
+  (
+    { assignment },
+    { submitter, submitterName, submission, artifacts, submittedAt, number, status },
+  ) =>
     each(
       Submitting._getSubmissionsForAssignment({ assignment }).is({
         submitter,
         submission,
+        artifacts,
         submittedAt,
         number,
         status,
@@ -46,7 +50,15 @@ export const theSubmissionsForAssignment = former(
           Profiling._getProfileFields({ user: submitter }).is({ displayName: submitterName }),
         ),
       )
-      .form({ submitter, submitterName, submission, submittedAt, number, status }),
+      .form({
+        submitter,
+        submitterName,
+        submission,
+        artifacts,
+        submittedAt,
+        number,
+        status,
+      }),
 );
 
 /** Who was assigned this assignment? */

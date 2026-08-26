@@ -17,6 +17,7 @@ interface GradeInputProps {
   currentScore?: number;
   currentFeedback?: string;
   currentStatus?: string;
+  evidence?: string;
   onSaved: () => void;
   className?: string;
 }
@@ -27,6 +28,7 @@ export function GradeInput({
   currentScore,
   currentFeedback,
   currentStatus,
+  evidence,
   onSaved,
   className,
 }: GradeInputProps) {
@@ -53,7 +55,7 @@ export function GradeInput({
       item,
       score,
       feedback,
-      evidence: "",
+      evidence: evidence ?? "",
     });
     setLoading(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));

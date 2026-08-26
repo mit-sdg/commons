@@ -4,6 +4,7 @@ import { Archive, ArrowLeft, Eye, Send } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { Link } from "@/components/link";
 import { AssignmentForm } from "@/components/lms/assignment-form";
 import { GradeInput } from "@/components/lms/grade-input";
@@ -122,6 +123,7 @@ function StaffAssignmentDetailPageContent({
   const { session } = useAuth();
   const [editing, setEditing] = useState(false);
   const [gradingUser, setGradingUser] = useState<string | null>(null);
+  const [gradingEvidence, setGradingEvidence] = useState<string | null>(null);
 
   const {
     data: asgnData,
@@ -147,6 +149,7 @@ function StaffAssignmentDetailPageContent({
       submitter: string;
       submitterName: string | null;
       submission: string;
+      artifacts: string[];
       submittedAt: string;
       number: number;
       status: string;
@@ -155,6 +158,30 @@ function StaffAssignmentDetailPageContent({
     session,
     assignment,
   ]);
+
+  const submissions = subsData?.submissions ?? [];
+  const { data: artifactData } = useQuery<Record<string, string>>(
+    submissions.length > 0
+      ? async () => {
+          const artifacts = [
+            ...new Set(
+              submissions.flatMap((submission) => submission.artifacts),
+            ),
+          ];
+          const entries = await Promise.all(
+            artifacts.map(async (artifact) => {
+              const result = await api.posts.get({ post: artifact });
+              return [
+                artifact,
+                "error" in result ? "" : (result.post?.rendered ?? ""),
+              ] as const;
+            }),
+          );
+          return Object.fromEntries(entries);
+        }
+      : null,
+    [subsData],
+  );
 
   const { data: gradesData, refetch: refetchGrades } = useQuery<{
     grades: { learner: string; grade: string; score: number; status: string }[];
@@ -172,7 +199,6 @@ function StaffAssignmentDetailPageContent({
 
   const detail = asgnData?.summary;
   const assigned = subsData?.assigned ?? [];
-  const submissions = subsData?.submissions ?? [];
   const grades = gradesData?.grades ?? [];
   const lateUsers = lateData?.users ?? [];
 
@@ -403,13 +429,48 @@ function StaffAssignmentDetailPageContent({
                               </Badge>
                             ) : null}
                           </p>
-                          {attempts.length > 1 ? (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Attempts{" "}
-                              {attempts
-                                .map((attempt) => `#${attempt.number}`)
-                                .join(", ")}
-                            </p>
+                          {attempts.length > 0 ? (
+                            <div className="mt-2 space-y-2">
+                              {attempts.map((attempt) => (
+                                <details
+                                  key={attempt.submission}
+                                  className="rounded-md border border-border px-2 py-1.5 text-xs"
+                                >
+                                  <summary className="cursor-pointer font-medium">
+                                    Attempt #{attempt.number} ·{" "}
+                                    {fullTime(attempt.submittedAt)} ·{" "}
+                                    {attempt.status.toLowerCase()}
+                                  </summary>
+                                  <div className="mt-2 space-y-2 border-t border-border pt-2 text-sm">
+                                    {attempt.artifacts.map((artifact) =>
+                                      artifactData?.[artifact] ? (
+                                        <RenderedMarkdown
+                                          key={artifact}
+                                          html={artifactData[artifact]}
+                                        />
+                                      ) : (
+                                        <p
+                                          key={artifact}
+                                          className="text-muted-foreground"
+                                        >
+                                          Submission content is unavailable.
+                                        </p>
+                                      ),
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setGradingEvidence(attempt.submission);
+                                        setGradingUser(learnerId);
+                                      }}
+                                    >
+                                      Grade this attempt
+                                    </Button>
+                                  </div>
+                                </details>
+                              ))}
+                            </div>
                           ) : null}
                         </div>
                         {grade ? (
@@ -439,8 +500,10 @@ function StaffAssignmentDetailPageContent({
                           item={assignment}
                           currentScore={grade?.score}
                           currentStatus={grade?.status}
+                          evidence={gradingEvidence ?? latest?.submission}
                           onSaved={() => {
                             setGradingUser(null);
+                            setGradingEvidence(null);
                             refetchGrades();
                           }}
                         />
@@ -448,7 +511,10 @@ function StaffAssignmentDetailPageContent({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setGradingUser(learnerId)}
+                          onClick={() => {
+                            setGradingEvidence(latest?.submission ?? null);
+                            setGradingUser(learnerId);
+                          }}
                         >
                           {grade ? "Review grade" : "Add grade"}
                         </Button>

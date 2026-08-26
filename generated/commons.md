@@ -2648,10 +2648,11 @@ Authored path: `Course.submissions.theSubmissionsForAssignment`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
 
 ```former
-Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, submittedAt, number, status); promises exactly one record — forms:
-  each Submitting._getSubmissionsForAssignment (assignment) has (number, status, submission, submittedAt, submitter)
+Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
+  each Submitting._getSubmissionsForAssignment (assignment) has (artifacts, number, status, submission, submittedAt, submitter)
     where whether Profiling._getProfileFields (user: submitter) has (displayName: submitterName)
     form a record of
+      artifacts
       number
       status
       submission
