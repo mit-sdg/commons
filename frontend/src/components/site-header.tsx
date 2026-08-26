@@ -85,7 +85,8 @@ export function SiteHeader() {
     Boolean(session) && resolvedLmsAccess.user === currentUser;
   const effectiveHasRosterSeat =
     accessIsCurrent && resolvedLmsAccess.hasRosterSeat;
-  const effectiveIsStaff = accessIsCurrent && resolvedLmsAccess.isStaff;
+  const effectiveIsStaff =
+    permissions.isStaff || (accessIsCurrent && resolvedLmsAccess.isStaff);
   const courseNav = lmsNavigation(effectiveIsStaff, permissions.can);
   const courseHome = effectiveIsStaff ? "/staff" : "/assignments";
   const isCourseArea = COURSE_PATHS.some(
