@@ -333,7 +333,11 @@ function LateDaysAdminPageContent() {
           <PolicySettings
             key={`${policyQuery.data.defaultDays}-${policyQuery.data.maxDaysPerItem}-${policyQuery.data.unitHours}`}
             policy={policyQuery.data}
-            onUpdate={policyQuery.refetch}
+            onUpdate={() => {
+              policyQuery.refetch();
+              refetchBalances();
+              usesQuery.refetch();
+            }}
           />
         ) : null}
 

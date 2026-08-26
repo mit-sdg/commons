@@ -217,8 +217,8 @@ function StaffAssignmentDetailPageContent({
     const result = await api.assignments.publish({ assignment });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("Assignment published!");
-      refetch();
+      await Promise.all([refetch(), refetchSubmissions(), refetchGrades()]);
+      toast.success("Assignment published");
     }
   }
 
