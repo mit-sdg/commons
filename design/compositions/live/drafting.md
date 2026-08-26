@@ -85,20 +85,35 @@ page holds. The title and disclosure are not the line's to change; they stay
 with the quizzes page that owns them.
 
 A line, once left, can be found again.
+[Live.drafting.Abandon](reaction:Live.drafting.Abandon) lets the line's author
+deliberately leave an unfinished line. Abandonment is not another Drafting
+state: a separate `DraftTrashing` instance records the root brief as trashed,
+so Drafting's small describe–propose–correct–adopt lifecycle stays unchanged.
+Only the root author may abandon a line, and an adopted line cannot be
+abandoned. There is no restore or purge surface: abandoned lines are retained
+as provenance, but no correction, clarification, adoption, repair, or reasoner
+reply may advance them. If a repair insistence was still open,
+[Live.drafting.AbandonedLineGivesUpInsistence](reaction:Live.drafting.AbandonedLineGivesUpInsistence)
+closes it rather than leaving work unsettled.
+
 [Live.drafting.Lines](reaction:Live.drafting.Lines) forms
 [the author's drafting lines](former:Live.drafting.theDraftLines) — one row
 per line the caller began, newest first, each saying whether it stands
-adopted, stalled, or waiting on a clarification, what it was opened from, and,
-when a description's adoption composed a questionnaire, which one — so the
-drafting page can offer an interrupted line back.
+adopted, abandoned, stalled, or waiting on a clarification, who began its
+root, what it was opened from, and, when a description's adoption composed a
+questionnaire, which one — so the drafting page can offer an interrupted line
+back without offering abandoned work as unfinished.
 [Live.drafting.Provenance](reaction:Live.drafting.Provenance) forms
 [the drafting provenance of one questionnaire](former:Live.drafting.theProvenance):
 the described line that composed it, when one did, and every refining line
-opened on it, whoever opened it — how the questionnaire came to read as it
-does. Both require `live:host`.
+opened on it, whoever opened it, including abandoned refinements — how the
+questionnaire came to read as it does. The whole-line former likewise carries
+the root author and abandonment standing on every step. Both reads require
+`live:host`.
 
 ```endpoints
 Live.drafting.Adopt at /live/drafts/adopt
+Live.drafting.Abandon at /live/drafts/abandon
 Live.drafting.Clarify at /live/drafts/clarify
 Live.drafting.Correct at /live/drafts/correct
 Live.drafting.Describe at /live/drafts/describe

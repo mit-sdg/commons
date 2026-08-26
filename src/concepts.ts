@@ -16,6 +16,7 @@ import { inviting } from "./concepts/inviting/registry.ts";
 import { itemizing } from "./concepts/itemizing/registry.ts";
 import { linking } from "./concepts/linking/registry.ts";
 import { locking } from "./concepts/locking/registry.ts";
+import { locating } from "./concepts/locating/registry.ts";
 import { mailing } from "./concepts/mailing/registry.ts";
 import { notifying } from "./concepts/notifying/registry.ts";
 import { noting } from "./concepts/noting/registry.ts";
@@ -34,6 +35,7 @@ import { rostering } from "./concepts/rostering/registry.ts";
 import { scoring } from "./concepts/scoring/registry.ts";
 import { sessioning } from "./concepts/sessioning/registry.ts";
 import { sharing } from "./concepts/sharing/registry.ts";
+import { snapshotting } from "./concepts/snapshotting/registry.ts";
 import { submitting } from "./concepts/submitting/registry.ts";
 import { subscribing } from "./concepts/subscribing/registry.ts";
 import { tagging } from "./concepts/tagging/registry.ts";
@@ -58,7 +60,17 @@ import {
   revisionPassage,
 } from "./computations/live-drafting.ts";
 import { soleTarget } from "./computations/live-links.ts";
-import { positionAfter, positionBefore } from "./computations/live-quizzes.ts";
+import { positionAfter, positionBefore, receiptKind } from "./computations/live-quizzes.ts";
+import {
+  answerReceipt,
+  boardQuestions,
+  explanationReceipt,
+  participantQuestions,
+  snapshotForm,
+  snapshotHasQuestion,
+  snapshotIsWhole,
+  snapshotTitle,
+} from "./computations/live-snapshots.ts";
 import {
   passwordResetCooldownStart,
   passwordResetExpiry,
@@ -88,6 +100,7 @@ const registrations = {
   Categorizing: categorizing,
   Conversing: conversing,
   Drafting: drafting,
+  DraftTrashing: trashing,
   Flagging: flagging,
   Formatting: formatting,
   Grading: grading,
@@ -97,6 +110,7 @@ const registrations = {
   Itemizing: itemizing,
   Linking: linking,
   Locking: locking,
+  Locating: locating,
   Mailing: mailing,
   Notifying: notifying,
   Noting: noting,
@@ -116,6 +130,7 @@ const registrations = {
   Scoring: scoring,
   Sessioning: sessioning,
   Sharing: sharing,
+  RunSnapshotting: snapshotting,
   Submitting: submitting,
   Subscribing: subscribing,
   Tagging: tagging,
@@ -126,20 +141,25 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  answerReceipt,
+  boardQuestions,
   capabilitiesAreKnown,
   clarifiedPassage,
   draftTitle,
   draftingPassage,
+  explanationReceipt,
   parseKind,
   parsedForm,
   parsedMaterial,
   parsedQuestion,
   parsedReason,
+  participantQuestions,
   repairPassage,
   revisionPassage,
   soleTarget,
   positionAfter,
   positionBefore,
+  receiptKind,
   effectiveCapabilities,
   invitationMailHtml,
   invitationMailText,
@@ -151,6 +171,10 @@ export const learningConcepts = conceptSet(registrations, {
   passwordResetMailText,
   setupSecretMatches,
   singleImportRow,
+  snapshotForm,
+  snapshotHasQuestion,
+  snapshotIsWhole,
+  snapshotTitle,
   subjectIsAddress,
   taskListMailHtml,
   taskListMailSubject,

@@ -11,3 +11,19 @@ export function positionAfter({ position }: { position: number }): number {
 export function positionBefore({ position }: { position: number }): number {
   return position - 1;
 }
+
+/**
+ * Name the kind of feedback a submitted answer can receive. Choice answers
+ * with a standard are graded; written answers with a standard carry a
+ * reference; everything else is deliberately ungraded.
+ */
+export function receiptKind({
+  choices,
+  expected,
+}: {
+  choices: string[];
+  expected: string;
+}): "graded" | "reference" | "ungraded" {
+  if (expected === "") return "ungraded";
+  return choices.length > 0 ? "graded" : "reference";
+}

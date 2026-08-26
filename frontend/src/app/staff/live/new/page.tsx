@@ -34,11 +34,11 @@ function NewQuestionnaireContent() {
   const [busy, setBusy] = useState(false);
 
   async function create() {
-    setBusy(true);
     const trimmed = title.trim();
+    if (trimmed === "") return;
+    setBusy(true);
     const result = await api["/live/quizzes/create"]({
-      // An untitled questionnaire gets its name from the composition's default.
-      title: trimmed === "" ? undefined : trimmed,
+      title: trimmed,
       form,
       disclosure,
     });
@@ -71,10 +71,15 @@ function NewQuestionnaireContent() {
           <Input
             id="live-title"
             value={title}
+            maxLength={200}
+            aria-invalid={title.trim() === ""}
             disabled={busy}
             placeholder="e.g. Lecture 7 check-in"
             onChange={(event) => setTitle(event.target.value)}
           />
+          {title.trim() === "" ? (
+            <p className="text-xs text-destructive">Enter a title.</p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -123,7 +128,10 @@ function NewQuestionnaireContent() {
         ) : null}
 
         <div className="flex items-center gap-2">
-          <Button disabled={busy} onClick={() => void create()}>
+          <Button
+            disabled={busy || title.trim() === ""}
+            onClick={() => void create()}
+          >
             {busy ? "Creating…" : "Create"}
           </Button>
           <Button variant="ghost" asChild>

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import { RequireCapability } from "@/components/require-capability";
-import { EmptyState, LoadingState } from "@/components/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -22,7 +22,7 @@ function ProjectorContent() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 
-  const { data, loading, refetch } = useQuery(
+  const { data, loading, error, refetch } = useQuery(
     session ? () => api["/live/runs/results"]({ run }).then(unwrap) : null,
     [session, run],
   );
@@ -44,6 +44,14 @@ function ProjectorContent() {
     );
   }
 
+  if (error !== null && data === null) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center px-6">
+        <ErrorState message={error} onRetry={refetch} />
+      </div>
+    );
+  }
+
   if (board === null) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
@@ -53,9 +61,10 @@ function ProjectorContent() {
   }
 
   const url = board.token === null ? null : joinUrl(board.token);
+  const code = board.code;
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6 py-10 text-center sm:gap-10">
+    <div className="flex h-dvh flex-col items-center justify-center gap-[clamp(0.75rem,2.5dvh,2rem)] overflow-hidden px-6 py-[clamp(1rem,3dvh,2.5rem)] text-center">
       <h1
         dir="auto"
         className="text-balance font-display text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl"
@@ -64,14 +73,19 @@ function ProjectorContent() {
       </h1>
       {!open ? (
         <p className="text-2xl text-muted-foreground">Closed</p>
-      ) : url === null ? (
+      ) : url === null || code === null ? (
         <p className="text-2xl text-muted-foreground">Nothing to project</p>
       ) : (
         <>
-          <JoinCode url={url} wall />
-          <p className="text-xl text-muted-foreground sm:text-2xl">
+          <JoinCode url={url} code={code} wall />
+          <p className="text-lg text-muted-foreground sm:text-2xl">
             {board.started} joined · {board.handedIn} handed in
           </p>
+          {error !== null ? (
+            <p className="text-amber-700 text-sm dark:text-amber-300">
+              Connection interrupted. Showing the last update.
+            </p>
+          ) : null}
         </>
       )}
     </div>

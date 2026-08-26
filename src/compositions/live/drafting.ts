@@ -7,6 +7,7 @@ import {
   no,
   now,
   reaction,
+  view,
   when,
   where,
   whether,
@@ -23,7 +24,7 @@ import {
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
-const { AdoptLinking, Drafting, Insisting, Questioning, Reasoning } = concepts;
+const { AdoptLinking, Drafting, DraftTrashing, Insisting, Questioning, Reasoning } = concepts;
 
 /** The one reasoner name this composition asks for; the floor decides what answers it. */
 const REASONER = "gemini-flash";
@@ -31,10 +32,29 @@ const REASONER = "gemini-flash";
 /** How many times an unusable reply is stood upon before the brief stalls. */
 const PATIENCE = 3;
 
+/**
+ * Abandonment belongs to a drafting line, not to one of its steps. Drafting
+ * already knows how a correction reaches its root; the separate Trashing
+ * instance records only that root's lifecycle.
+ */
+const theDraftRoot = view(
+  "the root of drafting line (brief)",
+  ({ brief }, { root, rootAuthor, abandoned }, _bindings) =>
+    where(
+      Drafting._rootOf({ brief }).is({ root }),
+      Drafting._brief({ brief: root }).is({ author: rootAuthor }),
+      DraftTrashing._isTrashed({ item: root }).is({ trashed: abandoned }),
+    ),
+).one();
+
 /** A described brief goes straight before the reasoner. */
 export const DescribedBriefAsksReasoner = reaction(({ brief, request, passage, at }) =>
   when(Drafting.describe({ request }).responds({ brief }))
-    .where(now(at), compute(computations.draftingPassage, { request }, passage))
+    .where(
+      now(at),
+      theDraftRoot({ brief }).is({ abandoned: false }),
+      compute(computations.draftingPassage, { request }, passage),
+    )
     .then(Reasoning.ask({ reasoner: REASONER, about: brief, passage, at })),
 );
 
@@ -44,6 +64,7 @@ export const CorrectedBriefAsksReasoner = reaction(
     when(Drafting.correct({ candidate, request }).responds({ brief }))
       .where(
         now(at),
+        theDraftRoot({ brief }).is({ abandoned: false }),
         Drafting._material({ candidate }).is({ form, material }),
         compute(computations.revisionPassage, { request, form, material }, passage),
       )
@@ -56,6 +77,7 @@ export const ClarifiedBriefAsksReasoner = reaction(
     when(Drafting.clarify({ clarification, answer }).responds({ brief }))
       .where(
         now(at),
+        theDraftRoot({ brief }).is({ abandoned: false }),
         Drafting._clarifications({ brief }).is({ clarification, question }),
         Drafting._brief({ brief }).is({ request }),
         compute(computations.clarifiedPassage, { request, question, answer }, passage),
@@ -74,6 +96,7 @@ export const ReplyDraftProposes = reaction(({ asking, reply, brief, kind, form, 
   when(Reasoning.answer({ asking, reply }).responds())
     .where(
       Reasoning._asking({ asking }).is({ about: brief }),
+      theDraftRoot({ brief }).is({ abandoned: false }),
       compute(computations.parseKind, { reply }, kind),
       is.among(kind, ["draft"]),
       compute(computations.parsedForm, { reply }, form),
@@ -86,6 +109,7 @@ export const ReplyQuestionAsks = reaction(({ asking, reply, brief, kind, questio
   when(Reasoning.answer({ asking, reply }).responds())
     .where(
       Reasoning._asking({ asking }).is({ about: brief }),
+      theDraftRoot({ brief }).is({ abandoned: false }),
       compute(computations.parseKind, { reply }, kind),
       is.among(kind, ["question"]),
       no(Drafting._basisOf({ brief })),
@@ -98,6 +122,7 @@ export const CorrectionQuestionComplains = reaction(({ asking, reply, brief, kin
   when(Reasoning.answer({ asking, reply }).responds())
     .where(
       Reasoning._asking({ asking }).is({ about: brief }),
+      theDraftRoot({ brief }).is({ abandoned: false }),
       compute(computations.parseKind, { reply }, kind),
       is.among(kind, ["question"]),
       Drafting._basisOf({ brief }),
@@ -117,6 +142,7 @@ export const ReplyNeitherComplains = reaction(({ asking, reply, brief, kind, rea
   when(Reasoning.answer({ asking, reply }).responds())
     .where(
       Reasoning._asking({ asking }).is({ about: brief }),
+      theDraftRoot({ brief }).is({ abandoned: false }),
       compute(computations.parseKind, { reply }, kind),
       is.among(kind, ["neither"]),
       compute(computations.parsedReason, { reply }, reason),
@@ -127,13 +153,19 @@ export const ReplyNeitherComplains = reaction(({ asking, reply, brief, kind, rea
 /** A usable reply settles whatever was being insisted on for the brief. */
 export const ProposedDraftSatisfiesInsistence = reaction(({ brief }) =>
   when(Drafting.propose({ brief }).responds())
-    .where(Insisting._unsettledFor({ aim: brief }))
+    .where(
+      theDraftRoot({ brief }).is({ abandoned: false }),
+      Insisting._unsettledFor({ aim: brief }),
+    )
     .then(Insisting.satisfy({ aim: brief })),
 );
 
 export const AskedQuestionSatisfiesInsistence = reaction(({ brief }) =>
   when(Drafting.ask({ brief }).responds())
-    .where(Insisting._unsettledFor({ aim: brief }))
+    .where(
+      theDraftRoot({ brief }).is({ abandoned: false }),
+      Insisting._unsettledFor({ aim: brief }),
+    )
     .then(Insisting.satisfy({ aim: brief })),
 );
 
@@ -143,6 +175,7 @@ export const ComplaintRetriesTheAsk = reaction(
     when(Insisting.complain({ aim: brief, offering, account }).responds())
       .where(
         now(at),
+        theDraftRoot({ brief }).is({ abandoned: false }),
         Insisting._standingFor({ aim: brief }),
         Drafting._brief({ brief }).is({ request }),
         compute(computations.repairPassage, { request, offering, account }, passage),
@@ -153,7 +186,7 @@ export const ComplaintRetriesTheAsk = reaction(
 /** Once patience is spent, the brief stalls honestly and the insistence closes. */
 export const SpentPatienceStallsTheBrief = reaction(({ brief }) =>
   when(Insisting.complain({ aim: brief }).responds())
-    .where(Insisting._spentFor({ aim: brief }))
+    .where(theDraftRoot({ brief }).is({ abandoned: false }), Insisting._spentFor({ aim: brief }))
     .then(
       Drafting.stall({
         brief,
@@ -166,7 +199,10 @@ export const SpentPatienceStallsTheBrief = reaction(({ brief }) =>
 /** A reasoner that could not answer leaves nothing waiting silently. */
 export const FailedAskStallsTheBrief = reaction(({ asking, brief, account }) =>
   when(Reasoning.fail({ asking }).responds())
-    .where(Reasoning._asking({ asking }).is({ about: brief }))
+    .where(
+      Reasoning._asking({ asking }).is({ about: brief }),
+      theDraftRoot({ brief }).is({ abandoned: false }),
+    )
     .then(
       where(Insisting._unsettledFor({ aim: brief }))
         .then(Insisting.giveUp({ aim: brief }))
@@ -178,6 +214,13 @@ export const FailedAskStallsTheBrief = reaction(({ asking, brief, account }) =>
         .then(Drafting.stall({ brief, reason: account }))
         .named("stall"),
     ),
+);
+
+/** Abandoning a line also closes any repair insistence still awaiting a reply. */
+export const AbandonedLineGivesUpInsistence = reaction(({ root, brief }) =>
+  when(DraftTrashing.trash({ item: root }).responds())
+    .where(Drafting._line({ brief: root }).is({ brief }), Insisting._unsettledFor({ aim: brief }))
+    .then(Insisting.giveUp({ aim: brief })),
 );
 
 /**
@@ -208,6 +251,7 @@ export const AdoptedCandidateComposesQuestionnaire = reaction(
       .where(
         now(at),
         Drafting._candidate({ candidate }).is({ brief, form }),
+        theDraftRoot({ brief }).is({ abandoned: false }),
         no(Drafting._originOf({ brief })),
         Drafting._brief({ brief }).is({ author }),
         compute(computations.draftTitle, { form }, title),
@@ -268,6 +312,7 @@ export const AdoptedRevisionRevisesQuestionnaire = reaction(
     when(Drafting.adopt({ candidate }).responds())
       .where(
         Drafting._candidate({ candidate }).is({ brief }),
+        theDraftRoot({ brief }).is({ abandoned: false }),
         Drafting._originOf({ brief }).is({ origin: questionnaire }),
       )
       .then(
@@ -342,10 +387,14 @@ export const theDraftLine = former(
       position,
       refines,
       composed,
+      root,
+      rootAuthor,
+      abandoned,
     },
   ) =>
     each(Drafting._line({ brief }).is({ brief: step, request, basis, candidate, form, adopted }))
       .where(
+        theDraftRoot({ brief: step }).is({ root, rootAuthor, abandoned }),
         Drafting._standing({ brief: step }).is({ clarifying, stalled }),
         whether(Drafting._originOf({ brief: step }).is({ origin: refines })),
         whether(AdoptLinking._getLinks({ source: step }).is({ target: composed })),
@@ -361,6 +410,9 @@ export const theDraftLine = former(
         stalled,
         refines,
         composed,
+        root,
+        rootAuthor,
+        abandoned,
         items: each(
           Drafting._items({ candidate }).is({ prompt, choices, expected, explanation, position }),
         ).form({ prompt, choices, expected, explanation, position }),
@@ -389,6 +441,8 @@ export const theDraftLines = former(
       refinesTitle,
       composed,
       composedTitle,
+      rootAuthor,
+      abandoned,
     },
   ) =>
     each(
@@ -403,6 +457,7 @@ export const theDraftLines = former(
       }),
     )
       .where(
+        theDraftRoot({ brief }).is({ rootAuthor, abandoned }),
         whether(
           Questioning._getQuestionnaire({ questionnaire: origin }).is({ title: refinesTitle }),
         ),
@@ -422,6 +477,8 @@ export const theDraftLines = former(
         refinesTitle,
         composed,
         composedTitle,
+        rootAuthor,
+        abandoned,
       }),
 );
 
@@ -444,17 +501,34 @@ export const theProvenance = former(
       adopted,
       stalled,
       clarifying,
+      composedRoot,
+      composedRootAuthor,
+      composedAbandoned,
+      rootAuthor,
+      abandoned,
     },
   ) =>
     form({
       composed: each(AdoptLinking._getBacklinks({ target: questionnaire }).is({ source: composer }))
         .where(
+          theDraftRoot({ brief: composer }).is({
+            root: composedRoot,
+            rootAuthor: composedRootAuthor,
+            abandoned: composedAbandoned,
+          }),
           Drafting._brief({ brief: composer }).is({
             request: composedRequest,
             createdAt: composedAt,
           }),
         )
-        .form({ brief: composer, request: composedRequest, createdAt: composedAt }),
+        .form({
+          brief: composer,
+          root: composedRoot,
+          rootAuthor: composedRootAuthor,
+          request: composedRequest,
+          createdAt: composedAt,
+          abandoned: composedAbandoned,
+        }),
       refined: each(
         Drafting._openedFrom({ origin: questionnaire }).is({
           brief,
@@ -465,7 +539,19 @@ export const theProvenance = former(
           stalled,
           clarifying,
         }),
-      ).form({ brief, author, request, createdAt, adopted, stalled, clarifying }),
+      )
+        .where(theDraftRoot({ brief }).is({ rootAuthor, abandoned }))
+        .form({
+          brief,
+          author,
+          rootAuthor,
+          request,
+          createdAt,
+          adopted,
+          stalled,
+          clarifying,
+          abandoned,
+        }),
     }),
 );
 
@@ -525,9 +611,17 @@ export const Provenance = endpoint(
 
 export const Clarify = endpoint(
   "/live/drafts/clarify",
-  ({ session, clarification, answer, user, at, clarified, brief }) =>
+  ({ session, clarification, answer, user, at, root, clarified, brief }) =>
     receive({ session, clarification, answer }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._lines({ author: user }).is({ brief: root }),
+        Drafting._line({ brief: root }).is({ brief }),
+        Drafting._clarifications({ brief }).is({ clarification }),
+        DraftTrashing._isTrashed({ item: root }).is({ trashed: false }),
+      )
         .then(
           Drafting.clarify({ clarification, answer }).responds({
             clarification: clarified,
@@ -536,6 +630,16 @@ export const Clarify = endpoint(
         )
         .then(respond({ clarification: clarified, brief }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._lines({ author: user }).is({ brief: root }),
+        Drafting._line({ brief: root }).is({ brief }),
+        Drafting._clarifications({ brief }).is({ clarification }),
+        DraftTrashing._isTrashed({ item: root }).is({ trashed: true }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("abandoned"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -545,12 +649,34 @@ export const Clarify = endpoint(
 
 export const Correct = endpoint(
   "/live/drafts/correct",
-  ({ session, candidate, request, user, at, brief }) =>
+  ({ session, candidate, request, user, at, continued, brief }) =>
     receive({ session, candidate, request }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief: continued }),
+        theDraftRoot({ brief: continued }).is({ rootAuthor: user, abandoned: false }),
+      )
         .then(Drafting.correct({ author: user, candidate, request, at }).responds({ brief }))
         .then(respond({ brief }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief: continued }),
+        theDraftRoot({ brief: continued }).is({ rootAuthor: user, abandoned: true }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("abandoned"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief: continued }),
+        theDraftRoot({ brief: continued }).is.not({ rootAuthor: user }),
+      )
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("not-author"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -611,6 +737,60 @@ export const Refine = endpoint(
   { input: { required: ["session", "questionnaire"] } },
 );
 
+/**
+ * Leave an unfinished line without changing Drafting's own lifecycle. The
+ * line's root author alone may abandon it, and adopted history remains intact.
+ */
+export const Abandon = endpoint(
+  "/live/drafts/abandon",
+  ({ session, brief, user, at, root, trashed }) =>
+    receive({ session, brief }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDraftRoot({ brief }).is({ root, rootAuthor: user, abandoned: false }),
+        no(Drafting._line({ brief: root }).is({ adopted: true })),
+      )
+        .then(DraftTrashing.trash({ item: root, by: user, at }).responds({ item: trashed }))
+        .then(respond({ brief: trashed }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDraftRoot({ brief }).is({ root, rootAuthor: user, abandoned: false }),
+        Drafting._line({ brief: root }).is({ adopted: true }),
+      )
+        .then(respond({ error: "ALREADY_ADOPTED" }))
+        .named("adopted"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDraftRoot({ brief }).is({ rootAuthor: user, abandoned: true }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("abandoned"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDraftRoot({ brief }).is.not({ rootAuthor: user }),
+      )
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("not-author"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(Drafting._rootOf({ brief })),
+      )
+        .then(respond({ error: "BRIEF_NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "brief"] } },
+);
+
 export const Adopt = endpoint(
   "/live/drafts/adopt",
   ({ session, candidate, user, at, brief, questionnaire, form, adopted }) =>
@@ -620,6 +800,7 @@ export const Adopt = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Drafting._candidate({ candidate }).is({ brief }),
+        theDraftRoot({ brief }).is({ rootAuthor: user, abandoned: false }),
         no(Drafting._originOf({ brief })),
       )
         .then(Drafting.adopt({ candidate }).responds({ candidate: adopted }))
@@ -630,6 +811,7 @@ export const Adopt = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Drafting._candidate({ candidate }).is({ brief, form }),
+        theDraftRoot({ brief }).is({ rootAuthor: user, abandoned: false }),
         Drafting._originOf({ brief }).is({ origin: questionnaire }),
         questionnaireHasNoOpenRun({ questionnaire }),
         Questioning._getQuestionnaire({ questionnaire }).is({ form, retired: false }),
@@ -637,6 +819,22 @@ export const Adopt = endpoint(
         .then(Drafting.adopt({ candidate }).responds({ candidate: adopted }))
         .then(respond({ candidate: adopted }))
         .named("refit"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief }),
+        theDraftRoot({ brief }).is({ rootAuthor: user, abandoned: true }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("abandoned"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief }),
+        theDraftRoot({ brief }).is.not({ rootAuthor: user }),
+      )
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("not-author"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),

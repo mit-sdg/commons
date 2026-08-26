@@ -1,7 +1,21 @@
 import type { Collection, Db } from "mongodb";
 import {
+  normalizeQuestionMaterial,
+  normalizeTitle,
+  QUESTIONING_LIMITS,
+  type QuestionMaterialViolation,
+} from "./constraints.ts";
+import {
+  DuplicateChoices,
+  InvalidChoices,
+  InvalidExpected,
+  InvalidExplanation,
+  InvalidPrompt,
+  InvalidReference,
+  InvalidTitle,
   NotSiblings,
   QuestionNotFound,
+  QuestionLimitReached,
   QuestionnaireNotFound,
   QuestionnaireRetired,
   UnknownDisclosure,
@@ -10,6 +24,34 @@ import {
 
 const FORMS = ["quiz", "survey"];
 const LEVELS = ["score", "answers", "explanations"];
+function normalizedTitle(title: string): string {
+  const result = normalizeTitle(title);
+  if (!result.ok) throw new InvalidTitle(result.violation.message);
+  return result.value;
+}
+
+function refuseMaterial(violation: QuestionMaterialViolation): never {
+  const ErrorClass = {
+    prompt: InvalidPrompt,
+    choices: InvalidChoices,
+    duplicateChoices: DuplicateChoices,
+    expected: InvalidExpected,
+    reference: InvalidReference,
+    explanation: InvalidExplanation,
+  }[violation.kind];
+  throw new ErrorClass(violation.message);
+}
+
+function normalizedMaterial(input: {
+  prompt: string;
+  choices: string[];
+  expected: string;
+  explanation: string;
+}) {
+  const result = normalizeQuestionMaterial(input);
+  if (!result.ok) refuseMaterial(result.violation);
+  return result.value;
+}
 
 /**
  * Only a question that offers choices proposes its expected answer; a
@@ -27,6 +69,8 @@ interface QuestionnaireDoc {
   createdAt: Date;
   retired: boolean;
   seq: number;
+  /** Atomic capacity ledger; absent only on questionnaires stored by an earlier floor. */
+  questionPlaces?: number;
 }
 
 interface QuestionDoc {
@@ -67,6 +111,13 @@ export class MongoQuestioningConcept {
     if (doc.retired) {
       throw new QuestionnaireRetired("This questionnaire was retired.");
     }
+    if (doc.questionPlaces === undefined) {
+      const count = await this.questions.countDocuments({ questionnaire });
+      await this.questionnaires.updateOne(
+        { _id: questionnaire, questionPlaces: { $exists: false } },
+        { $set: { questionPlaces: QUESTIONING_LIMITS.questions - count } },
+      );
+    }
     return doc;
   }
 
@@ -89,17 +140,19 @@ export class MongoQuestioningConcept {
     if (!LEVELS.includes(disclosure)) {
       throw new UnknownDisclosure("That is not a disclosure level.");
     }
+    const normalized = normalizedTitle(title);
     const questionnaire = crypto.randomUUID();
     const seq = await this.#nextSeq();
     await this.questionnaires.insertOne({
       _id: questionnaire,
       author,
-      title,
+      title: normalized,
       form,
       disclosure,
       createdAt: at,
       retired: false,
       seq,
+      questionPlaces: QUESTIONING_LIMITS.questions,
     });
     return { questionnaire };
   }
@@ -121,7 +174,8 @@ export class MongoQuestioningConcept {
 
   async retitle({ questionnaire, title }: { questionnaire: string; title: string }) {
     await this.#revisable(questionnaire);
-    await this.questionnaires.updateOne({ _id: questionnaire }, { $set: { title } });
+    const normalized = normalizedTitle(title);
+    await this.questionnaires.updateOne({ _id: questionnaire }, { $set: { title: normalized } });
     return { questionnaire };
   }
 
@@ -141,17 +195,28 @@ export class MongoQuestioningConcept {
     position: number;
   }) {
     await this.#revisable(questionnaire);
-    const question = crypto.randomUUID();
-    await this.questions.insertOne({
-      _id: question,
-      questionnaire,
-      prompt,
-      choices,
-      expected,
-      explanation,
-      position,
-    });
-    return { question };
+    const material = normalizedMaterial({ prompt, choices, expected, explanation });
+    const reserved = await this.questionnaires.updateOne(
+      { _id: questionnaire, retired: false, questionPlaces: { $gt: 0 } },
+      { $inc: { questionPlaces: -1 } },
+    );
+    if (reserved.modifiedCount === 0) {
+      await this.#revisable(questionnaire);
+      throw new QuestionLimitReached("A questionnaire may contain at most 100 questions.");
+    }
+    try {
+      const question = crypto.randomUUID();
+      await this.questions.insertOne({
+        _id: question,
+        questionnaire,
+        ...material,
+        position,
+      });
+      return { question };
+    } catch (error) {
+      await this.questionnaires.updateOne({ _id: questionnaire }, { $inc: { questionPlaces: 1 } });
+      throw error;
+    }
   }
 
   async reviseQuestion({
@@ -174,10 +239,8 @@ export class MongoQuestioningConcept {
       throw new QuestionNotFound(`No question named ${question}`);
     }
     await this.#revisable(doc.questionnaire);
-    await this.questions.updateOne(
-      { _id: question },
-      { $set: { prompt, choices, expected, explanation, position } },
-    );
+    const material = normalizedMaterial({ prompt, choices, expected, explanation });
+    await this.questions.updateOne({ _id: question }, { $set: { ...material, position } });
     return { question };
   }
 
@@ -202,7 +265,13 @@ export class MongoQuestioningConcept {
       throw new QuestionNotFound(`No question named ${question}`);
     }
     await this.#revisable(doc.questionnaire);
-    await this.questions.deleteOne({ _id: question });
+    const removed = await this.questions.deleteOne({ _id: question });
+    if (removed.deletedCount === 1) {
+      await this.questionnaires.updateOne(
+        { _id: doc.questionnaire },
+        { $inc: { questionPlaces: 1 } },
+      );
+    }
     return { question, questionnaire: doc.questionnaire, position: doc.position };
   }
 
@@ -284,6 +353,63 @@ export class MongoQuestioningConcept {
         })),
       },
     ];
+  }
+
+  async present({ questionnaire }: { questionnaire: string }) {
+    const [doc] = await this.questionnaires
+      .aggregate<
+        Pick<QuestionnaireDoc, "title" | "form" | "disclosure" | "retired"> & {
+          questions: QuestionDoc[];
+        }
+      >([
+        { $match: { _id: questionnaire } },
+        {
+          $lookup: {
+            from: "questioning.questions",
+            let: { questionnaire: "$_id" },
+            pipeline: [
+              { $match: { $expr: { $eq: ["$questionnaire", "$$questionnaire"] } } },
+              { $sort: { position: 1 } },
+            ],
+            as: "questions",
+          },
+        },
+      ])
+      .toArray();
+    if (doc === undefined) {
+      throw new QuestionnaireNotFound(`No questionnaire named ${questionnaire}`);
+    }
+    if (doc.retired) {
+      throw new QuestionnaireRetired("This questionnaire was retired.");
+    }
+    const questions = doc.questions.map((question) => ({
+      item: question._id,
+      prompt: question.prompt,
+      choices: question.choices,
+      expected: question.expected,
+      explanation: question.explanation,
+      position: question.position,
+    }));
+    const expectations = questions
+      .filter((question) => question.choices.length > 0 && question.expected !== "")
+      .map((question) => ({
+        item: question.item,
+        expected: question.expected,
+        explanation: question.explanation,
+      }));
+    const presentation = {
+      title: doc.title,
+      form: doc.form,
+      disclosure: doc.disclosure,
+      questions,
+    };
+    return {
+      presentation,
+      form: presentation.form,
+      disclosure: presentation.disclosure,
+      proposes: expectations.length > 0,
+      expectations,
+    };
   }
 
   async _proposesAnswers({ questionnaire }: { questionnaire: string }) {

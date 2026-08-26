@@ -68,6 +68,7 @@ export function QuizQuestionEditor({
   onSave,
   onRemove,
   onMove,
+  onDirtyChange,
 }: {
   index: number;
   /** Null while the question has never been saved. */
@@ -81,6 +82,7 @@ export function QuizQuestionEditor({
   /** Deletes a saved question; simply discards an unsaved one. */
   onRemove: () => Promise<void>;
   onMove?: (direction: -1 | 1) => Promise<void>;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const unsaved = question === null;
   const saved = question ?? BLANK;
@@ -97,9 +99,14 @@ export function QuizQuestionEditor({
   );
   const [explanation, setExplanation] = useState(saved.explanation);
   const [busy, setBusy] = useState(false);
+  const onDirtyChangeRef = useRef(onDirtyChange);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const choiceRefs = useRef<(HTMLInputElement | null)[]>([]);
   const caretRow = useRef<number | null>(null);
+
+  useEffect(() => {
+    onDirtyChangeRef.current = onDirtyChange;
+  }, [onDirtyChange]);
 
   // A fresh card is where the author is already looking, so put the caret there.
   useEffect(() => {
@@ -124,11 +131,19 @@ export function QuizQuestionEditor({
       : correct === null
         ? ""
         : (choices[correct] ?? "").trim();
+  const normalizedPrompt = prompt.trim();
+  const normalizedExplanation = isQuiz ? explanation.trim() : "";
   const dirty =
-    prompt !== saved.prompt ||
+    normalizedPrompt !== saved.prompt ||
     cleaned.join("\n") !== saved.choices.join("\n") ||
     expected !== saved.expected ||
-    explanation !== saved.explanation;
+    normalizedExplanation !== saved.explanation;
+  const duplicateChoices = cleaned.some(
+    (choice, row) =>
+      cleaned.findIndex(
+        (candidate) => candidate.toLowerCase() === choice.toLowerCase(),
+      ) !== row,
+  );
   // A saved answer that no longer matches any row would save back as ungraded;
   // say so until a row is marked.
   const stray =
@@ -137,6 +152,11 @@ export function QuizQuestionEditor({
     correct === null &&
     saved.expected !== "" &&
     !cleaned.includes(saved.expected);
+
+  useEffect(() => {
+    onDirtyChangeRef.current?.(dirty);
+    return () => onDirtyChangeRef.current?.(false);
+  }, [dirty]);
 
   function editChoice(row: number, text: string) {
     setChoices((prev) => prev.map((choice, i) => (i === row ? text : choice)));
@@ -183,10 +203,10 @@ export function QuizQuestionEditor({
     setBusy(true);
     try {
       await onSave({
-        prompt: prompt.trim(),
+        prompt: normalizedPrompt,
         choices: cleaned,
         expected,
-        explanation: isQuiz ? explanation.trim() : "",
+        explanation: normalizedExplanation,
       });
     } finally {
       setBusy(false);
@@ -214,6 +234,7 @@ export function QuizQuestionEditor({
       <Input
         id={field("explanation")}
         value={explanation}
+        maxLength={2000}
         disabled={locked || busy}
         onChange={(event) => setExplanation(event.target.value)}
       />
@@ -286,6 +307,7 @@ export function QuizQuestionEditor({
             id={field("prompt")}
             ref={promptRef}
             value={prompt}
+            maxLength={10000}
             rows={2}
             disabled={locked || busy}
             placeholder="What are you asking?"
@@ -333,6 +355,7 @@ export function QuizQuestionEditor({
                       choiceRefs.current[row] = element;
                     }}
                     value={choice}
+                    maxLength={500}
                     aria-label={`Choice ${row + 1}`}
                     disabled={locked || busy}
                     onChange={(event) => editChoice(row, event.target.value)}
@@ -354,7 +377,7 @@ export function QuizQuestionEditor({
           <Button
             size="sm"
             variant="outline"
-            disabled={locked || busy}
+            disabled={locked || busy || choices.length >= 50}
             onClick={appendChoice}
           >
             <Plus /> Add choice
@@ -362,6 +385,11 @@ export function QuizQuestionEditor({
           {stray ? (
             <p className="text-xs text-destructive">
               Answer does not match any choice.
+            </p>
+          ) : null}
+          {duplicateChoices ? (
+            <p className="text-xs text-destructive">
+              Choice labels must be different, ignoring capitalization.
             </p>
           ) : null}
         </div>
@@ -379,6 +407,7 @@ export function QuizQuestionEditor({
                 <Input
                   id={field("reference")}
                   value={reference}
+                  maxLength={2000}
                   disabled={locked || busy}
                   onChange={(event) => setReference(event.target.value)}
                 />
@@ -394,7 +423,13 @@ export function QuizQuestionEditor({
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <Button
           size="sm"
-          disabled={locked || busy || !dirty || prompt.trim() === ""}
+          disabled={
+            locked ||
+            busy ||
+            !dirty ||
+            normalizedPrompt === "" ||
+            duplicateChoices
+          }
           onClick={() => void save()}
         >
           {busy ? "Saving…" : "Save question"}

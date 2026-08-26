@@ -1,6 +1,7 @@
 import {
-  each,
+  compute,
   former,
+  is,
   no,
   now,
   reaction,
@@ -19,8 +20,9 @@ import {
   runIsOpen,
 } from "./policy.ts";
 import { concepts } from "../../concepts.ts";
+import { computations } from "../../concepts.ts";
 
-const { Publishing, Questioning, Responding, Scoring, Sharing } = concepts;
+const { Locating, Publishing, Responding, RunSnapshotting, Scoring, Sharing } = concepts;
 
 /**
  * What a participant meets on arrival: the run, whether it is open, and its
@@ -29,18 +31,19 @@ const { Publishing, Questioning, Responding, Scoring, Sharing } = concepts;
  */
 export const theParticipantFace = former(
   "the face of (run)",
-  ({ run }, { questionnaire, title, form, open, question, prompt, choices, position }) =>
+  ({ run }, { open, presentation, title, form, questions }) =>
     where(
-      Publishing._edition({ edition: run }).is({ material: questionnaire, open }),
-      Questioning._getQuestionnaire({ questionnaire }).is({ title, form }),
+      Publishing._edition({ edition: run }).is({ open }),
+      RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+      compute(computations.snapshotTitle, { value: presentation }, title),
+      compute(computations.snapshotForm, { value: presentation }, form),
+      compute(computations.participantQuestions, { value: presentation }, questions),
     ).form({
       run,
       title,
       form,
       open,
-      questions: each(
-        Questioning._getQuestions({ questionnaire }).is({ question, prompt, choices, position }),
-      ).form({ question, prompt, choices, position }),
+      questions,
     }),
 ).optional();
 
@@ -49,8 +52,8 @@ export const theParticipantFace = former(
  * levels that reveal answers also carry the written-answer questions keeping a
  * reference, each beside what the participant wrote: the key holds proposed
  * expectations alone, so a written answer is read against its reference and
- * never measured. References come live from Questioning, as the board's
- * questions do — a questionnaire cannot be edited while its run stands open.
+ * never measured. Every receipt row comes from the run's captured presentation,
+ * so later work on the questionnaire cannot rewrite an earlier hand-in.
  */
 export const theScoreOutcome = former(
   "the score outcome of (response)",
@@ -64,112 +67,39 @@ export const theScoreOutcome = former(
 
 export const theAnswersOutcome = former(
   "the answers outcome of (response)",
-  (
-    { response },
-    {
-      run,
-      key,
-      questionnaire,
-      disclosure,
-      score,
-      outOf,
-      item,
-      expected,
-      prompt,
-      value,
-      written,
-      writtenPrompt,
-      reference,
-      writtenValue,
-    },
-  ) =>
+  ({ response }, { run, key, presentation, disclosure, score, outOf, answers, receipt }) =>
     where(
       Responding._response({ response }).is({ subject: run, submitted: true }),
-      Publishing._edition({ edition: run }).is({ material: questionnaire }),
+      RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
       Scoring._keyFor({ subject: run }).is({ key, disclosure }),
       whether(Scoring._resultFor({ key, submission: response }).is({ score, outOf })),
+      Responding._collectedAnswers({ response }).is({ answers }),
+      compute(computations.answerReceipt, { value: presentation, answers }, receipt),
     ).form({
       response,
       disclosure,
       score,
       outOf,
-      items: each(Scoring._expectations({ key }).is({ item, expected }))
-        .where(
-          Questioning._getQuestion({ question: item }).is({ prompt }),
-          whether(Responding._answers({ response }).is({ item, value })),
-        )
-        .form({ item, prompt, expected, value }),
-      references: each(
-        Questioning._references({ questionnaire }).is({
-          question: written,
-          prompt: writtenPrompt,
-          expected: reference,
-        }),
-      )
-        .where(
-          whether(Responding._answers({ response }).is({ item: written, value: writtenValue })),
-        )
-        .form({ item: written, prompt: writtenPrompt, reference, value: writtenValue }),
+      receipt,
     }),
 ).optional();
 
 export const theExplanationsOutcome = former(
   "the explained outcome of (response)",
-  (
-    { response },
-    {
-      run,
-      key,
-      questionnaire,
-      disclosure,
-      score,
-      outOf,
-      item,
-      expected,
-      explanation,
-      prompt,
-      value,
-      written,
-      writtenPrompt,
-      reference,
-      writtenExplanation,
-      writtenValue,
-    },
-  ) =>
+  ({ response }, { run, key, presentation, disclosure, score, outOf, answers, receipt }) =>
     where(
       Responding._response({ response }).is({ subject: run, submitted: true }),
-      Publishing._edition({ edition: run }).is({ material: questionnaire }),
+      RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
       Scoring._keyFor({ subject: run }).is({ key, disclosure }),
       whether(Scoring._resultFor({ key, submission: response }).is({ score, outOf })),
+      Responding._collectedAnswers({ response }).is({ answers }),
+      compute(computations.explanationReceipt, { value: presentation, answers }, receipt),
     ).form({
       response,
       disclosure,
       score,
       outOf,
-      items: each(Scoring._expectations({ key }).is({ item, expected, explanation }))
-        .where(
-          Questioning._getQuestion({ question: item }).is({ prompt }),
-          whether(Responding._answers({ response }).is({ item, value })),
-        )
-        .form({ item, prompt, expected, explanation, value }),
-      references: each(
-        Questioning._references({ questionnaire }).is({
-          question: written,
-          prompt: writtenPrompt,
-          expected: reference,
-          explanation: writtenExplanation,
-        }),
-      )
-        .where(
-          whether(Responding._answers({ response }).is({ item: written, value: writtenValue })),
-        )
-        .form({
-          item: written,
-          prompt: writtenPrompt,
-          reference,
-          explanation: writtenExplanation,
-          value: writtenValue,
-        }),
+      receipt,
     }),
 ).optional();
 
@@ -191,6 +121,16 @@ export const Arrive = endpoint(
       .then(Sharing.open({ token }).responds({ subject: run }))
       .then(respond({ face: theParticipantFace({ run }) })),
   { input: { required: ["token"] } },
+);
+
+/** Turn the room-friendly code into the existing participation token. */
+export const Locate = endpoint(
+  "/live/p/locate",
+  ({ code, run, token }) =>
+    receive({ code })
+      .then(Locating.locate({ code }).responds({ subject: run }))
+      .then(where(Sharing._sharesFor({ subject: run }).is({ token })).then(respond({ token }))),
+  { input: { required: ["code"] } },
 );
 
 export const Begin = endpoint(
@@ -257,14 +197,15 @@ export const Answer = endpoint(
 
 export const Submit = endpoint(
   "/live/p/submit",
-  ({ response, run, questionnaire, at, submitted }) =>
+  ({ response, run, presentation, form, at, submitted }) =>
     receive({ response }).then(
       where(
         now(at),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
-        Publishing._edition({ edition: run }).is({ material: questionnaire }),
-        Questioning._getQuestionnaire({ questionnaire }).is({ form: "survey" }),
+        RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+        compute(computations.snapshotForm, { value: presentation }, form),
+        is.among(form, ["survey"]),
       )
         .then(Responding.submit({ response, at }).responds({ response: submitted }))
         .then(respond({ response: submitted }))
@@ -273,8 +214,9 @@ export const Submit = endpoint(
         now(at),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
-        Publishing._edition({ edition: run }).is({ material: questionnaire }),
-        Questioning._getQuestionnaire({ questionnaire }).is({ form: "quiz" }),
+        RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+        compute(computations.snapshotForm, { value: presentation }, form),
+        is.among(form, ["quiz"]),
         responseIsWhole({ response }),
       )
         .then(Responding.submit({ response, at }).responds({ response: submitted }))
@@ -283,8 +225,9 @@ export const Submit = endpoint(
       where(
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
-        Publishing._edition({ edition: run }).is({ material: questionnaire }),
-        Questioning._getQuestionnaire({ questionnaire }).is({ form: "quiz" }),
+        RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+        compute(computations.snapshotForm, { value: presentation }, form),
+        is.among(form, ["quiz"]),
         responseIsNotWhole({ response }),
       )
         .then(respond({ error: "INCOMPLETE" }))

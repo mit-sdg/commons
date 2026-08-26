@@ -10,6 +10,7 @@ const PUBLIC_PATHS = new Set([
   "/live/p/answer",
   "/live/p/arrive",
   "/live/p/begin",
+  "/live/p/locate",
   "/live/p/outcome",
   "/live/p/submit",
   "/auth/accept-invitation",

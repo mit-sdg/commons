@@ -9,7 +9,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
 import {
@@ -137,13 +137,19 @@ function draftingHistory(provenance: Provenance | null) {
       brief: line.brief,
       createdAt: line.createdAt,
       label: "Drafted",
-      status: null as string | null,
+      status: line.abandoned ? "abandoned" : (null as string | null),
     })),
     ...provenance.refined.map((line) => ({
       brief: line.brief,
       createdAt: line.createdAt,
       label: "Refined",
-      status: line.adopted ? null : line.stalled ? "stalled" : "open",
+      status: line.abandoned
+        ? "abandoned"
+        : line.adopted
+          ? null
+          : line.stalled
+            ? "stalled"
+            : "open",
     })),
   ];
 }
@@ -166,12 +172,59 @@ function QuestionnaireDesk({
   // A question being written but not yet added: it lives here, never on the
   // server, so a placeholder can never ride into a run.
   const [adding, setAdding] = useState(false);
+  const [dirtyQuestions, setDirtyQuestions] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const isQuiz = sheet.form === "quiz";
   const openRun = sheet.runs.find((run) => run.open) ?? null;
   const locked = openRun !== null || sheet.retired;
   const questions = sheet.questions;
   const runOpen = openRun !== null;
+  const titleDirty = title.trim() !== sheet.title;
+  const hasUnsavedChanges = titleDirty || adding || dirtyQuestions.size > 0;
+
+  const questionDirty = useCallback((question: string, dirty: boolean) => {
+    setDirtyQuestions((standing) => {
+      const next = new Set(standing);
+      if (dirty) next.add(question);
+      else next.delete(question);
+      return next;
+    });
+  }, []);
+
+  // Explicit saves make the boundary understandable, but leaving must not
+  // silently discard the browser-held question or title draft.
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    const guardLink = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest("a[href]");
+      if (!(link instanceof HTMLAnchorElement)) return;
+      const destination = new URL(link.href, window.location.href);
+      if (destination.href === window.location.href) return;
+      if (!window.confirm("Leave without saving your changes?")) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    const guardHistory = () => {
+      if (!window.confirm("Leave without saving your changes?")) {
+        window.history.forward();
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    window.addEventListener("popstate", guardHistory);
+    document.addEventListener("click", guardLink, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      window.removeEventListener("popstate", guardHistory);
+      document.removeEventListener("click", guardLink, true);
+    };
+  }, [hasUnsavedChanges]);
 
   useEffect(() => {
     if (!runOpen) return;
@@ -192,7 +245,7 @@ function QuestionnaireDesk({
       ? "Add a question first."
       : isQuiz && !answerable
         ? QUIZ_NOT_READY_MESSAGE
-        : busy || title.trim() !== sheet.title
+        : busy || hasUnsavedChanges
           ? "Save changes before launching."
           : undefined;
 
@@ -331,11 +384,14 @@ function QuestionnaireDesk({
               <Input
                 id="sheet-title"
                 value={title}
+                maxLength={200}
+                aria-invalid={title.trim() === ""}
                 disabled={locked || busy}
                 onChange={(event) => setTitle(event.target.value)}
-                onBlur={() => void retitle()}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") event.currentTarget.blur();
+                  if (event.key === "Enter" && title.trim() !== "") {
+                    void retitle();
+                  }
                 }}
               />
               {title.trim() !== sheet.title && title.trim() !== "" ? (
@@ -348,6 +404,9 @@ function QuestionnaireDesk({
                 </Button>
               ) : null}
             </div>
+            {title.trim() === "" ? (
+              <p className="text-xs text-destructive">Enter a title.</p>
+            ) : null}
           </div>
 
           {isQuiz ? (
@@ -357,7 +416,7 @@ function QuestionnaireDesk({
               </Label>
               <Select
                 value={disclosure}
-                disabled={locked || busy}
+                disabled={locked || busy || hasUnsavedChanges}
                 onValueChange={(value) => {
                   if (isDisclosure(value)) void changeDisclosure(value);
                 }}
@@ -392,7 +451,7 @@ function QuestionnaireDesk({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={locked || busy}
+                disabled={locked || busy || hasUnsavedChanges}
                 onClick={() => void refine()}
               >
                 <Sparkles /> Refine with AI
@@ -400,7 +459,7 @@ function QuestionnaireDesk({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={locked || busy || adding}
+                disabled={locked || busy || adding || questions.length >= 100}
                 onClick={() => setAdding(true)}
               >
                 <Plus /> Add question
@@ -424,6 +483,9 @@ function QuestionnaireDesk({
                   onSave={(draft) => saveQuestion(question, draft)}
                   onRemove={() => removeQuestion(question)}
                   onMove={(direction) => moveQuestion(question, direction)}
+                  onDirtyChange={(dirty) =>
+                    questionDirty(question.question, dirty)
+                  }
                 />
               ))}
               {adding ? (
@@ -435,6 +497,7 @@ function QuestionnaireDesk({
                   locked={locked || busy}
                   onSave={addQuestion}
                   onRemove={async () => setAdding(false)}
+                  onDirtyChange={(dirty) => questionDirty("new", dirty)}
                 />
               ) : null}
             </div>

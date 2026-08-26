@@ -237,6 +237,7 @@ export function DraftStep({
   waiting,
   busy,
   adopting,
+  editable,
   refiningForm,
   onClarify,
   onCorrect,
@@ -249,6 +250,7 @@ export function DraftStep({
   waiting: boolean;
   busy: boolean;
   adopting: boolean;
+  editable: boolean;
   refiningForm: DraftLineStep["form"];
   onClarify: (clarification: string, answer: string) => void;
   onCorrect: (candidate: string, request: string) => void;
@@ -276,6 +278,7 @@ export function DraftStep({
         <Badge variant="secondary">Step {position}</Badge>
         {isTip ? <Badge variant="outline">Current</Badge> : null}
         {step.adopted ? <Badge>Adopted</Badge> : null}
+        {step.abandoned ? <Badge variant="outline">Abandoned</Badge> : null}
       </div>
 
       <div className="rounded-xl border border-border bg-muted/40 px-4 py-3">
@@ -294,7 +297,7 @@ export function DraftStep({
         />
       ))}
 
-      {openClarification && isTip ? (
+      {openClarification && isTip && editable ? (
         <ClarificationPrompt
           clarification={openClarification}
           busy={busy}
@@ -339,7 +342,7 @@ export function DraftStep({
               </p>
             )}
 
-            {isTip ? (
+            {isTip && editable ? (
               <div className="space-y-4 border-t border-border pt-4">
                 {step.adopted ? (
                   <div className="space-y-2">
@@ -402,7 +405,7 @@ export function DraftStep({
         </Card>
       ) : null}
 
-      {isTip && waiting ? (
+      {isTip && waiting && editable ? (
         <div
           role="status"
           aria-live="polite"
@@ -414,7 +417,7 @@ export function DraftStep({
         </div>
       ) : null}
 
-      {isTip && step.stalled ? (
+      {isTip && step.stalled && editable ? (
         <div className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3">
           <p className="flex items-start gap-2 text-sm text-destructive">
             <CircleAlert className="mt-0.5 size-4 shrink-0" />

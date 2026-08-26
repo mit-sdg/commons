@@ -163,4 +163,27 @@ export class MongoRespondingConcept {
     const docs = await this.answers.find({ response }).sort({ seq: 1 }).toArray();
     return [{ answers: docs.map((entry) => ({ item: entry.item, value: entry.value })) }];
   }
+
+  async _valuesForSubject({ subject }: { subject: string }) {
+    const submitted = await this.responses
+      .find({ subject, submitted: true })
+      .sort({ submittedAt: 1, seq: 1 })
+      .toArray();
+    const values: { response: string; participant: string; item: string; value: string }[] = [];
+    for (const response of submitted) {
+      const answers = await this.answers
+        .find({ response: response._id })
+        .sort({ seq: 1 })
+        .toArray();
+      for (const answer of answers) {
+        values.push({
+          response: response._id,
+          participant: response.participant,
+          item: answer.item,
+          value: answer.value,
+        });
+      }
+    }
+    return { values };
+  }
 }

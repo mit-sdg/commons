@@ -7,6 +7,11 @@ const ALLOWED_DEV_ORIGINS = allowedDevOriginsFromPublicOrigin(process.env.PUBLIC
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ALLOWED_DEV_ORIGINS,
+  // The participant destination is public configuration, embedded for the
+  // client that draws QR codes. Production already requires PUBLIC_ORIGIN.
+  env: {
+    NEXT_PUBLIC_PARTICIPANT_ORIGIN: process.env.PUBLIC_ORIGIN ?? "",
+  },
   output: "standalone",
   outputFileTracingRoot: join(__dirname, ".."),
   experimental: {

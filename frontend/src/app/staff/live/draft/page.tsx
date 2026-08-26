@@ -4,6 +4,7 @@ import { ArrowLeft, FileQuestion } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
 import { DraftDescribe } from "@/components/live/draft-describe";
 import type { DraftLineStep } from "@/components/live/draft-step";
@@ -70,7 +71,7 @@ function isWaiting(line: DraftLineStep[]): boolean {
 /** A line with nothing left to do on it: adopted at the tip, or gone entirely. */
 function isFinished(line: DraftLineStep[]): boolean {
   const tip = line.at(-1);
-  return tip === undefined || tip.adopted;
+  return tip === undefined || tip.adopted || tip.abandoned;
 }
 
 function DraftPageContent() {
@@ -166,6 +167,24 @@ function DraftPageContent() {
     setAdoptNote(null);
     setLoadingLine(false);
   }, [author, named, router]);
+
+  const abandon = useCallback(async () => {
+    if (brief === null) return;
+    setBusy(true);
+    try {
+      const result = await api["/live/drafts/abandon"]({ brief });
+      if (isApiError(result)) {
+        toast.error(publicErrorMessage(result.error));
+        return;
+      }
+      toast.success("Draft left in history");
+      startNewDraft();
+    } catch {
+      toast.error("The draft could not be left. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }, [brief, startNewDraft]);
 
   const describe = useCallback(
     async (request: string) => {
@@ -270,12 +289,16 @@ function DraftPageContent() {
     onDescribeSurface ? () => api["/live/drafts/lines"]({}).then(unwrap) : null,
     [onDescribeSurface],
   );
-  const unfinished = (lines?.lines ?? []).filter((entry) => !entry.adopted);
+  const unfinished = (lines?.lines ?? []).filter(
+    (entry) => !entry.adopted && !entry.abandoned,
+  );
 
   const tip = line.at(-1) ?? null;
   const waiting = isWaiting(line);
   const refining = tip?.refines ?? null;
   const refiningForm = line.find((step) => step.refines !== null)?.form ?? null;
+  const abandoned = tip?.abandoned ?? false;
+  const ownsLine = tip !== null && author === String(tip.rootAuthor);
 
   return (
     <PageContainer>
@@ -293,10 +316,19 @@ function DraftPageContent() {
         }
         title={refining !== null ? "Refine with AI" : "Draft with AI"}
         actions={
-          brief !== null ? (
-            <Button variant="outline" onClick={startNewDraft}>
-              Start a new draft
-            </Button>
+          brief !== null && !abandoned && !tip?.adopted && ownsLine ? (
+            <ConfirmAction
+              trigger={
+                <Button variant="outline" disabled={busy}>
+                  Abandon and start new
+                </Button>
+              }
+              title="Leave this draft?"
+              description="It will leave your unfinished drafts and stay available as read-only history."
+              confirmLabel="Leave draft"
+              destructive
+              onConfirm={abandon}
+            />
           ) : null
         }
       />
@@ -350,6 +382,16 @@ function DraftPageContent() {
         />
       ) : (
         <div className="space-y-8">
+          {abandoned ? (
+            <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+              This draft was left unfinished. It is retained as read-only
+              history.
+            </div>
+          ) : !ownsLine ? (
+            <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+              This draft belongs to another author and is read-only.
+            </div>
+          ) : null}
           {lineError !== null ? (
             <p
               role="status"
@@ -368,11 +410,12 @@ function DraftPageContent() {
               waiting={waiting}
               busy={busy}
               adopting={adopting}
+              editable={ownsLine && !abandoned}
               refiningForm={refiningForm}
               onClarify={clarify}
               onCorrect={correct}
               onAdopt={adopt}
-              onStartOver={startNewDraft}
+              onStartOver={abandon}
             />
           ))}
 

@@ -1,8 +1,9 @@
-import { count, is, no, view, where } from "@mit-sdg/sync-engine/language";
-import { concepts } from "../../concepts.ts";
+import { compute, count, is, no, view, where } from "@mit-sdg/sync-engine/language";
+import { computations, concepts } from "../../concepts.ts";
 import { ADMINISTER, COMMONS } from "../access/capabilities.ts";
 
-const { Drafting, Publishing, Questioning, Responding, Roling, Scoring } = concepts;
+const { Drafting, Publishing, Questioning, Responding, Roling, RunSnapshotting, Scoring } =
+  concepts;
 
 /** How many questions the questionnaire holds; contiguity makes it the last position. */
 export const theQuestionCount = view(
@@ -63,50 +64,46 @@ export const questionnaireHasNoOpenRun = view(
 
 export const questionBelongsToRun = view(
   "(question) belongs to (run)",
-  ({ question, run }, _outputs, { questionnaire }) =>
+  ({ question, run }, _outputs, { presentation, belongs }) =>
     where(
-      Publishing._edition({ edition: run }).is({ material: questionnaire }),
-      Questioning._getQuestion({ question }).is({ questionnaire }),
+      RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+      compute(computations.snapshotHasQuestion, { value: presentation, question }, belongs),
+      is.among(belongs, [true]),
     ),
 ).holds();
 
 export const questionIsNotOfRun = view(
   "(question) is not part of (run)",
-  ({ question, run }, _outputs, { questionnaire }) => [
-    where(no(Questioning._getQuestion({ question }))),
+  ({ question, run }, _outputs, { presentation, belongs }) =>
     where(
-      Publishing._edition({ edition: run }).is({ material: questionnaire }),
-      Questioning._getQuestion({ question }).is.not({ questionnaire }),
+      RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+      compute(computations.snapshotHasQuestion, { value: presentation, question }, belongs),
+      is.among(belongs, [false]),
     ),
-  ],
 ).holds();
 
-/**
- * A quiz is handed in whole. The answer endpoint only admits the run's own
- * questions, so a response's answers never outnumber them and reaching the
- * question count means every question is answered.
- */
+/** A quiz is whole when every question captured for this run has an answer. */
 export const responseIsWhole = view(
   "(response) answers every question",
-  ({ response }, _outputs, { run, questionnaire, answered, total }) =>
+  ({ response }, _outputs, { run, presentation, answers, whole }) =>
     where(
       Responding._response({ response }).is({ subject: run }),
-      Publishing._edition({ edition: run }).is({ material: questionnaire }),
-      count(Responding._answers, { response }, answered),
-      count(Questioning._getQuestions, { questionnaire }, total),
-      is.ge(answered, total),
+      RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+      Responding._collectedAnswers({ response }).is({ answers }),
+      compute(computations.snapshotIsWhole, { value: presentation, answers }, whole),
+      is.among(whole, [true]),
     ),
 ).holds();
 
 export const responseIsNotWhole = view(
   "(response) leaves a question unanswered",
-  ({ response }, _outputs, { run, questionnaire, answered, total }) =>
+  ({ response }, _outputs, { run, presentation, answers, whole }) =>
     where(
       Responding._response({ response }).is({ subject: run }),
-      Publishing._edition({ edition: run }).is({ material: questionnaire }),
-      count(Responding._answers, { response }, answered),
-      count(Questioning._getQuestions, { questionnaire }, total),
-      is.lt(answered, total),
+      RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+      Responding._collectedAnswers({ response }).is({ answers }),
+      compute(computations.snapshotIsWhole, { value: presentation, answers }, whole),
+      is.among(whole, [false]),
     ),
 ).holds();
 

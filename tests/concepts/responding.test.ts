@@ -151,6 +151,26 @@ for (const [floor, make] of floors) {
       expect(await responding._collectedAnswers({ response: "no-such" })).toEqual([]);
     });
 
+    test("_valuesForSubject collects submitted values in hand-in and answer order", async () => {
+      const responding = await make();
+      const first = await responding.begin({ participant: "leon", subject: "quiz", at });
+      const second = await responding.begin({ participant: "mira", subject: "quiz", at: later });
+      await responding.answer({ response: first.response, item: "q2", value: "b" });
+      await responding.answer({ response: first.response, item: "q1", value: "a" });
+      await responding.answer({ response: second.response, item: "q1", value: "z" });
+      await responding.submit({ response: second.response, at: later });
+      await responding.submit({ response: first.response, at });
+
+      expect(await responding._valuesForSubject({ subject: "quiz" })).toEqual({
+        values: [
+          { response: first.response, participant: "leon", item: "q2", value: "b" },
+          { response: first.response, participant: "leon", item: "q1", value: "a" },
+          { response: second.response, participant: "mira", item: "q1", value: "z" },
+        ],
+      });
+      expect(await responding._valuesForSubject({ subject: "no-such" })).toEqual({ values: [] });
+    });
+
     test("queries answer nothing for responses and pairings that do not exist", async () => {
       const responding = await make();
       expect(await responding._response({ response: "no-such" })).toEqual([]);

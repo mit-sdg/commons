@@ -1,45 +1,33 @@
-import {
-  each,
-  former,
-  no,
-  now,
-  reaction,
-  when,
-  where,
-  whether,
-} from "@mit-sdg/sync-engine/language";
+import { compute, each, former, is, no, now, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
 import { mayHostLive, mayNotHostLive } from "./policy.ts";
-import { concepts } from "../../concepts.ts";
+import { computations, concepts } from "../../concepts.ts";
 
-const { Profiling, Publishing, Questioning, Responding, Scoring, Sharing } = concepts;
-
-/**
- * Publishing a quiz establishes its key from the authored expectations and
- * disclosure, whole, before any participant can reach the run — the share
- * token is issued to the caller only after the same occurrence.
- */
-export const PublishedQuizEstablishesKey = reaction(
-  ({ questionnaire, run, disclosure, expectations }) =>
-    when(Publishing.publish({ material: questionnaire }).responds({ edition: run }))
-      .where(
-        Questioning._getQuestionnaire({ questionnaire }).is({ form: "quiz", disclosure }),
-        Questioning._expectedAnswers({ questionnaire }).is({ expectations }),
-      )
-      .then(Scoring.establish({ subject: run, disclosure, expectations })),
-);
+const {
+  Locating,
+  Profiling,
+  Publishing,
+  Questioning,
+  Responding,
+  RunSnapshotting,
+  Scoring,
+  Sharing,
+} = concepts;
 
 /** Every open run, newest first, with its questionnaire and its share token. */
 export const theOpenRuns = former(
   "the open runs",
-  (_inputs, { run, questionnaire, title, form, openedAt, token }) =>
+  (_inputs, { run, questionnaire, presentation, title, form, openedAt, token, code }) =>
     each(Publishing._openEditions({}).is({ edition: run, material: questionnaire, openedAt }))
       .where(
-        Questioning._getQuestionnaire({ questionnaire }).is({ title, form }),
+        RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+        compute(computations.snapshotTitle, { value: presentation }, title),
+        compute(computations.snapshotForm, { value: presentation }, form),
         whether(Sharing._sharesFor({ subject: run }).is({ token })),
+        whether(Locating._for({ subject: run }).is({ code })),
       )
-      .form({ run, questionnaire, title, form, openedAt, token }),
+      .form({ run, questionnaire, title, form, openedAt, token, code }),
 );
 
 /** The live board of one run: counts, questions, and every handed-in value. */
@@ -55,17 +43,12 @@ export const theRunBoard = former(
       openedAt,
       closedAt,
       token,
+      code,
       started,
       handedIn,
-      question,
-      prompt,
-      choices,
-      expected,
-      explanation,
-      position,
-      participant,
-      name,
-      value,
+      presentation,
+      values,
+      questions,
     },
   ) =>
     where(
@@ -75,7 +58,12 @@ export const theRunBoard = former(
         openedAt,
         closedAt,
       }),
-      Questioning._getQuestionnaire({ questionnaire }).is({ title, form }),
+      RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+      Responding._valuesForSubject({ subject: run }).is({ values }),
+      compute(computations.snapshotTitle, { value: presentation }, title),
+      compute(computations.snapshotForm, { value: presentation }, form),
+      compute(computations.boardQuestions, { value: presentation, values }, questions),
+      whether(Locating._for({ subject: run }).is({ code })),
     ).form({
       run,
       questionnaire,
@@ -85,34 +73,12 @@ export const theRunBoard = former(
       openedAt,
       closedAt,
       token: each(Sharing._sharesFor({ subject: run }).is({ token })).first(token),
+      code,
       started: each(Responding._responsesFor({ subject: run }).is({ response: started })).count(),
       handedIn: each(
         Responding._responsesFor({ subject: run }).is({ response: handedIn, submitted: true }),
       ).count(),
-      questions: each(
-        Questioning._getQuestions({ questionnaire }).is({
-          question,
-          prompt,
-          choices,
-          expected,
-          explanation,
-          position,
-        }),
-      ).form({
-        question,
-        prompt,
-        choices,
-        expected,
-        explanation,
-        position,
-        values: each(
-          Responding._valuesFor({ subject: run, item: question }).is({ participant, value }),
-        )
-          .where(
-            whether(Profiling._getProfileFields({ user: participant }).is({ displayName: name })),
-          )
-          .form({ participant, name, value }),
-      }),
+      questions,
     }),
 ).optional();
 
@@ -143,52 +109,90 @@ export const OpenRuns = endpoint("/live/runs/open", ({ session, user, at }) =>
   ),
 );
 
+/**
+ * Presenting is the one coherent authored read for a launch. Every durable run
+ * artifact is derived from that returned value before either address is issued.
+ */
 export const Launch = endpoint(
   "/live/runs/launch",
-  ({ session, questionnaire, user, at, run, token }) =>
-    receive({ session, questionnaire }).then(
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        Questioning._getQuestionnaire({ questionnaire }).is({ form: "quiz" }),
-        Questioning._proposesAnswers({ questionnaire }).is({ proposes: true }),
-      )
-        .then(
-          Publishing.publish({ author: user, material: questionnaire, at }).responds({
-            edition: run,
+  ({
+    session,
+    questionnaire,
+    user,
+    at,
+    presentation,
+    form,
+    disclosure,
+    proposes,
+    expectations,
+    run,
+    snapshot,
+    key,
+    token,
+    code,
+  }) =>
+    receive({ session, questionnaire })
+      .then(
+        where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user })).then(
+          Questioning.present({ questionnaire }).responds({
+            presentation,
+            form,
+            disclosure,
+            proposes,
+            expectations,
           }),
-        )
-        .then(Sharing.issue({ subject: run }).responds({ token }))
-        .then(respond({ run, token }))
-        .named("quiz"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        Questioning._getQuestionnaire({ questionnaire }).is({ form: "quiz" }),
-        Questioning._proposesAnswers({ questionnaire }).is({ proposes: false }),
+        ),
       )
-        .then(respond({ error: "NOT_QUIZ_READY" }))
-        .named("quiz-not-ready"),
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        Questioning._getQuestionnaire({ questionnaire }).is({ form: "survey" }),
-      )
-        .then(
-          Publishing.publish({ author: user, material: questionnaire, at }).responds({
-            edition: run,
-          }),
+      .then(
+        where(
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
+          is.among(form, ["quiz"]),
+          is.among(proposes, [true]),
         )
-        .then(Sharing.issue({ subject: run }).responds({ token }))
-        .then(respond({ run, token }))
-        .named("survey"),
-      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
+          .then(
+            Publishing.publish({ author: user, material: questionnaire, at }).responds({
+              edition: run,
+            }),
+          )
+          .then(
+            RunSnapshotting.capture({ subject: run, value: presentation }).responds({ snapshot }),
+          )
+          .then(Scoring.establish({ subject: run, disclosure, expectations }).responds({ key }))
+          .then(Sharing.issue({ subject: run }).responds({ token }))
+          .then(Locating.ensure({ subject: run }).responds({ code }))
+          .then(respond({ run, token, code }))
+          .named("quiz"),
+        where(
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
+          is.among(form, ["survey"]),
+        )
+          .then(
+            Publishing.publish({ author: user, material: questionnaire, at }).responds({
+              edition: run,
+            }),
+          )
+          .then(
+            RunSnapshotting.capture({ subject: run, value: presentation }).responds({ snapshot }),
+          )
+          .then(Sharing.issue({ subject: run }).responds({ token }))
+          .then(Locating.ensure({ subject: run }).responds({ code }))
+          .then(respond({ run, token, code }))
+          .named("survey"),
+        where(is.among(form, ["quiz"]), is.among(proposes, [false]))
+          .then(respond({ error: "NOT_QUIZ_READY" }))
+          .named("unready-quiz"),
+      ),
   { input: { required: ["session", "questionnaire"] } },
+);
+
+export const LaunchForbidden = endpoint("/live/runs/launch", ({ session, questionnaire, user }) =>
+  receive({ session, questionnaire })
+    .where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+    .then(respond({ error: "FORBIDDEN" })),
 );
 
 export const Close = endpoint(

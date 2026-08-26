@@ -217,7 +217,7 @@ function ShelfRow({
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/staff/live/${entry.questionnaire}`}>
-            <Pencil /> Edit
+            <Pencil /> {entry.retired ? "View" : "Edit"}
           </Link>
         </Button>
 

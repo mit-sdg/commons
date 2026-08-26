@@ -4,6 +4,7 @@ const PUBLIC_PATHS = new Set([
   "/setup",
   "/forgot-password",
   "/reset-password",
+  "/join",
 ]);
 
 /** Participant join pages are reachable from a scanned code, with no account. */

@@ -239,7 +239,7 @@ export function RunQuestionBoard({
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
-      <h3
+      <h2
         dir="auto"
         className="mb-4 font-display text-xl font-semibold text-balance sm:text-2xl"
       >
@@ -247,7 +247,7 @@ export function RunQuestionBoard({
           {index + 1}.
         </span>
         {question.prompt}
-      </h3>
+      </h2>
       {choices.length > 0 ? (
         <div className="space-y-4">
           {tally.map((row, rowIndex) => (
@@ -305,9 +305,9 @@ export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
   if (results.length === 0) {
     return (
       <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
-        <h3 className="font-display text-xl font-semibold sm:text-2xl">
+        <h2 className="font-display text-xl font-semibold sm:text-2xl">
           Scores
-        </h3>
+        </h2>
         <p className="mt-2 text-muted-foreground">
           Nothing has been graded yet.
         </p>
@@ -323,9 +323,9 @@ export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
   return (
     <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-        <h3 className="font-display text-xl font-semibold sm:text-2xl">
+        <h2 className="font-display text-xl font-semibold sm:text-2xl">
           Scores
-        </h3>
+        </h2>
         <p className="text-muted-foreground">
           Average{" "}
           <span className="font-semibold text-foreground tabular-nums">

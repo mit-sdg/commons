@@ -47,18 +47,21 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByRole("button", { name: "Launch" })).toBeEnabled();
 
-  // Launch, landing on the run dashboard with the join address on screen.
+  // Launch, landing on the run dashboard with the room code on screen.
   await page.getByRole("button", { name: "Launch" }).first().click();
   await page.waitForURL(/\/staff\/live\/run\//, { timeout: 20_000 });
   await expect(page.getByText("Handed in", { exact: true })).toBeVisible();
-  const address = await page.locator("figcaption").first().innerText();
-  expect(address).toMatch(/\/q\/[0-9a-f-]{36}$/);
+  const code = await page.locator("figcaption span").first().innerText();
+  expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
 
   // A participant joins from another browser entirely — a phone, effectively.
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const participant = await phone.newPage();
   await signIn(participant, NOAH);
-  await participant.goto(address);
+  await participant.goto("/join");
+  await participant.getByRole("textbox", { name: "Session code" }).fill(code);
+  await participant.getByRole("button", { name: "Join" }).click();
+  await participant.waitForURL(/\/q\/[0-9a-f-]{36}$/);
   await participant.getByRole("button", { name: "Join" }).click();
 
   // The face conceals the answers; the participant supplies their own.
@@ -69,6 +72,16 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   await participant.getByPlaceholder("Your answer").fill("Chlorophyll");
   await participant.getByPlaceholder("Your answer").blur();
   await expect(participant.getByText("2 of 2 answered")).toBeVisible();
+  // The hand-in commits, but its response disappears in transit. Outcome
+  // reconciliation must still move the participant to their receipt.
+  await participant.route(
+    "**/api/live/p/submit",
+    async (route) => {
+      await route.fetch();
+      await route.abort("failed");
+    },
+    { times: 1 },
+  );
   await participant.getByRole("button", { name: "Hand in" }).click();
 
   // Grading lands through the reaction and the score arrives by polling.
@@ -81,7 +94,10 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   await participant.getByRole("button", { name: "Account menu" }).click();
   await participant.getByRole("menuitem", { name: "Sign out" }).click();
   await signIn(participant, PRIYA);
-  await participant.goto(address);
+  await participant.goto("/join");
+  await participant.getByRole("textbox", { name: "Session code" }).fill(code);
+  await participant.getByRole("button", { name: "Join" }).click();
+  await participant.waitForURL(/\/q\/[0-9a-f-]{36}$/);
   await expect(participant.getByRole("button", { name: "Join" })).toBeVisible();
   await expect(participant.getByText("Your score")).toBeHidden();
   await participant.getByRole("button", { name: "Join" }).click();
@@ -106,7 +122,9 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
 
   const late = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const latecomer = await late.newPage();
-  await latecomer.goto(address);
+  await latecomer.goto("/join");
+  await latecomer.getByRole("textbox", { name: "Session code" }).fill(code);
+  await latecomer.getByRole("button", { name: "Join" }).click();
   await expect(latecomer.getByText("This quiz has been closed")).toBeVisible({ timeout: 15_000 });
 
   await phone.close();
@@ -188,4 +206,123 @@ test("an empty quiz can adopt its first AI-generated questions", async ({ page }
   await page.getByRole("button", { name: "Adopt this draft" }).click();
   await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}$/, { timeout: 20_000 });
   await expect(page.getByRole("heading", { name: /Questions \(2\)/ })).toBeVisible();
+});
+
+test("a concurrent launch and edit keep the participant face and scoring key coherent", async ({
+  page,
+}) => {
+  await signIn(page);
+  const postApi = (path: string, body: Record<string, unknown>) =>
+    page.evaluate(
+      async ({ path, body }) => {
+        const response = await fetch(`/api${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(body),
+        });
+        return { status: response.status, body: await response.json() };
+      },
+      { path, body },
+    );
+  const created = (
+    await postApi("/live/quizzes/create", {
+      title: "Race probe",
+      form: "quiz",
+      disclosure: "answers",
+    })
+  ).body as { questionnaire: string };
+  const questionnaire = created.questionnaire;
+  await postApi("/live/quizzes/add-question", {
+    questionnaire,
+    prompt: "Old prompt",
+    choices: [],
+    expected: "Old reference",
+    explanation: "Old explanation",
+  });
+  const authored = (await postApi("/live/quizzes/get", { questionnaire })).body as {
+    questionnaire: { questions: { question: string }[] };
+  };
+  const question = authored.questionnaire.questions[0].question as string;
+
+  const [launchResponse] = await page.evaluate(
+    async ({ questionnaire, question }) => {
+      const post = async (path: string, body: Record<string, unknown>) => {
+        const response = await fetch(`/api${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(body),
+        });
+        return { status: response.status, body: await response.json() };
+      };
+      return Promise.all([
+        post("/live/runs/launch", { questionnaire }),
+        post("/live/quizzes/revise-question", {
+          question,
+          prompt: "New prompt",
+          choices: ["New A", "New B"],
+          expected: "New B",
+          explanation: "New explanation",
+        }),
+      ]);
+    },
+    { questionnaire, question },
+  );
+  expect([200, 409]).toContain(launchResponse.status);
+  const raced = launchResponse.body as {
+    error?: string;
+    run?: string;
+    token?: string;
+  };
+  let launch: { run: string; token: string };
+  if (launchResponse.status === 409) {
+    expect(raced.error).toBe("CONFLICT");
+    const open = (await postApi("/live/runs/open", {})).body as {
+      runs: { questionnaire: string }[];
+    };
+    expect(open.runs.some((entry) => entry.questionnaire === questionnaire)).toBe(false);
+    const retried = await postApi("/live/runs/launch", { questionnaire });
+    expect(retried.status).toBe(200);
+    launch = retried.body as { run: string; token: string };
+  } else {
+    launch = raced as { run: string; token: string };
+  }
+
+  const arrived = (await postApi("/live/p/arrive", { token: launch.token })).body as {
+    face: { questions: { question: string; prompt: string; choices: string[] }[] };
+  };
+  const captured = arrived.face.questions[0];
+  expect(captured).toEqual(
+    expect.objectContaining({ prompt: "New prompt", choices: ["New A", "New B"] }),
+  );
+
+  const begun = (
+    await postApi("/live/p/begin", { token: launch.token, device: "race-probe-device" })
+  ).body as { response: string };
+  await postApi("/live/p/answer", {
+    response: begun.response,
+    question: arrived.face.questions[0].question,
+    value: "New B",
+  });
+  await postApi("/live/p/submit", { response: begun.response });
+  await expect
+    .poll(async () => {
+      const outcome = (await postApi("/live/p/outcome", { response: begun.response })).body as {
+        outcome?: { score?: number };
+      };
+      return outcome.outcome?.score;
+    })
+    .toBe(1);
+
+  const results = (await postApi("/live/runs/results", { run: launch.run })).body as {
+    board: { questions: unknown[] };
+  };
+  expect(results.board.questions[0]).toEqual(
+    expect.objectContaining({
+      prompt: captured.prompt,
+      expected: "New B",
+    }),
+  );
+  await postApi("/live/runs/close", { run: launch.run });
 });

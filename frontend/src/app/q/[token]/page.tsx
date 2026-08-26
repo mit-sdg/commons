@@ -4,7 +4,7 @@ import { CheckCircle2, CircleSlash } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { EmptyState, LoadingState } from "@/components/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,25 +25,19 @@ type Outcome = Output<"/live/p/outcome">;
 type OutcomeShapeOf<T> = T extends { outcome: infer Formed } ? Formed : never;
 type FormedOutcome = OutcomeShapeOf<Outcome>;
 type ScoredOutcome = NonNullable<FormedOutcome>;
-type OutcomeItem = Extract<ScoredOutcome, { items: unknown }>["items"][number];
-type OutcomeReference = Extract<
+type OutcomeReceipt = Extract<
   ScoredOutcome,
-  { references: unknown }
->["references"][number];
+  { receipt: unknown }
+>["receipt"][number];
 
 const formedOutcomeOf = (result: Outcome): FormedOutcome | undefined =>
   "outcome" in result ? result.outcome : undefined;
 
-const itemsOf = (formed: ScoredOutcome): OutcomeItem[] | undefined =>
-  "items" in formed ? formed.items : undefined;
+const receiptOf = (formed: ScoredOutcome): OutcomeReceipt[] | undefined =>
+  "receipt" in formed ? formed.receipt : undefined;
 
-/** Written-answer questions the author kept an answer beside; never scored. */
-const referencesOf = (formed: ScoredOutcome): OutcomeReference[] | undefined =>
-  "references" in formed ? formed.references : undefined;
-
-const explanationOf = (
-  row: OutcomeItem | OutcomeReference,
-): string | undefined => ("explanation" in row ? row.explanation : undefined);
+const explanationOf = (row: OutcomeReceipt): string | undefined =>
+  "explanation" in row ? row.explanation : undefined;
 
 const FACE_POLL_MS = 5_000;
 const OUTCOME_POLL_MS = 1_500;
@@ -107,6 +101,7 @@ export default function ParticipantPage() {
   const { me, loading: authLoading, logout } = useAuth();
   const [face, setFace] = useState<Face | null>(null);
   const [missing, setMissing] = useState(false);
+  const [faceError, setFaceError] = useState<string | null>(null);
   const [participant, setParticipant] = useState<string | null>(null);
   const [progressReady, setProgressReady] = useState(false);
   const [response, setResponse] = useState<string | null>(null);
@@ -114,9 +109,13 @@ export default function ParticipantPage() {
   const [submitted, setSubmitted] = useState(false);
   const [alreadyIn, setAlreadyIn] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const [outcomeError, setOutcomeError] = useState<string | null>(null);
+  const [outcomeRetry, setOutcomeRetry] = useState(0);
   const [busy, setBusy] = useState(false);
   const sent = useRef<Record<string, string>>({});
   const pending = useRef<Record<string, Promise<boolean>>>({});
+  const submissionUncertain = useRef(false);
+  const reconciledResponse = useRef<string | null>(null);
   const signedParticipant = me === null ? null : String(me.user);
   const progressBelongsToViewer =
     !authLoading &&
@@ -146,16 +145,28 @@ export default function ParticipantPage() {
     /* eslint-enable react-hooks/set-state-in-effect */
     sent.current = {};
     pending.current = {};
+    submissionUncertain.current = false;
+    reconciledResponse.current = null;
   }, [authLoading, signedParticipant, token]);
 
   const loadFace = useCallback(async () => {
-    const result = await api["/live/p/arrive"]({ token });
-    if (isApiError(result)) {
-      setMissing(true);
+    try {
+      const result = await api["/live/p/arrive"]({ token });
+      if (isApiError(result)) {
+        setMissing(true);
+        setFaceError(null);
+        return null;
+      }
+      setMissing(false);
+      setFaceError(null);
+      setFace(result.face ?? null);
+      return result.face ?? null;
+    } catch {
+      setFaceError(
+        "We couldn't reach Commons. Check your connection and try again.",
+      );
       return null;
     }
-    setFace(result.face ?? null);
-    return result.face ?? null;
   }, [token]);
 
   // Arrive.
@@ -187,21 +198,34 @@ export default function ParticipantPage() {
       if (handle.timer !== undefined) clearInterval(handle.timer);
     };
     const poll = async () => {
-      const result = await api["/live/p/outcome"]({ response });
-      if (cancelled || isApiError(result)) return;
-      setOutcome(result);
-      const formed = formedOutcomeOf(result);
-      if (
-        !("outcome" in result) ||
-        (formed?.score !== null && formed?.score !== undefined)
-      ) {
-        stop();
+      try {
+        const result = await api["/live/p/outcome"]({ response });
+        if (cancelled) return;
+        if (isApiError(result)) {
+          setOutcomeError("Your result couldn't be loaded. Try again.");
+          return;
+        }
+        setOutcomeError(null);
+        setOutcome(result);
+        const formed = formedOutcomeOf(result);
+        if (
+          !("outcome" in result) ||
+          (formed?.score !== null && formed?.score !== undefined)
+        ) {
+          stop();
+        }
+      } catch {
+        if (!cancelled) {
+          setOutcomeError(
+            "Your result couldn't be loaded. Check your connection and try again.",
+          );
+        }
       }
     };
     void poll();
     handle.timer = setInterval(() => void poll(), OUTCOME_POLL_MS);
     return stop;
-  }, [submitted, response]);
+  }, [submitted, response, outcomeRetry]);
 
   const begin = useCallback(async () => {
     if (participant === null) return;
@@ -221,6 +245,8 @@ export default function ParticipantPage() {
         answers,
         submitted: false,
       });
+    } catch {
+      toast.error("Could not join. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -249,17 +275,22 @@ export default function ParticipantPage() {
       const prior = pending.current[question] ?? Promise.resolve(true);
       const write = prior.then(async () => {
         if (sent.current[question] === value) return true;
-        const result = await api["/live/p/answer"]({
-          response,
-          question,
-          value,
-        });
-        if (isApiError(result)) {
-          toast.error("That answer was not saved. Try again.");
-          return false;
+        try {
+          const result = await api["/live/p/answer"]({
+            response,
+            question,
+            value,
+          });
+          if (!isApiError(result)) {
+            sent.current[question] = value;
+            return true;
+          }
+        } catch {
+          // The same recovery sentence covers a transport failure and a
+          // refusal: the local draft remains available for another attempt.
         }
-        sent.current[question] = value;
-        return true;
+        toast.error("That answer was not saved. Try again.");
+        return false;
       });
       pending.current[question] = write;
       return write;
@@ -282,10 +313,55 @@ export default function ParticipantPage() {
     [response, participant, answers, token, persistAnswer],
   );
 
+  const rememberSubmitted = useCallback(
+    (received?: Outcome) => {
+      if (response === null || participant === null) return;
+      submissionUncertain.current = false;
+      setSubmitted(true);
+      if (received !== undefined) {
+        setOutcome(received);
+        setOutcomeError(null);
+      }
+      writeProgress(token, participant, {
+        response,
+        answers,
+        submitted: true,
+      });
+    },
+    [response, participant, token, answers],
+  );
+
+  // A hand-in may commit even when its HTTP response is lost. Outcome is the
+  // authoritative receipt, so it also reconciles an uncertain retry or reload.
+  const recoverSubmission = useCallback(async (): Promise<boolean> => {
+    if (response === null) return false;
+    try {
+      const result = await api["/live/p/outcome"]({ response });
+      if (isApiError(result) || result.received !== true) return false;
+      rememberSubmitted(result);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [response, rememberSubmitted]);
+
+  useEffect(() => {
+    if (
+      !progressReady ||
+      submitted ||
+      response === null ||
+      reconciledResponse.current === response
+    )
+      return;
+    reconciledResponse.current = response;
+    void recoverSubmission();
+  }, [progressReady, submitted, response, recoverSubmission]);
+
   const submit = useCallback(async () => {
     if (response === null || participant === null) return;
     setBusy(true);
     try {
+      if (submissionUncertain.current && (await recoverSubmission())) return;
       // Hand-in flushes anything typed but not yet committed by a blur.
       for (const [question, value] of Object.entries(answers)) {
         const trimmed = value.trim();
@@ -295,22 +371,31 @@ export default function ParticipantPage() {
       }
       const result = await api["/live/p/submit"]({ response });
       if (isApiError(result)) {
+        submissionUncertain.current = true;
+        if (await recoverSubmission()) return;
         toast.error(
           "Could not hand in. Check every answer and make sure the quiz is still open.",
         );
         await loadFace();
         return;
       }
-      setSubmitted(true);
-      writeProgress(token, participant, {
-        response,
-        answers,
-        submitted: true,
-      });
+      rememberSubmitted();
+    } catch {
+      submissionUncertain.current = true;
+      if (await recoverSubmission()) return;
+      toast.error("Could not hand in. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
-  }, [response, participant, answers, token, loadFace, persistAnswer]);
+  }, [
+    response,
+    participant,
+    answers,
+    loadFace,
+    persistAnswer,
+    recoverSubmission,
+    rememberSubmitted,
+  ]);
 
   const isQuiz = face?.form === "quiz";
   const complete = useMemo(
@@ -335,6 +420,13 @@ export default function ParticipantPage() {
   }
 
   if (face === null || !progressReady || !progressBelongsToViewer) {
+    if (faceError !== null) {
+      return (
+        <Shell>
+          <ErrorState message={faceError} onRetry={() => void loadFace()} />
+        </Shell>
+      );
+    }
     return (
       <Shell>
         <LoadingState label="Opening…" />
@@ -345,7 +437,12 @@ export default function ParticipantPage() {
   if (submitted) {
     return (
       <Shell title={face.title}>
-        <OutcomeView outcome={outcome} isQuiz={isQuiz} />
+        <OutcomeView
+          outcome={outcome}
+          isQuiz={isQuiz}
+          error={outcomeError}
+          onRetry={() => setOutcomeRetry((standing) => standing + 1)}
+        />
       </Shell>
     );
   }
@@ -405,6 +502,19 @@ export default function ParticipantPage() {
   return (
     <Shell title={face.title}>
       <div className="flex flex-col gap-4 pb-28">
+        {faceError !== null ? (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm"
+          >
+            <span>
+              Connection interrupted. Your answers remain on this device.
+            </span>
+            <Button size="sm" variant="outline" onClick={() => void loadFace()}>
+              Retry
+            </Button>
+          </div>
+        ) : null}
         {face.questions.map((question, index) => (
           <QuestionCard
             key={question.question}
@@ -418,7 +528,12 @@ export default function ParticipantPage() {
       </div>
       <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
-          <span className="text-sm text-muted-foreground">
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="text-sm text-muted-foreground"
+          >
             {
               Object.values(answers).filter((value) => value.trim() !== "")
                 .length
@@ -480,12 +595,12 @@ function QuestionCard({
     <Card>
       <CardContent className="flex flex-col gap-3">
         {/* The number keeps its own column so a wrapped prompt holds its edge. */}
-        <p className="flex items-start gap-2 font-medium" dir="auto">
+        <h2 className="flex items-start gap-2 font-medium" dir="auto">
           <span className="w-6 shrink-0 text-muted-foreground tabular-nums">
             {index + 1}.
           </span>
           <span className="min-w-0 flex-1">{question.prompt}</span>
-        </p>
+        </h2>
         {choices.length > 0 ? (
           <div className="flex flex-col gap-2">
             {choices.map((choice) => (
@@ -532,20 +647,24 @@ function QuestionCard({
 function OutcomeView({
   outcome,
   isQuiz,
+  error,
+  onRetry,
 }: {
   outcome: Outcome | null;
   isQuiz: boolean;
+  error: string | null;
+  onRetry: () => void;
 }) {
   if (!isQuiz || (outcome !== null && !("outcome" in outcome))) {
     return <EmptyState icon={CheckCircle2} title="Handed in" />;
   }
   const formed = outcome === null ? undefined : formedOutcomeOf(outcome);
   if (formed === null || formed === undefined || formed.score === null) {
+    if (error !== null) return <ErrorState message={error} onRetry={onRetry} />;
     return <LoadingState label="Handed in — scoring…" />;
   }
   // Disclosure decides whether the key travels back with the score at all.
-  const items = itemsOf(formed);
-  const references = referencesOf(formed);
+  const receipt = receiptOf(formed);
   return (
     <div className="flex flex-col gap-4">
       <div className="py-6 text-center">
@@ -558,61 +677,42 @@ function OutcomeView({
           </span>
         </p>
       </div>
-      {items !== undefined && (
+      {receipt !== undefined && (
         <div className="flex flex-col gap-3">
-          {items.map((item) => {
-            const right = item.value !== null && item.value === item.expected;
+          {receipt.map((item) => {
+            const graded = item.kind === "graded";
+            const right = graded && item.value === item.standard;
             const explanation = explanationOf(item);
             return (
               <Card key={item.item}>
                 <CardContent className="flex flex-col gap-1 text-sm">
-                  <p className="font-medium" dir="auto">
-                    {item.prompt}
-                  </p>
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="font-medium" dir="auto">
+                      {item.prompt}
+                    </h2>
+                    {!graded ? (
+                      <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-muted-foreground text-xs">
+                        Not graded
+                      </span>
+                    ) : null}
+                  </div>
                   <p
+                    dir="auto"
                     className={cn(
-                      right
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-destructive",
+                      graded &&
+                        (right
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-destructive"),
                     )}
                   >
-                    Your answer: {item.value ?? "—"}
+                    Your answer: {item.value}
                   </p>
-                  {!right && (
-                    <p className="text-muted-foreground">
-                      Expected: {item.expected}
+                  {item.standard !== "" && (!graded || !right) ? (
+                    <p className="text-muted-foreground" dir="auto">
+                      {item.kind === "reference" ? "Reference" : "Expected"}:{" "}
+                      {item.standard}
                     </p>
-                  )}
-                  {explanation !== undefined && explanation !== "" && (
-                    <p className="text-muted-foreground">{explanation}</p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-      {references !== undefined && references.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {references.map((reference) => {
-            const explanation = explanationOf(reference);
-            return (
-              <Card key={reference.item}>
-                <CardContent className="flex flex-col gap-1 text-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="font-medium" dir="auto">
-                      {reference.prompt}
-                    </p>
-                    <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-muted-foreground text-xs">
-                      Not graded
-                    </span>
-                  </div>
-                  {/* A written answer is read against its reference, so it
-                      never wears the right-or-wrong colours. */}
-                  <p dir="auto">Your answer: {reference.value ?? "—"}</p>
-                  <p className="text-muted-foreground" dir="auto">
-                    Reference: {reference.reference}
-                  </p>
+                  ) : null}
                   {explanation !== undefined && explanation !== "" && (
                     <p className="text-muted-foreground">{explanation}</p>
                   )}

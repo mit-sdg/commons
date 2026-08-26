@@ -91,6 +91,7 @@ function RunDashboardContent() {
   }
 
   const url = board.token === null ? null : joinUrl(board.token);
+  const code = board.code;
 
   return (
     <PageContainer width="wide">
@@ -181,13 +182,13 @@ function RunDashboardContent() {
           <aside className="order-1 lg:order-2">
             <div className="sticky top-6 space-y-4 rounded-xl border border-border bg-card p-5">
               <p className="eyebrow text-center">Join here</p>
-              {url === null ? (
+              {url === null || code === null ? (
                 <p className="text-center text-muted-foreground text-sm">
                   No join code.
                 </p>
               ) : (
                 <>
-                  <JoinCode url={url} />
+                  <JoinCode url={url} code={code} />
                   <Button variant="outline" className="w-full" asChild>
                     <Link
                       href={`/staff/live/run/${run}/project`}

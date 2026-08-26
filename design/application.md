@@ -29,6 +29,9 @@ concrete LiveParticipant
 concrete LiveReasoner
   The name of the reasoner the floor's worker serves; the deployment configures
   which model answers it.
+
+concrete LiveRunSnapshot
+  The complete structured presentation captured for one published live run.
 ```
 
 ## Instances
@@ -68,6 +71,10 @@ instantiate Drafting with
   Author is Authenticating.User
   Origin is Questioning.Questionnaire
 
+instantiate Trashing as DraftTrashing with
+  User is Authenticating.User
+  Item is Drafting.Brief
+
 instantiate Flagging with
   User is Authenticating.User
   Target is Posting.Post
@@ -104,6 +111,9 @@ instantiate Linking as AdoptLinking with
 
 instantiate Locking with
   Target is Lockable
+
+instantiate Locating with
+  Subject is Publishing.Edition
 
 instantiate Mailing with
   Key is MailKey
@@ -171,6 +181,10 @@ instantiate Scoring with
   Subject is Publishing.Edition
   Item is Questioning.Question
   Submission is Responding.Response
+
+instantiate Snapshotting as RunSnapshotting with
+  Subject is Publishing.Edition
+  Value is LiveRunSnapshot
 
 instantiate Sessioning with
   User is Authenticating.User
@@ -246,7 +260,10 @@ link of an entry.
 
 The live domain runs quizzes and surveys during a meeting. Questioning owns
 questionnaire and question identities; Publishing fixes an open edition of one
-questionnaire, and Sharing's token is the only address a participant needs.
+questionnaire, Sharing owns its opaque participation token, and Locating gives
+the same edition a durable six-character room code. The code is a convenient,
+deliberately guessable locator rather than a credential; participation resolves
+it to the existing token and applies the same run state.
 Responding and Scoring both use the edition as their subject and Questioning's
 questions as their items, so an answer, an expectation, and a result all name
 the same question identity. `LiveParticipant` has two valid owners in the same
@@ -259,6 +276,11 @@ comes back unusable, and `LiveReasoner` names the mind the floor's worker
 serves. Adopting a candidate is what turns drafted material into an ordinary
 editable questionnaire; nothing else crosses from the drafting line into the
 live domain.
+
+DraftTrashing marks an author deliberately leaving an unfinished draft line.
+The drafting composition applies it to the canonical root brief and uses the
+marker to stop later reasoning work; Drafting's own lifecycle and state machine
+remain unchanged, and the retained line stays available as read-only history.
 
 These bindings record application meaning. They do not copy state, validate an
 identity at runtime, or make one concept depend on another.
@@ -383,6 +405,10 @@ positionAfter(position: Number) : Number
 positionBefore(position: Number) : Number
   Answers the place one before the given one, for moving a question earlier
   and for closing ranks after a removal.
+
+receiptKind(choices: Strings, expected: String) : String
+  Names a submitted answer's feedback as graded, reference, or ungraded from
+  the authored question material, without adding feedback state to a concept.
 ```
 
 Two of these decide rather than render. `singleImportRow` composes the one row a

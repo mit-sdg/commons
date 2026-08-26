@@ -139,7 +139,10 @@ describe("application-owned design integration", () => {
       "AdoptLinking.Target is Questioning.Questionnaire",
       "Drafting.Author is Authenticating.User",
       "Drafting.Origin is Questioning.Questionnaire",
+      "DraftTrashing.Item is Drafting.Brief",
+      "DraftTrashing.User is Authenticating.User",
       "Insisting.Aim is Drafting.Brief",
+      "Locating.Subject is Publishing.Edition",
       "Publishing.Author is Authenticating.User",
       "Publishing.Material is Questioning.Questionnaire",
       "Questioning.Author is Authenticating.User",
@@ -152,6 +155,8 @@ describe("application-owned design integration", () => {
       "Scoring.Subject is Publishing.Edition",
       "Scoring.Submission is Responding.Response",
       "Sharing.Subject is Publishing.Edition",
+      "RunSnapshotting.Subject is Publishing.Edition",
+      "RunSnapshotting.Value is LiveRunSnapshot",
     ].sort();
     const source = readFileSync(join(root, "design/application.md"), "utf8");
     const inventory = source.match(/^```instances\n([\s\S]*?)^```$/m)?.[1] ?? "";

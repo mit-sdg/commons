@@ -91,10 +91,22 @@ export function scriptedMind(): Mind {
     // Markers are read from the author's own words — the correction, the
     // clarification answer, or the request — never from the contract text or
     // prior material that precedes them: those mention every form.
+    const authorText = (marker: string, next: string[]) => {
+      const text = passage.split(marker)[1];
+      if (text === undefined) return undefined;
+      const boundary = next
+        .map((candidate) => text.indexOf(candidate))
+        .filter((index) => index >= 0)
+        .sort((left, right) => left - right)[0];
+      return boundary === undefined ? text : text.slice(0, boundary);
+    };
     const request =
-      passage.split("The correction:\n")[1] ??
-      passage.split("The author answered:\n")[1] ??
-      passage.split("The request:\n")[1] ??
+      authorText("The correction:\n", ['\n\nKeep "form":']) ??
+      authorText("The author answered:\n", ["\n\nDeliver the draft;"]) ??
+      authorText("The request:\n", [
+        "\n\nYou asked this clarifying question:",
+        "\n\nYour previous reply came back unusable.",
+      ]) ??
       passage;
     const correcting = passage.includes("An earlier draft exists, as this ");
     const reply = (() => {

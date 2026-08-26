@@ -346,6 +346,7 @@ describe("invitations and email", () => {
       "/live/p/answer",
       "/live/p/arrive",
       "/live/p/begin",
+      "/live/p/locate",
       "/live/p/outcome",
       "/live/p/submit",
       "/setup/register-admin",

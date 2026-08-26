@@ -126,4 +126,10 @@ _collectedAnswers (response: String) : optional (answers: Seq)
   answers the same answers as one value: an ordered sequence of `{ item, value }`
   pairs in first-answer order
   answers no row when the Response does not exist
+
+_valuesForSubject (subject: String) : one (values: Seq)
+  answers all submitted values as one sequence of `{ response, participant,
+  item, value }`, ordered first by hand-in and then by the answer's first-save
+  order
+  answers an empty sequence when the subject has no submitted values
 ```

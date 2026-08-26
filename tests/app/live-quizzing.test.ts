@@ -27,11 +27,11 @@ const HOST = {
   email: "lee@example.com",
 };
 
-async function registerHost(edge: Edge) {
-  const registered = await edge.application.concepts.Authenticating.register(HOST);
+async function registerHost(edge: Edge, host = HOST) {
+  const registered = await edge.application.concepts.Authenticating.register(host);
   await edge.application.concepts.Profiling.createProfile({
     user: registered.user,
-    displayName: HOST.displayName,
+    displayName: host.displayName,
   });
   const { role } = await edge.application.concepts.Roling.ensureRole({
     name: "live-host",
@@ -43,8 +43,8 @@ async function registerHost(edge: Edge) {
     role,
   });
   const login = await post(edge, "/auth/login", {
-    username: HOST.username,
-    password: HOST.password,
+    username: host.username,
+    password: host.password,
   });
   const cookie = login.headers.get("Set-Cookie")?.split(";")[0] as string;
   return { user: registered.user, cookie };
@@ -128,8 +128,14 @@ describe("the live quiz loop", () => {
     const launch = await json(await post(edge, "/live/runs/launch", { questionnaire }, cookie));
     const run = launch.run as string;
     const token = launch.token as string;
+    const code = launch.code as string;
     expect(typeof token).toBe("string");
     expect(token.length).toBeGreaterThan(0);
+    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+    const located = await json(
+      await post(edge, "/live/p/locate", { code: `  ${code.toLowerCase()}  ` }),
+    );
+    expect(located.token).toBe(token);
 
     // Editing while the run is open is refused with RUN_OPEN.
     const editWhileOpen = await json(
@@ -208,22 +214,32 @@ describe("the live quiz loop", () => {
       disclosure: string;
       score: number;
       outOf: number;
-      items: { expected: string; value: string | null }[];
-      references: { prompt: string; reference: string; value: string | null }[];
+      receipt: {
+        prompt: string;
+        kind: "graded" | "reference" | "ungraded";
+        standard: string;
+        value: string;
+      }[];
     };
     expect(formed.disclosure).toBe("answers");
     // The written question keeps a reference, so it widens neither the score
     // nor what it is out of.
     expect(formed.score).toBe(1);
     expect(formed.outOf).toBe(1);
-    expect(formed.items).toHaveLength(1);
-    expect(formed.references).toEqual([
+    expect(formed.receipt).toHaveLength(2);
+    expect(formed.receipt[0]).toMatchObject({
+      kind: "graded",
+      standard: "Carbon dioxide",
+      value: "Carbon dioxide",
+    });
+    expect(formed.receipt[1]).toEqual(
       expect.objectContaining({
         prompt: "Name the light-capturing pigment.",
-        reference: "Chlorophyll",
+        kind: "reference",
+        standard: "Chlorophyll",
         value: "Chlorophyll",
       }),
-    ]);
+    );
     expect(JSON.stringify(formed)).not.toContain("Photosynthesis fixes carbon.");
 
     // The staff board carries the handed-in values and the score.
@@ -238,10 +254,128 @@ describe("the live quiz loop", () => {
     const open = await json(await post(edge, "/live/runs/open", {}, cookie));
     expect(JSON.stringify(open)).toContain(run);
     await post(edge, "/live/runs/close", { run }, cookie);
+    const closedLocation = await json(await post(edge, "/live/p/locate", { code }));
+    expect(closedLocation.token).toBe(token);
     const closedFace = await json(await post(edge, "/live/p/arrive", { token }));
     expect((closedFace.face as { open: boolean }).open).toBe(false);
+
+    // Closing makes the source editable for a future class, but this edition's
+    // face, board, and receipt remain exactly what participants received.
+    await post(
+      edge,
+      "/live/quizzes/revise-question",
+      {
+        question: questions[0].question,
+        prompt: "A changed prompt?",
+        choices: ["Oxygen", "Carbon dioxide"],
+        expected: "Oxygen",
+        explanation: "A changed explanation.",
+        position: 1,
+      },
+      cookie,
+    );
+    await post(edge, "/live/quizzes/remove-question", { question: questions[1].question }, cookie);
+    await post(edge, "/live/quizzes/retitle", { questionnaire, title: "A changed title" }, cookie);
+
+    const historicalFace = await json(await post(edge, "/live/p/arrive", { token }));
+    expect(historicalFace.face).toMatchObject({
+      title: "Photosynthesis check",
+      questions: [
+        { prompt: "Which gas do plants take in?" },
+        { prompt: "Name the light-capturing pigment." },
+      ],
+    });
+    const historicalOutcome = await json(await post(edge, "/live/p/outcome", { response }));
+    expect((historicalOutcome.outcome as typeof formed).receipt).toEqual(formed.receipt);
+    expect((historicalOutcome.outcome as typeof formed).score).toBe(1);
+    const historicalResults = await json(await post(edge, "/live/runs/results", { run }, cookie));
+    expect(historicalResults.board).toMatchObject({
+      title: "Photosynthesis check",
+      questions: [
+        { prompt: "Which gas do plants take in?", expected: "Carbon dioxide" },
+        { prompt: "Name the light-capturing pigment.", expected: "Chlorophyll" },
+      ],
+    });
     const lateBegin = await post(edge, "/live/p/begin", { token, device: "phone-2" });
     expect(lateBegin.status).toBe(409);
+  });
+
+  test("a concurrent launch and edit release one coherent version for every run artifact", async () => {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const questionnaire = await buildQuiz(edge, cookie, "explanations");
+      const authored = await json(await post(edge, "/live/quizzes/get", { questionnaire }, cookie));
+      const question = (authored.questionnaire as { questions: { question: string }[] })
+        .questions[0].question;
+      await post(
+        edge,
+        "/live/quizzes/revise-question",
+        {
+          question,
+          prompt: "Unready prompt",
+          choices: [],
+          expected: "A written reference",
+          explanation: "Unready explanation",
+        },
+        cookie,
+      );
+      const revised = {
+        prompt: `Concurrent prompt ${attempt}`,
+        choices: ["New A", "New B"],
+        expected: "New B",
+        explanation: `Concurrent explanation ${attempt}`,
+      };
+
+      const [launchResponse] = await Promise.all([
+        post(edge, "/live/runs/launch", { questionnaire }, cookie),
+        post(edge, "/live/quizzes/revise-question", { question, ...revised }, cookie),
+      ]);
+      expect([200, 409]).toContain(launchResponse.status);
+      const raced = await json(launchResponse);
+      let launch = raced;
+      if (launchResponse.status === 409) {
+        expect(raced.error).toBe("CONFLICT");
+        const open = await json(await post(edge, "/live/runs/open", {}, cookie));
+        expect(JSON.stringify(open)).not.toContain(questionnaire);
+        launch = await json(await post(edge, "/live/runs/launch", { questionnaire }, cookie));
+      }
+      const run = launch.run as string;
+
+      const [snapshotRow] = await edge.application.concepts.RunSnapshotting._snapshot({
+        subject: run,
+      });
+      const presentation = snapshotRow.value as {
+        disclosure: string;
+        questions: {
+          item: string;
+          prompt: string;
+          choices: string[];
+          expected: string;
+          explanation: string;
+          position: number;
+        }[];
+      };
+      const captured = presentation.questions.find(({ item }) => item === question);
+      expect(captured).toMatchObject(revised);
+
+      const [key] = await edge.application.concepts.Scoring._keyFor({ subject: run });
+      expect(key.disclosure).toBe(presentation.disclosure);
+      expect(await edge.application.concepts.Scoring._expectations({ key: key.key })).toEqual(
+        presentation.questions
+          .filter(({ choices, expected }) => choices.length > 0 && expected !== "")
+          .map(({ item, expected, explanation }) => ({ item, expected, explanation })),
+      );
+
+      const arrived = await json(await post(edge, "/live/p/arrive", { token: launch.token }));
+      expect((arrived.face as { questions: unknown[] }).questions).toEqual(
+        presentation.questions.map(({ item, prompt, choices, position }) => ({
+          question: item,
+          prompt,
+          choices,
+          position,
+        })),
+      );
+      await post(edge, "/live/runs/close", { run }, cookie);
+    }
   });
 
   test("a survey collects hand-ins without a key and accepts partial answers", async () => {
@@ -386,6 +520,18 @@ describe("the live quiz loop", () => {
         "/live/quizzes/add-question",
         {
           questionnaire,
+          prompt: "How was the pace?",
+          choices: ["Too fast", "Just right"],
+          expected: "",
+          explanation: "",
+        },
+        cookie,
+      );
+      await post(
+        edge,
+        "/live/quizzes/add-question",
+        {
+          questionnaire,
           prompt: "Name the light-capturing pigment.",
           choices: [],
           expected: "Chlorophyll",
@@ -410,6 +556,11 @@ describe("the live quiz loop", () => {
       await post(edge, "/live/p/answer", {
         response,
         question: questions[1].question,
+        value: "Just right",
+      });
+      await post(edge, "/live/p/answer", {
+        response,
+        question: questions[2].question,
         value: "chloroplast",
       });
       await post(edge, "/live/p/submit", { response });
@@ -424,11 +575,11 @@ describe("the live quiz loop", () => {
       return settled.outcome as {
         score: number;
         outOf: number;
-        items?: { expected: string; value: string | null }[];
-        references?: {
+        receipt?: {
           prompt: string;
-          reference: string;
-          value: string | null;
+          kind: "graded" | "reference" | "ungraded";
+          standard: string;
+          value: string;
           explanation?: string;
         }[];
       };
@@ -437,19 +588,27 @@ describe("the live quiz loop", () => {
     const scored = await outcomeAt("score");
     expect(scored.score).toBe(1);
     expect(scored.outOf).toBe(1);
-    expect(scored.items).toBeUndefined();
-    expect(scored.references).toBeUndefined();
+    expect(scored.receipt).toBeUndefined();
 
     const answered = await outcomeAt("answers");
     expect(answered.score).toBe(1);
     expect(answered.outOf).toBe(1);
-    expect(answered.items).toEqual([
-      expect.objectContaining({ expected: "Carbon dioxide", value: "Carbon dioxide" }),
-    ]);
-    expect(answered.references).toEqual([
+    expect(answered.receipt).toEqual([
+      expect.objectContaining({
+        kind: "graded",
+        standard: "Carbon dioxide",
+        value: "Carbon dioxide",
+      }),
+      expect.objectContaining({
+        prompt: "How was the pace?",
+        kind: "ungraded",
+        standard: "",
+        value: "Just right",
+      }),
       expect.objectContaining({
         prompt: "Name the light-capturing pigment.",
-        reference: "Chlorophyll",
+        kind: "reference",
+        standard: "Chlorophyll",
         value: "chloroplast",
       }),
     ]);
@@ -457,13 +616,16 @@ describe("the live quiz loop", () => {
 
     const explained = await outcomeAt("explanations");
     expect(explained.score).toBe(1);
-    expect(explained.references).toEqual([
-      expect.objectContaining({
-        reference: "Chlorophyll",
-        value: "chloroplast",
-        explanation: "It absorbs red and blue light.",
-      }),
-    ]);
+    expect(explained.receipt).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "reference",
+          standard: "Chlorophyll",
+          value: "chloroplast",
+          explanation: "It absorbs red and blue light.",
+        }),
+      ]),
+    );
   });
 
   test("an empty device identity cannot begin a response", async () => {
@@ -505,6 +667,9 @@ describe("the drafting loop with a scripted reasoner", () => {
       adopted: boolean;
       clarifying: boolean;
       stalled: boolean;
+      abandoned: boolean;
+      root: string;
+      rootAuthor: string;
       refines: string | null;
       composed: string | null;
       items: { prompt: string; expected: string }[];
@@ -574,6 +739,8 @@ describe("the drafting loop with a scripted reasoner", () => {
       cookie,
     );
     expect(late.status).toBeGreaterThanOrEqual(400);
+    const abandonAdopted = await post(edge, "/live/drafts/abandon", { brief }, cookie);
+    expect(abandonAdopted.status).toBe(409);
   });
 
   test("an ambiguous request comes back as a question and resumes from the answer", async () => {
@@ -672,6 +839,109 @@ describe("the drafting loop with a scripted reasoner", () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     const line = await lineOf(brief);
     expect(line[0].stalled).toBe(true);
+  });
+
+  test("an abandoned line retains its history but ignores a late reasoner reply", async () => {
+    const described = await json(
+      await post(edge, "/live/drafts/describe", { request: "A short quiz about light" }, cookie),
+    );
+    const root = described.brief as string;
+    await serveReasoner(edge);
+    let line = await lineOf(root);
+    const firstCandidate = line[0].candidate as string;
+
+    const corrected = await json(
+      await post(
+        edge,
+        "/live/drafts/correct",
+        { candidate: firstCandidate, request: "Make it more concise" },
+        cookie,
+      ),
+    );
+    const correction = corrected.brief as string;
+    const abandoned = await json(
+      await post(edge, "/live/drafts/abandon", { brief: correction }, cookie),
+    );
+    expect(abandoned.brief).toBe(root);
+
+    line = await lineOf(root);
+    expect(line).toHaveLength(2);
+    expect(line[1]).toMatchObject({
+      root,
+      abandoned: true,
+      candidate: null,
+    });
+
+    // The already-issued ask may still be answered, but its reply cannot
+    // advance an abandoned line.
+    await serveReasoner(edge);
+    line = await lineOf(root);
+    expect(line[1].candidate).toBeNull();
+
+    expect(
+      await post(
+        edge,
+        "/live/drafts/correct",
+        { candidate: firstCandidate, request: "Try again" },
+        cookie,
+      ),
+    ).toHaveProperty("status", 409);
+    expect(
+      await post(edge, "/live/drafts/adopt", { candidate: firstCandidate }, cookie),
+    ).toHaveProperty("status", 409);
+    expect(await post(edge, "/live/drafts/abandon", { brief: root }, cookie)).toHaveProperty(
+      "status",
+      409,
+    );
+  });
+
+  test("abandoning a repair closes its unsettled insistence", async () => {
+    const described = await json(
+      await post(edge, "/live/drafts/describe", { request: "one unreadable reply" }, cookie),
+    );
+    const root = described.brief as string;
+    await serveOnePass(edge.application.concepts.Reasoning, () => Promise.resolve("not json"));
+    await until(
+      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: root }),
+      (rows) => rows.length === 1,
+    );
+
+    await post(edge, "/live/drafts/abandon", { brief: root }, cookie);
+    const unsettled = await until(
+      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: root }),
+      (rows) => rows.length === 0,
+    );
+    expect(unsettled).toEqual([]);
+  });
+
+  test("only the root author may abandon, and clarification cannot resume afterward", async () => {
+    const described = await json(
+      await post(edge, "/live/drafts/describe", { request: "Something ambiguous" }, cookie),
+    );
+    const root = described.brief as string;
+    await serveReasoner(edge);
+    const line = await lineOf(root);
+    const clarification = line[0].clarifications.find((entry) => entry.answer === null);
+    expect(clarification).toBeDefined();
+
+    const other = await registerHost(edge, {
+      username: "pat",
+      password: "pw-pat-123",
+      displayName: "Professor Pat",
+      email: "pat@example.com",
+    });
+    const denied = await post(edge, "/live/drafts/abandon", { brief: root }, other.cookie);
+    expect(denied.status).toBe(403);
+
+    await post(edge, "/live/drafts/abandon", { brief: root }, cookie);
+    const resumed = await post(
+      edge,
+      "/live/drafts/clarify",
+      { clarification: clarification?.clarification, answer: "A quiz" },
+      cookie,
+    );
+    expect(resumed.status).toBe(409);
+    expect((await lineOf(root))[0]).toMatchObject({ abandoned: true, clarifying: true });
   });
 });
 
@@ -1024,6 +1294,8 @@ describe("a line left can be found again", () => {
       adopted: boolean;
       stalled: boolean;
       clarifying: boolean;
+      abandoned: boolean;
+      rootAuthor: string;
       refines: string | null;
       refinesTitle: string | null;
       composed: string | null;
@@ -1034,7 +1306,14 @@ describe("a line left can be found again", () => {
     (await json(await post(edge, "/live/drafts/provenance", { questionnaire }, cookie)))
       .provenance as {
       composed: { brief: string; request: string }[];
-      refined: { brief: string; author: string; adopted: boolean; stalled: boolean }[];
+      refined: {
+        brief: string;
+        author: string;
+        rootAuthor: string;
+        adopted: boolean;
+        abandoned: boolean;
+        stalled: boolean;
+      }[];
     };
 
   test("the author's lines say where each stands, before and after adoption", async () => {
@@ -1100,6 +1379,28 @@ describe("a line left can be found again", () => {
     expect(lines.find((row) => row.brief === asking.brief)).toMatchObject({
       clarifying: true,
       stalled: false,
+      adopted: false,
+    });
+  });
+
+  test("abandoned refinements leave unfinished work but remain in provenance", async () => {
+    const questionnaire = await buildQuiz(edge, cookie, "score");
+    const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
+    const brief = refined.brief as string;
+
+    const abandoned = await json(await post(edge, "/live/drafts/abandon", { brief }, cookie));
+    expect(abandoned.brief).toBe(brief);
+
+    const lines = await linesOf();
+    expect(lines.find((row) => row.brief === brief)).toMatchObject({
+      abandoned: true,
+      rootAuthor: user,
+      adopted: false,
+    });
+    const provenance = await provenanceOf(questionnaire);
+    expect(provenance.refined.find((row) => row.brief === brief)).toMatchObject({
+      abandoned: true,
+      rootAuthor: user,
       adopted: false,
     });
   });

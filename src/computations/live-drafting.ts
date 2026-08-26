@@ -5,6 +5,12 @@
  * three kinds — a draft, a clarifying question, or neither.
  */
 
+import {
+  normalizeQuestionMaterial,
+  QUESTIONING_LIMITS,
+  type QuestionMaterial,
+} from "../concepts/questioning/constraints.ts";
+
 const FORMS = ["quiz", "survey"];
 
 const CONTRACT = `You compose quizzes and surveys for a live classroom tool.
@@ -14,7 +20,9 @@ To deliver a draft:
 {"kind":"draft","form":"quiz","material":[{"prompt":"...","choices":["..."],"expected":"...","explanation":"..."}]}
 - "form" is "quiz" or "survey".
 - Every item needs a "prompt". "choices" may be [] for a written answer.
+- Deliver 1 to ${QUESTIONING_LIMITS.questions} items. Prompts may be at most ${QUESTIONING_LIMITS.prompt} characters. Offer at most ${QUESTIONING_LIMITS.choices} distinct, nonblank choices per item, each at most ${QUESTIONING_LIMITS.choice} characters; choices that differ only by case or surrounding space are duplicates.
 - A quiz item's "expected" is the correct answer; when choices are given it must equal one of them exactly, and only those items are graded. On a written-answer item it is a reference shown afterward, never graded. "explanation" says briefly why, and may be "".
+- Every quiz item needs a nonblank "expected". A written-answer reference may be at most ${QUESTIONING_LIMITS.reference} characters and an explanation at most ${QUESTIONING_LIMITS.explanation} characters.
 - A survey proposes no answers: every "expected" and "explanation" is "".
 - Unless the request says otherwise, draft 3 to 6 items.
 
@@ -66,7 +74,7 @@ export function repairPassage({
   return `${CONTRACT}\n\nThe request:\n${request}\n\nYour previous reply came back unusable. The reply was:\n${offering}\n\nThe account of the problem:\n${account}\n\nDeliver a correct reply this time.`;
 }
 
-type Entry = { prompt: string; choices: string[]; expected: string; explanation: string };
+type Entry = QuestionMaterial;
 type Reading =
   | { kind: "draft"; form: string; material: Entry[] }
   | { kind: "question"; question: string }
@@ -100,33 +108,35 @@ function parse(reply: string): Reading {
     if (!Array.isArray(record.material) || record.material.length === 0) {
       return { kind: "neither", reason: "The draft carried no material." };
     }
+    if (record.material.length > QUESTIONING_LIMITS.questions) {
+      return {
+        kind: "neither",
+        reason: `The draft carried more than ${QUESTIONING_LIMITS.questions} items.`,
+      };
+    }
     const material: Entry[] = [];
     for (const entry of record.material) {
-      if (typeof entry !== "object" || entry === null) {
+      if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
         return { kind: "neither", reason: "A material entry was not an object." };
       }
       const item = entry as Record<string, unknown>;
-      const prompt = asString(item.prompt).trim();
-      if (prompt === "") {
-        return { kind: "neither", reason: "A material entry carried no prompt." };
+      const normalized = normalizeQuestionMaterial({
+        prompt: item.prompt,
+        choices: item.choices,
+        expected: item.expected,
+        explanation: item.explanation,
+      });
+      if (!normalized.ok) {
+        return { kind: "neither", reason: normalized.violation.message };
       }
-      const choices = Array.isArray(item.choices) ? item.choices.map(asString) : [];
-      const expected = form === "quiz" ? asString(item.expected) : "";
+      const { prompt, choices, expected, explanation } = normalized.value;
+      if (form === "survey" && (expected !== "" || explanation !== "")) {
+        return { kind: "neither", reason: "A survey item proposed an answer or explanation." };
+      }
       if (form === "quiz" && expected === "") {
         return { kind: "neither", reason: "A quiz item proposed no expected answer." };
       }
-      if (form === "quiz" && choices.length > 0 && !choices.includes(expected)) {
-        return {
-          kind: "neither",
-          reason: "A quiz item's expected answer is not among its choices.",
-        };
-      }
-      material.push({
-        prompt,
-        choices,
-        expected,
-        explanation: form === "quiz" ? asString(item.explanation) : "",
-      });
+      material.push({ prompt, choices, expected, explanation });
     }
     return { kind: "draft", form, material };
   }
