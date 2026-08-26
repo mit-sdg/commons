@@ -548,19 +548,24 @@ function RosterPageContent() {
       />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="sections">Sections</TabsTrigger>
-          <TabsTrigger value="active">
-            Active ({activeMembers.length})
-          </TabsTrigger>
-          <TabsTrigger value="pending">
-            Pending ({pendingMembers.length})
-          </TabsTrigger>
-          <TabsTrigger value="dropped">
-            Dropped ({droppedMembers.length})
-          </TabsTrigger>
-          <TabsTrigger value="add">Add people</TabsTrigger>
-        </TabsList>
+        <p className="mb-2 text-xs text-muted-foreground sm:hidden">
+          Scroll tabs sideways for more roster views →
+        </p>
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="w-max min-w-full">
+            <TabsTrigger value="sections">Sections</TabsTrigger>
+            <TabsTrigger value="active">
+              Active ({activeMembers.length})
+            </TabsTrigger>
+            <TabsTrigger value="pending">
+              Pending ({pendingMembers.length})
+            </TabsTrigger>
+            <TabsTrigger value="dropped">
+              Dropped ({droppedMembers.length})
+            </TabsTrigger>
+            <TabsTrigger value="add">Add people</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="sections" className="mt-6">
           <SectionManager />

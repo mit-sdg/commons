@@ -106,96 +106,101 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
 
   return (
     <>
-      <div className="rounded-lg border border-border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Kind</TableHead>
-              <TableHead>Section</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-12" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.length === 0 ? (
+      <div className="relative">
+        <p className="mb-2 text-xs text-muted-foreground sm:hidden">
+          Scroll rows sideways to see section, status, and actions →
+        </p>
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <Table className="min-w-[48rem]">
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="text-center text-muted-foreground py-8"
-                >
-                  No roster members.
-                </TableCell>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Kind</TableHead>
+                <TableHead>Section</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="sticky right-0 w-12 bg-card" />
               </TableRow>
-            ) : (
-              members.map((m) => {
-                const sec = sections.find((s) => s.section === m.section);
-                return (
-                  <TableRow key={m.seat}>
-                    <TableCell className="font-medium text-sm">
-                      {m.displayName}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {m.email}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={m.kind} />
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {sec?.name ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={m.status ?? "ACTIVE"} />
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8"
-                            aria-label={`Actions for ${m.displayName}`}
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => dropSeat(m.seat)}>
-                            <UserMinus className="size-4" /> Drop
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setTargetSection("");
-                              setMoveSeat({
-                                seat: m.seat,
-                                name: m.displayName ?? m.email,
-                                currentSection: m.section,
-                              });
-                            }}
-                          >
-                            <ArrowLeftRight className="size-4" /> Move Section
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() =>
-                              setRemoveSeat({
-                                seat: m.seat,
-                                name: m.displayName ?? m.email,
-                              })
-                            }
-                          >
-                            <Trash2 className="size-4" /> Remove from roster…
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {members.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    No roster members.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                members.map((m) => {
+                  const sec = sections.find((s) => s.section === m.section);
+                  return (
+                    <TableRow key={m.seat}>
+                      <TableCell className="font-medium text-sm">
+                        {m.displayName}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {m.email}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={m.kind} />
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {sec?.name ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={m.status ?? "ACTIVE"} />
+                      </TableCell>
+                      <TableCell className="sticky right-0 bg-card">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8"
+                              aria-label={`Actions for ${m.displayName}`}
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => dropSeat(m.seat)}>
+                              <UserMinus className="size-4" /> Drop
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setTargetSection("");
+                                setMoveSeat({
+                                  seat: m.seat,
+                                  name: m.displayName ?? m.email,
+                                  currentSection: m.section,
+                                });
+                              }}
+                            >
+                              <ArrowLeftRight className="size-4" /> Move Section
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() =>
+                                setRemoveSeat({
+                                  seat: m.seat,
+                                  name: m.displayName ?? m.email,
+                                })
+                              }
+                            >
+                              <Trash2 className="size-4" /> Remove from roster…
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {removeSeat ? (
