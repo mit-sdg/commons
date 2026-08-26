@@ -51,7 +51,7 @@ export type CommonsWire = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["createDraft"]>>, ["assignment"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" };
+    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_SCHEDULE_INVALID" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/assignments/for-me": {
     input: {
@@ -85,7 +85,7 @@ export type CommonsWire = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["publish"]>>, ["assignment"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_DRAFT" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_DRAFT" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_SCHEDULE_INVALID" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" };
   };
   "/assignments/revise": {
     input: {
@@ -104,7 +104,7 @@ export type CommonsWire = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["revise"]>>, ["assignment"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_NOT_REVISABLE" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" };
+    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_NOT_REVISABLE" | "ASSIGNMENT_SCHEDULE_INVALID" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" };
   };
   "/assignments/set-due-override": {
     input: {
@@ -2732,7 +2732,7 @@ export type CommonsWireHttp = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["createDraft"]>>, ["assignment"]>>;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" };
   };
   "/assignments/for-me": {
     input: Record<string, never>;
@@ -2762,7 +2762,7 @@ export type CommonsWireHttp = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["publish"]>>, ["assignment"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/assignments/revise": {
     input: {
@@ -2780,7 +2780,7 @@ export type CommonsWireHttp = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["revise"]>>, ["assignment"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/assignments/set-due-override": {
     input: {

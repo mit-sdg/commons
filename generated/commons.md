@@ -18,15 +18,18 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+  - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
 - `revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Bool, audience: String, targets: Sections, at: Date) : return (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Bool)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
   - Refuses `ASSIGNMENT_NOT_REVISABLE`: An archived assignment can no longer be revised.
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+  - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
 - `publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audience: String, targets: Sections, acceptsSubmissions: Bool)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
   - Refuses `ASSIGNMENT_NOT_DRAFT`: Only a draft can be published.
+  - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
 - `archive(assignment: Assignment, at: Date) : return (assignment: Assignment)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
 - `assign(assignment: Assignment, assignee: Assignee, at: Date) : return (release: Release)`

@@ -6,6 +6,7 @@ import {
   AssignmentNotFound,
   AssignmentNotPublished,
   AssignmentNotRevisable,
+  AssignmentScheduleInvalid,
   AssignmentTargetsRequired,
   ReleaseAlreadyExists,
   ReleaseNotFound,
@@ -61,6 +62,23 @@ export class MongoAssigningConcept {
     return counter?.value ?? 0;
   }
 
+  #checkSchedule(availableAt: string, dueAt: string, closeAt?: string | null) {
+    const available = new Date(availableAt).getTime();
+    const due = new Date(dueAt).getTime();
+    const close = closeAt ? new Date(closeAt).getTime() : null;
+    if (
+      !Number.isFinite(available) ||
+      !Number.isFinite(due) ||
+      (close !== null && !Number.isFinite(close)) ||
+      available > due ||
+      (close !== null && due > close)
+    ) {
+      throw new AssignmentScheduleInvalid(
+        "Availability must be on or before the due date, and the due date must be on or before close.",
+      );
+    }
+  }
+
   #checkTargets(audience: Audience, targets: string[]) {
     if (audience !== "EVERYONE" && audience !== "TARGETS") {
       throw new AssignmentAudienceInvalid("The assignment audience must be EVERYONE or TARGETS.");
@@ -99,6 +117,7 @@ export class MongoAssigningConcept {
     at: Date;
   }) {
     this.#checkTargets(audience, targets);
+    this.#checkSchedule(availableAt, dueAt, closeAt);
     const assignment = crypto.randomUUID();
     const seq = await this.#nextSeq("assignments");
     await this.assignments.insertOne({
@@ -154,6 +173,7 @@ export class MongoAssigningConcept {
       throw new AssignmentNotRevisable(assignment);
     }
     this.#checkTargets(audience, targets);
+    this.#checkSchedule(availableAt, dueAt, closeAt);
     await this.assignments.updateOne(
       { _id: assignment },
       {
@@ -188,6 +208,7 @@ export class MongoAssigningConcept {
     if (doc.status !== "DRAFT") {
       throw new AssignmentNotDraft(assignment);
     }
+    this.#checkSchedule(doc.availableAt, doc.dueAt, doc.closeAt);
     await this.assignments.updateOne(
       { _id: assignment },
       { $set: { status: "PUBLISHED", updatedAt: at } },

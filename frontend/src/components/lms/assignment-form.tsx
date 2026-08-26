@@ -77,6 +77,16 @@ export function AssignmentForm({
   const sections = (sectionsData?.sections ?? []).filter(
     (section) => section.status === "ACTIVE",
   );
+  const availableError =
+    availableAt && dueAt && availableAt > dueAt
+      ? "Availability must be on or before the due date."
+      : "";
+  const dueError =
+    closeAt && dueAt && dueAt > closeAt
+      ? "The due date must be on or before close."
+      : "";
+  const scheduleValid =
+    Boolean(availableAt && dueAt) && !availableError && !dueError;
 
   function toggleTarget(section: string) {
     setTargets((current) =>
@@ -87,7 +97,7 @@ export function AssignmentForm({
   }
 
   async function save() {
-    if (!session) return;
+    if (!session || !scheduleValid) return;
     setLoading(true);
 
     const rawPayload = {
@@ -236,7 +246,16 @@ export function AssignmentForm({
             value={availableAt}
             onChange={(e) => setAvailableAt(e.target.value)}
             disabled={loading}
+            aria-invalid={Boolean(availableError)}
+            aria-describedby={
+              availableError ? "asgn-available-error" : undefined
+            }
           />
+          {availableError ? (
+            <p id="asgn-available-error" className="text-xs text-destructive">
+              {availableError}
+            </p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor="asgn-due">Due at</Label>
@@ -246,7 +265,16 @@ export function AssignmentForm({
             value={dueAt}
             onChange={(e) => setDueAt(e.target.value)}
             disabled={loading}
+            aria-invalid={Boolean(availableError || dueError)}
+            aria-describedby={
+              availableError || dueError ? "asgn-due-error" : undefined
+            }
           />
+          {availableError || dueError ? (
+            <p id="asgn-due-error" className="text-xs text-destructive">
+              {availableError || dueError}
+            </p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor="asgn-close">
@@ -261,7 +289,14 @@ export function AssignmentForm({
             value={closeAt}
             onChange={(e) => setCloseAt(e.target.value)}
             disabled={loading}
+            aria-invalid={Boolean(dueError)}
+            aria-describedby={dueError ? "asgn-close-error" : undefined}
           />
+          {dueError ? (
+            <p id="asgn-close-error" className="text-xs text-destructive">
+              {dueError}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -297,6 +332,7 @@ export function AssignmentForm({
           disabled={
             loading ||
             !title.trim() ||
+            !scheduleValid ||
             (audience === "TARGETS" && targets.length === 0)
           }
         >
