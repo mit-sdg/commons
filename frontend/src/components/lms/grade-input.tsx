@@ -153,7 +153,12 @@ export function GradeInput({
   return (
     <div className={cn("space-y-3", className)}>
       <div className="space-y-2">
-        <Label htmlFor={`grade-score-${learner}-${item}`}>Score</Label>
+        <Label htmlFor={`grade-score-${learner}-${item}`}>
+          Score
+          {itemQuery.data && !("error" in itemQuery.data)
+            ? ` / ${itemQuery.data.maxPoints}`
+            : ""}
+        </Label>
         <Input
           id={`grade-score-${learner}-${item}`}
           type="number"
@@ -254,7 +259,7 @@ export function GradeInput({
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={save} disabled={loading}>
+          <Button size="sm" onClick={save} disabled={loading || !dirty}>
             Save draft
           </Button>
           <ConfirmAction
