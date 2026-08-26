@@ -114,6 +114,9 @@ export function AssignmentForm({
       targets: audience === "TARGETS" ? targets : [],
     };
 
+    const existingGradeItem = existing
+      ? await api.grades.item({ item: existing.assignment })
+      : null;
     const result = existing
       ? await api.assignments.revise({
           title: rawPayload.title,
@@ -132,6 +135,19 @@ export function AssignmentForm({
     setLoading(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
+      if (
+        existing &&
+        existingGradeItem &&
+        !("error" in existingGradeItem) &&
+        existingGradeItem.label === existing.title &&
+        existing.title !== rawPayload.title
+      ) {
+        await api.grades["configure-item"]({
+          item: existing.assignment,
+          label: rawPayload.title,
+          maxPoints: existingGradeItem.maxPoints,
+        });
+      }
       toast.success(existing ? "Assignment updated" : "Assignment created");
       onSaved();
     }
