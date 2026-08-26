@@ -8,6 +8,7 @@ import { LateDayControls } from "@/components/lms/late-day-controls";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
+import { TaskMarkdown } from "@/components/tasks/task-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -204,9 +205,7 @@ export default function AssignmentDetailPage({
                 <CardTitle className="text-base">Instructions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap text-sm">
-                  {detail.instructions}
-                </div>
+                <TaskMarkdown content={detail.instructions} />
               </CardContent>
             </Card>
           )}

@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
+import { TaskMarkdown } from "@/components/tasks/task-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -466,9 +467,7 @@ function StaffAssignmentDetailPageContent({
               <CardTitle className="text-base">Instructions</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">
-                {detail.instructions}
-              </p>
+              <TaskMarkdown content={detail.instructions} />
             </CardContent>
           </Card>
         )}
