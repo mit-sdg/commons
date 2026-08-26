@@ -71,6 +71,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
   const [moveSeat, setMoveSeat] = useState<{
     seat: string;
     name: string;
+    currentSection: string | null;
   } | null>(null);
   const [removeSeat, setRemoveSeat] = useState<{
     seat: string;
@@ -98,6 +99,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
     else {
       toast.success("Section updated");
       setMoveSeat(null);
+      setTargetSection("");
       onUpdate();
     }
   }
@@ -163,12 +165,14 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                             <UserMinus className="size-4" /> Drop
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() =>
+                            onClick={() => {
+                              setTargetSection("");
                               setMoveSeat({
                                 seat: m.seat,
                                 name: m.displayName ?? m.email,
-                              })
-                            }
+                                currentSection: m.section,
+                              });
+                            }}
                           >
                             <ArrowLeftRight className="size-4" /> Move Section
                           </DropdownMenuItem>
@@ -206,7 +210,15 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
         />
       ) : null}
 
-      <Dialog open={!!moveSeat} onOpenChange={() => setMoveSeat(null)}>
+      <Dialog
+        open={!!moveSeat}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMoveSeat(null);
+            setTargetSection("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Move {moveSeat?.name} to another section</DialogTitle>
@@ -220,7 +232,11 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {sections
-                    .filter((s) => s.status === "ACTIVE")
+                    .filter(
+                      (section) =>
+                        section.status === "ACTIVE" &&
+                        section.section !== moveSeat?.currentSection,
+                    )
                     .map((s) => (
                       <SelectItem key={s.section} value={s.section}>
                         {s.name}
