@@ -19,7 +19,7 @@ scores from Grading. The cleanup is a separate consequence: if it faults, the
 criterion stays removed while stale scores can remain. Changing a criterion's maximum does not rewrite the maximum retained with an
 existing Grading score. [Course.grades.GradesCriterionScores](reaction:Course.grades.GradesCriterionScores) forms
 [the remaining criterion scores](former:Course.grades.theCriterionScoresOf) for one learner and item,
-presenting each score beside the criterion's current Itemizing maximum.
+presenting each score beside the criterion's current Itemizing maximum. Staff can read these throughout grading; an active learner can read the item rubric and criterion scores after their overall grade is released.
 
 [Course.grades.GradesRecord](reaction:Course.grades.GradesRecord) records a draft score and feedback using the grade
 item's current maximum. Evidence is an optional submission identity supplied by staff; recording does

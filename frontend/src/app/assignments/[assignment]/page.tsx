@@ -123,6 +123,24 @@ export default function AssignmentDetailPage({
     [me, session],
   );
 
+  const releasedGrade = gradesData?.grades?.find(
+    (grade) => grade.item === assignment && grade.status === "RELEASED",
+  );
+  const { data: gradeItemData } = useQuery(
+    releasedGrade ? () => api.grades.item({ item: assignment }) : null,
+    [releasedGrade, assignment],
+  );
+  const { data: criterionScoreData } = useQuery(
+    releasedGrade && me
+      ? () =>
+          api.grades["criterion-scores"]({
+            learner: String(me.user),
+            item: assignment,
+          })
+      : null,
+    [releasedGrade, me, assignment],
+  );
+
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -335,6 +353,32 @@ export default function AssignmentDetailPage({
                       {myGrade.feedback}
                     </p>
                   )}
+                  {gradeItemData &&
+                  !("error" in gradeItemData) &&
+                  criterionScoreData &&
+                  !("error" in criterionScoreData) &&
+                  criterionScoreData.scores.length > 0 ? (
+                    <div className="space-y-2 border-t border-border pt-3">
+                      <p className="text-sm font-medium">Rubric results</p>
+                      {criterionScoreData.scores.map((criterionScore) => {
+                        const criterion = gradeItemData.criteria.find(
+                          (item) => item.criterion === criterionScore.criterion,
+                        );
+                        return (
+                          <div
+                            key={criterionScore.criterion}
+                            className="flex justify-between gap-3 text-sm"
+                          >
+                            <span>{criterion?.name ?? "Criterion"}</span>
+                            <span>
+                              {criterionScore.points} /{" "}
+                              {criterionScore.maxPoints}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </CardContent>
               </Card>
             )}

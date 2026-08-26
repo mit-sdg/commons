@@ -51,7 +51,9 @@ export function GradeInput({
   }, [dirty, onDirtyChange]);
 
   const itemQuery = useQuery(
-    currentStatus === "DRAFT" ? () => api.grades.item({ item }) : null,
+    !currentStatus || currentStatus === "DRAFT"
+      ? () => api.grades.item({ item })
+      : null,
     [item, currentStatus],
   );
   const scoresQuery = useQuery(
@@ -133,6 +135,20 @@ export function GradeInput({
   }
 
   const locked = currentStatus === "RELEASED" || currentStatus === "EXCUSED";
+  const rubricTotal =
+    scoresQuery.data && !("error" in scoresQuery.data)
+      ? scoresQuery.data.scores.reduce(
+          (total, criterion) => total + criterion.points,
+          0,
+        )
+      : 0;
+  const rubricMaximum =
+    itemQuery.data && !("error" in itemQuery.data)
+      ? itemQuery.data.criteria.reduce(
+          (total, criterion) => total + criterion.maxPoints,
+          0,
+        )
+      : 0;
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -159,12 +175,29 @@ export function GradeInput({
           placeholder="Optional feedback for the learner..."
         />
       </div>
-      {currentStatus === "DRAFT" &&
+      {(!currentStatus || currentStatus === "DRAFT") &&
       itemQuery.data &&
       !("error" in itemQuery.data) &&
       itemQuery.data.criteria.length > 0 ? (
         <fieldset className="space-y-3 rounded-lg border border-border bg-muted/25 p-3">
           <legend className="px-1 text-sm font-medium">Rubric scores</legend>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span>
+              Rubric total: {rubricTotal} / {rubricMaximum}
+            </span>
+            {rubricTotal !== score ? (
+              <span className="text-amber-700 dark:text-amber-300">
+                Overall score differs from the rubric total.
+              </span>
+            ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setScore(rubricTotal)}
+            >
+              Set total from rubric
+            </Button>
+          </div>
           {itemQuery.data.criteria.map((criterion) => {
             const existing =
               scoresQuery.data && !("error" in scoresQuery.data)

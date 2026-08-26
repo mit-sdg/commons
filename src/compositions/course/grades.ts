@@ -186,6 +186,14 @@ export const GradesItem = endpoint(
           }),
         )
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment: item, assignee: user }).is({ assigned: true }),
+        Itemizing._getItem({ item }).is({ label, maxPoints, status }),
+      )
+        .then(respond({ item, label, maxPoints, status, criteria: theCriteriaOf({ item }) }))
+        .named("learner"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -249,6 +257,13 @@ export const GradesCriterionScores = endpoint(
   "/grades/criterion-scores",
   ({ session, learner, item, user }) =>
     receive({ session, learner, item }).then(
+      where(
+        activeUser({ session }).is({ user: learner }),
+        isActiveStudent({ user: learner }),
+        Grading._getGrade({ learner, item }).is({ status: "RELEASED" }),
+      )
+        .then(respond({ scores: theCriterionScoresOf({ learner, item }) }))
+        .named("learner"),
       where(activeUser({ session }).is({ user }), mayGrade({ user }))
         .then(
           respond({

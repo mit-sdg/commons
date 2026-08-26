@@ -5357,6 +5357,22 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Course.grades.GradesCriterionScores:learner
+
+Authored path: `Course.grades.GradesCriterionScores`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 20.
+- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: learner)
+  view "(user) is an active student" with (user: learner)
+  Grading._getGrade (item, learner) has (status: "RELEASED")
+then
+  RequestBoundary.respond (requestId, scores: former "the criterion scores of (learner) on (item)" with (item, learner))
+```
+
 ### Course.grades.GradesCriterionScores:success
 
 Authored path: `Course.grades.GradesCriterionScores`.
@@ -5580,6 +5596,23 @@ where
   view "(user) may not grade" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.grades.GradesItem:learner
+
+Authored path: `Course.grades.GradesItem`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 7.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
+
+```reaction
+when RequestBoundary.request (item, path: "/grades/item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment: item) has (assigned: true)
+  Itemizing._getItem (item) has (label, maxPoints, status)
+then
+  RequestBoundary.respond (criteria: former "the criteria of (item)" with (item), item, label, maxPoints, requestId, status)
 ```
 
 ### Course.grades.GradesItem:missing
