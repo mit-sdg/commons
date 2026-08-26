@@ -334,6 +334,125 @@ for (const [floor, make] of floors) {
       ]);
     });
 
+    test("a line reads as one row, newest first, saying where it now stands", async () => {
+      const drafting = await make();
+      const fresh = await drafting.describe({ author: "lee", request: "A quiz on tides.", at });
+      expect(await drafting._lines({ author: "lee" })).toEqual([
+        {
+          brief: fresh.brief,
+          request: "A quiz on tides.",
+          createdAt: at,
+          origin: null,
+          adopted: false,
+          stalled: false,
+          clarifying: false,
+        },
+      ]);
+
+      const held = await drafting.describe({
+        author: "lee",
+        request: "Something about gardening.",
+        at: later,
+      });
+      await drafting.ask({ brief: held.brief, question: "A quiz or a survey?" });
+      const spent = await drafting.describe({
+        author: "lee",
+        request: "A quiz nothing answered.",
+        at: new Date("2026-03-03T11:00:00Z"),
+      });
+      await drafting.stall({ brief: spent.brief, reason: "nothing came back" });
+
+      const lines = await drafting._lines({ author: "lee" });
+      expect(lines.map((row) => row.brief)).toEqual([spent.brief, held.brief, fresh.brief]);
+      expect(lines[0]).toMatchObject({ stalled: true, clarifying: false, adopted: false });
+      expect(lines[1]).toMatchObject({ stalled: false, clarifying: true, adopted: false });
+      expect(await drafting._lines({ author: "nobody" })).toEqual([]);
+    });
+
+    test("a line answers for its tip, and a correction never begins one", async () => {
+      const drafting = await make();
+      const { brief } = await drafting.describe({ author: "lee", request: "A quiz.", at });
+      const { candidate } = await drafting.propose({ brief, form: "quiz", material });
+      const { brief: correction } = await drafting.correct({
+        author: "lee",
+        candidate,
+        request: "Sharpen the wording.",
+        at: later,
+      });
+      expect((await drafting._lines({ author: "lee" })).map((row) => row.brief)).toEqual([brief]);
+
+      await drafting.stall({ brief: correction, reason: "nothing came back" });
+      expect(await drafting._lines({ author: "lee" })).toMatchObject([
+        { brief, stalled: true, clarifying: false, adopted: false },
+      ]);
+
+      await drafting.adopt({ candidate });
+      expect(await drafting._lines({ author: "lee" })).toMatchObject([
+        { brief, adopted: true, stalled: true },
+      ]);
+    });
+
+    test("the lines opened from an origin answer their author, newest first", async () => {
+      const drafting = await make();
+      const described = await drafting.describe({ author: "lee", request: "A quiz.", at });
+      const first = await drafting.open({
+        author: "lee",
+        request: "Houseplants, as it stands",
+        form: "quiz",
+        material,
+        origin: "questionnaire-1",
+        at,
+      });
+      const other = await drafting.open({
+        author: "kim",
+        request: "Tides, as it stands",
+        form: "quiz",
+        material,
+        origin: "questionnaire-2",
+        at: later,
+      });
+      const second = await drafting.open({
+        author: "kim",
+        request: "Houseplants again",
+        form: "quiz",
+        material,
+        origin: "questionnaire-1",
+        at: later,
+      });
+      await drafting.adopt({ candidate: second.candidate });
+
+      expect(await drafting._openedFrom({ origin: "questionnaire-1" })).toEqual([
+        {
+          brief: second.brief,
+          author: "kim",
+          request: "Houseplants again",
+          createdAt: later,
+          adopted: true,
+          stalled: false,
+          clarifying: false,
+        },
+        {
+          brief: first.brief,
+          author: "lee",
+          request: "Houseplants, as it stands",
+          createdAt: at,
+          adopted: false,
+          stalled: false,
+          clarifying: false,
+        },
+      ]);
+      expect(
+        (await drafting._openedFrom({ origin: "questionnaire-2" })).map((row) => row.brief),
+      ).toEqual([other.brief]);
+      expect(await drafting._openedFrom({ origin: "no-such" })).toEqual([]);
+      expect(
+        (await drafting._lines({ author: "lee" })).map((row) => [row.brief, row.origin]),
+      ).toEqual([
+        [first.brief, "questionnaire-1"],
+        [described.brief, null],
+      ]);
+    });
+
     test("adopting closes the line to further correction", async () => {
       const drafting = await make();
       const { brief } = await drafting.describe({ author: "lee", request: "A quiz.", at });

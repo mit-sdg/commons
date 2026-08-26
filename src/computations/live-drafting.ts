@@ -14,7 +14,7 @@ To deliver a draft:
 {"kind":"draft","form":"quiz","material":[{"prompt":"...","choices":["..."],"expected":"...","explanation":"..."}]}
 - "form" is "quiz" or "survey".
 - Every item needs a "prompt". "choices" may be [] for a written answer.
-- A quiz item's "expected" is the correct answer; when choices are given it must equal one of them exactly. "explanation" says briefly why, and may be "".
+- A quiz item's "expected" is the correct answer; when choices are given it must equal one of them exactly, and only those items are graded. On a written-answer item it is a reference shown afterward, never graded. "explanation" says briefly why, and may be "".
 - A survey proposes no answers: every "expected" and "explanation" is "".
 - Unless the request says otherwise, draft 3 to 6 items.
 

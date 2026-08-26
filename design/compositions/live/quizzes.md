@@ -25,7 +25,10 @@ questionnaire out of use while keeping it readable.
 [Live.quizzes.RemoveQuestion](reaction:Live.quizzes.RemoveQuestion) edit the
 questions themselves: a prompt, offered choices (none means a written answer),
 and for a quiz an optional expected answer with an optional explanation, empty
-strings carrying none. Questions stand contiguously in position order, counting
+strings carrying none. On a question offering choices the expected answer
+proposes one of them for grading; on a written-answer question it is a
+reference revealed at the disclosure levels that show answers, and nothing is
+ever graded against it. Questions stand contiguously in position order, counting
 from one, and the composition keeps that so: adding appends at the end,
 [Live.quizzes.RemovedQuestionClosesRanks](reaction:Live.quizzes.RemovedQuestionClosesRanks)
 closes the ranks behind whatever was removed, revising changes content and

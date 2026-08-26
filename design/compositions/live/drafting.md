@@ -85,11 +85,26 @@ refused with `RUN_OPEN` while a run stands open, the same rule the quizzes
 page holds. The title and disclosure are not the line's to change; they stay
 with the quizzes page that owns them.
 
+A line, once left, can be found again.
+[Live.drafting.Lines](reaction:Live.drafting.Lines) forms
+[the author's drafting lines](former:Live.drafting.theDraftLines) — one row
+per line the caller began, newest first, each saying whether it stands
+adopted, stalled, or waiting on a clarification, what it was opened from, and,
+when a description's adoption composed a questionnaire, which one — so the
+drafting page can offer an interrupted line back.
+[Live.drafting.Provenance](reaction:Live.drafting.Provenance) forms
+[the drafting provenance of one questionnaire](former:Live.drafting.theProvenance):
+the described line that composed it, when one did, and every refining line
+opened on it, whoever opened it — how the questionnaire came to read as it
+does. Both require `live:host`.
+
 ```endpoints
 Live.drafting.Adopt at /live/drafts/adopt
 Live.drafting.Clarify at /live/drafts/clarify
 Live.drafting.Correct at /live/drafts/correct
 Live.drafting.Describe at /live/drafts/describe
 Live.drafting.Line at /live/drafts/line
+Live.drafting.Lines at /live/drafts/lines
+Live.drafting.Provenance at /live/drafts/provenance
 Live.drafting.Refine at /live/drafts/refine
 ```

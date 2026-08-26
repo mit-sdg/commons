@@ -13,8 +13,9 @@ import { api, isApiError, publicErrorMessage } from "@/lib/api";
  * dashboard that shows it.
  *
  * A refusal here is a backstop: callers disable the button when they can see
- * the questionnaire is not ready, and the branch that still refuses arrives as
- * a plain conflict, which only these two conditions can produce.
+ * the questionnaire is not ready, so a refusal means the facts moved after the
+ * page last read them. The wire folds both refusals — a run already open, a
+ * quiz not ready — into one conflict, so the toast cannot name which.
  */
 export function RunLaunchButton({
   questionnaire,
@@ -43,7 +44,7 @@ export function RunLaunchButton({
       setBusy(false);
       toast.error(
         result.error === "CONFLICT"
-          ? "This cannot launch: a quiz needs at least one expected answer, and a questionnaire can have only one run open at a time."
+          ? "This cannot launch right now."
           : publicErrorMessage(result.error),
       );
       return;

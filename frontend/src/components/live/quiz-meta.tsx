@@ -15,21 +15,9 @@ export function isQuizForm(value: string): value is QuizForm {
  * into a run's key at launch, so a change here reaches only later runs.
  */
 export const DISCLOSURE_OPTIONS = [
-  {
-    value: "score",
-    label: "Score only",
-    hint: "Participants see the number they earned and nothing else.",
-  },
-  {
-    value: "answers",
-    label: "Score and expected answers",
-    hint: "Participants also see what each question expected.",
-  },
-  {
-    value: "explanations",
-    label: "Everything, explanations included",
-    hint: "Participants also see the explanation written for each question.",
-  },
+  { value: "score", label: "Score only" },
+  { value: "answers", label: "Score and answers" },
+  { value: "explanations", label: "Score, answers, and explanations" },
 ] as const;
 
 export type Disclosure = (typeof DISCLOSURE_OPTIONS)[number]["value"];
@@ -38,19 +26,15 @@ export function isDisclosure(value: string): value is Disclosure {
   return DISCLOSURE_OPTIONS.some((option) => option.value === value);
 }
 
-export function disclosureHint(value: string): string {
-  return (
-    DISCLOSURE_OPTIONS.find((option) => option.value === value)?.hint ?? ""
-  );
-}
-
 /**
  * What a refusal means once a run is open: the questionnaire is frozen for as
  * long as the room is answering it. Every surface that can meet that conflict
  * says it the same way.
  */
-export const RUN_OPEN_MESSAGE =
-  "A run is open, so this questionnaire cannot be changed.";
+export const RUN_OPEN_MESSAGE = "A run is open — editing is locked.";
+
+/** Why a quiz cannot launch yet; the shelf and the desk say it the same way. */
+export const QUIZ_NOT_READY_MESSAGE = "No question has a marked answer.";
 
 export function FormBadge({
   form,

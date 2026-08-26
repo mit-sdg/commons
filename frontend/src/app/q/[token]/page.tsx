@@ -25,6 +25,10 @@ type OutcomeShapeOf<T> = T extends { outcome: infer Formed } ? Formed : never;
 type FormedOutcome = OutcomeShapeOf<Outcome>;
 type ScoredOutcome = NonNullable<FormedOutcome>;
 type OutcomeItem = Extract<ScoredOutcome, { items: unknown }>["items"][number];
+type OutcomeReference = Extract<
+  ScoredOutcome,
+  { references: unknown }
+>["references"][number];
 
 const formedOutcomeOf = (result: Outcome): FormedOutcome | undefined =>
   "outcome" in result ? result.outcome : undefined;
@@ -32,8 +36,13 @@ const formedOutcomeOf = (result: Outcome): FormedOutcome | undefined =>
 const itemsOf = (formed: ScoredOutcome): OutcomeItem[] | undefined =>
   "items" in formed ? formed.items : undefined;
 
-const explanationOf = (item: OutcomeItem): string | undefined =>
-  "explanation" in item ? item.explanation : undefined;
+/** Written-answer questions the author kept an answer beside; never scored. */
+const referencesOf = (formed: ScoredOutcome): OutcomeReference[] | undefined =>
+  "references" in formed ? formed.references : undefined;
+
+const explanationOf = (
+  row: OutcomeItem | OutcomeReference,
+): string | undefined => ("explanation" in row ? row.explanation : undefined);
 
 const FACE_POLL_MS = 5_000;
 const OUTCOME_POLL_MS = 1_500;
@@ -183,6 +192,19 @@ export default function ParticipantPage() {
     }
   }, [me, token, answers, loadFace]);
 
+  // Typing counts at once — the hand-in button must not stay dead under a
+  // finger while a written answer sits uncommitted — but the network only
+  // hears committed values: blur, or the hand-in flush.
+  const draftAnswer = useCallback(
+    (question: string, value: string) => {
+      if (response === null) return;
+      const next = { ...answers, [question]: value };
+      setAnswers(next);
+      writeProgress(token, { response, answers: next, submitted: false });
+    },
+    [response, answers, token],
+  );
+
   const answer = useCallback(
     async (question: string, value: string) => {
       if (response === null) return;
@@ -200,6 +222,13 @@ export default function ParticipantPage() {
     if (response === null) return;
     setBusy(true);
     try {
+      // Hand-in flushes anything typed but not yet committed by a blur.
+      for (const [question, value] of Object.entries(answers)) {
+        const trimmed = value.trim();
+        if (trimmed === "" || sent.current[question] === trimmed) continue;
+        sent.current[question] = trimmed;
+        await api["/live/p/answer"]({ response, question, value: trimmed });
+      }
       const result = await api["/live/p/submit"]({ response });
       if (isApiError(result)) {
         await loadFace();
@@ -227,8 +256,8 @@ export default function ParticipantPage() {
       <Shell>
         <EmptyState
           icon={CircleSlash}
-          title="Nothing is shared here"
-          description="Check the address or scan the code again."
+          title="Nothing here"
+          description="Check the address or scan again."
         />
       </Shell>
     );
@@ -255,14 +284,7 @@ export default function ParticipantPage() {
       <Shell title={face.title}>
         <EmptyState
           icon={CircleSlash}
-          title="This has closed"
-          // Only someone who had begun lost something by the close; a device
-          // arriving after the fact is just late.
-          description={
-            response === null
-              ? "This run has ended."
-              : "Participation ended before you could hand in."
-          }
+          title={`This ${face.form} has been closed`}
         />
       </Shell>
     );
@@ -271,16 +293,7 @@ export default function ParticipantPage() {
   if (alreadyIn) {
     return (
       <Shell title={face.title}>
-        <EmptyState
-          icon={CheckCircle2}
-          title="Already handed in"
-          // Signed-in participation is bound to the account, not the handset.
-          description={
-            me
-              ? "You already handed in from this account."
-              : `This device already handed in a response to this ${face.form}.`
-          }
-        />
+        <EmptyState icon={CheckCircle2} title="Already handed in" />
       </Shell>
     );
   }
@@ -288,13 +301,18 @@ export default function ParticipantPage() {
   if (response === null) {
     return (
       <Shell title={face.title}>
-        <div className="flex flex-col items-center gap-4 py-10">
+        <div className="flex min-h-[55dvh] flex-col items-center justify-center gap-4 py-10">
           <p className="text-center text-muted-foreground">
             {face.questions.length} question
             {face.questions.length === 1 ? "" : "s"} ·{" "}
             {isQuiz ? "quiz" : "survey"}
           </p>
-          <Button size="lg" onClick={() => void begin()} disabled={busy}>
+          <Button
+            size="lg"
+            className="h-11"
+            onClick={() => void begin()}
+            disabled={busy}
+          >
             Join
           </Button>
         </div>
@@ -312,10 +330,11 @@ export default function ParticipantPage() {
             question={question}
             value={answers[question.question] ?? ""}
             onAnswer={(value) => void answer(question.question, value)}
+            onDraft={(value) => draftAnswer(question.question, value)}
           />
         ))}
       </div>
-      <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-4 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
           <span className="text-sm text-muted-foreground">
             {Object.values(answers).filter((value) => value !== "").length} of{" "}
@@ -362,20 +381,25 @@ function QuestionCard({
   question,
   value,
   onAnswer,
+  onDraft,
 }: {
   index: number;
   question: Question;
   value: string;
   onAnswer: (value: string) => void;
+  onDraft: (value: string) => void;
 }) {
   const choices = question.choices;
 
   return (
     <Card>
       <CardContent className="flex flex-col gap-3">
-        <p className="font-medium" dir="auto">
-          <span className="me-2 text-muted-foreground">{index + 1}.</span>
-          {question.prompt}
+        {/* The number keeps its own column so a wrapped prompt holds its edge. */}
+        <p className="flex items-start gap-2 font-medium" dir="auto">
+          <span className="w-6 shrink-0 text-muted-foreground tabular-nums">
+            {index + 1}.
+          </span>
+          <span className="min-w-0 flex-1">{question.prompt}</span>
         </p>
         {choices.length > 0 ? (
           <div className="flex flex-col gap-2">
@@ -399,13 +423,14 @@ function QuestionCard({
             ))}
           </div>
         ) : (
-          // The field owns the draft and commits on blur, so nothing has to be
-          // synced from props into state during render.
+          // The field stays uncontrolled — typing drafts, blur commits — so
+          // nothing has to be synced from props into state during render.
           <Input
             className="h-11"
             dir="auto"
             defaultValue={value}
             placeholder="Your answer"
+            onChange={(event) => onDraft(event.currentTarget.value)}
             onBlur={(event) => {
               const next = event.currentTarget.value.trim();
               if (next === "") return;
@@ -427,13 +452,7 @@ function OutcomeView({
   isQuiz: boolean;
 }) {
   if (!isQuiz || (outcome !== null && !("outcome" in outcome))) {
-    return (
-      <EmptyState
-        icon={CheckCircle2}
-        title="Handed in"
-        description="Thanks — your response was received."
-      />
-    );
+    return <EmptyState icon={CheckCircle2} title="Handed in" />;
   }
   const formed = outcome === null ? undefined : formedOutcomeOf(outcome);
   if (formed === null || formed === undefined || formed.score === null) {
@@ -441,6 +460,7 @@ function OutcomeView({
   }
   // Disclosure decides whether the key travels back with the score at all.
   const items = itemsOf(formed);
+  const references = referencesOf(formed);
   return (
     <div className="flex flex-col gap-4">
       <div className="py-6 text-center">
@@ -478,6 +498,36 @@ function OutcomeView({
                       Expected: {item.expected}
                     </p>
                   )}
+                  {explanation !== undefined && explanation !== "" && (
+                    <p className="text-muted-foreground">{explanation}</p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+      {references !== undefined && references.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {references.map((reference) => {
+            const explanation = explanationOf(reference);
+            return (
+              <Card key={reference.item}>
+                <CardContent className="flex flex-col gap-1 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium" dir="auto">
+                      {reference.prompt}
+                    </p>
+                    <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-muted-foreground text-xs">
+                      Not graded
+                    </span>
+                  </div>
+                  {/* A written answer is read against its reference, so it
+                      never wears the right-or-wrong colours. */}
+                  <p dir="auto">Your answer: {reference.value ?? "—"}</p>
+                  <p className="text-muted-foreground" dir="auto">
+                    Reference: {reference.reference}
+                  </p>
                   {explanation !== undefined && explanation !== "" && (
                     <p className="text-muted-foreground">{explanation}</p>
                   )}

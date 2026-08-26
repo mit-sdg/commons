@@ -100,8 +100,11 @@ export function SiteHeader() {
   }
 
   // A participant page reached from a scanned code stands alone: no product
-  // chrome between the phone and the questions.
+  // chrome between the phone and the questions. The projected join page stands
+  // alone the same way — a wall shows the room only the invitation.
   if (pathname.startsWith("/q/")) return null;
+  if (pathname.startsWith("/staff/live/run/") && pathname.endsWith("/project"))
+    return null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">

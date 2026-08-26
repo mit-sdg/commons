@@ -249,6 +249,8 @@ Defined in [Drafting](../design/concepts/Drafting.md), line 1.
 
 - `_brief(brief: String) : optional (author: String, request: String, createdAt: Date, basis: String | Null)`
 - `_briefs(author: String) : many (brief: String, request: String, createdAt: Date, basis: String | Null)`
+- `_lines(author: String) : many (brief: String, request: String, createdAt: Date, origin: String | Null, adopted: Boolean, stalled: Boolean, clarifying: Boolean)`
+- `_openedFrom(origin: String) : many (brief: String, author: String, request: String, createdAt: Date, adopted: Boolean, stalled: Boolean, clarifying: Boolean)`
 - `_standing(brief: String) : optional (clarifying: Boolean, stalled: Boolean)`
 - `_originOf(brief: String) : optional (origin: String)`
 - `_basisOf(brief: String) : optional (basis: String)`
@@ -753,6 +755,7 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
 - `_material(questionnaire: String) : optional (form: String, material: Seq)`
 - `_proposesAnswers(questionnaire: String) : one (proposes: Boolean)`
 - `_expectedAnswers(questionnaire: String) : optional (expectations: Seq)`
+- `_references(questionnaire: String) : many (question: String, prompt: String, expected: String, explanation: String, position: Number)`
 
 #### Instances
 
@@ -2023,9 +2026,10 @@ Authored path: `Live.participation.theAnswersOutcome`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 41.
 
 ```former
-Former "the answers outcome of (response)" — inputs (response); bindings (run, key, disclosure, score, outOf, item, expected, prompt, value); promises at most one record — forms:
+Former "the answers outcome of (response)" — inputs (response); bindings (run, key, questionnaire, disclosure, score, outOf, item, expected, prompt, value, written, writtenPrompt, reference, writtenValue); promises at most one record — forms:
   a record of
     where Responding._response (response) has (subject: run, submitted: true)
+    where Publishing._edition (edition: run) has (material: questionnaire)
     where Scoring._keyFor (subject: run) has (disclosure, key)
     where whether Scoring._resultFor (key, submission: response) has (outOf, score)
     disclosure
@@ -2038,6 +2042,13 @@ Former "the answers outcome of (response)" — inputs (response); bindings (run,
         prompt
         value
     outOf
+    references: each Questioning._references (questionnaire) has (expected: reference, prompt: writtenPrompt, question: written)
+      where whether Responding._answers (response) has (item: written, value: writtenValue)
+      form a record of
+        item: written
+        prompt: writtenPrompt
+        reference
+        value: writtenValue
     response
     score
 ```
@@ -2108,7 +2119,7 @@ Former "the backlinks of (target)" — inputs (target); bindings (source); promi
 ### the board of (run)
 
 Authored path: `Live.runs.theRunBoard`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 33.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 37.
 
 ```former
 Former "the board of (run)" — inputs (run); bindings (questionnaire, title, form, open, openedAt, closedAt, token, started, handedIn, question, prompt, choices, expected, explanation, position, participant, name, value); promises at most one record — forms:
@@ -2325,6 +2336,55 @@ Former "the drafting line of (brief)" — inputs (brief); bindings (step, reques
       step
 ```
 
+### the drafting lines of (author)
+
+Authored path: `Live.drafting.theDraftLines`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 90.
+
+```former
+Former "the drafting lines of (author)" — inputs (author); bindings (brief, request, createdAt, origin, adopted, stalled, clarifying, refinesTitle, composed, composedTitle); promises exactly one record — forms:
+  each Drafting._lines (author) has (adopted, brief, clarifying, createdAt, origin, request, stalled)
+    where whether Questioning._getQuestionnaire (questionnaire: origin) has (title: refinesTitle)
+    where whether AdoptLinking._getLinks (source: brief) has (target: composed)
+    where whether Questioning._getQuestionnaire (questionnaire: composed) has (title: composedTitle)
+    form a record of
+      adopted
+      brief
+      clarifying
+      composed
+      composedTitle
+      createdAt
+      refines: origin
+      refinesTitle
+      request
+      stalled
+```
+
+### the drafting provenance of (questionnaire)
+
+Authored path: `Live.drafting.theProvenance`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 96.
+
+```former
+Former "the drafting provenance of (questionnaire)" — inputs (questionnaire); bindings (composer, composedRequest, composedAt, brief, author, request, createdAt, adopted, stalled, clarifying); promises exactly one record — forms:
+  a record of
+    composed: each AdoptLinking._getBacklinks (target: questionnaire) has (source: composer)
+      where Drafting._brief (brief: composer) has (createdAt: composedAt, request: composedRequest)
+      form a record of
+        brief: composer
+        createdAt: composedAt
+        request: composedRequest
+    refined: each Drafting._openedFrom (origin: questionnaire) has (adopted, author, brief, clarifying, createdAt, request, stalled)
+      form a record of
+        adopted
+        author
+        brief
+        clarifying
+        createdAt
+        request
+        stalled
+```
+
 ### the dropped roster ()
 
 Authored path: `Course.roster.theDroppedRoster`.
@@ -2349,9 +2409,10 @@ Authored path: `Live.participation.theExplanationsOutcome`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 42.
 
 ```former
-Former "the explained outcome of (response)" — inputs (response); bindings (run, key, disclosure, score, outOf, item, expected, explanation, prompt, value); promises at most one record — forms:
+Former "the explained outcome of (response)" — inputs (response); bindings (run, key, questionnaire, disclosure, score, outOf, item, expected, explanation, prompt, value, written, writtenPrompt, reference, writtenExplanation, writtenValue); promises at most one record — forms:
   a record of
     where Responding._response (response) has (subject: run, submitted: true)
+    where Publishing._edition (edition: run) has (material: questionnaire)
     where Scoring._keyFor (subject: run) has (disclosure, key)
     where whether Scoring._resultFor (key, submission: response) has (outOf, score)
     disclosure
@@ -2365,6 +2426,14 @@ Former "the explained outcome of (response)" — inputs (response); bindings (ru
         prompt
         value
     outOf
+    references: each Questioning._references (questionnaire) has (expected: reference, explanation: writtenExplanation, prompt: writtenPrompt, question: written)
+      where whether Responding._answers (response) has (item: written, value: writtenValue)
+      form a record of
+        explanation: writtenExplanation
+        item: written
+        prompt: writtenPrompt
+        reference
+        value: writtenValue
     response
     score
 ```
@@ -2832,7 +2901,7 @@ Former "the open flags ()" — inputs (); bindings (target, count); promises exa
 ### the open runs
 
 Authored path: `Live.runs.theOpenRuns`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 30.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 34.
 
 ```former
 Former "the open runs" — inputs (); bindings (run, questionnaire, title, form, openedAt, token); promises exactly one record — forms:
@@ -2934,7 +3003,7 @@ Former "the public posts of (author)" — inputs (author); bindings (post); prom
 ### the questionnaire (questionnaire)
 
 Authored path: `Live.quizzes.theQuestionnaire`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 49.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 52.
 
 ```former
 Former "the questionnaire (questionnaire)" — inputs (questionnaire); bindings (title, form, disclosure, createdAt, retired, question, prompt, choices, expected, explanation, position, run, open, openedAt, closedAt, token); promises at most one record — forms:
@@ -2967,7 +3036,7 @@ Former "the questionnaire (questionnaire)" — inputs (questionnaire); bindings 
 ### the questionnaires
 
 Authored path: `Live.quizzes.theQuestionnaires`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 44.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 47.
 
 ```former
 Former "the questionnaires" — inputs (); bindings (questionnaire, title, form, disclosure, createdAt, retired, run, token, questions, proposes); promises exactly one record — forms:
@@ -3152,7 +3221,7 @@ Former "the score outcome of (response)" — inputs (response); bindings (run, k
 ### the scores of (run)
 
 Authored path: `Live.runs.theRunScores`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 37.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 41.
 
 ```former
 Former "the scores of (run)" — inputs (run); bindings (key, disclosure, submission, participant, name, score, outOf); promises at most one record — forms:
@@ -12282,7 +12351,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12297,7 +12366,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12316,7 +12385,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12335,7 +12404,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12351,7 +12420,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12371,7 +12440,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when Drafting.adopt (candidate, result.candidate: adopted), asked by Live.drafting.Adopt:refit
@@ -12385,7 +12454,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12404,7 +12473,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12422,7 +12491,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -12440,7 +12509,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 102.
 
 ```reaction
 when Drafting.adopt (candidate, result.candidate: adopted), asked by Live.drafting.Adopt:success
@@ -12580,7 +12649,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 90.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 103.
 
 ```reaction
 when RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
@@ -12595,7 +12664,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 90.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 103.
 
 ```reaction
 when RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
@@ -12611,7 +12680,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 90.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 103.
 
 ```reaction
 when Drafting.clarify (answer, clarification, brief, result.clarification: clarified), asked by Live.drafting.Clarify:success
@@ -12641,7 +12710,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 91.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 104.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
@@ -12656,7 +12725,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 91.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 104.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
@@ -12672,7 +12741,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 91.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 104.
 
 ```reaction
 when Drafting.correct (at, author: user, candidate, request, brief), asked by Live.drafting.Correct:success
@@ -12717,7 +12786,7 @@ then
 
 Authored path: `Live.drafting.Describe`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 92.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
@@ -12732,7 +12801,7 @@ then
 
 Authored path: `Live.drafting.Describe`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 92.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
@@ -12748,7 +12817,7 @@ then
 
 Authored path: `Live.drafting.Describe`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 92.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 105.
 
 ```reaction
 when Drafting.describe (at, author: user, request, brief), asked by Live.drafting.Describe:success
@@ -12805,7 +12874,7 @@ then
 
 Authored path: `Live.drafting.Line`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 49.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 93.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 106.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/line", requestId, session)
@@ -12820,7 +12889,7 @@ then
 
 Authored path: `Live.drafting.Line`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 49.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 93.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 106.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/line", requestId, session)
@@ -12830,6 +12899,37 @@ where
   view "(user) may host live runs" with (user)
 then
   RequestBoundary.respond (line: former "the drafting line of (brief)" with (brief), requestId)
+```
+
+### Live.drafting.Lines:forbidden
+
+Authored path: `Live.drafting.Lines`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 107.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/lines", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.Lines:success
+
+Authored path: `Live.drafting.Lines`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 89.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 107.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/lines", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  RequestBoundary.respond (lines: former "the drafting lines of (author)" with (author: user), requestId)
 ```
 
 ### Live.drafting.ProposedDraftSatisfiesInsistence
@@ -12845,11 +12945,42 @@ then
   Insisting.satisfy (aim: brief)
 ```
 
+### Live.drafting.Provenance:forbidden
+
+Authored path: `Live.drafting.Provenance`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 95.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/provenance", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.Provenance:success
+
+Authored path: `Live.drafting.Provenance`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 95.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 108.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/provenance", questionnaire, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+then
+  RequestBoundary.respond (provenance: former "the drafting provenance of (questionnaire)" with (questionnaire), requestId)
+```
+
 ### Live.drafting.Refine:forbidden
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 94.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -12864,7 +12995,7 @@ then
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 94.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -12880,7 +13011,7 @@ then
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 94.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -12896,7 +13027,7 @@ then
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 94.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -12913,7 +13044,7 @@ then
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 94.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -12932,7 +13063,7 @@ then
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 68.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 94.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 109.
 
 ```reaction
 when Drafting.open (at, author: user, form, material, origin: questionnaire, request: title, brief, candidate), asked by Live.drafting.Refine:success
@@ -13020,7 +13151,7 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 26.
-- Covered by [Participation](../design/compositions/live/participation.md), line 47.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
@@ -13035,7 +13166,7 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 26.
-- Covered by [Participation](../design/compositions/live/participation.md), line 47.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
@@ -13051,7 +13182,7 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 26.
-- Covered by [Participation](../design/compositions/live/participation.md), line 47.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
@@ -13067,7 +13198,7 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 26.
-- Covered by [Participation](../design/compositions/live/participation.md), line 47.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
 
 ```reaction
 when Responding.answer (item: question, response, value, result.response: answered), asked by Live.participation.Answer:success
@@ -13081,7 +13212,7 @@ then
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 10.
-- Covered by [Participation](../design/compositions/live/participation.md), line 48.
+- Covered by [Participation](../design/compositions/live/participation.md), line 53.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/arrive", requestId, token)
@@ -13093,7 +13224,7 @@ then
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 10.
-- Covered by [Participation](../design/compositions/live/participation.md), line 48.
+- Covered by [Participation](../design/compositions/live/participation.md), line 53.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Arrive
@@ -13107,7 +13238,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
 
 ```reaction
 when RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
@@ -13119,7 +13250,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -13134,7 +13265,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -13150,7 +13281,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
 
 ```reaction
 when Responding.begin (at, participant: device, subject: run, response), asked by Live.participation.Begin:open#2
@@ -13164,7 +13295,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 19.
-- Covered by [Participation](../design/compositions/live/participation.md), line 50.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/begin-signed", requestId, session, token)
@@ -13176,7 +13307,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 19.
-- Covered by [Participation](../design/compositions/live/participation.md), line 50.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -13191,7 +13322,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 19.
-- Covered by [Participation](../design/compositions/live/participation.md), line 50.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -13208,7 +13339,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 19.
-- Covered by [Participation](../design/compositions/live/participation.md), line 50.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
 
 ```reaction
 when Responding.begin (at, participant: user, subject: run, response), asked by Live.participation.BeginSigned:open#2
@@ -13222,7 +13353,7 @@ then
 
 Authored path: `Live.participation.Outcome`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 37.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+- Covered by [Participation](../design/compositions/live/participation.md), line 56.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -13237,7 +13368,7 @@ then
 
 Authored path: `Live.participation.Outcome`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 37.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+- Covered by [Participation](../design/compositions/live/participation.md), line 56.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -13252,7 +13383,7 @@ then
 
 Authored path: `Live.participation.Outcome`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 37.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+- Covered by [Participation](../design/compositions/live/participation.md), line 56.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -13266,7 +13397,7 @@ then
 
 Authored path: `Live.participation.Outcome`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 37.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+- Covered by [Participation](../design/compositions/live/participation.md), line 56.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -13281,7 +13412,7 @@ then
 
 Authored path: `Live.participation.Outcome`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 37.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
+- Covered by [Participation](../design/compositions/live/participation.md), line 56.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -13296,7 +13427,7 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 29.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 57.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
@@ -13311,7 +13442,7 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 29.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 57.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
@@ -13329,7 +13460,7 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 29.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 57.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
@@ -13348,7 +13479,7 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 29.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 57.
 
 ```reaction
 when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:quiz-whole
@@ -13362,7 +13493,7 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 29.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 57.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
@@ -13380,7 +13511,7 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 29.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 57.
 
 ```reaction
 when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:survey
@@ -13409,7 +13540,7 @@ then
 
 Authored path: `Live.quizzes.AddQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 23.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 54.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", prompt, questionnaire, requestId, session)
@@ -13424,7 +13555,7 @@ then
 
 Authored path: `Live.quizzes.AddQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 23.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 54.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", prompt, questionnaire, requestId, session)
@@ -13440,7 +13571,7 @@ then
 
 Authored path: `Live.quizzes.AddQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 23.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 54.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", prompt, questionnaire, requestId, session)
@@ -13459,7 +13590,7 @@ then
 
 Authored path: `Live.quizzes.AddQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 23.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 54.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
 
 ```reaction
 when Questioning.addQuestion (choices, expected, explanation, position, prompt, questionnaire, question), asked by Live.quizzes.AddQuestion:success
@@ -13473,7 +13604,7 @@ then
 
 Authored path: `Live.quizzes.Create`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 12.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 55.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
 
 ```reaction
 when RequestBoundary.request (disclosure, form, path: "/live/quizzes/create", requestId, session, title)
@@ -13488,7 +13619,7 @@ then
 
 Authored path: `Live.quizzes.Create`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 12.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 55.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
 
 ```reaction
 when RequestBoundary.request (disclosure, form, path: "/live/quizzes/create", requestId, session, title)
@@ -13504,7 +13635,7 @@ then
 
 Authored path: `Live.quizzes.Create`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 12.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 55.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
 
 ```reaction
 when Questioning.compose (at, author: user, disclosure, form, title, questionnaire), asked by Live.quizzes.Create:success
@@ -13517,8 +13648,8 @@ then
 ### Live.quizzes.Get:forbidden
 
 Authored path: `Live.quizzes.Get`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 48.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 56.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 51.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/get", questionnaire, requestId, session)
@@ -13532,8 +13663,8 @@ then
 ### Live.quizzes.Get:success
 
 Authored path: `Live.quizzes.Get`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 48.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 56.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 51.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/get", questionnaire, requestId, session)
@@ -13548,8 +13679,8 @@ then
 ### Live.quizzes.List:forbidden
 
 Authored path: `Live.quizzes.List`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 43.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 46.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/list", requestId, session)
@@ -13563,8 +13694,8 @@ then
 ### Live.quizzes.List:success
 
 Authored path: `Live.quizzes.List`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 43.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 46.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/list", requestId, session)
@@ -13579,8 +13710,8 @@ then
 ### Live.quizzes.LowerQuestion:at-edge
 
 Authored path: `Live.quizzes.LowerQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 34.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -13598,8 +13729,8 @@ then
 ### Live.quizzes.LowerQuestion:forbidden
 
 Authored path: `Live.quizzes.LowerQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 34.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -13613,8 +13744,8 @@ then
 ### Live.quizzes.LowerQuestion:missing
 
 Authored path: `Live.quizzes.LowerQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 34.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -13629,8 +13760,8 @@ then
 ### Live.quizzes.LowerQuestion:run-open
 
 Authored path: `Live.quizzes.LowerQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 34.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -13646,8 +13777,8 @@ then
 ### Live.quizzes.LowerQuestion:success
 
 Authored path: `Live.quizzes.LowerQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 34.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -13668,8 +13799,8 @@ then
 ### Live.quizzes.LowerQuestion:success#2
 
 Authored path: `Live.quizzes.LowerQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 34.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
 
 ```reaction
 when Questioning.swapQuestions (other: neighbor, question), asked by Live.quizzes.LowerQuestion:success
@@ -13682,8 +13813,8 @@ then
 ### Live.quizzes.RaiseQuestion:at-edge
 
 Authored path: `Live.quizzes.RaiseQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 33.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -13699,8 +13830,8 @@ then
 ### Live.quizzes.RaiseQuestion:forbidden
 
 Authored path: `Live.quizzes.RaiseQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 33.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -13714,8 +13845,8 @@ then
 ### Live.quizzes.RaiseQuestion:missing
 
 Authored path: `Live.quizzes.RaiseQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 33.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -13730,8 +13861,8 @@ then
 ### Live.quizzes.RaiseQuestion:run-open
 
 Authored path: `Live.quizzes.RaiseQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 33.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -13747,8 +13878,8 @@ then
 ### Live.quizzes.RaiseQuestion:success
 
 Authored path: `Live.quizzes.RaiseQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 33.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -13768,8 +13899,8 @@ then
 ### Live.quizzes.RaiseQuestion:success#2
 
 Authored path: `Live.quizzes.RaiseQuestion`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 33.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
 
 ```reaction
 when Questioning.swapQuestions (other: neighbor, question), asked by Live.quizzes.RaiseQuestion:success
@@ -13783,7 +13914,7 @@ then
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
@@ -13798,7 +13929,7 @@ then
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
@@ -13814,7 +13945,7 @@ then
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
@@ -13831,7 +13962,7 @@ then
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
@@ -13849,7 +13980,7 @@ then
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
 
 ```reaction
 when Questioning.removeQuestion (question, result.question: removed), asked by Live.quizzes.RemoveQuestion:success
@@ -13862,7 +13993,7 @@ then
 ### Live.quizzes.RemovedQuestionClosesRanks
 
 Authored path: `Live.quizzes.RemovedQuestionClosesRanks`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 30.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 33.
 
 ```reaction
 when Questioning.removeQuestion (question, position, questionnaire)
@@ -13878,7 +14009,7 @@ then
 
 Authored path: `Live.quizzes.Retire`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
@@ -13893,7 +14024,7 @@ then
 
 Authored path: `Live.quizzes.Retire`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
@@ -13909,7 +14040,7 @@ then
 
 Authored path: `Live.quizzes.Retire`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
@@ -13926,7 +14057,7 @@ then
 
 Authored path: `Live.quizzes.Retire`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when Questioning.retire (questionnaire, result.questionnaire: retired), asked by Live.quizzes.Retire:success
@@ -13940,7 +14071,7 @@ then
 
 Authored path: `Live.quizzes.Retitle`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 18.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
@@ -13955,7 +14086,7 @@ then
 
 Authored path: `Live.quizzes.Retitle`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 18.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
@@ -13971,7 +14102,7 @@ then
 
 Authored path: `Live.quizzes.Retitle`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 18.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
@@ -13988,7 +14119,7 @@ then
 
 Authored path: `Live.quizzes.Retitle`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 18.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when Questioning.retitle (questionnaire, title, result.questionnaire: retitled), asked by Live.quizzes.Retitle:success
@@ -14002,7 +14133,7 @@ then
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", prompt, question, requestId, session)
@@ -14017,7 +14148,7 @@ then
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", prompt, question, requestId, session)
@@ -14033,7 +14164,7 @@ then
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", prompt, question, requestId, session)
@@ -14050,7 +14181,7 @@ then
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", prompt, question, requestId, session)
@@ -14068,7 +14199,7 @@ then
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when Questioning.reviseQuestion (choices, expected, explanation, position, prompt, question, result.question: revised), asked by Live.quizzes.ReviseQuestion:success
@@ -14082,7 +14213,7 @@ then
 
 Authored path: `Live.quizzes.SetDisclosure`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 19.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
 
 ```reaction
 when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
@@ -14097,7 +14228,7 @@ then
 
 Authored path: `Live.quizzes.SetDisclosure`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 19.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
 
 ```reaction
 when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
@@ -14113,7 +14244,7 @@ then
 
 Authored path: `Live.quizzes.SetDisclosure`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 19.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
 
 ```reaction
 when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
@@ -14130,7 +14261,7 @@ then
 
 Authored path: `Live.quizzes.SetDisclosure`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 19.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
 
 ```reaction
 when Questioning.setDisclosure (disclosure, questionnaire, result.questionnaire: changed), asked by Live.quizzes.SetDisclosure:success
@@ -14143,8 +14274,8 @@ then
 ### Live.runs.Close:forbidden
 
 Authored path: `Live.runs.Close`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 25.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 29.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 48.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
@@ -14158,8 +14289,8 @@ then
 ### Live.runs.Close:success
 
 Authored path: `Live.runs.Close`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 25.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 29.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 48.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
@@ -14174,8 +14305,8 @@ then
 ### Live.runs.Close:success#2
 
 Authored path: `Live.runs.Close`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 25.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 29.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 48.
 
 ```reaction
 when Publishing.close (at, edition: run, result.edition: closed), asked by Live.runs.Close:success
@@ -14189,7 +14320,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 49.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -14204,7 +14335,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 49.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -14222,7 +14353,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 49.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:quiz
@@ -14234,7 +14365,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 49.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.runs.Launch:quiz#2
@@ -14248,7 +14379,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 49.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -14265,7 +14396,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 49.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -14282,7 +14413,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 49.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:survey
@@ -14294,7 +14425,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 49.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.runs.Launch:survey#2
@@ -14307,8 +14438,8 @@ then
 ### Live.runs.OpenRuns:forbidden
 
 Authored path: `Live.runs.OpenRuns`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 29.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 46.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 33.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 50.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/open", requestId, session)
@@ -14322,8 +14453,8 @@ then
 ### Live.runs.OpenRuns:success
 
 Authored path: `Live.runs.OpenRuns`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 29.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 46.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 33.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 50.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/open", requestId, session)
@@ -14338,7 +14469,7 @@ then
 ### Live.runs.PublishedQuizEstablishesKey
 
 Authored path: `Live.runs.PublishedQuizEstablishesKey`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 17.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 19.
 
 ```reaction
 when Publishing.publish (material: questionnaire, edition: run)
@@ -14352,8 +14483,8 @@ then
 ### Live.runs.Results:forbidden
 
 Authored path: `Live.runs.Results`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 32.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 47.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 36.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -14367,8 +14498,8 @@ then
 ### Live.runs.Results:quiz
 
 Authored path: `Live.runs.Results`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 32.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 47.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 36.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -14384,8 +14515,8 @@ then
 ### Live.runs.Results:survey
 
 Authored path: `Live.runs.Results`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 32.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 47.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 36.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -15633,6 +15764,8 @@ not listed here have no explicit input contract.
 - `/live/drafts/correct` — requires `session`, `candidate`, `request`
 - `/live/drafts/describe` — requires `session`, `request`
 - `/live/drafts/line` — requires `session`, `brief`
+- `/live/drafts/lines` — requires `session`
+- `/live/drafts/provenance` — requires `session`, `questionnaire`
 - `/live/drafts/refine` — requires `session`, `questionnaire`
 - `/live/p/answer` — requires `response`, `question`, `value`
 - `/live/p/arrive` — requires `token`

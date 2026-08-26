@@ -35,13 +35,6 @@ export function DraftDescribe({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Say what it should cover, roughly how many questions, and whether it
-          is a quiz with right answers or a survey that only asks. The reasoner
-          drafts the whole thing; you can correct it in the same plain language
-          before anything becomes a questionnaire.
-        </p>
-
         <div className="space-y-2">
           <Label htmlFor="draft-request">Your description</Label>
           <Textarea
@@ -52,10 +45,6 @@ export function DraftDescribe({
             rows={6}
             className="min-h-40 resize-y"
           />
-          <p className="text-xs text-muted-foreground">
-            If the request could go either way, the reasoner asks you one
-            clarifying question rather than guessing.
-          </p>
         </div>
 
         <Button

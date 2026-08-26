@@ -8,7 +8,6 @@ import { Link } from "@/components/link";
 import {
   DISCLOSURE_OPTIONS,
   type Disclosure,
-  disclosureHint,
   isDisclosure,
   isQuizForm,
   type QuizForm,
@@ -26,11 +25,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api, isApiError, publicErrorMessage } from "@/lib/api";
-
-const FORM_HINTS: Record<QuizForm, string> = {
-  quiz: "Questions carry expected answers, and every response is graded and given back.",
-  survey: "Answers are gathered and shown to the room, never graded.",
-};
 
 function NewQuestionnaireContent() {
   const router = useRouter();
@@ -69,7 +63,6 @@ function NewQuestionnaireContent() {
           </Link>
         }
         title="New quiz or survey"
-        description="Name it and choose what it is. Questions come next."
       />
 
       <div className="space-y-6">
@@ -101,12 +94,13 @@ function NewQuestionnaireContent() {
               <SelectItem value="survey">Survey</SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-muted-foreground text-sm">{FORM_HINTS[form]}</p>
         </div>
 
         {form === "quiz" ? (
           <div className="space-y-2">
-            <Label htmlFor="live-disclosure">What participants see after</Label>
+            <Label htmlFor="live-disclosure">
+              What participants see afterward
+            </Label>
             <Select
               value={disclosure}
               disabled={busy}
@@ -125,10 +119,6 @@ function NewQuestionnaireContent() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-muted-foreground text-sm">
-              {disclosureHint(disclosure)} This is fixed into each run when it
-              launches, so a later change reaches only later runs.
-            </p>
           </div>
         ) : null}
 

@@ -33,8 +33,8 @@ export function RequireCapability({
           title="You don't have access to this"
           description={
             needed.length === 1
-              ? `This page needs the "${needed[0]}" capability. Ask an administrator to assign you a role that carries it.`
-              : `This page needs one of: ${needed.join(", ")}. Ask an administrator to assign you a role that carries one.`
+              ? `Ask an administrator for a role with ${needed[0]}.`
+              : `Ask an administrator for a role with one of: ${needed.join(", ")}.`
           }
         />
       </div>

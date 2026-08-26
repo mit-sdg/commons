@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 import type { Output } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -285,6 +285,16 @@ export function RunQuestionBoard({
           ))}
         </div>
       )}
+      {/* A written answer is measured against nothing, so what the author kept
+          beside the question is offered as a reference, not a verdict. */}
+      {choices.length === 0 && revealExpected && question.expected !== "" ? (
+        <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+          Reference:{" "}
+          <span dir="auto" className="font-medium text-foreground">
+            {question.expected}
+          </span>
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -337,8 +347,11 @@ export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
 
       {/* Individual results stay behind a deliberate click: this board is
           projected, and nobody's score belongs on the wall by accident. */}
-      <details className="mt-4">
-        <summary className="cursor-pointer text-muted-foreground text-sm hover:text-foreground">
+      <details className="group mt-4">
+        {/* A thumb-sized row on the phone, with the marker drawn by the same
+            icon set as the rest of the feature. */}
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 py-2.5 text-muted-foreground text-sm hover:text-foreground [&::-webkit-details-marker]:hidden">
+          <ChevronRight className="size-4 shrink-0 transition-transform group-open:rotate-90" />
           Results by participant
         </summary>
         <ul className="mt-3 space-y-1">

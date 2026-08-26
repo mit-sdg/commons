@@ -1,6 +1,7 @@
 import {
   compute,
   each,
+  form,
   former,
   is,
   no,
@@ -371,6 +372,105 @@ export const theDraftLine = former(
       }),
 );
 
+/**
+ * The author's lines, newest first: where each stands, and the questionnaire
+ * it was opened from or its adoption composed.
+ */
+export const theDraftLines = former(
+  "the drafting lines of (author)",
+  (
+    { author },
+    {
+      brief,
+      request,
+      createdAt,
+      origin,
+      adopted,
+      stalled,
+      clarifying,
+      refinesTitle,
+      composed,
+      composedTitle,
+    },
+  ) =>
+    each(
+      Drafting._lines({ author }).is({
+        brief,
+        request,
+        createdAt,
+        origin,
+        adopted,
+        stalled,
+        clarifying,
+      }),
+    )
+      .where(
+        whether(
+          Questioning._getQuestionnaire({ questionnaire: origin }).is({ title: refinesTitle }),
+        ),
+        whether(AdoptLinking._getLinks({ source: brief }).is({ target: composed })),
+        whether(
+          Questioning._getQuestionnaire({ questionnaire: composed }).is({ title: composedTitle }),
+        ),
+      )
+      .form({
+        brief,
+        request,
+        createdAt,
+        adopted,
+        stalled,
+        clarifying,
+        refines: origin,
+        refinesTitle,
+        composed,
+        composedTitle,
+      }),
+);
+
+/**
+ * How a questionnaire came to read as it does: the described line whose
+ * adoption composed it — one at most — and every refining line opened on it.
+ */
+export const theProvenance = former(
+  "the drafting provenance of (questionnaire)",
+  (
+    { questionnaire },
+    {
+      composer,
+      composedRequest,
+      composedAt,
+      brief,
+      author,
+      request,
+      createdAt,
+      adopted,
+      stalled,
+      clarifying,
+    },
+  ) =>
+    form({
+      composed: each(AdoptLinking._getBacklinks({ target: questionnaire }).is({ source: composer }))
+        .where(
+          Drafting._brief({ brief: composer }).is({
+            request: composedRequest,
+            createdAt: composedAt,
+          }),
+        )
+        .form({ brief: composer, request: composedRequest, createdAt: composedAt }),
+      refined: each(
+        Drafting._openedFrom({ origin: questionnaire }).is({
+          brief,
+          author,
+          request,
+          createdAt,
+          adopted,
+          stalled,
+          clarifying,
+        }),
+      ).form({ brief, author, request, createdAt, adopted, stalled, clarifying }),
+    }),
+);
+
 export const Describe = endpoint(
   "/live/drafts/describe",
   ({ session, request, user, at, brief }) =>
@@ -398,6 +498,31 @@ export const Line = endpoint(
         .named("forbidden"),
     ),
   { input: { required: ["session", "brief"] } },
+);
+
+export const Lines = endpoint("/live/drafts/lines", ({ session, user, at }) =>
+  receive({ session }).then(
+    where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      .then(respond({ lines: theDraftLines({ author: user }) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
+export const Provenance = endpoint(
+  "/live/drafts/provenance",
+  ({ session, questionnaire, user, at }) =>
+    receive({ session, questionnaire }).then(
+      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+        .then(respond({ provenance: theProvenance({ questionnaire }) }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "questionnaire"] } },
 );
 
 export const Clarify = endpoint(

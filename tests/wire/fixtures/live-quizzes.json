@@ -350,19 +350,21 @@
         "outcome": {
           "response": "uuid#12",
           "disclosure": "answers",
-          "score": 2,
-          "outOf": 2,
+          "score": 1,
+          "outOf": 1,
           "items": [
             {
               "item": "uuid#8",
               "prompt": "Which gas do plants take in?",
               "expected": "Carbon dioxide",
               "value": "Carbon dioxide"
-            },
+            }
+          ],
+          "references": [
             {
               "item": "uuid#9",
               "prompt": "Name the light-capturing pigment.",
-              "expected": "Chlorophyll",
+              "reference": "Chlorophyll",
               "value": "Chlorophyll"
             }
           ]
@@ -431,8 +433,8 @@
               "submission": "uuid#12",
               "participant": "phone-1",
               "name": null,
-              "score": 2,
-              "outOf": 2
+              "score": 1,
+              "outOf": 1
             }
           ]
         }

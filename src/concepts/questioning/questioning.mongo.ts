@@ -11,6 +11,13 @@ import {
 const FORMS = ["quiz", "survey"];
 const LEVELS = ["score", "answers", "explanations"];
 
+/**
+ * Only a question that offers choices proposes its expected answer; a
+ * written-answer question's expected is a reference the questionnaire keeps.
+ */
+const PROPOSING = { expected: { $ne: "" }, "choices.0": { $exists: true } };
+const KEEPS_REFERENCE = { expected: { $ne: "" }, "choices.0": { $exists: false } };
+
 interface QuestionnaireDoc {
   _id: string;
   author: string;
@@ -280,7 +287,7 @@ export class MongoQuestioningConcept {
   }
 
   async _proposesAnswers({ questionnaire }: { questionnaire: string }) {
-    const doc = await this.questions.findOne({ questionnaire, expected: { $ne: "" } });
+    const doc = await this.questions.findOne({ questionnaire, ...PROPOSING });
     return { proposes: doc !== null };
   }
 
@@ -288,7 +295,7 @@ export class MongoQuestioningConcept {
     const doc = await this.questionnaires.findOne({ _id: questionnaire });
     if (doc === null) return [];
     const docs = await this.questions
-      .find({ questionnaire, expected: { $ne: "" } })
+      .find({ questionnaire, ...PROPOSING })
       .sort({ position: 1 })
       .toArray();
     return [
@@ -300,5 +307,19 @@ export class MongoQuestioningConcept {
         })),
       },
     ];
+  }
+
+  async _references({ questionnaire }: { questionnaire: string }) {
+    const docs = await this.questions
+      .find({ questionnaire, ...KEEPS_REFERENCE })
+      .sort({ position: 1 })
+      .toArray();
+    return docs.map((doc) => ({
+      question: doc._id,
+      prompt: doc.prompt,
+      expected: doc.expected,
+      explanation: doc.explanation,
+      position: doc.position,
+    }));
   }
 }

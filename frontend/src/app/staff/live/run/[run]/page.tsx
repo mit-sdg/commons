@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Radio, Square } from "lucide-react";
+import { ArrowLeft, Presentation, Radio, Square } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -80,10 +80,9 @@ function RunDashboardContent() {
         <EmptyState
           icon={Radio}
           title="No such run"
-          description="It may have been removed, or the address may be wrong."
           action={
             <Button size="sm" asChild>
-              <Link href="/staff/live">Back to the shelf</Link>
+              <Link href="/staff/live">Back to Live</Link>
             </Button>
           }
         />
@@ -136,7 +135,7 @@ function RunDashboardContent() {
                 </Button>
               }
               title="Close this run?"
-              description="Nobody else can join or hand in, and a late scanner finds it closed. The results stay on this page."
+              description="Nobody can join or hand in after this. The results stay."
               confirmLabel="Close run"
               destructive
               onConfirm={close}
@@ -165,9 +164,7 @@ function RunDashboardContent() {
           {scores !== null ? <RunScoreBoard scores={scores} /> : null}
 
           {board.questions.length === 0 ? (
-            <p className="text-muted-foreground">
-              This run has no questions to show.
-            </p>
+            <p className="text-muted-foreground">No questions in this run.</p>
           ) : (
             board.questions.map((question, index) => (
               <RunQuestionBoard
@@ -186,14 +183,21 @@ function RunDashboardContent() {
               <p className="eyebrow text-center">Join here</p>
               {url === null ? (
                 <p className="text-center text-muted-foreground text-sm">
-                  This run has no share token.
+                  No join code.
                 </p>
               ) : (
-                <JoinCode url={url} />
+                <>
+                  <JoinCode url={url} />
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link
+                      href={`/staff/live/run/${run}/project`}
+                      target="_blank"
+                    >
+                      <Presentation /> Project
+                    </Link>
+                  </Button>
+                </>
               )}
-              <p className="text-center text-muted-foreground text-sm">
-                Anyone holding this address can join until you close the run.
-              </p>
             </div>
           </aside>
         ) : null}

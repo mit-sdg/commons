@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "@/components/link";
+import { FormBadge } from "@/components/live/quiz-meta";
 import { Spinner } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,48 +47,51 @@ function DraftItemRow({ item }: { item: DraftItem }) {
         </p>
       </div>
 
-      {item.choices.length > 0 ? (
-        <ul className="space-y-1">
-          {item.choices.map((choice) => {
-            const expected = item.expected !== "" && choice === item.expected;
-            return (
-              <li
-                key={choice}
-                className={cn(
-                  "flex items-start gap-2 text-sm text-muted-foreground",
-                  expected && "font-medium text-foreground",
-                )}
-              >
-                <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
-                  {expected ? (
-                    <Check className="size-3.5" />
-                  ) : (
-                    <span className="size-1.5 rounded-full bg-muted-foreground/50" />
+      {/* Everything under the prompt shares its text edge, past the number. */}
+      <div className="space-y-2 ps-8">
+        {item.choices.length > 0 ? (
+          <ul className="space-y-1">
+            {item.choices.map((choice) => {
+              const expected = item.expected !== "" && choice === item.expected;
+              return (
+                <li
+                  key={choice}
+                  className={cn(
+                    "flex items-start gap-2 text-sm text-muted-foreground",
+                    expected && "font-medium text-foreground",
                   )}
-                </span>
-                <span dir="auto" className="min-w-0 flex-1">
-                  {choice}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="text-xs text-muted-foreground">Written answer</p>
-      )}
+                >
+                  <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+                    {expected ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <span className="size-1.5 rounded-full bg-muted-foreground/50" />
+                    )}
+                  </span>
+                  <span dir="auto" className="min-w-0 flex-1">
+                    {choice}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground">Written answer</p>
+        )}
 
-      {item.expected !== "" && !item.choices.includes(item.expected) ? (
-        <p className="text-sm">
-          <span className="text-muted-foreground">Expected answer: </span>
-          <span dir="auto">{item.expected}</span>
-        </p>
-      ) : null}
+        {item.expected !== "" && !item.choices.includes(item.expected) ? (
+          <p className="text-sm">
+            <span className="text-muted-foreground">Reference: </span>
+            <span dir="auto">{item.expected}</span>
+          </p>
+        ) : null}
 
-      {item.explanation !== "" ? (
-        <p dir="auto" className="text-sm text-muted-foreground">
-          {item.explanation}
-        </p>
-      ) : null}
+        {item.explanation !== "" ? (
+          <p dir="auto" className="text-sm text-muted-foreground">
+            {item.explanation}
+          </p>
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -205,7 +209,7 @@ function CorrectionBox({
           onKeyDown={(event) => {
             if (event.key === "Enter") send();
           }}
-          placeholder="Request a change — e.g. make question 3 harder"
+          placeholder="e.g. make question 3 harder"
           aria-label="Request a change to this draft"
         />
         <Button variant="outline" onClick={send} disabled={!ready || busy}>
@@ -217,9 +221,6 @@ function CorrectionBox({
           Request a change
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Only what you ask for changes; the rest of the draft is carried over.
-      </p>
     </div>
   );
 }
@@ -260,6 +261,10 @@ export function DraftStep({
   // one this line was refining. Without either the quizzes page is all we can
   // point at.
   const questionnaire = step.composed ?? step.refines;
+  // A refining line opens on the questionnaire's own questions, so this
+  // candidate is that questionnaire verbatim until a correction moves it —
+  // adopting it would apply nothing.
+  const uncorrected = step.refines !== null && step.basis === null;
 
   return (
     <article className="space-y-3">
@@ -307,7 +312,11 @@ export function DraftStep({
           <CardHeader>
             <CardTitle className="text-base">Drafted questions</CardTitle>
             <CardAction>
-              <Badge variant="outline">{step.form ?? "draft"}</Badge>
+              {step.form !== null ? (
+                <FormBadge form={step.form} />
+              ) : (
+                <Badge variant="outline">Draft</Badge>
+              )}
             </CardAction>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -330,11 +339,11 @@ export function DraftStep({
               <div className="space-y-4 border-t border-border pt-4">
                 {step.adopted ? (
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      {questionnaire !== null
-                        ? "This draft has been adopted. It is an ordinary questionnaire now — revise it on its own page."
-                        : "This draft has been adopted. Its questionnaire is still being composed — it will appear on the quizzes page shortly."}
-                    </p>
+                    {questionnaire === null ? (
+                      <p className="text-sm text-muted-foreground">
+                        Composing the questionnaire…
+                      </p>
+                    ) : null}
                     <Link
                       href={
                         questionnaire !== null
@@ -345,28 +354,26 @@ export function DraftStep({
                     >
                       {questionnaire !== null
                         ? "Open the questionnaire"
-                        : "Open the quizzes page"}
+                        : "Back to Live"}
                     </Link>
                   </div>
                 ) : (
                   <>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Button
-                        onClick={() => onAdopt(candidate)}
-                        disabled={adopting || busy}
-                      >
-                        {adopting ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <Check className="size-4" />
-                        )}
-                        Adopt this draft
-                      </Button>
-                      <p className="text-sm text-muted-foreground">
-                        Adopting makes it an editable questionnaire; corrections
-                        stop here.
-                      </p>
-                    </div>
+                    {uncorrected ? null : (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Button
+                          onClick={() => onAdopt(candidate)}
+                          disabled={adopting || busy}
+                        >
+                          {adopting ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Check className="size-4" />
+                          )}
+                          Adopt this draft
+                        </Button>
+                      </div>
+                    )}
                     <CorrectionBox
                       candidate={candidate}
                       busy={busy}
@@ -387,7 +394,7 @@ export function DraftStep({
           className="flex items-center gap-2 rounded-xl border border-dashed border-border px-4 py-3 text-sm text-muted-foreground"
         >
           <Spinner className="size-4" />
-          <span>Waiting on the reasoner…</span>
+          <span>Drafting…</span>
           <WaitingElapsed />
         </div>
       ) : null}
@@ -396,9 +403,7 @@ export function DraftStep({
         <div className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3">
           <p className="flex items-start gap-2 text-sm text-destructive">
             <CircleAlert className="mt-0.5 size-4 shrink-0" />
-            <span>
-              The reasoner could not produce a usable draft from this request.
-            </span>
+            <span>No usable draft came back.</span>
           </p>
           <Button variant="outline" size="sm" onClick={onStartOver}>
             Start over

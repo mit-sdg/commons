@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeft, ClipboardList, Lock, Plus, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ClipboardList,
+  History,
+  Lock,
+  Plus,
+  Sparkles,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -8,9 +15,9 @@ import { Link } from "@/components/link";
 import {
   DISCLOSURE_OPTIONS,
   type Disclosure,
-  disclosureHint,
   FormBadge,
   isDisclosure,
+  QUIZ_NOT_READY_MESSAGE,
   RUN_OPEN_MESSAGE,
 } from "@/components/live/quiz-meta";
 import {
@@ -46,6 +53,7 @@ import { fullTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type Sheet = NonNullable<Output<"/live/quizzes/get">["questionnaire"]>;
+type Provenance = Output<"/live/drafts/provenance">["provenance"];
 
 function report(result: unknown): boolean {
   if (!isApiError(result)) return true;
@@ -64,6 +72,12 @@ function QuestionnaireEditorContent() {
   const { data, loading, error, refetch } = useQuery(
     session
       ? () => api["/live/quizzes/get"]({ questionnaire }).then(unwrap)
+      : null,
+    [session, questionnaire],
+  );
+  const { data: drafting } = useQuery(
+    session
+      ? () => api["/live/drafts/provenance"]({ questionnaire }).then(unwrap)
       : null,
     [session, questionnaire],
   );
@@ -90,10 +104,9 @@ function QuestionnaireEditorContent() {
         <EmptyState
           icon={ClipboardList}
           title="No such questionnaire"
-          description="It may have been removed, or the address may be wrong."
           action={
             <Button size="sm" asChild>
-              <Link href="/staff/live">Back to the shelf</Link>
+              <Link href="/staff/live">Back to Live</Link>
             </Button>
           }
         />
@@ -107,6 +120,7 @@ function QuestionnaireEditorContent() {
     <QuestionnaireDesk
       key={sheet.questionnaire}
       sheet={sheet}
+      provenance={drafting?.provenance ?? null}
       onChanged={refetch}
     />
   );
@@ -115,17 +129,40 @@ function QuestionnaireEditorContent() {
 /** How often the desk re-reads while a run is open, so closing it elsewhere unlocks without a reload. */
 const LOCK_POLL_MS = 5_000;
 
+/** Every drafting line behind the questionnaire, the one that composed it first. */
+function draftingHistory(provenance: Provenance | null) {
+  if (provenance === null) return [];
+  return [
+    ...provenance.composed.map((line) => ({
+      brief: line.brief,
+      createdAt: line.createdAt,
+      label: "Drafted",
+      status: null as string | null,
+    })),
+    ...provenance.refined.map((line) => ({
+      brief: line.brief,
+      createdAt: line.createdAt,
+      label: "Refined",
+      status: line.adopted ? null : line.stalled ? "stalled" : "open",
+    })),
+  ];
+}
+
 function QuestionnaireDesk({
   sheet,
+  provenance,
   onChanged,
 }: {
   sheet: Sheet;
+  provenance: Provenance | null;
   onChanged: () => void;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(sheet.title);
   const [disclosure, setDisclosure] = useState(sheet.disclosure);
   const [busy, setBusy] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const history = draftingHistory(provenance);
   // A question being written but not yet added: it lives here, never on the
   // server, so a placeholder can never ride into a run.
   const [adding, setAdding] = useState(false);
@@ -142,19 +179,20 @@ function QuestionnaireDesk({
     return () => clearInterval(timer);
   }, [runOpen, onChanged]);
 
+  // Only a choice question proposes an answer; a written reference grades nothing.
   const answerable = questions.some(
-    (question) => question.expected.trim() !== "",
+    (question) =>
+      question.choices.length > 0 && question.expected.trim() !== "",
   );
-  const launchHint =
-    openRun !== null
-      ? "A run of this questionnaire is already open."
-      : sheet.retired
-        ? "This questionnaire is retired."
-        : questions.length === 0
-          ? "Add a question first."
-          : isQuiz && !answerable
-            ? "A quiz launches only once at least one question has an expected answer."
-            : undefined;
+  // While a run is open the actions slot offers the dashboard, never Launch,
+  // so the ladder starts past that case.
+  const launchHint = sheet.retired
+    ? "Retired."
+    : questions.length === 0
+      ? "Add a question first."
+      : isQuiz && !answerable
+        ? QUIZ_NOT_READY_MESSAGE
+        : undefined;
 
   async function retitle() {
     const trimmed = title.trim();
@@ -275,18 +313,10 @@ function QuestionnaireDesk({
       {openRun !== null ? (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
           <Lock className="size-4 text-primary" />
-          <p className="flex-1 text-sm">
-            A run is open — editing is disabled so the room never meets a
-            questionnaire that moved under it.
-          </p>
+          <p className="flex-1 text-sm">{RUN_OPEN_MESSAGE}</p>
           <Button size="sm" variant="outline" asChild>
             <Link href={`/staff/live/run/${openRun.run}`}>Go to the run</Link>
           </Button>
-        </div>
-      ) : sheet.retired ? (
-        <div className="mb-6 rounded-xl border border-border bg-muted/40 px-4 py-3 text-muted-foreground text-sm">
-          This questionnaire is retired. It stays readable, but it can no longer
-          be edited or launched.
         </div>
       ) : null}
 
@@ -321,7 +351,7 @@ function QuestionnaireDesk({
           {isQuiz ? (
             <div className="space-y-2">
               <Label htmlFor="sheet-disclosure">
-                What participants see after
+                What participants see afterward
               </Label>
               <Select
                 value={disclosure}
@@ -342,7 +372,7 @@ function QuestionnaireDesk({
                 </SelectContent>
               </Select>
               <p className="text-muted-foreground text-xs">
-                {disclosureHint(disclosure)}
+                Changes reach only runs launched afterward.
               </p>
             </div>
           ) : null}
@@ -363,7 +393,7 @@ function QuestionnaireDesk({
                 disabled={locked || busy}
                 onClick={() => void refine()}
               >
-                <Sparkles /> Refine with the reasoner
+                <Sparkles /> Refine with AI
               </Button>
               <Button
                 size="sm"
@@ -377,15 +407,7 @@ function QuestionnaireDesk({
           </div>
 
           {questions.length === 0 && !adding ? (
-            <EmptyState
-              icon={ClipboardList}
-              title="No questions yet"
-              description={
-                isQuiz
-                  ? "A quiz launches once at least one question carries an expected answer."
-                  : "Add the first thing you want to ask the room."
-              }
-            />
+            <EmptyState icon={ClipboardList} title="No questions yet" />
           ) : (
             <div className="space-y-3">
               {questions.map((question, index) => (
@@ -417,10 +439,7 @@ function QuestionnaireDesk({
           )}
 
           {isQuiz && questions.length > 0 && !answerable ? (
-            <p className="text-sm text-destructive">
-              No question has an expected answer yet, so this quiz cannot be
-              launched.
-            </p>
+            <p className="text-sm text-destructive">{QUIZ_NOT_READY_MESSAGE}</p>
           ) : null}
         </section>
 
@@ -455,6 +474,43 @@ function QuestionnaireDesk({
             </ul>
           )}
         </section>
+
+        {history.length > 0 ? (
+          <section>
+            <button
+              type="button"
+              onClick={() => setShowHistory((shown) => !shown)}
+              className="flex items-center gap-2 text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
+            >
+              <History className="size-4" />
+              History ({history.length})
+            </button>
+            {showHistory ? (
+              <ul className="mt-3 space-y-2">
+                {history.map((line) => (
+                  <li
+                    key={line.brief}
+                    className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-2 text-sm"
+                  >
+                    <span>{line.label}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {fullTime(line.createdAt)}
+                    </span>
+                    {line.status !== null ? (
+                      <Badge variant="outline">{line.status}</Badge>
+                    ) : null}
+                    <Link
+                      href={`/staff/live/draft?brief=${line.brief}`}
+                      className="ml-auto text-muted-foreground text-xs hover:text-primary"
+                    >
+                      View
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
       </div>
     </PageContainer>
   );

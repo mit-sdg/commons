@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
-import { FormBadge } from "@/components/live/quiz-meta";
+import { FormBadge, QUIZ_NOT_READY_MESSAGE } from "@/components/live/quiz-meta";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -55,7 +55,7 @@ function LiveShelfContent() {
       toast.error(publicErrorMessage(result.error));
       return;
     }
-    toast.success("Moved out of use");
+    toast.success("Retired");
     refetch();
     refetchLive();
   }
@@ -65,7 +65,6 @@ function LiveShelfContent() {
       <PageHeader
         eyebrow="Live"
         title="Quizzes and surveys"
-        description="Compose a questionnaire, launch it into the room, and watch the answers land."
         actions={
           <>
             <Button variant="outline" asChild>
@@ -121,8 +120,7 @@ function LiveShelfContent() {
       ) : questionnaires.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title="Nothing composed yet"
-          description="A quiz grades what the room answers; a survey only gathers it. Start either one here."
+          title="No quizzes or surveys yet"
           action={
             <Button size="sm" asChild>
               <Link href="/staff/live/new">
@@ -141,9 +139,17 @@ function LiveShelfContent() {
             />
           ))}
           {standing.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              Everything on the shelf has been retired.
-            </p>
+            <EmptyState
+              icon={Archive}
+              title="Everything is retired"
+              action={
+                <Button size="sm" asChild>
+                  <Link href="/staff/live/new">
+                    <Plus /> New quiz or survey
+                  </Link>
+                </Button>
+              }
+            />
           ) : null}
         </div>
       )}
@@ -184,7 +190,7 @@ function ShelfRow({
     entry.questions === 0
       ? "Add a question first."
       : entry.form === "quiz" && !entry.proposes
-        ? "A quiz launches only once at least one question has an expected answer."
+        ? QUIZ_NOT_READY_MESSAGE
         : undefined;
 
   return (
@@ -236,8 +242,8 @@ function ShelfRow({
                 <Archive /> Retire
               </Button>
             }
-            title={`Retire "${entry.title}"?`}
-            description="It moves out of use and can no longer be launched or edited. Past runs and their answers stay readable."
+            title={`Retire “${entry.title}”?`}
+            description="It can no longer be edited or launched. Past runs and their answers are retained."
             confirmLabel="Retire"
             destructive
             onConfirm={onRetire}

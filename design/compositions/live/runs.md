@@ -9,14 +9,18 @@ to the questionnaire and issues its share token in the same request, so the
 caller walks away holding everything the room needs — the token renders as a
 QR code and a short address in the browser, a floor concern that appears
 nowhere in this design. A quiz launches only once at least one question
-proposes an expected answer; otherwise the caller receives `NOT_QUIZ_READY`.
+proposes an expected answer — only a question offering choices proposes, so a
+quiz of written-answer questions alone is not ready; otherwise the caller
+receives `NOT_QUIZ_READY`.
 Publishing refuses a second open run of the same questionnaire, so which run
 is the live one is never in question.
 
 After a quiz is published,
 [Live.runs.PublishedQuizEstablishesKey](reaction:Live.runs.PublishedQuizEstablishesKey)
-establishes the run's key whole — every expectation together with the authored
-disclosure — before any participant can present the token, because the token
+establishes the run's key whole — every proposed expectation together with the
+authored disclosure; a written answer's reference never enters a key, so
+nothing is ever graded against it — before any participant can present the
+token, because the token
 is issued only after the same publish occurrence. The standard therefore
 exists before anyone is measured, and later edits to the questionnaire never
 reach a run already launched. A survey publishes without a key and is never

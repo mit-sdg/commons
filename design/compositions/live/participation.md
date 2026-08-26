@@ -40,8 +40,13 @@ receipt, and a quiz answers by the key's disclosure —
 [the score alone](former:Live.participation.theScoreOutcome),
 [the score with the expected answers](former:Live.participation.theAnswersOutcome), or
 [everything including explanations](former:Live.participation.theExplanationsOutcome).
-The score arrives blank until grading lands, which is why the screen polls. A
-response not yet handed in answers `NOT_SUBMITTED`.
+The score counts the key's expectations alone — only choice questions propose,
+so a written answer widens neither the score nor what it is out of. At the
+levels that reveal answers, the outcome also carries the written-answer
+questions that keep a reference, each with the participant's answer beside it
+and nothing judged right or wrong: a written answer is read against its
+reference, never measured. The score arrives blank until grading lands, which
+is why the screen polls. A response not yet handed in answers `NOT_SUBMITTED`.
 
 ```endpoints
 Live.participation.Answer at /live/p/answer

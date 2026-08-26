@@ -376,30 +376,15 @@ export class MongoDraftingConcept {
     ];
   }
 
-  async _line({ brief }: { brief: string }) {
-    const start = await this.briefs.findOne({ _id: brief });
-    if (start === null) return [];
-    const rows: {
-      brief: string;
-      request: string;
-      basis: string | null;
-      candidate: string | null;
-      form: string | null;
-      adopted: boolean;
-    }[] = [];
+  /** The line from a brief onward: each step with its candidate, in discovery order. */
+  async #walk(start: BriefDoc): Promise<{ doc: BriefDoc; candidate: CandidateDoc | null }[]> {
+    const steps: { doc: BriefDoc; candidate: CandidateDoc | null }[] = [];
     const seen = new Set<string>([start._id]);
     const queue: BriefDoc[] = [start];
     while (queue.length > 0) {
       const doc = queue.shift() as BriefDoc;
       const candidate = await this.candidates.findOne({ brief: doc._id });
-      rows.push({
-        brief: doc._id,
-        request: doc.request,
-        basis: doc.basis,
-        candidate: candidate === null ? null : candidate._id,
-        form: candidate === null ? null : candidate.form,
-        adopted: candidate === null ? false : candidate.adopted,
-      });
+      steps.push({ doc, candidate });
       if (candidate === null) continue;
       const corrections = await this.briefs
         .find({ basis: candidate._id })
@@ -411,6 +396,73 @@ export class MongoDraftingConcept {
         queue.push(correction);
       }
     }
+    return steps;
+  }
+
+  /** Where a line stands: adopted anywhere along it, or held at its tip. */
+  async #standing(root: BriefDoc) {
+    const steps = await this.#walk(root);
+    const tip = steps[steps.length - 1]?.doc ?? root;
+    return {
+      adopted: steps.some((step) => step.candidate?.adopted === true),
+      stalled: tip.stalled,
+      clarifying: tip.clarifying,
+    };
+  }
+
+  async _lines({ author }: { author: string }) {
+    const roots = await this.briefs
+      .find({ author, basis: null })
+      .sort({ createdAt: -1, seq: -1 })
+      .toArray();
+    const rows = [];
+    for (const root of roots) {
+      const { adopted, stalled, clarifying } = await this.#standing(root);
+      rows.push({
+        brief: root._id,
+        request: root.request,
+        createdAt: root.createdAt,
+        origin: root.origin,
+        adopted,
+        stalled,
+        clarifying,
+      });
+    }
     return rows;
+  }
+
+  async _openedFrom({ origin }: { origin: string }) {
+    const roots = await this.briefs
+      .find({ origin, basis: null })
+      .sort({ createdAt: -1, seq: -1 })
+      .toArray();
+    const rows = [];
+    for (const root of roots) {
+      const { adopted, stalled, clarifying } = await this.#standing(root);
+      rows.push({
+        brief: root._id,
+        author: root.author,
+        request: root.request,
+        createdAt: root.createdAt,
+        adopted,
+        stalled,
+        clarifying,
+      });
+    }
+    return rows;
+  }
+
+  async _line({ brief }: { brief: string }) {
+    const start = await this.briefs.findOne({ _id: brief });
+    if (start === null) return [];
+    const steps = await this.#walk(start);
+    return steps.map(({ doc, candidate }) => ({
+      brief: doc._id,
+      request: doc.request,
+      basis: doc.basis,
+      candidate: candidate === null ? null : candidate._id,
+      form: candidate === null ? null : candidate.form,
+      adopted: candidate === null ? false : candidate.adopted,
+    }));
   }
 }

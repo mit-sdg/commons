@@ -445,6 +445,103 @@ for (const [floor, make] of floors) {
       expect(await questioning._expectedAnswers({ questionnaire: "no-such" })).toEqual([]);
     });
 
+    test("a written answer's expected is a reference, not an expectation", async () => {
+      const questioning = await make();
+      const { questionnaire } = await questioning.compose({
+        author: "lee",
+        title: "Quiz",
+        form: "quiz",
+        disclosure: "answers",
+        at,
+      });
+      const written = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Name the pigment.",
+        choices: [],
+        expected: "Chlorophyll",
+        explanation: "It captures light.",
+        position: 1,
+      });
+      expect(await questioning._proposesAnswers({ questionnaire })).toEqual({ proposes: false });
+      expect(await questioning._expectedAnswers({ questionnaire })).toEqual([{ expectations: [] }]);
+      expect(await questioning._references({ questionnaire })).toEqual([
+        {
+          question: written.question,
+          prompt: "Name the pigment.",
+          expected: "Chlorophyll",
+          explanation: "It captures light.",
+          position: 1,
+        },
+      ]);
+    });
+
+    test("_references answers the written questions keeping one, in position order", async () => {
+      const questioning = await make();
+      const { questionnaire } = await questioning.compose({
+        author: "lee",
+        title: "Quiz",
+        form: "quiz",
+        disclosure: "answers",
+        at,
+      });
+      const later = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Later written?",
+        choices: [],
+        expected: "second",
+        explanation: "",
+        position: 3,
+      });
+      const earlier = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Earlier written?",
+        choices: [],
+        expected: "first",
+        explanation: "",
+        position: 1,
+      });
+      await questioning.addQuestion({
+        questionnaire,
+        prompt: "Chosen?",
+        choices: ["yes", "no"],
+        expected: "yes",
+        explanation: "",
+        position: 2,
+      });
+      await questioning.addQuestion({
+        questionnaire,
+        prompt: "Bare written?",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 4,
+      });
+      expect((await questioning._references({ questionnaire })).map((row) => row.question)).toEqual(
+        [earlier.question, later.question],
+      );
+    });
+
+    test("_references answers no rows when nothing keeps one", async () => {
+      const questioning = await make();
+      const { questionnaire } = await questioning.compose({
+        author: "lee",
+        title: "Quiz",
+        form: "quiz",
+        disclosure: "score",
+        at,
+      });
+      await questioning.addQuestion({
+        questionnaire,
+        prompt: "Chosen?",
+        choices: ["yes", "no"],
+        expected: "yes",
+        explanation: "",
+        position: 1,
+      });
+      expect(await questioning._references({ questionnaire })).toEqual([]);
+      expect(await questioning._references({ questionnaire: "no-such" })).toEqual([]);
+    });
+
     test("unknown questionnaires refuse with QUESTIONNAIRE_NOT_FOUND", async () => {
       const questioning = await make();
       const err = await refusal(() => questioning.retitle({ questionnaire: "none", title: "x" }));

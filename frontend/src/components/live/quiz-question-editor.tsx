@@ -1,6 +1,14 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Circle,
+  CircleCheck,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Button } from "@/components/ui/button";
@@ -26,14 +34,6 @@ export interface QuestionDraft {
   explanation: string;
 }
 
-/** Choices are written one per line, and a blank line simply is not a choice. */
-export function parseChoices(text: string): string[] {
-  return text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line !== "");
-}
-
 /** What a card that has never been saved starts from: nothing written yet. */
 const BLANK: EditableQuestion = {
   question: "new",
@@ -48,6 +48,11 @@ const BLANK: EditableQuestion = {
  * One question, edited in place. The card holds its own draft and compares it
  * against the loaded question, so "unsaved" is a fact about the two rather than
  * a flag anyone has to remember to clear.
+ *
+ * Choices are structured rows. On a quiz, the answer is marked on its row and
+ * follows the row through edits, so retyping the answer text is never asked
+ * for; a question with no rows takes a written answer, which is never graded —
+ * its expected answer is a reference.
  *
  * A null question is a card for a question that does not exist yet: it lives
  * only in the browser until its first save, so no placeholder wording can ride
@@ -80,36 +85,107 @@ export function QuizQuestionEditor({
   const unsaved = question === null;
   const saved = question ?? BLANK;
   const [prompt, setPrompt] = useState(saved.prompt);
-  const [choicesText, setChoicesText] = useState(saved.choices.join("\n"));
-  const [expected, setExpected] = useState(saved.expected);
+  const [choices, setChoices] = useState<string[]>(saved.choices);
+  // The marked row is held by position, so editing the answer's text keeps it
+  // the answer.
+  const [correct, setCorrect] = useState<number | null>(() => {
+    const marked = saved.choices.indexOf(saved.expected);
+    return marked === -1 ? null : marked;
+  });
+  const [reference, setReference] = useState(
+    saved.choices.length === 0 ? saved.expected : "",
+  );
   const [explanation, setExplanation] = useState(saved.explanation);
   const [busy, setBusy] = useState(false);
   const promptRef = useRef<HTMLTextAreaElement>(null);
+  const choiceRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const caretRow = useRef<number | null>(null);
 
   // A fresh card is where the author is already looking, so put the caret there.
   useEffect(() => {
     if (unsaved) promptRef.current?.focus();
   }, [unsaved]);
 
-  const choices = parseChoices(choicesText);
+  // A row added or removed from the keyboard takes the caret with it.
+  useEffect(() => {
+    if (caretRow.current === null) return;
+    choiceRefs.current[caretRow.current]?.focus();
+    caretRow.current = null;
+  });
+
+  const written = choices.length === 0;
+  const cleaned = choices
+    .map((choice) => choice.trim())
+    .filter((choice) => choice !== "");
+  const expected = !isQuiz
+    ? ""
+    : written
+      ? reference.trim()
+      : correct === null
+        ? ""
+        : (choices[correct] ?? "").trim();
   const dirty =
     prompt !== saved.prompt ||
-    choices.join("\n") !== saved.choices.join("\n") ||
+    cleaned.join("\n") !== saved.choices.join("\n") ||
     expected !== saved.expected ||
     explanation !== saved.explanation;
+  // A saved answer that no longer matches any row would save back as ungraded;
+  // say so until a row is marked.
   const stray =
     isQuiz &&
-    expected.trim() !== "" &&
-    choices.length > 0 &&
-    !choices.includes(expected.trim());
+    !written &&
+    correct === null &&
+    saved.expected !== "" &&
+    !cleaned.includes(saved.expected);
+
+  function editChoice(row: number, text: string) {
+    setChoices((prev) => prev.map((choice, i) => (i === row ? text : choice)));
+  }
+
+  function insertChoice(row: number) {
+    setChoices((prev) => [
+      ...prev.slice(0, row + 1),
+      "",
+      ...prev.slice(row + 1),
+    ]);
+    setCorrect((prev) => (prev !== null && prev > row ? prev + 1 : prev));
+    caretRow.current = row + 1;
+  }
+
+  function appendChoice() {
+    caretRow.current = choices.length;
+    setChoices((prev) => [...prev, ""]);
+  }
+
+  function removeChoice(row: number) {
+    setChoices((prev) => prev.filter((_, i) => i !== row));
+    setCorrect((prev) =>
+      prev === null ? null : prev === row ? null : prev > row ? prev - 1 : prev,
+    );
+  }
+
+  function keyChoice(
+    row: number,
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      insertChoice(row);
+    }
+    if (event.key === "Backspace" && choices[row] === "") {
+      event.preventDefault();
+      removeChoice(row);
+      if (row > 0) caretRow.current = row - 1;
+    }
+  }
 
   async function save() {
     setBusy(true);
     try {
       await onSave({
         prompt: prompt.trim(),
-        choices,
-        expected: isQuiz ? expected.trim() : "",
+        choices: cleaned,
+        expected,
         explanation: isQuiz ? explanation.trim() : "",
       });
     } finally {
@@ -128,6 +204,21 @@ export function QuizQuestionEditor({
   }
 
   const field = (name: string) => `question-${saved.question}-${name}`;
+
+  const explanationField = (
+    <div className="space-y-1.5">
+      <Label htmlFor={field("explanation")}>
+        Explanation{" "}
+        <span className="font-normal text-muted-foreground">(optional)</span>
+      </Label>
+      <Input
+        id={field("explanation")}
+        value={explanation}
+        disabled={locked || busy}
+        onChange={(event) => setExplanation(event.target.value)}
+      />
+    </div>
+  );
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -178,7 +269,7 @@ export function QuizQuestionEditor({
                   </Button>
                 }
                 title="Remove this question?"
-                description="The question and its wording are deleted. Runs already closed keep the answers they gathered."
+                description="The question and its wording are deleted. Closed runs keep the answers they gathered."
                 confirmLabel="Remove"
                 destructive
                 onConfirm={onRemove}
@@ -203,63 +294,100 @@ export function QuizQuestionEditor({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor={field("choices")}>Choices</Label>
-          <p className="text-xs text-muted-foreground">
-            One per line. Empty means a written answer.
-          </p>
-          <Textarea
-            id={field("choices")}
-            value={choicesText}
-            rows={3}
+          <Label>Choices</Label>
+          {written ? (
+            <p className="text-muted-foreground text-sm">
+              Participants write their answer.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {choices.map((choice, row) => (
+                <div
+                  // Rows have no identity of their own; the position is the key.
+                  // biome-ignore lint/suspicious/noArrayIndexKey: values are controlled
+                  key={row}
+                  className="flex items-center gap-2"
+                >
+                  {isQuiz ? (
+                    <button
+                      type="button"
+                      aria-label={
+                        correct === row ? "The answer" : "Mark as the answer"
+                      }
+                      aria-pressed={correct === row}
+                      disabled={locked || busy}
+                      onClick={() =>
+                        setCorrect((prev) => (prev === row ? null : row))
+                      }
+                      className="shrink-0 rounded-full p-1.5 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      {correct === row ? (
+                        <CircleCheck className="size-5 text-primary" />
+                      ) : (
+                        <Circle className="size-5 text-muted-foreground" />
+                      )}
+                    </button>
+                  ) : null}
+                  <Input
+                    ref={(element) => {
+                      choiceRefs.current[row] = element;
+                    }}
+                    value={choice}
+                    aria-label={`Choice ${row + 1}`}
+                    disabled={locked || busy}
+                    onChange={(event) => editChoice(row, event.target.value)}
+                    onKeyDown={(event) => keyChoice(row, event)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Remove choice"
+                    disabled={locked || busy}
+                    onClick={() => removeChoice(row)}
+                  >
+                    <X />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
             disabled={locked || busy}
-            placeholder={"Paris\nBerlin\nMadrid"}
-            onChange={(event) => setChoicesText(event.target.value)}
-          />
+            onClick={appendChoice}
+          >
+            <Plus /> Add choice
+          </Button>
+          {stray ? (
+            <p className="text-xs text-destructive">
+              Answer does not match any choice.
+            </p>
+          ) : null}
         </div>
 
         {isQuiz ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor={field("expected")}>
-                Expected answer{" "}
-                <span className="font-normal text-muted-foreground">
-                  (optional)
-                </span>
-              </Label>
-              <Input
-                id={field("expected")}
-                value={expected}
-                disabled={locked || busy}
-                placeholder="Leave empty to leave this question ungraded"
-                onChange={(event) => setExpected(event.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                {choices.length > 0
-                  ? "A question with choices expects one of them, matched exactly."
-                  : "A written answer is matched exactly against what you type here."}
-              </p>
-              {stray ? (
-                <p className="text-xs text-destructive">
-                  This answer is not one of the choices, so nobody can give it.
-                </p>
-              ) : null}
+          written ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor={field("reference")}>
+                  Reference answer{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (not graded)
+                  </span>
+                </Label>
+                <Input
+                  id={field("reference")}
+                  value={reference}
+                  disabled={locked || busy}
+                  onChange={(event) => setReference(event.target.value)}
+                />
+              </div>
+              {explanationField}
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={field("explanation")}>
-                Explanation{" "}
-                <span className="font-normal text-muted-foreground">
-                  (optional)
-                </span>
-              </Label>
-              <Input
-                id={field("explanation")}
-                value={explanation}
-                disabled={locked || busy}
-                placeholder="Shown only at the fullest disclosure level"
-                onChange={(event) => setExplanation(event.target.value)}
-              />
-            </div>
-          </div>
+          ) : (
+            explanationField
+          )
         ) : null}
       </div>
 

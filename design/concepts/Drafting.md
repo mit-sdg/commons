@@ -185,6 +185,17 @@ _briefs (author: String) : many (brief: String, request: String, createdAt: Date
   answers the author's briefs, newest first
   answers no rows when none match
 
+_lines (author: String) : many (brief: String, request: String, createdAt: Date, origin: String|Null, adopted: Boolean, stalled: Boolean, clarifying: Boolean)
+  answers the author's lines, newest first — one row per brief that begins a
+  line, with what it was opened from and where the line now stands: a
+  candidate adopted, its tip stalled, or a clarification waiting
+  answers no rows when none match
+
+_openedFrom (origin: String) : many (brief: String, author: String, request: String, createdAt: Date, adopted: Boolean, stalled: Boolean, clarifying: Boolean)
+  answers the briefs that began a line opened from origin, newest first, each
+  with where the line now stands as _lines answers it
+  answers no rows when none match
+
 _standing (brief: String) : optional (clarifying: Boolean, stalled: Boolean)
   answers where the brief stands
   answers no row when the Brief does not exist

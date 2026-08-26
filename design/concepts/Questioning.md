@@ -10,7 +10,9 @@ revise it freely for as long as it stays in the author's hands.
 
 Professor Lee composes a five-question quiz about photosynthesis. She adds each
 question with its choices and the answer she expects, notices a typo in the
-third prompt, and revises that one question without touching the others. She
+third prompt, and revises that one question without touching the others. One
+question offers no choices and takes a written answer; the answer she records
+beside it is a reference the questionnaire keeps, not a proposal. She
 removes a question that duplicates the fourth and the rest keep their order.
 Months later she retires the quiz; it stays readable, but revising a question
 of a retired questionnaire is refused.
@@ -47,6 +49,7 @@ Rule: a named level is a calculation over the input alone: a disclosure names a 
 Rule: questions belong to their questionnaire and stand in position order.
 Rule: empty choices offer none, so the question takes a written answer; non-empty choices offer exactly those.
 Rule: an empty expected or explanation carries none, the way an omitted field does.
+Rule: only a question that offers choices proposes its expected answer; the expected answer of a written-answer question is a reference the questionnaire keeps.
 Rule: a retired questionnaire keeps its questions and accepts no further change.
 Rule: Questioning does not decide who may compose, put a questionnaire before an audience, or measure anyone against an expected answer; whether a questionnaire may still be revised while an audience is meeting it is a question the surrounding design answers.
 ```
@@ -184,12 +187,18 @@ _material (questionnaire: String) : optional (form: String, material: Seq)
 
 _proposesAnswers (questionnaire: String) : one (proposes: Boolean)
   answers whether any question of the questionnaire proposes an expected answer
+  — a written-answer question's reference proposes nothing
   answers false when the Questionnaire does not exist
 
 _expectedAnswers (questionnaire: String) : optional (expectations: Seq)
   answers the questionnaire's proposed answers as one value: an ordered sequence
-  of `{ item, expected, explanation }` entries, one per question whose expected
-  is non-empty, in position order
+  of `{ item, expected, explanation }` entries, one per question that proposes —
+  choices offered and expected non-empty — in position order
   answers one row with an empty sequence when the questionnaire proposes none
   answers no row when the Questionnaire does not exist
+
+_references (questionnaire: String) : many (question: String, prompt: String, expected: String, explanation: String, position: Number)
+  answers the written-answer questions that keep a reference — no choices
+  offered, expected non-empty — in position order
+  answers no rows when none match
 ```

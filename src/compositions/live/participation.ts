@@ -44,7 +44,14 @@ export const theParticipantFace = former(
     }),
 ).optional();
 
-/** What a participant learns afterward, by the key's disclosure level. */
+/**
+ * What a participant learns afterward, by the key's disclosure level. The
+ * levels that reveal answers also carry the written-answer questions keeping a
+ * reference, each beside what the participant wrote: the key holds proposed
+ * expectations alone, so a written answer is read against its reference and
+ * never measured. References come live from Questioning, as the board's
+ * questions do — a questionnaire cannot be edited while its run stands open.
+ */
 export const theScoreOutcome = former(
   "the score outcome of (response)",
   ({ response }, { run, key, disclosure, score, outOf }) =>
@@ -57,9 +64,28 @@ export const theScoreOutcome = former(
 
 export const theAnswersOutcome = former(
   "the answers outcome of (response)",
-  ({ response }, { run, key, disclosure, score, outOf, item, expected, prompt, value }) =>
+  (
+    { response },
+    {
+      run,
+      key,
+      questionnaire,
+      disclosure,
+      score,
+      outOf,
+      item,
+      expected,
+      prompt,
+      value,
+      written,
+      writtenPrompt,
+      reference,
+      writtenValue,
+    },
+  ) =>
     where(
       Responding._response({ response }).is({ subject: run, submitted: true }),
+      Publishing._edition({ edition: run }).is({ material: questionnaire }),
       Scoring._keyFor({ subject: run }).is({ key, disclosure }),
       whether(Scoring._resultFor({ key, submission: response }).is({ score, outOf })),
     ).form({
@@ -73,6 +99,17 @@ export const theAnswersOutcome = former(
           whether(Responding._answers({ response }).is({ item, value })),
         )
         .form({ item, prompt, expected, value }),
+      references: each(
+        Questioning._references({ questionnaire }).is({
+          question: written,
+          prompt: writtenPrompt,
+          expected: reference,
+        }),
+      )
+        .where(
+          whether(Responding._answers({ response }).is({ item: written, value: writtenValue })),
+        )
+        .form({ item: written, prompt: writtenPrompt, reference, value: writtenValue }),
     }),
 ).optional();
 
@@ -80,10 +117,28 @@ export const theExplanationsOutcome = former(
   "the explained outcome of (response)",
   (
     { response },
-    { run, key, disclosure, score, outOf, item, expected, explanation, prompt, value },
+    {
+      run,
+      key,
+      questionnaire,
+      disclosure,
+      score,
+      outOf,
+      item,
+      expected,
+      explanation,
+      prompt,
+      value,
+      written,
+      writtenPrompt,
+      reference,
+      writtenExplanation,
+      writtenValue,
+    },
   ) =>
     where(
       Responding._response({ response }).is({ subject: run, submitted: true }),
+      Publishing._edition({ edition: run }).is({ material: questionnaire }),
       Scoring._keyFor({ subject: run }).is({ key, disclosure }),
       whether(Scoring._resultFor({ key, submission: response }).is({ score, outOf })),
     ).form({
@@ -97,6 +152,24 @@ export const theExplanationsOutcome = former(
           whether(Responding._answers({ response }).is({ item, value })),
         )
         .form({ item, prompt, expected, explanation, value }),
+      references: each(
+        Questioning._references({ questionnaire }).is({
+          question: written,
+          prompt: writtenPrompt,
+          expected: reference,
+          explanation: writtenExplanation,
+        }),
+      )
+        .where(
+          whether(Responding._answers({ response }).is({ item: written, value: writtenValue })),
+        )
+        .form({
+          item: written,
+          prompt: writtenPrompt,
+          reference,
+          explanation: writtenExplanation,
+          value: writtenValue,
+        }),
     }),
 ).optional();
 

@@ -63,7 +63,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
 
   // Grading lands through the reaction and the score arrives by polling.
   await expect(participant.getByText("Your score")).toBeVisible({ timeout: 20_000 });
-  await expect(participant.locator("main")).toContainText("2 / 2");
+  await expect(participant.locator("main")).toContainText("1 / 1");
 
   // The staff board reaches the same state live.
   await expect(page.getByText("1 answer handed in").first()).toBeVisible({ timeout: 20_000 });
@@ -81,7 +81,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   const late = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const latecomer = await late.newPage();
   await latecomer.goto(address);
-  await expect(latecomer.getByText("This has closed")).toBeVisible({ timeout: 15_000 });
+  await expect(latecomer.getByText("This quiz has been closed")).toBeVisible({ timeout: 15_000 });
 
   await phone.close();
   await late.close();
@@ -92,8 +92,6 @@ test("an ambiguous request comes back as a question and resumes from the answer"
 }) => {
   await signIn(page);
   await page.goto("/staff/live/draft");
-  const restart = page.getByRole("button", { name: "Start a new draft" });
-  if (await restart.isVisible().catch(() => false)) await restart.click();
   const describe = page.getByRole("textbox").first();
   await describe.fill("Something ambiguous about gardening");
   await page.getByRole("button", { name: /draft it/i }).click();
@@ -115,11 +113,15 @@ test("a questionnaire is refined with the reasoner and applied back in place", a
   const editorUrl = page.url();
 
   // The desk opens a refining line on the questionnaire as it stands.
-  await page.getByRole("button", { name: "Refine with the reasoner" }).click();
+  await page.getByRole("button", { name: "Refine with AI" }).click();
   await page.waitForURL(/\/staff\/live\/draft\?brief=/, { timeout: 20_000 });
   await expect(page.getByText("Scripted quiz: which gas do plants take in?")).toBeVisible({
     timeout: 20_000,
   });
+
+  // The opening candidate is the questionnaire itself, so there is nothing to
+  // adopt until a correction moves it.
+  await expect(page.getByRole("button", { name: "Adopt this draft" })).toBeHidden();
 
   // A plain-language correction returns a revised candidate.
   await page.getByLabel("Request a change to this draft").fill("Tighten the wording");
@@ -134,4 +136,8 @@ test("a questionnaire is refined with the reasoner and applied back in place", a
   await expect(page.getByText("Corrected quiz: which gas do plants take in?")).toBeVisible({
     timeout: 20_000,
   });
+
+  // The adopted line is spent: the drafting page opens on a fresh description.
+  await page.goto("/staff/live/draft");
+  await expect(page.getByRole("button", { name: "Draft it" })).toBeVisible({ timeout: 20_000 });
 });
