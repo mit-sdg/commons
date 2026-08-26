@@ -317,14 +317,21 @@ function StaffAssignmentDetailPageContent({
               </span>
             )}
             {detail.status === "DRAFT" && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-emerald-600"
-                onClick={publish}
-              >
-                <Eye className="size-4 mr-1" /> Publish
-              </Button>
+              <ConfirmAction
+                title="Publish this assignment?"
+                description={`${detail.audience === "EVERYONE" ? "Everyone in the course" : `${detail.targets.length} targeted section${detail.targets.length === 1 ? "" : "s"}`} will receive this assignment. It is available ${fullTime(detail.availableAt)}, due ${fullTime(detail.dueAt)}${detail.closeAt ? `, and closes ${fullTime(detail.closeAt)}` : ""}.`}
+                confirmLabel="Publish assignment"
+                onConfirm={publish}
+                trigger={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-emerald-600"
+                  >
+                    <Eye className="size-4 mr-1" /> Publish
+                  </Button>
+                }
+              />
             )}
             {detail.status !== "ARCHIVED" ? (
               <ConfirmAction

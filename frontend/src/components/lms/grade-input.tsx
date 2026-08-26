@@ -224,14 +224,21 @@ export function GradeInput({
           <Button size="sm" onClick={save} disabled={loading}>
             Save draft
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={release}
-            disabled={loading || !currentStatus}
-          >
-            Release
-          </Button>
+          <ConfirmAction
+            title={`Release grade for ${learnerLabel ?? learner}?`}
+            description={`${score} points for ${itemLabel ?? item} will become visible to the learner. Confirm that the feedback and rubric are complete.`}
+            confirmLabel="Release grade"
+            onConfirm={release}
+            trigger={
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={loading || !currentStatus}
+              >
+                Release
+              </Button>
+            }
+          />
           <ConfirmAction
             title={`Excuse ${learnerLabel ?? learner}?`}
             description={`${itemLabel ?? item} will be marked excused with the feedback currently shown: ${feedback || "Excused"}`}
