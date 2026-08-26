@@ -812,7 +812,7 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 - `_getLatest(assignment: String, submitter: String) : optional (latest: Submission)`
 - `_getAttempts(assignment: String, submitter: String) : many (submission: String, artifacts: Strings, submittedAt: Date, number: Number, status: String)`
-- `_getSubmissionsForAssignment(assignment: String) : many (submitter: String, submission: String, submittedAt: Date, number: Number, status: String)`
+- `_getSubmissionsForAssignment(assignment: String) : many (submitter: String, submission: String, artifacts: Artifacts, submittedAt: Date, number: Number, status: String)`
 - `_getSubmissionsForSubmitter(submitter: String) : many (assignment: String, submission: String, submittedAt: Date, number: Number, status: String)`
 
 #### Instances
