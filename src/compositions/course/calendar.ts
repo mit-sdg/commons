@@ -35,17 +35,7 @@ export const theCalendarOf = former(
   "the calendar of (student) between (start) and (end)",
   (
     { student, start, end },
-    {
-      assignment,
-      release,
-      dueOverride,
-      title,
-      kind,
-      availableAt,
-      dueAt,
-      closeAt,
-      status,
-    },
+    { assignment, release, dueOverride, title, kind, availableAt, dueAt, closeAt, status },
   ) =>
     each(
       Assigning._getAssigned({ assignee: student }).is({
@@ -132,9 +122,7 @@ export const CalendarMe = endpoint(
   ({ session, start, end, user }) =>
     receive({ session, start, end }).then(
       where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-        .then(
-          respond({ events: theCalendarOf({ student: user, start, end }) }),
-        )
+        .then(respond({ events: theCalendarOf({ student: user, start, end }) }))
         .named("success"),
       where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
         .then(respond({ error: "FORBIDDEN" }))

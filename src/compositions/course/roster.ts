@@ -206,16 +206,10 @@ export const UpdateClass = endpoint(
 
 export const ClassConfiguration = endpoint("/roster/class", ({ session, detail }) =>
   receive({ session }).then(
-    where(
-      activeUser({ session }),
-      theClassConfiguration({}).is({ detail }),
-    )
+    where(activeUser({ session }), theClassConfiguration({}).is({ detail }))
       .then(respond({ class: detail }))
       .named("found"),
-    where(
-      activeUser({ session }),
-      no(theClassConfiguration({})),
-    )
+    where(activeUser({ session }), no(theClassConfiguration({})))
       .then(respond({ class: null }))
       .named("absent"),
   ),

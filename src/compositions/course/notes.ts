@@ -90,8 +90,7 @@ export const theNotesShownTo = former(
 /** What seat detail belongs to this user? */
 export const theSeatDetailOf = view(
   "the seat detail of (user)",
-  ({ user }, { detail }, _bindings) =>
-    where(Rostering._getSeatDetail({ user }).is({ detail })),
+  ({ user }, { detail }, _bindings) => where(Rostering._getSeatDetail({ user }).is({ detail })),
 ).optional();
 export const Write = endpoint(
   "/students/notes/write",

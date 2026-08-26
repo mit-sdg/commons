@@ -70,9 +70,7 @@ export const theCriterionScoresOf = former(
 export const theGradesOn = former(
   "the grades on (item)",
   ({ item }, { learner, grade, score, feedback, status }) =>
-    each(
-      Grading._getGradesForItem({ item }).is({ learner, grade, score, feedback, status }),
-    ).form({
+    each(Grading._getGradesForItem({ item }).is({ learner, grade, score, feedback, status })).form({
       learner,
       grade,
       score,

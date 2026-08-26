@@ -193,8 +193,7 @@ export class MongoRosteringConcept {
         if (!requested) return { ...row, section: "", sectionName: "—" };
         const matches = sections.filter(
           (section) =>
-            section._id === requested ||
-            section.name.toLowerCase() === requested.toLowerCase(),
+            section._id === requested || section.name.toLowerCase() === requested.toLowerCase(),
         );
         return matches.length === 1
           ? { ...row, section: matches[0]._id, sectionName: matches[0].name }
