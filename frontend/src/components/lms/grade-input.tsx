@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ interface GradeInputProps {
   currentStatus?: string;
   evidence?: string;
   onSaved: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
   className?: string;
 }
 
@@ -30,12 +31,20 @@ export function GradeInput({
   currentStatus,
   evidence,
   onSaved,
+  onDirtyChange,
   className,
 }: GradeInputProps) {
   const { session } = useAuth();
   const [score, setScore] = useState(currentScore ?? 0);
   const [feedback, setFeedback] = useState(currentFeedback ?? "");
   const [loading, setLoading] = useState(false);
+  const dirty =
+    score !== (currentScore ?? 0) || feedback !== (currentFeedback ?? "");
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
   const itemQuery = useQuery(
     currentStatus === "DRAFT" ? () => api.grades.item({ item }) : null,
     [item, currentStatus],

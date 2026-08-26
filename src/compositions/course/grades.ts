@@ -69,11 +69,14 @@ export const theCriterionScoresOf = former(
 /** Which grades are on this item? */
 export const theGradesOn = former(
   "the grades on (item)",
-  ({ item }, { learner, grade, score, status }) =>
-    each(Grading._getGradesForItem({ item }).is({ learner, grade, score, status })).form({
+  ({ item }, { learner, grade, score, feedback, status }) =>
+    each(
+      Grading._getGradesForItem({ item }).is({ learner, grade, score, feedback, status }),
+    ).form({
       learner,
       grade,
       score,
+      feedback,
       status,
     }),
 );
@@ -96,7 +99,20 @@ export const theGradebook = former(
   "the gradebook ()",
   (
     _inputs,
-    { item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, status },
+    {
+      item,
+      label,
+      maxPoints,
+      user,
+      section,
+      displayName,
+      email,
+      cellItem,
+      grade,
+      score,
+      feedback,
+      status,
+    },
   ) =>
     form({
       items: each(Itemizing._getItems({}).is({ item, label, maxPoints })).form({
@@ -118,11 +134,12 @@ export const theGradebook = former(
                 Grading._getGrade({ learner: user, item: cellItem }).is({
                   grade,
                   score,
+                  feedback,
                   status,
                 }),
               ),
             )
-            .form({ item: cellItem, grade, score, status }),
+            .form({ item: cellItem, grade, score, feedback, status }),
         }),
     }),
 );

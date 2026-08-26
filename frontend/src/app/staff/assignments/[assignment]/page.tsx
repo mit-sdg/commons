@@ -184,7 +184,13 @@ function StaffAssignmentDetailPageContent({
   );
 
   const { data: gradesData, refetch: refetchGrades } = useQuery<{
-    grades: { learner: string; grade: string; score: number; status: string }[];
+    grades: {
+      learner: string;
+      grade: string;
+      score: number;
+      feedback: string;
+      status: string;
+    }[];
   }>(session ? () => loadGradesForItem(assignment) : null, [
     session,
     assignment,
@@ -499,6 +505,7 @@ function StaffAssignmentDetailPageContent({
                           learner={learnerId}
                           item={assignment}
                           currentScore={grade?.score}
+                          currentFeedback={grade?.feedback}
                           currentStatus={grade?.status}
                           evidence={gradingEvidence ?? latest?.submission}
                           onSaved={() => {

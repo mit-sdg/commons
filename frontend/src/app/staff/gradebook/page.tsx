@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 function GradebookPageContent() {
   const { session } = useAuth();
+  const [dirtyGrade, setDirtyGrade] = useState(false);
   const [grading, setGrading] = useState<{
     learner: string;
     learnerName: string;
@@ -176,7 +177,16 @@ function GradebookPageContent() {
 
       <Dialog
         open={!!grading}
-        onOpenChange={(open) => !open && setGrading(null)}
+        onOpenChange={(open) => {
+          if (open) return;
+          if (
+            dirtyGrade &&
+            !window.confirm("Discard your unsaved grade changes?")
+          )
+            return;
+          setDirtyGrade(false);
+          setGrading(null);
+        }}
       >
         <DialogContent>
           <DialogHeader>
@@ -194,8 +204,11 @@ function GradebookPageContent() {
                   ? selectedCell.score
                   : undefined
               }
+              currentFeedback={selectedCell?.feedback ?? undefined}
               currentStatus={selectedCell?.status ?? undefined}
+              onDirtyChange={setDirtyGrade}
               onSaved={() => {
+                setDirtyGrade(false);
                 setGrading(null);
                 refetch();
               }}

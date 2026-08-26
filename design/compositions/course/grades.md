@@ -41,10 +41,10 @@ An active student sees only
 [Course.grades.GradesForStudent](reaction:Course.grades.GradesForStudent) gives callers holding `grade`
 [all grades for one learner](former:Course.grades.theGradesOf).
 [Course.grades.GradesForItem](reaction:Course.grades.GradesForItem) gives the same callers
-[every recorded grade on one item](former:Course.grades.theGradesOn).
+[every recorded grade on one item](former:Course.grades.theGradesOn), including its saved feedback.
 [Course.grades.GradesGradebook](reaction:Course.grades.GradesGradebook) builds
 [the current gradebook](former:Course.grades.theGradebook) from active students, active grade
-items, and any grade cells at read time rather than storing a snapshot. The narrower
+items, and any grade cells with their saved feedback at read time rather than storing a snapshot. The narrower
 [theGradebookLearners former](former:Course.grades.theGradebookLearners) exposes the learners a
 gradebook-oriented read covers: the account behind each active seat, presented
 through that account's own profile fields, since a seat records no name of its

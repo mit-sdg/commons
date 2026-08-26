@@ -1902,7 +1902,7 @@ Authored path: `Course.grades.theGradebook`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 46.
 
 ```former
-Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, status); promises exactly one record — forms:
+Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, feedback, status); promises exactly one record — forms:
   a record of
     items: each Itemizing._getItems () has (item, label, maxPoints)
       form a record of
@@ -1914,8 +1914,9 @@ Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user,
       arranged by displayName
       form a record of
         cells: each Itemizing._getItems () has (item: cellItem)
-          where whether Grading._getGrade (item: cellItem, learner: user) has (grade, score, status)
+          where whether Grading._getGrade (item: cellItem, learner: user) has (feedback, grade, score, status)
           form a record of
+            feedback
             grade
             item: cellItem
             score
@@ -1968,9 +1969,10 @@ Authored path: `Course.grades.theGradesOn`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 44.
 
 ```former
-Former "the grades on (item)" — inputs (item); bindings (learner, grade, score, status); promises exactly one record — forms:
-  each Grading._getGradesForItem (item) has (grade, learner, score, status)
+Former "the grades on (item)" — inputs (item); bindings (learner, grade, score, feedback, status); promises exactly one record — forms:
+  each Grading._getGradesForItem (item) has (feedback, grade, learner, score, status)
     form a record of
+      feedback
       grade
       learner
       score
