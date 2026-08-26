@@ -146,7 +146,14 @@ function GradeSetupForm({
               onChange={(event) => setMaxPoints(Number(event.target.value))}
             />
           </div>
-          <Button onClick={configure} disabled={busy || !label.trim()}>
+          <Button
+            onClick={configure}
+            disabled={
+              busy ||
+              !label.trim() ||
+              (label === detail.label && maxPoints === detail.maxPoints)
+            }
+          >
             Save settings
           </Button>
         </div>
