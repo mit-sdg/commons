@@ -274,7 +274,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {effectiveHasRosterSeat && isCourseArea ? (
+      {(effectiveHasRosterSeat || effectiveIsStaff) && isCourseArea ? (
         <nav
           aria-label="Course"
           className="hidden border-t border-border/70 bg-muted/30 lg:block"
