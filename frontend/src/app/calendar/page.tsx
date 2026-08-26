@@ -66,6 +66,7 @@ export default function CalendarPage() {
         label: `Available: ${event.title}`,
         kind: "available",
         detail: event.kind,
+        href: `/assignments/${event.assignment}`,
       },
       {
         date: dueAt,
@@ -74,6 +75,7 @@ export default function CalendarPage() {
         detail: event.dueOverride
           ? `${event.kind} · individual due date`
           : event.kind,
+        href: `/assignments/${event.assignment}`,
       },
       event.closeAt
         ? {
@@ -81,6 +83,7 @@ export default function CalendarPage() {
             label: `Closes: ${event.title}`,
             kind: "close",
             detail: event.kind,
+            href: `/assignments/${event.assignment}`,
           }
         : null,
     ].filter(Boolean) as {
@@ -88,6 +91,7 @@ export default function CalendarPage() {
       label: string;
       kind?: string;
       detail?: string;
+      href: string;
     }[];
   });
 
