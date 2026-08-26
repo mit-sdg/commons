@@ -397,9 +397,7 @@ function WriteNoteForm({
           <Label htmlFor={`${prefix}-visibility`}>Visibility</Label>
           <Select
             value={visibility}
-            onValueChange={(value) =>
-              setVisibility(value as typeof visibility)
-            }
+            onValueChange={(value) => setVisibility(value as typeof visibility)}
             disabled={loading}
           >
             <SelectTrigger id={`${prefix}-visibility`} className="w-full">
@@ -407,9 +405,7 @@ function WriteNoteForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="STAFF_ONLY">Staff only</SelectItem>
-              <SelectItem value="LEARNER_VISIBLE">
-                Learner visible
-              </SelectItem>
+              <SelectItem value="LEARNER_VISIBLE">Learner visible</SelectItem>
             </SelectContent>
           </Select>
         </div>
