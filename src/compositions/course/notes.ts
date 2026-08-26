@@ -9,7 +9,7 @@ import {
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Noting, Rostering } = concepts;
+const { Noting, Profiling, Rostering } = concepts;
 /** Which staff notes are about this learner? */
 export const theStaffNotesOn = former(
   "the staff notes on (learner)",
@@ -90,7 +90,8 @@ export const theNotesShownTo = former(
 /** What seat detail belongs to this user? */
 export const theSeatDetailOf = view(
   "the seat detail of (user)",
-  ({ user }, { detail }, _bindings) => where(Rostering._getSeatDetail({ user }).is({ detail })),
+  ({ user }, { detail }, _bindings) =>
+    where(Rostering._getSeatDetail({ user }).is({ detail })),
 ).optional();
 export const Write = endpoint(
   "/students/notes/write",
@@ -216,21 +217,22 @@ export const NotesVisible = endpoint(
 
 export const StudentsDetail = endpoint(
   "/students/detail",
-  ({ session, user: caller, target, detail }) =>
+  ({ session, user: caller, target, detail, displayName }) =>
     receive({ session, user: target }).then(
       where(
         activeUser({ session }).is({ user: caller }),
         mayManageStudentRecords({ user: caller }),
         theSeatDetailOf({ user: target }).is({ detail }),
+        Profiling._getProfileFields({ user: target }).is({ displayName }),
       )
-        .then(respond({ detail }))
+        .then(respond({ detail, displayName }))
         .named("found"),
       where(
         activeUser({ session }).is({ user: caller }),
         mayManageStudentRecords({ user: caller }),
         no(theSeatDetailOf({ user: target })),
       )
-        .then(respond({ detail: null }))
+        .then(respond({ detail: null, displayName: null }))
         .named("missing"),
       where(
         activeUser({ session }).is({ user: caller }),

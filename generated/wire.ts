@@ -1777,10 +1777,14 @@ export type CommonsWire = {
   "/students/detail": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatDetail"]>[0], ["user"]>>;
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatDetail"]>[0], ["user"]>]>>;
     };
     output: {
-      "detail": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatDetail"]>>>, ["detail"]>> | null;
+      "detail": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatDetail"]>>>, ["detail"]>>;
+      "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+    } | {
+      "detail": null;
+      "displayName": null;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
@@ -4320,10 +4324,14 @@ export type CommonsWireHttp = {
   };
   "/students/detail": {
     input: {
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatDetail"]>[0], ["user"]>>;
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatDetail"]>[0], ["user"]>]>>;
     };
     output: {
-      "detail": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatDetail"]>>>, ["detail"]>> | null;
+      "detail": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatDetail"]>>>, ["detail"]>>;
+      "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
+    } | {
+      "detail": null;
+      "displayName": null;
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };

@@ -2262,7 +2262,7 @@ Former "the moderation queue ()" — inputs (); bindings (target, count, node, c
 ### the notes shown to (learner)
 
 Authored path: `Course.notes.theNotesShownTo`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 16.
 
 ```former
 Former "the notes shown to (learner)" — inputs (learner); bindings (note, author, body, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags); promises exactly one record — forms:
@@ -6525,8 +6525,8 @@ then
 ### Course.notes.Acknowledge:forbidden
 
 Authored path: `Course.notes.Acknowledge`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 27.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/acknowledge", requestId, session)
@@ -6540,8 +6540,8 @@ then
 ### Course.notes.Acknowledge:success
 
 Authored path: `Course.notes.Acknowledge`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 27.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/acknowledge", requestId, session)
@@ -6556,8 +6556,8 @@ then
 ### Course.notes.Acknowledge:success#2
 
 Authored path: `Course.notes.Acknowledge`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 27.
 
 ```reaction
 when Noting.acknowledge (at, learner: user, note), asked by Course.notes.Acknowledge:success
@@ -6571,7 +6571,7 @@ then
 
 Authored path: `Course.notes.Archive`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 6.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/archive", requestId, session)
@@ -6586,7 +6586,7 @@ then
 
 Authored path: `Course.notes.Archive`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 6.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/archive", requestId, session)
@@ -6602,7 +6602,7 @@ then
 
 Authored path: `Course.notes.Archive`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 6.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
 
 ```reaction
 when Noting.archive (at, note), asked by Course.notes.Archive:success
@@ -6616,7 +6616,7 @@ then
 
 Authored path: `Course.notes.NotesList`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 10.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 30.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/students/notes/list", requestId, session)
@@ -6631,7 +6631,7 @@ then
 
 Authored path: `Course.notes.NotesList`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 10.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 30.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/students/notes/list", requestId, session)
@@ -6645,8 +6645,8 @@ then
 ### Course.notes.NotesVisible:forbidden
 
 Authored path: `Course.notes.NotesVisible`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 30.
 
 ```reaction
 when RequestBoundary.request (path: "/students/notes/visible", requestId, session)
@@ -6660,8 +6660,8 @@ then
 ### Course.notes.NotesVisible:success
 
 Authored path: `Course.notes.NotesVisible`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 30.
 
 ```reaction
 when RequestBoundary.request (path: "/students/notes/visible", requestId, session)
@@ -6676,7 +6676,7 @@ then
 
 Authored path: `Course.notes.Resolve`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 5.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/resolve", requestId, session)
@@ -6691,7 +6691,7 @@ then
 
 Authored path: `Course.notes.Resolve`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 5.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/resolve", requestId, session)
@@ -6707,7 +6707,7 @@ then
 
 Authored path: `Course.notes.Resolve`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 5.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
 
 ```reaction
 when Noting.resolve (at, note), asked by Course.notes.Resolve:success
@@ -6721,7 +6721,7 @@ then
 
 Authored path: `Course.notes.Restore`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 7.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/restore", requestId, session)
@@ -6736,7 +6736,7 @@ then
 
 Authored path: `Course.notes.Restore`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 7.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/restore", requestId, session)
@@ -6752,7 +6752,7 @@ then
 
 Authored path: `Course.notes.Restore`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 7.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
 
 ```reaction
 when Noting.restore (at, note), asked by Course.notes.Restore:success
@@ -6766,7 +6766,7 @@ then
 
 Authored path: `Course.notes.Revise`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, note, path: "/students/notes/revise", requestId, session, tags, visibility)
@@ -6781,7 +6781,7 @@ then
 
 Authored path: `Course.notes.Revise`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, note, path: "/students/notes/revise", requestId, session, tags, visibility)
@@ -6797,7 +6797,7 @@ then
 
 Authored path: `Course.notes.Revise`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
 
 ```reaction
 when Noting.revise (at, body, followUpAt, note, tags, visibility), asked by Course.notes.Revise:success
@@ -6810,8 +6810,8 @@ then
 ### Course.notes.StudentsDetail:forbidden
 
 Authored path: `Course.notes.StudentsDetail`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 13.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 12.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -6825,8 +6825,8 @@ then
 ### Course.notes.StudentsDetail:found
 
 Authored path: `Course.notes.StudentsDetail`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 13.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 12.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -6834,15 +6834,16 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage student records" with (user)
   view "the seat detail of (user)" with (user: target) has (detail)
+  Profiling._getProfileFields (user: target) has (displayName)
 then
-  RequestBoundary.respond (detail, requestId)
+  RequestBoundary.respond (detail, displayName, requestId)
 ```
 
 ### Course.notes.StudentsDetail:missing
 
 Authored path: `Course.notes.StudentsDetail`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 13.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 12.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -6851,14 +6852,14 @@ where
   view "(user) may manage student records" with (user)
   no view "the seat detail of (user)" with (user: target)
 then
-  RequestBoundary.respond (detail: null, requestId)
+  RequestBoundary.respond (detail: null, displayName: null, requestId)
 ```
 
 ### Course.notes.Write:forbidden
 
 Authored path: `Course.notes.Write`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 36.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, learner, path: "/students/notes/write", requestId, session, tags, visibility)
@@ -6873,7 +6874,7 @@ then
 
 Authored path: `Course.notes.Write`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 36.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, learner, path: "/students/notes/write", requestId, session, tags, visibility)
@@ -6889,7 +6890,7 @@ then
 
 Authored path: `Course.notes.Write`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 36.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
 
 ```reaction
 when Noting.write (at, author: user, body, followUpAt, learner, tags, visibility, note), asked by Course.notes.Write:success

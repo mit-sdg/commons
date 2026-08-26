@@ -10,6 +10,7 @@ import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@/hooks/use-query";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { relativeTime } from "@/lib/format";
 import {
@@ -44,6 +45,35 @@ function StudentDetailPageContent({
       status: string;
     }[];
   }>(() => loadSubmissionsForStudent(user), [user]);
+
+  const { data: assignmentTitles } = useQuery<Record<string, string>>(
+    submissionsData?.submissions
+      ? async () => {
+          const assignments = [
+            ...new Set(
+              submissionsData.submissions.map(
+                (submission) => submission.assignment,
+              ),
+            ),
+          ];
+          const entries = await Promise.all(
+            assignments.map(async (assignment) => {
+              const result = await api.assignments["staff-summary"]({
+                assignment,
+              });
+              return [
+                assignment,
+                "error" in result
+                  ? assignment.slice(0, 8)
+                  : (result.summary?.title ?? assignment.slice(0, 8)),
+              ] as const;
+            }),
+          );
+          return Object.fromEntries(entries);
+        }
+      : null,
+    [submissionsData],
+  );
 
   const { data: gradesData } = useQuery(
     session ? () => loadGradesForStudent(user) : null,
@@ -108,8 +138,11 @@ function StudentDetailPageContent({
 
       <div className="mb-6">
         <h1 className="font-display text-3xl font-semibold tracking-tight">
-          {seat?.email ?? user}
+          {detailData?.displayName ?? seat?.email ?? user}
         </h1>
+        {seat ? (
+          <p className="mt-1 text-sm text-muted-foreground">{seat.email}</p>
+        ) : null}
         <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
           <Link
             href={`/u/${user}`}
@@ -123,8 +156,6 @@ function StudentDetailPageContent({
               <StatusBadge status={seat.kind} />
               <span>·</span>
               <StatusBadge status={seat.status} />
-              <span>·</span>
-              <span>{seat.email}</span>
             </>
           )}
         </div>
@@ -147,18 +178,23 @@ function StudentDetailPageContent({
               ) : (
                 <div className="space-y-2">
                   {submissions.map((s) => (
-                    <div
+                    <Link
                       key={s.submission}
-                      className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+                      href={`/staff/assignments/${s.assignment}`}
+                      className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted/50"
                     >
                       <div>
-                        <span className="font-medium">#{s.number}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {relativeTime(s.submittedAt)}
+                        <span className="font-medium">
+                          {assignmentTitles?.[s.assignment] ??
+                            s.assignment.slice(0, 8)}{" "}
+                          · Attempt #{s.number}
+                        </span>
+                        <span className="ml-2 block text-xs text-muted-foreground sm:inline">
+                          {relativeTime(s.submittedAt)} · Open evidence
                         </span>
                       </div>
                       <StatusBadge status={s.status} />
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
