@@ -154,9 +154,10 @@ export default function AssignmentsPage() {
     if (filter === "submitted") return !!sub;
     if (filter === "graded") return !!grade && grade.status === "RELEASED";
     if (filter === "upcoming") {
-      if (detail?.closeAt) return new Date(detail.closeAt) > now;
-      if (dueAt) return new Date(dueAt) > now && !sub;
-      return !sub;
+      if (sub || grade?.status === "RELEASED" || grade?.status === "EXCUSED")
+        return false;
+      if (dueAt) return new Date(dueAt) > now;
+      return true;
     }
     if (filter === "overdue") {
       if (sub) return false;
@@ -200,25 +201,34 @@ export default function AssignmentsPage() {
           </Button>
         ))}
         <div className="flex-1" />
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 w-48"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 w-48"
+            />
+          </div>
+          {search ? (
+            <Button variant="ghost" size="sm" onClick={() => setSearch("")}>
+              Clear search
+            </Button>
+          ) : null}
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState
           icon={BookOpen}
-          title="No assignments"
+          title={search ? `No assignments match “${search}”` : "No assignments"}
           description={
-            filter !== "all"
-              ? `No ${filter} assignments to show.`
-              : "No assignments yet."
+            search
+              ? "Try another title or kind, or clear the search."
+              : filter !== "all"
+                ? `No ${filter} assignments to show.`
+                : "No assignments yet."
           }
         />
       ) : (
