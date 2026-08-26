@@ -108,3 +108,32 @@ test("an ambiguous request comes back as a question and resumes from the answer"
     timeout: 20_000,
   });
 });
+
+test("a questionnaire is refined with the reasoner and applied back in place", async ({
+  page,
+}) => {
+  await signIn(page);
+  await draftAndAdopt(page, "A short quiz about leaves for beginners");
+  const editorUrl = page.url();
+
+  // The desk opens a refining line on the questionnaire as it stands.
+  await page.getByRole("button", { name: "Refine with the reasoner" }).click();
+  await page.waitForURL(/\/staff\/live\/draft\?brief=/, { timeout: 20_000 });
+  await expect(
+    page.getByText("Scripted quiz: which gas do plants take in?"),
+  ).toBeVisible({ timeout: 20_000 });
+
+  // A plain-language correction returns a revised candidate.
+  await page.getByLabel("Request a change to this draft").fill("Tighten the wording");
+  await page.getByRole("button", { name: "Request a change" }).click();
+  await expect(
+    page.getByText("Corrected quiz: which gas do plants take in?"),
+  ).toBeVisible({ timeout: 20_000 });
+
+  // Adopting applies the revision back to the same questionnaire.
+  await page.getByRole("button", { name: "Adopt this draft" }).click();
+  await page.waitForURL(editorUrl, { timeout: 20_000 });
+  await expect(
+    page.getByText("Corrected quiz: which gas do plants take in?"),
+  ).toBeVisible({ timeout: 20_000 });
+});

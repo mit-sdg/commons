@@ -1,5 +1,6 @@
 import type { Collection, Db } from "mongodb";
 import {
+  NotSiblings,
   QuestionNotFound,
   QuestionnaireNotFound,
   QuestionnaireRetired,
@@ -173,6 +174,21 @@ export class MongoQuestioningConcept {
     return { question };
   }
 
+  async swapQuestions({ question, other }: { question: string; other: string }) {
+    const first = await this.questions.findOne({ _id: question });
+    const second = await this.questions.findOne({ _id: other });
+    if (first === null || second === null) {
+      throw new QuestionNotFound("There is no such question.");
+    }
+    if (first.questionnaire !== second.questionnaire) {
+      throw new NotSiblings("These questions do not share a questionnaire.");
+    }
+    await this.#revisable(first.questionnaire);
+    await this.questions.updateOne({ _id: question }, { $set: { position: second.position } });
+    await this.questions.updateOne({ _id: other }, { $set: { position: first.position } });
+    return { question, other };
+  }
+
   async removeQuestion({ question }: { question: string }) {
     const doc = await this.questions.findOne({ _id: question });
     if (doc === null) {
@@ -180,7 +196,7 @@ export class MongoQuestioningConcept {
     }
     await this.#revisable(doc.questionnaire);
     await this.questions.deleteOne({ _id: question });
-    return { question };
+    return { question, questionnaire: doc.questionnaire, position: doc.position };
   }
 
   async retire({ questionnaire }: { questionnaire: string }) {
@@ -244,6 +260,23 @@ export class MongoQuestioningConcept {
             position: doc.position,
           },
         ];
+  }
+
+  async _material({ questionnaire }: { questionnaire: string }) {
+    const doc = await this.questionnaires.findOne({ _id: questionnaire });
+    if (doc === null) return [];
+    const docs = await this.questions.find({ questionnaire }).sort({ position: 1 }).toArray();
+    return [
+      {
+        form: doc.form,
+        material: docs.map((entry) => ({
+          prompt: entry.prompt,
+          choices: entry.choices,
+          expected: entry.expected,
+          explanation: entry.explanation,
+        })),
+      },
+    ];
   }
 
   async _proposesAnswers({ questionnaire }: { questionnaire: string }) {

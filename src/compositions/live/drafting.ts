@@ -3,17 +3,26 @@ import {
   each,
   former,
   is,
+  no,
   now,
   reaction,
   when,
   where,
+  whether,
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
-import { mayHostLive, mayNotHostLive } from "./policy.ts";
+import {
+  mayHostLive,
+  mayNotHostLive,
+  questionnaireHasAnOpenRun,
+  questionnaireHasNoOpenRun,
+  theItemCount,
+  theQuestionCount,
+} from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
-const { Drafting, Insisting, Questioning, Reasoning } = concepts;
+const { AdoptLinking, Drafting, Insisting, Questioning, Reasoning } = concepts;
 
 /** The one reasoner name this composition asks for; the floor decides what answers it. */
 const REASONER = "gemini-flash";
@@ -149,14 +158,18 @@ export const FailedAskStallsTheBrief = reaction(({ asking, brief, account }) =>
 );
 
 /**
- * Adopting a candidate turns the drafted material into an ordinary editable
- * questionnaire — after this, revision happens by hand in Questioning, and
- * nothing else ever crosses from the drafting line into the live domain.
+ * Adopting a described line's candidate turns the drafted material into an
+ * ordinary editable questionnaire — after this, revision happens by hand in
+ * Questioning, and nothing else ever crosses from the drafting line into the
+ * live domain. The brief is linked to what it composed, so the line can say
+ * where its material went.
  */
 export const AdoptedCandidateComposesQuestionnaire = reaction(
   ({
     candidate,
     brief,
+    linked,
+    targets,
     author,
     form,
     request,
@@ -173,6 +186,7 @@ export const AdoptedCandidateComposesQuestionnaire = reaction(
       .where(
         now(at),
         Drafting._candidate({ candidate }).is({ brief, form }),
+        no(Drafting._originOf({ brief })),
         Drafting._brief({ brief }).is({ author, request }),
         compute(computations.draftTitle, { request }, title),
       )
@@ -196,6 +210,89 @@ export const AdoptedCandidateComposesQuestionnaire = reaction(
             }),
           )
           .named("each-item"),
+        where(
+          Drafting._candidate({ candidate }).is({ brief: linked }),
+          compute(computations.soleTarget, { target: questionnaire }, targets),
+        )
+          .then(AdoptLinking.setLinks({ source: linked, targets }))
+          .named("link"),
+      ),
+);
+
+/**
+ * Adopting a refining line's candidate applies it back to the questionnaire it
+ * refines instead of composing a new one: each question is revised in place by
+ * position, the questions past the candidate's reach are shed, and the items
+ * past the questionnaire's are added — so a question that merely changed keeps
+ * its identity, and the boards of closed runs keep reading their answers.
+ */
+export const AdoptedRevisionRevisesQuestionnaire = reaction(
+  ({
+    candidate,
+    brief,
+    questionnaire,
+    itemTotal,
+    questionTotal,
+    prompt,
+    choices,
+    expected,
+    explanation,
+    position,
+    question,
+    shed,
+    shedAt,
+    past,
+  }) =>
+    when(Drafting.adopt({ candidate }).responds())
+      .where(
+        Drafting._candidate({ candidate }).is({ brief }),
+        Drafting._originOf({ brief }).is({ origin: questionnaire }),
+      )
+      .then(
+        where(
+          Drafting._items({ candidate }).is({ prompt, choices, expected, explanation, position }),
+          Questioning._getQuestions({ questionnaire }).is({ question, position }),
+        )
+          .then(
+            Questioning.reviseQuestion({
+              question,
+              prompt,
+              choices,
+              expected,
+              explanation,
+              position,
+            }),
+          )
+          .named("revise"),
+        where(
+          Questioning._getQuestions({ questionnaire }).is({ question: shed, position: shedAt }),
+          theItemCount({ candidate }).is({ total: itemTotal }),
+          is.gt(shedAt, itemTotal),
+        )
+          .then(Questioning.removeQuestion({ question: shed }))
+          .named("shed"),
+        where(
+          Drafting._items({ candidate }).is({
+            prompt,
+            choices,
+            expected,
+            explanation,
+            position: past,
+          }),
+          theQuestionCount({ questionnaire }).is({ total: questionTotal }),
+          is.gt(past, questionTotal),
+        )
+          .then(
+            Questioning.addQuestion({
+              questionnaire,
+              prompt,
+              choices,
+              expected,
+              explanation,
+              position: past,
+            }),
+          )
+          .named("grow"),
       ),
 );
 
@@ -221,10 +318,16 @@ export const theDraftLine = former(
       expected,
       explanation,
       position,
+      refines,
+      composed,
     },
   ) =>
     each(Drafting._line({ brief }).is({ brief: step, request, basis, candidate, form, adopted }))
-      .where(Drafting._standing({ brief: step }).is({ clarifying, stalled }))
+      .where(
+        Drafting._standing({ brief: step }).is({ clarifying, stalled }),
+        whether(Drafting._originOf({ brief: step }).is({ origin: refines })),
+        whether(AdoptLinking._getLinks({ source: step }).is({ target: composed })),
+      )
       .form({
         step,
         request,
@@ -234,6 +337,8 @@ export const theDraftLine = former(
         adopted,
         clarifying,
         stalled,
+        refines,
+        composed,
         items: each(
           Drafting._items({ candidate }).is({ prompt, choices, expected, explanation, position }),
         ).form({ prompt, choices, expected, explanation, position }),
@@ -307,14 +412,131 @@ export const Correct = endpoint(
   { input: { required: ["session", "candidate", "request"] } },
 );
 
+export const Refine = endpoint(
+  "/live/drafts/refine",
+  ({ session, questionnaire, user, at, title, form, material, brief, candidate }) =>
+    receive({ session, questionnaire }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestionnaire({ questionnaire }).is({ title, retired: false }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+        Questioning._material({ questionnaire }).is({ form, material }),
+      )
+        .then(
+          Drafting.open({
+            author: user,
+            request: title,
+            form,
+            material,
+            origin: questionnaire,
+            at,
+          }).responds({ brief, candidate }),
+        )
+        .then(respond({ brief, candidate }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestionnaire({ questionnaire }).is({ retired: false }),
+        questionnaireHasAnOpenRun({ questionnaire }),
+      )
+        .then(respond({ error: "RUN_OPEN" }))
+        .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestionnaire({ questionnaire }).is({ retired: true }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_RETIRED" }))
+        .named("retired"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(Questioning._getQuestionnaire({ questionnaire })),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "questionnaire"] } },
+);
+
 export const Adopt = endpoint(
   "/live/drafts/adopt",
-  ({ session, candidate, user, at, adopted }) =>
+  ({ session, candidate, user, at, brief, questionnaire, form, adopted }) =>
     receive({ session, candidate }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief }),
+        no(Drafting._originOf({ brief })),
+      )
         .then(Drafting.adopt({ candidate }).responds({ candidate: adopted }))
         .then(respond({ candidate: adopted }))
         .named("success"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief, form }),
+        Drafting._originOf({ brief }).is({ origin: questionnaire }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+        Questioning._getQuestionnaire({ questionnaire }).is({ form, retired: false }),
+      )
+        .then(Drafting.adopt({ candidate }).responds({ candidate: adopted }))
+        .then(respond({ candidate: adopted }))
+        .named("refit"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief }),
+        Drafting._originOf({ brief }).is({ origin: questionnaire }),
+        questionnaireHasAnOpenRun({ questionnaire }),
+      )
+        .then(respond({ error: "RUN_OPEN" }))
+        .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief, form: "survey" }),
+        Drafting._originOf({ brief }).is({ origin: questionnaire }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+        Questioning._getQuestionnaire({ questionnaire }).is({ form: "quiz", retired: false }),
+      )
+        .then(respond({ error: "FORM_FIXED" }))
+        .named("form-fixed-quiz"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief, form: "quiz" }),
+        Drafting._originOf({ brief }).is({ origin: questionnaire }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+        Questioning._getQuestionnaire({ questionnaire }).is({ form: "survey", retired: false }),
+      )
+        .then(respond({ error: "FORM_FIXED" }))
+        .named("form-fixed-survey"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Drafting._candidate({ candidate }).is({ brief }),
+        Drafting._originOf({ brief }).is({ origin: questionnaire }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+        Questioning._getQuestionnaire({ questionnaire }).is({ retired: true }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_RETIRED" }))
+        .named("retired"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(Drafting._candidate({ candidate })),
+      )
+        .then(respond({ error: "CANDIDATE_NOT_FOUND" }))
+        .named("missing"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),

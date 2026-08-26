@@ -80,7 +80,6 @@ async function buildQuiz(edge: Edge, cookie: string, disclosure: string) {
       choices: ["Oxygen", "Carbon dioxide"],
       expected: "Carbon dioxide",
       explanation: "Photosynthesis fixes carbon.",
-      position: 1,
     },
     cookie,
   );
@@ -93,11 +92,23 @@ async function buildQuiz(edge: Edge, cookie: string, disclosure: string) {
       choices: [],
       expected: "Chlorophyll",
       explanation: "",
-      position: 2,
     },
     cookie,
   );
   return questionnaire;
+}
+
+/** Poll a read until it settles into the expected shape; reactions land after the response. */
+async function until<Value>(
+  read: () => Promise<Value>,
+  done: (value: Value) => boolean,
+): Promise<Value> {
+  let value = await read();
+  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    value = await read();
+  }
+  return value;
 }
 
 describe("the live quiz loop", () => {
@@ -346,6 +357,8 @@ describe("the drafting loop with a scripted reasoner", () => {
       adopted: boolean;
       clarifying: boolean;
       stalled: boolean;
+      refines: string | null;
+      composed: string | null;
       items: { prompt: string; expected: string }[];
       clarifications: { clarification: string; question: string; answer: string | null }[];
     }[];
@@ -380,23 +393,19 @@ describe("the drafting loop with a scripted reasoner", () => {
     expect(line).toHaveLength(2);
     expect(line[1].candidate).not.toBeNull();
 
-    // Adopt the revision; the questionnaire appears on the staff shelf with the items.
+    // Adopt the revision; the line answers the questionnaire it composed.
     await post(edge, "/live/drafts/adopt", { candidate: line[1].candidate }, cookie);
-    let questionnaires: { title: string; questionnaire: string }[] = [];
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      const listed = await json(await post(edge, "/live/quizzes/list", {}, cookie));
-      questionnaires = listed.questionnaires as typeof questionnaires;
-      if (questionnaires.length > 0) break;
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    expect(questionnaires.length).toBe(1);
+    line = await until(
+      () => lineOf(brief),
+      (steps) => steps[1]?.composed !== null,
+    );
+    const composed = line[1].composed as string;
+    const listed = await json(await post(edge, "/live/quizzes/list", {}, cookie));
+    expect(
+      (listed.questionnaires as { questionnaire: string }[]).map((entry) => entry.questionnaire),
+    ).toContain(composed);
     const whole = await json(
-      await post(
-        edge,
-        "/live/quizzes/get",
-        { questionnaire: questionnaires[0].questionnaire },
-        cookie,
-      ),
+      await post(edge, "/live/quizzes/get", { questionnaire: composed }, cookie),
     );
     const questions = (whole.questionnaire as { questions: { prompt: string }[] }).questions;
     expect(questions.length).toBeGreaterThan(0);
@@ -483,5 +492,352 @@ describe("the drafting loop with a scripted reasoner", () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     const line = await lineOf(brief);
     expect(line[0].stalled).toBe(true);
+  });
+});
+
+describe("questions stand contiguously", () => {
+  let edge: Edge;
+  let cookie: string;
+
+  beforeAll(async () => {
+    edge = createEdge(mongoImplementations(await testDb()));
+    ({ cookie } = await registerHost(edge));
+  });
+
+  afterAll(stopTestDb);
+
+  const questionsOf = async (questionnaire: string) => {
+    const whole = await json(await post(edge, "/live/quizzes/get", { questionnaire }, cookie));
+    return (
+      whole.questionnaire as {
+        questions: { question: string; prompt: string; position: number }[];
+      }
+    ).questions;
+  };
+
+  test("adding appends, removing closes ranks, and a move swaps neighbors", async () => {
+    const questionnaire = await buildQuiz(edge, cookie, "score");
+    await post(
+      edge,
+      "/live/quizzes/add-question",
+      { questionnaire, prompt: "Name one plant.", expected: "Any" },
+      cookie,
+    );
+    let questions = await questionsOf(questionnaire);
+    expect(questions.map((entry) => entry.position)).toEqual([1, 2, 3]);
+
+    await post(edge, "/live/quizzes/remove-question", { question: questions[1].question }, cookie);
+    questions = await until(
+      () => questionsOf(questionnaire),
+      (rows) => rows.length === 2 && rows[1].position === 2,
+    );
+    expect(questions.map((entry) => entry.position)).toEqual([1, 2]);
+    expect(questions.map((entry) => entry.prompt)).toEqual([
+      "Which gas do plants take in?",
+      "Name one plant.",
+    ]);
+
+    const raised = await json(
+      await post(edge, "/live/quizzes/raise-question", { question: questions[1].question }, cookie),
+    );
+    expect(raised.question).toBe(questions[1].question);
+    questions = await questionsOf(questionnaire);
+    expect(questions.map((entry) => entry.prompt)).toEqual([
+      "Name one plant.",
+      "Which gas do plants take in?",
+    ]);
+
+    const atTop = await post(
+      edge,
+      "/live/quizzes/raise-question",
+      { question: questions[0].question },
+      cookie,
+    );
+    expect(atTop.status).toBeGreaterThanOrEqual(400);
+    const atBottom = await post(
+      edge,
+      "/live/quizzes/lower-question",
+      { question: questions[1].question },
+      cookie,
+    );
+    expect(atBottom.status).toBeGreaterThanOrEqual(400);
+
+    const lowered = await post(
+      edge,
+      "/live/quizzes/lower-question",
+      { question: questions[0].question },
+      cookie,
+    );
+    expect(lowered.status).toBe(200);
+    questions = await questionsOf(questionnaire);
+    expect(questions.map((entry) => entry.prompt)).toEqual([
+      "Which gas do plants take in?",
+      "Name one plant.",
+    ]);
+
+    const missing = await post(
+      edge,
+      "/live/quizzes/raise-question",
+      { question: "no-such" },
+      cookie,
+    );
+    expect(missing.status).toBeGreaterThanOrEqual(400);
+  });
+
+  test("retitling and moving are refused while a run is open", async () => {
+    const questionnaire = await buildQuiz(edge, cookie, "score");
+    const questions = await questionsOf(questionnaire);
+    const launch = await json(await post(edge, "/live/runs/launch", { questionnaire }, cookie));
+    const retitleDenied = await post(
+      edge,
+      "/live/quizzes/retitle",
+      { questionnaire, title: "Mid-run title" },
+      cookie,
+    );
+    expect(retitleDenied.status).toBeGreaterThanOrEqual(400);
+    const moveDenied = await post(
+      edge,
+      "/live/quizzes/lower-question",
+      { question: questions[0].question },
+      cookie,
+    );
+    expect(moveDenied.status).toBeGreaterThanOrEqual(400);
+    await post(edge, "/live/runs/close", { run: launch.run }, cookie);
+    const allowed = await post(
+      edge,
+      "/live/quizzes/retitle",
+      { questionnaire, title: "After-run title" },
+      cookie,
+    );
+    expect(allowed.status).toBe(200);
+  });
+});
+
+describe("the refining line with a scripted reasoner", () => {
+  let edge: Edge;
+  let cookie: string;
+
+  beforeAll(async () => {
+    edge = createEdge(mongoImplementations(await testDb()));
+    ({ cookie } = await registerHost(edge));
+  });
+
+  afterAll(stopTestDb);
+
+  const lineOf = async (brief: string) =>
+    (await json(await post(edge, "/live/drafts/line", { brief }, cookie))).line as {
+      step: string;
+      candidate: string | null;
+      adopted: boolean;
+      refines: string | null;
+      composed: string | null;
+      items: { prompt: string; expected: string }[];
+    }[];
+
+  const questionsOf = async (questionnaire: string) => {
+    const whole = await json(await post(edge, "/live/quizzes/get", { questionnaire }, cookie));
+    return (
+      whole.questionnaire as {
+        questions: { question: string; prompt: string; position: number }[];
+      }
+    ).questions;
+  };
+
+  test("a refined quiz is corrected in place, keeping question identities", async () => {
+    const questionnaire = await buildQuiz(edge, cookie, "score");
+    await post(
+      edge,
+      "/live/quizzes/add-question",
+      { questionnaire, prompt: "One more.", expected: "x" },
+      cookie,
+    );
+    const before = await questionsOf(questionnaire);
+    expect(before).toHaveLength(3);
+
+    const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
+    const brief = refined.brief as string;
+    let line = await lineOf(brief);
+    expect(line).toHaveLength(1);
+    expect(line[0].refines).toBe(questionnaire);
+    expect(line[0].items).toHaveLength(3);
+    expect(line[0].items[0].prompt).toBe("Which gas do plants take in?");
+
+    await post(
+      edge,
+      "/live/drafts/correct",
+      { candidate: line[0].candidate, request: "Tighten the wording" },
+      cookie,
+    );
+    await serveReasoner(edge);
+    line = await lineOf(brief);
+    expect(line).toHaveLength(2);
+    expect(line[1].refines).toBe(questionnaire);
+    expect(line[1].items).toHaveLength(2);
+    expect(line[1].items[0].prompt).toContain("Corrected quiz");
+
+    const adopted = await post(
+      edge,
+      "/live/drafts/adopt",
+      { candidate: line[1].candidate },
+      cookie,
+    );
+    expect(adopted.status).toBe(200);
+    const after = await until(
+      () => questionsOf(questionnaire),
+      (rows) => rows.length === 2 && rows[0].prompt.includes("Corrected quiz"),
+    );
+    expect(after).toHaveLength(2);
+    expect(after[0].question).toBe(before[0].question);
+    expect(after[1].question).toBe(before[1].question);
+    expect(after.map((entry) => entry.position)).toEqual([1, 2]);
+  });
+
+  test("a refinement grows the questionnaire when the draft carries more", async () => {
+    const created = await json(
+      await post(
+        edge,
+        "/live/quizzes/create",
+        { title: "Short quiz", form: "quiz", disclosure: "score" },
+        cookie,
+      ),
+    );
+    const questionnaire = created.questionnaire as string;
+    await post(
+      edge,
+      "/live/quizzes/add-question",
+      { questionnaire, prompt: "Only question?", expected: "Yes" },
+      cookie,
+    );
+    const before = await questionsOf(questionnaire);
+
+    const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
+    let line = await lineOf(refined.brief as string);
+    await post(
+      edge,
+      "/live/drafts/correct",
+      { candidate: line[0].candidate, request: "Add another question" },
+      cookie,
+    );
+    await serveReasoner(edge);
+    line = await lineOf(refined.brief as string);
+    await post(edge, "/live/drafts/adopt", { candidate: line[1].candidate }, cookie);
+    const after = await until(
+      () => questionsOf(questionnaire),
+      (rows) => rows.length === 2,
+    );
+    expect(after[0].question).toBe(before[0].question);
+    expect(after.map((entry) => entry.position)).toEqual([1, 2]);
+  });
+
+  test("a refinement keeps the questionnaire's form", async () => {
+    const questionnaire = await buildQuiz(edge, cookie, "score");
+    const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
+    let line = await lineOf(refined.brief as string);
+    await post(
+      edge,
+      "/live/drafts/correct",
+      { candidate: line[0].candidate, request: "Make this a survey instead" },
+      cookie,
+    );
+    await serveReasoner(edge);
+    line = await lineOf(refined.brief as string);
+    expect(line[1].items[0].prompt).toContain("Corrected survey");
+    const denied = await post(edge, "/live/drafts/adopt", { candidate: line[1].candidate }, cookie);
+    expect(denied.status).toBeGreaterThanOrEqual(400);
+
+    // The questionnaire is untouched, and the line stays open to correct again.
+    expect(await questionsOf(questionnaire)).toHaveLength(2);
+    await post(
+      edge,
+      "/live/drafts/correct",
+      { candidate: line[1].candidate, request: "Make it a quiz again" },
+      cookie,
+    );
+    await serveReasoner(edge);
+    line = await lineOf(refined.brief as string);
+    const adopted = await post(
+      edge,
+      "/live/drafts/adopt",
+      { candidate: line[2].candidate },
+      cookie,
+    );
+    expect(adopted.status).toBe(200);
+  });
+
+  test("refining is refused while a run is open and once retired", async () => {
+    const questionnaire = await buildQuiz(edge, cookie, "score");
+    const launch = await json(await post(edge, "/live/runs/launch", { questionnaire }, cookie));
+    const midRun = await post(edge, "/live/drafts/refine", { questionnaire }, cookie);
+    expect(midRun.status).toBeGreaterThanOrEqual(400);
+    await post(edge, "/live/runs/close", { run: launch.run }, cookie);
+    await post(edge, "/live/quizzes/retire", { questionnaire }, cookie);
+    const retired = await post(edge, "/live/drafts/refine", { questionnaire }, cookie);
+    expect(retired.status).toBeGreaterThanOrEqual(400);
+    const missing = await post(edge, "/live/drafts/refine", { questionnaire: "no-such" }, cookie);
+    expect(missing.status).toBeGreaterThanOrEqual(400);
+  });
+});
+
+describe("many participants at once", () => {
+  let edge: Edge;
+  let cookie: string;
+
+  beforeAll(async () => {
+    edge = createEdge(mongoImplementations(await testDb()));
+    ({ cookie } = await registerHost(edge));
+  });
+
+  afterAll(stopTestDb);
+
+  test("forty devices join, answer, and hand in concurrently; the board counts every one", async () => {
+    const questionnaire = await buildQuiz(edge, cookie, "score");
+    const launch = await json(await post(edge, "/live/runs/launch", { questionnaire }, cookie));
+    const run = launch.run as string;
+    const token = launch.token as string;
+
+    const face = await json(await post(edge, "/live/p/arrive", { token }));
+    const questions = (face.face as { questions: { question: string }[] }).questions;
+
+    const participants = Array.from({ length: 40 }, (_value, index) => `device-${index}`);
+    const outcomes = await Promise.all(
+      participants.map(async (device, index) => {
+        const begun = await json(await post(edge, "/live/p/begin", { token, device }));
+        const response = begun.response as string;
+        // Half the room answers correctly; the other half misses the first question.
+        const first = index % 2 === 0 ? "Carbon dioxide" : "Oxygen";
+        await post(edge, "/live/p/answer", {
+          response,
+          question: questions[0].question,
+          value: first,
+        });
+        await post(edge, "/live/p/answer", {
+          response,
+          question: questions[1].question,
+          value: "Chlorophyll",
+        });
+        const submitted = await post(edge, "/live/p/submit", { response });
+        return { response, submitted: submitted.status };
+      }),
+    );
+    expect(outcomes.every((entry) => entry.submitted === 200)).toBe(true);
+    expect(new Set(outcomes.map((entry) => entry.response)).size).toBe(40);
+
+    const results = await until(
+      async () => {
+        const read = await json(await post(edge, "/live/runs/results", { run }, cookie));
+        return read as {
+          board: { started: number; handedIn: number };
+          scores: { results: { score: number }[] } | undefined;
+        };
+      },
+      (read) => (read.scores?.results.length ?? 0) === 40,
+    );
+    expect(results.board.started).toBe(40);
+    expect(results.board.handedIn).toBe(40);
+    const scores = (results.scores as { results: { score: number }[] }).results.map(
+      (entry) => entry.score,
+    );
+    expect(scores.filter((score) => score === 2)).toHaveLength(20);
+    expect(scores.filter((score) => score === 1)).toHaveLength(20);
   });
 });

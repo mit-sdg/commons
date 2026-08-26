@@ -1,8 +1,8 @@
 "use client";
 
 import { FileQuestion } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DraftDescribe } from "@/components/live/draft-describe";
 import type { DraftLineStep } from "@/components/live/draft-step";
@@ -17,9 +17,9 @@ import { api, isApiError, publicErrorMessage } from "@/lib/api";
 const BRIEF_STORAGE_KEY = "commons-live-draft-brief";
 /** How often the line is re-read while a reply is out with the reasoner. */
 const POLL_INTERVAL_MS = 1500;
-/** How long to watch for the questionnaire an adopted candidate composes. */
-const ADOPT_WATCH_MS = 5000;
-const ADOPT_WATCH_INTERVAL_MS = 500;
+/** How often, and how many times, the line is re-read after adoption while its questionnaire composes. */
+const ADOPT_READS = 10;
+const ADOPT_READ_INTERVAL_MS = 300;
 
 function readStoredBrief(): string | null {
   try {
@@ -58,6 +58,7 @@ function isWaiting(line: DraftLineStep[]): boolean {
 
 function DraftPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [brief, setBrief] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
   const [line, setLine] = useState<DraftLineStep[]>([]);
@@ -69,14 +70,17 @@ function DraftPageContent() {
   const [adopting, setAdopting] = useState(false);
   const [adoptNote, setAdoptNote] = useState<string | null>(null);
 
-  // A brief kept in session storage means a reload resumes the same line
-  // rather than starting the author over.
+  // A brief named in the address (the refine entry from a questionnaire's
+  // desk) takes the line over; otherwise session storage means a reload
+  // resumes the same line rather than starting the author over.
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- resuming a stored brief runs once on mount */
-    setBrief(readStoredBrief());
+    /* eslint-disable react-hooks/set-state-in-effect -- resuming a brief runs once on mount */
+    const named = searchParams.get("brief");
+    if (named !== null) writeStoredBrief(named);
+    setBrief(named ?? readStoredBrief());
     setRestored(true);
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
+  }, [searchParams]);
 
   // One self-scheduling loop per brief: read the line, and keep reading while
   // the tip is waiting on the reasoner. Every action bumps the nonce, which
@@ -169,19 +173,13 @@ function DraftPageContent() {
     [resumePolling],
   );
 
-  // Adoption composes a questionnaire a moment later, so the page watches the
-  // quizzes list for one that was not there before and opens it.
+  // The line itself answers where an adopted candidate went: the questionnaire
+  // it refined, or the one adoption composed a moment later.
   const adopt = useCallback(
     async (candidate: string) => {
+      if (brief === null) return;
       setAdopting(true);
       setAdoptNote(null);
-
-      const before = await api["/live/quizzes/list"]({});
-      const known = new Set(
-        isApiError(before)
-          ? []
-          : before.questionnaires.map((entry) => entry.questionnaire),
-      );
 
       const adopted = await api["/live/drafts/adopt"]({ candidate });
       if (isApiError(adopted)) {
@@ -191,20 +189,20 @@ function DraftPageContent() {
         return;
       }
 
-      const deadline = Date.now() + ADOPT_WATCH_MS;
-      while (Date.now() < deadline) {
-        const listed = await api["/live/quizzes/list"]({});
-        if (!isApiError(listed)) {
-          const fresh = listed.questionnaires.find(
-            (entry) => !known.has(entry.questionnaire),
+      for (let read = 0; read < ADOPT_READS; read += 1) {
+        const result = await api["/live/drafts/line"]({ brief });
+        if (!isApiError(result)) {
+          const step = result.line.find(
+            (entry) => entry.candidate === candidate,
           );
-          if (fresh) {
+          const questionnaire = step?.composed ?? step?.refines ?? null;
+          if (questionnaire !== null) {
             toast.success("Draft adopted");
-            router.push(`/staff/live/${fresh.questionnaire}`);
+            router.push(`/staff/live/${questionnaire}`);
             return;
           }
         }
-        await sleep(ADOPT_WATCH_INTERVAL_MS);
+        await sleep(ADOPT_READ_INTERVAL_MS);
       }
 
       setAdopting(false);
@@ -213,18 +211,27 @@ function DraftPageContent() {
       );
       resumePolling();
     },
-    [resumePolling, router],
+    [brief, resumePolling, router],
   );
 
   const tip = line.at(-1) ?? null;
   const waiting = isWaiting(line);
+  const refining = tip?.refines ?? null;
 
   return (
     <PageContainer>
       <PageHeader
         eyebrow="Live"
-        title="Draft with the reasoner"
-        description="Describe the quiz or survey you want. The reasoner drafts it whole; you correct it in plain language and adopt it when it reads right."
+        title={
+          refining !== null
+            ? "Refine with the reasoner"
+            : "Draft with the reasoner"
+        }
+        description={
+          refining !== null
+            ? "The line opened on the questionnaire as it stands. Ask for changes in plain language, and adopt the revision to apply it back."
+            : "Describe the quiz or survey you want. The reasoner drafts it whole; you correct it in plain language and adopt it when it reads right."
+        }
         actions={
           brief !== null ? (
             <Button variant="outline" onClick={startNewDraft}>
@@ -293,7 +300,9 @@ function DraftPageContent() {
 export default function DraftPage() {
   return (
     <RequireCapability capability="live:host">
-      <DraftPageContent />
+      <Suspense fallback={<LoadingState label="Loading…" />}>
+        <DraftPageContent />
+      </Suspense>
     </RequireCapability>
   );
 }

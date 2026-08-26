@@ -3,6 +3,7 @@ import type { Db } from "mongodb";
 import spec from "@design/concepts/Questioning.md" with { type: "text" };
 import { MongoQuestioningConcept } from "./questioning.mongo.ts";
 import {
+  NotSiblings,
   QuestionNotFound,
   QuestionnaireNotFound,
   QuestionnaireRetired,
@@ -19,6 +20,7 @@ export const questioning = registerConcept({
     QUESTIONNAIRE_NOT_FOUND: QuestionnaireNotFound,
     QUESTIONNAIRE_RETIRED: QuestionnaireRetired,
     QUESTION_NOT_FOUND: QuestionNotFound,
+    NOT_SIBLINGS: NotSiblings,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoQuestioningConcept(database) },
 });

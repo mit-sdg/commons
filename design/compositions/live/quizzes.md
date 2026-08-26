@@ -4,7 +4,10 @@ A questionnaire is authored by hand here, whatever its origin: a staff member
 holding `live:host` composes a quiz or a survey, adds and revises questions,
 and retires the questionnaire when its teaching life ends. A questionnaire that
 arrived through the drafting line is edited through exactly these operations —
-adoption hands it over and nothing distinguishes it afterward.
+adoption hands it over and nothing distinguishes it afterward — and any
+questionnaire can be taken back up in plain language through a refining line
+(see the drafting page), which applies its adopted revision under the same
+rules that govern editing here.
 
 [Live.quizzes.Create](reaction:Live.quizzes.Create) composes a questionnaire
 with a title, a form — `quiz` or `survey` — and, for a quiz, the disclosure
@@ -22,7 +25,16 @@ questionnaire out of use while keeping it readable.
 [Live.quizzes.RemoveQuestion](reaction:Live.quizzes.RemoveQuestion) edit the
 questions themselves: a prompt, offered choices (none means a written answer),
 and for a quiz an optional expected answer with an optional explanation, empty
-strings carrying none. Every mutating operation refuses with `RUN_OPEN` while
+strings carrying none. Questions stand contiguously in position order, counting
+from one, and the composition keeps that so: adding appends at the end,
+[Live.quizzes.RemovedQuestionClosesRanks](reaction:Live.quizzes.RemovedQuestionClosesRanks)
+closes the ranks behind whatever was removed, revising changes content and
+leaves the question's place alone, and
+[Live.quizzes.RaiseQuestion](reaction:Live.quizzes.RaiseQuestion) and
+[Live.quizzes.LowerQuestion](reaction:Live.quizzes.LowerQuestion) swap a
+question with its neighbor — one request per move, so an interrupted reorder
+never leaves the sheet half-written, and a question at its edge answers
+`AT_EDGE`. Every mutating operation refuses with `RUN_OPEN` while
 the questionnaire has an open run, so an audience mid-run never meets a
 questionnaire that moved under them; Questioning's own refusals — an unknown
 form or disclosure, a retired questionnaire, a missing question — stay in
@@ -41,6 +53,8 @@ Live.quizzes.AddQuestion at /live/quizzes/add-question
 Live.quizzes.Create at /live/quizzes/create
 Live.quizzes.Get at /live/quizzes/get
 Live.quizzes.List at /live/quizzes/list
+Live.quizzes.LowerQuestion at /live/quizzes/lower-question
+Live.quizzes.RaiseQuestion at /live/quizzes/raise-question
 Live.quizzes.RemoveQuestion at /live/quizzes/remove-question
 Live.quizzes.Retire at /live/quizzes/retire
 Live.quizzes.Retitle at /live/quizzes/retitle

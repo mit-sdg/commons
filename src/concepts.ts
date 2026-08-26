@@ -57,6 +57,8 @@ import {
   repairPassage,
   revisionPassage,
 } from "./computations/live-drafting.ts";
+import { soleTarget } from "./computations/live-links.ts";
+import { positionAfter, positionBefore } from "./computations/live-quizzes.ts";
 import {
   passwordResetCooldownStart,
   passwordResetExpiry,
@@ -77,6 +79,7 @@ import {
 } from "./computations/mail-content.ts";
 
 const registrations = {
+  AdoptLinking: linking,
   Archiving: trashing,
   Assigning: assigning,
   Authenticating: authenticating,
@@ -134,6 +137,9 @@ export const learningConcepts = conceptSet(registrations, {
   parsedReason,
   repairPassage,
   revisionPassage,
+  soleTarget,
+  positionAfter,
+  positionBefore,
   effectiveCapabilities,
   invitationMailHtml,
   invitationMailText,

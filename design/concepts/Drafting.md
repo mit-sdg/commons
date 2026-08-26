@@ -16,13 +16,20 @@ untouched — with the earlier version still there to compare. When she instead
 writes something that could equally be a survey or a quiz, drafting asks her
 which she means rather than deciding for her. Satisfied at last, she adopts the
 candidate and the line closes: correcting an adopted candidate is refused,
-because what she took is now hers to change by hand.
+because what she took is now hers to change by hand. Returning later to a
+worksheet she already owns, she opens a new line on it as it stands: the first
+candidate carries the material she brought, not something drafted for her, and
+the line remembers what it was opened from. Asking for corrections proceeds as
+ever, every step of the line answering the same origin.
 
 ## Types
 
 ```types
 external Author
   An application-owned identity used in the author role.
+
+external Origin
+  An application-owned identity for what a line was opened from.
 ```
 
 ## State
@@ -33,6 +40,7 @@ a set of Briefs with
   a request  String
   a createdAt Date
   an optional basis Candidate
+  an optional origin Origin
 
 a Clarifying set of Briefs
 a Stalled    set of Briefs
@@ -57,6 +65,7 @@ a set of Items with
 
 Rule: each entry of propose's material is `{ prompt, choices, expected, explanation }`; choices may be empty, an empty expected or explanation carries none, and a candidate's items keep the entries' order under per-item identities the concept mints.
 Rule: a brief holds at most one candidate, and a correction is a new brief whose basis is the candidate it corrects — the line of revisions is read through those bases.
+Rule: a line opened on material in hand records what it was opened from as its origin, and a correction inherits the origin of the brief it continues, so every step of a line knows the same origin; a described line has none.
 Rule: Drafting does not generate drafts, decide who is asked for one, or interpret what a draft means to the surrounding design; who reads a brief and answers it, and what adopting a candidate turns it into, are arranged outside the concept.
 ```
 
@@ -69,10 +78,20 @@ describe (author: Author, request: String, at: Date) : return (brief: Brief)
     add a new brief with author, request, and createdAt at
     return brief
 
+open (author: Author, request: String, form: String, material: Seq, origin: Origin, at: Date) : return (brief: Brief, candidate: Candidate)
+  where true
+  then
+    add a new brief with author, request, createdAt at, and origin
+    add a new candidate with brief and form
+    add a new item for each entry of material with its prompt, choices, expected,
+      and explanation, appending it to candidate's items
+    return brief, candidate
+
 correct (author: Author, candidate: Candidate, request: String, at: Date) : return (brief: Brief)
   where candidate exists and candidate not in adopted
   then
-    add a new brief with author, request, createdAt at, and basis candidate
+    add a new brief with author, request, createdAt at, basis candidate, and
+      the origin of candidate's brief
     return brief
   where candidate does not exist
   then
@@ -169,6 +188,10 @@ _briefs (author: String) : many (brief: String, request: String, createdAt: Date
 _standing (brief: String) : optional (clarifying: Boolean, stalled: Boolean)
   answers where the brief stands
   answers no row when the Brief does not exist
+
+_originOf (brief: String) : optional (origin: String)
+  answers what the brief's line was opened from
+  answers no row when the brief has no origin or does not exist
 
 _clarifications (brief: String) : many (clarification: String, question: String, answer: String|Null)
   answers the brief's clarifications in asking order

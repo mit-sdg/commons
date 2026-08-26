@@ -1,4 +1,15 @@
-import { each, former, now, where, whether } from "@mit-sdg/sync-engine/language";
+import {
+  compute,
+  each,
+  former,
+  is,
+  no,
+  now,
+  reaction,
+  when,
+  where,
+  whether,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
 import {
@@ -6,8 +17,9 @@ import {
   mayNotHostLive,
   questionnaireHasAnOpenRun,
   questionnaireHasNoOpenRun,
+  theQuestionCount,
 } from "./policy.ts";
-import { concepts } from "../../concepts.ts";
+import { computations, concepts } from "../../concepts.ts";
 
 const { Publishing, Questioning, Sharing } = concepts;
 
@@ -143,10 +155,22 @@ export const Retitle = endpoint(
   "/live/quizzes/retitle",
   ({ session, questionnaire, title, user, at, retitled }) =>
     receive({ session, questionnaire, title }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+      )
         .then(Questioning.retitle({ questionnaire, title }).responds({ questionnaire: retitled }))
         .then(respond({ questionnaire: retitled }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        questionnaireHasAnOpenRun({ questionnaire }),
+      )
+        .then(respond({ error: "RUN_OPEN" }))
+        .named("run-open"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -194,17 +218,20 @@ export const AddQuestion = endpoint(
     choices,
     expected,
     explanation,
+    standing,
     position,
     user,
     at,
     question,
   }) =>
-    receive({ session, questionnaire, prompt, choices, expected, explanation, position }).then(
+    receive({ session, questionnaire, prompt, choices, expected, explanation }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         questionnaireHasNoOpenRun({ questionnaire }),
+        theQuestionCount({ questionnaire }).is({ total: standing }),
+        compute(computations.positionAfter, { position: standing }, position),
       )
         .then(
           Questioning.addQuestion({
@@ -231,7 +258,7 @@ export const AddQuestion = endpoint(
     ),
   {
     input: {
-      required: ["session", "questionnaire", "prompt", "position"],
+      required: ["session", "questionnaire", "prompt"],
       defaults: { choices: [], expected: "", explanation: "" },
     },
   },
@@ -252,12 +279,12 @@ export const ReviseQuestion = endpoint(
     questionnaire,
     revised,
   }) =>
-    receive({ session, question, prompt, choices, expected, explanation, position }).then(
+    receive({ session, question, prompt, choices, expected, explanation }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        Questioning._getQuestion({ question }).is({ questionnaire }),
+        Questioning._getQuestion({ question }).is({ questionnaire, position }),
         questionnaireHasNoOpenRun({ questionnaire }),
       )
         .then(
@@ -280,16 +307,64 @@ export const ReviseQuestion = endpoint(
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(Questioning._getQuestion({ question })),
+      )
+        .then(respond({ error: "QUESTION_NOT_FOUND" }))
+        .named("missing"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
   {
     input: {
-      required: ["session", "question", "prompt", "position"],
+      required: ["session", "question", "prompt"],
       defaults: { choices: [], expected: "", explanation: "" },
     },
   },
+);
+
+/** Removing a question closes the ranks behind it, so positions stay contiguous. */
+export const RemovedQuestionClosesRanks = reaction(
+  ({
+    question,
+    questionnaire,
+    position,
+    later,
+    laterPrompt,
+    laterChoices,
+    laterExpected,
+    laterExplanation,
+    laterAt,
+    closed,
+  }) =>
+    when(Questioning.removeQuestion({ question }).responds({ questionnaire, position })).then(
+      where(
+        Questioning._getQuestions({ questionnaire }).is({
+          question: later,
+          prompt: laterPrompt,
+          choices: laterChoices,
+          expected: laterExpected,
+          explanation: laterExplanation,
+          position: laterAt,
+        }),
+        is.gt(laterAt, position),
+        compute(computations.positionBefore, { position: laterAt }, closed),
+      )
+        .then(
+          Questioning.reviseQuestion({
+            question: later,
+            prompt: laterPrompt,
+            choices: laterChoices,
+            expected: laterExpected,
+            explanation: laterExplanation,
+            position: closed,
+          }),
+        )
+        .named("close-ranks"),
+    ),
 );
 
 export const RemoveQuestion = endpoint(
@@ -314,6 +389,112 @@ export const RemoveQuestion = endpoint(
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(Questioning._getQuestion({ question })),
+      )
+        .then(respond({ error: "QUESTION_NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "question"] } },
+);
+
+/** Swap a question with the one before it; the sheet stays contiguous. */
+export const RaiseQuestion = endpoint(
+  "/live/quizzes/raise-question",
+  ({ session, question, user, at, questionnaire, position, target, neighbor }) =>
+    receive({ session, question }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire, position }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+        is.gt(position, 1),
+        compute(computations.positionBefore, { position }, target),
+        Questioning._getQuestions({ questionnaire }).is({ question: neighbor, position: target }),
+      )
+        .then(Questioning.swapQuestions({ question, other: neighbor }).responds())
+        .then(respond({ question }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire, position: 1 }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+      )
+        .then(respond({ error: "AT_EDGE" }))
+        .named("at-edge"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire }),
+        questionnaireHasAnOpenRun({ questionnaire }),
+      )
+        .then(respond({ error: "RUN_OPEN" }))
+        .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(Questioning._getQuestion({ question })),
+      )
+        .then(respond({ error: "QUESTION_NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "question"] } },
+);
+
+/** Swap a question with the one after it; the sheet stays contiguous. */
+export const LowerQuestion = endpoint(
+  "/live/quizzes/lower-question",
+  ({ session, question, user, at, questionnaire, position, standing, target, neighbor }) =>
+    receive({ session, question }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire, position }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+        theQuestionCount({ questionnaire }).is({ total: standing }),
+        is.lt(position, standing),
+        compute(computations.positionAfter, { position }, target),
+        Questioning._getQuestions({ questionnaire }).is({ question: neighbor, position: target }),
+      )
+        .then(Questioning.swapQuestions({ question, other: neighbor }).responds())
+        .then(respond({ question }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire, position }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+        theQuestionCount({ questionnaire }).is({ total: standing }),
+        is.ge(position, standing),
+      )
+        .then(respond({ error: "AT_EDGE" }))
+        .named("at-edge"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire }),
+        questionnaireHasAnOpenRun({ questionnaire }),
+      )
+        .then(respond({ error: "RUN_OPEN" }))
+        .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(Questioning._getQuestion({ question })),
+      )
+        .then(respond({ error: "QUESTION_NOT_FOUND" }))
+        .named("missing"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),

@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowLeft, ClipboardList, Lock, Plus } from "lucide-react";
-import { useParams } from "next/navigation";
+import { ArrowLeft, ClipboardList, Lock, Plus, Sparkles } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
@@ -117,6 +117,7 @@ function QuestionnaireDesk({
   sheet: Sheet;
   onChanged: () => void;
 }) {
+  const router = useRouter();
   const [title, setTitle] = useState(sheet.title);
   const [disclosure, setDisclosure] = useState(sheet.disclosure);
   const [busy, setBusy] = useState(false);
@@ -166,10 +167,6 @@ function QuestionnaireDesk({
   }
 
   async function addQuestion() {
-    const position = questions.reduce(
-      (high, question) => Math.max(high, question.position + 1),
-      0,
-    );
     setBusy(true);
     const result = await api["/live/quizzes/add-question"]({
       questionnaire: sheet.questionnaire,
@@ -177,7 +174,6 @@ function QuestionnaireDesk({
       choices: [],
       expected: "",
       explanation: "",
-      position,
     });
     setBusy(false);
     if (report(result)) onChanged();
@@ -193,7 +189,6 @@ function QuestionnaireDesk({
       choices: draft.choices,
       expected: draft.expected,
       explanation: draft.explanation,
-      position: question.position,
     });
     if (report(result)) onChanged();
   }
@@ -205,30 +200,26 @@ function QuestionnaireDesk({
     if (report(result)) onChanged();
   }
 
-  /**
-   * Order is carried by position alone, so moving a question means writing the
-   * new positions back. Renumbering the whole run of them keeps the sequence
-   * dense and settles any ties a draft may have arrived with.
-   */
-  async function moveQuestion(index: number, direction: -1 | 1) {
-    const target = index + direction;
-    if (target < 0 || target >= questions.length) return;
-    const next = [...questions];
-    const [moved] = next.splice(index, 1);
-    next.splice(target, 0, moved);
-    for (const [place, question] of next.entries()) {
-      if (question.position === place) continue;
-      const result = await api["/live/quizzes/revise-question"]({
-        question: question.question,
-        prompt: question.prompt,
-        choices: question.choices,
-        expected: question.expected,
-        explanation: question.explanation,
-        position: place,
-      });
-      if (!report(result)) return;
+  async function moveQuestion(question: EditableQuestion, direction: -1 | 1) {
+    const move =
+      direction === -1
+        ? api["/live/quizzes/raise-question"]
+        : api["/live/quizzes/lower-question"];
+    const result = await move({ question: question.question });
+    if (report(result)) onChanged();
+  }
+
+  async function refine() {
+    setBusy(true);
+    const result = await api["/live/drafts/refine"]({
+      questionnaire: sheet.questionnaire,
+    });
+    setBusy(false);
+    if (isApiError(result)) {
+      report(result);
+      return;
     }
-    onChanged();
+    router.push(`/staff/live/draft?brief=${result.brief}`);
   }
 
   return (
@@ -349,14 +340,24 @@ function QuestionnaireDesk({
                 ({questions.length})
               </span>
             </h2>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={locked || busy}
-              onClick={() => void addQuestion()}
-            >
-              <Plus /> Add question
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={locked || busy}
+                onClick={() => void refine()}
+              >
+                <Sparkles /> Refine with the reasoner
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={locked || busy}
+                onClick={() => void addQuestion()}
+              >
+                <Plus /> Add question
+              </Button>
+            </div>
           </div>
 
           {questions.length === 0 ? (
@@ -382,7 +383,7 @@ function QuestionnaireDesk({
                   last={index === questions.length - 1}
                   onSave={(draft) => saveQuestion(question, draft)}
                   onRemove={() => removeQuestion(question)}
-                  onMove={(direction) => moveQuestion(index, direction)}
+                  onMove={(direction) => moveQuestion(question, direction)}
                 />
               ))}
             </div>

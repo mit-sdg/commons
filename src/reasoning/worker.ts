@@ -88,9 +88,15 @@ export function geminiMind(configuration: ReasonerConfiguration): Mind {
  */
 export function scriptedMind(): Mind {
   return ({ passage }) => {
-    // Markers are read from the request itself, never from the contract text
-    // that precedes it — the contract mentions every form.
-    const request = passage.split("The request:\n")[1] ?? passage;
+    // Markers are read from the author's own words — the correction, the
+    // clarification answer, or the request — never from the contract text or
+    // prior material that precedes them: those mention every form.
+    const request =
+      passage.split("The correction:\n")[1] ??
+      passage.split("The author answered:\n")[1] ??
+      passage.split("The request:\n")[1] ??
+      passage;
+    const correcting = passage.includes("An earlier draft exists, as this ");
     const reply = (() => {
       if (passage.includes("Your previous reply came back unusable")) {
         return JSON.stringify(scriptedQuiz("Repaired quiz"));
@@ -108,23 +114,36 @@ export function scriptedMind(): Mind {
         });
       }
       if (request.includes("survey")) {
-        return JSON.stringify({
-          kind: "draft",
-          form: "survey",
-          material: [
-            {
-              prompt: "How is the pace so far?",
-              choices: ["Too slow", "Right", "Too fast"],
-              expected: "",
-              explanation: "",
-            },
-            { prompt: "What is still unclear?", choices: [], expected: "", explanation: "" },
-          ],
-        });
+        return JSON.stringify(scriptedSurvey(correcting ? "Corrected survey" : "Scripted survey"));
+      }
+      if (request.includes("quiz")) {
+        return JSON.stringify(scriptedQuiz(correcting ? "Corrected quiz" : "Scripted quiz"));
+      }
+      if (correcting && passage.includes("An earlier draft exists, as this survey")) {
+        return JSON.stringify(scriptedSurvey("Corrected survey"));
+      }
+      if (correcting) {
+        return JSON.stringify(scriptedQuiz("Corrected quiz"));
       }
       return JSON.stringify(scriptedQuiz("Scripted quiz"));
     })();
     return Promise.resolve(reply);
+  };
+}
+
+function scriptedSurvey(marker: string) {
+  return {
+    kind: "draft",
+    form: "survey",
+    material: [
+      {
+        prompt: `${marker}: how is the pace so far?`,
+        choices: ["Too slow", "Right", "Too fast"],
+        expected: "",
+        explanation: "",
+      },
+      { prompt: `${marker}: what is still unclear?`, choices: [], expected: "", explanation: "" },
+    ],
   };
 }
 

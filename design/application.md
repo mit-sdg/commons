@@ -66,6 +66,7 @@ instantiate Conversing with
 
 instantiate Drafting with
   Author is Authenticating.User
+  Origin is Questioning.Questionnaire
 
 instantiate Flagging with
   User is Authenticating.User
@@ -96,6 +97,10 @@ instantiate Itemizing with
 instantiate Linking with
   Source is Posting.Post
   Target is Posting.Post
+
+instantiate Linking as AdoptLinking with
+  Source is Drafting.Brief
+  Target is Questioning.Questionnaire
 
 instantiate Locking with
   Target is Lockable
@@ -365,6 +370,19 @@ parsedQuestion(reply: String) : String
 parsedReason(reply: String) : String
   Answers the account of why a reply could not be read, and an empty string
   when it could.
+
+soleTarget(target: String) : Strings
+  Wraps the one questionnaire a drafting line links — the one it refines or
+  composed — as the sequence Linking takes.
+
+positionAfter(position: Number) : Number
+  Answers the place one past the given one. Questions stand contiguously,
+  counting from one, so appending reckons from the count and moving a question
+  later reckons from its own place.
+
+positionBefore(position: Number) : Number
+  Answers the place one before the given one, for moving a question earlier
+  and for closing ranks after a removal.
 ```
 
 Two of these decide rather than render. `singleImportRow` composes the one row a

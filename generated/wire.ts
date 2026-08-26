@@ -921,13 +921,15 @@ export type CommonsWire = {
   };
   "/live/drafts/adopt": {
     input: {
-      "candidate": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>[0], ["candidate"]>>;
+      "candidate": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["_candidate"]>[0], ["candidate"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>[0], ["candidate"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "candidate": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>>, ["candidate"]>>;
+    } | {
+      "candidate": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>>, ["candidate"]>>;
     };
-    error: { error: AppWideError | "ALREADY_ADOPTED" | "CANDIDATE_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" };
+    error: { error: AppWideError | "ALREADY_ADOPTED" | "CANDIDATE_NOT_FOUND" | "FORBIDDEN" | "FORM_FIXED" | "INVALID_INPUT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" };
   };
   "/live/drafts/clarify": {
     input: {
@@ -968,7 +970,7 @@ export type CommonsWire = {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "line": {
+      "line": ({
         "adopted": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["adopted"]>>;
         "basis": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["basis"]>>;
         "candidate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["candidate"]>>;
@@ -978,6 +980,7 @@ export type CommonsWire = {
           "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_clarifications"]>>>, ["question"]>>;
         }[];
         "clarifying": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_standing"]>>>, ["clarifying"]>>;
+        "composed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["AdoptLinking"]["_getLinks"]>>>, ["target"]>> | null;
         "form": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["form"]>>;
         "items": {
           "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_items"]>>>, ["choices"]>>;
@@ -986,12 +989,24 @@ export type CommonsWire = {
           "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_items"]>>>, ["position"]>>;
           "prompt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_items"]>>>, ["prompt"]>>;
         }[];
+        "refines": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_originOf"]>>>, ["origin"]>> | null;
         "request": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["request"]>>;
         "stalled": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_standing"]>>>, ["stalled"]>>;
-        "step": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["_standing"]>[0], ["brief"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["brief"]>]>>;
-      }[];
+        "step": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["AdoptLinking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["_originOf"]>[0], ["brief"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["_standing"]>[0], ["brief"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["brief"]>]>>;
+      })[];
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/drafts/refine": {
+    input: {
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["open"]>[0], ["origin"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "brief": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["open"]>>, ["brief"]>>;
+      "candidate": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["open"]>>, ["candidate"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "RUN_OPEN" };
   };
   "/live/p/answer": {
     input: {
@@ -1108,7 +1123,6 @@ export type CommonsWire = {
       "choices"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["choices"]>>;
       "expected"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["expected"]>>;
       "explanation"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["explanation"]>>;
-      "position": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["position"]>>;
       "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>>;
       "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
@@ -1180,6 +1194,26 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
+  "/live/quizzes/lower-question": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestion"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "question": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>>;
+    };
+    error: { error: AppWideError | "AT_EDGE" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_SIBLINGS" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
+  };
+  "/live/quizzes/raise-question": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestion"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "question": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>>;
+    };
+    error: { error: AppWideError | "AT_EDGE" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_SIBLINGS" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
+  };
   "/live/quizzes/remove-question": {
     input: {
       "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestion"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["removeQuestion"]>[0], ["question"]>]>>;
@@ -1202,21 +1236,20 @@ export type CommonsWire = {
   };
   "/live/quizzes/retitle": {
     input: {
-      "questionnaire": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["questionnaire"]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["questionnaire"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>>;
     };
     output: {
       "questionnaire": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>>, ["questionnaire"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "RUN_OPEN" };
   };
   "/live/quizzes/revise-question": {
     input: {
       "choices"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["choices"]>>;
       "expected"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["expected"]>>;
       "explanation"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["explanation"]>>;
-      "position": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["position"]>>;
       "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["prompt"]>>;
       "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestion"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["question"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
@@ -3932,12 +3965,14 @@ export type CommonsWireHttp = {
   };
   "/live/drafts/adopt": {
     input: {
-      "candidate": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>[0], ["candidate"]>>;
+      "candidate": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["_candidate"]>[0], ["candidate"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>[0], ["candidate"]>]>>;
     };
     output: {
       "candidate": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>>, ["candidate"]>>;
+    } | {
+      "candidate": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>>, ["candidate"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/drafts/clarify": {
     input: {
@@ -3974,7 +4009,7 @@ export type CommonsWireHttp = {
       "brief": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>[0], ["brief"]>>;
     };
     output: {
-      "line": {
+      "line": ({
         "adopted": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["adopted"]>>;
         "basis": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["basis"]>>;
         "candidate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["candidate"]>>;
@@ -3984,6 +4019,7 @@ export type CommonsWireHttp = {
           "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_clarifications"]>>>, ["question"]>>;
         }[];
         "clarifying": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_standing"]>>>, ["clarifying"]>>;
+        "composed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["AdoptLinking"]["_getLinks"]>>>, ["target"]>> | null;
         "form": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["form"]>>;
         "items": {
           "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_items"]>>>, ["choices"]>>;
@@ -3992,12 +4028,23 @@ export type CommonsWireHttp = {
           "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_items"]>>>, ["position"]>>;
           "prompt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_items"]>>>, ["prompt"]>>;
         }[];
+        "refines": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_originOf"]>>>, ["origin"]>> | null;
         "request": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["request"]>>;
         "stalled": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_standing"]>>>, ["stalled"]>>;
-        "step": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["_standing"]>[0], ["brief"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["brief"]>]>>;
-      }[];
+        "step": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["AdoptLinking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["_originOf"]>[0], ["brief"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["_standing"]>[0], ["brief"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["_line"]>>>, ["brief"]>]>>;
+      })[];
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/drafts/refine": {
+    input: {
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Drafting"]["open"]>[0], ["origin"]>]>>;
+    };
+    output: {
+      "brief": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["open"]>>, ["brief"]>>;
+      "candidate": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["open"]>>, ["candidate"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/p/answer": {
     input: {
@@ -4113,7 +4160,6 @@ export type CommonsWireHttp = {
       "choices"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["choices"]>>;
       "expected"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["expected"]>>;
       "explanation"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["explanation"]>>;
-      "position": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["position"]>>;
       "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>>;
       "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>]>>;
     };
@@ -4180,6 +4226,24 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
+  "/live/quizzes/lower-question": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestion"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>]>>;
+    };
+    output: {
+      "question": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/quizzes/raise-question": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestion"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>]>>;
+    };
+    output: {
+      "question": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
   "/live/quizzes/remove-question": {
     input: {
       "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestion"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["removeQuestion"]>[0], ["question"]>]>>;
@@ -4200,7 +4264,7 @@ export type CommonsWireHttp = {
   };
   "/live/quizzes/retitle": {
     input: {
-      "questionnaire": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["questionnaire"]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["questionnaire"]>]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>>;
     };
     output: {
@@ -4213,7 +4277,6 @@ export type CommonsWireHttp = {
       "choices"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["choices"]>>;
       "expected"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["expected"]>>;
       "explanation"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["explanation"]>>;
-      "position": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["position"]>>;
       "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["prompt"]>>;
       "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestion"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["question"]>]>>;
     };

@@ -117,11 +117,26 @@ reviseQuestion (question: Question, prompt: String, choices: Seq, expected: Stri
   then
     refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
 
-removeQuestion (question: Question) : return (question: Question)
+swapQuestions (question: Question, other: Question) : return (question: Question, other: Question)
+  where question and other exist, share a questionnaire, and it is not in retired
+  then
+    trade the positions of question and other
+    return question, other
+  where question does not exist or other does not exist
+  then
+    refuse QUESTION_NOT_FOUND "There is no such question."
+  where question and other do not share a questionnaire
+  then
+    refuse NOT_SIBLINGS "These questions do not share a questionnaire."
+  where question's questionnaire in retired
+  then
+    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+
+removeQuestion (question: Question) : return (question: Question, questionnaire: Questionnaire, position: Number)
   where question exists and its questionnaire not in retired
   then
-    delete question
-    return question
+    delete question, remembering its questionnaire and the position it stood at
+    return question, questionnaire, position
   where question does not exist
   then
     refuse QUESTION_NOT_FOUND "There is no such question."
@@ -159,6 +174,13 @@ _getQuestions (questionnaire: String) : many (question: String, prompt: String, 
 _getQuestion (question: String) : optional (questionnaire: String, prompt: String, choices: Seq, expected: String, explanation: String, position: Number)
   answers the complete Question
   answers no row when the Question does not exist
+
+_material (questionnaire: String) : optional (form: String, material: Seq)
+  answers the questionnaire's form and its questions back as one value: an
+  ordered sequence of `{ prompt, choices, expected, explanation }` entries in
+  position order
+  answers one row with an empty sequence when the questionnaire has no questions
+  answers no row when the Questionnaire does not exist
 
 _proposesAnswers (questionnaire: String) : one (proposes: Boolean)
   answers whether any question of the questionnaire proposes an expected answer

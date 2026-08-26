@@ -81,6 +81,64 @@ for (const [floor, make] of floors) {
       ]);
     });
 
+    test("open begins a line from material in hand, remembering its origin", async () => {
+      const drafting = await make();
+      const { brief, candidate } = await drafting.open({
+        author: "lee",
+        request: "Houseplants, as it stands",
+        form: "quiz",
+        material,
+        origin: "questionnaire-1",
+        at,
+      });
+      expect(await drafting._material({ candidate })).toEqual([{ form: "quiz", material }]);
+      expect(await drafting._candidateOf({ brief })).toEqual([
+        { candidate, form: "quiz", adopted: false },
+      ]);
+      expect(await drafting._originOf({ brief })).toEqual([{ origin: "questionnaire-1" }]);
+      expect(await drafting._standing({ brief })).toEqual([{ clarifying: false, stalled: false }]);
+    });
+
+    test("a correction inherits the origin of the line it continues", async () => {
+      const drafting = await make();
+      const { candidate } = await drafting.open({
+        author: "lee",
+        request: "Houseplants, as it stands",
+        form: "quiz",
+        material,
+        origin: "questionnaire-1",
+        at,
+      });
+      const { brief: correction } = await drafting.correct({
+        author: "lee",
+        candidate,
+        request: "Sharpen the first question.",
+        at: later,
+      });
+      expect(await drafting._originOf({ brief: correction })).toEqual([
+        { origin: "questionnaire-1" },
+      ]);
+      const { candidate: revised } = await drafting.propose({
+        brief: correction,
+        form: "quiz",
+        material,
+      });
+      const { brief: further } = await drafting.correct({
+        author: "lee",
+        candidate: revised,
+        request: "Once more.",
+        at: later,
+      });
+      expect(await drafting._originOf({ brief: further })).toEqual([{ origin: "questionnaire-1" }]);
+    });
+
+    test("a described line has no origin", async () => {
+      const drafting = await make();
+      const { brief } = await drafting.describe({ author: "lee", request: "A quiz.", at });
+      expect(await drafting._originOf({ brief })).toEqual([]);
+      expect(await drafting._originOf({ brief: "no-such" })).toEqual([]);
+    });
+
     test("a drafted brief refuses a second proposal and a further question", async () => {
       const drafting = await make();
       const { brief } = await drafting.describe({ author: "lee", request: "A quiz.", at });

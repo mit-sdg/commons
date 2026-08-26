@@ -17,6 +17,7 @@ interface BriefDoc {
   request: string;
   createdAt: Date;
   basis: string | null;
+  origin: string | null;
   clarifying: boolean;
   stalled: boolean;
   seq: number;
@@ -87,11 +88,55 @@ export class MongoDraftingConcept {
       request,
       createdAt: at,
       basis: null,
+      origin: null,
       clarifying: false,
       stalled: false,
       seq,
     });
     return { brief };
+  }
+
+  async open({
+    author,
+    request,
+    form,
+    material,
+    origin,
+    at,
+  }: {
+    author: string;
+    request: string;
+    form: string;
+    material: MaterialEntry[];
+    origin: string;
+    at: Date;
+  }) {
+    const brief = crypto.randomUUID();
+    const seq = await this.#nextSeq("briefs");
+    await this.briefs.insertOne({
+      _id: brief,
+      author,
+      request,
+      createdAt: at,
+      basis: null,
+      origin,
+      clarifying: false,
+      stalled: false,
+      seq,
+    });
+    const candidate = crypto.randomUUID();
+    await this.candidates.insertOne({ _id: candidate, brief, form, adopted: false });
+    const entries = material.map((entry, order) => ({
+      _id: crypto.randomUUID(),
+      candidate,
+      prompt: entry.prompt,
+      choices: entry.choices ?? [],
+      expected: entry.expected ?? "",
+      explanation: entry.explanation ?? "",
+      order,
+    }));
+    if (entries.length > 0) await this.items.insertMany(entries);
+    return { brief, candidate };
   }
 
   async correct({
@@ -112,6 +157,7 @@ export class MongoDraftingConcept {
     if (doc.adopted) {
       throw new AlreadyAdopted("This draft was already adopted; edit it directly instead.");
     }
+    const continued = await this.briefs.findOne({ _id: doc.brief });
     const brief = crypto.randomUUID();
     const seq = await this.#nextSeq("briefs");
     await this.briefs.insertOne({
@@ -120,6 +166,7 @@ export class MongoDraftingConcept {
       request,
       createdAt: at,
       basis: candidate,
+      origin: continued?.origin ?? null,
       clarifying: false,
       stalled: false,
       seq,
@@ -255,6 +302,11 @@ export class MongoDraftingConcept {
   async _standing({ brief }: { brief: string }) {
     const doc = await this.briefs.findOne({ _id: brief });
     return doc === null ? [] : [{ clarifying: doc.clarifying, stalled: doc.stalled }];
+  }
+
+  async _originOf({ brief }: { brief: string }) {
+    const doc = await this.briefs.findOne({ _id: brief });
+    return doc === null || doc.origin === null ? [] : [{ origin: doc.origin }];
   }
 
   async _clarifications({ brief }: { brief: string }) {

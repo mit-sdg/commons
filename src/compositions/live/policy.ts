@@ -2,7 +2,20 @@ import { count, is, no, view, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
 import { ADMINISTER, COMMONS } from "../access/capabilities.ts";
 
-const { Publishing, Questioning, Responding, Roling, Scoring } = concepts;
+const { Drafting, Publishing, Questioning, Responding, Roling, Scoring } = concepts;
+
+/** How many questions the questionnaire holds; contiguity makes it the last position. */
+export const theQuestionCount = view(
+  "the question count of (questionnaire)",
+  ({ questionnaire }, { total }, _bindings) =>
+    where(count(Questioning._getQuestions, { questionnaire }, total)),
+).one();
+
+/** How many items the candidate carries. */
+export const theItemCount = view(
+  "the item count of (candidate)",
+  ({ candidate }, { total }, _bindings) => where(count(Drafting._items, { candidate }, total)),
+).one();
 
 export const mayHostLive = view("(user) may host live runs", ({ user }, _outputs, _bindings) => [
   where(
