@@ -22,7 +22,14 @@ import { Label } from "@/components/ui/label";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { count, fullTime, relativeTime } from "@/lib/format";
+import { useCourse } from "@/lib/course";
+import {
+  count,
+  fromZonedInput,
+  fullTime,
+  relativeTime,
+  toZonedInput,
+} from "@/lib/format";
 import {
   loadGradesForItem,
   loadLateDaysForAssignment,
@@ -44,8 +51,9 @@ function DueDateOverride({
   currentDueAt: string | null;
   onUpdate: () => void;
 }) {
+  const { timezone } = useCourse();
   const [dueAt, setDueAt] = useState(
-    new Date(currentDueAt ?? courseDueAt).toISOString().slice(0, 16),
+    toZonedInput(currentDueAt ?? courseDueAt, timezone),
   );
   const [busy, setBusy] = useState(false);
 
@@ -54,7 +62,7 @@ function DueDateOverride({
     const result = await api.assignments["set-due-override"]({
       assignment,
       assignee,
-      dueAt: new Date(dueAt).toISOString(),
+      dueAt: fromZonedInput(dueAt, timezone),
     });
     setBusy(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
@@ -74,7 +82,7 @@ function DueDateOverride({
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
       toast.success(`Course due date restored for ${learnerName}`);
-      setDueAt(new Date(courseDueAt).toISOString().slice(0, 16));
+      setDueAt(toZonedInput(courseDueAt, timezone));
       onUpdate();
     }
   }
@@ -86,7 +94,7 @@ function DueDateOverride({
           htmlFor={`due-override-${assignee}`}
           className="text-xs text-muted-foreground"
         >
-          Individual due date
+          Individual due date ({timezone})
         </Label>
         <Input
           id={`due-override-${assignee}`}

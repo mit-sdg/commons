@@ -2,6 +2,7 @@ import type { Collection, Db } from "mongodb";
 import {
   ClassAlreadyConfigured,
   ClassNotConfigured,
+  ClassTimezoneInvalid,
   SeatAlreadyActive,
   SeatAlreadyExists,
   SeatNotActive,
@@ -80,6 +81,14 @@ export class MongoRosteringConcept {
     return counter?.value ?? 0;
   }
 
+  #checkTimezone(timezone: string) {
+    try {
+      new Intl.DateTimeFormat("en", { timeZone: timezone }).format();
+    } catch {
+      throw new ClassTimezoneInvalid(`${timezone} is not an IANA timezone`);
+    }
+  }
+
   async configureClass({
     code,
     title,
@@ -91,6 +100,7 @@ export class MongoRosteringConcept {
     term: string;
     timezone: string;
   }) {
+    this.#checkTimezone(timezone);
     const existing = await this.classes.findOne({});
     if (existing !== null) {
       throw new ClassAlreadyConfigured(existing.code);
@@ -118,6 +128,7 @@ export class MongoRosteringConcept {
     term: string;
     timezone: string;
   }) {
+    this.#checkTimezone(timezone);
     const existing = await this.classes.findOne({});
     if (existing === null) {
       throw new ClassNotConfigured("no class is configured");

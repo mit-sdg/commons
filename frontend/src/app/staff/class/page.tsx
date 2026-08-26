@@ -14,10 +14,13 @@ import { useQuery } from "@/hooks/use-query";
 import type { Output } from "@/lib/api";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { isValidTimezone } from "@/lib/format";
 import { loadClassConfiguration } from "@/lib/lms";
 import { classSettingsRefusal } from "@/lib/roster-messages";
 
 type ClassSettings = NonNullable<Output<"/roster/class">["class"]>;
+
+const TIMEZONES = Intl.supportedValuesOf("timeZone");
 
 /**
  * Setting the class up and correcting it later are two acts behind the same
@@ -42,8 +45,13 @@ function ClassSettingsForm({
   const [conflict, setConflict] = useState<string | null>(null);
 
   const configured = configuration !== null;
+  const timezoneValid = isValidTimezone(timezone.trim());
   const complete = Boolean(
-    code.trim() && title.trim() && term.trim() && timezone.trim(),
+    code.trim() &&
+      title.trim() &&
+      term.trim() &&
+      timezone.trim() &&
+      timezoneValid,
   );
 
   async function save() {
@@ -137,8 +145,24 @@ function ClassSettingsForm({
               value={timezone}
               onChange={(event) => setTimezone(event.target.value)}
               placeholder="America/New_York"
+              list="iana-timezones"
+              aria-invalid={!timezoneValid}
+              aria-describedby="class-timezone-help"
             />
-            <p className="text-xs text-muted-foreground">
+            <datalist id="iana-timezones">
+              {TIMEZONES.map((zone) => (
+                <option key={zone} value={zone} />
+              ))}
+            </datalist>
+            {!timezoneValid ? (
+              <p className="text-xs text-destructive">
+                Choose a valid IANA timezone.
+              </p>
+            ) : null}
+            <p
+              id="class-timezone-help"
+              className="text-xs text-muted-foreground"
+            >
               Due dates and the calendar are read in this timezone.
             </p>
           </div>

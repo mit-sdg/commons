@@ -61,6 +61,7 @@ an Active set of Seats
 a Dropped set of Seats
 
 Rule: the class is absent until it is configured, and it is configured at most once.
+Rule: a class timezone must be a valid IANA timezone identifier.
 Rule: an import row carries an email, a kind, and optionally a section and a display name.
 Rule: a display name is an uninterpreted string recorded for the address a seat carries, not for whoever eventually holds it.
 Rule: a display name is written when a pending seat is created and refreshed only while that seat is pending; a seat with a holder is never written, and no read of a held seat answers a display name.
@@ -82,6 +83,9 @@ configureClass(code: String, title: String, term: String, timezone: String) : re
   where a class is already configured
   then
     refuse CLASS_ALREADY_CONFIGURED "The class has already been configured."
+  where timezone is not a valid IANA timezone
+  then
+    refuse CLASS_TIMEZONE_INVALID "Choose a valid IANA timezone."
 
 updateClass(code: String, title: String, term: String, timezone: String) : return (class: Class)
   where a class is configured
@@ -91,6 +95,9 @@ updateClass(code: String, title: String, term: String, timezone: String) : retur
   where no class is configured
   then
     refuse CLASS_NOT_CONFIGURED "The class has not been configured."
+  where timezone is not a valid IANA timezone
+  then
+    refuse CLASS_TIMEZONE_INVALID "Choose a valid IANA timezone."
 
 createSection(name: String, location: String, meetingPattern: String) : return (section: Section)
   where true

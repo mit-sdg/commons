@@ -1577,7 +1577,7 @@ export type CommonsWire = {
     output: {
       "class": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getClass"]>>>, ["detail"]>> | null;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+    error: { error: AppWideError | "INVALID_INPUT" };
   };
   "/roster/configure-class": {
     input: {
@@ -1590,7 +1590,7 @@ export type CommonsWire = {
     output: {
       "class": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["configureClass"]>>, ["class"]>>;
     };
-    error: { error: AppWideError | "CLASS_ALREADY_CONFIGURED" | "FORBIDDEN" | "INVALID_INPUT" };
+    error: { error: AppWideError | "CLASS_ALREADY_CONFIGURED" | "CLASS_TIMEZONE_INVALID" | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/roster/drop": {
     input: {
@@ -1772,7 +1772,7 @@ export type CommonsWire = {
     output: {
       "class": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>>, ["class"]>>;
     };
-    error: { error: AppWideError | "CLASS_NOT_CONFIGURED" | "FORBIDDEN" | "INVALID_INPUT" };
+    error: { error: AppWideError | "CLASS_NOT_CONFIGURED" | "CLASS_TIMEZONE_INVALID" | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/setup/register-admin": {
     input: {
@@ -4156,7 +4156,7 @@ export type CommonsWireHttp = {
     output: {
       "class": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getClass"]>>>, ["detail"]>> | null;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/roster/configure-class": {
     input: {
@@ -4168,7 +4168,7 @@ export type CommonsWireHttp = {
     output: {
       "class": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["configureClass"]>>, ["class"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" };
   };
   "/roster/drop": {
     input: {
@@ -4333,7 +4333,7 @@ export type CommonsWireHttp = {
     output: {
       "class": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["updateClass"]>>, ["class"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" };
   };
   "/setup/register-admin": {
     input: {

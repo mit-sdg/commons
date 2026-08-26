@@ -725,8 +725,10 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 - `configureClass(code: String, title: String, term: String, timezone: String) : return (class: Class)`
   - Refuses `CLASS_ALREADY_CONFIGURED`: The class has already been configured.
+  - Refuses `CLASS_TIMEZONE_INVALID`: Choose a valid IANA timezone.
 - `updateClass(code: String, title: String, term: String, timezone: String) : return (class: Class)`
   - Refuses `CLASS_NOT_CONFIGURED`: The class has not been configured.
+  - Refuses `CLASS_TIMEZONE_INVALID`: Choose a valid IANA timezone.
 - `createSection(name: String, location: String, meetingPattern: String) : return (section: Section)`
 - `updateSection(section: Section, name: String, location: String, meetingPattern: String) : return (section: Section)`
   - Refuses `SECTION_NOT_FOUND`: No such section exists.
@@ -7209,26 +7211,10 @@ Authored path: `Course.roster.ClassConfiguration`.
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the course" with (user)
+  view "the active user of (session)" with (session)
   no view "the class configuration ()"
 then
   RequestBoundary.respond (class: null, requestId)
-```
-
-### Course.roster.ClassConfiguration:forbidden
-
-Authored path: `Course.roster.ClassConfiguration`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 6.
-- Covered by [Roster](../design/compositions/course/roster.md), line 227.
-
-```reaction
-when RequestBoundary.request (path: "/roster/class", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the course" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### Course.roster.ClassConfiguration:found
@@ -7240,8 +7226,7 @@ Authored path: `Course.roster.ClassConfiguration`.
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the course" with (user)
+  view "the active user of (session)" with (session)
   view "the class configuration ()" has (detail)
 then
   RequestBoundary.respond (class: detail, requestId)
