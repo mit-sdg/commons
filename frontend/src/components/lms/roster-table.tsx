@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { RemoveSeatDialog } from "@/components/lms/remove-seat";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,10 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
     name: string;
     currentSection: string | null;
   } | null>(null);
+  const [dropTarget, setDropTarget] = useState<{
+    seat: string;
+    name: string;
+  } | null>(null);
   const [removeSeat, setRemoveSeat] = useState<{
     seat: string;
     name: string;
@@ -85,6 +90,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
       toast.success("Seat dropped");
+      setDropTarget(null);
       onUpdate();
     }
   }
@@ -165,8 +171,15 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => dropSeat(m.seat)}>
-                              <UserMinus className="size-4" /> Drop
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setDropTarget({
+                                  seat: m.seat,
+                                  name: m.displayName ?? m.email,
+                                })
+                              }
+                            >
+                              <UserMinus className="size-4" /> Drop…
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
@@ -202,6 +215,18 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
           </Table>
         </div>
       </div>
+
+      {dropTarget ? (
+        <ConfirmAction
+          open
+          onOpenChange={(open) => !open && setDropTarget(null)}
+          title={`Drop ${dropTarget.name}?`}
+          description="They will immediately lose course access, but their submissions, grades, and notes remain. You can reinstate the seat later."
+          confirmLabel="Drop seat"
+          destructive
+          onConfirm={() => dropSeat(dropTarget.seat)}
+        />
+      ) : null}
 
       {removeSeat ? (
         <RemoveSeatDialog
