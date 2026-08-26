@@ -169,8 +169,8 @@ _getGradesForLearner (learner: String) : many (item: String, grade: String, scor
   answers all of the learner's grades in creation order, including each recorded maximum and feedback
   answers no rows when none match
 
-_getGradesForItem (item: String) : many (learner: String, grade: String, score: Number, status: String)
-  answers all grades for the item in creation order
+_getGradesForItem (item: String) : many (learner: String, grade: String, score: Number, feedback: String, status: String)
+  answers all grades for the item in creation order, including saved feedback
   answers no rows when none match
 
 _getCriterionScores (learner: String, item: String) : many (criterion: String, points: Number, feedback: String)

@@ -285,7 +285,7 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 - `_getGrade(learner: String, item: String) : optional (grade: String, score: Number, outOf: Number, status: String, feedback: String)`
 - `_getGradesForLearner(learner: String) : many (item: String, grade: String, score: Number, outOf: Number, status: String, feedback: String)`
-- `_getGradesForItem(item: String) : many (learner: String, grade: String, score: Number, status: String)`
+- `_getGradesForItem(item: String) : many (learner: String, grade: String, score: Number, feedback: String, status: String)`
 - `_getCriterionScores(learner: String, item: String) : many (criterion: String, points: Number, feedback: String)`
 
 #### Instances

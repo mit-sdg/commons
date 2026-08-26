@@ -257,6 +257,7 @@ export class MongoGradingConcept {
       learner: doc.learner,
       grade: doc._id,
       score: doc.score,
+      feedback: doc.feedback,
       status: doc.status,
     }));
   }
