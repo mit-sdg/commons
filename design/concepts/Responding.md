@@ -45,6 +45,7 @@ a set of Answers with
   an item    Item
   a value    String
 
+Rule: a participant identity is present when it is a nonblank string — an empty or whitespace identity names no one.
 Rule: at most one response exists per subject and participant, so beginning again rejoins the response in progress.
 Rule: an answer is keyed by its response and item: answering the same item again replaces the value in place.
 Rule: a response's answers keep the order in which its items were first answered.
@@ -55,7 +56,7 @@ Rule: whether the subject is open to participation, whether an item belongs to t
 
 ```actions
 begin (participant: Participant, subject: Subject, at: Date) : return (response: Response)
-  where no response has subject and participant
+  where participant is present and no response has subject and participant
   then
     add a new response with subject, participant, and startedAt at
     add response to inProgress
@@ -66,6 +67,9 @@ begin (participant: Participant, subject: Subject, at: Date) : return (response:
   where the response with subject and participant is in submitted
   then
     refuse ALREADY_SUBMITTED "This was already handed in."
+  where participant is blank
+  then
+    refuse NO_PARTICIPANT "A response needs someone to belong to."
 
 answer (response: Response, item: Item, value: String) : return (response: Response)
   where response in inProgress

@@ -329,6 +329,17 @@ describe("the live quiz loop", () => {
     await post(edge, "/live/runs/close", { run: launch.run }, cookie);
   });
 
+  test("an empty device identity cannot begin a response", async () => {
+    const questionnaire = await buildQuiz(edge, cookie, "score");
+    const launch = await json(await post(edge, "/live/runs/launch", { questionnaire }, cookie));
+    const token = launch.token as string;
+    const blank = await post(edge, "/live/p/begin", { token, device: "" });
+    expect(blank.status).toBe(400);
+    const spaces = await post(edge, "/live/p/begin", { token, device: "   " });
+    expect(spaces.status).toBe(400);
+    await post(edge, "/live/runs/close", { run: launch.run }, cookie);
+  });
+
   test("permissions gate the staff surface", async () => {
     const listed = await post(edge, "/live/quizzes/list", {}, cookie);
     expect(listed.status).toBe(200);

@@ -334,6 +334,29 @@ export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
           />
         ))}
       </div>
+
+      {/* Individual results stay behind a deliberate click: this board is
+          projected, and nobody's score belongs on the wall by accident. */}
+      <details className="mt-4">
+        <summary className="cursor-pointer text-muted-foreground text-sm hover:text-foreground">
+          Results by participant
+        </summary>
+        <ul className="mt-3 space-y-1">
+          {results.map((row) => (
+            <li
+              key={row.submission}
+              className="flex items-baseline justify-between gap-3 rounded-lg bg-muted/40 px-3 py-1.5 text-sm"
+            >
+              <span dir="auto" className="min-w-0 flex-1 truncate">
+                {row.name ?? "Anonymous device"}
+              </span>
+              <span className="font-medium tabular-nums">
+                {row.score} / {row.outOf}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </details>
     </section>
   );
 }

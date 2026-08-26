@@ -25,7 +25,11 @@ Ask only when the request could equally be a quiz or a survey and the choice cha
 export function draftTitle({ request }: { request: string }): string {
   const collapsed = request.replace(/\s+/g, " ").trim();
   if (collapsed === "") return "Untitled";
-  return collapsed.length > 60 ? `${collapsed.slice(0, 59)}\u2026` : collapsed;
+  if (collapsed.length <= 60) return collapsed;
+  // Cut at a word boundary so the title never ends mid-word.
+  const cut = collapsed.slice(0, 59);
+  const boundary = cut.lastIndexOf(" ");
+  return `${boundary > 20 ? cut.slice(0, boundary) : cut}\u2026`;
 }
 
 export function draftingPassage({ request }: { request: string }): string {

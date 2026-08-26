@@ -13,7 +13,7 @@ import { activeUser } from "../access/session.ts";
 import { mayHostLive, mayNotHostLive } from "./policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Publishing, Questioning, Responding, Scoring, Sharing } = concepts;
+const { Profiling, Publishing, Questioning, Responding, Scoring, Sharing } = concepts;
 
 /**
  * Publishing a quiz establishes its key from the authored expectations and
@@ -64,6 +64,7 @@ export const theRunBoard = former(
       explanation,
       position,
       participant,
+      name,
       value,
     },
   ) =>
@@ -106,23 +107,28 @@ export const theRunBoard = former(
         position,
         values: each(
           Responding._valuesFor({ subject: run, item: question }).is({ participant, value }),
-        ).form({ participant, value }),
+        )
+          .where(
+            whether(Profiling._getProfileFields({ user: participant }).is({ displayName: name })),
+          )
+          .form({ participant, name, value }),
       }),
     }),
 ).optional();
 
-/** The scores of a keyed run, in grading order. */
+/** The scores of a keyed run, in grading order, named where the participant is a signed-in account. */
 export const theRunScores = former(
   "the scores of (run)",
-  ({ run }, { key, disclosure, submission, score, outOf }) =>
+  ({ run }, { key, disclosure, submission, participant, name, score, outOf }) =>
     where(Scoring._keyFor({ subject: run }).is({ key, disclosure })).form({
       run,
       disclosure,
-      results: each(Scoring._results({ key }).is({ submission, score, outOf })).form({
-        submission,
-        score,
-        outOf,
-      }),
+      results: each(Scoring._results({ key }).is({ submission, score, outOf }))
+        .where(
+          Responding._response({ response: submission }).is({ participant }),
+          whether(Profiling._getProfileFields({ user: participant }).is({ displayName: name })),
+        )
+        .form({ submission, participant, name, score, outOf }),
     }),
 ).optional();
 

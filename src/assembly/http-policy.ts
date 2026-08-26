@@ -127,6 +127,7 @@ export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategor
     NOTHING_SHARED: "NOT_FOUND",
     RESPONSE_NOT_FOUND: "NOT_FOUND",
     ALREADY_SUBMITTED: "CONFLICT",
+    NO_PARTICIPANT: "INVALID_REQUEST",
     KEY_EXISTS: "CONFLICT",
     KEY_NOT_FOUND: "NOT_FOUND",
     ALREADY_GRADED: "CONFLICT",

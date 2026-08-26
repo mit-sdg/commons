@@ -843,6 +843,7 @@ Defined in [Responding](../design/concepts/Responding.md), line 1.
 
 - `begin(participant: Participant, subject: Subject, at: Date) : return (response: Response)`
   - Refuses `ALREADY_SUBMITTED`: This was already handed in.
+  - Refuses `NO_PARTICIPANT`: A response needs someone to belong to.
 - `answer(response: Response, item: Item, value: String) : return (response: Response)`
   - Refuses `RESPONSE_NOT_FOUND`: There is no such response.
   - Refuses `ALREADY_SUBMITTED`: This was already handed in.
@@ -2110,7 +2111,7 @@ Authored path: `Live.runs.theRunBoard`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 33.
 
 ```former
-Former "the board of (run)" — inputs (run); bindings (questionnaire, title, form, open, openedAt, closedAt, token, started, handedIn, question, prompt, choices, expected, explanation, position, participant, value); promises at most one record — forms:
+Former "the board of (run)" — inputs (run); bindings (questionnaire, title, form, open, openedAt, closedAt, token, started, handedIn, question, prompt, choices, expected, explanation, position, participant, name, value); promises at most one record — forms:
   a record of
     where Publishing._edition (edition: run) has (closedAt, material: questionnaire, open, openedAt)
     where Questioning._getQuestionnaire (questionnaire) has (form, title)
@@ -2129,7 +2130,9 @@ Former "the board of (run)" — inputs (run); bindings (questionnaire, title, fo
         prompt
         question
         values: each Responding._valuesFor (item: question, subject: run) has (participant, value)
+          where whether Profiling._getProfileFields (user: participant) has (displayName: name)
           form a record of
+            name
             participant
             value
     run
@@ -3152,13 +3155,17 @@ Authored path: `Live.runs.theRunScores`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 37.
 
 ```former
-Former "the scores of (run)" — inputs (run); bindings (key, disclosure, submission, score, outOf); promises at most one record — forms:
+Former "the scores of (run)" — inputs (run); bindings (key, disclosure, submission, participant, name, score, outOf); promises at most one record — forms:
   a record of
     where Scoring._keyFor (subject: run) has (disclosure, key)
     disclosure
     results: each Scoring._results (key) has (outOf, score, submission)
+      where Responding._response (response: submission) has (participant)
+      where whether Profiling._getProfileFields (user: participant) has (displayName: name)
       form a record of
+        name
         outOf
+        participant
         score
         submission
     run
@@ -14137,7 +14144,7 @@ then
 
 Authored path: `Live.runs.Close`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 25.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
@@ -14152,7 +14159,7 @@ then
 
 Authored path: `Live.runs.Close`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 25.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
@@ -14168,7 +14175,7 @@ then
 
 Authored path: `Live.runs.Close`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 25.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
 
 ```reaction
 when Publishing.close (at, edition: run, result.edition: closed), asked by Live.runs.Close:success
@@ -14182,7 +14189,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -14197,7 +14204,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -14215,7 +14222,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:quiz
@@ -14227,7 +14234,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.runs.Launch:quiz#2
@@ -14241,7 +14248,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -14258,7 +14265,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -14275,7 +14282,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:survey
@@ -14287,7 +14294,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 43.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.runs.Launch:survey#2
@@ -14301,7 +14308,7 @@ then
 
 Authored path: `Live.runs.OpenRuns`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 29.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 46.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/open", requestId, session)
@@ -14316,7 +14323,7 @@ then
 
 Authored path: `Live.runs.OpenRuns`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 29.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 44.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 46.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/open", requestId, session)
@@ -14346,7 +14353,7 @@ then
 
 Authored path: `Live.runs.Results`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 32.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -14361,7 +14368,7 @@ then
 
 Authored path: `Live.runs.Results`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 32.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -14378,7 +14385,7 @@ then
 
 Authored path: `Live.runs.Results`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 32.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)

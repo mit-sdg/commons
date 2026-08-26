@@ -401,6 +401,7 @@
               "values": [
                 {
                   "participant": "phone-1",
+                  "name": null,
                   "value": "Carbon dioxide"
                 }
               ]
@@ -415,6 +416,7 @@
               "values": [
                 {
                   "participant": "phone-1",
+                  "name": null,
                   "value": "Chlorophyll"
                 }
               ]
@@ -427,6 +429,8 @@
           "results": [
             {
               "submission": "uuid#12",
+              "participant": "phone-1",
+              "name": null,
               "score": 2,
               "outOf": 2
             }

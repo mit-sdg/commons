@@ -244,6 +244,11 @@ function ShelfRow({
           />
         ) : null}
       </div>
+
+      {/* The hint must be readable on a phone, where there is no hover. */}
+      {launchHint !== undefined && entry.openRun === null && !entry.retired ? (
+        <p className="w-full text-muted-foreground text-xs">{launchHint}</p>
+      ) : null}
     </div>
   );
 }

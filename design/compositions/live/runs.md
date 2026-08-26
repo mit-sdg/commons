@@ -34,7 +34,9 @@ active right now. [Live.runs.Results](reaction:Live.runs.Results) forms
 begun and handed in, and each question — expected answer included, since the
 board is the author's own desk — with every handed-in value; nothing counts
 until a participant deliberately submits. For a keyed run it also forms
-[the scores](former:Live.runs.theRunScores) in grading order. The staff
+[the scores](former:Live.runs.theRunScores) in grading order, each naming its
+participant when a signed-in account stands behind it — an anonymous device
+stays opaque. The staff
 surface polls this endpoint while the run is open; that cadence is the
 frontend's business.
 

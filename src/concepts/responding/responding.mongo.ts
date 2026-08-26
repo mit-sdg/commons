@@ -1,5 +1,5 @@
 import type { Collection, Db } from "mongodb";
-import { AlreadySubmitted, ResponseNotFound } from "./errors.ts";
+import { AlreadySubmitted, NoParticipant, ResponseNotFound } from "./errors.ts";
 
 interface ResponseDoc {
   _id: string;
@@ -51,6 +51,9 @@ export class MongoRespondingConcept {
   }
 
   async begin({ participant, subject, at }: { participant: string; subject: string; at: Date }) {
+    if (participant.trim() === "") {
+      throw new NoParticipant("A response needs someone to belong to.");
+    }
     const existing = await this.responses.findOne({ subject, participant });
     if (existing !== null) {
       if (existing.submitted) {

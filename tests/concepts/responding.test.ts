@@ -37,6 +37,16 @@ for (const [floor, make] of floors) {
       ]);
     });
 
+    test("a blank participant identity is refused", async () => {
+      const responding = await make();
+      expect(
+        await refusal(() => responding.begin({ participant: "", subject: "run-1", at })),
+      ).toBeInstanceOf(refusalErrors.NoParticipant);
+      expect(
+        await refusal(() => responding.begin({ participant: "   ", subject: "run-1", at })),
+      ).toBeInstanceOf(refusalErrors.NoParticipant);
+    });
+
     test("beginning again rejoins the response in progress, answers standing", async () => {
       const responding = await make();
       const first = await responding.begin({ participant: "leon", subject: "quiz", at });
