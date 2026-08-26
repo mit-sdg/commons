@@ -6089,7 +6089,7 @@ then
 
 Authored path: `Course.lateDays.Apply`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 9.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
@@ -6104,7 +6104,7 @@ then
 
 Authored path: `Course.lateDays.Apply`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 9.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
@@ -6112,6 +6112,8 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED")
 then
   Banking.apply (at, days, item: assignment, learner: user)
 ```
@@ -6120,7 +6122,7 @@ then
 
 Authored path: `Course.lateDays.Apply`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 9.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
 
 ```reaction
 when Banking.apply (at, days, item: assignment, learner: user, use), asked by Course.lateDays.Apply:success
@@ -6134,7 +6136,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 30.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -6149,7 +6151,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 30.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -6164,7 +6166,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 30.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -6180,7 +6182,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 30.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -6196,7 +6198,7 @@ then
 
 Authored path: `Course.lateDays.Cancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 11.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/cancel", requestId, session)
@@ -6211,7 +6213,7 @@ then
 
 Authored path: `Course.lateDays.Cancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 11.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/cancel", requestId, session)
@@ -6226,7 +6228,7 @@ then
 
 Authored path: `Course.lateDays.Cancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 11.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
 
 ```reaction
 when Banking.cancel (item: assignment, learner: user, use), asked by Course.lateDays.Cancel:success
@@ -6240,7 +6242,7 @@ then
 
 Authored path: `Course.lateDays.Change`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 10.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
@@ -6255,13 +6257,15 @@ then
 
 Authored path: `Course.lateDays.Change`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 10.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED")
 then
   Banking.change (days, item: assignment, learner: user)
 ```
@@ -6270,7 +6274,7 @@ then
 
 Authored path: `Course.lateDays.Change`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 10.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
 
 ```reaction
 when Banking.change (days, item: assignment, learner: user, use), asked by Course.lateDays.Change:success
@@ -6284,7 +6288,7 @@ then
 
 Authored path: `Course.lateDays.ConfigurePolicy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 4.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when RequestBoundary.request (defaultDays, maxDaysPerItem, path: "/late-days/configure-policy", requestId, session, unitHours)
@@ -6299,7 +6303,7 @@ then
 
 Authored path: `Course.lateDays.ConfigurePolicy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 4.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when RequestBoundary.request (defaultDays, maxDaysPerItem, path: "/late-days/configure-policy", requestId, session, unitHours)
@@ -6314,7 +6318,7 @@ then
 
 Authored path: `Course.lateDays.ConfigurePolicy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 4.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours), asked by Course.lateDays.ConfigurePolicy:success
@@ -6328,7 +6332,7 @@ then
 
 Authored path: `Course.lateDays.ForAssignment`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 21.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
@@ -6343,7 +6347,7 @@ then
 
 Authored path: `Course.lateDays.ForAssignment`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 21.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
@@ -6358,7 +6362,7 @@ then
 
 Authored path: `Course.lateDays.Grant`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 6.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
 
 ```reaction
 when RequestBoundary.request (days, learner, path: "/late-days/grant", reason, requestId, session)
@@ -6373,7 +6377,7 @@ then
 
 Authored path: `Course.lateDays.Grant`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 6.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
 
 ```reaction
 when RequestBoundary.request (days, learner, path: "/late-days/grant", reason, requestId, session)
@@ -6389,7 +6393,7 @@ then
 
 Authored path: `Course.lateDays.Grant`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 6.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
 
 ```reaction
 when Banking.grant (at, days, learner, reason, grant), asked by Course.lateDays.Grant:success
@@ -6403,7 +6407,7 @@ then
 
 Authored path: `Course.lateDays.List`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 12.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/list", requestId, session)
@@ -6418,22 +6422,23 @@ then
 
 Authored path: `Course.lateDays.List`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 12.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/list", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
+  Banking._getTerms () has (perItemLimit: maxDaysPerItem, unitHours)
 then
-  RequestBoundary.respond (requestId, uses: former "the late-day uses of (learner)" with (learner: user))
+  RequestBoundary.respond (maxDaysPerItem, requestId, unitHours, uses: former "the late-day uses of (learner)" with (learner: user))
 ```
 
 ### Course.lateDays.Policy:forbidden
 
 Authored path: `Course.lateDays.Policy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 3.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/policy", requestId, session)
@@ -6448,7 +6453,7 @@ then
 
 Authored path: `Course.lateDays.Policy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 3.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/policy", requestId, session)
@@ -6464,7 +6469,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -6479,7 +6484,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -6495,7 +6500,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when Banking.cancel (item: assignment, learner, use), asked by Course.lateDays.StaffCancel:success
@@ -6509,7 +6514,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -6525,7 +6530,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -6540,7 +6545,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -6556,7 +6561,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when Banking.change (days, item: assignment, learner, use), asked by Course.lateDays.StaffChange:success
@@ -6570,7 +6575,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)

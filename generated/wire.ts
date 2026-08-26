@@ -880,6 +880,8 @@ export type CommonsWire = {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
+      "maxDaysPerItem": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["_getTerms"]>>>, ["perItemLimit"]>>;
+      "unitHours": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["_getTerms"]>>>, ["unitHours"]>>;
       "uses": {
         "appliedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["_getUses"]>>>, ["appliedAt"]>>;
         "days": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["_getUses"]>>>, ["days"]>>;
@@ -3505,6 +3507,8 @@ export type CommonsWireHttp = {
   "/late-days/list": {
     input: Record<string, never>;
     output: {
+      "maxDaysPerItem": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["_getTerms"]>>>, ["perItemLimit"]>>;
+      "unitHours": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["_getTerms"]>>>, ["unitHours"]>>;
       "uses": {
         "appliedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["_getUses"]>>>, ["appliedAt"]>>;
         "days": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Banking"]["_getUses"]>>>, ["days"]>>;

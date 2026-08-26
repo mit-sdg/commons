@@ -197,13 +197,19 @@ export default function AssignmentDetailPage({
       </PageContainer>
     );
 
-  const due =
+  const baseDue =
     assignmentsData?.assignments.find(
       (release) => release.assignment === assignment,
     )?.dueOverride ?? detail.dueAt;
+  const unitHours = lateUseData?.unitHours ?? 24;
+  const extensionMs = (appliedLateUse?.days ?? 0) * unitHours * 3600000;
+  const due = new Date(new Date(baseDue).getTime() + extensionMs).toISOString();
+  const effectiveClose = detail.closeAt
+    ? new Date(new Date(detail.closeAt).getTime() + extensionMs).toISOString()
+    : null;
   const now = new Date();
   const isOverdue = new Date(due) < now;
-  const isPastClose = detail.closeAt ? new Date(detail.closeAt) < now : false;
+  const isPastClose = effectiveClose ? new Date(effectiveClose) < now : false;
   const canSubmit =
     detail.acceptsSubmissions && !isPastClose && detail.status === "PUBLISHED";
 
@@ -404,10 +410,10 @@ export default function AssignmentDetailPage({
                   {fullTime(due)}
                 </p>
               </div>
-              {detail.closeAt && (
+              {effectiveClose && (
                 <div>
                   <p className="text-muted-foreground">Closes</p>
-                  <p className="font-medium">{fullTime(detail.closeAt)}</p>
+                  <p className="font-medium">{fullTime(effectiveClose)}</p>
                 </div>
               )}
             </CardContent>
@@ -417,6 +423,9 @@ export default function AssignmentDetailPage({
             assignment={assignment}
             balance={balance}
             appliedDays={appliedLateUse?.days ?? 0}
+            dueAt={baseDue}
+            closeAt={detail.closeAt}
+            unitHours={unitHours}
             onUpdate={handleUpdate}
           />
 
