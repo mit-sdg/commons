@@ -215,6 +215,7 @@ function StaffAssignmentDetailPageContent({
   const assigned = subsData?.assigned ?? [];
   const grades = gradesData?.grades ?? [];
   const lateUsers = lateData?.users ?? [];
+  const draftCount = grades.filter((grade) => grade.status === "DRAFT").length;
 
   const submittedIds = new Set(submissions.map((s) => s.submitter));
   const gradeMap = new Map(grades.map((g) => [g.learner, g]));
@@ -247,7 +248,7 @@ function StaffAssignmentDetailPageContent({
     });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("All grades released");
+      toast.success(`${count(draftCount, "grade")} released`);
       refetchGrades();
     }
   }
@@ -406,8 +407,8 @@ function StaffAssignmentDetailPageContent({
               confirmLabel="Release grades"
               onConfirm={releaseAll}
               trigger={
-                <Button size="sm" variant="outline">
-                  <Send className="size-4" /> Release drafts
+                <Button size="sm" variant="outline" disabled={draftCount === 0}>
+                  <Send className="size-4" /> Release drafts ({draftCount})
                 </Button>
               }
             />
