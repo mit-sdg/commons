@@ -31,8 +31,9 @@ Publishing.
 its questionnaire and token — which is how the staff surface says what is
 active right now. [Live.runs.Results](reaction:Live.runs.Results) forms
 [the board of one run](former:Live.runs.theRunBoard): counts of responses
-begun and handed in, and each question with every handed-in value — nothing
-counts until a participant deliberately submits. For a keyed run it also forms
+begun and handed in, and each question — expected answer included, since the
+board is the author's own desk — with every handed-in value; nothing counts
+until a participant deliberately submits. For a keyed run it also forms
 [the scores](former:Live.runs.theRunScores) in grading order. The staff
 surface polls this endpoint while the run is open; that cadence is the
 frontend's business.

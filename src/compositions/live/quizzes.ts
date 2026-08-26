@@ -23,10 +23,17 @@ import { computations, concepts } from "../../concepts.ts";
 
 const { Publishing, Questioning, Sharing } = concepts;
 
-/** Every questionnaire on the staff shelf, newest first, with its open run when one stands. */
+/**
+ * Every questionnaire on the staff shelf, newest first, with its open run when
+ * one stands — and what launching needs: how many questions it holds, and
+ * whether any proposes an expected answer.
+ */
 export const theQuestionnaires = former(
   "the questionnaires",
-  (_inputs, { questionnaire, title, form, disclosure, createdAt, retired, run, token }) =>
+  (
+    _inputs,
+    { questionnaire, title, form, disclosure, createdAt, retired, run, token, questions, proposes },
+  ) =>
     each(
       Questioning._getQuestionnaires({}).is({
         questionnaire,
@@ -42,8 +49,21 @@ export const theQuestionnaires = former(
           Publishing._editionsFor({ material: questionnaire }).is({ edition: run, open: true }),
         ),
         whether(Sharing._sharesFor({ subject: run }).is({ token })),
+        theQuestionCount({ questionnaire }).is({ total: questions }),
+        Questioning._proposesAnswers({ questionnaire }).is({ proposes }),
       )
-      .form({ questionnaire, title, form, disclosure, createdAt, retired, openRun: run, token }),
+      .form({
+        questionnaire,
+        title,
+        form,
+        disclosure,
+        createdAt,
+        retired,
+        openRun: run,
+        token,
+        questions,
+        proposes,
+      }),
 );
 
 /** One questionnaire whole: its questions in position order and its runs, newest first. */

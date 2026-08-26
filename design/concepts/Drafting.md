@@ -197,6 +197,11 @@ _basisOf (brief: String) : optional (basis: String)
   answers the candidate the brief corrects
   answers no row when the brief is not a correction or does not exist
 
+_rootOf (brief: String) : optional (root: String, request: String)
+  answers the brief that began the line this brief continues — the brief
+  itself when it begins one — together with that root's request
+  answers no row when the Brief does not exist
+
 _clarifications (brief: String) : many (clarification: String, question: String, answer: String|Null)
   answers the brief's clarifications in asking order
   answers no rows when none match

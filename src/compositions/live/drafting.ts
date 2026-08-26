@@ -209,7 +209,8 @@ export const AdoptedCandidateComposesQuestionnaire = reaction(
         now(at),
         Drafting._candidate({ candidate }).is({ brief, form }),
         no(Drafting._originOf({ brief })),
-        Drafting._brief({ brief }).is({ author, request }),
+        Drafting._brief({ brief }).is({ author }),
+        Drafting._rootOf({ brief }).is({ request }),
         compute(computations.draftTitle, { request }, title),
       )
       .then(

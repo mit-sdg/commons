@@ -314,6 +314,20 @@ export class MongoDraftingConcept {
     return doc === null || doc.basis === null ? [] : [{ basis: doc.basis }];
   }
 
+  async _rootOf({ brief }: { brief: string }) {
+    const found = await this.briefs.findOne({ _id: brief });
+    if (found === null) return [];
+    let doc: BriefDoc = found;
+    while (doc.basis !== null) {
+      const corrected = await this.candidates.findOne({ _id: doc.basis });
+      if (corrected === null) break;
+      const continued = await this.briefs.findOne({ _id: corrected.brief });
+      if (continued === null) break;
+      doc = continued;
+    }
+    return [{ root: doc._id, request: doc.request }];
+  }
+
   async _clarifications({ brief }: { brief: string }) {
     const docs = await this.clarifications.find({ brief }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({

@@ -7,7 +7,7 @@ import {
   MessageCircleQuestion,
   PencilLine,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@/components/link";
 import { Spinner } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
@@ -35,12 +35,16 @@ type DraftClarification = DraftLineStep["clarifications"][number];
 function DraftItemRow({ item }: { item: DraftItem }) {
   return (
     <li className="space-y-2 rounded-lg border border-border/70 bg-background/40 p-3">
-      <p className="text-sm font-medium">
-        <span className="mr-2 text-muted-foreground tabular-nums">
+      {/* The number sits in its own column so a wrapped prompt keeps its
+          hanging indent on a narrow screen. */}
+      <div className="flex items-start gap-2 text-sm font-medium">
+        <span className="w-6 shrink-0 text-muted-foreground tabular-nums">
           {item.position}.
         </span>
-        {item.prompt}
-      </p>
+        <p dir="auto" className="min-w-0 flex-1">
+          {item.prompt}
+        </p>
+      </div>
 
       {item.choices.length > 0 ? (
         <ul className="space-y-1">
@@ -61,7 +65,9 @@ function DraftItemRow({ item }: { item: DraftItem }) {
                     <span className="size-1.5 rounded-full bg-muted-foreground/50" />
                   )}
                 </span>
-                <span>{choice}</span>
+                <span dir="auto" className="min-w-0 flex-1">
+                  {choice}
+                </span>
               </li>
             );
           })}
@@ -73,14 +79,39 @@ function DraftItemRow({ item }: { item: DraftItem }) {
       {item.expected !== "" && !item.choices.includes(item.expected) ? (
         <p className="text-sm">
           <span className="text-muted-foreground">Expected answer: </span>
-          {item.expected}
+          <span dir="auto">{item.expected}</span>
         </p>
       ) : null}
 
       {item.explanation !== "" ? (
-        <p className="text-sm text-muted-foreground">{item.explanation}</p>
+        <p dir="auto" className="text-sm text-muted-foreground">
+          {item.explanation}
+        </p>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * How long the current wait has run. It mounts with the wait and unmounts with
+ * it, so every wait counts from zero; it is hidden from assistive tech, whose
+ * announcement of the wait should not repeat once a second.
+ */
+function WaitingElapsed() {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const started = Date.now();
+    const timer = setInterval(() => {
+      setSeconds(Math.floor((Date.now() - started) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <span aria-hidden="true" className="tabular-nums">
+      {seconds}s
+    </span>
   );
 }
 
@@ -225,6 +256,10 @@ export function DraftStep({
     step.clarifications.find((entry) => entry.answer === null) ?? null;
   const answered = step.clarifications.filter((entry) => entry.answer !== null);
   const candidate = step.candidate;
+  // Where an adopted draft went: the questionnaire adoption composed, or the
+  // one this line was refining. Without either the quizzes page is all we can
+  // point at.
+  const questionnaire = step.composed ?? step.refines;
 
   return (
     <article className="space-y-3">
@@ -238,7 +273,9 @@ export function DraftStep({
         <p className="eyebrow mb-1">
           {position === 1 ? "Your description" : "Your correction"}
         </p>
-        <p className="whitespace-pre-wrap text-sm">{step.request}</p>
+        <p dir="auto" className="whitespace-pre-wrap text-sm">
+          {step.request}
+        </p>
       </div>
 
       {answered.map((entry) => (
@@ -294,14 +331,21 @@ export function DraftStep({
                 {step.adopted ? (
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      This draft has been adopted. It is an ordinary
-                      questionnaire now — revise it on its own page.
+                      {questionnaire !== null
+                        ? "This draft has been adopted. It is an ordinary questionnaire now — revise it on its own page."
+                        : "This draft has been adopted. Its questionnaire is still being composed — it will appear on the quizzes page shortly."}
                     </p>
                     <Link
-                      href="/staff/live"
+                      href={
+                        questionnaire !== null
+                          ? `/staff/live/${questionnaire}`
+                          : "/staff/live"
+                      }
                       className="text-sm font-medium underline underline-offset-4 hover:text-primary"
                     >
-                      Open the quizzes page
+                      {questionnaire !== null
+                        ? "Open the questionnaire"
+                        : "Open the quizzes page"}
                     </Link>
                   </div>
                 ) : (
@@ -344,6 +388,7 @@ export function DraftStep({
         >
           <Spinner className="size-4" />
           <span>Waiting on the reasoner…</span>
+          <WaitingElapsed />
         </div>
       ) : null}
 

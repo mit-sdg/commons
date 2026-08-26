@@ -43,7 +43,9 @@ force. Callers without the capability receive `FORBIDDEN`.
 [Live.quizzes.List](reaction:Live.quizzes.List) forms
 [the questionnaires](former:Live.quizzes.theQuestionnaires) — every
 questionnaire, newest first, each carrying its open run and share token when
-one stands — and [Live.quizzes.Get](reaction:Live.quizzes.Get) forms
+one stands, its question count, and whether any question proposes an expected
+answer, so every surface that offers Launch can decide readiness from the same
+facts — and [Live.quizzes.Get](reaction:Live.quizzes.Get) forms
 [one questionnaire whole](former:Live.quizzes.theQuestionnaire): its questions
 in position order, expected answers included (this is the author's own desk),
 and its runs, newest first.

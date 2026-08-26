@@ -43,6 +43,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { fullTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 type Sheet = NonNullable<Output<"/live/quizzes/get">["questionnaire"]>;
 
@@ -125,6 +126,9 @@ function QuestionnaireDesk({
   const [title, setTitle] = useState(sheet.title);
   const [disclosure, setDisclosure] = useState(sheet.disclosure);
   const [busy, setBusy] = useState(false);
+  // A question being written but not yet added: it lives here, never on the
+  // server, so a placeholder can never ride into a run.
+  const [adding, setAdding] = useState(false);
 
   const isQuiz = sheet.form === "quiz";
   const openRun = sheet.runs.find((run) => run.open) ?? null;
@@ -177,17 +181,17 @@ function QuestionnaireDesk({
     else setDisclosure(previous);
   }
 
-  async function addQuestion() {
-    setBusy(true);
+  async function addQuestion(draft: QuestionDraft) {
     const result = await api["/live/quizzes/add-question"]({
       questionnaire: sheet.questionnaire,
-      prompt: "New question",
-      choices: [],
-      expected: "",
-      explanation: "",
+      prompt: draft.prompt,
+      choices: draft.choices,
+      expected: draft.expected,
+      explanation: draft.explanation,
     });
-    setBusy(false);
-    if (report(result)) onChanged();
+    if (!report(result)) return;
+    setAdding(false);
+    onChanged();
   }
 
   async function saveQuestion(
@@ -288,7 +292,8 @@ function QuestionnaireDesk({
 
       <div className="space-y-8">
         <section className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+          {/* Without the quiz-only disclosure beside it, the title has the row. */}
+          <div className={cn("space-y-2", !isQuiz && "sm:col-span-2")}>
             <Label htmlFor="sheet-title">Title</Label>
             <div className="flex items-center gap-2">
               <Input
@@ -344,14 +349,14 @@ function QuestionnaireDesk({
         </section>
 
         <section className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-xl font-semibold">
               Questions{" "}
               <span className="font-normal text-muted-foreground">
                 ({questions.length})
               </span>
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -363,15 +368,15 @@ function QuestionnaireDesk({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={locked || busy}
-                onClick={() => void addQuestion()}
+                disabled={locked || busy || adding}
+                onClick={() => setAdding(true)}
               >
                 <Plus /> Add question
               </Button>
             </div>
           </div>
 
-          {questions.length === 0 ? (
+          {questions.length === 0 && !adding ? (
             <EmptyState
               icon={ClipboardList}
               title="No questions yet"
@@ -397,6 +402,17 @@ function QuestionnaireDesk({
                   onMove={(direction) => moveQuestion(question, direction)}
                 />
               ))}
+              {adding ? (
+                <QuizQuestionEditor
+                  key="new"
+                  index={questions.length}
+                  question={null}
+                  isQuiz={isQuiz}
+                  locked={locked || busy}
+                  onSave={addQuestion}
+                  onRemove={async () => setAdding(false)}
+                />
+              ) : null}
             </div>
           )}
 

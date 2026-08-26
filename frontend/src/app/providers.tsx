@@ -19,7 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <NotificationCountProvider>
           <ProfilesProvider>
             <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
-            <Toaster position="top-center" richColors closeButton />
+            <Toaster position="bottom-center" richColors closeButton />
           </ProfilesProvider>
         </NotificationCountProvider>
       </AuthProvider>

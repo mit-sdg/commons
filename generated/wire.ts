@@ -1186,7 +1186,9 @@ export type CommonsWire = {
         "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["disclosure"]>>;
         "form": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["form"]>>;
         "openRun": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>> | null;
-        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["questionnaire"]>]>>;
+        "proposes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>>>, ["proposes"]>>;
+        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["questionnaire"]>]>>;
+        "questions": Jsonify<number>;
         "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["retired"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["title"]>>;
         "token": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>>>, ["token"]>> | null;
@@ -1325,6 +1327,8 @@ export type CommonsWire = {
         "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["material"]>]>>;
         "questions": {
           "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["choices"]>>;
+          "expected": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["expected"]>>;
+          "explanation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["explanation"]>>;
           "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["position"]>>;
           "prompt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["prompt"]>>;
           "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["question"]>>;
@@ -1357,6 +1361,8 @@ export type CommonsWire = {
         "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["material"]>]>>;
         "questions": {
           "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["choices"]>>;
+          "expected": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["expected"]>>;
+          "explanation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["explanation"]>>;
           "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["position"]>>;
           "prompt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["prompt"]>>;
           "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["question"]>>;
@@ -4218,7 +4224,9 @@ export type CommonsWireHttp = {
         "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["disclosure"]>>;
         "form": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["form"]>>;
         "openRun": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>> | null;
-        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["questionnaire"]>]>>;
+        "proposes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>>>, ["proposes"]>>;
+        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["questionnaire"]>]>>;
+        "questions": Jsonify<number>;
         "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["retired"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["title"]>>;
         "token": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>>>, ["token"]>> | null;
@@ -4345,6 +4353,8 @@ export type CommonsWireHttp = {
         "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["material"]>]>>;
         "questions": {
           "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["choices"]>>;
+          "expected": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["expected"]>>;
+          "explanation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["explanation"]>>;
           "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["position"]>>;
           "prompt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["prompt"]>>;
           "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["question"]>>;
@@ -4377,6 +4387,8 @@ export type CommonsWireHttp = {
         "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["material"]>]>>;
         "questions": {
           "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["choices"]>>;
+          "expected": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["expected"]>>;
+          "explanation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["explanation"]>>;
           "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["position"]>>;
           "prompt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["prompt"]>>;
           "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["question"]>>;

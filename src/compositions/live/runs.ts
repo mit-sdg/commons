@@ -60,6 +60,8 @@ export const theRunBoard = former(
       question,
       prompt,
       choices,
+      expected,
+      explanation,
       position,
       participant,
       value,
@@ -87,11 +89,20 @@ export const theRunBoard = former(
         Responding._responsesFor({ subject: run }).is({ response: handedIn, submitted: true }),
       ).count(),
       questions: each(
-        Questioning._getQuestions({ questionnaire }).is({ question, prompt, choices, position }),
+        Questioning._getQuestions({ questionnaire }).is({
+          question,
+          prompt,
+          choices,
+          expected,
+          explanation,
+          position,
+        }),
       ).form({
         question,
         prompt,
         choices,
+        expected,
+        explanation,
         position,
         values: each(
           Responding._valuesFor({ subject: run, item: question }).is({ participant, value }),

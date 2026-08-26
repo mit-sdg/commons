@@ -132,6 +132,36 @@ for (const [floor, make] of floors) {
       expect(await drafting._originOf({ brief: further })).toEqual([{ origin: "questionnaire-1" }]);
     });
 
+    test("the root of a corrected line answers the first request", async () => {
+      const drafting = await make();
+      const { brief } = await drafting.describe({ author: "lee", request: "A quiz on tides.", at });
+      expect(await drafting._rootOf({ brief })).toEqual([
+        { root: brief, request: "A quiz on tides." },
+      ]);
+      const { candidate } = await drafting.propose({ brief, form: "quiz", material });
+      const { brief: correction } = await drafting.correct({
+        author: "lee",
+        candidate,
+        request: "Sharpen the wording.",
+        at: later,
+      });
+      const { candidate: revised } = await drafting.propose({
+        brief: correction,
+        form: "quiz",
+        material,
+      });
+      const { brief: further } = await drafting.correct({
+        author: "lee",
+        candidate: revised,
+        request: "Once more.",
+        at: later,
+      });
+      expect(await drafting._rootOf({ brief: further })).toEqual([
+        { root: brief, request: "A quiz on tides." },
+      ]);
+      expect(await drafting._rootOf({ brief: "no-such" })).toEqual([]);
+    });
+
     test("a described line has no origin", async () => {
       const drafting = await make();
       const { brief } = await drafting.describe({ author: "lee", request: "A quiz.", at });

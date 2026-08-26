@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import type { Output } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,8 @@ interface ChoiceTally {
   count: number;
   /** A value nobody was offered — a written answer to a question that changed. */
   other: boolean;
+  /** The choice the question expected; never set on a survey, which expects none. */
+  expected: boolean;
 }
 
 /**
@@ -29,7 +32,11 @@ interface ChoiceTally {
  * matches no choice is gathered under one heading rather than dropped, so the
  * bars always add up to the answers actually given.
  */
-function tallyChoices(choices: string[], values: string[]): ChoiceTally[] {
+function tallyChoices(
+  choices: string[],
+  values: string[],
+  expected: string,
+): ChoiceTally[] {
   const counts = new Map<string, number>();
   for (const choice of choices) counts.set(choice, 0);
   let other = 0;
@@ -42,10 +49,61 @@ function tallyChoices(choices: string[], values: string[]): ChoiceTally[] {
     label: choice,
     count: counts.get(choice) ?? 0,
     other: false,
+    expected: expected !== "" && choice === expected,
   }));
   return other === 0
     ? rows
-    : [...rows, { label: "Something else", count: other, other: true }];
+    : [
+        ...rows,
+        { label: "Something else", count: other, other: true, expected: false },
+      ];
+}
+
+interface WrittenTally {
+  /** The most common casing the room actually typed. */
+  label: string;
+  count: number;
+  /** Trimmed and case-folded — one key for every way of writing the answer. */
+  key: string;
+}
+
+/**
+ * Written answers gathered by what they say rather than how they were typed:
+ * two people who wrote the same words in different case are one entry, shown in
+ * the casing most of them used. Loudest first, and ties keep the order the room
+ * handed them in.
+ */
+function tallyWritten(values: string[]): WrittenTally[] {
+  const groups = new Map<
+    string,
+    { order: number; count: number; casings: Map<string, number> }
+  >();
+  for (const value of values) {
+    const label = value.trim();
+    const key = label.toLocaleLowerCase();
+    let group = groups.get(key);
+    if (group === undefined) {
+      group = { order: groups.size, count: 0, casings: new Map() };
+      groups.set(key, group);
+    }
+    group.count += 1;
+    group.casings.set(label, (group.casings.get(label) ?? 0) + 1);
+  }
+  return [...groups.entries()]
+    .map(([key, group]) => {
+      let label = "";
+      let standing = 0;
+      // Insertion order breaks a tie, so the casing seen first stands.
+      for (const [casing, count] of group.casings) {
+        if (count > standing) {
+          label = casing;
+          standing = count;
+        }
+      }
+      return { label, count: group.count, key, order: group.order };
+    })
+    .sort((left, right) => right.count - left.count || left.order - right.order)
+    .map(({ label, count, key }) => ({ label, count, key }));
 }
 
 interface ScoreBand {
@@ -93,35 +151,51 @@ export function RunCount({
   );
 }
 
+/**
+ * One row of a tally. The bar carries exactly the share its label states — a bar
+ * scaled to the leading row would draw a three-way tie as three full bars — so
+ * an eye at the back of the room reads the same figure the label does.
+ */
 function Bar({
   label,
   count,
   total,
-  max,
   muted = false,
+  expected = false,
 }: {
   label: string;
   count: number;
   total: number;
-  max: number;
   muted?: boolean;
+  expected?: boolean;
 }) {
   const share = total === 0 ? 0 : Math.round((count / total) * 100);
-  const width = max === 0 ? 0 : (count / max) * 100;
   return (
-    <div className="space-y-1.5">
+    <div
+      className={cn(
+        "space-y-1.5",
+        expected && "-mx-3 rounded-lg bg-primary/5 px-3 py-2",
+      )}
+    >
       <div className="flex items-baseline justify-between gap-4">
         <span
           className={cn(
-            "text-base sm:text-lg",
+            "min-w-0 text-base sm:text-lg",
             muted && "text-muted-foreground italic",
+            expected && "font-medium",
           )}
         >
-          {label}
+          {expected ? (
+            <Check className="me-2 inline-block size-5 align-text-bottom text-primary" />
+          ) : null}
+          <span dir="auto">{label}</span>
+          {expected ? (
+            <span className="sr-only"> (expected answer)</span>
+          ) : null}
         </span>
         <span className="shrink-0 font-semibold text-base tabular-nums sm:text-lg">
           {count}
-          <span className="ml-2 font-normal text-muted-foreground text-sm">
+          <span className="ml-2 font-semibold text-base text-muted-foreground">
             {share}%
           </span>
         </span>
@@ -132,30 +206,44 @@ function Bar({
             "h-full rounded-full transition-[width] duration-500",
             muted ? "bg-muted-foreground/40" : "bg-primary",
           )}
-          style={{ width: `${width}%` }}
+          style={{ width: `${share}%` }}
         />
       </div>
     </div>
   );
 }
 
-/** One question's standing: bars where choices were offered, words where not. */
+/**
+ * One question's standing: bars where choices were offered, words where not.
+ * The expected choice is marked only once the run has closed — this board is
+ * projected to the room, and the standard is revealed when the moment has
+ * passed, not while the room is still answering.
+ */
 export function RunQuestionBoard({
   index,
   question,
+  revealExpected,
 }: {
   index: number;
   question: RunBoardQuestion;
+  revealExpected: boolean;
 }) {
   const values = question.values.map((entry) => entry.value);
   const choices = question.choices;
-  const tally = tallyChoices(choices, values);
-  const max = tally.reduce((high, row) => Math.max(high, row.count), 0);
+  const tally = tallyChoices(
+    choices,
+    values,
+    revealExpected ? question.expected : "",
+  );
+  const written = tallyWritten(values);
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
-      <h3 className="mb-4 font-display text-xl font-semibold text-balance sm:text-2xl">
-        <span className="mr-3 text-muted-foreground tabular-nums">
+      <h3
+        dir="auto"
+        className="mb-4 font-display text-xl font-semibold text-balance sm:text-2xl"
+      >
+        <span className="me-3 text-muted-foreground tabular-nums">
           {index + 1}.
         </span>
         {question.prompt}
@@ -168,11 +256,11 @@ export function RunQuestionBoard({
               label={row.label}
               count={row.count}
               total={values.length}
-              max={max}
               muted={row.other}
+              expected={row.expected}
             />
           ))}
-          <p className="text-muted-foreground text-sm">
+          <p className="font-medium text-base text-muted-foreground">
             {values.length} answer{values.length === 1 ? "" : "s"} handed in
           </p>
         </div>
@@ -180,12 +268,19 @@ export function RunQuestionBoard({
         <p className="text-muted-foreground">No written answers yet.</p>
       ) : (
         <div className="flex flex-wrap gap-2">
-          {question.values.map((entry) => (
+          {written.map((row) => (
             <span
-              key={entry.participant}
-              className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-base sm:text-lg"
+              key={row.key}
+              className="flex items-baseline gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-base sm:text-lg"
             >
-              {entry.value}
+              <span dir="auto" className="min-w-0">
+                {row.label}
+              </span>
+              {row.count > 1 ? (
+                <span className="shrink-0 font-semibold text-muted-foreground tabular-nums">
+                  ×{row.count}
+                </span>
+              ) : null}
             </span>
           ))}
         </div>
@@ -212,7 +307,6 @@ export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
 
   const outOf = results.reduce((high, row) => Math.max(high, row.outOf), 0);
   const bands = scoreDistribution(results);
-  const max = bands.reduce((high, band) => Math.max(high, band.count), 0);
   const total = results.reduce((sum, row) => sum + row.score, 0);
   const mean = total / results.length;
 
@@ -237,7 +331,6 @@ export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
             label={`${band.score} / ${outOf}`}
             count={band.count}
             total={results.length}
-            max={max}
           />
         ))}
       </div>

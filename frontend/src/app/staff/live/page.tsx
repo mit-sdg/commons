@@ -178,13 +178,22 @@ function ShelfRow({
   entry: Shelved;
   onRetire?: () => Promise<void>;
 }) {
+  // The same two conditions the detail page states, read off the shelf entry so
+  // the row never offers a launch the sheet would refuse.
+  const launchHint =
+    entry.questions === 0
+      ? "Add a question first."
+      : entry.form === "quiz" && !entry.proposes
+        ? "A quiz launches only once at least one question has an expected answer."
+        : undefined;
+
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-center">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={`/staff/live/${entry.questionnaire}`}
-            className="font-medium hover:text-primary"
+            className="min-w-0 break-words font-medium hover:text-primary"
           >
             {entry.title}
           </Link>
@@ -194,12 +203,12 @@ function ShelfRow({
             <Badge variant="secondary">Run open</Badge>
           ) : null}
         </div>
-        <p className="mt-1 text-muted-foreground text-xs">
+        <p className="mt-1 whitespace-nowrap text-muted-foreground text-xs">
           Created {fullTime(entry.createdAt)}
         </p>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/staff/live/${entry.questionnaire}`}>
             <Pencil /> Edit
@@ -213,6 +222,8 @@ function ShelfRow({
         ) : entry.retired ? null : (
           <RunLaunchButton
             questionnaire={entry.questionnaire}
+            disabled={launchHint !== undefined}
+            hint={launchHint}
             size="sm"
             variant="outline"
           />

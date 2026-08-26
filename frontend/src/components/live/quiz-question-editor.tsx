@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,45 +34,69 @@ export function parseChoices(text: string): string[] {
     .filter((line) => line !== "");
 }
 
+/** What a card that has never been saved starts from: nothing written yet. */
+const BLANK: EditableQuestion = {
+  question: "new",
+  prompt: "",
+  choices: [],
+  expected: "",
+  explanation: "",
+  position: 0,
+};
+
 /**
  * One question, edited in place. The card holds its own draft and compares it
  * against the loaded question, so "unsaved" is a fact about the two rather than
  * a flag anyone has to remember to clear.
+ *
+ * A null question is a card for a question that does not exist yet: it lives
+ * only in the browser until its first save, so no placeholder wording can ride
+ * into a run.
  */
 export function QuizQuestionEditor({
   index,
   question,
   isQuiz,
   locked,
-  first,
-  last,
+  first = false,
+  last = false,
   onSave,
   onRemove,
   onMove,
 }: {
   index: number;
-  question: EditableQuestion;
+  /** Null while the question has never been saved. */
+  question: EditableQuestion | null;
   isQuiz: boolean;
   /** A run is open: the questionnaire may be read but never moved. */
   locked: boolean;
-  first: boolean;
-  last: boolean;
+  first?: boolean;
+  last?: boolean;
   onSave: (draft: QuestionDraft) => Promise<void>;
+  /** Deletes a saved question; simply discards an unsaved one. */
   onRemove: () => Promise<void>;
-  onMove: (direction: -1 | 1) => Promise<void>;
+  onMove?: (direction: -1 | 1) => Promise<void>;
 }) {
-  const [prompt, setPrompt] = useState(question.prompt);
-  const [choicesText, setChoicesText] = useState(question.choices.join("\n"));
-  const [expected, setExpected] = useState(question.expected);
-  const [explanation, setExplanation] = useState(question.explanation);
+  const unsaved = question === null;
+  const saved = question ?? BLANK;
+  const [prompt, setPrompt] = useState(saved.prompt);
+  const [choicesText, setChoicesText] = useState(saved.choices.join("\n"));
+  const [expected, setExpected] = useState(saved.expected);
+  const [explanation, setExplanation] = useState(saved.explanation);
   const [busy, setBusy] = useState(false);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+
+  // A fresh card is where the author is already looking, so put the caret there.
+  useEffect(() => {
+    if (unsaved) promptRef.current?.focus();
+  }, [unsaved]);
 
   const choices = parseChoices(choicesText);
   const dirty =
-    prompt !== question.prompt ||
-    choices.join("\n") !== question.choices.join("\n") ||
-    expected !== question.expected ||
-    explanation !== question.explanation;
+    prompt !== saved.prompt ||
+    choices.join("\n") !== saved.choices.join("\n") ||
+    expected !== saved.expected ||
+    explanation !== saved.explanation;
   const stray =
     isQuiz &&
     expected.trim() !== "" &&
@@ -94,6 +118,7 @@ export function QuizQuestionEditor({
   }
 
   async function move(direction: -1 | 1) {
+    if (onMove === undefined) return;
     setBusy(true);
     try {
       await onMove(direction);
@@ -102,48 +127,64 @@ export function QuizQuestionEditor({
     }
   }
 
-  const field = (name: string) => `question-${question.question}-${name}`;
+  const field = (name: string) => `question-${saved.question}-${name}`;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="eyebrow">Question {index + 1}</p>
+        <p className="eyebrow">
+          {unsaved ? "New question" : `Question ${index + 1}`}
+        </p>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Move up"
-            disabled={locked || busy || first}
-            onClick={() => void move(-1)}
-          >
-            <ArrowUp />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Move down"
-            disabled={locked || busy || last}
-            onClick={() => void move(1)}
-          >
-            <ArrowDown />
-          </Button>
-          <ConfirmAction
-            trigger={
+          {unsaved ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Discard this question"
+              disabled={busy}
+              onClick={() => void onRemove()}
+            >
+              <Trash2 className="text-destructive" />
+            </Button>
+          ) : (
+            <>
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Remove question"
-                disabled={locked || busy}
+                aria-label="Move up"
+                disabled={locked || busy || first}
+                onClick={() => void move(-1)}
               >
-                <Trash2 className="text-destructive" />
+                <ArrowUp />
               </Button>
-            }
-            title="Remove this question?"
-            description="The question and its wording are deleted. Runs already closed keep the answers they gathered."
-            confirmLabel="Remove"
-            destructive
-            onConfirm={onRemove}
-          />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Move down"
+                disabled={locked || busy || last}
+                onClick={() => void move(1)}
+              >
+                <ArrowDown />
+              </Button>
+              <ConfirmAction
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Remove question"
+                    disabled={locked || busy}
+                  >
+                    <Trash2 className="text-destructive" />
+                  </Button>
+                }
+                title="Remove this question?"
+                description="The question and its wording are deleted. Runs already closed keep the answers they gathered."
+                confirmLabel="Remove"
+                destructive
+                onConfirm={onRemove}
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -152,6 +193,7 @@ export function QuizQuestionEditor({
           <Label htmlFor={field("prompt")}>Prompt</Label>
           <Textarea
             id={field("prompt")}
+            ref={promptRef}
             value={prompt}
             rows={2}
             disabled={locked || busy}
@@ -161,12 +203,10 @@ export function QuizQuestionEditor({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor={field("choices")}>
-            Choices{" "}
-            <span className="font-normal text-muted-foreground">
-              (one per line — leave empty for a written answer)
-            </span>
-          </Label>
+          <Label htmlFor={field("choices")}>Choices</Label>
+          <p className="text-xs text-muted-foreground">
+            One per line. Empty means a written answer.
+          </p>
           <Textarea
             id={field("choices")}
             value={choicesText}
@@ -223,7 +263,7 @@ export function QuizQuestionEditor({
         ) : null}
       </div>
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <Button
           size="sm"
           disabled={locked || busy || !dirty || prompt.trim() === ""}
@@ -231,7 +271,16 @@ export function QuizQuestionEditor({
         >
           {busy ? "Saving…" : "Save question"}
         </Button>
-        {dirty && !locked ? (
+        {unsaved ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => void onRemove()}
+          >
+            Cancel
+          </Button>
+        ) : dirty && !locked ? (
           <span className="text-xs text-muted-foreground">Unsaved changes</span>
         ) : null}
       </div>

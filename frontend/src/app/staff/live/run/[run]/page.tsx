@@ -104,7 +104,10 @@ function RunDashboardContent() {
         </Link>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-3">
-            <h1 className="text-balance font-display text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+            <h1
+              dir="auto"
+              className="text-balance font-display text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl"
+            >
               {board.title}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
@@ -171,6 +174,7 @@ function RunDashboardContent() {
                 key={question.question}
                 index={index}
                 question={question}
+                revealExpected={!open}
               />
             ))
           )}

@@ -256,7 +256,13 @@ export default function ParticipantPage() {
         <EmptyState
           icon={CircleSlash}
           title="This has closed"
-          description="Participation ended before you could hand in."
+          // Only someone who had begun lost something by the close; a device
+          // arriving after the fact is just late.
+          description={
+            response === null
+              ? "This run has ended."
+              : "Participation ended before you could hand in."
+          }
         />
       </Shell>
     );
@@ -316,6 +322,8 @@ export default function ParticipantPage() {
             {face.questions.length} answered
           </span>
           <Button
+            // A thumb-sized target: the default h-9 falls under the 44px floor.
+            className="h-11"
             onClick={() => void submit()}
             disabled={busy || (isQuiz && !complete)}
           >
@@ -337,7 +345,10 @@ function Shell({
   return (
     <div className="mx-auto min-h-dvh w-full max-w-xl px-4 py-6">
       {title !== undefined && (
-        <h1 className="mb-6 font-display text-2xl font-semibold tracking-tight">
+        <h1
+          className="mb-6 font-display text-2xl font-semibold tracking-tight"
+          dir="auto"
+        >
           {title}
         </h1>
       )}
@@ -362,8 +373,8 @@ function QuestionCard({
   return (
     <Card>
       <CardContent className="flex flex-col gap-3">
-        <p className="font-medium">
-          <span className="mr-2 text-muted-foreground">{index + 1}.</span>
+        <p className="font-medium" dir="auto">
+          <span className="me-2 text-muted-foreground">{index + 1}.</span>
           {question.prompt}
         </p>
         {choices.length > 0 ? (
@@ -372,9 +383,12 @@ function QuestionCard({
               <button
                 key={choice}
                 type="button"
+                dir="auto"
+                // Colour alone does not carry selection to a screen reader.
+                aria-pressed={value === choice}
                 onClick={() => onAnswer(choice)}
                 className={cn(
-                  "rounded-md border border-border px-4 py-3 text-left text-sm transition-colors",
+                  "rounded-md border border-border px-4 py-3 text-start text-sm transition-colors",
                   value === choice
                     ? "border-primary bg-primary/10 font-medium text-primary"
                     : "hover:bg-muted",
@@ -388,6 +402,8 @@ function QuestionCard({
           // The field owns the draft and commits on blur, so nothing has to be
           // synced from props into state during render.
           <Input
+            className="h-11"
+            dir="auto"
             defaultValue={value}
             placeholder="Your answer"
             onBlur={(event) => {
@@ -445,7 +461,9 @@ function OutcomeView({
             return (
               <Card key={item.item}>
                 <CardContent className="flex flex-col gap-1 text-sm">
-                  <p className="font-medium">{item.prompt}</p>
+                  <p className="font-medium" dir="auto">
+                    {item.prompt}
+                  </p>
                   <p
                     className={cn(
                       right
