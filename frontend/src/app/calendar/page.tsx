@@ -7,7 +7,6 @@ import { PageContainer, PageHeader } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
-import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { loadCalendarMe, loadRosterMe } from "@/lib/lms";
 
@@ -43,7 +42,15 @@ export default function CalendarPage() {
     error,
     refetch,
   } = useQuery<{
-    events: { assignment: string }[];
+    events: {
+      assignment: string;
+      title: string;
+      kind: string;
+      availableAt: string;
+      dueAt: string;
+      dueOverride: string | null;
+      closeAt: string | null;
+    }[];
   }>(session && rosterData?.seat ? () => loadCalendarMe(start, end) : null, [
     session,
     rosterData,
@@ -51,66 +58,32 @@ export default function CalendarPage() {
     end,
   ]);
 
-  const { data: detailsData } = useQuery<Record<string, unknown>>(
-    calendarData?.events
-      ? async () => {
-          const map: Record<string, unknown> = {};
-          await Promise.all(
-            calendarData.events.map(async (e) => {
-              const key = e.assignment;
-              if (!map[key]) {
-                const res = await api.assignments.get({
-                  assignment: key,
-                });
-                if (!("error" in res) && res.assignment)
-                  map[key] = res.assignment;
-              }
-            }),
-          );
-          return map;
-        }
-      : null,
-    [calendarData],
-  );
-
-  const details = (detailsData ?? {}) as Record<
-    string,
-    {
-      title: string;
-      kind: string;
-      availableAt: string;
-      dueAt: string;
-      closeAt?: string;
-      status: string;
-    }
-  >;
-
-  const events = (calendarData?.events ?? []).flatMap((e) => {
-    const d = details[e.assignment];
-    const name = d?.title ?? e.assignment.slice(0, 8);
+  const events = (calendarData?.events ?? []).flatMap((event) => {
+    const dueAt = event.dueOverride ?? event.dueAt;
     return [
-      d?.availableAt
+      {
+        date: event.availableAt,
+        label: `Available: ${event.title}`,
+        kind: "available",
+        detail: event.kind,
+        href: `/assignments/${event.assignment}`,
+      },
+      {
+        date: dueAt,
+        label: `Due: ${event.title}`,
+        kind: "due",
+        detail: event.dueOverride
+          ? `${event.kind} · individual due date`
+          : event.kind,
+        href: `/assignments/${event.assignment}`,
+      },
+      event.closeAt
         ? {
-            date: d.availableAt,
-            label: `Available: ${name}`,
-            kind: "available",
-            detail: d.kind,
-          }
-        : null,
-      d?.dueAt
-        ? {
-            date: d.dueAt,
-            label: `Due: ${name}`,
-            kind: "due",
-            detail: d.kind,
-          }
-        : null,
-      d?.closeAt
-        ? {
-            date: d.closeAt,
-            label: `Closes: ${name}`,
+            date: event.closeAt,
+            label: `Closes: ${event.title}`,
             kind: "close",
-            detail: d.kind,
+            detail: event.kind,
+            href: `/assignments/${event.assignment}`,
           }
         : null,
     ].filter(Boolean) as {
@@ -118,6 +91,7 @@ export default function CalendarPage() {
       label: string;
       kind?: string;
       detail?: string;
+      href: string;
     }[];
   });
 

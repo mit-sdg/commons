@@ -17,6 +17,8 @@ import { useQuery } from "@/hooks/use-query";
 import type { Input as ApiInput } from "@/lib/api";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useCourse } from "@/lib/course";
+import { fromZonedInput, toZonedInput } from "@/lib/format";
 import { loadSections } from "@/lib/lms";
 
 interface AssignmentFormProps {
@@ -43,6 +45,7 @@ export function AssignmentForm({
   onCancel,
 }: AssignmentFormProps) {
   const { session } = useAuth();
+  const { timezone } = useCourse();
   const [title, setTitle] = useState(existing?.title ?? "");
   const [instructions, setInstructions] = useState(
     existing?.instructions ?? "",
@@ -50,18 +53,16 @@ export function AssignmentForm({
   const [kind, setKind] = useState(existing?.kind ?? "HOMEWORK");
   const [availableAt, setAvailableAt] = useState(() =>
     existing?.availableAt
-      ? new Date(existing.availableAt).toISOString().slice(0, 16)
-      : new Date().toISOString().slice(0, 16),
+      ? toZonedInput(existing.availableAt, timezone)
+      : toZonedInput(new Date(), timezone),
   );
   const [dueAt, setDueAt] = useState(() =>
     existing?.dueAt
-      ? new Date(existing.dueAt).toISOString().slice(0, 16)
-      : new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16),
+      ? toZonedInput(existing.dueAt, timezone)
+      : toZonedInput(new Date(Date.now() + 7 * 86400000), timezone),
   );
   const [closeAt, setCloseAt] = useState(
-    existing?.closeAt
-      ? new Date(existing.closeAt).toISOString().slice(0, 16)
-      : "",
+    existing?.closeAt ? toZonedInput(existing.closeAt, timezone) : "",
   );
   const [acceptsSubmissions, setAcceptsSubmissions] = useState(
     existing?.acceptsSubmissions ?? true,
@@ -73,10 +74,23 @@ export function AssignmentForm({
     () => existing?.targets?.map(String) ?? [],
   );
   const [loading, setLoading] = useState(false);
-  const { data: sectionsData } = useQuery(() => loadSections(), []);
+  const { data: sectionsData, loading: sectionsLoading } = useQuery(
+    () => loadSections(),
+    [],
+  );
   const sections = (sectionsData?.sections ?? []).filter(
     (section) => section.status === "ACTIVE",
   );
+  const availableError =
+    availableAt && dueAt && availableAt > dueAt
+      ? "Availability must be on or before the due date."
+      : "";
+  const dueError =
+    closeAt && dueAt && dueAt > closeAt
+      ? "The due date must be on or before close."
+      : "";
+  const scheduleValid =
+    Boolean(availableAt && dueAt) && !availableError && !dueError;
 
   function toggleTarget(section: string) {
     setTargets((current) =>
@@ -87,7 +101,7 @@ export function AssignmentForm({
   }
 
   async function save() {
-    if (!session) return;
+    if (!session || !scheduleValid) return;
     setLoading(true);
 
     const rawPayload = {
@@ -95,14 +109,17 @@ export function AssignmentForm({
       title: title.trim(),
       instructions: instructions.trim(),
       kind,
-      availableAt: new Date(availableAt).toISOString(),
-      dueAt: new Date(dueAt).toISOString(),
-      closeAt: closeAt ? new Date(closeAt).toISOString() : undefined,
+      availableAt: fromZonedInput(availableAt, timezone),
+      dueAt: fromZonedInput(dueAt, timezone),
+      closeAt: closeAt ? fromZonedInput(closeAt, timezone) : undefined,
       acceptsSubmissions,
       audience,
       targets: audience === "TARGETS" ? targets : [],
     };
 
+    const existingGradeItem = existing
+      ? await api.grades.item({ item: existing.assignment })
+      : null;
     const result = existing
       ? await api.assignments.revise({
           title: rawPayload.title,
@@ -121,6 +138,19 @@ export function AssignmentForm({
     setLoading(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
+      if (
+        existing &&
+        existingGradeItem &&
+        !("error" in existingGradeItem) &&
+        existingGradeItem.label === existing.title &&
+        existing.title !== rawPayload.title
+      ) {
+        await api.grades["configure-item"]({
+          item: existing.assignment,
+          label: rawPayload.title,
+          maxPoints: existingGradeItem.maxPoints,
+        });
+      }
       toast.success(existing ? "Assignment updated" : "Assignment created");
       onSaved();
     }
@@ -182,7 +212,9 @@ export function AssignmentForm({
           <legend className="px-1 text-sm font-medium">
             Assigned sections
           </legend>
-          {sections.length === 0 ? (
+          {sectionsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading sections…</p>
+          ) : sections.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Create a course section before targeting an assignment.
             </p>
@@ -229,28 +261,46 @@ export function AssignmentForm({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="asgn-available">Available at</Label>
+          <Label htmlFor="asgn-available">Available at ({timezone})</Label>
           <Input
             id="asgn-available"
             type="datetime-local"
             value={availableAt}
             onChange={(e) => setAvailableAt(e.target.value)}
             disabled={loading}
+            aria-invalid={Boolean(availableError)}
+            aria-describedby={
+              availableError ? "asgn-available-error" : undefined
+            }
           />
+          {availableError ? (
+            <p id="asgn-available-error" className="text-xs text-destructive">
+              {availableError}
+            </p>
+          ) : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="asgn-due">Due at</Label>
+          <Label htmlFor="asgn-due">Due at ({timezone})</Label>
           <Input
             id="asgn-due"
             type="datetime-local"
             value={dueAt}
             onChange={(e) => setDueAt(e.target.value)}
             disabled={loading}
+            aria-invalid={Boolean(availableError || dueError)}
+            aria-describedby={
+              availableError || dueError ? "asgn-due-error" : undefined
+            }
           />
+          {availableError || dueError ? (
+            <p id="asgn-due-error" className="text-xs text-destructive">
+              {availableError || dueError}
+            </p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor="asgn-close">
-            Close at{" "}
+            Close at ({timezone}){" "}
             <span className="text-muted-foreground font-normal">
               (optional)
             </span>
@@ -261,7 +311,14 @@ export function AssignmentForm({
             value={closeAt}
             onChange={(e) => setCloseAt(e.target.value)}
             disabled={loading}
+            aria-invalid={Boolean(dueError)}
+            aria-describedby={dueError ? "asgn-close-error" : undefined}
           />
+          {dueError ? (
+            <p id="asgn-close-error" className="text-xs text-destructive">
+              {dueError}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -297,6 +354,7 @@ export function AssignmentForm({
           disabled={
             loading ||
             !title.trim() ||
+            !scheduleValid ||
             (audience === "TARGETS" && targets.length === 0)
           }
         >

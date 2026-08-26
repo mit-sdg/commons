@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, where, now } from "@mit-sdg/sync-engine/language";
+import { each, former, no, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -9,7 +9,7 @@ import {
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Banking } = concepts;
+const { Assigning, Banking } = concepts;
 /** What late-day balance does this learner have? */
 export const theLateDayBalanceOf = former(
   "the late-day balance of (learner)",
@@ -103,10 +103,31 @@ export const Apply = endpoint(
   "/late-days/apply",
   ({ session, assignment, days, user, at, use }) =>
     receive({ session, assignment, days }).then(
-      where(now(at), activeUser({ session }).is({ user }), isActiveStudent({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+        Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" }),
+      )
         .then(Banking.apply({ learner: user, item: assignment, days, at }).responds({ use }))
         .then(respond({ use }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-assigned"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+        no(Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-published"),
       where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -118,10 +139,30 @@ export const Change = endpoint(
   "/late-days/change",
   ({ session, assignment, days, user, use }) =>
     receive({ session, assignment, days }).then(
-      where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+        Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" }),
+      )
         .then(Banking.change({ learner: user, item: assignment, days }).responds({ use }))
         .then(respond({ use }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-assigned"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+        no(Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-published"),
       where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -146,10 +187,20 @@ export const Cancel = endpoint(
 
 export const List = endpoint(
   "/late-days/list",
-  ({ session, user }) =>
+  ({ session, user, unitHours, maxDaysPerItem }) =>
     receive({ session }).then(
-      where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-        .then(respond({ uses: theLateDayUsesOf({ learner: user }) }))
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Banking._getTerms({}).is({ unitHours, perItemLimit: maxDaysPerItem }),
+      )
+        .then(
+          respond({
+            uses: theLateDayUsesOf({ learner: user }),
+            unitHours,
+            maxDaysPerItem,
+          }),
+        )
         .named("success"),
       where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
         .then(respond({ error: "FORBIDDEN" }))

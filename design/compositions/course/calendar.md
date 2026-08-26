@@ -2,11 +2,7 @@
 
 The [calendar former](former:Course.calendar.theCalendarBetween) selects published assignments
 whose availability or due date falls inside a requested inclusive window.
-[Course.calendar.CalendarMe](reaction:Course.calendar.CalendarMe) gives that calendar to an active student, while
-[Course.calendar.CalendarStaff](reaction:Course.calendar.CalendarStaff) gives it to a caller holding `administer`,
-`course:manage`, or `grade`. There is no staff-calendar capability of its own any
-more: the staff calendar is a read any of those three reaches. Neither result is
-filtered by a student's releases or section.
+[Course.calendar.CalendarMe](reaction:Course.calendar.CalendarMe) gives an active student [only their released assignments](former:Course.calendar.theCalendarOf), including each release's individual due override. [Course.calendar.CalendarStaff](reaction:Course.calendar.CalendarStaff) gives the base calendar to a caller holding `administer`, `course:manage`, or `grade`. There is no staff-calendar capability of its own any more: the staff calendar is a read any of those three reaches.
 
 [Course.calendar.LmsMe](reaction:Course.calendar.LmsMe) forms
 [the calling student's dashboard seat](former:Course.calendar.theDashboardSeatOf).

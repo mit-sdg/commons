@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/lib/auth";
+import { useCourse } from "@/lib/course";
 import { loadRosterMe } from "@/lib/lms";
 import { lmsAccess, lmsNavigation } from "@/lib/lms-navigation";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ const COURSE_PATHS = [
 
 export function SiteHeader() {
   const { me, loading, permissions, logout, session } = useAuth();
+  const course = useCourse();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [resolvedLmsAccess, setResolvedLmsAccess] = useState({
@@ -83,7 +85,8 @@ export function SiteHeader() {
     Boolean(session) && resolvedLmsAccess.user === currentUser;
   const effectiveHasRosterSeat =
     accessIsCurrent && resolvedLmsAccess.hasRosterSeat;
-  const effectiveIsStaff = accessIsCurrent && resolvedLmsAccess.isStaff;
+  const effectiveIsStaff =
+    permissions.isStaff || (accessIsCurrent && resolvedLmsAccess.isStaff);
   const courseNav = lmsNavigation(effectiveIsStaff, permissions.can);
   const courseHome = effectiveIsStaff ? "/staff" : "/assignments";
   const isCourseArea = COURSE_PATHS.some(
@@ -281,14 +284,17 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {effectiveHasRosterSeat && isCourseArea ? (
+      {(effectiveHasRosterSeat || effectiveIsStaff) && isCourseArea ? (
         <nav
           aria-label="Course"
           className="hidden border-t border-border/70 bg-muted/30 lg:block"
         >
           <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-4 py-2 sm:px-6">
             <span className="mr-2 flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <GraduationCap className="size-4" /> Course
+              <GraduationCap className="size-4" />
+              {course.code
+                ? `${course.code} · ${course.title} · ${course.term}`
+                : "Course"}
             </span>
             {courseNav.map((item) => (
               <Link

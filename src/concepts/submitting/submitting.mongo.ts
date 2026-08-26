@@ -122,6 +122,7 @@ export class MongoSubmittingConcept {
     return docs.map((doc) => ({
       submitter: doc.submitter,
       submission: doc._id,
+      artifacts: [...doc.artifacts],
       submittedAt: doc.submittedAt,
       number: doc.number,
       status: doc.status,

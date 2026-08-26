@@ -1,3 +1,5 @@
+import { courseTimezone } from "@/lib/course";
+
 export function toDate(value: unknown): Date | null {
   if (value == null) return null;
   const d = new Date(value as string);
@@ -31,9 +33,65 @@ export function fullTime(value: unknown): string {
   const date = toDate(value);
   if (!date) return "";
   return date.toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: courseTimezone(),
+    timeZoneName: "short",
   });
+}
+
+export function toZonedInput(
+  value: unknown,
+  timeZone = courseTimezone(),
+): string {
+  const date = toDate(value);
+  if (!date) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((candidate) => candidate.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
+}
+
+export function fromZonedInput(
+  value: string,
+  timeZone = courseTimezone(),
+): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!match) throw new RangeError("Invalid local date and time");
+  const wall = Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+    Number(match[4]),
+    Number(match[5]),
+  );
+  let instant = wall;
+  for (let pass = 0; pass < 2; pass++) {
+    const represented = toZonedInput(new Date(instant), timeZone);
+    const representedUtc = Date.parse(`${represented}:00Z`);
+    instant -= representedUtc - wall;
+  }
+  return new Date(instant).toISOString();
+}
+
+export function isValidTimezone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function initials(name: string): string {

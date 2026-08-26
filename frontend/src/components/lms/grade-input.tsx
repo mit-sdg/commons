@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,29 +14,46 @@ import { cn } from "@/lib/utils";
 
 interface GradeInputProps {
   learner: string;
+  learnerLabel?: string;
   item: string;
+  itemLabel?: string;
   currentScore?: number;
   currentFeedback?: string;
   currentStatus?: string;
+  evidence?: string;
   onSaved: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
   className?: string;
 }
 
 export function GradeInput({
   learner,
+  learnerLabel,
   item,
+  itemLabel,
   currentScore,
   currentFeedback,
   currentStatus,
+  evidence,
   onSaved,
+  onDirtyChange,
   className,
 }: GradeInputProps) {
   const { session } = useAuth();
   const [score, setScore] = useState(currentScore ?? 0);
   const [feedback, setFeedback] = useState(currentFeedback ?? "");
   const [loading, setLoading] = useState(false);
+  const dirty =
+    score !== (currentScore ?? 0) || feedback !== (currentFeedback ?? "");
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
   const itemQuery = useQuery(
-    currentStatus === "DRAFT" ? () => api.grades.item({ item }) : null,
+    !currentStatus || currentStatus === "DRAFT"
+      ? () => api.grades.item({ item })
+      : null,
     [item, currentStatus],
   );
   const scoresQuery = useQuery(
@@ -53,7 +71,7 @@ export function GradeInput({
       item,
       score,
       feedback,
-      evidence: "",
+      evidence: evidence ?? "",
     });
     setLoading(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
@@ -87,6 +105,18 @@ export function GradeInput({
     }
   }
 
+  async function restoreExcused() {
+    if (!session) return;
+    setLoading(true);
+    const result = await api.grades["restore-excused"]({ learner, item });
+    setLoading(false);
+    if ("error" in result) toast.error(publicErrorMessage(result.error));
+    else {
+      toast.success("Excused grade restored to draft");
+      onSaved();
+    }
+  }
+
   async function excuse() {
     if (!session) return;
     const excuseFeedback = feedback || "Excused";
@@ -105,11 +135,30 @@ export function GradeInput({
   }
 
   const locked = currentStatus === "RELEASED" || currentStatus === "EXCUSED";
+  const rubricTotal =
+    scoresQuery.data && !("error" in scoresQuery.data)
+      ? scoresQuery.data.scores.reduce(
+          (total, criterion) => total + criterion.points,
+          0,
+        )
+      : 0;
+  const rubricMaximum =
+    itemQuery.data && !("error" in itemQuery.data)
+      ? itemQuery.data.criteria.reduce(
+          (total, criterion) => total + criterion.maxPoints,
+          0,
+        )
+      : 0;
 
   return (
     <div className={cn("space-y-3", className)}>
       <div className="space-y-2">
-        <Label htmlFor={`grade-score-${learner}-${item}`}>Score</Label>
+        <Label htmlFor={`grade-score-${learner}-${item}`}>
+          Score
+          {itemQuery.data && !("error" in itemQuery.data)
+            ? ` / ${itemQuery.data.maxPoints}`
+            : ""}
+        </Label>
         <Input
           id={`grade-score-${learner}-${item}`}
           type="number"
@@ -131,12 +180,29 @@ export function GradeInput({
           placeholder="Optional feedback for the learner..."
         />
       </div>
-      {currentStatus === "DRAFT" &&
+      {(!currentStatus || currentStatus === "DRAFT") &&
       itemQuery.data &&
       !("error" in itemQuery.data) &&
       itemQuery.data.criteria.length > 0 ? (
         <fieldset className="space-y-3 rounded-lg border border-border bg-muted/25 p-3">
           <legend className="px-1 text-sm font-medium">Rubric scores</legend>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span>
+              Rubric total: {rubricTotal} / {rubricMaximum}
+            </span>
+            {rubricTotal !== score ? (
+              <span className="text-amber-700 dark:text-amber-300">
+                Overall score differs from the rubric total.
+              </span>
+            ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setScore(rubricTotal)}
+            >
+              Set total from rubric
+            </Button>
+          </div>
           {itemQuery.data.criteria.map((criterion) => {
             const existing =
               scoresQuery.data && !("error" in scoresQuery.data)
@@ -177,31 +243,56 @@ export function GradeInput({
           </Button>
         </div>
       ) : currentStatus === "EXCUSED" ? (
-        <p className="text-sm text-muted-foreground">
-          This learner is excused. Excused grades cannot currently be changed.
-        </p>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={save} disabled={loading}>
-            Save draft
-          </Button>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            This learner is excused. Restore the grade to draft before editing
+            it.
+          </p>
           <Button
             size="sm"
             variant="outline"
-            onClick={release}
-            disabled={loading || !currentStatus}
+            onClick={restoreExcused}
+            disabled={loading}
           >
-            Release
+            Restore to draft
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-destructive"
-            onClick={excuse}
-            disabled={loading || !currentStatus}
-          >
-            Excuse
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={save} disabled={loading || !dirty}>
+            Save draft
           </Button>
+          <ConfirmAction
+            title={`Release grade for ${learnerLabel ?? learner}?`}
+            description={`${score} points for ${itemLabel ?? item} will become visible to the learner. Confirm that the feedback and rubric are complete.`}
+            confirmLabel="Release grade"
+            onConfirm={release}
+            trigger={
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={loading || !currentStatus}
+              >
+                Release
+              </Button>
+            }
+          />
+          <ConfirmAction
+            title={`Excuse ${learnerLabel ?? learner}?`}
+            description={`${itemLabel ?? item} will be marked excused with the feedback currently shown: ${feedback || "Excused"}`}
+            confirmLabel="Excuse learner"
+            onConfirm={excuse}
+            trigger={
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive"
+                disabled={loading || !currentStatus}
+              >
+                Excuse
+              </Button>
+            }
+          />
         </div>
       )}
     </div>

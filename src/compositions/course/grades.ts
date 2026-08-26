@@ -15,7 +15,7 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { isActiveStudent, isNotActiveStudent, mayGrade, mayNotGrade } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Grading, Itemizing, Profiling, Rostering } = concepts;
+const { Assigning, Grading, Itemizing, Profiling, Rostering } = concepts;
 
 /** Which released grades belong to this learner? */
 export const theReleasedGradesOf = former(
@@ -69,11 +69,12 @@ export const theCriterionScoresOf = former(
 /** Which grades are on this item? */
 export const theGradesOn = former(
   "the grades on (item)",
-  ({ item }, { learner, grade, score, status }) =>
-    each(Grading._getGradesForItem({ item }).is({ learner, grade, score, status })).form({
+  ({ item }, { learner, grade, score, feedback, status }) =>
+    each(Grading._getGradesForItem({ item }).is({ learner, grade, score, feedback, status })).form({
       learner,
       grade,
       score,
+      feedback,
       status,
     }),
 );
@@ -96,7 +97,21 @@ export const theGradebook = former(
   "the gradebook ()",
   (
     _inputs,
-    { item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, status },
+    {
+      item,
+      label,
+      maxPoints,
+      user,
+      section,
+      displayName,
+      email,
+      cellItem,
+      grade,
+      score,
+      feedback,
+      status,
+      assigned,
+    },
   ) =>
     form({
       items: each(Itemizing._getItems({}).is({ item, label, maxPoints })).form({
@@ -114,15 +129,19 @@ export const theGradebook = former(
           section,
           cells: each(Itemizing._getItems({}).is({ item: cellItem }))
             .where(
+              Assigning._isAssigned({ assignment: cellItem, assignee: user }).is({
+                assigned,
+              }),
               whether(
                 Grading._getGrade({ learner: user, item: cellItem }).is({
                   grade,
                   score,
+                  feedback,
                   status,
                 }),
               ),
             )
-            .form({ item: cellItem, grade, score, status }),
+            .form({ item: cellItem, assigned, grade, score, feedback, status }),
         }),
     }),
 );
@@ -165,6 +184,14 @@ export const GradesItem = endpoint(
           }),
         )
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment: item, assignee: user }).is({ assigned: true }),
+        Itemizing._getItem({ item }).is({ label, maxPoints, status }),
+      )
+        .then(respond({ item, label, maxPoints, status, criteria: theCriteriaOf({ item }) }))
+        .named("learner"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -228,6 +255,13 @@ export const GradesCriterionScores = endpoint(
   "/grades/criterion-scores",
   ({ session, learner, item, user }) =>
     receive({ session, learner, item }).then(
+      where(
+        activeUser({ session }).is({ user: learner }),
+        isActiveStudent({ user: learner }),
+        Grading._getGrade({ learner, item }).is({ status: "RELEASED" }),
+      )
+        .then(respond({ scores: theCriterionScoresOf({ learner, item }) }))
+        .named("learner"),
       where(activeUser({ session }).is({ user }), mayGrade({ user }))
         .then(
           respond({
@@ -359,6 +393,20 @@ export const GradesRetract = endpoint(
     receive({ session, learner, item }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
         .then(Grading.retract({ learner, item, at }).responds({ grade }))
+        .then(respond({ grade }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+
+export const GradesRestoreExcused = endpoint(
+  "/grades/restore-excused",
+  ({ session, learner, item, user, at, grade }) =>
+    receive({ session, learner, item }).then(
+      where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
+        .then(Grading.restoreExcused({ learner, item, at }).responds({ grade }))
         .then(respond({ grade }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))

@@ -204,25 +204,14 @@ export const UpdateClass = endpoint(
     ),
 );
 
-export const ClassConfiguration = endpoint("/roster/class", ({ session, user, detail }) =>
+export const ClassConfiguration = endpoint("/roster/class", ({ session, detail }) =>
   receive({ session }).then(
-    where(
-      activeUser({ session }).is({ user }),
-      mayManageCourse({ user }),
-      theClassConfiguration({}).is({ detail }),
-    )
+    where(activeUser({ session }), theClassConfiguration({}).is({ detail }))
       .then(respond({ class: detail }))
       .named("found"),
-    where(
-      activeUser({ session }).is({ user }),
-      mayManageCourse({ user }),
-      no(theClassConfiguration({})),
-    )
+    where(activeUser({ session }), no(theClassConfiguration({})))
       .then(respond({ class: null }))
       .named("absent"),
-    where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
   ),
 );
 

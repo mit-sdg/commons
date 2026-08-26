@@ -38,9 +38,11 @@ import {
   seatKindOptions,
 } from "@/lib/roster-people";
 
-function SectionManager() {
-  const { session } = useAuth();
-  const { data, refetch } = useQuery<{
+function SectionManager({
+  data,
+  onUpdate,
+}: {
+  data: {
     sections: {
       section: string;
       name: string;
@@ -48,7 +50,10 @@ function SectionManager() {
       meetingPattern?: string;
       status: string;
     }[];
-  }>(() => loadSections(), []);
+  } | null;
+  onUpdate: () => void;
+}) {
+  const { session } = useAuth();
 
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
@@ -74,7 +79,7 @@ function SectionManager() {
       setName("");
       setLocation("");
       setMeetingPattern("");
-      refetch();
+      onUpdate();
     }
   }
 
@@ -92,7 +97,7 @@ function SectionManager() {
     else {
       toast.success("Section updated");
       setEditing(null);
-      refetch();
+      onUpdate();
     }
   }
 
@@ -480,7 +485,7 @@ function RosterPageContent() {
     session,
   ]);
 
-  const { data: sectionsData } = useQuery<{
+  const sectionsQuery = useQuery<{
     sections: {
       section: string;
       name: string;
@@ -495,7 +500,7 @@ function RosterPageContent() {
     (member): member is typeof member & { user: string } =>
       member.user !== null,
   );
-  const sections = sectionsData?.sections ?? [];
+  const sections = sectionsQuery.data?.sections ?? [];
   const pendingMembers = pendingQuery.data?.members ?? [];
   const droppedMembers = droppedQuery.data?.members ?? [];
   const kinds = seatKindOptions([
@@ -548,22 +553,30 @@ function RosterPageContent() {
       />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="sections">Sections</TabsTrigger>
-          <TabsTrigger value="active">
-            Active ({activeMembers.length})
-          </TabsTrigger>
-          <TabsTrigger value="pending">
-            Pending ({pendingMembers.length})
-          </TabsTrigger>
-          <TabsTrigger value="dropped">
-            Dropped ({droppedMembers.length})
-          </TabsTrigger>
-          <TabsTrigger value="add">Add people</TabsTrigger>
-        </TabsList>
+        <p className="mb-2 text-xs text-muted-foreground sm:hidden">
+          Scroll tabs sideways for more roster views →
+        </p>
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="w-max min-w-full">
+            <TabsTrigger value="sections">Sections</TabsTrigger>
+            <TabsTrigger value="active">
+              Active ({activeMembers.length})
+            </TabsTrigger>
+            <TabsTrigger value="pending">
+              Pending ({pendingMembers.length})
+            </TabsTrigger>
+            <TabsTrigger value="dropped">
+              Dropped ({droppedMembers.length})
+            </TabsTrigger>
+            <TabsTrigger value="add">Add people</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="sections" className="mt-6">
-          <SectionManager />
+          <SectionManager
+            data={sectionsQuery.data}
+            onUpdate={sectionsQuery.refetch}
+          />
         </TabsContent>
 
         <TabsContent value="active" className="mt-6">

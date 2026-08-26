@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
+import { CourseProvider } from "@/lib/course";
 import { NotificationCountProvider } from "@/lib/notification-count";
 import { ProfilesProvider } from "@/lib/profiles";
 
@@ -16,12 +17,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <AuthProvider>
-        <NotificationCountProvider>
-          <ProfilesProvider>
-            <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
-            <Toaster position="bottom-center" richColors closeButton />
-          </ProfilesProvider>
-        </NotificationCountProvider>
+        <CourseProvider>
+          <NotificationCountProvider>
+            <ProfilesProvider>
+              <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+              <Toaster position="bottom-center" richColors closeButton />
+            </ProfilesProvider>
+          </NotificationCountProvider>
+        </CourseProvider>
       </AuthProvider>
     </ThemeProvider>
   );

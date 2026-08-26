@@ -4,6 +4,7 @@ import { Archive, ArrowLeft, Eye, Send } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { Link } from "@/components/link";
 import { AssignmentForm } from "@/components/lms/assignment-form";
 import { GradeInput } from "@/components/lms/grade-input";
@@ -12,6 +13,7 @@ import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
+import { TaskMarkdown } from "@/components/tasks/task-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +22,14 @@ import { Label } from "@/components/ui/label";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { count, fullTime, relativeTime } from "@/lib/format";
+import { useCourse } from "@/lib/course";
+import {
+  count,
+  fromZonedInput,
+  fullTime,
+  relativeTime,
+  toZonedInput,
+} from "@/lib/format";
 import {
   loadGradesForItem,
   loadLateDaysForAssignment,
@@ -42,8 +51,9 @@ function DueDateOverride({
   currentDueAt: string | null;
   onUpdate: () => void;
 }) {
+  const { timezone } = useCourse();
   const [dueAt, setDueAt] = useState(
-    new Date(currentDueAt ?? courseDueAt).toISOString().slice(0, 16),
+    toZonedInput(currentDueAt ?? courseDueAt, timezone),
   );
   const [busy, setBusy] = useState(false);
 
@@ -52,7 +62,7 @@ function DueDateOverride({
     const result = await api.assignments["set-due-override"]({
       assignment,
       assignee,
-      dueAt: new Date(dueAt).toISOString(),
+      dueAt: fromZonedInput(dueAt, timezone),
     });
     setBusy(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
@@ -72,7 +82,7 @@ function DueDateOverride({
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
       toast.success(`Course due date restored for ${learnerName}`);
-      setDueAt(new Date(courseDueAt).toISOString().slice(0, 16));
+      setDueAt(toZonedInput(courseDueAt, timezone));
       onUpdate();
     }
   }
@@ -84,7 +94,7 @@ function DueDateOverride({
           htmlFor={`due-override-${assignee}`}
           className="text-xs text-muted-foreground"
         >
-          Individual due date
+          Individual due date ({timezone})
         </Label>
         <Input
           id={`due-override-${assignee}`}
@@ -121,6 +131,7 @@ function StaffAssignmentDetailPageContent({
   const { session } = useAuth();
   const [editing, setEditing] = useState(false);
   const [gradingUser, setGradingUser] = useState<string | null>(null);
+  const [gradingEvidence, setGradingEvidence] = useState<string | null>(null);
 
   const {
     data: asgnData,
@@ -146,6 +157,7 @@ function StaffAssignmentDetailPageContent({
       submitter: string;
       submitterName: string | null;
       submission: string;
+      artifacts: string[];
       submittedAt: string;
       number: number;
       status: string;
@@ -155,8 +167,38 @@ function StaffAssignmentDetailPageContent({
     assignment,
   ]);
 
+  const submissions = subsData?.submissions ?? [];
+  const { data: artifactData } = useQuery<Record<string, string>>(
+    submissions.length > 0
+      ? async () => {
+          const artifacts = [
+            ...new Set(
+              submissions.flatMap((submission) => submission.artifacts),
+            ),
+          ];
+          const entries = await Promise.all(
+            artifacts.map(async (artifact) => {
+              const result = await api.posts.get({ post: artifact });
+              return [
+                artifact,
+                "error" in result ? "" : (result.post?.rendered ?? ""),
+              ] as const;
+            }),
+          );
+          return Object.fromEntries(entries);
+        }
+      : null,
+    [subsData],
+  );
+
   const { data: gradesData, refetch: refetchGrades } = useQuery<{
-    grades: { learner: string; grade: string; score: number; status: string }[];
+    grades: {
+      learner: string;
+      grade: string;
+      score: number;
+      feedback: string;
+      status: string;
+    }[];
   }>(session ? () => loadGradesForItem(assignment) : null, [
     session,
     assignment,
@@ -171,9 +213,9 @@ function StaffAssignmentDetailPageContent({
 
   const detail = asgnData?.summary;
   const assigned = subsData?.assigned ?? [];
-  const submissions = subsData?.submissions ?? [];
   const grades = gradesData?.grades ?? [];
   const lateUsers = lateData?.users ?? [];
+  const draftCount = grades.filter((grade) => grade.status === "DRAFT").length;
 
   const submittedIds = new Set(submissions.map((s) => s.submitter));
   const gradeMap = new Map(grades.map((g) => [g.learner, g]));
@@ -184,8 +226,8 @@ function StaffAssignmentDetailPageContent({
     const result = await api.assignments.publish({ assignment });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("Assignment published!");
-      refetch();
+      await Promise.all([refetch(), refetchSubmissions(), refetchGrades()]);
+      toast.success("Assignment published");
     }
   }
 
@@ -206,7 +248,7 @@ function StaffAssignmentDetailPageContent({
     });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("All grades released");
+      toast.success(`${count(draftCount, "grade")} released`);
       refetchGrades();
     }
   }
@@ -270,22 +312,35 @@ function StaffAssignmentDetailPageContent({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setEditing(true)}
-            >
-              Edit
-            </Button>
-            {detail.status === "DRAFT" && (
+            {detail.status !== "ARCHIVED" ? (
               <Button
                 size="sm"
                 variant="outline"
-                className="text-emerald-600"
-                onClick={publish}
+                onClick={() => setEditing(true)}
               >
-                <Eye className="size-4 mr-1" /> Publish
+                Edit
               </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                Archived assignments are read-only
+              </span>
+            )}
+            {detail.status === "DRAFT" && (
+              <ConfirmAction
+                title="Publish this assignment?"
+                description={`${detail.audience === "EVERYONE" ? "Everyone in the course" : `${detail.targets.length} targeted section${detail.targets.length === 1 ? "" : "s"}`} will receive this assignment. It is available ${fullTime(detail.availableAt)}, due ${fullTime(detail.dueAt)}${detail.closeAt ? `, and closes ${fullTime(detail.closeAt)}` : ""}.`}
+                confirmLabel="Publish assignment"
+                onConfirm={publish}
+                trigger={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-emerald-600"
+                  >
+                    <Eye className="size-4 mr-1" /> Publish
+                  </Button>
+                }
+              />
             )}
             {detail.status !== "ARCHIVED" ? (
               <ConfirmAction
@@ -352,8 +407,8 @@ function StaffAssignmentDetailPageContent({
               confirmLabel="Release grades"
               onConfirm={releaseAll}
               trigger={
-                <Button size="sm" variant="outline">
-                  <Send className="size-4" /> Release drafts
+                <Button size="sm" variant="outline" disabled={draftCount === 0}>
+                  <Send className="size-4" /> Release drafts ({draftCount})
                 </Button>
               }
             />
@@ -396,13 +451,48 @@ function StaffAssignmentDetailPageContent({
                               </Badge>
                             ) : null}
                           </p>
-                          {attempts.length > 1 ? (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Attempts{" "}
-                              {attempts
-                                .map((attempt) => `#${attempt.number}`)
-                                .join(", ")}
-                            </p>
+                          {attempts.length > 0 ? (
+                            <div className="mt-2 space-y-2">
+                              {attempts.map((attempt) => (
+                                <details
+                                  key={attempt.submission}
+                                  className="rounded-md border border-border px-2 py-1.5 text-xs"
+                                >
+                                  <summary className="cursor-pointer font-medium">
+                                    Attempt #{attempt.number} ·{" "}
+                                    {fullTime(attempt.submittedAt)} ·{" "}
+                                    {attempt.status.toLowerCase()}
+                                  </summary>
+                                  <div className="mt-2 space-y-2 border-t border-border pt-2 text-sm">
+                                    {attempt.artifacts.map((artifact) =>
+                                      artifactData?.[artifact] ? (
+                                        <RenderedMarkdown
+                                          key={artifact}
+                                          html={artifactData[artifact]}
+                                        />
+                                      ) : (
+                                        <p
+                                          key={artifact}
+                                          className="text-muted-foreground"
+                                        >
+                                          Submission content is unavailable.
+                                        </p>
+                                      ),
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setGradingEvidence(attempt.submission);
+                                        setGradingUser(learnerId);
+                                      }}
+                                    >
+                                      Grade this attempt
+                                    </Button>
+                                  </div>
+                                </details>
+                              ))}
+                            </div>
                           ) : null}
                         </div>
                         {grade ? (
@@ -429,11 +519,16 @@ function StaffAssignmentDetailPageContent({
                       {isGrading ? (
                         <GradeInput
                           learner={learnerId}
+                          learnerLabel={learner.displayName ?? learner.assignee}
                           item={assignment}
+                          itemLabel={detail.title}
                           currentScore={grade?.score}
+                          currentFeedback={grade?.feedback}
                           currentStatus={grade?.status}
+                          evidence={gradingEvidence ?? latest?.submission}
                           onSaved={() => {
                             setGradingUser(null);
+                            setGradingEvidence(null);
                             refetchGrades();
                           }}
                         />
@@ -441,7 +536,10 @@ function StaffAssignmentDetailPageContent({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setGradingUser(learnerId)}
+                          onClick={() => {
+                            setGradingEvidence(latest?.submission ?? null);
+                            setGradingUser(learnerId);
+                          }}
                         >
                           {grade ? "Review grade" : "Add grade"}
                         </Button>
@@ -460,9 +558,7 @@ function StaffAssignmentDetailPageContent({
               <CardTitle className="text-base">Instructions</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">
-                {detail.instructions}
-              </p>
+              <TaskMarkdown content={detail.instructions} />
             </CardContent>
           </Card>
         )}

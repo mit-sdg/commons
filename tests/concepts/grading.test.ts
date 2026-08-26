@@ -125,7 +125,7 @@ for (const [floor, make] of floors) {
         at: T1,
       });
       expect(await c._getGrade({ learner: "ben", item: "essay" })).toEqual([
-        { grade, score: 0, outOf: 50, status: "EXCUSED", feedback: "medical" },
+        { grade, score: 42, outOf: 50, status: "EXCUSED", feedback: "medical" },
       ]);
       expect(await refusal(() => draft(c, "ben"))).toBeInstanceOf(refusalErrors.LearnerExcused);
       expect(

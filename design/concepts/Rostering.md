@@ -61,6 +61,7 @@ an Active set of Seats
 a Dropped set of Seats
 
 Rule: the class is absent until it is configured, and it is configured at most once.
+Rule: a class timezone must be a valid IANA timezone identifier.
 Rule: an import row carries an email, a kind, and optionally a section and a display name.
 Rule: a display name is an uninterpreted string recorded for the address a seat carries, not for whoever eventually holds it.
 Rule: a display name is written when a pending seat is created and refreshed only while that seat is pending; a seat with a holder is never written, and no read of a held seat answers a display name.
@@ -82,6 +83,9 @@ configureClass(code: String, title: String, term: String, timezone: String) : re
   where a class is already configured
   then
     refuse CLASS_ALREADY_CONFIGURED "The class has already been configured."
+  where timezone is not a valid IANA timezone
+  then
+    refuse CLASS_TIMEZONE_INVALID "Choose a valid IANA timezone."
 
 updateClass(code: String, title: String, term: String, timezone: String) : return (class: Class)
   where a class is configured
@@ -91,6 +95,9 @@ updateClass(code: String, title: String, term: String, timezone: String) : retur
   where no class is configured
   then
     refuse CLASS_NOT_CONFIGURED "The class has not been configured."
+  where timezone is not a valid IANA timezone
+  then
+    refuse CLASS_TIMEZONE_INVALID "Choose a valid IANA timezone."
 
 createSection(name: String, location: String, meetingPattern: String) : return (section: Section)
   where true
@@ -111,10 +118,11 @@ previewImport(csv: String) : return (rows: Rows)
   then
     read the first newline-delimited line as comma-delimited headers
     read each later newline-delimited line as comma-delimited values, without quoting or escaping
+    resolve each non-empty section name or identifier to one active section and mark unknown or ambiguous sections invalid
     return rows
 
 importSeats(rows: Rows) : return (created: Seats, skipped: Strings)
-  where true
+  where every non-empty section identifies an active section
   then
     for each row whose email no seat already carries:
       add a new seat with the row's email, kind, section, and display name, and no holder
@@ -122,6 +130,9 @@ importSeats(rows: Rows) : return (created: Seats, skipped: Strings)
     for each row carrying a display name whose email any seat in pending carries, including a seat this import has just created:
       set that seat's displayName to the row's display name
     return created, skipped
+  where a non-empty section does not identify an active section
+  then
+    refuse SECTION_NOT_FOUND "No such section exists."
 
 enrol(email: String, kind: String, section: Section, user: User) : return (seat: Seat, kind: String, user: User, section: Section)
   where a seat not in pending carries email

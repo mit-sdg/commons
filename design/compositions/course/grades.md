@@ -19,7 +19,7 @@ scores from Grading. The cleanup is a separate consequence: if it faults, the
 criterion stays removed while stale scores can remain. Changing a criterion's maximum does not rewrite the maximum retained with an
 existing Grading score. [Course.grades.GradesCriterionScores](reaction:Course.grades.GradesCriterionScores) forms
 [the remaining criterion scores](former:Course.grades.theCriterionScoresOf) for one learner and item,
-presenting each score beside the criterion's current Itemizing maximum.
+presenting each score beside the criterion's current Itemizing maximum. Staff can read these throughout grading; an active learner can read the item rubric and criterion scores after their overall grade is released.
 
 [Course.grades.GradesRecord](reaction:Course.grades.GradesRecord) records a draft score and feedback using the grade
 item's current maximum. Evidence is an optional submission identity supplied by staff; recording does
@@ -31,9 +31,7 @@ item.
 [Course.grades.GradesReleaseItem](reaction:Course.grades.GradesReleaseItem) releases every draft grade currently on an
 item. [Course.grades.GradesRetract](reaction:Course.grades.GradesRetract) returns one released learner-and-item grade
 to draft.
-[Course.grades.GradesExcuse](reaction:Course.grades.GradesExcuse) marks an existing grade excused with staff
-feedback. These transitions use current application time and retain Grading's
-state-specific refusals.
+[Course.grades.GradesExcuse](reaction:Course.grades.GradesExcuse) marks an existing grade excused with staff feedback after the UI confirms the learner and item. [Course.grades.GradesRestoreExcused](reaction:Course.grades.GradesRestoreExcused) returns an excused grade to draft so staff can correct routine mistakes. These transitions use current application time and retain Grading's state-specific refusals.
 
 An active student sees only
 [their released and excused results](former:Course.grades.theReleasedGradesOf) through
@@ -41,10 +39,10 @@ An active student sees only
 [Course.grades.GradesForStudent](reaction:Course.grades.GradesForStudent) gives callers holding `grade`
 [all grades for one learner](former:Course.grades.theGradesOf).
 [Course.grades.GradesForItem](reaction:Course.grades.GradesForItem) gives the same callers
-[every recorded grade on one item](former:Course.grades.theGradesOn).
+[every recorded grade on one item](former:Course.grades.theGradesOn), including its saved feedback.
 [Course.grades.GradesGradebook](reaction:Course.grades.GradesGradebook) builds
 [the current gradebook](former:Course.grades.theGradebook) from active students, active grade
-items, and any grade cells at read time rather than storing a snapshot. The narrower
+items, and grade cells with assignment-membership status and any saved feedback at read time rather than storing a snapshot. The gradebook frontend disables a targeted assignment's unassigned cells so they cannot become accidental grades through the routine workflow. The narrower
 [theGradebookLearners former](former:Course.grades.theGradebookLearners) exposes the learners a
 gradebook-oriented read covers: the account behind each active seat, presented
 through that account's own profile fields, since a seat records no name of its
@@ -68,6 +66,7 @@ Course.grades.GradesRelease at /grades/release
 Course.grades.GradesReleaseItem at /grades/release-item
 Course.grades.GradesRemoveCriterion at /grades/remove-criterion
 Course.grades.GradesRetract at /grades/retract
+Course.grades.GradesRestoreExcused at /grades/restore-excused
 Course.grades.GradesReviseCriterion at /grades/revise-criterion
 Course.grades.GradesScoreCriterion at /grades/score-criterion
 ```

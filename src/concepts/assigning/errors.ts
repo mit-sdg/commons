@@ -4,6 +4,7 @@ export class AssignmentNotDraft extends Error {}
 export class AssignmentNotFound extends Error {}
 export class AssignmentNotPublished extends Error {}
 export class AssignmentNotRevisable extends Error {}
+export class AssignmentScheduleInvalid extends Error {}
 export class AssignmentTargetsRequired extends Error {}
 export class ReleaseAlreadyExists extends Error {}
 export class ReleaseNotFound extends Error {}

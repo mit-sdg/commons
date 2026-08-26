@@ -18,15 +18,18 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+  - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
 - `revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Bool, audience: String, targets: Sections, at: Date) : return (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Bool)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
   - Refuses `ASSIGNMENT_NOT_REVISABLE`: An archived assignment can no longer be revised.
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+  - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
 - `publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audience: String, targets: Sections, acceptsSubmissions: Bool)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
   - Refuses `ASSIGNMENT_NOT_DRAFT`: Only a draft can be published.
+  - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
 - `archive(assignment: Assignment, at: Date) : return (assignment: Assignment)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
 - `assign(assignment: Assignment, assignee: Assignee, at: Date) : return (release: Release)`
@@ -330,6 +333,8 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 - `releaseItem(item: Item, at: Date) : return (released: Grades)`
 - `retract(learner: Learner, item: Item, at: Date) : return (grade: Grade)`
   - Refuses `GRADE_RELEASED_NOT_FOUND`: There is no released grade for this learner and item.
+- `restoreExcused(learner: Learner, item: Item, at: Date) : return (grade: Grade)`
+  - Refuses `GRADE_EXCUSED_NOT_FOUND`: There is no excused grade for this learner and item.
 - `excuse(learner: Learner, item: Item, grader: Grader, feedback: String, at: Date) : return (grade: Grade)`
   - Refuses `GRADE_NOT_FOUND`: There is no grade for this learner and item.
 - `clearCriterionScores(criterion: Criterion) : return (criterion: Criterion)`
@@ -338,7 +343,7 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 - `_getGrade(learner: String, item: String) : optional (grade: String, score: Number, outOf: Number, status: String, feedback: String)`
 - `_getGradesForLearner(learner: String) : many (item: String, grade: String, score: Number, outOf: Number, status: String, feedback: String)`
-- `_getGradesForItem(item: String) : many (learner: String, grade: String, score: Number, status: String)`
+- `_getGradesForItem(item: String) : many (learner: String, grade: String, score: Number, feedback: String, status: String)`
 - `_getCriterionScores(learner: String, item: String) : many (criterion: String, points: Number, feedback: String)`
 
 #### Instances
@@ -976,13 +981,16 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 - `configureClass(code: String, title: String, term: String, timezone: String) : return (class: Class)`
   - Refuses `CLASS_ALREADY_CONFIGURED`: The class has already been configured.
+  - Refuses `CLASS_TIMEZONE_INVALID`: Choose a valid IANA timezone.
 - `updateClass(code: String, title: String, term: String, timezone: String) : return (class: Class)`
   - Refuses `CLASS_NOT_CONFIGURED`: The class has not been configured.
+  - Refuses `CLASS_TIMEZONE_INVALID`: Choose a valid IANA timezone.
 - `createSection(name: String, location: String, meetingPattern: String) : return (section: Section)`
 - `updateSection(section: Section, name: String, location: String, meetingPattern: String) : return (section: Section)`
   - Refuses `SECTION_NOT_FOUND`: No such section exists.
 - `previewImport(csv: String) : return (rows: Rows)`
 - `importSeats(rows: Rows) : return (created: Seats, skipped: Strings)`
+  - Refuses `SECTION_NOT_FOUND`: No such section exists.
 - `enrol(email: String, kind: String, section: Section, user: User) : return (seat: Seat, kind: String, user: User, section: Section)`
   - Refuses `SEAT_ALREADY_EXISTS`: A seat already exists for this address.
   - Refuses `SEAT_ALREADY_ACTIVE`: This user already holds an active seat.
@@ -1127,7 +1135,7 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 - `_getLatest(assignment: String, submitter: String) : optional (latest: Submission)`
 - `_getAttempts(assignment: String, submitter: String) : many (submission: String, artifacts: Strings, submittedAt: Date, number: Number, status: String)`
-- `_getSubmissionsForAssignment(assignment: String) : many (submitter: String, submission: String, submittedAt: Date, number: Number, status: String)`
+- `_getSubmissionsForAssignment(assignment: String) : many (submitter: String, submission: String, artifacts: Artifacts, submittedAt: Date, number: Number, status: String)`
 - `_getSubmissionsForSubmitter(submitter: String) : many (assignment: String, submission: String, submittedAt: Date, number: Number, status: String)`
 
 #### Instances
@@ -2273,6 +2281,28 @@ Former "the calendar between (start) and (end)" — inputs (start, end); binding
       title
 ```
 
+### the calendar of (student) between (start) and (end)
+
+Authored path: `Course.calendar.theCalendarOf`.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
+
+```former
+Former "the calendar of (student) between (start) and (end)" — inputs (student, start, end); bindings (assignment, release, dueOverride, title, kind, availableAt, dueAt, closeAt, status); promises exactly one record — forms:
+  each Assigning._getAssigned (assignee: student) has (assignment, dueOverride, release)
+    where Assigning._getPublishedInWindow (end, start) has (assignment)
+    where Assigning._getAssignments () has (assignment, availableAt, closeAt, dueAt, kind, status, title)
+    form a record of
+      assignment
+      availableAt
+      closeAt
+      dueAt
+      dueOverride
+      kind
+      release
+      status
+      title
+```
+
 ### the categories ()
 
 Authored path: `Forum.categories.theCategories`.
@@ -2335,7 +2365,7 @@ Former "the criterion scores of (learner) on (item)" — inputs (learner, item);
 ### the dashboard seat of (user)
 
 Authored path: `Course.calendar.theDashboardSeatOf`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 12.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 8.
 
 ```former
 Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder, email, kind, section, status); promises exactly one record — forms:
@@ -2553,10 +2583,10 @@ Former "the forward links of (source)" — inputs (source); bindings (target); p
 ### the gradebook ()
 
 Authored path: `Course.grades.theGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 46.
+- Covered by [Grades](../design/compositions/course/grades.md), line 44.
 
 ```former
-Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, status); promises exactly one record — forms:
+Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user, section, displayName, email, cellItem, grade, score, feedback, status, assigned); promises exactly one record — forms:
   a record of
     items: each Itemizing._getItems () has (item, label, maxPoints)
       form a record of
@@ -2568,8 +2598,11 @@ Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user,
       arranged by displayName
       form a record of
         cells: each Itemizing._getItems () has (item: cellItem)
-          where whether Grading._getGrade (item: cellItem, learner: user) has (grade, score, status)
+          where Assigning._isAssigned (assignee: user, assignment: cellItem) has (assigned)
+          where whether Grading._getGrade (item: cellItem, learner: user) has (feedback, grade, score, status)
           form a record of
+            assigned
+            feedback
             grade
             item: cellItem
             score
@@ -2583,7 +2616,7 @@ Former "the gradebook ()" — inputs (); bindings (item, label, maxPoints, user,
 ### the gradebook learners ()
 
 Authored path: `Course.grades.theGradebookLearners`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 48.
+- Covered by [Grades](../design/compositions/course/grades.md), line 46.
 
 ```former
 Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, email, displayName); promises exactly one record — forms:
@@ -2600,7 +2633,7 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
 ### the grades of (learner)
 
 Authored path: `Course.grades.theGradesOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 42.
+- Covered by [Grades](../design/compositions/course/grades.md), line 40.
 
 ```former
 Former "the grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -2619,12 +2652,13 @@ Former "the grades of (learner)" — inputs (learner); bindings (item, grade, sc
 ### the grades on (item)
 
 Authored path: `Course.grades.theGradesOn`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 44.
+- Covered by [Grades](../design/compositions/course/grades.md), line 42.
 
 ```former
-Former "the grades on (item)" — inputs (item); bindings (learner, grade, score, status); promises exactly one record — forms:
-  each Grading._getGradesForItem (item) has (grade, learner, score, status)
+Former "the grades on (item)" — inputs (item); bindings (learner, grade, score, feedback, status); promises exactly one record — forms:
+  each Grading._getGradesForItem (item) has (feedback, grade, learner, score, status)
     form a record of
+      feedback
       grade
       learner
       score
@@ -2910,7 +2944,7 @@ Former "the moderation queue ()" — inputs (); bindings (target, count, node, c
 ### the notes shown to (learner)
 
 Authored path: `Course.notes.theNotesShownTo`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 16.
 
 ```former
 Former "the notes shown to (learner)" — inputs (learner); bindings (note, author, body, status, createdAt, updatedAt, followUpAt, acknowledgedAt, tags); promises exactly one record — forms:
@@ -3188,7 +3222,7 @@ Former "the registered users ()" — inputs (); bindings (user, username, email,
 ### the released grades of (learner)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 39.
+- Covered by [Grades](../design/compositions/course/grades.md), line 37.
 
 ```former
 Former "the released grades of (learner)" — inputs (learner); bindings (item, grade, score, outOf, status, feedback, label); promises exactly one record — forms:
@@ -3349,7 +3383,7 @@ Former "the staff assignments ()" — inputs (); bindings (assignment, author, t
 ### the staff dashboard ()
 
 Authored path: `Course.calendar.theStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 14.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 10.
 
 ```former
 Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, section, email, displayName); promises exactly one record — forms:
@@ -3367,7 +3401,7 @@ Former "the staff dashboard ()" — inputs (); bindings (user, seat, kind, secti
 ### the staff dashboard counts ()
 
 Authored path: `Course.calendar.theStaffDashboardCounts`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 15.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
 
 ```former
 Former "the staff dashboard counts ()" — inputs (); bindings (assignment, item, learner, use); promises exactly one record — forms:
@@ -3422,10 +3456,11 @@ Authored path: `Course.submissions.theSubmissionsForAssignment`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
 
 ```former
-Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, submittedAt, number, status); promises exactly one record — forms:
-  each Submitting._getSubmissionsForAssignment (assignment) has (number, status, submission, submittedAt, submitter)
+Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
+  each Submitting._getSubmissionsForAssignment (assignment) has (artifacts, number, status, submission, submittedAt, submitter)
     where whether Profiling._getProfileFields (user: submitter) has (displayName: submitterName)
     form a record of
+      artifacts
       number
       status
       submission
@@ -5856,7 +5891,7 @@ then
 
 Authored path: `Course.calendar.CalendarMe`.
 - Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 22.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 18.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
@@ -5871,7 +5906,7 @@ then
 
 Authored path: `Course.calendar.CalendarMe`.
 - Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 22.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 18.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/me", requestId, session, start)
@@ -5879,14 +5914,14 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
 then
-  RequestBoundary.respond (events: former "the calendar between (start) and (end)" with (end, start), requestId)
+  RequestBoundary.respond (events: former "the calendar of (student) between (start) and (end)" with (end, start, student: user), requestId)
 ```
 
 ### Course.calendar.CalendarStaff:forbidden
 
 Authored path: `Course.calendar.CalendarStaff`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 6.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 23.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 19.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
@@ -5900,8 +5935,8 @@ then
 ### Course.calendar.CalendarStaff:success
 
 Authored path: `Course.calendar.CalendarStaff`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 6.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 23.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 5.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 19.
 
 ```reaction
 when RequestBoundary.request (end, path: "/calendar/staff", requestId, session, start)
@@ -5915,8 +5950,8 @@ then
 ### Course.calendar.LmsMe:forbidden
 
 Authored path: `Course.calendar.LmsMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 24.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 7.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 20.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
@@ -5930,8 +5965,8 @@ then
 ### Course.calendar.LmsMe:success
 
 Authored path: `Course.calendar.LmsMe`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 11.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 24.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 7.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 20.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/me", requestId, session)
@@ -5945,8 +5980,8 @@ then
 ### Course.calendar.LmsStaffDashboard:forbidden
 
 Authored path: `Course.calendar.LmsStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 13.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 25.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 9.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 21.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)
@@ -5960,8 +5995,8 @@ then
 ### Course.calendar.LmsStaffDashboard:success
 
 Authored path: `Course.calendar.LmsStaffDashboard`.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 13.
-- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 25.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 9.
+- Covered by [Calendar and dashboards](../design/compositions/course/calendar.md), line 21.
 
 ```reaction
 when RequestBoundary.request (path: "/lms/staff-dashboard", requestId, session)
@@ -6000,7 +6035,7 @@ then
 
 Authored path: `Course.grades.GradesAddCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 13.
-- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+- Covered by [Grades](../design/compositions/course/grades.md), line 54.
 
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
@@ -6015,7 +6050,7 @@ then
 
 Authored path: `Course.grades.GradesAddCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 13.
-- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+- Covered by [Grades](../design/compositions/course/grades.md), line 54.
 
 ```reaction
 when RequestBoundary.request (item, maxPoints, name, path: "/grades/add-criterion", position, requestId, session)
@@ -6030,7 +6065,7 @@ then
 
 Authored path: `Course.grades.GradesAddCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 13.
-- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+- Covered by [Grades](../design/compositions/course/grades.md), line 54.
 
 ```reaction
 when Itemizing.addCriterion (item, maxPoints, name, position, criterion), asked by Course.grades.GradesAddCriterion:success
@@ -6044,7 +6079,7 @@ then
 
 Authored path: `Course.grades.GradesConfigureItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 4.
-- Covered by [Grades](../design/compositions/course/grades.md), line 57.
+- Covered by [Grades](../design/compositions/course/grades.md), line 55.
 
 ```reaction
 when RequestBoundary.request (item, label, maxPoints, path: "/grades/configure-item", requestId, session)
@@ -6059,7 +6094,7 @@ then
 
 Authored path: `Course.grades.GradesConfigureItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 4.
-- Covered by [Grades](../design/compositions/course/grades.md), line 57.
+- Covered by [Grades](../design/compositions/course/grades.md), line 55.
 
 ```reaction
 when RequestBoundary.request (item, label, maxPoints, path: "/grades/configure-item", requestId, session)
@@ -6074,7 +6109,7 @@ then
 
 Authored path: `Course.grades.GradesConfigureItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 4.
-- Covered by [Grades](../design/compositions/course/grades.md), line 57.
+- Covered by [Grades](../design/compositions/course/grades.md), line 55.
 
 ```reaction
 when Itemizing.configureItem (item, label, maxPoints, gradeItem), asked by Course.grades.GradesConfigureItem:success
@@ -6088,7 +6123,7 @@ then
 
 Authored path: `Course.grades.GradesCriterionScores`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 20.
-- Covered by [Grades](../design/compositions/course/grades.md), line 58.
+- Covered by [Grades](../design/compositions/course/grades.md), line 56.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
@@ -6099,11 +6134,27 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Course.grades.GradesCriterionScores:learner
+
+Authored path: `Course.grades.GradesCriterionScores`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 20.
+- Covered by [Grades](../design/compositions/course/grades.md), line 56.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: learner)
+  view "(user) is an active student" with (user: learner)
+  Grading._getGrade (item, learner) has (status: "RELEASED")
+then
+  RequestBoundary.respond (requestId, scores: former "the criterion scores of (learner) on (item)" with (item, learner))
+```
+
 ### Course.grades.GradesCriterionScores:success
 
 Authored path: `Course.grades.GradesCriterionScores`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 20.
-- Covered by [Grades](../design/compositions/course/grades.md), line 58.
+- Covered by [Grades](../design/compositions/course/grades.md), line 56.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/criterion-scores", requestId, session)
@@ -6118,7 +6169,7 @@ then
 
 Authored path: `Course.grades.GradesExcuse`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 34.
-- Covered by [Grades](../design/compositions/course/grades.md), line 59.
+- Covered by [Grades](../design/compositions/course/grades.md), line 57.
 
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
@@ -6133,7 +6184,7 @@ then
 
 Authored path: `Course.grades.GradesExcuse`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 34.
-- Covered by [Grades](../design/compositions/course/grades.md), line 59.
+- Covered by [Grades](../design/compositions/course/grades.md), line 57.
 
 ```reaction
 when RequestBoundary.request (feedback, item, learner, path: "/grades/excuse", requestId, session)
@@ -6149,7 +6200,7 @@ then
 
 Authored path: `Course.grades.GradesExcuse`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 34.
-- Covered by [Grades](../design/compositions/course/grades.md), line 59.
+- Covered by [Grades](../design/compositions/course/grades.md), line 57.
 
 ```reaction
 when Grading.excuse (at, feedback, grader: user, item, learner, grade), asked by Course.grades.GradesExcuse:success
@@ -6162,8 +6213,8 @@ then
 ### Course.grades.GradesExport:forbidden
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 52.
-- Covered by [Grades](../design/compositions/course/grades.md), line 60.
+- Covered by [Grades](../design/compositions/course/grades.md), line 50.
+- Covered by [Grades](../design/compositions/course/grades.md), line 58.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -6177,8 +6228,8 @@ then
 ### Course.grades.GradesExport:success
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 52.
-- Covered by [Grades](../design/compositions/course/grades.md), line 60.
+- Covered by [Grades](../design/compositions/course/grades.md), line 50.
+- Covered by [Grades](../design/compositions/course/grades.md), line 58.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -6192,8 +6243,8 @@ then
 ### Course.grades.GradesForItem:forbidden
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 43.
-- Covered by [Grades](../design/compositions/course/grades.md), line 61.
+- Covered by [Grades](../design/compositions/course/grades.md), line 41.
+- Covered by [Grades](../design/compositions/course/grades.md), line 59.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -6207,8 +6258,8 @@ then
 ### Course.grades.GradesForItem:success
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 43.
-- Covered by [Grades](../design/compositions/course/grades.md), line 61.
+- Covered by [Grades](../design/compositions/course/grades.md), line 41.
+- Covered by [Grades](../design/compositions/course/grades.md), line 59.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -6222,8 +6273,8 @@ then
 ### Course.grades.GradesForMe:not-student
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 40.
-- Covered by [Grades](../design/compositions/course/grades.md), line 62.
+- Covered by [Grades](../design/compositions/course/grades.md), line 38.
+- Covered by [Grades](../design/compositions/course/grades.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -6237,8 +6288,8 @@ then
 ### Course.grades.GradesForMe:success
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 40.
-- Covered by [Grades](../design/compositions/course/grades.md), line 62.
+- Covered by [Grades](../design/compositions/course/grades.md), line 38.
+- Covered by [Grades](../design/compositions/course/grades.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -6252,8 +6303,8 @@ then
 ### Course.grades.GradesForStudent:forbidden
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 41.
-- Covered by [Grades](../design/compositions/course/grades.md), line 63.
+- Covered by [Grades](../design/compositions/course/grades.md), line 39.
+- Covered by [Grades](../design/compositions/course/grades.md), line 61.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -6267,8 +6318,8 @@ then
 ### Course.grades.GradesForStudent:success
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 41.
-- Covered by [Grades](../design/compositions/course/grades.md), line 63.
+- Covered by [Grades](../design/compositions/course/grades.md), line 39.
+- Covered by [Grades](../design/compositions/course/grades.md), line 61.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -6282,8 +6333,8 @@ then
 ### Course.grades.GradesGradebook:forbidden
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
-- Covered by [Grades](../design/compositions/course/grades.md), line 64.
+- Covered by [Grades](../design/compositions/course/grades.md), line 43.
+- Covered by [Grades](../design/compositions/course/grades.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -6297,8 +6348,8 @@ then
 ### Course.grades.GradesGradebook:success
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grades](../design/compositions/course/grades.md), line 45.
-- Covered by [Grades](../design/compositions/course/grades.md), line 64.
+- Covered by [Grades](../design/compositions/course/grades.md), line 43.
+- Covered by [Grades](../design/compositions/course/grades.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -6313,7 +6364,7 @@ then
 
 Authored path: `Course.grades.GradesItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 7.
-- Covered by [Grades](../design/compositions/course/grades.md), line 65.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -6324,11 +6375,28 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Course.grades.GradesItem:learner
+
+Authored path: `Course.grades.GradesItem`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 7.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
+
+```reaction
+when RequestBoundary.request (item, path: "/grades/item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment: item) has (assigned: true)
+  Itemizing._getItem (item) has (label, maxPoints, status)
+then
+  RequestBoundary.respond (criteria: former "the criteria of (item)" with (item), item, label, maxPoints, requestId, status)
+```
+
 ### Course.grades.GradesItem:missing
 
 Authored path: `Course.grades.GradesItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 7.
-- Covered by [Grades](../design/compositions/course/grades.md), line 65.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -6344,7 +6412,7 @@ then
 
 Authored path: `Course.grades.GradesItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 7.
-- Covered by [Grades](../design/compositions/course/grades.md), line 65.
+- Covered by [Grades](../design/compositions/course/grades.md), line 63.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -6360,7 +6428,7 @@ then
 
 Authored path: `Course.grades.GradesRecord`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -6375,7 +6443,7 @@ then
 
 Authored path: `Course.grades.GradesRecord`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -6391,7 +6459,7 @@ then
 
 Authored path: `Course.grades.GradesRecord`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when RequestBoundary.request (evidence, feedback, item, learner, path: "/grades/record", requestId, score, session)
@@ -6408,7 +6476,7 @@ then
 
 Authored path: `Course.grades.GradesRecord`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 24.
-- Covered by [Grades](../design/compositions/course/grades.md), line 66.
+- Covered by [Grades](../design/compositions/course/grades.md), line 64.
 
 ```reaction
 when Grading.record (at, evidence, feedback, grader: user, item, learner, outOf: maxPoints, score, grade), asked by Course.grades.GradesRecord:success
@@ -6422,7 +6490,7 @@ then
 
 Authored path: `Course.grades.GradesRelease`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 30.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 65.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
@@ -6437,7 +6505,7 @@ then
 
 Authored path: `Course.grades.GradesRelease`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 30.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 65.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/release", requestId, session)
@@ -6453,7 +6521,7 @@ then
 
 Authored path: `Course.grades.GradesRelease`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 30.
-- Covered by [Grades](../design/compositions/course/grades.md), line 67.
+- Covered by [Grades](../design/compositions/course/grades.md), line 65.
 
 ```reaction
 when Grading.release (at, item, learner, grade), asked by Course.grades.GradesRelease:success
@@ -6467,7 +6535,7 @@ then
 
 Authored path: `Course.grades.GradesReleaseItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 31.
-- Covered by [Grades](../design/compositions/course/grades.md), line 68.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -6482,7 +6550,7 @@ then
 
 Authored path: `Course.grades.GradesReleaseItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 31.
-- Covered by [Grades](../design/compositions/course/grades.md), line 68.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -6498,7 +6566,7 @@ then
 
 Authored path: `Course.grades.GradesReleaseItem`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 31.
-- Covered by [Grades](../design/compositions/course/grades.md), line 68.
+- Covered by [Grades](../design/compositions/course/grades.md), line 66.
 
 ```reaction
 when Grading.releaseItem (at, item, released), asked by Course.grades.GradesReleaseItem:success
@@ -6512,7 +6580,7 @@ then
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 15.
-- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+- Covered by [Grades](../design/compositions/course/grades.md), line 67.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
@@ -6527,7 +6595,7 @@ then
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 15.
-- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+- Covered by [Grades](../design/compositions/course/grades.md), line 67.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
@@ -6542,7 +6610,7 @@ then
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 15.
-- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+- Covered by [Grades](../design/compositions/course/grades.md), line 67.
 
 ```reaction
 when Itemizing.removeCriterion (criterion, result.criterion: removed), asked by Course.grades.GradesRemoveCriterion:success
@@ -6552,11 +6620,56 @@ then
   RequestBoundary.respond (criterion: removed, requestId)
 ```
 
+### Course.grades.GradesRestoreExcused:forbidden
+
+Authored path: `Course.grades.GradesRestoreExcused`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 34.
+- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/grades/restore-excused", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.grades.GradesRestoreExcused:success
+
+Authored path: `Course.grades.GradesRestoreExcused`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 34.
+- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/grades/restore-excused", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  Grading.restoreExcused (at, item, learner)
+```
+
+### Course.grades.GradesRestoreExcused:success#2
+
+Authored path: `Course.grades.GradesRestoreExcused`.
+- Covered by [Grades](../design/compositions/course/grades.md), line 34.
+- Covered by [Grades](../design/compositions/course/grades.md), line 69.
+
+```reaction
+when Grading.restoreExcused (at, item, learner, grade), asked by Course.grades.GradesRestoreExcused:success
+where
+  earlier, RequestBoundary.request (item, learner, path: "/grades/restore-excused", requestId, session)
+then
+  RequestBoundary.respond (grade, requestId)
+```
+
 ### Course.grades.GradesRetract:forbidden
 
 Authored path: `Course.grades.GradesRetract`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 32.
-- Covered by [Grades](../design/compositions/course/grades.md), line 70.
+- Covered by [Grades](../design/compositions/course/grades.md), line 68.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
@@ -6571,7 +6684,7 @@ then
 
 Authored path: `Course.grades.GradesRetract`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 32.
-- Covered by [Grades](../design/compositions/course/grades.md), line 70.
+- Covered by [Grades](../design/compositions/course/grades.md), line 68.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/grades/retract", requestId, session)
@@ -6587,7 +6700,7 @@ then
 
 Authored path: `Course.grades.GradesRetract`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 32.
-- Covered by [Grades](../design/compositions/course/grades.md), line 70.
+- Covered by [Grades](../design/compositions/course/grades.md), line 68.
 
 ```reaction
 when Grading.retract (at, item, learner, grade), asked by Course.grades.GradesRetract:success
@@ -6601,7 +6714,7 @@ then
 
 Authored path: `Course.grades.GradesReviseCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 14.
-- Covered by [Grades](../design/compositions/course/grades.md), line 71.
+- Covered by [Grades](../design/compositions/course/grades.md), line 70.
 
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
@@ -6616,7 +6729,7 @@ then
 
 Authored path: `Course.grades.GradesReviseCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 14.
-- Covered by [Grades](../design/compositions/course/grades.md), line 71.
+- Covered by [Grades](../design/compositions/course/grades.md), line 70.
 
 ```reaction
 when RequestBoundary.request (criterion, maxPoints, name, path: "/grades/revise-criterion", position, requestId, session)
@@ -6631,7 +6744,7 @@ then
 
 Authored path: `Course.grades.GradesReviseCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 14.
-- Covered by [Grades](../design/compositions/course/grades.md), line 71.
+- Covered by [Grades](../design/compositions/course/grades.md), line 70.
 
 ```reaction
 when Itemizing.reviseCriterion (criterion, maxPoints, name, position, result.criterion: revised), asked by Course.grades.GradesReviseCriterion:success
@@ -6645,7 +6758,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -6661,7 +6774,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -6676,7 +6789,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -6692,7 +6805,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when RequestBoundary.request (criterion, feedback, item, learner, path: "/grades/score-criterion", points, requestId, session)
@@ -6708,7 +6821,7 @@ then
 
 Authored path: `Course.grades.GradesScoreCriterion`.
 - Covered by [Grades](../design/compositions/course/grades.md), line 26.
-- Covered by [Grades](../design/compositions/course/grades.md), line 72.
+- Covered by [Grades](../design/compositions/course/grades.md), line 71.
 
 ```reaction
 when Grading.scoreCriterion (criterion, feedback, item, learner, outOf: critMax, points, criterionScore), asked by Course.grades.GradesScoreCriterion:success
@@ -6733,7 +6846,7 @@ then
 
 Authored path: `Course.lateDays.Apply`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 9.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
@@ -6744,11 +6857,44 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Course.lateDays.Apply:not-assigned
+
+Authored path: `Course.lateDays.Apply`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 9.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: false)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.lateDays.Apply:not-published
+
+Authored path: `Course.lateDays.Apply`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 9.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  no Assigning._getAssignments () has (assignment, status: "PUBLISHED")
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Course.lateDays.Apply:success
 
 Authored path: `Course.lateDays.Apply`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 9.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
@@ -6756,6 +6902,8 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED")
 then
   Banking.apply (at, days, item: assignment, learner: user)
 ```
@@ -6764,7 +6912,7 @@ then
 
 Authored path: `Course.lateDays.Apply`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 9.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
 
 ```reaction
 when Banking.apply (at, days, item: assignment, learner: user, use), asked by Course.lateDays.Apply:success
@@ -6778,7 +6926,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 30.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -6793,7 +6941,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 30.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -6808,7 +6956,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 30.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -6824,7 +6972,7 @@ then
 
 Authored path: `Course.lateDays.Balance`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 14.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 30.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/late-days/balance", requestId, session)
@@ -6840,7 +6988,7 @@ then
 
 Authored path: `Course.lateDays.Cancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 11.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/cancel", requestId, session)
@@ -6855,7 +7003,7 @@ then
 
 Authored path: `Course.lateDays.Cancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 11.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/cancel", requestId, session)
@@ -6870,7 +7018,7 @@ then
 
 Authored path: `Course.lateDays.Cancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 11.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 31.
 
 ```reaction
 when Banking.cancel (item: assignment, learner: user, use), asked by Course.lateDays.Cancel:success
@@ -6884,7 +7032,7 @@ then
 
 Authored path: `Course.lateDays.Change`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 10.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
@@ -6895,17 +7043,52 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Course.lateDays.Change:success
+### Course.lateDays.Change:not-assigned
 
 Authored path: `Course.lateDays.Change`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 10.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
 
 ```reaction
 when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: false)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.lateDays.Change:not-published
+
+Authored path: `Course.lateDays.Change`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 10.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  no Assigning._getAssignments () has (assignment, status: "PUBLISHED")
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.lateDays.Change:success
+
+Authored path: `Course.lateDays.Change`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 10.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED")
 then
   Banking.change (days, item: assignment, learner: user)
 ```
@@ -6914,7 +7097,7 @@ then
 
 Authored path: `Course.lateDays.Change`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 10.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
 
 ```reaction
 when Banking.change (days, item: assignment, learner: user, use), asked by Course.lateDays.Change:success
@@ -6928,7 +7111,7 @@ then
 
 Authored path: `Course.lateDays.ConfigurePolicy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 4.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when RequestBoundary.request (defaultDays, maxDaysPerItem, path: "/late-days/configure-policy", requestId, session, unitHours)
@@ -6943,7 +7126,7 @@ then
 
 Authored path: `Course.lateDays.ConfigurePolicy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 4.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when RequestBoundary.request (defaultDays, maxDaysPerItem, path: "/late-days/configure-policy", requestId, session, unitHours)
@@ -6958,7 +7141,7 @@ then
 
 Authored path: `Course.lateDays.ConfigurePolicy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 4.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 33.
 
 ```reaction
 when Banking.setTerms (allowance: defaultDays, perItemLimit: maxDaysPerItem, unitHours), asked by Course.lateDays.ConfigurePolicy:success
@@ -6972,7 +7155,7 @@ then
 
 Authored path: `Course.lateDays.ForAssignment`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 21.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
@@ -6987,7 +7170,7 @@ then
 
 Authored path: `Course.lateDays.ForAssignment`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 21.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 34.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/late-days/for-assignment", requestId, session)
@@ -7002,7 +7185,7 @@ then
 
 Authored path: `Course.lateDays.Grant`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 6.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
 
 ```reaction
 when RequestBoundary.request (days, learner, path: "/late-days/grant", reason, requestId, session)
@@ -7017,7 +7200,7 @@ then
 
 Authored path: `Course.lateDays.Grant`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 6.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
 
 ```reaction
 when RequestBoundary.request (days, learner, path: "/late-days/grant", reason, requestId, session)
@@ -7033,7 +7216,7 @@ then
 
 Authored path: `Course.lateDays.Grant`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 6.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 35.
 
 ```reaction
 when Banking.grant (at, days, learner, reason, grant), asked by Course.lateDays.Grant:success
@@ -7047,7 +7230,7 @@ then
 
 Authored path: `Course.lateDays.List`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 12.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/list", requestId, session)
@@ -7062,22 +7245,23 @@ then
 
 Authored path: `Course.lateDays.List`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 12.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 36.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/list", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
+  Banking._getTerms () has (perItemLimit: maxDaysPerItem, unitHours)
 then
-  RequestBoundary.respond (requestId, uses: former "the late-day uses of (learner)" with (learner: user))
+  RequestBoundary.respond (maxDaysPerItem, requestId, unitHours, uses: former "the late-day uses of (learner)" with (learner: user))
 ```
 
 ### Course.lateDays.Policy:forbidden
 
 Authored path: `Course.lateDays.Policy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 3.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/policy", requestId, session)
@@ -7092,7 +7276,7 @@ then
 
 Authored path: `Course.lateDays.Policy`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 3.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 40.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/late-days/policy", requestId, session)
@@ -7108,7 +7292,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -7123,7 +7307,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -7139,7 +7323,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when Banking.cancel (item: assignment, learner, use), asked by Course.lateDays.StaffCancel:success
@@ -7153,7 +7337,7 @@ then
 
 Authored path: `Course.lateDays.StaffCancel`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 20.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 41.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 38.
 
 ```reaction
 when RequestBoundary.request (assignment, learner, path: "/late-days/staff-cancel", requestId, session)
@@ -7169,7 +7353,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -7184,7 +7368,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -7200,7 +7384,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when Banking.change (days, item: assignment, learner, use), asked by Course.lateDays.StaffChange:success
@@ -7214,7 +7398,7 @@ then
 
 Authored path: `Course.lateDays.StaffChange`.
 - Covered by [Late days](../design/compositions/course/late-days.md), line 19.
-- Covered by [Late days](../design/compositions/course/late-days.md), line 42.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
 
 ```reaction
 when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
@@ -7229,8 +7413,8 @@ then
 ### Course.notes.Acknowledge:forbidden
 
 Authored path: `Course.notes.Acknowledge`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 27.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/acknowledge", requestId, session)
@@ -7244,8 +7428,8 @@ then
 ### Course.notes.Acknowledge:success
 
 Authored path: `Course.notes.Acknowledge`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 27.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/acknowledge", requestId, session)
@@ -7260,8 +7444,8 @@ then
 ### Course.notes.Acknowledge:success#2
 
 Authored path: `Course.notes.Acknowledge`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 27.
 
 ```reaction
 when Noting.acknowledge (at, learner: user, note), asked by Course.notes.Acknowledge:success
@@ -7275,7 +7459,7 @@ then
 
 Authored path: `Course.notes.Archive`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 6.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/archive", requestId, session)
@@ -7290,7 +7474,7 @@ then
 
 Authored path: `Course.notes.Archive`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 6.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/archive", requestId, session)
@@ -7306,7 +7490,7 @@ then
 
 Authored path: `Course.notes.Archive`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 6.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 28.
 
 ```reaction
 when Noting.archive (at, note), asked by Course.notes.Archive:success
@@ -7320,7 +7504,7 @@ then
 
 Authored path: `Course.notes.NotesList`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 10.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 30.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/students/notes/list", requestId, session)
@@ -7335,7 +7519,7 @@ then
 
 Authored path: `Course.notes.NotesList`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 10.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 30.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 29.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/students/notes/list", requestId, session)
@@ -7349,8 +7533,8 @@ then
 ### Course.notes.NotesVisible:forbidden
 
 Authored path: `Course.notes.NotesVisible`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 30.
 
 ```reaction
 when RequestBoundary.request (path: "/students/notes/visible", requestId, session)
@@ -7364,8 +7548,8 @@ then
 ### Course.notes.NotesVisible:success
 
 Authored path: `Course.notes.NotesVisible`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 18.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 17.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 30.
 
 ```reaction
 when RequestBoundary.request (path: "/students/notes/visible", requestId, session)
@@ -7380,7 +7564,7 @@ then
 
 Authored path: `Course.notes.Resolve`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 5.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/resolve", requestId, session)
@@ -7395,7 +7579,7 @@ then
 
 Authored path: `Course.notes.Resolve`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 5.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/resolve", requestId, session)
@@ -7411,7 +7595,7 @@ then
 
 Authored path: `Course.notes.Resolve`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 5.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 31.
 
 ```reaction
 when Noting.resolve (at, note), asked by Course.notes.Resolve:success
@@ -7425,7 +7609,7 @@ then
 
 Authored path: `Course.notes.Restore`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 7.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/restore", requestId, session)
@@ -7440,7 +7624,7 @@ then
 
 Authored path: `Course.notes.Restore`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 7.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
 
 ```reaction
 when RequestBoundary.request (note, path: "/students/notes/restore", requestId, session)
@@ -7456,7 +7640,7 @@ then
 
 Authored path: `Course.notes.Restore`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 7.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 32.
 
 ```reaction
 when Noting.restore (at, note), asked by Course.notes.Restore:success
@@ -7470,7 +7654,7 @@ then
 
 Authored path: `Course.notes.Revise`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, note, path: "/students/notes/revise", requestId, session, tags, visibility)
@@ -7485,7 +7669,7 @@ then
 
 Authored path: `Course.notes.Revise`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, note, path: "/students/notes/revise", requestId, session, tags, visibility)
@@ -7501,7 +7685,7 @@ then
 
 Authored path: `Course.notes.Revise`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 33.
 
 ```reaction
 when Noting.revise (at, body, followUpAt, note, tags, visibility), asked by Course.notes.Revise:success
@@ -7514,8 +7698,8 @@ then
 ### Course.notes.StudentsDetail:forbidden
 
 Authored path: `Course.notes.StudentsDetail`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 13.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 12.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -7529,8 +7713,8 @@ then
 ### Course.notes.StudentsDetail:found
 
 Authored path: `Course.notes.StudentsDetail`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 13.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 12.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -7538,15 +7722,16 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage student records" with (user)
   view "the seat detail of (user)" with (user: target) has (detail)
+  Profiling._getProfileFields (user: target) has (displayName)
 then
-  RequestBoundary.respond (detail, requestId)
+  RequestBoundary.respond (detail, displayName, requestId)
 ```
 
 ### Course.notes.StudentsDetail:missing
 
 Authored path: `Course.notes.StudentsDetail`.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 13.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 12.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 34.
 
 ```reaction
 when RequestBoundary.request (path: "/students/detail", requestId, session, user: target)
@@ -7555,14 +7740,14 @@ where
   view "(user) may manage student records" with (user)
   no view "the seat detail of (user)" with (user: target)
 then
-  RequestBoundary.respond (detail: null, requestId)
+  RequestBoundary.respond (detail: null, displayName: null, requestId)
 ```
 
 ### Course.notes.Write:forbidden
 
 Authored path: `Course.notes.Write`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 36.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, learner, path: "/students/notes/write", requestId, session, tags, visibility)
@@ -7577,7 +7762,7 @@ then
 
 Authored path: `Course.notes.Write`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 36.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
 
 ```reaction
 when RequestBoundary.request (body, followUpAt, learner, path: "/students/notes/write", requestId, session, tags, visibility)
@@ -7593,7 +7778,7 @@ then
 
 Authored path: `Course.notes.Write`.
 - Covered by [Student notes](../design/compositions/course/notes.md), line 4.
-- Covered by [Student notes](../design/compositions/course/notes.md), line 36.
+- Covered by [Student notes](../design/compositions/course/notes.md), line 35.
 
 ```reaction
 when Noting.write (at, author: user, body, followUpAt, learner, tags, visibility, note), asked by Course.notes.Write:success
@@ -7854,26 +8039,10 @@ Authored path: `Course.roster.ClassConfiguration`.
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the course" with (user)
+  view "the active user of (session)" with (session)
   no view "the class configuration ()"
 then
   RequestBoundary.respond (class: null, requestId)
-```
-
-### Course.roster.ClassConfiguration:forbidden
-
-Authored path: `Course.roster.ClassConfiguration`.
-- Covered by [Roster](../design/compositions/course/roster.md), line 6.
-- Covered by [Roster](../design/compositions/course/roster.md), line 227.
-
-```reaction
-when RequestBoundary.request (path: "/roster/class", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not manage the course" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### Course.roster.ClassConfiguration:found
@@ -7885,8 +8054,7 @@ Authored path: `Course.roster.ClassConfiguration`.
 ```reaction
 when RequestBoundary.request (path: "/roster/class", requestId, session)
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may manage the course" with (user)
+  view "the active user of (session)" with (session)
   view "the class configuration ()" has (detail)
 then
   RequestBoundary.respond (class: detail, requestId)
@@ -16143,6 +16311,7 @@ not listed here have no explicit input contract.
 - `/grades/release` — requires `item`, `learner`, `session`
 - `/grades/release-item` — requires `item`, `session`
 - `/grades/remove-criterion` — requires `criterion`, `session`
+- `/grades/restore-excused` — requires `item`, `learner`, `session`
 - `/grades/retract` — requires `item`, `learner`, `session`
 - `/grades/revise-criterion` — requires `criterion`, `maxPoints`, `name`, `position`, `session`
 - `/grades/score-criterion` — requires `criterion`, `feedback`, `item`, `learner`, `points`, `session`

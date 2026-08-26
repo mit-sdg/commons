@@ -3,7 +3,7 @@
 A course manager establishes the one class record with
 [Course.roster.ConfigureClass](reaction:Course.roster.ConfigureClass). The
 [theClassConfiguration view](view:Course.roster.theClassConfiguration) reads that optional record, which
-[Course.roster.ClassConfiguration](reaction:Course.roster.ClassConfiguration) returns to course managers as `null` before configuration.
+[Course.roster.ClassConfiguration](reaction:Course.roster.ClassConfiguration) returns to authenticated course participants as `null` before configuration so every view can use the class timezone; only course managers can configure or update it.
 [Course.roster.UpdateClass](reaction:Course.roster.UpdateClass) requires `course:manage` to revise that
 record afterwards and refuses `CLASS_NOT_CONFIGURED` while there is none, so
 establishing the class and correcting it stay separate acts rather than one

@@ -433,7 +433,7 @@ describe("the Commons process with MongoDB", () => {
         operatorCookie,
       );
       expect(sectionResult.response.status).toBe(200);
-      const section = String(sectionResult.body.section);
+      const section = String((sectionResult.body.section as { _id: string })._id);
       const imported = await post(
         edge.origin,
         "/api/roster/import",

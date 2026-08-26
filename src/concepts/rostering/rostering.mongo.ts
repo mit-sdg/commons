@@ -2,6 +2,7 @@ import type { Collection, Db } from "mongodb";
 import {
   ClassAlreadyConfigured,
   ClassNotConfigured,
+  ClassTimezoneInvalid,
   SeatAlreadyActive,
   SeatAlreadyExists,
   SeatNotActive,
@@ -80,6 +81,14 @@ export class MongoRosteringConcept {
     return counter?.value ?? 0;
   }
 
+  #checkTimezone(timezone: string) {
+    try {
+      new Intl.DateTimeFormat("en", { timeZone: timezone }).format();
+    } catch {
+      throw new ClassTimezoneInvalid(`${timezone} is not an IANA timezone`);
+    }
+  }
+
   async configureClass({
     code,
     title,
@@ -91,6 +100,7 @@ export class MongoRosteringConcept {
     term: string;
     timezone: string;
   }) {
+    this.#checkTimezone(timezone);
     const existing = await this.classes.findOne({});
     if (existing !== null) {
       throw new ClassAlreadyConfigured(existing.code);
@@ -118,6 +128,7 @@ export class MongoRosteringConcept {
     term: string;
     timezone: string;
   }) {
+    this.#checkTimezone(timezone);
     const existing = await this.classes.findOne({});
     if (existing === null) {
       throw new ClassNotConfigured("no class is configured");
@@ -167,7 +178,7 @@ export class MongoRosteringConcept {
     return { section: { _id: section, name, location, meetingPattern, status: doc.status } };
   }
 
-  previewImport({ csv }: { csv: string }) {
+  async previewImport({ csv }: { csv: string }) {
     const lines = csv.trim().split("\n");
     if (lines.length < 2) return { rows: [] };
     const headers = lines[0].split(",").map((header) => header.trim());
@@ -175,7 +186,25 @@ export class MongoRosteringConcept {
       const values = line.split(",").map((value) => value.trim());
       return Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""]));
     });
-    return { rows };
+    const sections = await this.sections.find({ status: "ACTIVE" }).toArray();
+    return {
+      rows: rows.map((row) => {
+        const requested = row.section?.trim();
+        if (!requested) return row;
+        const matches = sections.filter(
+          (section) =>
+            section._id === requested || section.name.toLowerCase() === requested.toLowerCase(),
+        );
+        return matches.length === 1
+          ? { ...row, section: matches[0]._id, sectionName: matches[0].name }
+          : {
+              ...row,
+              section: requested,
+              sectionName: matches.length === 0 ? "Unknown section" : "Ambiguous section",
+              sectionError: "INVALID",
+            };
+      }),
+    };
   }
 
   async importSeats({
@@ -188,6 +217,18 @@ export class MongoRosteringConcept {
       displayName?: string;
     }[];
   }) {
+    const sectionIds = [
+      ...new Set(
+        rows
+          .map((row) => row.section?.trim())
+          .filter((section): section is string => Boolean(section)),
+      ),
+    ];
+    for (const section of sectionIds) {
+      if ((await this.sections.findOne({ _id: section, status: "ACTIVE" })) === null) {
+        throw new SectionNotFound(section);
+      }
+    }
     const created: SeatRow[] = [];
     const skipped: string[] = [];
     for (const row of rows) {

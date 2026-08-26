@@ -1,6 +1,8 @@
 "use client";
 
 import { CalendarDays } from "lucide-react";
+import { Link } from "@/components/link";
+import { courseTimezone } from "@/lib/course";
 import { fullTime, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +11,7 @@ interface CalendarEvent {
   label: string;
   kind?: string;
   detail?: string;
+  href: string;
 }
 
 interface CalendarViewProps {
@@ -41,10 +44,11 @@ export function CalendarView({ events, className }: CalendarViewProps) {
         const date = new Date(event.date);
         const isPast = date < new Date();
         return (
-          <div
+          <Link
             key={`${event.date}-${event.label || i}`}
+            href={event.href}
             className={cn(
-              "flex items-start gap-3 px-3 py-3 transition-colors",
+              "flex items-start gap-3 px-3 py-3 transition-colors hover:bg-muted/50",
               isPast ? "text-muted-foreground" : "text-foreground",
             )}
           >
@@ -52,6 +56,7 @@ export function CalendarView({ events, className }: CalendarViewProps) {
               {date.toLocaleDateString("en", {
                 month: "short",
                 day: "numeric",
+                timeZone: courseTimezone(),
               })}
             </div>
             <div className="min-w-0 flex-1">
@@ -61,14 +66,11 @@ export function CalendarView({ events, className }: CalendarViewProps) {
                   {event.detail}
                 </p>
               )}
-              <p
-                className="text-xs text-muted-foreground mt-0.5"
-                title={fullTime(event.date)}
-              >
-                {relativeTime(event.date)}
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {fullTime(event.date)} · {relativeTime(event.date)}
               </p>
             </div>
-          </div>
+          </Link>
         );
       })}
     </div>

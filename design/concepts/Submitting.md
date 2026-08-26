@@ -89,8 +89,8 @@ _getAttempts (assignment: String, submitter: String) : many (submission: String,
   answers all attempts in number order
   answers no rows when none match
 
-_getSubmissionsForAssignment (assignment: String) : many (submitter: String, submission: String, submittedAt: Date, number: Number, status: String)
-  answers its attempts in creation order
+_getSubmissionsForAssignment (assignment: String) : many (submitter: String, submission: String, artifacts: Artifacts, submittedAt: Date, number: Number, status: String)
+  answers its attempts and artifact identities in creation order
   answers no rows when none match
 
 _getSubmissionsForSubmitter (submitter: String) : many (assignment: String, submission: String, submittedAt: Date, number: Number, status: String)

@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 function GradebookPageContent() {
   const { session } = useAuth();
+  const [dirtyGrade, setDirtyGrade] = useState(false);
   const [grading, setGrading] = useState<{
     learner: string;
     learnerName: string;
@@ -126,6 +127,7 @@ function GradebookPageContent() {
                         String(candidate.item) === String(item.item),
                     );
                     const status = cell?.status;
+                    const assigned = cell?.assigned === true;
                     return (
                       <TableCell
                         key={String(item.item)}
@@ -134,7 +136,7 @@ function GradebookPageContent() {
                         <button
                           type="button"
                           className={cn(
-                            "min-h-10 w-full rounded-md px-2 py-1 text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            "min-h-10 w-full rounded-md px-2 py-1 text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:hover:bg-transparent",
                             status === "RELEASED" &&
                               "font-medium text-emerald-700 dark:text-emerald-300",
                             status === "DRAFT" &&
@@ -143,8 +145,14 @@ function GradebookPageContent() {
                               "text-purple-700 dark:text-purple-300",
                             !status && "text-muted-foreground",
                           )}
-                          aria-label={`Grade ${learner.displayName ?? learner.email} for ${item.label}`}
+                          aria-label={
+                            assigned
+                              ? `Grade ${learner.displayName ?? learner.email} for ${item.label}`
+                              : `${learner.displayName ?? learner.email} was not assigned ${item.label}`
+                          }
+                          disabled={!assigned}
                           onClick={() =>
+                            assigned &&
                             setGrading({
                               learner: String(learner.learner),
                               learnerName: learner.displayName ?? learner.email,
@@ -153,12 +161,15 @@ function GradebookPageContent() {
                             })
                           }
                         >
-                          {status === "EXCUSED"
-                            ? "Excused"
-                            : cell?.score !== null && cell?.score !== undefined
-                              ? `${cell.score} / ${item.maxPoints}`
-                              : "Add grade"}
-                          {status ? (
+                          {!assigned
+                            ? "N/A — not assigned"
+                            : status === "EXCUSED"
+                              ? "Excused"
+                              : cell?.score !== null &&
+                                  cell?.score !== undefined
+                                ? `${cell.score} / ${item.maxPoints}`
+                                : "Add grade"}
+                          {assigned && status ? (
                             <span className="block text-[0.65rem] uppercase opacity-70">
                               {status.toLowerCase()}
                             </span>
@@ -176,7 +187,16 @@ function GradebookPageContent() {
 
       <Dialog
         open={!!grading}
-        onOpenChange={(open) => !open && setGrading(null)}
+        onOpenChange={(open) => {
+          if (open) return;
+          if (
+            dirtyGrade &&
+            !window.confirm("Discard your unsaved grade changes?")
+          )
+            return;
+          setDirtyGrade(false);
+          setGrading(null);
+        }}
       >
         <DialogContent>
           <DialogHeader>
@@ -188,14 +208,19 @@ function GradebookPageContent() {
           {grading ? (
             <GradeInput
               learner={grading.learner}
+              learnerLabel={grading.learnerName}
               item={grading.item}
+              itemLabel={grading.itemLabel}
               currentScore={
                 typeof selectedCell?.score === "number"
                   ? selectedCell.score
                   : undefined
               }
+              currentFeedback={selectedCell?.feedback ?? undefined}
               currentStatus={selectedCell?.status ?? undefined}
+              onDirtyChange={setDirtyGrade}
               onSaved={() => {
+                setDirtyGrade(false);
                 setGrading(null);
                 refetch();
               }}

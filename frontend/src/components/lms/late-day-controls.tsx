@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { count } from "@/lib/format";
+import { count, fullTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface BalanceInfo {
@@ -20,6 +21,9 @@ interface LateDayControlsProps {
   assignment: string;
   balance: BalanceInfo | null;
   appliedDays: number;
+  dueAt: string;
+  closeAt: string | null;
+  unitHours: number;
   onUpdate: () => void;
   className?: string;
 }
@@ -28,12 +32,19 @@ export function LateDayControls({
   assignment,
   balance,
   appliedDays,
+  dueAt,
+  closeAt,
+  unitHours,
   onUpdate,
   className,
 }: LateDayControlsProps) {
   const { session } = useAuth();
   const [days, setDays] = useState(appliedDays > 0 ? appliedDays : 1);
   const [loading, setLoading] = useState(false);
+  const extend = (value: string, amount: number) =>
+    new Date(new Date(value).getTime() + amount * unitHours * 3600000);
+  const newDue = extend(dueAt, days);
+  const newClose = closeAt ? extend(closeAt, days) : null;
 
   async function apply() {
     if (!session || days <= 0) return;
@@ -117,14 +128,17 @@ export function LateDayControls({
                 disabled={loading}
               />
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={change}
-              disabled={loading}
-            >
-              Change
-            </Button>
+            <ConfirmAction
+              title={`Change to ${count(days, "late day")}?`}
+              description={`The effective due date will be ${fullTime(newDue)}${newClose ? ` and submissions will close ${fullTime(newClose)}` : ""}.`}
+              confirmLabel="Change late days"
+              onConfirm={change}
+              trigger={
+                <Button size="sm" variant="outline" disabled={loading}>
+                  Change
+                </Button>
+              }
+            />
             <Button
               size="sm"
               variant="ghost"
@@ -153,14 +167,21 @@ export function LateDayControls({
               disabled={loading}
             />
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={apply}
-            disabled={loading || !balance || balance.remaining < 1}
-          >
-            Apply Late Days
-          </Button>
+          <ConfirmAction
+            title={`Apply ${count(days, "late day")}?`}
+            description={`This spends ${count(days, "late day")} and moves the effective due date to ${fullTime(newDue)}${newClose ? ` and the submission close to ${fullTime(newClose)}` : ""}.`}
+            confirmLabel="Apply late days"
+            onConfirm={apply}
+            trigger={
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={loading || !balance || balance.remaining < days}
+              >
+                Apply Late Days
+              </Button>
+            }
+          />
         </div>
       )}
     </div>

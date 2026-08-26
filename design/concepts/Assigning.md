@@ -54,6 +54,7 @@ a set of Releases with
 
 Rule: an assignment's audience is either everyone or targets; when it is targets, the targets say which sections are addressed, and an assignment addressed to everyone lists none.
 Rule: whether a given audience and targets agree is a calculation over the inputs alone: everyone suits an empty set of targets, targets suits a set holding at least one, and no other audience value suits a set of targets.
+Rule: an assignment schedule is valid only when availableAt is on or before dueAt and an optional closeAt is on or after dueAt.
 ```
 
 ## Actions
@@ -75,6 +76,9 @@ createDraft(author: Author, title: String, instructions: String, kind: String, a
   where audience is not everyone and audience is not targets
   then
     refuse ASSIGNMENT_AUDIENCE_INVALID "The assignment audience must be EVERYONE or TARGETS."
+  where the assignment schedule is invalid
+  then
+    refuse ASSIGNMENT_SCHEDULE_INVALID "Availability must be on or before the due date, and the due date must be on or before close."
 
 revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Bool, audience: String, targets: Sections, at: Date) : return (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Bool)
   where assignment in assignments, assignment not in archived, and audience suits targets
@@ -97,6 +101,9 @@ revise(assignment: Assignment, title: String, instructions: String, kind: String
   where audience is not everyone and audience is not targets
   then
     refuse ASSIGNMENT_AUDIENCE_INVALID "The assignment audience must be EVERYONE or TARGETS."
+  where the assignment schedule is invalid
+  then
+    refuse ASSIGNMENT_SCHEDULE_INVALID "Availability must be on or before the due date, and the due date must be on or before close."
 
 publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audience: String, targets: Sections, acceptsSubmissions: Bool)
   where assignment in draft
@@ -111,6 +118,9 @@ publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audi
   where assignment in assignments and assignment not in draft
   then
     refuse ASSIGNMENT_NOT_DRAFT "Only a draft can be published."
+  where assignment in draft and its schedule is invalid
+  then
+    refuse ASSIGNMENT_SCHEDULE_INVALID "Availability must be on or before the due date, and the due date must be on or before close."
 
 archive(assignment: Assignment, at: Date) : return (assignment: Assignment)
   where assignment in assignments

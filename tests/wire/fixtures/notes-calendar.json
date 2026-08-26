@@ -980,7 +980,8 @@
           "kind": "STUDENT",
           "section": "uuid#5",
           "status": "ACTIVE"
-        }
+        },
+        "displayName": "Alice"
       }
     },
     {
@@ -997,19 +998,23 @@
         "events": [
           {
             "assignment": "uuid#16",
+            "release": "uuid#25",
             "title": "Homework 1",
             "kind": "HOMEWORK",
             "availableAt": "<date>",
             "dueAt": "<date>",
+            "dueOverride": null,
             "closeAt": "<date>",
             "status": "PUBLISHED"
           },
           {
             "assignment": "uuid#19",
+            "release": "uuid#26",
             "title": "Homework 4",
             "kind": "HOMEWORK",
             "availableAt": "<date>",
             "dueAt": "<date>",
+            "dueOverride": null,
             "closeAt": "<date>",
             "status": "PUBLISHED"
           }
@@ -1102,7 +1107,7 @@
         "capabilities": ["course:manage", "grade", "student-records"]
       },
       "response": {
-        "role": "uuid#25"
+        "role": "uuid#27"
       }
     },
     {

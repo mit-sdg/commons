@@ -55,6 +55,10 @@ function GradeSetupForm({
   const [editName, setEditName] = useState("");
   const [editPoints, setEditPoints] = useState(0);
   const [busy, setBusy] = useState(false);
+  const criteriaMaximum = detail.criteria.reduce(
+    (total, criterion) => total + criterion.maxPoints,
+    0,
+  );
 
   async function configure() {
     setBusy(true);
@@ -142,10 +146,24 @@ function GradeSetupForm({
               onChange={(event) => setMaxPoints(Number(event.target.value))}
             />
           </div>
-          <Button onClick={configure} disabled={busy || !label.trim()}>
+          <Button
+            onClick={configure}
+            disabled={
+              busy ||
+              !label.trim() ||
+              (label === detail.label && maxPoints === detail.maxPoints)
+            }
+          >
             Save settings
           </Button>
         </div>
+
+        {detail.criteria.length > 0 && criteriaMaximum !== maxPoints ? (
+          <p className="rounded-md border border-amber-400/40 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            Rubric criteria total {criteriaMaximum} points, which differs from
+            the {maxPoints}-point overall grade.
+          </p>
+        ) : null}
 
         <div className="border-t border-border pt-5">
           <div className="mb-3">

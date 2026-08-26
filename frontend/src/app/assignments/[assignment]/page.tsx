@@ -3,11 +3,13 @@
 import { ArrowLeft, Clock, GraduationCap, Send } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
+import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { Link } from "@/components/link";
 import { LateDayControls } from "@/components/lms/late-day-controls";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
+import { TaskMarkdown } from "@/components/tasks/task-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,6 +86,28 @@ export default function AssignmentDetailPage({
       : null,
     [assignment, me, asgnData],
   );
+  const attempts = attemptsData?.attempts ?? [];
+
+  const { data: artifactData } = useQuery<Record<string, string>>(
+    attempts.length > 0
+      ? async () => {
+          const artifacts = [
+            ...new Set(attempts.flatMap((item) => item.artifacts)),
+          ];
+          const entries = await Promise.all(
+            artifacts.map(async (artifact) => {
+              const result = await api.posts.get({ post: artifact });
+              return [
+                artifact,
+                "error" in result ? "" : (result.post?.rendered ?? ""),
+              ] as const;
+            }),
+          );
+          return Object.fromEntries(entries);
+        }
+      : null,
+    [attemptsData],
+  );
 
   const { data: lateBalance, refetch: refetchLate } = useQuery<{
     balance: { granted: number; used: number; remaining: number };
@@ -99,13 +123,30 @@ export default function AssignmentDetailPage({
     [me, session],
   );
 
+  const releasedGrade = gradesData?.grades?.find(
+    (grade) => grade.item === assignment && grade.status === "RELEASED",
+  );
+  const { data: gradeItemData } = useQuery(
+    releasedGrade ? () => api.grades.item({ item: assignment }) : null,
+    [releasedGrade, assignment],
+  );
+  const { data: criterionScoreData } = useQuery(
+    releasedGrade && me
+      ? () =>
+          api.grades["criterion-scores"]({
+            learner: String(me.user),
+            item: assignment,
+          })
+      : null,
+    [releasedGrade, me, assignment],
+  );
+
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const detail =
     asgnData?.assignment && !("error" in asgnData) ? asgnData.assignment : null;
   const latest = subData?.submission;
-  const attempts = attemptsData?.attempts ?? [];
   const balance = lateBalance?.balance ?? null;
   const myGrade = gradesData?.grades?.find((g) => g.item === assignment);
   const appliedLateUse = lateUseData?.uses.find(
@@ -156,13 +197,19 @@ export default function AssignmentDetailPage({
       </PageContainer>
     );
 
-  const due =
+  const baseDue =
     assignmentsData?.assignments.find(
       (release) => release.assignment === assignment,
     )?.dueOverride ?? detail.dueAt;
+  const unitHours = lateUseData?.unitHours ?? 24;
+  const extensionMs = (appliedLateUse?.days ?? 0) * unitHours * 3600000;
+  const due = new Date(new Date(baseDue).getTime() + extensionMs).toISOString();
+  const effectiveClose = detail.closeAt
+    ? new Date(new Date(detail.closeAt).getTime() + extensionMs).toISOString()
+    : null;
   const now = new Date();
   const isOverdue = new Date(due) < now;
-  const isPastClose = detail.closeAt ? new Date(detail.closeAt) < now : false;
+  const isPastClose = effectiveClose ? new Date(effectiveClose) < now : false;
   const canSubmit =
     detail.acceptsSubmissions && !isPastClose && detail.status === "PUBLISHED";
 
@@ -177,10 +224,10 @@ export default function AssignmentDetailPage({
         </Link>
       </div>
 
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="font-display text-3xl font-semibold tracking-tight">
+      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h1 className="min-w-0 break-words font-display text-3xl font-semibold tracking-tight">
               {detail.title}
             </h1>
             <Badge variant="secondary">
@@ -189,7 +236,7 @@ export default function AssignmentDetailPage({
             <StatusBadge status={detail.status} />
           </div>
         </div>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href="/grades">
             <GraduationCap className="size-4 mr-1" /> View grades
           </Link>
@@ -204,9 +251,7 @@ export default function AssignmentDetailPage({
                 <CardTitle className="text-base">Instructions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap text-sm">
-                  {detail.instructions}
-                </div>
+                <TaskMarkdown content={detail.instructions} />
               </CardContent>
             </Card>
           )}
@@ -254,22 +299,40 @@ export default function AssignmentDetailPage({
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {[...attempts].reverse().map((a) => (
-                    <div
-                      key={a.submission}
+                  {[...attempts].reverse().map((attempt) => (
+                    <details
+                      key={attempt.submission}
                       className={cn(
-                        "flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm",
-                        a.status === "WITHDRAWN" && "opacity-60",
+                        "rounded-lg border border-border px-3 py-2 text-sm",
+                        attempt.status === "WITHDRAWN" && "opacity-60",
                       )}
                     >
-                      <div>
-                        <span className="font-medium">Attempt #{a.number}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {fullTime(a.submittedAt)}
+                      <summary className="flex cursor-pointer items-center justify-between gap-3">
+                        <span>
+                          <span className="font-medium">
+                            Attempt #{attempt.number}
+                          </span>
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {fullTime(attempt.submittedAt)}
+                          </span>
                         </span>
+                        <StatusBadge status={attempt.status} />
+                      </summary>
+                      <div className="mt-3 border-t border-border pt-3">
+                        {attempt.artifacts.map((artifact) =>
+                          artifactData?.[artifact] ? (
+                            <RenderedMarkdown
+                              key={artifact}
+                              html={artifactData[artifact]}
+                            />
+                          ) : (
+                            <p key={artifact} className="text-muted-foreground">
+                              Submission content is unavailable.
+                            </p>
+                          ),
+                        )}
                       </div>
-                      <StatusBadge status={a.status} />
-                    </div>
+                    </details>
                   ))}
                 </div>
               </CardContent>
@@ -296,6 +359,32 @@ export default function AssignmentDetailPage({
                       {myGrade.feedback}
                     </p>
                   )}
+                  {gradeItemData &&
+                  !("error" in gradeItemData) &&
+                  criterionScoreData &&
+                  !("error" in criterionScoreData) &&
+                  criterionScoreData.scores.length > 0 ? (
+                    <div className="space-y-2 border-t border-border pt-3">
+                      <p className="text-sm font-medium">Rubric results</p>
+                      {criterionScoreData.scores.map((criterionScore) => {
+                        const criterion = gradeItemData.criteria.find(
+                          (item) => item.criterion === criterionScore.criterion,
+                        );
+                        return (
+                          <div
+                            key={criterionScore.criterion}
+                            className="flex justify-between gap-3 text-sm"
+                          >
+                            <span>{criterion?.name ?? "Criterion"}</span>
+                            <span>
+                              {criterionScore.points} /{" "}
+                              {criterionScore.maxPoints}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </CardContent>
               </Card>
             )}
@@ -321,10 +410,10 @@ export default function AssignmentDetailPage({
                   {fullTime(due)}
                 </p>
               </div>
-              {detail.closeAt && (
+              {effectiveClose && (
                 <div>
                   <p className="text-muted-foreground">Closes</p>
-                  <p className="font-medium">{fullTime(detail.closeAt)}</p>
+                  <p className="font-medium">{fullTime(effectiveClose)}</p>
                 </div>
               )}
             </CardContent>
@@ -334,6 +423,9 @@ export default function AssignmentDetailPage({
             assignment={assignment}
             balance={balance}
             appliedDays={appliedLateUse?.days ?? 0}
+            dueAt={baseDue}
+            closeAt={detail.closeAt}
+            unitHours={unitHours}
             onUpdate={handleUpdate}
           />
 

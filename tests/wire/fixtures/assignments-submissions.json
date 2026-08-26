@@ -1052,6 +1052,7 @@
             "submitter": "uuid#11",
             "submitterName": "Alice",
             "submission": "uuid#28",
+            "artifacts": ["uuid#30"],
             "submittedAt": "<date>",
             "number": 1,
             "status": "SUBMITTED"
@@ -1060,6 +1061,7 @@
             "submitter": "uuid#11",
             "submitterName": "Alice",
             "submission": "uuid#29",
+            "artifacts": ["uuid#31"],
             "submittedAt": "<date>",
             "number": 2,
             "status": "SUBMITTED"
@@ -1123,7 +1125,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#30"
+        "assignment": "uuid#32"
       }
     },
     {
@@ -1136,7 +1138,7 @@
         "assignment": "$createHw3Closed.assignment"
       },
       "response": {
-        "assignment": "uuid#30"
+        "assignment": "uuid#32"
       }
     },
     {
@@ -1150,7 +1152,7 @@
         "content": "Better late."
       },
       "response": {
-        "submission": "uuid#31"
+        "submission": "uuid#33"
       }
     },
     {
@@ -1171,7 +1173,7 @@
         "targets": []
       },
       "response": {
-        "assignment": "uuid#32"
+        "assignment": "uuid#34"
       }
     },
     {
@@ -1185,7 +1187,7 @@
         "content": "Submitting to a draft."
       },
       "response": {
-        "submission": "uuid#33"
+        "submission": "uuid#35"
       }
     },
     {
@@ -1199,7 +1201,7 @@
         "content": "Into the void."
       },
       "response": {
-        "submission": "uuid#34"
+        "submission": "uuid#36"
       }
     },
     {
@@ -1251,7 +1253,7 @@
         "assignment": "$createHw3Closed.assignment"
       },
       "response": {
-        "assignment": "uuid#30"
+        "assignment": "uuid#32"
       }
     },
     {

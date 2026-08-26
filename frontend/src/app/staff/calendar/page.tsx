@@ -88,6 +88,7 @@ function StaffCalendarPageContent() {
             label: `Due: ${name}`,
             kind: "due",
             detail: d.kind,
+            href: `/staff/assignments/${e.assignment}`,
           }
         : null,
       d?.closeAt
@@ -96,6 +97,7 @@ function StaffCalendarPageContent() {
             label: `Closes: ${name}`,
             kind: "close",
             detail: d.kind,
+            href: `/staff/assignments/${e.assignment}`,
           }
         : null,
     ].filter(Boolean) as {
@@ -103,6 +105,7 @@ function StaffCalendarPageContent() {
       label: string;
       kind?: string;
       detail?: string;
+      href: string;
     }[];
   });
 

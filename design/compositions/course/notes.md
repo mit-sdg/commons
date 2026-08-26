@@ -9,8 +9,7 @@ uses current application time and leaves Noting's lifecycle refusals in force.
 
 [Course.notes.NotesList](reaction:Course.notes.NotesList) gives callers holding `student-records`
 [the learner's open and resolved notes](former:Course.notes.theStaffNotesOn), whether staff-only or disclosed.
-The [theSeatDetailOf view](view:Course.notes.theSeatDetailOf) relates an account to its roster detail, which
-[Course.notes.StudentsDetail](reaction:Course.notes.StudentsDetail) returns to the same staff; an absent seat is
+The [theSeatDetailOf view](view:Course.notes.theSeatDetailOf) relates an account to its roster detail, which [Course.notes.StudentsDetail](reaction:Course.notes.StudentsDetail) returns beside the account's profile display name to the same staff; an absent seat is
 `null`, while a caller without `student-records` receives `FORBIDDEN`.
 
 An active student sees only

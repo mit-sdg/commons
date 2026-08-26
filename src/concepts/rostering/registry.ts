@@ -5,6 +5,7 @@ import { MongoRosteringConcept } from "./rostering.mongo.ts";
 import {
   ClassAlreadyConfigured,
   ClassNotConfigured,
+  ClassTimezoneInvalid,
   SeatAlreadyActive,
   SeatAlreadyExists,
   SeatNotActive,
@@ -20,6 +21,7 @@ export const rostering = registerConcept({
   refusals: {
     CLASS_ALREADY_CONFIGURED: ClassAlreadyConfigured,
     CLASS_NOT_CONFIGURED: ClassNotConfigured,
+    CLASS_TIMEZONE_INVALID: ClassTimezoneInvalid,
     SECTION_NOT_FOUND: SectionNotFound,
     SEAT_NOT_FOUND: SeatNotFound,
     SEAT_NOT_PENDING: SeatNotPending,

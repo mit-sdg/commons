@@ -140,12 +140,23 @@ retract(learner: Learner, item: Item, at: Date) : return (grade: Grade)
   then
     refuse GRADE_RELEASED_NOT_FOUND "There is no released grade for this learner and item."
 
+restoreExcused(learner: Learner, item: Item, at: Date) : return (grade: Grade)
+  where the grade of learner and item is in excused
+  then
+    remove grade from excused
+    add grade to draft
+    set grade's releasedAt to none and updatedAt to at
+    return grade
+  where learner has no excused grade for item
+  then
+    refuse GRADE_EXCUSED_NOT_FOUND "There is no excused grade for this learner and item."
+
 excuse(learner: Learner, item: Item, grader: Grader, feedback: String, at: Date) : return (grade: Grade)
   where learner has a grade for item
   then
     remove grade from draft and from released
     add grade to excused
-    set grade's score to 0, grader to grader, feedback to feedback, releasedAt to none, and updatedAt to at
+    keep grade's score for a possible correction, set grader to grader, feedback to feedback, releasedAt to none, and updatedAt to at
     return grade
   where learner has no grade for item
   then
@@ -169,8 +180,8 @@ _getGradesForLearner (learner: String) : many (item: String, grade: String, scor
   answers all of the learner's grades in creation order, including each recorded maximum and feedback
   answers no rows when none match
 
-_getGradesForItem (item: String) : many (learner: String, grade: String, score: Number, status: String)
-  answers all grades for the item in creation order
+_getGradesForItem (item: String) : many (learner: String, grade: String, score: Number, feedback: String, status: String)
+  answers all grades for the item in creation order, including saved feedback
   answers no rows when none match
 
 _getCriterionScores (learner: String, item: String) : many (criterion: String, points: Number, feedback: String)
