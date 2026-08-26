@@ -18,7 +18,7 @@ import {
 import { useQuery } from "@/hooks/use-query";
 import { useAuth } from "@/lib/auth";
 import { fullTime } from "@/lib/format";
-import { loadStaffAssignments } from "@/lib/lms";
+import { loadSections, loadStaffAssignments } from "@/lib/lms";
 
 const KIND_LABELS: Record<string, string> = {
   HOMEWORK: "Homework",
@@ -47,8 +47,19 @@ function StaffAssignmentsPageContent() {
       dueAt: string;
       availableAt: string;
       audience: string;
+      targets: string[];
     }[];
   }>(session ? () => loadStaffAssignments() : null, [session]);
+
+  const sectionsQuery = useQuery(session ? () => loadSections() : null, [
+    session,
+  ]);
+  const sectionNames = new Map(
+    (sectionsQuery.data?.sections ?? []).map((section) => [
+      String(section.section),
+      section.name,
+    ]),
+  );
 
   const filters = [
     { key: "all", label: "All" },
@@ -121,7 +132,14 @@ function StaffAssignmentsPageContent() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Due: {fullTime(a.dueAt)} | Audience:{" "}
-                  {a.audience.toLowerCase()}
+                  {a.audience === "EVERYONE"
+                    ? "Everyone"
+                    : a.targets
+                        .map(
+                          (target) =>
+                            sectionNames.get(target) ?? "Unknown section",
+                        )
+                        .join(", ")}
                 </p>
               </div>
               <StatusBadge status={a.status} />
