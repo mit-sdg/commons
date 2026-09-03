@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
+import { titleFromBrief } from "@/components/live/copy-relay";
 import { DraftDescribe } from "@/components/live/draft-describe";
 import type { DraftLineStep } from "@/components/live/draft-step";
 import { DraftStep } from "@/components/live/draft-step";
@@ -14,10 +15,27 @@ import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@/hooks/use-query";
 import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { relativeTime } from "@/lib/format";
+
+const KINDS = [
+  { kind: "quiz", label: "Quiz" },
+  { kind: "survey", label: "Survey" },
+  { kind: "relay", label: "Relay" },
+] as const;
+
+type Kind = (typeof KINDS)[number]["kind"];
+
+function isKind(value: string | null): value is Kind {
+  return KINDS.some((entry) => entry.kind === value);
+}
+
+/** The grain of a relay brief: the rounds, and what the later one is handed. */
+const RELAY_EXAMPLE =
+  "two rounds: three verbs for a concept, then a stranger guesses it from the verbs alone";
 
 /** The brief the author is drafting against, kept across a reload. */
 const BRIEF_STORAGE_KEY = "commons-live-draft-brief";
@@ -80,6 +98,10 @@ function DraftPageContent() {
   const { me } = useAuth();
   const author = me === null ? null : String(me.user);
   const named = searchParams.get("brief");
+  const askedKind = searchParams.get("kind");
+  const [kind, setKind] = useState<Kind>(
+    isKind(askedKind) ? askedKind : "quiz",
+  );
   const [brief, setBrief] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
   const [resumed, setResumed] = useState(false);
@@ -206,6 +228,35 @@ function DraftPageContent() {
     [author],
   );
 
+  // A relay is drafted onto a relay of its own: the brief names it, the model
+  // proposes its rounds on the edit page.
+  const draftRelay = useCallback(
+    async (request: string) => {
+      setDescribing(true);
+      const planned = await api["/live/relays/plan"]({
+        title: titleFromBrief(request),
+      });
+      if (isApiError(planned)) {
+        setDescribing(false);
+        toast.error(publicErrorMessage(planned.error));
+        return;
+      }
+      const asked = await api["/live/edits/draft"]({
+        relay: planned.relay,
+        request,
+      });
+      if (isApiError(asked)) {
+        setDescribing(false);
+        toast.error(publicErrorMessage(asked.error));
+        return;
+      }
+      router.push(
+        `/staff/live/relay/${planned.relay}/edit?draft=${asked.asking}`,
+      );
+    },
+    [router],
+  );
+
   const clarify = useCallback(
     async (clarification: string, answer: string) => {
       setBusy(true);
@@ -267,7 +318,7 @@ function DraftPageContent() {
           const questionnaire = step?.composed ?? step?.refines ?? null;
           if (questionnaire !== null) {
             toast.success("Draft adopted");
-            router.push(`/staff/live/${questionnaire}`);
+            router.push(`/staff/live/${questionnaire}/edit`);
             return;
           }
         }
@@ -305,7 +356,9 @@ function DraftPageContent() {
       <PageHeader
         eyebrow={
           <Link
-            href={refining !== null ? `/staff/live/${refining}` : "/staff/live"}
+            href={
+              refining !== null ? `/staff/live/${refining}/edit` : "/staff/live"
+            }
             className="inline-flex items-center gap-1 hover:text-foreground"
           >
             <ArrowLeft className="size-3" />
@@ -337,8 +390,33 @@ function DraftPageContent() {
         <LoadingState label="Loading…" />
       ) : brief === null ? (
         <>
-          <DraftDescribe submitting={describing} onSubmit={describe} />
-          {unfinished.length > 0 ? (
+          <Tabs
+            value={kind}
+            className="mb-6"
+            onValueChange={(value) => {
+              if (isKind(value)) setKind(value);
+            }}
+          >
+            <TabsList>
+              {KINDS.map((entry) => (
+                <TabsTrigger key={entry.kind} value={entry.kind}>
+                  {entry.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          {kind === "relay" ? (
+            <DraftDescribe
+              submitting={describing}
+              onSubmit={draftRelay}
+              title="Describe the relay you want"
+              placeholder={RELAY_EXAMPLE}
+              label="Draft"
+            />
+          ) : (
+            <DraftDescribe submitting={describing} onSubmit={describe} />
+          )}
+          {kind !== "relay" && unfinished.length > 0 ? (
             <section className="mt-10 space-y-3">
               <h2 className="font-display text-lg font-semibold">
                 Unfinished drafts

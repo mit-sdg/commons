@@ -12,22 +12,32 @@ import {
   normalizeTitle,
   QUESTIONING_LIMITS,
 } from "../concepts/questioning/constraints.ts";
+import { CARRY_USES, isCarryUse, type RoundKind, roundKind } from "./live-carries.ts";
 
 /** How many rounds one relay-drafting reply may deliver. */
 const ROUNDS = 20;
 
-/** The shapes this composition fills when a round takes from an earlier one. */
-const SHAPES = ["picked", "every", "top"];
+const KINDS: RoundKind[] = ["write", "list", "vote"];
 
-const CONTRACT = `You revise a relay for a live classroom tool. A relay is a short series of rounds run in one meeting; each round is one question the room answers on phones, and a later round can take what an earlier round produced.
+/** The table of uses as the model reads it: one line per kind. */
+const USES_TABLE = KINDS.map(
+  (kind) =>
+    `  ${kind}: ${CARRY_USES.filter((entry) => entry.kinds.includes(kind))
+      .map((entry) => `"${entry.use}"`)
+      .join(", ")}`,
+).join("\n");
+
+const CONTRACT = `You revise a relay for a live classroom tool. A relay is a short series of rounds run in one meeting; each round is one question the room answers on phones. Every round leaves named groups on the wall — piles of written answers, or the choices of a vote with their counts — and a later round can take the groups the staff member picks from an earlier round.
 Reply with exactly one JSON object and nothing else.
 
-{"kind":"relay","rounds":[{"number":1,"title":"...","prompt":"...","parts":[],"cap":0,"choices":[],"takes":{"from":0,"shape":""}}]}
+{"kind":"relay","rounds":[{"number":1,"kind":"write","title":"...","prompt":"...","parts":[],"cap":0,"choices":[],"takes":{"from":0,"use":""}}]}
 - Deliver the whole relay as it should read afterward, in order, including the rounds you leave unchanged.
 - "number" is the round's number in the relay as it stands, so a round you keep, rename, or move keeps its number wherever it lands; a round you add has "number":0. Never give two rounds the same standing number.
 - "title" names the round and is 1 to ${QUESTIONING_LIMITS.title} characters; "prompt" is the question the room reads and is 1 to ${QUESTIONING_LIMITS.prompt} characters.
-- A round offers "choices" or takes "parts", never both. "choices" are up to ${QUESTIONING_LIMITS.choices} distinct, nonblank options. "parts" are up to ${QUESTIONING_LIMITS.parts} short labels — one box each, with "cap":0 — or one label with a "cap" of 2 to ${QUESTIONING_LIMITS.cap} for one box repeated up to that many times. A round with neither takes one written answer.
-- "takes" says what a round carries from an earlier round: "from" is that round's number in the relay you deliver and "shape" is "picked" (the piles the staff member tapped), "every" (every pile), or "top" (the fullest piles). A round that takes nothing has {"from":0,"shape":""}. A round that takes piles gets its choices from them when it opens, so give it "choices":[]; never invent placeholder choices.
+- A round's "kind" is "write" (one written answer; "parts":[] and "choices":[]), "list" (several written answers: "parts" are up to ${QUESTIONING_LIMITS.parts} short labels, one box each with "cap":0, or one label with a "cap" of 2 to ${QUESTIONING_LIMITS.cap} for one box repeated; "choices":[]), or "vote" ("choices" are 2 to ${QUESTIONING_LIMITS.choices} distinct, nonblank options; "parts":[]).
+- "takes" says what a round does with the groups picked from an earlier round: "from" is that round's number in the relay you deliver, and "use" is one of the uses open to the round's kind:
+${USES_TABLE}
+  "context" shows the picked groups above the prompt; "choices" makes them the vote's choices, so give that round "choices":[]; "parts" makes them the boxes, so give that round "parts":[]. A round that takes nothing has {"from":0,"use":""}. Never invent placeholder choices or parts for what a round takes.
 - Deliver 1 to ${ROUNDS} rounds.`;
 
 /** One leg of the relay's plan, as Relaying answers it. */
@@ -136,20 +146,69 @@ function standingRounds(legs: unknown, materials: unknown): StandingRound[] {
 
 /** What the reasoner is shown of the relay: its rounds by number, never by identity. */
 function standingFace(legs: unknown, materials: unknown) {
-  return standingRounds(legs, materials).map(({ leg: _leg, ...round }) => round);
+  return standingRounds(legs, materials).map(({ leg: _leg, takes, ...round }) => ({
+    number: round.number,
+    kind: roundKind({ choices: round.choices, parts: round.parts, use: takes.shape }),
+    title: round.title,
+    prompt: round.prompt,
+    parts: round.parts,
+    cap: round.cap,
+    choices: round.choices,
+    takes: { from: takes.from, use: takes.shape },
+  }));
 }
 
+/** A take as the model writes it (`use`) or as a line carries it (`shape`); the two are one word. */
 function readTakes(value: unknown): RoundTakes | undefined {
   if (value === undefined || value === null) return { from: 0, shape: "" };
   if (typeof value !== "object" || Array.isArray(value)) return undefined;
   const record = value as Record<string, unknown>;
   const from = record.from ?? 0;
-  const shape = record.shape ?? "";
+  const shape = record.use ?? record.shape ?? "";
   if (typeof from !== "number" || !Number.isInteger(from) || from < 0) return undefined;
   if (typeof shape !== "string") return undefined;
   const named = shape.trim();
-  if (named !== "" && !SHAPES.includes(named)) return undefined;
+  if (named !== "" && !isCarryUse(named)) return undefined;
   return from === 0 || named === "" ? { from: 0, shape: "" } : { from, shape: named };
+}
+
+/** The kind a drafted round claims, or the one its boxes and take imply when it claims none. */
+function readKind(
+  value: unknown,
+  round: { parts: string[]; choices: string[]; takes: RoundTakes },
+): RoundKind | undefined {
+  if (value === undefined || value === null || value === "") {
+    return roundKind({ choices: round.choices, parts: round.parts, use: round.takes.shape });
+  }
+  return typeof value === "string" && (KINDS as string[]).includes(value)
+    ? (value as RoundKind)
+    : undefined;
+}
+
+/** Why a round's boxes, choices, and take do not fit its kind, or nothing when they do. */
+function misfit(kind: RoundKind, round: { parts: string[]; choices: string[]; takes: RoundTakes }) {
+  const use = round.takes.shape;
+  if (use !== "" && !CARRY_USES.some((entry) => entry.use === use && entry.kinds.includes(kind))) {
+    return `A ${kind} round cannot take "${use}".`;
+  }
+  if (kind === "write" && (round.parts.length > 0 || round.choices.length > 0)) {
+    return "A write round has no parts and no choices.";
+  }
+  if (kind === "list" && round.choices.length > 0) return "A list round has no choices.";
+  if (kind === "list" && round.parts.length === 0 && use !== "parts") {
+    return "A list round needs parts, or takes them.";
+  }
+  if (kind === "vote" && round.parts.length > 0) return "A vote round has no parts.";
+  if (kind === "vote" && round.choices.length === 0 && use !== "choices") {
+    return "A vote round needs choices, or takes them.";
+  }
+  if (use === "choices" && round.choices.length > 0) {
+    return "A round that takes its choices delivers none of its own.";
+  }
+  if (use === "parts" && round.parts.length > 0) {
+    return "A round that takes its parts delivers none of its own.";
+  }
+  return "";
 }
 
 function parse(reply: string): Reading {
@@ -185,16 +244,21 @@ function parse(reply: string): Reading {
     if (!material.ok) return { kind: "neither", reason: material.violation.message };
     const shape = normalizeParts({ parts: round.parts ?? [], cap: round.cap ?? 0 });
     if (!shape.ok) return { kind: "neither", reason: shape.violation.message };
-    if (shape.value.parts.length > 0 && material.value.choices.length > 0) {
-      return { kind: "neither", reason: "A round offers choices or takes parts, never both." };
-    }
     const takes = readTakes(round.takes);
     if (takes === undefined) {
       return {
         kind: "neither",
-        reason: 'A round\'s takes needs a round number and a shape of "picked", "every", or "top".',
+        reason:
+          'A round\'s takes needs a round number and a use of "context", "choices", or "parts".',
       };
     }
+    const fitted = { parts: shape.value.parts, choices: material.value.choices, takes };
+    const kind = readKind(round.kind, fitted);
+    if (kind === undefined) {
+      return { kind: "neither", reason: 'A round\'s kind is "write", "list", or "vote".' };
+    }
+    const wrong = misfit(kind, fitted);
+    if (wrong !== "") return { kind: "neither", reason: wrong };
     rounds.push({
       number: Math.max(0, asNumber(round.number)),
       title: title.value,
@@ -273,10 +337,11 @@ const sameTakes = (left: RoundTakes, right: RoundTakes) =>
 /** An `add` line's value: the round, what it takes, and the number it lands at. */
 function addLine(drafted: DraftedRound, position: number): Line {
   const { title, prompt, parts, cap, choices, takes } = drafted;
+  const kind = roundKind({ choices, parts, use: takes.shape });
   return {
     kind: "add",
     target: "",
-    value: JSON.stringify({ title, prompt, parts, cap, choices, takes, position }),
+    value: JSON.stringify({ kind, title, prompt, parts, cap, choices, takes, position }),
   };
 }
 

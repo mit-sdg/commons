@@ -131,7 +131,17 @@ function Change({ children }: { children: React.ReactNode }) {
 function LineBody({ line, round }: { line: OfferedLine; round: Round | null }) {
   if (line.kind === "add") {
     const drafted = record(readJson(line.value));
-    return <span>{String(drafted.title ?? "")}</span>;
+    const kind = typeof drafted.kind === "string" ? drafted.kind : "";
+    return (
+      <span className="flex min-w-0 items-baseline gap-2">
+        {kind === "" ? null : (
+          <span className="flex-none font-mono text-[11px] text-muted-foreground">
+            {kind}
+          </span>
+        )}
+        <span className="min-w-0">{String(drafted.title ?? "")}</span>
+      </span>
+    );
   }
   if (line.kind === "remove") {
     return <Was>{round?.title ?? ""}</Was>;

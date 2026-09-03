@@ -8,19 +8,26 @@ import {
   type RefusalWord,
   saidRefusal,
 } from "@/components/live/refusals";
+import { RoundPreview } from "@/components/live/round-preview";
+import { RoundToken } from "@/components/live/round-token";
 import {
-  RoundToken,
-  shapeWords,
-  TakesChip,
-} from "@/components/live/round-token";
+  firstUse,
+  kindOf,
+  type RoundKind,
+  sentenceOf,
+  useCarryUses,
+  usesFor,
+} from "@/components/live/rounds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, isApiError, type Output } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -29,7 +36,10 @@ export type RelayRound = NonNullable<
   Output<"/live/relays/get">["relay"]
 >["rounds"][number];
 
-const SHAPES = ["picked", "every", "top"] as const;
+const KINDS: RoundKind[] = ["write", "list", "vote"];
+
+/** The source select's word for a round that takes nothing; no leg reads so. */
+const NOTHING = "nothing";
 
 const PARTS_MAX = 12;
 const CAP_MIN = 2;
@@ -161,11 +171,23 @@ export function RoundEditor({
   };
   const [draft, setDraft] = useState<Draft>(saved);
   const [busy, setBusy] = useState(false);
+  const [chosenKind, setChosenKind] = useState<RoundKind | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const uses = useCarryUses();
 
   const takes = round.takes[0] ?? null;
   const earlier = rounds.filter((entry) => entry.number < round.number);
   const first = round.number === 1;
   const last = round.number === rounds.length;
+  const written = cleaned(draft);
+  // A round with nothing written and nothing taken is still free to be another
+  // kind; once it holds parts, choices, or a take, its kind is what it holds.
+  const bare =
+    written.parts.length === 0 &&
+    written.choices.length === 0 &&
+    takes === null;
+  const kind: RoundKind = (bare ? chosenKind : null) ?? kindOf(round);
+  const open = usesFor(uses, kind);
 
   async function commit(next: Draft) {
     const wanted = cleaned(next);
@@ -250,8 +272,33 @@ export function RoundEditor({
     if (report(result, null)) onChanged();
   }
 
+  /**
+   * A kind is chosen by clearing what the other kinds hold: a write holds
+   * neither parts nor choices, a list no choices, a vote no parts. A take that
+   * the new kind is not open to moves to the use the kind starts with.
+   */
+  async function chooseKind(next: RoundKind) {
+    if (next === kind) return;
+    setChosenKind(next);
+    const merged: Draft =
+      next === "write"
+        ? { ...draft, parts: [], cap: 0, choices: [] }
+        : next === "list"
+          ? { ...draft, choices: [] }
+          : { ...draft, parts: [], cap: 0 };
+    setDraft(merged);
+    await commit(merged);
+    if (takes === null) return;
+    if (usesFor(uses, next).some((entry) => entry.use === takes.shape)) return;
+    await setTakes(takes.source, firstUse(uses, next));
+  }
+
   const disabled = locked || busy;
   const repeats = draft.parts.length === 1 && draft.cap > 0;
+  // A round that takes its parts or choices from another round is written
+  // there, so this card only offers the side the round still holds itself.
+  const partsOpen = kind === "list" && takes?.shape !== "parts";
+  const choicesOpen = kind === "vote" && takes?.shape !== "choices";
 
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4 focus-within:outline focus-within:outline-2 focus-within:outline-primary focus-within:-outline-offset-2">
@@ -300,6 +347,26 @@ export function RoundEditor({
           </div>
         </div>
 
+        <div className="inline-flex w-fit gap-0.5 rounded-md border border-border p-0.5">
+          {KINDS.map((entry) => (
+            <button
+              key={entry}
+              type="button"
+              disabled={disabled}
+              aria-pressed={entry === kind}
+              className={cn(
+                "rounded-[5px] px-2.5 py-1 text-sm capitalize disabled:opacity-50",
+                entry === kind
+                  ? "bg-foreground font-medium text-background"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              onClick={() => void chooseKind(entry)}
+            >
+              {entry}
+            </button>
+          ))}
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`prompt-${round.leg}`}>Prompt</Label>
           <Textarea
@@ -313,261 +380,241 @@ export function RoundEditor({
           />
         </div>
 
-        <div className="flex flex-wrap items-start gap-6">
-          {draft.choices.length === 0 ? (
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label>Parts</Label>
-              <div className="flex flex-wrap items-center gap-2">
-                {draft.parts.map((part, index) => (
-                  <span
-                    // biome-ignore lint/suspicious/noArrayIndexKey: a part is its row, and a row carries no id
-                    key={index}
-                    className="group/part relative inline-flex items-center"
-                  >
-                    <Input
-                      value={part}
-                      maxLength={40}
-                      disabled={disabled}
-                      aria-label="Part"
-                      className="w-36 pr-8"
-                      onChange={(event) => {
-                        const parts = [...draft.parts];
-                        parts[index] = event.target.value;
-                        change({ parts });
-                      }}
-                      onBlur={() => void commit(draft)}
-                    />
+        {partsOpen || choicesOpen ? (
+          <div className="flex flex-wrap items-start gap-6">
+            {partsOpen ? (
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <Label>Parts</Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {draft.parts.map((part, index) => (
+                    <span
+                      // biome-ignore lint/suspicious/noArrayIndexKey: a part is its row, and a row carries no id
+                      key={index}
+                      className="group/part relative inline-flex items-center"
+                    >
+                      <Input
+                        value={part}
+                        maxLength={40}
+                        disabled={disabled}
+                        aria-label="Part"
+                        className="w-36 pr-8"
+                        onChange={(event) => {
+                          const parts = [...draft.parts];
+                          parts[index] = event.target.value;
+                          change({ parts });
+                        }}
+                        onBlur={() => void commit(draft)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label="Remove part"
+                        disabled={disabled}
+                        className="-translate-y-1/2 absolute top-1/2 right-1 opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100"
+                        onClick={() =>
+                          change(
+                            {
+                              parts: draft.parts.filter(
+                                (_, at) => at !== index,
+                              ),
+                            },
+                            true,
+                          )
+                        }
+                      >
+                        <X />
+                      </Button>
+                    </span>
+                  ))}
+                  {draft.parts.length < PARTS_MAX && !repeats ? (
                     <Button
                       variant="ghost"
-                      size="icon-xs"
-                      aria-label="Remove part"
+                      size="sm"
                       disabled={disabled}
-                      className="-translate-y-1/2 absolute top-1/2 right-1 opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100"
-                      onClick={() =>
+                      onClick={() => change({ parts: [...draft.parts, ""] })}
+                    >
+                      + Part
+                    </Button>
+                  ) : null}
+                </div>
+                {draft.parts.length === 1 ? (
+                  <label className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <input
+                      type="checkbox"
+                      checked={repeats}
+                      disabled={disabled}
+                      className="size-4 rounded-sm border-input accent-primary"
+                      onChange={(event) =>
                         change(
-                          {
-                            parts: draft.parts.filter((_, at) => at !== index),
-                          },
+                          { cap: event.target.checked ? CAP_START : 0 },
                           true,
                         )
                       }
+                    />
+                    Repeat up to
+                    <Input
+                      type="number"
+                      min={CAP_MIN}
+                      max={CAP_MAX}
+                      value={repeats ? draft.cap : CAP_START}
+                      disabled={disabled || !repeats}
+                      aria-label="Repeat up to"
+                      className="h-8 w-16"
+                      onChange={(event) =>
+                        change({ cap: Number(event.target.value) })
+                      }
+                      onBlur={() => void commit(draft)}
+                    />
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
+
+            {choicesOpen ? (
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <Label>Choices</Label>
+                <div className="flex flex-col gap-2">
+                  {draft.choices.map((choice, index) => (
+                    <span
+                      // biome-ignore lint/suspicious/noArrayIndexKey: a choice is its row, and a row carries no id
+                      key={index}
+                      className="inline-flex items-center gap-1"
                     >
-                      <X />
-                    </Button>
-                  </span>
-                ))}
-                {draft.parts.length < PARTS_MAX && !repeats ? (
+                      <Input
+                        value={choice}
+                        maxLength={500}
+                        disabled={disabled}
+                        aria-label="Choice"
+                        className="w-56"
+                        onChange={(event) => {
+                          const choices = [...draft.choices];
+                          choices[index] = event.target.value;
+                          change({ choices });
+                        }}
+                        onBlur={() => void commit(draft)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label="Remove choice"
+                        disabled={disabled}
+                        onClick={() =>
+                          change(
+                            {
+                              choices: draft.choices.filter(
+                                (_, at) => at !== index,
+                              ),
+                            },
+                            true,
+                          )
+                        }
+                      >
+                        <X />
+                      </Button>
+                    </span>
+                  ))}
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="self-start"
                     disabled={disabled}
-                    onClick={() => change({ parts: [...draft.parts, ""] })}
+                    onClick={() => change({ choices: [...draft.choices, ""] })}
                   >
-                    + Part
+                    + Choice
                   </Button>
-                ) : null}
+                </div>
               </div>
-              {draft.parts.length === 1 ? (
-                <label className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <input
-                    type="checkbox"
-                    checked={repeats}
-                    disabled={disabled}
-                    className="size-4 rounded-sm border-input accent-primary"
-                    onChange={(event) =>
-                      change(
-                        { cap: event.target.checked ? CAP_START : 0 },
-                        true,
-                      )
-                    }
-                  />
-                  Repeat up to
-                  <Input
-                    type="number"
-                    min={CAP_MIN}
-                    max={CAP_MAX}
-                    value={repeats ? draft.cap : CAP_START}
-                    disabled={disabled || !repeats}
-                    aria-label="Repeat up to"
-                    className="h-8 w-16"
-                    onChange={(event) =>
-                      change({ cap: Number(event.target.value) })
-                    }
-                    onBlur={() => void commit(draft)}
-                  />
-                </label>
-              ) : null}
-            </div>
-          ) : null}
+            ) : null}
+          </div>
+        ) : null}
 
-          {draft.parts.length === 0 ? (
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label>Choices</Label>
-              <div className="flex flex-col gap-2">
-                {draft.choices.map((choice, index) => (
-                  <span
-                    // biome-ignore lint/suspicious/noArrayIndexKey: a choice is its row, and a row carries no id
-                    key={index}
-                    className="inline-flex items-center gap-1"
+        {earlier.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Takes from</span>
+            <Select
+              value={takes?.source ?? NOTHING}
+              disabled={disabled}
+              onValueChange={(value) => {
+                if (value === NOTHING) {
+                  void clearTakes();
+                  return;
+                }
+                void setTakes(value, takes?.shape ?? firstUse(uses, kind));
+              }}
+            >
+              <SelectTrigger
+                size="sm"
+                aria-label="Takes from"
+                className="max-w-[220px]"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NOTHING}>nothing</SelectItem>
+                {earlier.map((entry) => (
+                  <SelectItem
+                    key={entry.leg}
+                    value={entry.leg}
+                    textValue={`${entry.number} ${entry.title}`}
                   >
-                    <Input
-                      value={choice}
-                      maxLength={500}
-                      disabled={disabled}
-                      aria-label="Choice"
-                      className="w-56"
-                      onChange={(event) => {
-                        const choices = [...draft.choices];
-                        choices[index] = event.target.value;
-                        change({ choices });
-                      }}
-                      onBlur={() => void commit(draft)}
+                    <RoundToken
+                      number={entry.number}
+                      title={entry.title}
+                      size="sm"
                     />
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label="Remove choice"
-                      disabled={disabled}
-                      onClick={() =>
-                        change(
-                          {
-                            choices: draft.choices.filter(
-                              (_, at) => at !== index,
-                            ),
-                          },
-                          true,
-                        )
-                      }
-                    >
-                      <X />
-                    </Button>
-                  </span>
+                  </SelectItem>
                 ))}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="self-start"
-                  disabled={disabled}
-                  onClick={() => change({ choices: [...draft.choices, ""] })}
-                >
-                  + Choice
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          {earlier.length > 0 ? (
-            <div className="flex flex-col gap-1.5">
-              <Label>Takes</Label>
-              <div className="flex items-center gap-2">
-                {takes === null ? (
-                  <span className="text-muted-foreground text-sm">nothing</span>
+              </SelectContent>
+            </Select>
+            {takes === null ? null : (
+              <>
+                <span className="text-muted-foreground">as</span>
+                {open.length > 1 &&
+                open.some((entry) => entry.use === takes.shape) ? (
+                  <Select
+                    value={takes.shape}
+                    disabled={disabled}
+                    onValueChange={(value) =>
+                      void setTakes(takes.source, value)
+                    }
+                  >
+                    <SelectTrigger size="sm" aria-label="Use">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {open.map((entry) => (
+                        <SelectItem key={entry.use} value={entry.use}>
+                          {entry.use}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
-                  <TakesChip
-                    from={takes.sourceNumber}
-                    shape={takes.shape}
-                    size="lg"
-                  />
+                  <span>{takes.shape}</span>
                 )}
-                <TakesPicker
-                  earlier={earlier}
-                  disabled={disabled}
-                  onSet={(source, shape) => void setTakes(source, shape)}
-                  onClear={() => void clearTakes()}
-                />
-              </div>
-            </div>
+                <span className="text-muted-foreground">
+                  {sentenceOf(uses, takes.shape)}
+                </span>
+              </>
+            )}
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="self-start"
+            onClick={() => setPreviewing((shown) => !shown)}
+          >
+            Preview
+          </Button>
+          {previewing ? (
+            <RoundPreview round={{ ...round, ...written }} />
           ) : null}
         </div>
       </div>
     </div>
-  );
-}
-
-function TakesPicker({
-  earlier,
-  disabled,
-  onSet,
-  onClear,
-}: {
-  earlier: RelayRound[];
-  disabled: boolean;
-  onSet: (source: string, shape: string) => void;
-  onClear: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [source, setSource] = useState<string>(
-    earlier[earlier.length - 1]?.leg ?? "",
-  );
-  const [shape, setShape] = useState<string>("picked");
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" disabled={disabled}>
-          Change
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 space-y-3" align="start">
-        <div className="flex flex-col gap-1">
-          {earlier.map((entry) => (
-            <button
-              key={entry.leg}
-              type="button"
-              className={cn(
-                "flex items-center rounded-md px-2 py-1.5 text-left hover:bg-accent",
-                entry.leg === source && "bg-accent",
-              )}
-              onClick={() => setSource(entry.leg)}
-            >
-              <RoundToken
-                number={entry.number}
-                title={entry.title}
-                size="sm"
-                standing="done"
-              />
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-col gap-1">
-          {SHAPES.map((entry) => (
-            <button
-              key={entry}
-              type="button"
-              className={cn(
-                "rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-                entry === shape && "bg-accent",
-              )}
-              onClick={() => setShape(entry)}
-            >
-              {shapeWords(entry)}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            disabled={source === ""}
-            onClick={() => {
-              setOpen(false);
-              onSet(source, shape);
-            }}
-          >
-            Set
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setOpen(false);
-              onClear();
-            }}
-          >
-            Take nothing
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 }
 

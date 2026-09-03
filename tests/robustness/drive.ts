@@ -1,6 +1,6 @@
 /**
  * The driver the robustness scenarios share: one signed-in staff member over
- * the edge, relays copied from the deck, real browser pages for the staff
+ * the edge, relays played in from the deck below, real browser pages for the staff
  * dashboard, the projector, and a phone, scripted phones over the participant
  * endpoints, the wall read back, screenshots to a named directory, and a log
  * of findings. Scenarios run with `bun tests/robustness/scenarios/<name>.ts`
@@ -10,7 +10,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { type Browser, type BrowserContext, chromium, type Page } from "playwright";
-import { DECK, type DeckRelay } from "../../frontend/src/components/live/deck.ts";
 
 export const EDGE = process.env.EDGE ?? "http://127.0.0.1:4000";
 export const WEB = process.env.WEB ?? "http://127.0.0.1:3000";
@@ -140,6 +139,85 @@ export async function signIn(account = HOST): Promise<Client> {
 // Relays: the deck copied, launched, and run.
 // ---------------------------------------------------------------------------
 
+/**
+ * The deck the scenarios play in: relays as a staff member would write them,
+ * kept here because the harness is the only thing that still copies one.
+ */
+export interface DeckRound {
+  title: string;
+  prompt: string;
+  parts: string[];
+  cap: number;
+  choices: string[];
+  /** The round it takes from, by number, and the shape; absent when it takes nothing. */
+  takes?: { from: number; shape: "context" | "choices" | "parts" };
+}
+
+export interface DeckRelay {
+  key: string;
+  title: string;
+  rounds: DeckRound[];
+}
+
+export const DECK: DeckRelay[] = [
+  {
+    key: "three-verbs",
+    title: "Three verbs, then a stranger",
+    rounds: [
+      {
+        title: "Three verbs",
+        prompt: "Three verbs a bookmark needs.",
+        parts: ["one", "two", "three"],
+        cap: 0,
+        choices: [],
+      },
+      {
+        title: "The stranger",
+        prompt: "Only these verbs. What is it?",
+        parts: [],
+        cap: 0,
+        choices: [],
+        takes: { from: 1, shape: "context" },
+      },
+    ],
+  },
+  {
+    key: "name-the-activity",
+    title: "Name the activity",
+    rounds: [
+      {
+        title: "One word",
+        prompt: "DoorDash, the screen before you order. One word for what this lets you do.",
+        parts: [],
+        cap: 0,
+        choices: [],
+      },
+    ],
+  },
+  {
+    key: "fix-the-spec",
+    title: "Fix the spec",
+    rounds: [
+      {
+        title: "Rewrite",
+        prompt:
+          "“Manages the lifecycle of bookings, including creation, modification, and cancellation.” Rewrite it as a purpose.",
+        parts: [],
+        cap: 0,
+        choices: [],
+      },
+      {
+        title: "Vote",
+        prompt: "Which rewrite is the purpose?",
+        parts: [],
+        cap: 0,
+        choices: [],
+        takes: { from: 1, shape: "choices" },
+      },
+    ],
+  },
+];
+
 export interface Relay {
   relay: string;
   legs: string[];
@@ -152,7 +230,7 @@ export function deck(key: string): DeckRelay {
   return found;
 }
 
-/** Copies a deck relay exactly as the Live page's Copy button does. */
+/** Copies a deck relay exactly as a staff member would write it by hand. */
 export async function copyDeck(host: Client, key: string, title?: string): Promise<Relay> {
   const source = deck(key);
   const planned = await host.call<{ relay: string }>("/live/relays/plan", {

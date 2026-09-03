@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { AnimatePresence, motion, useAnimate } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import type { WallCard } from "@/components/live/rounds";
+import { Spread } from "@/components/live/spread";
+import { CARD_MOVE, PILE_MOVE } from "@/components/live/wall-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +15,7 @@ const PILE_MIME = "application/x-commons-pile";
 const PEEK = 3;
 
 /** What stands on a card whose answer is nothing but spaces. */
-const BLANK = "\u2014";
+const BLANK = "—";
 
 /** How a pile's face is sized on each surface; a full projector packs its piles. */
 const FACES = {
@@ -63,52 +66,80 @@ export function YouTag() {
   );
 }
 
-/** One answer as a card: in the tray, on a pile's face, or being dragged. */
+/**
+ * One answer as a card: in the tray, on a pile's face, or being dragged. The
+ * card keeps its identity as it moves, so it flies from the tray onto the
+ * stack it lands in; a card under the hand holds still until the hand lets go.
+ */
 export function Card({
   card,
   big = false,
   draggable = false,
+  still = false,
   onDragStart,
+  onDragEnd,
   className,
 }: {
   card: WallCard;
   big?: boolean;
   draggable?: boolean;
+  /** A card being dragged is not moved by a layout of the wall under it. */
+  still?: boolean;
   onDragStart?: (card: WallCard) => void;
+  onDragEnd?: () => void;
   className?: string;
 }) {
   return (
     <span
       draggable={draggable}
       onDragStart={
-        onDragStart === undefined
-          ? undefined
-          : (event) => {
+        draggable
+          ? (event) => {
               event.dataTransfer.setData("text/plain", card.card);
               event.dataTransfer.effectAllowed = "move";
-              onDragStart(card);
+              onDragStart?.(card);
             }
+          : undefined
       }
+      onDragEnd={draggable ? onDragEnd : undefined}
       className={cn(
-        "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg border border-border bg-card shadow-[0_1px_0_var(--border)] leading-[1.3]",
-        big
-          ? "rounded-[10px] px-[18px] py-2.5 text-2xl"
-          : "px-3 py-[7px] text-[15px]",
-        card.mine && "border-primary bg-primary/5",
+        "inline-flex min-w-0 max-w-full",
         draggable && "cursor-grab active:cursor-grabbing",
-        className,
       )}
-      title={titleOf(card)}
     >
-      <Answer value={card.value} className="line-clamp-3" />
-      {card.model ? <ModelTag big={big} /> : null}
-      {card.mine ? <YouTag /> : null}
+      <motion.span
+        layout={!still}
+        layoutId={still ? undefined : card.card}
+        transition={CARD_MOVE}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, transition: { duration: 0.18 } }}
+        className={cn(
+          "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg border border-border bg-card shadow-[0_1px_0_var(--border)] leading-[1.3]",
+          big
+            ? "rounded-[10px] px-[18px] py-2.5 text-2xl"
+            : "px-3 py-[7px] text-[15px]",
+          card.mine && "border-primary bg-primary/5",
+          className,
+        )}
+        title={titleOf(card)}
+      >
+        <Answer value={card.value} className="line-clamp-3" />
+        {card.model ? <ModelTag big={big} /> : null}
+        {card.mine ? <YouTag /> : null}
+      </motion.span>
     </span>
   );
 }
 
 /** An answer as it reads on a card: wrapped, cut after its lines, never nothing. */
-function Answer({ value, className }: { value: string; className: string }) {
+export function Answer({
+  value,
+  className,
+}: {
+  value: string;
+  className: string;
+}) {
   const blank = value.trim() === "";
   return (
     <span
@@ -127,7 +158,7 @@ function Answer({ value, className }: { value: string; className: string }) {
 /** The whole answer, with the part it answers, for a card that had to be cut. */
 function titleOf(card: WallCard): string | undefined {
   if (card.value.trim() === "") return undefined;
-  return card.part === "" ? card.value : `${card.part} \u00b7 ${card.value}`;
+  return card.part === "" ? card.value : `${card.part} · ${card.value}`;
 }
 
 /** A faint card for an answer still being written. */
@@ -140,6 +171,35 @@ export function GhostCard({ big = false }: { big?: boolean }) {
         big ? "h-[50px] w-[110px]" : "h-[34px] w-[76px]",
       )}
     />
+  );
+}
+
+/** A count that pulses as it ticks, and stands still the first time it is read. */
+export function Count({
+  value,
+  className,
+}: {
+  value: number;
+  className: string;
+}) {
+  const [scope, animate] = useAnimate<HTMLSpanElement>();
+  const read = useRef(value);
+
+  useEffect(() => {
+    if (read.current === value) return;
+    read.current = value;
+    if (scope.current === null) return;
+    void animate(
+      scope.current,
+      { scale: [1.22, 1] },
+      { duration: 0.26, ease: "easeOut" },
+    );
+  }, [value, animate, scope]);
+
+  return (
+    <span ref={scope} className={className}>
+      {value}
+    </span>
   );
 }
 
@@ -218,7 +278,12 @@ export function Pile({
   }
 
   return (
-    <div
+    <motion.div
+      layout="position"
+      transition={PILE_MOVE}
+      initial={{ opacity: 0, scale: 0.94 }}
+      animate={{ opacity: faded ? 0.4 : 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.94 }}
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       onClick={interactive ? onTap : undefined}
@@ -256,22 +321,12 @@ export function Pile({
           "shadow-[0_5px_0_-2px_var(--card),0_6px_0_-2px_var(--border)]",
         (picked || selected) &&
           "outline outline-2 outline-primary -outline-offset-2",
-        faded && "opacity-40",
         interactive && "cursor-pointer hover:border-foreground/40",
         className,
       )}
     >
       {picked && carriesTo !== undefined ? (
-        <span
-          className={cn(
-            "absolute flex items-center justify-center rounded-full border-2 border-card bg-primary font-mono text-primary-foreground",
-            big
-              ? "-top-4 right-[18px] size-9 text-lg"
-              : "-top-3 right-3 size-6 text-xs",
-          )}
-        >
-          {carriesTo}
-        </span>
+        <CarriesTo number={carriesTo} big={big} />
       ) : null}
       {description !== "" ? (
         <p
@@ -323,11 +378,24 @@ export function Pile({
             className="h-7 min-w-0 flex-1 rounded-md border border-primary bg-card px-2 font-display font-semibold text-base"
           />
         )}
-        {counted ? (
-          <span className={cn("flex-none font-mono tabular-nums", face.count)}>
-            {count}
-          </span>
-        ) : null}
+        <span className="flex flex-none items-center gap-1">
+          {counted ? (
+            <Count
+              value={count}
+              className={cn("font-mono tabular-nums", face.count)}
+            />
+          ) : null}
+          {/* A faded pile stands behind a bar as its backdrop, not to be opened. */}
+          {faded ? null : (
+            <Spread
+              name={name}
+              count={count}
+              description={description}
+              cards={cards}
+              big={big}
+            />
+          )}
+        </span>
       </div>
       <div
         className={cn(
@@ -335,24 +403,29 @@ export function Pile({
           face.peek,
         )}
       >
-        {peek.map((card) =>
-          card.mine ? (
-            <Card
-              key={card.card}
-              card={card}
-              className="max-w-full self-start px-2 py-[3px] text-xs"
-            />
-          ) : (
-            <span
-              key={card.card}
-              title={titleOf(card)}
-              className="flex min-w-0 items-center gap-1.5"
-            >
-              <Answer value={card.value} className="line-clamp-1" />
-              {card.model ? <ModelTag big={big} /> : null}
-            </span>
-          ),
-        )}
+        <AnimatePresence initial={false}>
+          {peek.map((card) =>
+            card.mine ? (
+              <Card
+                key={card.card}
+                card={card}
+                className="max-w-full self-start px-2 py-[3px] text-xs"
+              />
+            ) : (
+              <motion.span
+                key={card.card}
+                layoutId={card.card}
+                transition={CARD_MOVE}
+                exit={{ opacity: 0 }}
+                title={titleOf(card)}
+                className="flex min-w-0 items-center gap-1.5"
+              >
+                <Answer value={card.value} className="line-clamp-1" />
+                {card.model ? <ModelTag big={big} /> : null}
+              </motion.span>
+            ),
+          )}
+        </AnimatePresence>
       </div>
       {onSummarize === undefined ? null : (
         <Button
@@ -368,7 +441,29 @@ export function Pile({
           Summarize
         </Button>
       )}
-    </div>
+    </motion.div>
+  );
+}
+
+/** The number of the round a picked pile carries into. */
+export function CarriesTo({
+  number,
+  big = false,
+}: {
+  number: number;
+  big?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "absolute flex items-center justify-center rounded-full border-2 border-card bg-primary font-mono text-primary-foreground",
+        big
+          ? "-top-4 right-[18px] size-9 text-lg"
+          : "-top-3 right-3 size-6 text-xs",
+      )}
+    >
+      {number}
+    </span>
   );
 }
 

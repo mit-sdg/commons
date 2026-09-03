@@ -1,19 +1,24 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
+import {
+  copyQuestionnaire,
+  copyRounds,
+  roundsToCopy,
+} from "@/components/live/copy-relay";
 import {
   DISCLOSURE_OPTIONS,
   type Disclosure,
   isDisclosure,
   isQuizForm,
-  type QuizForm,
 } from "@/components/live/quiz-meta";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
+import { LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,31 +29,116 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { api, isApiError, publicErrorMessage } from "@/lib/api";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@/hooks/use-query";
+import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
-function NewQuestionnaireContent() {
+const KINDS = [
+  { kind: "quiz", label: "Quiz" },
+  { kind: "survey", label: "Survey" },
+  { kind: "relay", label: "Relay" },
+] as const;
+
+type Kind = (typeof KINDS)[number]["kind"];
+
+function isKind(value: string | null): value is Kind {
+  return KINDS.some((entry) => entry.kind === value);
+}
+
+/** Nothing to start from: the value the Select carries for a blank one. */
+const BLANK = "blank";
+
+function NewLiveContent() {
   const router = useRouter();
+  const { session } = useAuth();
+  const searchParams = useSearchParams();
+  const asked = searchParams.get("kind");
+  const [kind, setKind] = useState<Kind>(isKind(asked) ? asked : "quiz");
   const [title, setTitle] = useState("");
-  const [form, setForm] = useState<QuizForm>("quiz");
   const [disclosure, setDisclosure] = useState<Disclosure>("score");
+  const [source, setSource] = useState(BLANK);
   const [busy, setBusy] = useState(false);
+
+  const { data: shelf } = useQuery(
+    session ? () => api["/live/quizzes/list"]({}).then(unwrap) : null,
+    [session],
+  );
+  const { data: relayList } = useQuery(
+    session ? () => api["/live/relays/list"]({}).then(unwrap) : null,
+    [session],
+  );
+
+  const sources =
+    kind === "relay"
+      ? (relayList?.relays ?? [])
+          .filter((entry) => !entry.retired)
+          .map((entry) => ({ id: entry.relay, title: entry.title }))
+      : (shelf?.questionnaires ?? [])
+          .filter((entry) => !entry.retired && entry.form === kind)
+          .map((entry) => ({ id: entry.questionnaire, title: entry.title }));
+
+  function chooseKind(value: string) {
+    if (!isKind(value)) return;
+    setKind(value);
+    setSource(BLANK);
+  }
+
+  async function createQuestionnaire(trimmed: string) {
+    if (!isQuizForm(kind)) return;
+    const created = await api["/live/quizzes/create"]({
+      title: trimmed,
+      form: kind,
+      disclosure,
+    });
+    if (isApiError(created)) {
+      setBusy(false);
+      toast.error(publicErrorMessage(created.error));
+      return;
+    }
+    if (source !== BLANK) {
+      const copied = await copyQuestionnaire(created.questionnaire, source);
+      if (isApiError(copied)) {
+        setBusy(false);
+        toast.error(publicErrorMessage(copied.error));
+        return;
+      }
+    }
+    router.push(`/staff/live/${created.questionnaire}/edit`);
+  }
+
+  async function createRelay(trimmed: string) {
+    const planned = await api["/live/relays/plan"]({ title: trimmed });
+    if (isApiError(planned)) {
+      setBusy(false);
+      toast.error(publicErrorMessage(planned.error));
+      return;
+    }
+    if (source !== BLANK) {
+      const read = await api["/live/relays/get"]({ relay: source });
+      if (isApiError(read) || read.relay === null) {
+        setBusy(false);
+        toast.error(
+          publicErrorMessage(isApiError(read) ? read.error : "NOT_FOUND"),
+        );
+        return;
+      }
+      const copied = await copyRounds(planned.relay, roundsToCopy(read.relay));
+      if (isApiError(copied)) {
+        setBusy(false);
+        toast.error(publicErrorMessage(copied.error));
+        return;
+      }
+    }
+    router.push(`/staff/live/relay/${planned.relay}/edit`);
+  }
 
   async function create() {
     const trimmed = title.trim();
     if (trimmed === "") return;
     setBusy(true);
-    const result = await api["/live/quizzes/create"]({
-      title: trimmed,
-      form,
-      disclosure,
-    });
-    if (isApiError(result)) {
-      setBusy(false);
-      toast.error(publicErrorMessage(result.error));
-      return;
-    }
-    // Straight to the desk where the questions get written.
-    router.push(`/staff/live/${result.questionnaire}`);
+    if (kind === "relay") await createRelay(trimmed);
+    else await createQuestionnaire(trimmed);
   }
 
   return (
@@ -62,10 +152,20 @@ function NewQuestionnaireContent() {
             <ArrowLeft className="size-3" /> Live
           </Link>
         }
-        title="New quiz or survey"
+        title="New"
       />
 
       <div className="space-y-6">
+        <Tabs value={kind} onValueChange={chooseKind}>
+          <TabsList>
+            {KINDS.map((entry) => (
+              <TabsTrigger key={entry.kind} value={entry.kind} disabled={busy}>
+                {entry.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
         <div className="space-y-2">
           <Label htmlFor="live-title">Title</Label>
           <Input
@@ -83,25 +183,27 @@ function NewQuestionnaireContent() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="live-form">Form</Label>
+          <Label htmlFor="live-source">Start from</Label>
           <Select
-            value={form}
+            value={source}
             disabled={busy}
-            onValueChange={(value) => {
-              if (isQuizForm(value)) setForm(value);
-            }}
+            onValueChange={(value) => setSource(value)}
           >
-            <SelectTrigger id="live-form" className="w-full">
+            <SelectTrigger id="live-source" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="quiz">Quiz</SelectItem>
-              <SelectItem value="survey">Survey</SelectItem>
+              <SelectItem value={BLANK}>Blank</SelectItem>
+              {sources.map((entry) => (
+                <SelectItem key={entry.id} value={entry.id}>
+                  {entry.title}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
-        {form === "quiz" ? (
+        {kind === "quiz" ? (
           <div className="space-y-2">
             <Label htmlFor="live-disclosure">
               What participants see afterward
@@ -143,10 +245,18 @@ function NewQuestionnaireContent() {
   );
 }
 
-export default function NewQuestionnairePage() {
+export default function NewLivePage() {
   return (
     <RequireCapability capability="live:host">
-      <NewQuestionnaireContent />
+      <Suspense
+        fallback={
+          <PageContainer width="narrow">
+            <LoadingState />
+          </PageContainer>
+        }
+      >
+        <NewLiveContent />
+      </Suspense>
     </RequireCapability>
   );
 }

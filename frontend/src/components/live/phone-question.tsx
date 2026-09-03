@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { distinctValues } from "@/components/live/rounds";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -11,8 +12,13 @@ export interface RoundQuestion {
   choices: string[];
   parts: string[];
   cap: number;
+  /** The groups a round carried from the one it takes from, shown above the prompt. */
+  context?: { name: string; cards: string[] }[];
   position: number;
 }
+
+/** How many of a group's words a phone shows before the rest are counted. */
+const WORDS_SHOWN = 4;
 
 /**
  * Every item a question is answered under: itself when it has no parts, one
@@ -65,9 +71,43 @@ export function QuestionCard({
   // question itself, or the first part when the round carries parts.
   const chosen = items[0] ?? question.question;
   const [shown, setShown] = useState(() => Math.max(1, filled(answers, items)));
+  const context = question.context ?? [];
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+      {context.length === 0 ? null : (
+        <div
+          className={cn(
+            "grid gap-2",
+            context.length === 1 ? "grid-cols-1" : "grid-cols-2",
+          )}
+        >
+          {context.map((group) => {
+            const values = distinctValues(group.cards);
+            const held = Math.max(0, values.length - WORDS_SHOWN);
+            return (
+              <div
+                key={group.name}
+                className="min-w-0 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5"
+              >
+                <p className="truncate font-medium text-xs" dir="auto">
+                  {group.name}
+                </p>
+                {values.length === 0 ? null : (
+                  <p
+                    dir="auto"
+                    className="text-muted-foreground text-xs leading-[1.45]"
+                  >
+                    {values.slice(0, WORDS_SHOWN).join(" · ")}
+                    {held === 0 ? "" : ` +${held}`}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <h2
         className="font-sans text-[15px] font-medium leading-[1.45]"
         dir="auto"

@@ -6,7 +6,14 @@ export interface RunSnapshotQuestion {
   explanation: string;
   parts?: string[];
   cap?: number;
+  /** The groups a round shows above its prompt, carried from an earlier round. */
+  context?: ContextGroup[];
   position: number;
+}
+
+export interface ContextGroup {
+  name: string;
+  cards: string[];
 }
 
 export interface RunSnapshot {
@@ -93,6 +100,7 @@ export function participantQuestions({ value }: { value: unknown }) {
     choices: question.choices,
     parts: partsOf(question),
     cap: capOf(question),
+    context: question.context ?? [],
     position: question.position,
   }));
 }

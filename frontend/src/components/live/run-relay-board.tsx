@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
 import { ModelRow } from "@/components/live/model-row";
+import { PickControl, usePick } from "@/components/live/pick-control";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import {
   type RefusalAbout,
@@ -13,7 +14,7 @@ import {
   refusalSentence,
   saidRefusal,
 } from "@/components/live/refusals";
-import { RoundStrip, RoundToken } from "@/components/live/round-token";
+import { RoundToken } from "@/components/live/round-token";
 import {
   choicesOf,
   pickedPiles,
@@ -23,6 +24,7 @@ import {
   type RelayTake,
   roundStanding,
   trayOf,
+  type Wall as WallShape,
 } from "@/components/live/rounds";
 import { Wall, type WallEdits } from "@/components/live/wall";
 import { PageContainer } from "@/components/page";
@@ -41,6 +43,9 @@ const SORTS_KEY = "commons-live-sorts:";
 
 /** The disabled Open button names the line that says why. */
 const REFUSAL_ID = "open-refusal";
+
+/** Every round in the strip sits in the same pill, tapped or not. */
+const STRIP_TOKEN = "flex min-w-0 rounded-full px-1 py-0.5";
 
 /** The disc on the primary button takes the button's own colour. */
 const ON_PRIMARY =
@@ -69,7 +74,11 @@ export function RelayRunBoard({
   refetch: () => void;
 }) {
   const { session } = useAuth();
-  const [shownLeg, setShownLeg] = useState<string | null>(null);
+  /** The round the strip was tapped for, under the round that was open then. */
+  const [shownLeg, setShownLeg] = useState<{
+    leg: string;
+    under: string | null;
+  } | null>(null);
   const [modelSorts, setModelSorts] = useState(false);
   const [askedFor, setAskedFor] = useState<string | null>(null);
 
@@ -85,13 +94,15 @@ export function RelayRunBoard({
   const closed = run.rounds.filter(
     (round) => round.round !== null && round.figure.open === false,
   );
+  // A tap lapses when the round it was made under gives way to another, so a
+  // round that opens takes the screen back.
   const chosen =
-    shownLeg === null
+    shownLeg === null || shownLeg.under !== openRound
       ? null
-      : (run.rounds.find((round) => round.leg === shownLeg)?.round ?? null);
+      : (run.rounds.find((round) => round.leg === shownLeg.leg)?.round ?? null);
   const next = run.rounds.find((round) => round.round === null) ?? null;
   const { take, source } = takeOf(run, relay, next);
-  const shown = openRound ?? chosen ?? source?.round ?? lastClosed(closed);
+  const shown = chosen ?? openRound ?? source?.round ?? lastClosed(closed);
 
   const {
     data: wallData,
@@ -104,6 +115,29 @@ export function RelayRunBoard({
     [session, shown, openRound],
   );
   const wall = wallData?.wall ?? null;
+
+  // A vote round's rows stand for piles on the wall its choices came from, so
+  // the dashboard reads that wall too and each row spreads the cards behind it.
+  const shownEntry =
+    run.rounds.find((round) => round.round !== null && round.round === shown) ??
+    null;
+  const shownTake =
+    shownEntry === null
+      ? null
+      : (relay?.rounds.find((one) => one.leg === shownEntry.leg)?.takes[0] ??
+        null);
+  const choiceSource =
+    shownTake === null || shownTake.shape !== "choices"
+      ? null
+      : (run.rounds.find((one) => one.leg === shownTake.source)?.round ?? null);
+  const { data: sourceData } = useQuery(
+    session && choiceSource !== null
+      ? () => api["/live/walls/read"]({ round: choiceSource }).then(unwrap)
+      : null,
+    [session, choiceSource],
+  );
+  const sourceWall: WallShape | null = sourceData?.wall ?? null;
+
   /** A vote round has nothing to sort: every answer is one of the choices. */
   const voting =
     openRound !== null && wall !== null && choicesOf(wall).length > 0;
@@ -161,10 +195,32 @@ export function RelayRunBoard({
   const picks =
     tapped !== null && tapped.round === shown ? tapped.piles : polled;
   const takesShown =
-    take?.shape === "picked" &&
+    take !== null &&
     source !== null &&
     source.round === shown &&
     source.figure.open === false;
+
+  /** Sends the whole picked set, which stands on the screen until the wall lands. */
+  function applyPick(piles: string[]) {
+    if (shown === null) return;
+    setTapped({ round: shown, piles });
+    picking.current = true;
+    void send(
+      api["/live/walls/pick"]({ round: shown, piles }),
+      goneOrClosed("PILE_GONE"),
+    ).then(() => {
+      picking.current = false;
+      refetchWall();
+    });
+  }
+
+  const pick = usePick({
+    run: run.run,
+    piles: wall?.piles ?? [],
+    picked: picks,
+    live: takesShown && run.open,
+    onPick: applyPick,
+  });
 
   /** Sends one request; a refusal is said in the word the screen reads for it. */
   async function send(request: Promise<unknown>, read: Reader) {
@@ -244,23 +300,7 @@ export function RelayRunBoard({
               if (sent) toast.success("Summarizing…");
             });
           },
-          togglePick:
-            takesShown && run.open
-              ? (pile) => {
-                  const piles = picks.includes(pile)
-                    ? picks.filter((one) => one !== pile)
-                    : [...picks, pile];
-                  setTapped({ round: shown, piles });
-                  picking.current = true;
-                  void send(
-                    api["/live/walls/pick"]({ round: shown, piles }),
-                    goneOrClosed("PILE_GONE"),
-                  ).then(() => {
-                    picking.current = false;
-                    refetchWall();
-                  });
-                }
-              : undefined,
+          togglePick: takesShown && run.open ? pick.tap : undefined,
         };
 
   async function openNext() {
@@ -385,16 +425,39 @@ export function RelayRunBoard({
           >
             {run.title}
           </h1>
-          <RoundStrip
-            titles
-            size="md"
-            className="flex-wrap gap-x-3.5 gap-y-1"
-            rounds={run.rounds.map((round) => ({
-              number: round.number,
-              title: round.title,
-              standing: roundStanding(round),
-            }))}
-          />
+          <div className="-mx-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            {run.rounds.map((round) => {
+              const standing = roundStanding(round);
+              const token = (
+                <RoundToken
+                  number={round.number}
+                  title={round.title}
+                  standing={standing}
+                  size="md"
+                />
+              );
+              return standing === "done" ? (
+                <button
+                  key={round.leg}
+                  type="button"
+                  aria-pressed={round.round === shown}
+                  onClick={() =>
+                    setShownLeg({ leg: round.leg, under: openRound })
+                  }
+                  className={cn(
+                    STRIP_TOKEN,
+                    round.round === shown && "ring-1 ring-primary/60",
+                  )}
+                >
+                  {token}
+                </button>
+              ) : (
+                <span key={round.leg} className={STRIP_TOKEN}>
+                  {token}
+                </span>
+              );
+            })}
+          </div>
         </div>
         <div className="flex flex-none items-center gap-2">
           <Button variant="outline" asChild>
@@ -425,29 +488,6 @@ export function RelayRunBoard({
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-3">
-          {openRound === null && closed.length > 1 ? (
-            <div className="flex flex-wrap items-center justify-end gap-1.5">
-              {closed
-                .filter((round) => round.round !== shown)
-                .map((round) => (
-                  <Button
-                    key={round.leg}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShownLeg(round.leg)}
-                  >
-                    Show
-                    <RoundToken
-                      number={round.number}
-                      standing="done"
-                      size="sm"
-                    />
-                    again
-                  </Button>
-                ))}
-            </div>
-          ) : null}
-
           {wall === null ? (
             wallError !== null ? (
               <ErrorState message={wallError} onRetry={refetchWall} />
@@ -463,6 +503,7 @@ export function RelayRunBoard({
               wall={wall}
               named={shown !== openRound}
               carriesTo={takesShown ? (next?.number ?? undefined) : undefined}
+              sourceWall={sourceWall}
               edits={edits}
             />
           )}
@@ -488,6 +529,14 @@ export function RelayRunBoard({
             )}
             {!run.open || next === null ? null : (
               <>
+                {takesShown ? (
+                  <PickControl
+                    mode={pick.mode}
+                    top={pick.top}
+                    onMode={pick.setMode}
+                    onTop={pick.setTop}
+                  />
+                ) : null}
                 <Button
                   variant={openEntry === null ? "default" : "outline"}
                   size="lg"
@@ -561,7 +610,7 @@ export function RelayRunBoard({
             ) : null}
 
             <Button variant="outline" size="sm" className="self-start" asChild>
-              <Link href={`/staff/live/relay/${run.relay}?draft=1`}>
+              <Link href={`/staff/live/relay/${run.relay}/edit?draft=1`}>
                 <Sparkles /> Draft a round
               </Link>
             </Button>
@@ -686,7 +735,7 @@ function refusalFor({
     return { word: "SOURCE_UNRUN", about: { round: source.number } };
   if (source !== null && source.figure.open === true)
     return { word: "SOURCE_OPEN", about: { round: source.number } };
-  if (take?.shape === "picked" && picks === 0)
+  if (take !== null && picks === 0)
     return { word: "NOTHING_PICKED", about: {} };
   return null;
 }

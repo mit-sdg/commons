@@ -181,8 +181,8 @@ function StaffDashboardPageContent() {
                 href="/staff/live"
                 className="flex items-center gap-2 text-sm hover:text-primary"
               >
-                <Radio className="size-4" /> Run quizzes &amp; surveys in the
-                room
+                <Radio className="size-4" /> Run quizzes, surveys &amp; relays
+                in the room
               </Link>
             ) : null}
           </CardContent>

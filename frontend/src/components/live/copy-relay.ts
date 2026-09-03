@@ -2,54 +2,45 @@ import { api, isApiError, type Output } from "@/lib/api";
 
 type FetchedRelay = NonNullable<Output<"/live/relays/get">["relay"]>;
 
-/** A relay as copying reads it: a title, its rounds, and takes by round number. */
-export interface CopyableRelay {
+/** One round as copying replays it; a take names its source by number. */
+export interface CopyableRound {
   title: string;
-  rounds: {
-    title: string;
-    prompt: string;
-    parts: string[];
-    cap: number;
-    choices: string[];
-    takes?: { from: number; shape: string };
-  }[];
+  prompt: string;
+  parts: string[];
+  cap: number;
+  choices: string[];
+  takes?: { from: number; shape: string };
 }
 
-/** The deck and a standing relay both reach copying through the same shape. */
-export function relayToCopy(relay: FetchedRelay): CopyableRelay {
-  return {
-    title: relay.title,
-    rounds: relay.rounds.map((round) => {
-      const takes = round.takes[0];
-      return {
-        title: round.title,
-        prompt: round.prompt,
-        parts: round.parts,
-        cap: round.cap,
-        choices: round.choices,
-        takes:
-          takes === undefined
-            ? undefined
-            : { from: takes.sourceNumber, shape: takes.shape },
-      };
-    }),
-  };
+/** A standing relay, read into the shape copying replays. */
+export function roundsToCopy(relay: FetchedRelay): CopyableRound[] {
+  return relay.rounds.map((round) => {
+    const takes = round.takes[0];
+    return {
+      title: round.title,
+      prompt: round.prompt,
+      parts: round.parts,
+      cap: round.cap,
+      choices: round.choices,
+      takes:
+        takes === undefined
+          ? undefined
+          : { from: takes.sourceNumber, shape: takes.shape },
+    };
+  });
 }
 
 /**
  * Copying plays the same requests a staff member would send by hand, in order:
- * the relay, each round, then what each round takes. The new relay comes back
- * so the caller can go on to its setup page.
+ * each round, then what each round takes. The relay is planned first, so its
+ * title is the one the author typed rather than the source's.
  */
-export async function copyRelay(
-  source: CopyableRelay,
+export async function copyRounds(
+  relay: string,
+  source: CopyableRound[],
 ): Promise<{ relay: string } | { error: string }> {
-  const planned = await api["/live/relays/plan"]({ title: source.title });
-  if (isApiError(planned)) return planned;
-  const relay = planned.relay;
-
   const legs: string[] = [];
-  for (const round of source.rounds) {
+  for (const round of source) {
     const added = await api["/live/relays/add-round"]({
       relay,
       title: round.title,
@@ -62,7 +53,7 @@ export async function copyRelay(
     legs.push(added.leg);
   }
 
-  for (const [index, round] of source.rounds.entries()) {
+  for (const [index, round] of source.entries()) {
     const takes = round.takes;
     if (takes === undefined || takes.shape === "") continue;
     const from = legs[takes.from - 1];
@@ -77,6 +68,33 @@ export async function copyRelay(
   }
 
   return { relay };
+}
+
+/**
+ * The same move for a questionnaire: the source's questions, in order, added
+ * to a questionnaire the create endpoint has already made.
+ */
+export async function copyQuestionnaire(
+  questionnaire: string,
+  source: string,
+): Promise<{ questionnaire: string } | { error: string }> {
+  const read = await api["/live/quizzes/get"]({ questionnaire: source });
+  if (isApiError(read)) return read;
+  const sheet = read.questionnaire;
+  if (sheet === null) return { error: "NOT_FOUND" };
+
+  for (const question of sheet.questions) {
+    const added = await api["/live/quizzes/add-question"]({
+      questionnaire,
+      prompt: question.prompt,
+      choices: question.choices,
+      expected: question.expected,
+      explanation: question.explanation,
+    });
+    if (isApiError(added)) return added;
+  }
+
+  return { questionnaire };
 }
 
 const TAIL = new Set([

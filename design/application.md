@@ -67,6 +67,10 @@ instantiate Trashing as Archiving with
   User is Authenticating.User
   Item is Authenticating.User
 
+instantiate Trashing as Retiring with
+  User is Authenticating.User
+  Item is Relaying.Relay
+
 instantiate Assigning with
   Author is Authenticating.User
   Assignee is Authenticating.User

@@ -160,6 +160,7 @@ describe("the relay editing loop", () => {
     expect(offering.lines.map((line) => line.kind)).toEqual(["add", "add"]);
     expect(offering.lines.every((line) => line.standing === "pending")).toBe(true);
     expect(JSON.parse(offering.lines[0].value)).toEqual({
+      kind: "list",
       title: "Three verbs",
       prompt: "Name three verbs from the passage.",
       parts: ["one", "two", "three"],
@@ -169,7 +170,7 @@ describe("the relay editing loop", () => {
       position: 1,
     });
     expect(JSON.parse(offering.lines[1].value)).toMatchObject({
-      takes: { from: 1, shape: "picked" },
+      takes: { from: 1, shape: "context" },
       position: 2,
     });
 
@@ -184,8 +185,8 @@ describe("the relay editing loop", () => {
     expect(built.map((round) => round.number)).toEqual([1, 2]);
     expect(built[0].parts).toEqual(["one", "two", "three"]);
     expect(built[0].prompt).toBe("Name three verbs from the passage.");
-    expect(built[1].parts).toEqual(["answer"]);
-    expect(built[1].takes).toEqual([{ source: built[0].leg, sourceNumber: 1, shape: "picked" }]);
+    expect(built[1].parts).toEqual([]);
+    expect(built[1].takes).toEqual([{ source: built[0].leg, sourceNumber: 1, shape: "context" }]);
 
     const settled = await until(
       () => offerings(edge, cookie, relay),

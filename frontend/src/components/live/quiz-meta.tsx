@@ -36,6 +36,16 @@ export const RUN_OPEN_MESSAGE = "A run is open — editing is locked.";
 /** Why a quiz cannot launch yet; the shelf and the desk say it the same way. */
 export const QUIZ_NOT_READY_MESSAGE = "No question has a marked answer.";
 
+const FORM_LABELS: Record<string, string> = {
+  quiz: "Quiz",
+  survey: "Survey",
+  relay: "Relay",
+};
+
+/** What retiring costs, said the same way wherever it is confirmed. */
+export const RETIRE_NOTE =
+  "It can no longer be edited or launched. Past runs and their answers are retained.";
+
 export function FormBadge({
   form,
   className,
@@ -43,10 +53,14 @@ export function FormBadge({
   form: string;
   className?: string;
 }) {
-  const quiz = form === "quiz";
   return (
-    <Badge variant={quiz ? "default" : "secondary"} className={className}>
-      {quiz ? "Quiz" : "Survey"}
+    <Badge
+      variant={
+        form === "quiz" ? "default" : form === "relay" ? "outline" : "secondary"
+      }
+      className={className}
+    >
+      {FORM_LABELS[form] ?? "Survey"}
     </Badge>
   );
 }

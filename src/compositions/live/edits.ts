@@ -9,6 +9,7 @@ import {
   when,
   where,
 } from "@mit-sdg/sync-engine/language";
+import { USE_WORDS } from "../../computations/live-carries.ts";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
 import {
@@ -329,7 +330,7 @@ export const TakenAddAddsRound = reaction(
         where(
           compute(computations.editRoundJson, { value }, drawing),
           compute(computations.editRoundTakesShape, { round: drawing }, shape),
-          is.among(shape, ["picked", "every", "top"]),
+          is.among(shape, USE_WORDS),
           compute(computations.editRoundTakesFrom, { round: drawing }, from),
           Relaying._leg({ leg: added }).is({ relay: drawn }),
           Relaying._legs({ relay: drawn }).is({ leg: source, position: from }),
@@ -476,7 +477,7 @@ export const TakenTakesDraws = reaction(
         Relaying._relay({ relay }),
         Relaying._leg({ leg: target }).is({ relay }),
         compute(computations.editShape, { value }, shape),
-        is.among(shape, ["picked", "every", "top"]),
+        is.among(shape, USE_WORDS),
         compute(computations.editPosition, { value }, position),
         Relaying._legs({ relay }).is({ leg: source, position }),
       )

@@ -4,7 +4,19 @@ A relay is a series of rounds a staff member runs in one meeting: each round is 
 
 ## Authoring a relay
 
-Each round's question is an ordinary questionnaire of the survey form holding exactly one question, so a round's title is its questionnaire's title and everything Questioning knows — prompts, choices, parts — is the round's. The relay holds the order and the takes. [Live.relays.Plan](reaction:Live.relays.Plan) plans an empty relay under a title, and [Live.relays.Retitle](reaction:Live.relays.Retitle) renames it. [Live.relays.AddRound](reaction:Live.relays.AddRound) composes the round's questionnaire, adds its one question, sets the question's parts, and appends the leg — one request, so a half-made round never stands. [Live.relays.ReviseRound](reaction:Live.relays.ReviseRound) rewrites a round in place: it clears the question's parts, revises the prompt and choices, and sets the parts again, in that order, so a round may move from choices to parts or back in one request; [Live.relays.ReviseRoundRefused](reaction:Live.relays.ReviseRoundRefused) answers the same path with `RUN_OPEN` for a round whose questionnaire has an open run, and `LEG_NOT_FOUND` for a round that does not exist, before anything changes. [Live.relays.RemoveRound](reaction:Live.relays.RemoveRound) removes the leg — Relaying refuses while another round still takes from it — and retires its questionnaire so the shelf never shows it as a survey of its own. [Live.relays.MoveRound](reaction:Live.relays.MoveRound) places a round at a position, and Relaying refuses any order that would put a round before what it takes from. [Live.relays.SetTakes](reaction:Live.relays.SetTakes) records what a round takes from an earlier one — a source round and a shape — and [Live.relays.ClearTakes](reaction:Live.relays.ClearTakes) removes it. The shapes this composition fills are `picked` (the piles the staff member tapped on the source's wall), `every` (every pile), and `top` (the three fullest); each fills the round's choices when it opens.
+Each round's question is an ordinary questionnaire of the survey form holding exactly one question, so a round's title is its questionnaire's title and everything Questioning knows — prompts, choices, parts — is the round's. The relay holds the order and the takes. [Live.relays.Plan](reaction:Live.relays.Plan) plans an empty relay under a title, [Live.relays.Retitle](reaction:Live.relays.Retitle) renames it, and [Live.relays.Retire](reaction:Live.relays.Retire) retires it when its teaching life ends: a retired relay is refused a launch with `RELAY_RETIRED`, its runs stay readable, and retiring is refused with `RUN_OPEN` while a run is open. Retiring is a Trashing instance over relays, so the list and the relay both carry `retired`. [Live.relays.AddRound](reaction:Live.relays.AddRound) composes the round's questionnaire, adds its one question, sets the question's parts, and appends the leg — one request, so a half-made round never stands. [Live.relays.ReviseRound](reaction:Live.relays.ReviseRound) rewrites a round in place: it clears the question's parts, revises the prompt and choices, and sets the parts again, in that order, so a round may move from choices to parts or back in one request; [Live.relays.ReviseRoundRefused](reaction:Live.relays.ReviseRoundRefused) answers the same path with `RUN_OPEN` for a round whose questionnaire has an open run, and `LEG_NOT_FOUND` for a round that does not exist, before anything changes. [Live.relays.RemoveRound](reaction:Live.relays.RemoveRound) removes the leg — Relaying refuses while another round still takes from it — and retires its questionnaire so the shelf never shows it as a survey of its own. [Live.relays.MoveRound](reaction:Live.relays.MoveRound) places a round at a position, and Relaying refuses any order that would put a round before what it takes from. [Live.relays.SetTakes](reaction:Live.relays.SetTakes) records what a round takes from an earlier one — a source round and a use — and [Live.relays.ClearTakes](reaction:Live.relays.ClearTakes) removes it; a use this composition does not fill is refused `INVALID_USE`.
+
+## Kinds and uses
+
+A round is one of three kinds, read off its question: **write** (one box), **list** (parts: labeled boxes, or one box repeated up to a cap), or **vote** (choices). Every round leaves named groups with counts on its wall — piles for a write or list round, and for a vote round the choices with their tallies, since the wall page files each ballot under a pile of its choice's name. Which groups carry forward is the staff member's pick on the dashboard, made after the source round closes; nothing about the pick is authored. What a round does with the picked groups is its take's use, and the use is open only to some kinds:
+
+| Use       | Kinds             | What it does when the round opens                                  |
+| --------- | ----------------- | ------------------------------------------------------------------ |
+| `context` | write, list, vote | the picked groups, with their cards, are shown above the prompt    |
+| `choices` | vote              | the picked groups' names are the choices, and the round is one box |
+| `parts`   | list              | the picked groups' names are the parts, one box each               |
+
+[Live.relays.Uses](reaction:Live.relays.Uses) forms this table — [carryUses](computation:carryUses) — for the editor, its explainer, and the drafting passage, so the words have one home. A round that takes its choices or parts is authored with none of its own.
 
 A question's parts are how one phone hands in several answers: labeled boxes (one, two, three) or one box repeated up to a cap. Each box is an item of its own, `question#n`, and each value handed in is one card on the wall. The shelf's questionnaire list leaves a round's questionnaire out, since a round is reached through its relay.
 
@@ -14,7 +26,7 @@ A question's parts are how one phone hands in several answers: labeled boxes (on
 
 [Live.relays.Launch](reaction:Live.relays.Launch) publishes the relay itself as an open edition — the run — and issues its share token and durable room code in the same request, exactly as a questionnaire launches. Nothing is captured at launch: the relay stays editable between rounds, and each round freezes only when it opens. A participant's token stays on the run for the whole meeting.
 
-Opening a round is publishing a second time, with the round's questionnaire as the material. [Live.relays.OpenRound](reaction:Live.relays.OpenRound) opens a round, and [Live.relays.OpenRoundRefused](reaction:Live.relays.OpenRoundRefused) answers the same path with the refusals: `ROUND_OPEN` while another round of the run is open, `ROUND_DONE` when this round already ran in this run, `SOURCE_OPEN` while any round it takes from has not closed in this run, `NOTHING_PICKED` when it takes the picked piles and none are picked, `CLOSED` once the run has closed, and `LEG_NOT_FOUND` for a round that is not the run's. A round whose sources have closed may open whatever its number, so the staff member can skip or return; opening in order is the default the dashboard offers. When the round takes `every` or `top`, [Live.relays.OpenRoundCarrying](reaction:Live.relays.OpenRoundCarrying) answers the same path and first records the carried piles on the source round, so that `picked`, `every`, and `top` all read the same record. Then it publishes the round and links it to its run through RoundLinking, so the run knows its rounds in opening order; the tie is what captures: [Live.relays.TiedRoundCapturesPresentation](reaction:Live.relays.TiedRoundCapturesPresentation) captures the presentation into RunSnapshotting under the new edition — [the round's presentation](former:Live.relays.theRoundPresentation), the questionnaire as it stands, for a round that takes nothing, or [the presentation taking from a source round](former:Live.relays.theRoundPresentationTaking), with the choices replaced by the carried piles' names and no parts, since a round that offers choices is one box. The filled question lives only in that snapshot; the questionnaire itself is never rewritten. Which piles a round carried out is the source round's PickLinking record, set by the wall page's pick and read by the wall as the small tag on a pile.
+Opening a round is publishing a second time, with the round's questionnaire as the material. [Live.relays.OpenRound](reaction:Live.relays.OpenRound) opens a round, and [Live.relays.OpenRoundRefused](reaction:Live.relays.OpenRoundRefused) answers the same path with the refusals: `ROUND_OPEN` while another round of the run is open, `ROUND_DONE` when this round already ran in this run, `SOURCE_OPEN` while the round it takes from has not closed in this run, `NOTHING_PICKED` when it takes from a round on which nothing is picked, `CLOSED` once the run has closed, and `LEG_NOT_FOUND` for a round that is not the run's. A round whose source has closed may open whatever its number, so the staff member can skip or return; opening in order is the default the dashboard offers. Opening publishes the round and links it to its run through RoundLinking, so the run knows its rounds in opening order; the tie is what captures: [Live.relays.TiedRoundCapturesPresentation](reaction:Live.relays.TiedRoundCapturesPresentation) captures the presentation into RunSnapshotting under the new edition, by the take's use — [the round's presentation](former:Live.relays.theRoundPresentation), the questionnaire as it stands, for a round that takes nothing; [the presentation taking choices](former:Live.relays.theRoundPresentationTaking), with the choices replaced by the picked piles' names and no parts; [the presentation taking parts](former:Live.relays.theRoundPresentationTakingParts), with the parts replaced by the picked piles' names and no choices; or [the presentation showing the source](former:Live.relays.theRoundPresentationShowing), the question as authored with the picked piles and their cards — [pileCards](computation:pileCards) — as its context. The filled question lives only in that snapshot; the questionnaire itself is never rewritten. Which piles a round carried out is the source round's PickLinking record, set by the wall page's pick and read by the wall as the small tag on a pile.
 
 [Live.relays.CloseRound](reaction:Live.relays.CloseRound) closes the round's edition; phones that answer afterward meet the same `CLOSED` refusal a closed quiz gives. [Live.relays.Close](reaction:Live.relays.Close) closes the run, closing its open round first when one stands. Showing a closed round again is a read of its wall, never a change of state.
 
@@ -35,6 +47,21 @@ oneBoxParts(question: String) : Strings
 
 oneBoxCap(question: String) : Number
   Answers the cap of a round that offers carried choices: none.
+
+noChoices(question: String) : Strings
+  Answers the choices of a round that takes its parts: none.
+
+carryUses() : Json
+  Answers the table of uses: each use, the kinds it is open to, and the one
+  sentence the editor shows beside it.
+
+useStanding(use: String) : String
+  Answers `known` when the word names a use this composition fills, and
+  `unknown` otherwise.
+
+pileCards(pile: String, categories: Json, values: Json) : Strings
+  Answers the values of a pile's cards in hand-in order, leaving out a card
+  that only repeats the pile's name, which is what a ballot does.
 ```
 
 ```endpoints
@@ -50,13 +77,14 @@ Live.relays.Launch at /live/relays/launch
 Live.relays.List at /live/relays/list
 Live.relays.MoveRound at /live/relays/move-round
 Live.relays.OpenRound at /live/relays/open-round
-Live.relays.OpenRoundCarrying at /live/relays/open-round
 Live.relays.OpenRoundRefused at /live/relays/open-round
 Live.relays.Plan at /live/relays/plan
 Live.relays.RemoveRound at /live/relays/remove-round
+Live.relays.Retire at /live/relays/retire
 Live.relays.Retitle at /live/relays/retitle
 Live.relays.ReviseRound at /live/relays/revise-round
 Live.relays.ReviseRoundRefused at /live/relays/revise-round
 Live.relays.Run at /live/relays/run
 Live.relays.SetTakes at /live/relays/set-takes
+Live.relays.Uses at /live/relays/uses
 ```

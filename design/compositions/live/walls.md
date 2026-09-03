@@ -1,6 +1,6 @@
 # The wall
 
-A round's wall is every answer the room handed in, as cards, sorted into named piles with counts. A card is one value of one part of one response; its identity is minted from the response and the item and reveals neither. Piles are Piling — a Categorizing instance whose scope is the round's edition — so an answer has at most one home, a pile's name is unique on its wall, and two walls may each have a pile called `add`. Cards with no home are the tray. Every staff endpoint here requires `live:host`, and every write is refused `CLOSED` once the round's run has closed, while a closed round of an open run still takes picks and hand sorting, which is when staff pick.
+A round's wall is every answer the room handed in, as cards, sorted into named piles with counts. A card is one value of one part of one response; its identity is minted from the response and the item and reveals neither. Piles are Piling — a Categorizing instance whose scope is the round's edition — so an answer has at most one home, a pile's name is unique on its wall, and two walls may each have a pile called `add`. Cards with no home are the tray. A vote's ballots sort themselves: [Live.walls.HandedInBallotsJoinTheirPiles](reaction:Live.walls.HandedInBallotsJoinTheirPiles) files each handed-in answer that is one of the round's choices — [answerKind](computation:answerKind) — under the pile of that name, so a vote wall is piles like any other, its bars read them, and its groups can be picked and carried like a written round's. Every staff endpoint here requires `live:host`, and every write is refused `CLOSED` once the round's run has closed, while a closed round of an open run still takes picks and hand sorting, which is when staff pick.
 
 [Live.walls.Read](reaction:Live.walls.Read) forms [the wall of one round](former:Live.walls.theWall): the round's number, title, prompt, and parts; whether it is open; how many responses were begun and handed in; every card with its value, its part's label, which pile it is in, whether a model participant wrote it, and whether it belongs to the viewer; and every pile with its name, its sentence, its count, and whether it was picked to carry forward. The dashboard, the projector, and a phone after hand-in all read this former; the phone's cards are marked `mine` against its own response and carry no other identity. Raw and grouped are two readings of the same cards — the frontend groups by pile — so nothing on the wall is stored twice.
 
@@ -76,11 +76,9 @@ participantAnswers(reply: String, value: Json) : Json
   Reads a participant reply into `{ item, value }` pairs for the round's
   items, and an empty sequence when the reply cannot be read.
 
-everyPile(categories: Json) : Strings
-  Answers every pile of a wall, as the sequence PickLinking takes.
-
-topPiles(categories: Json) : Strings
-  Answers the three fullest piles of a wall, as the sequence PickLinking takes.
+answerKind(value: Json, answer: String) : String
+  Answers `choice` when the answer is one of the choices the captured question
+  offered, and `written` otherwise.
 
 partLabel(value: Json, item: String) : String
   Answers the label of the part an item names, and an empty string for a

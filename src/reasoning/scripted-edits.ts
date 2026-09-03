@@ -14,32 +14,35 @@ const relay = (rounds: unknown[]) => JSON.stringify({ kind: "relay", rounds });
 const oneRound = () =>
   relay([
     {
+      kind: "write",
       title: "Warm-up",
       prompt: "In one word, how is the pace so far?",
       parts: [],
       cap: 0,
       choices: [],
-      takes: { from: 0, shape: "" },
+      takes: { from: 0, use: "" },
     },
   ]);
 
 const twoRounds = () =>
   relay([
     {
+      kind: "list",
       title: "Three verbs",
       prompt: "Name three verbs from the passage.",
       parts: ["one", "two", "three"],
       cap: 0,
       choices: [],
-      takes: { from: 0, shape: "" },
+      takes: { from: 0, use: "" },
     },
     {
+      kind: "write",
       title: "The stranger",
-      prompt: "Which verb best fits the stranger?",
-      parts: ["answer"],
+      prompt: "Only these verbs. What is it?",
+      parts: [],
       cap: 0,
       choices: [],
-      takes: { from: 1, shape: "picked" },
+      takes: { from: 1, use: "context" },
     },
   ]);
 
@@ -48,21 +51,23 @@ const swapped = () =>
   relay([
     {
       number: 2,
+      kind: "write",
       title: "The stranger",
-      prompt: "Which verb best fits the stranger?",
-      parts: ["answer"],
+      prompt: "Only these verbs. What is it?",
+      parts: [],
       cap: 0,
       choices: [],
-      takes: { from: 0, shape: "" },
+      takes: { from: 0, use: "" },
     },
     {
       number: 1,
+      kind: "list",
       title: "Three verbs",
       prompt: "Name three verbs from the passage.",
       parts: ["one", "two", "three"],
       cap: 0,
       choices: [],
-      takes: { from: 0, shape: "" },
+      takes: { from: 0, use: "" },
     },
   ]);
 

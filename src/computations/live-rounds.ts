@@ -1,19 +1,11 @@
 /**
  * The small calculations the relay and wall compositions share: card
- * identities, the model participant's mark, and what a round carries out of
- * a wall when it takes every pile or the fullest few.
+ * identities and the model participant's mark.
  */
 
 import { createHash } from "node:crypto";
 
 const MODEL_PREFIX = "model:";
-
-interface PileWithItems {
-  category: string;
-  name: string;
-  description: string;
-  items: string[];
-}
 
 /** A card names neither its response nor its item; the wall keeps the join. */
 export function cardId({ response, item }: { response: string; item: string }): string {
@@ -37,21 +29,11 @@ export function oneBoxCap({ question: _question }: { question: string }): number
   return 0;
 }
 
+/** A round that takes its parts offers no choices. */
+export function noChoices({ question: _question }: { question: string }): string[] {
+  return [];
+}
+
 export function isSame({ left, right }: { left: string; right: string }): boolean {
   return left === right;
-}
-
-export function everyPile({ categories }: { categories: PileWithItems[] }): string[] {
-  return categories.map((pile) => pile.category);
-}
-
-/** The three fullest piles, fullest first; ties keep the wall's creation order. */
-export function topPiles({ categories }: { categories: PileWithItems[] }): string[] {
-  return [...categories]
-    .map((pile, index) => ({ pile, index }))
-    .sort(
-      (left, right) => right.pile.items.length - left.pile.items.length || left.index - right.index,
-    )
-    .slice(0, 3)
-    .map(({ pile }) => pile.category);
 }

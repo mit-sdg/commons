@@ -91,17 +91,12 @@ export function RoundStrip({
   );
 }
 
-const SHAPE_WORDS: Record<string, string> = {
-  picked: "the piles you pick",
-  every: "every pile",
-  top: "the top 3",
-};
-
+/** How a take reads beside its source round: the use, as the table serves it. */
 export function shapeWords(shape: string): string {
-  return SHAPE_WORDS[shape] ?? shape;
+  return `as ${shape}`;
 }
 
-/** What a round takes: a chip naming the source round and the shape. */
+/** What a round takes: a chip naming the source round and the use. */
 export function TakesChip({
   from,
   shape,
@@ -118,11 +113,12 @@ export function TakesChip({
       className={cn(
         "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background text-muted-foreground",
         size === "lg"
-          ? "py-[5px] pr-3.5 pl-1.5 text-base"
-          : "py-[3px] pr-2.5 pl-1 text-[13px]",
+          ? "py-[5px] pr-3.5 pl-3 text-base"
+          : "py-[3px] pr-2.5 pl-2.5 text-[13px]",
         className,
       )}
     >
+      from
       <span
         className={cn(
           "inline-flex flex-none items-center justify-center rounded-full bg-foreground font-mono text-background",

@@ -4,6 +4,7 @@ import { normalizeAccountEmails } from "./20260824T000200-normalize-account-emai
 import { dropProfileEmail } from "./20260824T000300-drop-profile-email.ts";
 import { adoptLinkingStore } from "./20260902T000200-adopt-linking-store.ts";
 import { categorizingScope } from "./20260902T000100-categorizing-scope.ts";
+import { carryUses } from "./20260903T000100-carry-uses.ts";
 
 export { MigrationBlocked, runMigrations } from "./migration.ts";
 export type { Migration, MigrationOutcome } from "./migration.ts";
@@ -19,4 +20,5 @@ export const commonsMigrations: readonly Migration[] = [
   dropProfileEmail,
   categorizingScope,
   adoptLinkingStore,
+  carryUses,
 ];

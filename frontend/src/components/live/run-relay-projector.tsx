@@ -133,6 +133,7 @@ export function RelayProjector({
         eyebrow={run.title}
         carriesTo={carriesTo}
         sourceWall={sourceWall}
+        scroll
         className={cn(
           "min-h-0 overflow-hidden",
           joining && !filling ? "flex-initial" : "flex-1",

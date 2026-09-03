@@ -84,15 +84,15 @@ import {
   relayEditLines,
 } from "./computations/live-edits.ts";
 import { soleTarget } from "./computations/live-links.ts";
+import { answerKind, carryUses, pileCards, useStanding } from "./computations/live-carries.ts";
 import {
   cardId,
-  everyPile,
   isModelParticipant,
   isSame,
   modelParticipant,
+  noChoices,
   oneBoxCap,
   oneBoxParts,
-  topPiles,
 } from "./computations/live-rounds.ts";
 import { positionAfter, positionBefore, receiptKind } from "./computations/live-quizzes.ts";
 import {
@@ -173,6 +173,7 @@ const registrations = {
   Relaying: relaying,
   Responding: responding,
   Resolving: resolving,
+  Retiring: trashing,
   Revising: revising,
   Roling: roling,
   Rostering: rostering,
@@ -236,14 +237,17 @@ export const learningConcepts = conceptSet(registrations, {
   positionBefore,
   receiptKind,
   effectiveCapabilities,
-  everyPile,
+  answerKind,
+  carryUses,
+  pileCards,
+  useStanding,
   isModelParticipant,
   isSame,
   modelParticipant,
+  noChoices,
   oneBoxCap,
   oneBoxParts,
   partLabel,
-  topPiles,
   invitationMailHtml,
   invitationMailText,
   notificationMailHtml,

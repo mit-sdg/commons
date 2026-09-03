@@ -2,7 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 
 /**
  * The relay room, end to end, against the real stack with the scripted
- * reasoner: a relay copied from the deck and launched; round one answered by
+ * reasoner: a two-round relay written and launched; round one answered by
  * forty scripted phones and one model participant; sorted by the model, with
  * one unusable reply stood upon and repaired; three piles picked; round two
  * opened with those piles as its choices; the run closed; the wall read back.
@@ -48,7 +48,12 @@ async function until<Value>(
 interface Face {
   relay: {
     openRound: string | null;
-    questions: { question: string; choices: string[]; parts: string[] }[];
+    questions: {
+      question: string;
+      choices: string[];
+      parts: string[];
+      context: { name: string }[];
+    }[];
   } | null;
 }
 
@@ -59,16 +64,39 @@ interface WallRead {
   } | null;
 }
 
-test("a deck relay runs its room: forty phones, a model participant, sorting, picks, round two", async ({
+test("a relay runs its room: forty phones, a model participant, sorting, picks, round two", async ({
   page,
 }) => {
   test.setTimeout(240_000);
   await signIn(page);
 
-  // Copy the two-round deck relay and launch it from its setup page.
-  await page.goto("/staff/live");
-  await page.getByRole("button", { name: "Copy" }).first().click();
-  await page.waitForURL(/\/staff\/live\/relay\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+  // Write the two-round relay through the same requests its edit page sends,
+  // then launch it from that page.
+  const planned = await call<{ relay: string }>(page, "/live/relays/plan", {
+    title: "Three verbs, then a stranger",
+  });
+  const first = await call<{ leg: string }>(page, "/live/relays/add-round", {
+    relay: planned.relay,
+    title: "Three verbs",
+    prompt: "Three verbs a bookmark needs.",
+    parts: ["one", "two", "three"],
+    cap: 0,
+    choices: [],
+  });
+  const second = await call<{ leg: string }>(page, "/live/relays/add-round", {
+    relay: planned.relay,
+    title: "The stranger",
+    prompt: "Only these verbs. What is it?",
+    parts: ["answer"],
+    cap: 0,
+    choices: [],
+  });
+  await call(page, "/live/relays/set-takes", {
+    leg: second.leg,
+    source: first.leg,
+    shape: "context",
+  });
+  await page.goto(`/staff/live/relay/${planned.relay}/edit`);
   await expect(page.getByRole("textbox", { name: "Title" }).nth(2)).toHaveValue("The stranger");
   await page.getByRole("button", { name: "Launch" }).click();
   await page.waitForURL(/\/staff\/live\/run\/[0-9a-f-]{36}$/, { timeout: 20_000 });
@@ -141,22 +169,17 @@ test("a deck relay runs its room: forty phones, a model participant, sorting, pi
   expect(names).toEqual(["Examples", "Pace", "Questions"]);
   await expect(page.getByText("Pace", { exact: true }).first()).toBeVisible();
 
-  // Close round one, pick the three piles, open round two with them as its choices.
+  // Close round one. The pick control's default, the top four, picks all three
+  // piles at once; a tap on a pile hands the pick over and unpicks that one.
   await page.getByRole("button", { name: /^Close.*Three verbs/ }).click();
-  await expect(page.getByRole("button", { name: /^Open.*The stranger/ })).toBeVisible({
+  await expect(page.getByRole("button", { name: /^Open.*The stranger.*3 piles/ })).toBeVisible({
     timeout: 20_000,
   });
-  await expect(page.getByRole("button", { name: /^Open.*The stranger.*0 piles/ })).toBeVisible({
+  await page.getByRole("button", { name: /^Pace\b/ }).click();
+  await expect(page.getByRole("button", { name: /^Open.*The stranger.*2 piles/ })).toBeVisible({
     timeout: 20_000,
   });
-  let picked = 0;
-  for (const name of ["Pace", "Examples", "Questions"]) {
-    await page.getByRole("button", { name: new RegExp(`^${name}\\b`) }).click();
-    picked += 1;
-    await expect(
-      page.getByRole("button", { name: new RegExp(`^Open.*The stranger.*${picked} pile`) }),
-    ).toBeVisible({ timeout: 20_000 });
-  }
+  await page.getByRole("button", { name: /^Pace\b/ }).click();
   await expect(page.getByRole("button", { name: /^Open.*The stranger.*3 piles/ })).toBeEnabled({
     timeout: 20_000,
   });
@@ -165,7 +188,9 @@ test("a deck relay runs its room: forty phones, a model participant, sorting, pi
     () => call<Face>(page, "/live/p/arrive", { token }),
     (value) => value.relay?.openRound !== null && value.relay?.openRound !== roundOne,
   );
-  expect(roundTwo.relay?.questions[0]?.choices.slice().sort()).toEqual([
+  const shown = roundTwo.relay?.questions[0];
+  expect(shown?.choices).toEqual([]);
+  expect((shown?.context ?? []).map((group) => group.name).sort()).toEqual([
     "Examples",
     "Pace",
     "Questions",

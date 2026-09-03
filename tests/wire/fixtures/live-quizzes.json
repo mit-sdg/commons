@@ -275,7 +275,8 @@
               "choices": ["Oxygen", "Carbon dioxide"],
               "parts": [],
               "cap": 0,
-              "position": 1
+              "position": 1,
+              "context": []
             },
             {
               "question": "uuid#9",
@@ -283,7 +284,8 @@
               "choices": [],
               "parts": [],
               "cap": 0,
-              "position": 2
+              "position": 2,
+              "context": []
             }
           ]
         }

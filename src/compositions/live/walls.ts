@@ -176,6 +176,26 @@ export const theWall = former(
     }),
 ).optional();
 
+/**
+ * A vote's ballots sort themselves: each answer that is one of the round's
+ * choices is filed under the pile of that name the moment the response is
+ * handed in, so a vote wall is piles like any other and its bars read them.
+ */
+export const HandedInBallotsJoinTheirPiles = reaction(
+  ({ response, round, presentation, item, value, card, kind }) =>
+    when(Responding.submit({ response }).responds())
+      .where(
+        Responding._response({ response }).is({ subject: round }),
+        roundIsAWall({ round }),
+        RunSnapshotting._snapshot({ subject: round }).is({ value: presentation }),
+        Responding._answers({ response }).is({ item, value }),
+        compute(computations.answerKind, { value: presentation, answer: value }, kind),
+        is.among(kind, ["choice"]),
+        compute(computations.cardId, { response, item }, card),
+      )
+      .then(Piling.file({ scope: round, name: value, item: card })),
+);
+
 /** The model's placing reply becomes an offering of suggestions about the round. */
 export const ReplyPlacesCards = reaction(
   ({ asking, reply, round, categories, values, reading, lines, at }) =>

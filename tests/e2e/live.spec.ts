@@ -28,7 +28,7 @@ async function draftAndAdopt(page: Page, request: string) {
     timeout: 20_000,
   });
   await page.getByRole("button", { name: "Adopt this draft" }).click();
-  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}\/edit$/, { timeout: 20_000 });
 }
 
 test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed", async ({
@@ -195,7 +195,7 @@ test("an empty quiz can adopt its first AI-generated questions", async ({ page }
   await page.goto("/staff/live/new");
   await page.getByRole("textbox", { name: "Title" }).fill("Empty quiz");
   await page.getByRole("button", { name: "Create" }).click();
-  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}\/edit$/, { timeout: 20_000 });
 
   await page.getByRole("button", { name: "Refine with AI" }).click();
   await page.getByLabel("Request a change to this draft").fill("Add two questions about plants");
@@ -204,7 +204,7 @@ test("an empty quiz can adopt its first AI-generated questions", async ({ page }
     timeout: 20_000,
   });
   await page.getByRole("button", { name: "Adopt this draft" }).click();
-  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}\/edit$/, { timeout: 20_000 });
   await expect(page.getByRole("heading", { name: /Questions \(2\)/ })).toBeVisible();
 });
 

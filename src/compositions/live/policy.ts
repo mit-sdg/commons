@@ -116,7 +116,23 @@ export const runIsNotKeyed = view("(run) has no key", ({ run }, _outputs, _bindi
   where(no(Scoring._keyFor({ subject: run }))),
 ).holds();
 
-const { Piling, PickLinking, Relaying, RoundLinking } = concepts;
+const { Piling, PickLinking, Relaying, Retiring, RoundLinking } = concepts;
+
+export const relayHasAnOpenRun = view("(relay) has an open run", ({ relay }, _outputs, _bindings) =>
+  where(Publishing._hasOpenEditionFor({ material: relay }).is({ open: true })),
+).holds();
+
+export const relayHasNoOpenRun = view("(relay) has no open run", ({ relay }, _outputs, _bindings) =>
+  where(Publishing._hasOpenEditionFor({ material: relay }).is({ open: false })),
+).holds();
+
+export const relayIsRetired = view("(relay) is retired", ({ relay }, _outputs, _bindings) =>
+  where(Retiring._isTrashed({ item: relay }).is({ trashed: true })),
+).holds();
+
+export const relayIsNotRetired = view("(relay) is not retired", ({ relay }, _outputs, _bindings) =>
+  where(Retiring._isTrashed({ item: relay }).is({ trashed: false })),
+).holds();
 
 /** The run's rounds are the editions RoundLinking ties to it; at most one is open. */
 export const theOpenRoundOf = view("the open round of (run)", ({ run }, { round }, _bindings) =>

@@ -19,9 +19,16 @@ const EXAMPLE =
 export function DraftDescribe({
   submitting,
   onSubmit,
+  title = "Describe the quiz or survey you want",
+  placeholder = EXAMPLE,
+  label = "Draft it",
 }: {
   submitting: boolean;
   onSubmit: (request: string) => void;
+  /** What is being described, and the example that shows its grain. */
+  title?: string;
+  placeholder?: string;
+  label?: string;
 }) {
   const [request, setRequest] = useState("");
   const ready = request.trim().length > 0;
@@ -31,7 +38,7 @@ export function DraftDescribe({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Sparkles className="size-4" />
-          Describe the quiz or survey you want
+          {title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -41,7 +48,7 @@ export function DraftDescribe({
             id="draft-request"
             value={request}
             onChange={(event) => setRequest(event.target.value)}
-            placeholder={EXAMPLE}
+            placeholder={placeholder}
             rows={6}
             className="min-h-40 resize-y"
           />
@@ -54,7 +61,7 @@ export function DraftDescribe({
           disabled={!ready || submitting}
         >
           {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-          Draft it
+          {label}
         </Button>
       </CardContent>
     </Card>
