@@ -204,9 +204,14 @@ const STEP_MS = 380;
  * wall reaches the server's inside one poll however many cards arrived: a
  * few moves play one at a time, a room's worth play several to a step.
  */
-const STEPS_TO_SETTLE = 6;
+export const STEPS_TO_SETTLE = 6;
 
-/** The moves one step plays, so the whole diff settles within STEPS_TO_SETTLE. */
+/**
+ * The moves one step plays, fixed when a snapshot arrives from what it has to
+ * play, so the whole diff settles within STEPS_TO_SETTLE. Read afresh each
+ * step it would shrink with the remainder and a burst would trail off for
+ * many times as long.
+ */
 export function movesPerStep(pending: number): number {
   return Math.max(1, Math.ceil(pending / STEPS_TO_SETTLE));
 }
@@ -234,9 +239,12 @@ export function useStagedWall<Wall extends Staged>(
   const [settled, setSettled] = useState(true);
   const target = useRef<Wall | null>(wall);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The step's quota, set from the first diff against each new target.
+  const quota = useRef(0);
 
   useEffect(() => {
     target.current = wall;
+    quota.current = 0;
 
     // Every move is played off the clock, so the snapshot that arrives never
     // changes the wall in the render that took it.
@@ -247,7 +255,8 @@ export function useStagedWall<Wall extends Staged>(
         if (next === null) return null;
         if (current === null || instant) return next;
         const moves = diff(current, next);
-        const playing = movesPerStep(moves.length);
+        if (quota.current === 0) quota.current = movesPerStep(moves.length);
+        const playing = quota.current;
         setSettled(moves.length <= playing);
         if (moves.length === 0) return adopt(current, next);
         if (moves.length > playing && timer.current === null) {

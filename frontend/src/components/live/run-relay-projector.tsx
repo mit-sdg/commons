@@ -13,7 +13,6 @@ import { LoadingState } from "@/components/states";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { cn } from "@/lib/utils";
 
 /** The wall keeps pace with the room the same way the dashboard does. */
 const POLL_MS = 3_000;
@@ -123,7 +122,9 @@ export function RelayProjector({
   }
 
   // The room can join for as long as the run is open, between rounds as much
-  // as during one; the wall's own token says which round closed.
+  // as during one; the wall's own token says which round closed. Until the
+  // first pile opens the code stands where the piles will; after that it
+  // keeps the corner.
   const joining = run.open && url !== null && code !== null;
   const filling =
     !wall.open || wall.piles.length > 0 || choicesOf(wall).length > 0;
@@ -137,21 +138,17 @@ export function RelayProjector({
         carriesTo={carriesTo}
         sourceWall={sourceWall}
         scroll
-        className={cn(
-          "min-h-0 overflow-hidden",
-          joining && !filling ? "flex-initial" : "flex-1",
-        )}
+        empty={
+          joining ? <JoinCode url={url} code={code} size="room" /> : undefined
+        }
+        className="min-h-0 flex-1 overflow-hidden"
       />
       {joining ? (
         filling ? (
           <div className="flex flex-none justify-end">
             <JoinCode url={url} code={code} size="corner" />
           </div>
-        ) : (
-          <div className="flex flex-auto shrink-0 items-center justify-center">
-            <JoinCode url={url} code={code} size="room" />
-          </div>
-        )
+        ) : null
       ) : (
         <Standing>The run is closed.</Standing>
       )}

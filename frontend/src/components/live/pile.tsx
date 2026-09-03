@@ -1,6 +1,11 @@
 "use client";
 
-import { AnimatePresence, motion, useAnimate } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  useAnimate,
+  useReducedMotion,
+} from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { WallCard } from "@/components/live/rounds";
 import { Spread } from "@/components/live/spread";
@@ -235,6 +240,7 @@ export function Pile({
   packed = false,
   phone = false,
   selected = false,
+  follow = false,
   onDrop,
   onTap,
   onRename,
@@ -256,6 +262,8 @@ export function Pile({
   packed?: boolean;
   phone?: boolean;
   selected?: boolean;
+  /** A pile in a scrolling wall comes into view as a card lands in it. */
+  follow?: boolean;
   onDrop?: (card: string) => void;
   onTap?: () => void;
   onRename?: (name: string) => void;
@@ -268,6 +276,20 @@ export function Pile({
   // A pile crossing the wall is drawn over the piles that have settled, so a
   // move never reads as one card torn in half by another.
   const [flying, setFlying] = useState(false);
+  const box = useRef<HTMLDivElement | null>(null);
+  const counted = useRef(count);
+  const reduced = useReducedMotion() ?? false;
+
+  useEffect(() => {
+    const grew = count > counted.current;
+    counted.current = count;
+    if (!follow || !grew) return;
+    box.current?.scrollIntoView({
+      block: "nearest",
+      behavior: reduced ? "auto" : "smooth",
+    });
+  }, [count, follow, reduced]);
+
   const face = big
     ? packed
       ? FACES.packed
@@ -319,6 +341,7 @@ export function Pile({
 
   return (
     <motion.div
+      ref={box}
       layout="position"
       transition={PILE_MOVE}
       initial={{ opacity: 0, scale: 0.94 }}

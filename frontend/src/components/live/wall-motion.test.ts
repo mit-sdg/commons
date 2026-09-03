@@ -8,6 +8,7 @@ import {
   merged,
   movesPerStep,
   placed,
+  STEPS_TO_SETTLE,
 } from "./wall-motion";
 
 const wall = (cards: [string, string | null][], piles: string[]) => ({
@@ -137,6 +138,18 @@ describe("the wall when nothing is left to move", () => {
 });
 
 describe("how many moves a step plays", () => {
+  test("a quota fixed at arrival settles a burst in six steps, one read afresh does not", () => {
+    const burst = 93;
+    const quota = movesPerStep(burst);
+    let fixedSteps = 0;
+    for (let left = burst; left > 0; left -= quota) fixedSteps += 1;
+    expect(fixedSteps).toBeLessThanOrEqual(STEPS_TO_SETTLE);
+    let afreshSteps = 0;
+    for (let left = burst; left > 0; left -= movesPerStep(left))
+      afreshSteps += 1;
+    expect(afreshSteps).toBeGreaterThan(STEPS_TO_SETTLE * 3);
+  });
+
   test("a few moves play one at a time, and a room's worth settle within six steps", () => {
     expect(movesPerStep(0)).toBe(1);
     expect(movesPerStep(3)).toBe(1);

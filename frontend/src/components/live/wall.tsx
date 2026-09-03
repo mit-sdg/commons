@@ -41,11 +41,11 @@ import {
 } from "@/components/live/wall-motion";
 import { cn } from "@/lib/utils";
 
-/** How many faint cards stand in the tray for answers still being written. */
-const GHOSTS_SHOWN = 5;
+/** How many faint cards stand at the top of the tray for answers still being written. */
+const GHOSTS_SHOWN = 3;
 
-/** How many unsorted cards the projector shows before the rest become a count. */
-const TRAY_SHOWN = 24;
+/** How many unsorted cards the tray lists, newest first, before the rest fall off its bottom. */
+const TRAY_SHOWN = 16;
 
 /** How many of a context group's words a chip carries before the rest are a count. */
 const CONTEXT_SHOWN = 3;
@@ -86,19 +86,9 @@ function projected(count: number) {
   };
 }
 
-/**
- * The cards the tray shows — the newest, and the holder's own among them —
- * and how many are left over.
- */
-function trayShown(cards: WallCard[], shown: number) {
-  if (cards.length <= shown) return { tray: cards, held: 0 };
-  const own = cards.filter((card) => card.mine).slice(0, shown);
-  const others = cards.filter((card) => !card.mine);
-  const room = shown - own.length;
-  return {
-    tray: [...own, ...others.slice(others.length - room)],
-    held: cards.length - shown,
-  };
+/** The newest cards first, as many as the tray lists; the count above says the rest. */
+function newest(cards: WallCard[], shown: number): WallCard[] {
+  return cards.slice(-shown).reverse();
 }
 
 export interface WallEdits {
@@ -125,6 +115,8 @@ interface WallProps {
   sourceWall?: WallShape | null;
   /** The piles scroll under the question rather than run off the screen. */
   scroll?: boolean;
+  /** What stands where the piles will, while a wall that no hand sorts has none. */
+  empty?: React.ReactNode;
   edits?: WallEdits;
   className?: string;
 }
@@ -150,6 +142,7 @@ function StagedWall({
   carriesTo,
   sourceWall,
   scroll = false,
+  empty,
   edits,
   className,
 }: WallProps) {
@@ -200,10 +193,11 @@ function StagedWall({
   const editable = hand !== undefined;
   const canDrag = hand !== undefined;
   const grid = projected(piles.length);
-  const { tray, held } = big
-    ? trayShown(unsorted, TRAY_SHOWN)
-    : { tray: unsorted, held: 0 };
-  const trayEmpty = tray.length === 0 && writing === 0;
+  const tray = newest(unsorted, TRAY_SHOWN);
+  // The tray keeps its column while a round is open; once the round has
+  // closed and nothing is unsorted the piles take the whole width. The phone
+  // counts the tray on its own page instead.
+  const trayShown = !phone && (unsorted.length > 0 || writing > 0 || seen.open);
 
   function openPile(card: string) {
     setNaming(card);
@@ -221,9 +215,6 @@ function StagedWall({
     <MotionConfig reducedMotion="user">
       <LayoutGroup>
         <section
-          // The projector's piles take their share of the wall's own width,
-          // which the wall has to be asked for.
-          style={big ? { containerType: "inline-size" } : undefined}
           className={cn(
             "flex min-h-0 flex-col gap-5 rounded-2xl border border-border bg-card",
             big
@@ -369,130 +360,87 @@ function StagedWall({
             />
           ) : (
             <>
-              {trayEmpty && !editable ? null : (
-                <motion.div
-                  layout
-                  transition={PILE_MOVE}
-                  onDragOver={
-                    editable ? (event) => event.preventDefault() : undefined
-                  }
-                  onDrop={
-                    editable
-                      ? (event) => {
-                          event.preventDefault();
-                          const card = event.dataTransfer.getData("text/plain");
-                          if (card !== "") hand.toTray(card);
-                        }
-                      : undefined
-                  }
-                  className={cn(
-                    "flex flex-none flex-wrap items-center gap-2 rounded-[10px] border border-input border-dashed",
-                    big
-                      ? "min-h-[72px] gap-3 rounded-[14px] border-foreground/50 p-4"
-                      : phone
-                        ? "min-h-11 p-2"
-                        : "min-h-14 p-3",
-                    trayEmpty && "min-h-9 p-2",
-                    // With no card of its own the tray is no wider than what
-                    // it holds, unless a hand can still drop a card back in.
-                    tray.length === 0 && !editable && "w-fit",
-                  )}
-                >
-                  <AnimatePresence initial={false}>
-                    {tray.map((card) => (
-                      <Card
-                        key={card.card}
-                        card={card}
-                        big={big}
-                        draggable={canDrag}
-                        still={dragging === card.card}
-                        onDragStart={(one) => setDragging(one.card)}
-                        onDragEnd={() => setDragging(null)}
-                        className={
-                          big
-                            ? "max-w-[420px]"
-                            : phone
-                              ? "px-2.5 py-1 text-sm"
-                              : "max-w-[320px]"
-                        }
-                      />
-                    ))}
-                  </AnimatePresence>
-                  {held === 0 ? null : (
-                    <span
-                      className={cn(
-                        "font-mono text-muted-foreground",
-                        big ? "text-2xl" : "text-sm",
-                      )}
-                    >
-                      and {held} more
-                    </span>
-                  )}
-                  {Array.from(
-                    { length: Math.min(writing, GHOSTS_SHOWN) },
-                    (_, index) => (
-                      <GhostCard key={index} big={big} />
-                    ),
-                  )}
-                  {/* The faint cards are answers on their way, not blanks. */}
-                  {writing === 0 ? null : (
-                    <span
-                      className={cn(
-                        "font-mono text-muted-foreground",
-                        big ? "text-2xl" : "text-sm",
-                      )}
-                    >
-                      still writing
-                    </span>
-                  )}
-                </motion.div>
-              )}
-
-              <PileGrid big={big} phone={phone} grid={grid} scroll={scroll}>
-                <AnimatePresence initial={false}>
-                  {piles.map((pile) => (
-                    <Pile
-                      key={pile.pile}
-                      id={pile.pile}
-                      name={pile.name}
-                      count={pile.count}
-                      description={pile.description}
-                      cards={cardsIn(seen.cards, pile.pile)}
-                      picked={isPicked(pile)}
-                      carriesTo={carriesTo}
-                      big={big}
-                      packed={grid.packed}
-                      onDrop={
-                        editable
-                          ? (card) => hand.moveCard(card, pile.pile)
-                          : undefined
-                      }
-                      onTap={
-                        hand?.togglePick === undefined
-                          ? undefined
-                          : () => hand.togglePick?.(pile.pile)
-                      }
-                      onRename={
-                        editable && hand.renamePile !== undefined
-                          ? (next) => hand.renamePile?.(pile.pile, next)
-                          : undefined
-                      }
-                      onMergeIn={
-                        editable && hand.mergePile !== undefined
-                          ? (folded) => hand.mergePile?.(folded, pile.pile)
-                          : undefined
-                      }
-                      onSummarize={
-                        hand?.summarize === undefined
-                          ? undefined
-                          : () => hand.summarize?.(pile.pile)
-                      }
-                      phone={phone}
-                    />
-                  ))}
-                </AnimatePresence>
-                {editable ? <NewPile big={big} onDrop={openPile} /> : null}
-              </PileGrid>
+              <div
+                className={cn(
+                  "grid gap-6",
+                  trayShown &&
+                    (big
+                      ? "sm:grid-cols-[minmax(15rem,1fr)_minmax(0,3.4fr)]"
+                      : "sm:grid-cols-[minmax(13.5rem,1fr)_minmax(0,2.4fr)]"),
+                  big && "gap-10",
+                  // On the projector the two columns share the height the wall
+                  // has left, and each clips inside it.
+                  scroll && "min-h-0 flex-1 grid-rows-[minmax(0,1fr)]",
+                )}
+              >
+                {trayShown ? (
+                  <Tray
+                    cards={tray}
+                    count={unsorted.length}
+                    writing={writing}
+                    big={big}
+                    scroll={scroll}
+                    dragging={dragging}
+                    onDragStart={
+                      canDrag ? (one) => setDragging(one) : undefined
+                    }
+                    onDragEnd={canDrag ? () => setDragging(null) : undefined}
+                    onDrop={editable ? (card) => hand.toTray(card) : undefined}
+                  />
+                ) : null}
+                {piles.length === 0 && !editable && empty !== undefined ? (
+                  <div className="flex min-h-0 items-center justify-center">
+                    {empty}
+                  </div>
+                ) : (
+                  <PileGrid big={big} phone={phone} grid={grid} scroll={scroll}>
+                    <AnimatePresence initial={false}>
+                      {piles.map((pile) => (
+                        <Pile
+                          key={pile.pile}
+                          id={pile.pile}
+                          name={pile.name}
+                          count={pile.count}
+                          description={pile.description}
+                          cards={cardsIn(seen.cards, pile.pile)}
+                          picked={isPicked(pile)}
+                          carriesTo={carriesTo}
+                          big={big}
+                          packed={grid.packed}
+                          follow={scroll}
+                          onDrop={
+                            editable
+                              ? (card) => hand.moveCard(card, pile.pile)
+                              : undefined
+                          }
+                          onTap={
+                            hand?.togglePick === undefined
+                              ? undefined
+                              : () => hand.togglePick?.(pile.pile)
+                          }
+                          onRename={
+                            editable && hand.renamePile !== undefined
+                              ? (next) => hand.renamePile?.(pile.pile, next)
+                              : undefined
+                          }
+                          onMergeIn={
+                            editable && hand.mergePile !== undefined
+                              ? (folded) => hand.mergePile?.(folded, pile.pile)
+                              : undefined
+                          }
+                          onSummarize={
+                            hand?.summarize === undefined
+                              ? undefined
+                              : () => hand.summarize?.(pile.pile)
+                          }
+                          phone={phone}
+                        />
+                      ))}
+                    </AnimatePresence>
+                    {editable ? <NewPile big={big} onDrop={openPile} /> : null}
+                  </PileGrid>
+                )}
+              </div>
             </>
           )}
 
@@ -522,6 +470,124 @@ function StagedWall({
   );
 }
 
+/**
+ * The tray as a column: the count of everything unsorted, the answers still
+ * being written as faint cards, then the newest card at the top and the
+ * oldest falling off the bottom under a fade. A card placed from here travels
+ * across into its pile.
+ */
+function Tray({
+  cards,
+  count,
+  writing,
+  big,
+  scroll,
+  dragging,
+  onDragStart,
+  onDragEnd,
+  onDrop,
+}: {
+  cards: WallCard[];
+  count: number;
+  writing: number;
+  big: boolean;
+  scroll: boolean;
+  dragging: string | null;
+  onDragStart?: (card: string) => void;
+  onDragEnd?: () => void;
+  onDrop?: (card: string) => void;
+}) {
+  const { ref, over } = useOverflow(true);
+  const editable = onDrop !== undefined;
+  return (
+    <motion.div
+      layout
+      transition={PILE_MOVE}
+      onDragOver={editable ? (event) => event.preventDefault() : undefined}
+      onDrop={
+        editable
+          ? (event) => {
+              event.preventDefault();
+              const card = event.dataTransfer.getData("text/plain");
+              if (card !== "") onDrop(card);
+            }
+          : undefined
+      }
+      className={cn(
+        "flex min-h-0 flex-col rounded-[10px] border border-input border-dashed",
+        big
+          ? "gap-3 rounded-[14px] border-foreground/50 p-[18px]"
+          : "gap-2 p-3",
+        // The column holds as much as the piles beside it, not more.
+        scroll
+          ? "self-stretch"
+          : big
+            ? "max-h-[640px]"
+            : "max-h-60 sm:max-h-[560px]",
+      )}
+    >
+      <div
+        className={cn(
+          "flex flex-none items-baseline justify-between gap-3 px-0.5 text-muted-foreground",
+          big ? "text-xl" : "text-sm",
+        )}
+      >
+        Unsorted
+        <Count
+          value={count}
+          className={cn(
+            "font-mono text-foreground tabular-nums",
+            big ? "text-[34px]" : "text-lg",
+          )}
+        />
+      </div>
+      <div
+        ref={ref}
+        className={cn(
+          "flex min-h-0 flex-col items-start",
+          big ? "gap-3" : "gap-2",
+          // What the column cannot hold fades out, rather than stopping on a cut.
+          over &&
+            "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_56px),transparent)]",
+        )}
+      >
+        {/* The faint cards are answers on their way, not blanks; they stand
+            where those answers will land. */}
+        {writing === 0 ? null : (
+          <span
+            className={cn(
+              "flex flex-none flex-wrap items-center gap-2 pb-1 font-mono text-muted-foreground",
+              big ? "gap-2.5 text-xl" : "text-xs",
+            )}
+          >
+            {Array.from(
+              { length: Math.min(writing, GHOSTS_SHOWN) },
+              (_, index) => (
+                <GhostCard key={index} big={big} />
+              ),
+            )}
+            still writing
+          </span>
+        )}
+        <AnimatePresence initial={false}>
+          {cards.map((card) => (
+            <Card
+              key={card.card}
+              card={card}
+              big={big}
+              draggable={onDragStart !== undefined}
+              still={dragging === card.card}
+              onDragStart={(one) => onDragStart?.(one.card)}
+              onDragEnd={onDragEnd}
+              className="max-w-full"
+            />
+          ))}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+}
+
 function PileGrid({
   big,
   phone,
@@ -538,31 +604,38 @@ function PileGrid({
 }) {
   const { ref, over } = useOverflow(scroll);
   return (
+    // The projector's piles take their share of the column's width, which
+    // the column has to be asked for.
     <div
-      ref={ref}
-      style={
-        big
-          ? { gridTemplateColumns: grid.columns, gridAutoRows: grid.rows }
-          : undefined
-      }
-      className={cn(
-        "grid gap-x-[18px] gap-y-[22px] pb-3",
-        big
-          ? "flex-1 gap-x-7 gap-y-[34px]"
-          : phone
-            ? "grid-cols-2 gap-x-3 gap-y-4"
-            : "grid-cols-2 sm:grid-cols-3",
-        // Rows that share the wall take the height they are given; a lone row
-        // of piles stands at the top of it.
-        big && !grid.fill && "content-start",
-        // The disc a picked pile carries hangs above the first row.
-        scroll && "min-h-0 overflow-y-auto pt-5",
-        // What the box cannot hold fades out, rather than stopping on a cut.
-        over &&
-          "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_56px),transparent)]",
-      )}
+      style={big ? { containerType: "inline-size" } : undefined}
+      className={cn("flex min-w-0 flex-col", scroll && "min-h-0")}
     >
-      {children}
+      <div
+        ref={ref}
+        style={
+          big
+            ? { gridTemplateColumns: grid.columns, gridAutoRows: grid.rows }
+            : undefined
+        }
+        className={cn(
+          "grid gap-x-[18px] gap-y-[22px] pb-3",
+          big
+            ? "gap-x-7 gap-y-[34px]"
+            : phone
+              ? "grid-cols-2 gap-x-3 gap-y-4"
+              : "grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] content-start",
+          // Rows that share the wall take the height they are given; a lone row
+          // of piles stands at the top of it.
+          big && !grid.fill && "content-start",
+          // The disc a picked pile carries hangs above the first row.
+          scroll && "min-h-0 overflow-y-auto pt-5",
+          // What the box cannot hold fades out, rather than stopping on a cut.
+          over &&
+            "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_56px),transparent)]",
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
