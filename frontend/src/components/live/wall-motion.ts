@@ -200,11 +200,24 @@ export const PILE_MOVE = {
 const STEP_MS = 380;
 
 /**
- * The wall to draw. `wall` is the latest snapshot; `shown` trails it by one
- * move per step until the two agree. `edit` changes the shown wall at once —
- * a hand move already seen by the person who made it — and the snapshot that
- * follows finds nothing left to play for it. With `instant`, or before the
- * first snapshot, the shown wall is the target.
+ * How many steps a snapshot's moves are spread over at most, so the shown
+ * wall reaches the server's inside one poll however many cards arrived: a
+ * few moves play one at a time, a room's worth play several to a step.
+ */
+const STEPS_TO_SETTLE = 6;
+
+/** The moves one step plays, so the whole diff settles within STEPS_TO_SETTLE. */
+export function movesPerStep(pending: number): number {
+  return Math.max(1, Math.ceil(pending / STEPS_TO_SETTLE));
+}
+
+/**
+ * The wall to draw. `wall` is the latest snapshot; `shown` trails it by a
+ * step's worth of moves at a time until the two agree, never more than about
+ * one poll behind. `edit` changes the shown wall at once — a hand move
+ * already seen by the person who made it — and the snapshot that follows
+ * finds nothing left to play for it. With `instant`, or before the first
+ * snapshot, the shown wall is the target.
  */
 export function useStagedWall<Wall extends Staged>(
   wall: Wall | null,
@@ -234,12 +247,16 @@ export function useStagedWall<Wall extends Staged>(
         if (next === null) return null;
         if (current === null || instant) return next;
         const moves = diff(current, next);
-        setSettled(moves.length <= 1);
+        const playing = movesPerStep(moves.length);
+        setSettled(moves.length <= playing);
         if (moves.length === 0) return adopt(current, next);
-        if (moves.length > 1 && timer.current === null) {
+        if (moves.length > playing && timer.current === null) {
           timer.current = setTimeout(play, step);
         }
-        return apply(current, next, moves[0] as Move);
+        let played = current;
+        for (const move of moves.slice(0, playing))
+          played = apply(played, next, move);
+        return played;
       });
     }
 

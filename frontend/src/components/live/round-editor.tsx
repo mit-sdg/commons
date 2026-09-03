@@ -180,13 +180,19 @@ export function RoundEditor({
   const first = round.number === 1;
   const last = round.number === rounds.length;
   const written = cleaned(draft);
-  // A round with nothing written and nothing taken is still free to be another
-  // kind; once it holds parts, choices, or a take, its kind is what it holds.
+  // The kind is what the card holds — the parts or choices being typed, or a
+  // take that fixes it. A round holding none of those is still free to be the
+  // kind that was chosen for it, so the boxes of that kind can be filled.
+  const held = kindOf({
+    choices: written.choices,
+    parts: written.parts,
+    takes: round.takes,
+  });
   const bare =
     written.parts.length === 0 &&
     written.choices.length === 0 &&
-    takes === null;
-  const kind: RoundKind = (bare ? chosenKind : null) ?? kindOf(round);
+    (takes === null || takes.shape === "context");
+  const kind: RoundKind = (bare ? chosenKind : null) ?? held;
   const open = usesFor(uses, kind);
 
   async function commit(next: Draft) {

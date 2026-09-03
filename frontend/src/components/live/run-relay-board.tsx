@@ -504,7 +504,7 @@ export function RelayRunBoard({
               named={shown !== openRound}
               carriesTo={takesShown ? (next?.number ?? undefined) : undefined}
               sourceWall={sourceWall}
-              edits={edits}
+              edits={run.open ? edits : undefined}
             />
           )}
         </div>

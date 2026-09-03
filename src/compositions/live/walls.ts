@@ -89,6 +89,21 @@ const pileDoesNotExist = view("(pile) is no pile", ({ pile }, _outputs, _binding
   where(no(Piling._getCategoryDetail({ category: pile }))),
 ).holds();
 
+/** A card is one of the round's own cards; a card from another wall is none of this one's. */
+const cardIsOnTheWallOf = view(
+  "(card) is a card of (round)",
+  ({ card, round }, _outputs, { values, standing }) =>
+    where(
+      Responding._valuesForSubject({ subject: round }).is({ values }),
+      compute(computations.cardStanding, { card, values }, standing),
+      is.among(standing, ["known"]),
+    ),
+).holds();
+
+const pileHoldsACard = view("(pile) holds a card", ({ pile }, _outputs, _bindings) =>
+  where(Piling._getItems({ category: pile })),
+).holds();
+
 /** Which pile of the round carries forward, when this one does. */
 const thePickOn = former("the pick of (pile) on (round)", ({ round, pile }, _bindings) =>
   where(PickLinking._getLinks({ source: round }).is({ target: pile })).form({ picked: pile }),
@@ -369,6 +384,7 @@ export const OpenPile = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         roundIsNotOfAClosedRun({ round }),
+        cardIsOnTheWallOf({ card, round }),
       )
         .then(Piling.ensureCategory({ scope: round, name, description: "" }).responds({ category }))
         .then(Piling.assign({ item: card, category }).responds({ item: assigned }))
@@ -381,6 +397,14 @@ export const OpenPile = endpoint(
       )
         .then(respond({ error: "CLOSED" }))
         .named("closed"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        no(cardIsOnTheWallOf({ card, round })),
+      )
+        .then(respond({ error: "CARD_NOT_FOUND" }))
+        .named("no-such-card"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -390,7 +414,7 @@ export const OpenPile = endpoint(
 
 export const MoveCard = endpoint(
   "/live/walls/move-card",
-  ({ session, card, pile, user, at, assigned }) =>
+  ({ session, card, pile, user, at, round, assigned }) =>
     receive({ session, card, pile }).then(
       where(
         now(at),
@@ -398,10 +422,22 @@ export const MoveCard = endpoint(
         mayHostLive({ user }),
         pileExists({ pile }),
         pileIsNotOfAClosedRun({ pile }),
+        Piling._getCategoryDetail({ category: pile }).is({ scope: round }),
+        cardIsOnTheWallOf({ card, round }),
       )
         .then(Piling.assign({ item: card, category: pile }).responds({ item: assigned }))
         .then(respond({ card: assigned, pile }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileExists({ pile }),
+        pileIsNotOfAClosedRun({ pile }),
+        Piling._getCategoryDetail({ category: pile }).is({ scope: round }),
+        no(cardIsOnTheWallOf({ card, round })),
+      )
+        .then(respond({ error: "CARD_NOT_FOUND" }))
+        .named("no-such-card"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -535,7 +571,7 @@ export const DescribePile = endpoint(
 /** The dashboard sends the whole picked set each time a pile is tapped. */
 export const Pick = endpoint(
   "/live/walls/pick",
-  ({ session, round, piles, user, at, picked }) =>
+  ({ session, round, piles, user, at, categories, onWall, picked }) =>
     receive({ session, round, piles }).then(
       where(
         now(at),
@@ -543,8 +579,10 @@ export const Pick = endpoint(
         mayHostLive({ user }),
         Publishing._edition({ edition: round }),
         roundIsNotOfAClosedRun({ round }),
+        Piling._categoriesWithItems({ scope: round }).is({ categories }),
+        compute(computations.pilesOnWall, { piles, categories }, onWall),
       )
-        .then(PickLinking.setLinks({ source: round, targets: piles }).responds({ source: picked }))
+        .then(PickLinking.setLinks({ source: round, targets: onWall }).responds({ source: picked }))
         .then(respond({ round: picked }))
         .named("success"),
       where(
@@ -643,6 +681,7 @@ export const Summarize = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         pileIsNotOfAClosedRun({ pile }),
+        pileHoldsACard({ pile }),
         Piling._getCategoryDetail({ category: pile }).is({ scope: round }),
         Piling._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
@@ -655,6 +694,15 @@ export const Summarize = endpoint(
         )
         .then(respond({ asked: true, asking }))
         .named("asked"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsNotOfAClosedRun({ pile }),
+        pileExists({ pile }),
+        no(pileHoldsACard({ pile })),
+      )
+        .then(respond({ asked: false }))
+        .named("empty"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),

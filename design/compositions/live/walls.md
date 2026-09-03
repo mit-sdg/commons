@@ -6,7 +6,7 @@ A round's wall is every answer the room handed in, as cards, sorted into named p
 
 ## Sorting by hand
 
-[Live.walls.OpenPile](reaction:Live.walls.OpenPile) names a pile and puts a card in it in one request, which is what dragging a card onto empty space does; naming a pile that already exists on this wall reaches it rather than making another. [Live.walls.MoveCard](reaction:Live.walls.MoveCard) moves a card into a pile, [Live.walls.ToTray](reaction:Live.walls.ToTray) sends it back to the tray, [Live.walls.RenamePile](reaction:Live.walls.RenamePile) renames a pile, and [Live.walls.MergePile](reaction:Live.walls.MergePile) folds one pile into another, every card moving with it. [Live.walls.Pick](reaction:Live.walls.Pick) records which piles of a closed round carry into a round that takes the picked piles: the dashboard sends the whole picked set each time a pile is tapped, and PickLinking holds it under the round.
+[Live.walls.OpenPile](reaction:Live.walls.OpenPile) names a pile and puts a card in it in one request, which is what dragging a card onto empty space does; naming a pile that already exists on this wall reaches it rather than making another. [Live.walls.MoveCard](reaction:Live.walls.MoveCard) moves a card into a pile, [Live.walls.ToTray](reaction:Live.walls.ToTray) sends it back to the tray, [Live.walls.RenamePile](reaction:Live.walls.RenamePile) renames a pile, and [Live.walls.MergePile](reaction:Live.walls.MergePile) folds one pile into another, every card moving with it. A card is only ever placed on its own wall: opening a pile with, or moving, a card that is not one of the round's — [cardStanding](computation:cardStanding) — is refused `CARD_NOT_FOUND`. [Live.walls.Pick](reaction:Live.walls.Pick) records which piles of a closed round carry into a round that takes the picked piles: the dashboard sends the whole picked set each time a pile is tapped, and PickLinking holds it under the round; a name that is no pile of this wall is dropped from the set — [pilesOnWall](computation:pilesOnWall) — so nothing from another wall can be carried.
 
 ## Sorting by the model
 
@@ -18,13 +18,21 @@ A reply that names a pile not on the list and not marked new, or that is not rea
 
 ## The lid
 
-A pile's sentence is its Piling description. [Live.walls.Summarize](reaction:Live.walls.Summarize) asks the model for one sentence over a pile's cards through [lidPassage](computation:lidPassage); [Live.walls.ReplyOffersLid](reaction:Live.walls.ReplyOffersLid) reads the reply into a `lid` suggestion about the round, taken like any placing line, and [Live.walls.TakenLidDescribesPile](reaction:Live.walls.TakenLidDescribesPile) writes it onto the pile. [Live.walls.DescribePile](reaction:Live.walls.DescribePile) lets a person write or fix the sentence by hand.
+A pile's sentence is its Piling description. [Live.walls.Summarize](reaction:Live.walls.Summarize) asks the model for one sentence over a pile's cards through [lidPassage](computation:lidPassage), and answers that nothing was asked for a pile with no cards; [Live.walls.ReplyOffersLid](reaction:Live.walls.ReplyOffersLid) reads the reply into a `lid` suggestion about the round, taken like any placing line, and [Live.walls.TakenLidDescribesPile](reaction:Live.walls.TakenLidDescribesPile) writes it onto the pile. [Live.walls.DescribePile](reaction:Live.walls.DescribePile) lets a person write or fix the sentence by hand.
 
 ## The model participant
 
 When a response begins under a participant the dashboard marked as the model's, [Live.walls.BegunModelResponseAsksMind](reaction:Live.walls.BegunModelResponseAsksMind) puts the round's face before RoundReasoning as a participant would read it — [participantPassage](computation:participantPassage), seeded by the participant identity so forty invited participants do not all say the same thing — and asks for one answer per part. The participant worker on the floor then plays the phone: once the reply stands and the participant's own jittered delay has passed, it answers each item through Responding and hands in, so the cards land in the tray like anyone else's and are placed by the same sorting. A reply the worker cannot read leaves that participant begun and never handed in, which the figure shows as one still writing.
 
 ```computations
+cardStanding(card: String, values: Json) : String
+  Answers `known` when the card is one of the wall's cards, minted from a value
+  the room handed in, and `unknown` otherwise.
+
+pilesOnWall(piles: Json, categories: Json) : Strings
+  Answers the named piles that stand on the wall, in the order named and
+  without repeats; a name that is no pile of this wall is left out.
+
 cardId(response: String, item: String) : String
   Mints the wall's identity for one answer from its response and item, so a
   card names neither.

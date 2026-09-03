@@ -77,7 +77,6 @@ describe("the relay-drafting reply boundary", () => {
       "not JSON at all",
       JSON.stringify(["relay"]),
       JSON.stringify({ kind: "draft", rounds: [round()] }),
-      relay([]),
       relay(Array.from({ length: 21 }, () => round())),
       relay([round({ title: "" })]),
       relay([round({ prompt: "" })]),
@@ -95,6 +94,8 @@ describe("the relay-drafting reply boundary", () => {
       expect(relayDraftReading({ reply })).toBe("neither");
       expect(relayDraftReason({ reply })).not.toBe("");
     }
+    // A relay cleared of every round is a relay the brief asked for.
+    expect(relayDraftReading({ reply: relay([]) })).toBe("relay");
   });
 
   test("a round's kind is read off its boxes and its take when it claims none", () => {

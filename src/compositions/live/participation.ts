@@ -5,6 +5,7 @@ import {
   no,
   now,
   reaction,
+  view,
   when,
   where,
   whether,
@@ -28,7 +29,7 @@ import { theWall } from "./walls.ts";
 import { concepts } from "../../concepts.ts";
 import { computations } from "../../concepts.ts";
 
-const { Locating, Publishing, Responding, RunSnapshotting, Scoring, Sharing } = concepts;
+const { Locating, Publishing, Relaying, Responding, RunSnapshotting, Scoring, Sharing } = concepts;
 
 /**
  * What a participant meets on arrival: the run, whether it is open, and its
@@ -147,13 +148,37 @@ export const Locate = endpoint(
   { input: { required: ["code"] } },
 );
 
+/**
+ * The model's seats are minted by the dashboard and marked so; a device that
+ * arrives through the share token wearing that mark is no phone.
+ */
+const deviceIsAPhone = view("(device) is a phone", ({ device }, _outputs, { model }) =>
+  where(
+    compute(computations.isModelParticipant, { participant: device }, model),
+    is.among(model, [false]),
+  ),
+).holds();
+
+/** A round's edition: its material is a relay's leg, so every box is handed in. */
+const runIsARound = view("(run) is a round of a relay", ({ run }, _outputs, { questionnaire }) =>
+  where(
+    Publishing._edition({ edition: run }).is({ material: questionnaire }),
+    Relaying._legFor({ material: questionnaire }),
+  ),
+).holds();
+
 export const Begin = endpoint(
   "/live/p/begin",
   ({ token, device, run, round, at, response }) =>
     receive({ token, device })
       .then(Sharing.open({ token }).responds({ subject: run }))
       .then(
-        where(now(at), runIsOpen({ run }), runIsAQuestionnaireRun({ run }))
+        where(
+          now(at),
+          runIsOpen({ run }),
+          runIsAQuestionnaireRun({ run }),
+          deviceIsAPhone({ device }),
+        )
           .then(Responding.begin({ participant: device, subject: run, at }).responds({ response }))
           .then(respond({ response, participant: device }))
           .named("open"),
@@ -161,6 +186,7 @@ export const Begin = endpoint(
           now(at),
           runIsOpen({ run }),
           runIsARelayRun({ run }),
+          deviceIsAPhone({ device }),
           theOpenRoundOf({ run }).is({ round }),
         )
           .then(
@@ -171,6 +197,9 @@ export const Begin = endpoint(
         where(runIsOpen({ run }), runIsARelayRun({ run }), runHasNoOpenRound({ run }))
           .then(respond({ error: "NO_OPEN_ROUND" }))
           .named("no-open-round"),
+        where(runIsOpen({ run }), no(deviceIsAPhone({ device })))
+          .then(respond({ error: "FORBIDDEN" }))
+          .named("not-a-phone"),
         where(runIsClosed({ run }))
           .then(respond({ error: "CLOSED" }))
           .named("closed"),
@@ -252,10 +281,29 @@ export const Submit = endpoint(
         RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
         compute(computations.snapshotForm, { value: presentation }, form),
         is.among(form, ["survey"]),
+        no(runIsARound({ run })),
       )
         .then(Responding.submit({ response, at }).responds({ response: submitted }))
         .then(respond({ response: submitted }))
         .named("survey"),
+      where(
+        now(at),
+        Responding._response({ response }).is({ subject: run }),
+        runIsOpen({ run }),
+        runIsARound({ run }),
+        responseIsWhole({ response }),
+      )
+        .then(Responding.submit({ response, at }).responds({ response: submitted }))
+        .then(respond({ response: submitted }))
+        .named("round-whole"),
+      where(
+        Responding._response({ response }).is({ subject: run }),
+        runIsOpen({ run }),
+        runIsARound({ run }),
+        responseIsNotWhole({ response }),
+      )
+        .then(respond({ error: "INCOMPLETE" }))
+        .named("round-incomplete"),
       where(
         now(at),
         Responding._response({ response }).is({ subject: run }),

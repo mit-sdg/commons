@@ -35,12 +35,14 @@ const PATIENCE = 2;
  */
 export const Draft = endpoint(
   "/live/edits/draft",
-  ({ session, relay, request, user, at, legs, questionnaires, materials, passage, asking }) =>
+  ({ session, relay, request, user, at, said, legs, questionnaires, materials, passage, asking }) =>
     receive({ session, relay, request }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        compute(computations.briefStanding, { request }, said),
+        is.among(said, ["given"]),
         Relaying._plan({ relay }).is({ legs }),
         compute(computations.legMaterials, { legs }, questionnaires),
         Questioning._materials({ questionnaires }).is({ materials }),
@@ -53,6 +55,14 @@ export const Draft = endpoint(
         )
         .then(respond({ asking }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.briefStanding, { request }, said),
+        is.among(said, ["blank"]),
+      )
+        .then(respond({ error: "INVALID_REQUEST" }))
+        .named("blank"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),

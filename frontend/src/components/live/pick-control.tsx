@@ -33,7 +33,9 @@ const FRESH: PickChoice = { mode: "top", top: TOP_FRESH };
 /**
  * The pick as the dashboard holds it: the mode, the number Top carries, and
  * the tap that takes the pick into hand. Top and All are maintained — every
- * time the wall moves under them, the whole set is sent again.
+ * time the wall moves under them, the whole set is sent again — until another
+ * hand picks: a set this page did not send is someone else's pick, and the
+ * page follows it into By hand rather than fighting over the wall.
  */
 export function usePick({
   run,
@@ -61,6 +63,8 @@ export function usePick({
   const [choice, setChoice] = useState<PickChoice | null>(null);
   const held = choice ?? FRESH;
   const send = useRef(onPick);
+  /** The last set this page sent, so a set that differs is another hand's. */
+  const sent = useRef<string[] | null>(null);
 
   useEffect(() => {
     send.current = onPick;
@@ -78,8 +82,13 @@ export function usePick({
 
   useEffect(() => {
     if (wanted === null || same(wanted, picked)) return;
+    if (sent.current !== null && !same(sent.current, picked)) {
+      choose({ ...held, mode: "hand" });
+      return;
+    }
+    sent.current = wanted;
     send.current(wanted);
-  }, [wanted, picked]);
+  });
 
   function choose(next: PickChoice) {
     setChoice(next);
@@ -93,11 +102,11 @@ export function usePick({
     setTop: (top) => choose({ ...held, top }),
     tap: (pile) => {
       if (held.mode !== "hand") choose({ ...held, mode: "hand" });
-      send.current(
-        picked.includes(pile)
-          ? picked.filter((one) => one !== pile)
-          : [...picked, pile],
-      );
+      const next = picked.includes(pile)
+        ? picked.filter((one) => one !== pile)
+        : [...picked, pile];
+      sent.current = next;
+      send.current(next);
     },
   };
 }

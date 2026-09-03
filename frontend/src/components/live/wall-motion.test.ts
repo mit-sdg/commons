@@ -6,6 +6,7 @@ import {
   dropped,
   type Move,
   merged,
+  movesPerStep,
   placed,
 } from "./wall-motion";
 
@@ -132,5 +133,16 @@ describe("the wall when nothing is left to move", () => {
     };
     expect(adopt(shown, target).piles[0]?.name).toBe("add");
     expect(adopt(shown, target).cards[0]?.pile).toBe("p1");
+  });
+});
+
+describe("how many moves a step plays", () => {
+  test("a few moves play one at a time, and a room's worth settle within six steps", () => {
+    expect(movesPerStep(0)).toBe(1);
+    expect(movesPerStep(3)).toBe(1);
+    expect(movesPerStep(6)).toBe(1);
+    expect(movesPerStep(7)).toBe(2);
+    expect(movesPerStep(366)).toBe(61);
+    expect(Math.ceil(366 / movesPerStep(366))).toBeLessThanOrEqual(6);
   });
 });

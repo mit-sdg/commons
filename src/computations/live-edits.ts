@@ -31,14 +31,14 @@ const CONTRACT = `You revise a relay for a live classroom tool. A relay is a sho
 Reply with exactly one JSON object and nothing else.
 
 {"kind":"relay","rounds":[{"number":1,"kind":"write","title":"...","prompt":"...","parts":[],"cap":0,"choices":[],"takes":{"from":0,"use":""}}]}
-- Deliver the whole relay as it should read afterward, in order, including the rounds you leave unchanged.
+- Deliver the whole relay as it should read afterward, in order, including the rounds you leave unchanged. A brief that asks for nothing, or asks for something these rules cannot say, is answered with the relay exactly as it stands; never cut a take, invent choices, or rewrite a round to force a request through. A brief that asks to clear the relay is answered with "rounds":[].
 - "number" is the round's number in the relay as it stands, so a round you keep, rename, or move keeps its number wherever it lands; a round you add has "number":0. Never give two rounds the same standing number.
-- "title" names the round and is 1 to ${QUESTIONING_LIMITS.title} characters; "prompt" is the question the room reads and is 1 to ${QUESTIONING_LIMITS.prompt} characters.
-- A round's "kind" is "write" (one written answer; "parts":[] and "choices":[]), "list" (several written answers: "parts" are up to ${QUESTIONING_LIMITS.parts} short labels, one box each with "cap":0, or one label with a "cap" of 2 to ${QUESTIONING_LIMITS.cap} for one box repeated; "choices":[]), or "vote" ("choices" are 2 to ${QUESTIONING_LIMITS.choices} distinct, nonblank options; "parts":[]).
+- "title" names the round in two or three words and is 1 to ${QUESTIONING_LIMITS.title} characters, never numbered ("Week 1", "Q3"): the relay numbers its rounds itself. "prompt" is the one question the room reads on a phone, 1 to ${QUESTIONING_LIMITS.prompt} characters, in the staff member's own blunt voice: no greeting, no lead-in, no "please" or "reflect on", nothing before the question. A relay has no right answers: never mark a correct choice and never put an answer or an explanation in a prompt.
+- A round's "kind" is "write" (one written answer; "parts":[] and "choices":[]), "list" (several written answers: "parts" are up to ${QUESTIONING_LIMITS.parts} short distinct labels, one box each with "cap":0, or one label with a "cap" of 2 to ${QUESTIONING_LIMITS.cap} for one box repeated; "choices":[]), or "vote" ("choices" are 2 to ${QUESTIONING_LIMITS.choices} distinct, nonblank options the brief names or the question plainly implies; "parts":[]). A round may change kind when the brief asks; a vote that loses its choices and takes none becomes a write round, never a vote with made-up choices.
 - "takes" says what a round does with the groups picked from an earlier round: "from" is that round's number in the relay you deliver, and "use" is one of the uses open to the round's kind:
 ${USES_TABLE}
-  "context" shows the picked groups above the prompt; "choices" makes them the vote's choices, so give that round "choices":[]; "parts" makes them the boxes, so give that round "parts":[]. A round that takes nothing has {"from":0,"use":""}. Never invent placeholder choices or parts for what a round takes.
-- Deliver 1 to ${ROUNDS} rounds.`;
+  "context" shows the picked groups above the prompt; "choices" makes them the vote's choices, so give that round "choices":[]; "parts" makes them the boxes, so give that round "parts":[]. A round that takes nothing has {"from":0,"use":""}. A round takes only from a round before it. Never invent placeholder choices or parts, for what a round takes or for anything else.
+- Deliver at most ${ROUNDS} rounds.`;
 
 /** One leg of the relay's plan, as Relaying answers it. */
 interface PlanLeg {
@@ -221,7 +221,7 @@ function parse(reply: string): Reading {
   if (record.kind !== "relay") {
     return { kind: "neither", reason: "The reply named no recognizable kind." };
   }
-  if (!Array.isArray(record.rounds) || record.rounds.length === 0) {
+  if (!Array.isArray(record.rounds)) {
     return { kind: "neither", reason: "The relay carried no rounds." };
   }
   if (record.rounds.length > ROUNDS) {

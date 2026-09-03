@@ -4,6 +4,8 @@
  * capture makes of a source wall when a round shows what was picked.
  */
 
+import { cardId } from "./live-rounds.ts";
+
 /** The kinds a round can be, read off its question: one box, several boxes, or choices. */
 export type RoundKind = "write" | "list" | "vote";
 
@@ -41,6 +43,64 @@ export function useStanding({ use }: { use: string }): string {
   return isCarryUse(use) ? "known" : "unknown";
 }
 
+/**
+ * Whether a use is open to the round as it stands: `open` when the round's kind
+ * carries it, or the round holds nothing yet and the take is what makes it a
+ * kind; `closed` when the table shuts it to the kind the round's choices or
+ * parts already make it; `unknown` when the word names no use.
+ */
+export function useFit({
+  use,
+  choices,
+  parts,
+}: {
+  use: string;
+  choices: string[];
+  parts: string[];
+}): string {
+  if (!isCarryUse(use)) return "unknown";
+  // A round holding neither choices nor parts is the kind its take makes it.
+  if (choices.length === 0 && parts.length === 0) return "open";
+  const kind = roundKind({ choices, parts, use: "" });
+  const entry = CARRY_USES.find((candidate) => candidate.use === use);
+  return entry !== undefined && entry.kinds.includes(kind) ? "open" : "closed";
+}
+
+/** Which of the named piles stand on this wall, in the order named; the rest are dropped. */
+export function pilesOnWall({
+  piles,
+  categories,
+}: {
+  piles: string[];
+  categories: unknown;
+}): string[] {
+  const standing = new Set(
+    (Array.isArray(categories) ? (categories as { category?: unknown }[]) : []).map((pile) =>
+      typeof pile.category === "string" ? pile.category : "",
+    ),
+  );
+  const named = Array.isArray(piles) ? piles.filter((pile) => typeof pile === "string") : [];
+  return [...new Set(named)].filter((pile) => standing.has(pile));
+}
+
+/** Whether a card is one of the wall's cards: `known` or `unknown`. */
+export function cardStanding({ card, values }: { card: string; values: unknown }): string {
+  const rows = Array.isArray(values) ? (values as { response?: unknown; item?: unknown }[]) : [];
+  return rows.some(
+    (row) =>
+      typeof row.response === "string" &&
+      typeof row.item === "string" &&
+      cardId({ response: row.response, item: row.item }) === card,
+  )
+    ? "known"
+    : "unknown";
+}
+
+/** Whether a brief says anything: `given` or `blank`. */
+export function briefStanding({ request }: { request: string }): string {
+  return request.trim() === "" ? "blank" : "given";
+}
+
 /** The kind a round reads as, from what it offers and what it takes. */
 export function roundKind({
   choices,
@@ -69,8 +129,6 @@ interface Value {
 }
 
 /** Mirrors the wall's card identity; the two must agree, so the wall's own is reused. */
-import { cardId } from "./live-rounds.ts";
-
 /**
  * The values of a pile's cards, in the order the room handed them in. A card
  * that only repeats the pile's name — a ballot on a vote wall — says nothing

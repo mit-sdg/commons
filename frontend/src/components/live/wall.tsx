@@ -168,7 +168,7 @@ function StagedWall({
   const context = questionOf(seen)?.context ?? [];
   const writing = seen.open ? Math.max(0, seen.begun - seen.handedIn) : 0;
   const vote = choicesOf(seen).length > 0;
-  const editable = hand !== undefined && seen.open;
+  const editable = hand !== undefined;
   const canDrag = hand !== undefined;
   const grid = projected(piles.length);
   const { tray, held } = big

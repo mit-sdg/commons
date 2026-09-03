@@ -84,7 +84,16 @@ import {
   relayEditLines,
 } from "./computations/live-edits.ts";
 import { soleTarget } from "./computations/live-links.ts";
-import { answerKind, carryUses, pileCards, useStanding } from "./computations/live-carries.ts";
+import {
+  answerKind,
+  briefStanding,
+  cardStanding,
+  carryUses,
+  pileCards,
+  pilesOnWall,
+  useFit,
+  useStanding,
+} from "./computations/live-carries.ts";
 import {
   cardId,
   isModelParticipant,
@@ -241,6 +250,10 @@ export const learningConcepts = conceptSet(registrations, {
   carryUses,
   pileCards,
   useStanding,
+  useFit,
+  pilesOnWall,
+  cardStanding,
+  briefStanding,
   isModelParticipant,
   isSame,
   modelParticipant,

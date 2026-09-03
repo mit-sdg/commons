@@ -1115,13 +1115,13 @@ export type CommonsWire = {
   "/live/edits/draft": {
     input: {
       "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>[0], ["about"]>]>>;
-      "request": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["relayDraftPassage"]["fn"]>[0], ["request"]>>;
+      "request": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["briefStanding"]["fn"]>[0], ["request"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "RELAY_NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_REQUEST" | "RELAY_NOT_FOUND" };
   };
   "/live/edits/offerings": {
     input: {
@@ -1209,7 +1209,7 @@ export type CommonsWire = {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOTHING_SHARED" | "NO_OPEN_ROUND" | "NO_PARTICIPANT" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "NOTHING_SHARED" | "NO_OPEN_ROUND" | "NO_PARTICIPANT" };
   };
   "/live/p/begin-signed": {
     input: {
@@ -1274,6 +1274,8 @@ export type CommonsWire = {
       "response": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>[0], ["response"]>]>>;
     };
     output: {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
@@ -1484,7 +1486,7 @@ export type CommonsWire = {
       "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>>, ["question"]>>;
       "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>[0], ["material"]>]>>;
     };
-    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_TITLE" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RELAY_NOT_FOUND" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" };
+    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_TITLE" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" };
   };
   "/live/relays/clear-takes": {
     input: {
@@ -1571,6 +1573,18 @@ export type CommonsWire = {
           "code": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>>>, ["code"]>> | null;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["open"]>>;
           "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["openedAt"]>>;
+          "rounds": ({
+            "figure": {
+              "begun": number | null;
+              "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>> | null;
+              "handedIn": number | null;
+              "handedInByModel": number | null;
+              "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+              "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>> | null;
+              "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+            };
+            "round": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getBacklinks"]>>>, ["source"]>>;
+          })[];
           "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>>;
           "token": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>>>, ["token"]>> | null;
         })[];
@@ -1694,14 +1708,14 @@ export type CommonsWire = {
   };
   "/live/relays/retitle": {
     input: {
-      "relay": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["relay"]>>;
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["relay"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["title"]>>;
     };
     output: {
       "relay": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>>, ["relay"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_TITLE" | "RELAY_NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_TITLE" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" };
   };
   "/live/relays/revise-round": {
     input: {
@@ -1759,15 +1773,15 @@ export type CommonsWire = {
   };
   "/live/relays/set-takes": {
     input: {
-      "leg": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["leg"]>>;
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["leg"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "shape": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["shape"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useStanding"]["fn"]>[0], ["use"]>]>>;
+      "shape": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["shape"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useFit"]["fn"]>[0], ["use"]>]>>;
       "source": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["source"]>>;
     };
     output: {
       "draw": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>>, ["draw"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_INPUT" | "INVALID_SHAPE" | "INVALID_USE" | "LEG_NOT_FOUND" | "NOT_SIBLINGS" };
+    error: { error: AppWideError | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_INPUT" | "INVALID_SHAPE" | "INVALID_USE" | "LEG_NOT_FOUND" | "NOT_SIBLINGS" | "RELAY_RETIRED" };
   };
   "/live/relays/uses": {
     input: {
@@ -1902,11 +1916,11 @@ export type CommonsWire = {
       "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>>, ["item"]>>;
       "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>[0], ["category"]>>;
     };
-    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
+    error: { error: AppWideError | "CARD_NOT_FOUND" | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/live/walls/open-pile": {
     input: {
-      "card": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>[0], ["item"]>>;
+      "card": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["cardStanding"]["fn"]>[0], ["card"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>[0], ["item"]>]>>;
       "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["ensureCategory"]>[0], ["name"]>>;
       "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["ensureCategory"]>[0], ["scope"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
@@ -1915,11 +1929,11 @@ export type CommonsWire = {
       "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>>, ["item"]>>;
       "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>[0], ["category"]>>;
     };
-    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
+    error: { error: AppWideError | "CARD_NOT_FOUND" | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/live/walls/pick": {
     input: {
-      "piles": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PickLinking"]["setLinks"]>[0], ["targets"]>>;
+      "piles": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["pilesOnWall"]["fn"]>[0], ["piles"]>>;
       "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PickLinking"]["setLinks"]>[0], ["source"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
@@ -1995,6 +2009,8 @@ export type CommonsWire = {
     output: {
       "asked": true;
       "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
+    } | {
+      "asked": false;
     };
     error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
   };
@@ -4787,7 +4803,7 @@ export type CommonsWireHttp = {
   "/live/edits/draft": {
     input: {
       "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>[0], ["about"]>]>>;
-      "request": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["relayDraftPassage"]["fn"]>[0], ["request"]>>;
+      "request": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["briefStanding"]["fn"]>[0], ["request"]>>;
     };
     output: {
       "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
@@ -4878,7 +4894,7 @@ export type CommonsWireHttp = {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/p/begin-signed": {
     input: {
@@ -4942,6 +4958,8 @@ export type CommonsWireHttp = {
       "response": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>[0], ["response"]>]>>;
     };
     output: {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
@@ -5220,6 +5238,18 @@ export type CommonsWireHttp = {
           "code": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>>>, ["code"]>> | null;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["open"]>>;
           "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["openedAt"]>>;
+          "rounds": ({
+            "figure": {
+              "begun": number | null;
+              "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>> | null;
+              "handedIn": number | null;
+              "handedInByModel": number | null;
+              "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+              "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>> | null;
+              "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+            };
+            "round": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getBacklinks"]>>>, ["source"]>>;
+          })[];
           "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>>;
           "token": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>>>, ["token"]>> | null;
         })[];
@@ -5334,13 +5364,13 @@ export type CommonsWireHttp = {
   };
   "/live/relays/retitle": {
     input: {
-      "relay": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["relay"]>>;
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["relay"]>]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["title"]>>;
     };
     output: {
       "relay": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>>, ["relay"]>>;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/relays/revise-round": {
     input: {
@@ -5396,8 +5426,8 @@ export type CommonsWireHttp = {
   };
   "/live/relays/set-takes": {
     input: {
-      "leg": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["leg"]>>;
-      "shape": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["shape"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useStanding"]["fn"]>[0], ["use"]>]>>;
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["leg"]>]>>;
+      "shape": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["shape"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useFit"]["fn"]>[0], ["use"]>]>>;
       "source": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["source"]>>;
     };
     output: {
@@ -5528,11 +5558,11 @@ export type CommonsWireHttp = {
       "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>>, ["item"]>>;
       "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>[0], ["category"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/walls/open-pile": {
     input: {
-      "card": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>[0], ["item"]>>;
+      "card": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["cardStanding"]["fn"]>[0], ["card"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>[0], ["item"]>]>>;
       "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["ensureCategory"]>[0], ["name"]>>;
       "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["ensureCategory"]>[0], ["scope"]>]>>;
     };
@@ -5540,11 +5570,11 @@ export type CommonsWireHttp = {
       "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>>, ["item"]>>;
       "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Piling"]["assign"]>[0], ["category"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/walls/pick": {
     input: {
-      "piles": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PickLinking"]["setLinks"]>[0], ["targets"]>>;
+      "piles": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["pilesOnWall"]["fn"]>[0], ["piles"]>>;
       "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PickLinking"]["setLinks"]>[0], ["source"]>]>>;
     };
     output: {
@@ -5615,6 +5645,8 @@ export type CommonsWireHttp = {
     output: {
       "asked": true;
       "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
+    } | {
+      "asked": false;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };

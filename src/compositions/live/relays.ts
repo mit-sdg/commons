@@ -162,6 +162,7 @@ export const theRelay = former(
       token,
       code,
       retired,
+      ran,
     },
   ) =>
     where(
@@ -204,7 +205,18 @@ export const theRelay = former(
           whether(Sharing._sharesFor({ subject: run }).is({ token })),
           whether(Locating._for({ subject: run }).is({ code })),
         )
-        .form({ run, open, openedAt, closedAt, token, code }),
+        .form({
+          run,
+          open,
+          openedAt,
+          closedAt,
+          token,
+          code,
+          rounds: each(RoundLinking._getBacklinks({ target: run }).is({ source: ran })).form({
+            round: ran,
+            figure: whether(theRoundFigure({ round: ran })),
+          }),
+        }),
     }),
 ).optional();
 
@@ -601,10 +613,31 @@ export const Retitle = endpoint(
   "/live/relays/retitle",
   ({ session, relay, title, user, at, retitled }) =>
     receive({ session, relay, title }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._relay({ relay }),
+        relayIsNotRetired({ relay }),
+      )
         .then(Relaying.retitle({ relay, title }).responds({ relay: retitled }))
         .then(respond({ relay: retitled }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._relay({ relay }),
+        relayIsRetired({ relay }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(Relaying._relay({ relay })),
+      )
+        .then(respond({ error: "RELAY_NOT_FOUND" }))
+        .named("missing"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -686,6 +719,7 @@ export const AddRound = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Relaying._relay({ relay }),
+        relayIsNotRetired({ relay }),
       )
         .then(
           Questioning.compose({
@@ -710,6 +744,14 @@ export const AddRound = endpoint(
         .then(Relaying.addLeg({ relay, material: questionnaire }).responds({ leg, position }))
         .then(respond({ leg, questionnaire, question, position }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._relay({ relay }),
+        relayIsRetired({ relay }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -849,14 +891,17 @@ export const MoveRound = endpoint(
 
 export const SetTakes = endpoint(
   "/live/relays/set-takes",
-  ({ session, leg, source, shape, user, at, draw, standing }) =>
+  ({ session, leg, source, shape, user, at, relay, questionnaire, choices, parts, draw, fit }) =>
     receive({ session, leg, source, shape }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        compute(computations.useStanding, { use: shape }, standing),
-        is.among(standing, ["known"]),
+        Relaying._leg({ leg }).is({ relay, material: questionnaire }),
+        relayIsNotRetired({ relay }),
+        Questioning._getQuestions({ questionnaire }).is({ choices, parts }),
+        compute(computations.useFit, { use: shape, choices, parts }, fit),
+        is.among(fit, ["open"]),
       )
         .then(Relaying.draw({ leg, source, shape }).responds({ draw }))
         .then(respond({ draw }))
@@ -864,11 +909,25 @@ export const SetTakes = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        compute(computations.useStanding, { use: shape }, standing),
-        is.among(standing, ["unknown"]),
+        Relaying._leg({ leg }).is({ relay, material: questionnaire }),
+        relayIsNotRetired({ relay }),
+        Questioning._getQuestions({ questionnaire }).is({ choices, parts }),
+        compute(computations.useFit, { use: shape, choices, parts }, fit),
+        is.among(fit, ["closed", "unknown"]),
       )
         .then(respond({ error: "INVALID_USE" }))
-        .named("unknown-use"),
+        .named("use-not-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay }),
+        relayIsRetired({ relay }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), no(Relaying._leg({ leg })))
+        .then(respond({ error: "LEG_NOT_FOUND" }))
+        .named("missing"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
