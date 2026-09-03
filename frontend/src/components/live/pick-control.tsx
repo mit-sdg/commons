@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 /** Which piles of the shown wall carry into the round that takes from it. */
 export type PickMode = "top" | "all" | "hand";
 
-/** The mode a run is being run in, which a reload keeps. */
+/** The mode a wall is picked in, which a reload keeps. */
 const PICK_KEY = "commons-live-pick:";
 
 const TOP_FRESH = 4;
@@ -36,15 +36,22 @@ const FRESH: PickChoice = { mode: "top", top: TOP_FRESH };
  * time the wall moves under them, the whole set is sent again — until another
  * hand picks: a set this page did not send is someone else's pick, and the
  * page follows it into By hand rather than fighting over the wall.
+ *
+ * The mode and the set this page sent belong to the wall in hand, so a newly
+ * closed round starts in Top with its own set instead of reading the round
+ * before it as another hand.
  */
 export function usePick({
   run,
+  round,
   piles,
   picked,
   live,
   onPick,
 }: {
   run: string;
+  /** The shown wall's round, which the mode and the sent set belong to. */
+  round: string | null;
   /** The shown wall's piles, in the order the wall opened them. */
   piles: PickPile[];
   /** The piles picked as the screen has them. */
@@ -71,9 +78,12 @@ export function usePick({
   });
 
   useEffect(() => {
+    // The wall in hand is a fresh pick: what the page sent for the round
+    // before it says nothing about this one.
+    sent.current = null;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the mode is what the browser holds, which only a read can say
-    setChoice(recallPick(run));
-  }, [run]);
+    setChoice(round === null ? null : recallPick(run, round));
+  }, [run, round]);
 
   const wanted =
     choice === null || !live || choice.mode === "hand"
@@ -92,7 +102,7 @@ export function usePick({
 
   function choose(next: PickChoice) {
     setChoice(next);
-    rememberPick(run, next);
+    if (round !== null) rememberPick(run, round, next);
   }
 
   return {
@@ -128,55 +138,40 @@ export function PickControl({
       <span id={PICK_LABEL} className="text-sm">
         Pick
       </span>
-      <div
-        role="group"
-        aria-labelledby={PICK_LABEL}
-        className="ml-auto flex flex-none items-center gap-0.5 rounded-md border border-input p-0.5"
-      >
-        <div
-          className={cn(
-            "flex h-7 items-center rounded-[5px] transition-colors",
-            mode === "top" ? "bg-primary/10" : "hover:bg-accent",
-          )}
+      <span className="ml-auto flex flex-none items-center gap-1.5">
+        <span
+          role="group"
+          aria-labelledby={PICK_LABEL}
+          className="flex items-center gap-0.5 rounded-md border border-input p-0.5"
         >
-          <button
-            type="button"
-            aria-pressed={mode === "top"}
-            onClick={() => onMode("top")}
-            className={cn(
-              "h-7 rounded-[5px] pr-1 pl-2 text-xs",
-              mode === "top"
-                ? "font-medium text-primary"
-                : "text-muted-foreground",
-            )}
-          >
+          <Segment on={mode === "top"} onClick={() => onMode("top")}>
             Top
-          </button>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={TOP_LEAST}
-            max={TOP_MOST}
-            value={String(top)}
-            aria-label="Top piles"
-            // The number belongs to Top, so it takes nothing in the modes
-            // that ignore it.
-            disabled={mode !== "top"}
-            onFocus={(event) => event.currentTarget.select()}
-            onChange={(event) => {
-              const typed = Number(event.currentTarget.value.trim());
-              if (Number.isInteger(typed)) onTop(clamp(typed));
-            }}
-            className="mr-0.5 h-6 w-7 rounded-[4px] border border-input bg-card text-center font-mono text-xs [appearance:textfield] disabled:cursor-default disabled:text-muted-foreground [&::-webkit-inner-spin-button]:appearance-none"
-          />
-        </div>
-        <Segment on={mode === "all"} onClick={() => onMode("all")}>
-          All
-        </Segment>
-        <Segment on={mode === "hand"} onClick={() => onMode("hand")}>
-          By hand
-        </Segment>
-      </div>
+          </Segment>
+          <Segment on={mode === "all"} onClick={() => onMode("all")}>
+            All
+          </Segment>
+          <Segment on={mode === "hand"} onClick={() => onMode("hand")}>
+            By hand
+          </Segment>
+        </span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={TOP_LEAST}
+          max={TOP_MOST}
+          value={String(top)}
+          aria-label="Top piles"
+          // The number belongs to Top, so it takes nothing in the modes
+          // that ignore it.
+          disabled={mode !== "top"}
+          onFocus={(event) => event.currentTarget.select()}
+          onChange={(event) => {
+            const typed = Number(event.currentTarget.value.trim());
+            if (Number.isInteger(typed)) onTop(clamp(typed));
+          }}
+          className="h-8 w-9 rounded-md border border-input bg-card text-center font-mono text-xs [appearance:textfield] disabled:cursor-default disabled:text-muted-foreground [&::-webkit-inner-spin-button]:appearance-none"
+        />
+      </span>
     </div>
   );
 }
@@ -198,8 +193,8 @@ function Segment({
       className={cn(
         "h-7 whitespace-nowrap rounded-[5px] px-2 text-xs transition-colors",
         on
-          ? "bg-primary/10 font-medium text-primary"
-          : "text-muted-foreground hover:bg-accent",
+          ? "bg-foreground font-medium text-background"
+          : "text-muted-foreground hover:text-foreground",
       )}
     >
       {children}
@@ -225,9 +220,9 @@ function clamp(top: number): number {
   return Math.min(TOP_MOST, Math.max(TOP_LEAST, top));
 }
 
-function recallPick(run: string): PickChoice {
+function recallPick(run: string, round: string): PickChoice {
   try {
-    const stored = window.sessionStorage.getItem(PICK_KEY + run);
+    const stored = window.sessionStorage.getItem(keyOf(run, round));
     if (stored === null) return FRESH;
     const [word, count] = stored.split(":");
     const top = Number(count);
@@ -240,10 +235,14 @@ function recallPick(run: string): PickChoice {
   }
 }
 
-function rememberPick(run: string, choice: PickChoice): void {
+function keyOf(run: string, round: string): string {
+  return `${PICK_KEY}${run}:${round}`;
+}
+
+function rememberPick(run: string, round: string, choice: PickChoice): void {
   try {
     window.sessionStorage.setItem(
-      PICK_KEY + run,
+      keyOf(run, round),
       `${choice.mode}:${choice.top}`,
     );
   } catch {

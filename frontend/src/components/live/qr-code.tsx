@@ -12,7 +12,7 @@ const SIZES = {
   wall: {
     qr: "w-full max-w-[min(42dvh,70vw)] rounded-2xl",
     code: "text-4xl sm:text-5xl lg:text-6xl",
-    url: "text-lg sm:text-xl",
+    url: "text-2xl sm:text-3xl",
   },
 } as const;
 

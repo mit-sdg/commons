@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 /** How many seats the row offers before anyone touches it. */
 const SEATS = 5;
 
+/** A button that is out reads as out without leaving the tab order. */
+const OUT =
+  "cursor-default text-muted-foreground hover:bg-background hover:text-muted-foreground dark:hover:bg-input/30";
+
 /**
  * The model participants of a run: the seats taken, how many of them are still
  * writing the open round, and the buttons that take or drop seats. One seat is
@@ -59,28 +63,42 @@ export function ModelRow({
           <Button
             size="sm"
             variant="outline"
-            disabled={busy || !usable}
-            onClick={() => void act(() => onInvite(asked))}
+            // Out while a seat is in flight, but never out of the tab order:
+            // the row keeps the focus the click left on it.
+            aria-disabled={busy || !usable}
+            className={busy || !usable ? OUT : undefined}
+            onClick={() => {
+              if (busy || !usable) return;
+              void act(() => onInvite(asked));
+            }}
           >
             Invite
           </Button>
         </span>
       </div>
       {count > 0 ? (
-        <div className="-ml-2 flex items-center gap-0.5">
+        <div className="flex items-center gap-1.5">
           <Button
-            variant="ghost"
+            variant="outline"
             size="xs"
-            disabled={busy}
-            onClick={() => void act(onDismiss)}
+            aria-disabled={busy}
+            className={busy ? OUT : undefined}
+            onClick={() => {
+              if (busy) return;
+              void act(onDismiss);
+            }}
           >
             Dismiss last
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="xs"
-            disabled={busy}
-            onClick={() => void act(onDismissAll)}
+            aria-disabled={busy}
+            className={busy ? OUT : undefined}
+            onClick={() => {
+              if (busy) return;
+              void act(onDismissAll);
+            }}
           >
             Dismiss all
           </Button>
