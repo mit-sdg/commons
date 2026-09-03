@@ -1154,7 +1154,7 @@ export type CommonsWire = {
     } | {
       "suggestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["take"]>>, ["suggestion"]>>;
     };
-    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "DUPLICATE_CHOICES" | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_SHAPE" | "INVALID_TITLE" | "LEG_DRAWN_ON" | "LEG_NOT_FOUND" | "NOT_SIBLINGS" | "NO_DRAW" | "NO_SUCH_POSITION" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RELAY_NOT_FOUND" | "RUN_OPEN" | "SUGGESTION_NOT_FOUND" | "SUGGESTION_SETTLED" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" };
+    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "DUPLICATE_CHOICES" | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_TITLE" | "LEG_DRAWN_ON" | "LEG_NOT_FOUND" | "NOT_SIBLINGS" | "NO_DRAW" | "NO_SUCH_POSITION" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RELAY_NOT_FOUND" | "RUN_OPEN" | "SUGGESTION_NOT_FOUND" | "SUGGESTION_SETTLED" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" | "USE_BLANK" };
   };
   "/live/p/answer": {
     input: {
@@ -1554,9 +1554,9 @@ export type CommonsWire = {
           "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["question"]>>;
           "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["material"]>]>>;
           "takes": {
-            "shape": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["shape"]>>;
             "source": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["source"]>]>>;
             "sourceNumber": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>>>, ["position"]>>;
+            "use": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["use"]>>;
           }[];
           "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
         }[];
@@ -1767,13 +1767,13 @@ export type CommonsWire = {
     input: {
       "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["leg"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "shape": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["shape"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useFit"]["fn"]>[0], ["use"]>]>>;
       "source": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["source"]>>;
+      "use": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["use"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useFit"]["fn"]>[0], ["use"]>]>>;
     };
     output: {
       "draw": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>>, ["draw"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_INPUT" | "INVALID_SHAPE" | "INVALID_USE" | "LEG_NOT_FOUND" | "NOT_SIBLINGS" | "RELAY_RETIRED" };
+    error: { error: AppWideError | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_INPUT" | "INVALID_USE" | "LEG_NOT_FOUND" | "NOT_SIBLINGS" | "RELAY_RETIRED" | "USE_BLANK" };
   };
   "/live/relays/uses": {
     input: {
@@ -5227,9 +5227,9 @@ export type CommonsWireHttp = {
           "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["question"]>>;
           "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["material"]>]>>;
           "takes": {
-            "shape": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["shape"]>>;
             "source": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["source"]>]>>;
             "sourceNumber": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>>>, ["position"]>>;
+            "use": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["use"]>>;
           }[];
           "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
         }[];
@@ -5427,8 +5427,8 @@ export type CommonsWireHttp = {
   "/live/relays/set-takes": {
     input: {
       "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["leg"]>]>>;
-      "shape": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["shape"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useFit"]["fn"]>[0], ["use"]>]>>;
       "source": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["source"]>>;
+      "use": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["use"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useFit"]["fn"]>[0], ["use"]>]>>;
     };
     output: {
       "draw": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>>, ["draw"]>>;

@@ -9,8 +9,8 @@ import {
   editRoundJson,
   editRoundParts,
   editPrompt,
-  editShape,
   editTitle,
+  editUse,
   legMaterials,
   relayDraftPassage,
   relayDraftReading,
@@ -25,7 +25,7 @@ const round = (overrides: Record<string, unknown> = {}) => ({
   parts: ["one", "two", "three"],
   cap: 0,
   choices: [],
-  takes: { from: 0, shape: "" },
+  takes: { from: 0, use: "" },
   ...overrides,
 });
 
@@ -34,7 +34,7 @@ const relay = (rounds: unknown[]) => JSON.stringify({ kind: "relay", rounds });
 /** The plan and materials of a two-round relay whose second round takes the first's picks. */
 const legs = [
   { leg: "leg-1", material: "q-1", position: 1, draws: [] },
-  { leg: "leg-2", material: "q-2", position: 2, draws: [{ source: "leg-1", shape: "context" }] },
+  { leg: "leg-2", material: "q-2", position: 2, draws: [{ source: "leg-1", use: "context" }] },
 ];
 
 const materials = [
@@ -83,12 +83,12 @@ describe("the relay-drafting reply boundary", () => {
       relay([round({ parts: [], cap: 0, choices: ["Yes", "yes"] })]),
       relay([round({ parts: ["one"], cap: 1 })]),
       relay([round({ parts: ["one"], choices: ["Yes"] })]),
-      relay([round({ takes: { from: 1, shape: "guessed" } })]),
+      relay([round({ takes: { from: 1, use: "guessed" } })]),
       relay([round({ kind: "write", takes: { from: 1, use: "parts" } })]),
       relay([round({ parts: [], choices: ["ran", "waited"], takes: { from: 1, use: "choices" } })]),
       relay([round({ kind: "vote", parts: [], choices: [] })]),
       relay([round({ kind: "sing" })]),
-      relay([round({ takes: { from: -1, shape: "context" } })]),
+      relay([round({ takes: { from: -1, use: "context" } })]),
     ];
     for (const reply of unusable) {
       expect(relayDraftReading({ reply })).toBe("neither");
@@ -108,18 +108,18 @@ describe("the relay-drafting reply boundary", () => {
     for (const reply of usable) expect(relayDraftReading({ reply })).toBe("relay");
   });
 
-  test("a round takes nothing when its number or its shape is empty", () => {
+  test("a round takes nothing when its number or its use is empty", () => {
     const lines = relayEditLines({
       reply: relay([
-        round({ takes: { from: 0, shape: "context" } }),
-        round({ title: "The stranger", parts: ["answer"], takes: { from: 1, shape: "" } }),
+        round({ takes: { from: 0, use: "context" } }),
+        round({ title: "The stranger", parts: ["answer"], takes: { from: 1, use: "" } }),
       ]),
       legs: [],
       materials: [],
     });
     for (const line of lines) {
       expect(line.kind).toBe("add");
-      expect(JSON.parse(line.value)).toHaveProperty("takes", { from: 0, shape: "" });
+      expect(JSON.parse(line.value)).toHaveProperty("takes", { from: 0, use: "" });
     }
   });
 
@@ -155,7 +155,7 @@ describe("the lines that turn the standing relay into the drafted one", () => {
         title: "The stranger",
         prompt: "Which verb best fits the stranger?",
         parts: ["answer"],
-        takes: { from: 1, shape: "context" },
+        takes: { from: 1, use: "context" },
       }),
     ]);
     expect(relayEditLines({ reply, legs, materials })).toEqual([
@@ -174,7 +174,7 @@ describe("the lines that turn the standing relay into the drafted one", () => {
       round({ number: 1 }),
     ]);
     expect(relayEditLines({ reply, legs, materials })).toEqual([
-      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, shape: "" }) },
+      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, use: "" }) },
       { kind: "move", target: "leg-2", value: "1" },
     ]);
   });
@@ -187,11 +187,11 @@ describe("the lines that turn the standing relay into the drafted one", () => {
         title: "The stranger",
         prompt: "Which verb best fits the stranger?",
         parts: ["answer"],
-        takes: { from: 1, shape: "context" },
+        takes: { from: 1, use: "context" },
       }),
     ]);
     expect(relayEditLines({ reply, legs, materials })).toEqual([
-      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, shape: "" }) },
+      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, use: "" }) },
       { kind: "remove", target: "leg-1", value: "" },
       {
         kind: "add",
@@ -203,11 +203,11 @@ describe("the lines that turn the standing relay into the drafted one", () => {
           parts: [],
           cap: 0,
           choices: [],
-          takes: { from: 0, shape: "" },
+          takes: { from: 0, use: "" },
           position: 1,
         }),
       },
-      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 1, shape: "context" }) },
+      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 1, use: "context" }) },
     ]);
   });
 
@@ -219,7 +219,7 @@ describe("the lines that turn the standing relay into the drafted one", () => {
         prompt: "Which verb best fits the stranger?",
         parts: [],
         choices: ["ran", "waited"],
-        takes: { from: 1, shape: "context" },
+        takes: { from: 1, use: "context" },
       }),
     ]);
     expect(relayEditLines({ reply, legs, materials })).toEqual([
@@ -237,13 +237,13 @@ describe("the lines that turn the standing relay into the drafted one", () => {
         title: "The stranger",
         prompt: "Which verb best fits the stranger?",
         parts: ["answer"],
-        takes: { from: 1, shape: "context" },
+        takes: { from: 1, use: "context" },
       }),
       round({
         title: "Why",
         prompt: "Why that one?",
         parts: [],
-        takes: { from: 2, shape: "context" },
+        takes: { from: 2, use: "context" },
       }),
     ]);
     expect(relayEditLines({ reply, legs, materials })).toEqual([
@@ -257,7 +257,7 @@ describe("the lines that turn the standing relay into the drafted one", () => {
           parts: [],
           cap: 0,
           choices: [],
-          takes: { from: 2, shape: "context" },
+          takes: { from: 2, use: "context" },
           position: 3,
         }),
       },
@@ -310,21 +310,21 @@ describe("reading one line back into what a concept takes", () => {
     });
   });
 
-  test("parts, choices, position, and shape lines read their own values", () => {
+  test("parts, choices, position, and use lines read their own values", () => {
     const parts = JSON.stringify({ parts: ["one", "two"], cap: 0 });
     expect(editParts({ value: parts })).toEqual(["one", "two"]);
     expect(editCap({ value: parts })).toBe(0);
     expect(editChoices({ value: JSON.stringify(["ran", "waited"]) })).toEqual(["ran", "waited"]);
     expect(editPosition({ value: "2" })).toBe(2);
 
-    const takes = JSON.stringify({ from: 1, shape: "context" });
+    const takes = JSON.stringify({ from: 1, use: "context" });
     expect(editPosition({ value: takes })).toBe(1);
-    expect(editShape({ value: takes })).toBe("context");
+    expect(editUse({ value: takes })).toBe("context");
 
-    const nothing = JSON.stringify({ from: 0, shape: "" });
+    const nothing = JSON.stringify({ from: 0, use: "" });
     expect(editPosition({ value: nothing })).toBe(0);
-    expect(editShape({ value: nothing })).toBe("");
-    expect(editShape({ value: JSON.stringify({ from: 1, shape: "guessed" }) })).toBe("");
-    expect(editShape({ value: "nonsense" })).toBe("");
+    expect(editUse({ value: nothing })).toBe("");
+    expect(editUse({ value: JSON.stringify({ from: 1, use: "guessed" }) })).toBe("");
+    expect(editUse({ value: "nonsense" })).toBe("");
   });
 });

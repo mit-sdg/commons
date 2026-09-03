@@ -1,7 +1,7 @@
 import type { Collection, Db } from "mongodb";
 import {
   ForwardDraw,
-  InvalidShape,
+  UseBlank,
   InvalidTitle,
   LegDrawnOn,
   LegNotFound,
@@ -41,7 +41,7 @@ interface DrawDoc {
   _id: string;
   leg: string;
   source: string;
-  shape: string;
+  use: string;
   /** Fixed when the draw was made, so drawing again on the same source keeps its place. */
   seq: number;
 }
@@ -154,7 +154,7 @@ export class MongoRelayingConcept {
     return { leg, position };
   }
 
-  async draw({ leg, source, shape }: { leg: string; source: string; shape: string }) {
+  async draw({ leg, source, use }: { leg: string; source: string; use: string }) {
     const target = await this.legs.findOne({ _id: leg });
     const origin = await this.legs.findOne({ _id: source });
     if (target === null || origin === null) {
@@ -166,17 +166,17 @@ export class MongoRelayingConcept {
     if (origin.position >= target.position) {
       throw new ForwardDraw("A leg cannot come before what it draws on.");
     }
-    if (shape.trim() === "") {
-      throw new InvalidShape("A draw needs a shape.");
+    if (use.trim() === "") {
+      throw new UseBlank("A draw needs a use.");
     }
     const standing = await this.draws.findOne({ leg });
     if (standing !== null) {
-      await this.draws.updateOne({ _id: standing._id }, { $set: { source, shape } });
+      await this.draws.updateOne({ _id: standing._id }, { $set: { source, use } });
       return { draw: standing._id };
     }
     const draw = crypto.randomUUID();
     const seq = await this.#nextSeq("draws");
-    await this.draws.insertOne({ _id: draw, leg, source, shape, seq });
+    await this.draws.insertOne({ _id: draw, leg, source, use, seq });
     return { draw };
   }
 
@@ -222,12 +222,12 @@ export class MongoRelayingConcept {
 
   async _draws({ leg }: { leg: string }) {
     const docs = await this.draws.find({ leg }).sort({ seq: 1 }).toArray();
-    return docs.map((doc) => ({ draw: doc._id, source: doc.source, shape: doc.shape }));
+    return docs.map((doc) => ({ draw: doc._id, source: doc.source, use: doc.use }));
   }
 
   async _drawsOn({ source }: { source: string }) {
     const docs = await this.draws.find({ source }).sort({ seq: 1 }).toArray();
-    return docs.map((doc) => ({ draw: doc._id, leg: doc.leg, shape: doc.shape }));
+    return docs.map((doc) => ({ draw: doc._id, leg: doc.leg, use: doc.use }));
   }
 
   async _plan({ relay }: { relay: string }) {
@@ -246,7 +246,7 @@ export class MongoRelayingConcept {
           position: leg.position,
           draws: drawn
             .filter((draw) => draw.leg === leg._id)
-            .map((draw) => ({ source: draw.source, shape: draw.shape })),
+            .map((draw) => ({ source: draw.source, use: draw.use })),
         })),
       },
     ];

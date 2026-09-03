@@ -5,5 +5,5 @@ export class LegDrawnOn extends Error {}
 export class NoSuchPosition extends Error {}
 export class ForwardDraw extends Error {}
 export class NotSiblings extends Error {}
-export class InvalidShape extends Error {}
+export class UseBlank extends Error {}
 export class NoDraw extends Error {}

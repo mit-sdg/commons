@@ -54,7 +54,7 @@ interface Round {
   title: string;
   question: string;
   prompt: string;
-  takes: { source: string; sourceNumber: number; shape: string }[];
+  takes: { source: string; sourceNumber: number; use: string }[];
 }
 
 interface Added {
@@ -109,7 +109,7 @@ describe("writing to a retired relay", () => {
     await post(
       edge,
       "/live/relays/set-takes",
-      { leg: second.leg, source: first.leg, shape: "context" },
+      { leg: second.leg, source: first.leg, use: "context" },
       cookie,
     );
     const retired = await json(await post(edge, "/live/relays/retire", { relay }, cookie));
@@ -173,7 +173,7 @@ describe("writing to a retired relay", () => {
       await post(
         edge,
         "/live/relays/set-takes",
-        { leg: second.leg, source: first.leg, shape: "context" },
+        { leg: second.leg, source: first.leg, use: "context" },
         cookie,
       ),
     );
@@ -191,7 +191,7 @@ describe("writing to a retired relay", () => {
     const standing = await rounds(relay);
     expect(standing.map((round) => round.title)).toEqual(["One word", "The stranger"]);
     expect(standing[0].prompt).toBe("One word?");
-    expect(standing[1].takes).toEqual([{ source: first.leg, sourceNumber: 1, shape: "context" }]);
+    expect(standing[1].takes).toEqual([{ source: first.leg, sourceNumber: 1, use: "context" }]);
   });
 });
 

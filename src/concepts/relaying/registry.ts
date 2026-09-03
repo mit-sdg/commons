@@ -3,7 +3,6 @@ import type { Db } from "mongodb";
 import spec from "@design/concepts/Relaying.md" with { type: "text" };
 import {
   ForwardDraw,
-  InvalidShape,
   InvalidTitle,
   LegDrawnOn,
   LegNotFound,
@@ -11,6 +10,7 @@ import {
   NoSuchPosition,
   NotSiblings,
   RelayNotFound,
+  UseBlank,
 } from "./errors.ts";
 import { MongoRelayingConcept } from "./relaying.mongo.ts";
 
@@ -25,7 +25,7 @@ export const relaying = registerConcept({
     NO_SUCH_POSITION: NoSuchPosition,
     FORWARD_DRAW: ForwardDraw,
     NOT_SIBLINGS: NotSiblings,
-    INVALID_SHAPE: InvalidShape,
+    USE_BLANK: UseBlank,
     NO_DRAW: NoDraw,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoRelayingConcept(database) },

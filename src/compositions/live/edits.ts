@@ -277,7 +277,7 @@ export const TakenAddAddsRound = reaction(
     position,
     drawing,
     drawn,
-    shape,
+    use,
     from,
     source,
   }) =>
@@ -339,13 +339,13 @@ export const TakenAddAddsRound = reaction(
           .named("placed"),
         where(
           compute(computations.editRoundJson, { value }, drawing),
-          compute(computations.editRoundTakesShape, { round: drawing }, shape),
-          is.among(shape, USE_WORDS),
+          compute(computations.editRoundTakesUse, { round: drawing }, use),
+          is.among(use, USE_WORDS),
           compute(computations.editRoundTakesFrom, { round: drawing }, from),
           Relaying._leg({ leg: added }).is({ relay: drawn }),
           Relaying._legs({ relay: drawn }).is({ leg: source, position: from }),
         )
-          .then(Relaying.draw({ leg: added, source, shape }))
+          .then(Relaying.draw({ leg: added, source, use }))
           .named("drawn"),
       ),
 );
@@ -480,28 +480,28 @@ export const TakenPartsSetParts = reaction(
  * draw that stands.
  */
 export const TakenTakesDraws = reaction(
-  ({ suggestion, target, value, relay, shape, position, source }) =>
+  ({ suggestion, target, value, relay, use, position, source }) =>
     when(Suggesting.take({ suggestion }).responds({ kind: "takes", target, value }))
       .where(
         Suggesting._suggestion({ suggestion }).is({ subject: relay }),
         Relaying._relay({ relay }),
         Relaying._leg({ leg: target }).is({ relay }),
-        compute(computations.editShape, { value }, shape),
-        is.among(shape, USE_WORDS),
+        compute(computations.editUse, { value }, use),
+        is.among(use, USE_WORDS),
         compute(computations.editPosition, { value }, position),
         Relaying._legs({ relay }).is({ leg: source, position }),
       )
-      .then(Relaying.draw({ leg: target, source, shape })),
+      .then(Relaying.draw({ leg: target, source, use })),
 );
 
-export const TakenTakesUndraws = reaction(({ suggestion, target, value, relay, shape, source }) =>
+export const TakenTakesUndraws = reaction(({ suggestion, target, value, relay, use, source }) =>
   when(Suggesting.take({ suggestion }).responds({ kind: "takes", target, value }))
     .where(
       Suggesting._suggestion({ suggestion }).is({ subject: relay }),
       Relaying._relay({ relay }),
       Relaying._leg({ leg: target }).is({ relay }),
-      compute(computations.editShape, { value }, shape),
-      is.among(shape, [""]),
+      compute(computations.editUse, { value }, use),
+      is.among(use, [""]),
       Relaying._draws({ leg: target }).is({ source }),
     )
     .then(Relaying.undraw({ leg: target, source })),

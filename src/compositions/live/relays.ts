@@ -155,7 +155,7 @@ export const theRelay = former(
       cap,
       source,
       sourceNumber,
-      shape,
+      use,
       run,
       open,
       openedAt,
@@ -195,9 +195,9 @@ export const theRelay = former(
           choices,
           parts,
           cap,
-          takes: each(Relaying._draws({ leg }).is({ source, shape }))
+          takes: each(Relaying._draws({ leg }).is({ source, use }))
             .where(Relaying._leg({ leg: source }).is({ position: sourceNumber }))
-            .form({ source, sourceNumber, shape }),
+            .form({ source, sourceNumber, use }),
         }),
       runs: each(
         Publishing._editionsFor({ material: relay }).is({ edition: run, open, openedAt, closedAt }),
@@ -928,8 +928,8 @@ export const MoveRound = endpoint(
 
 export const SetTakes = endpoint(
   "/live/relays/set-takes",
-  ({ session, leg, source, shape, user, at, relay, questionnaire, choices, parts, draw, fit }) =>
-    receive({ session, leg, source, shape }).then(
+  ({ session, leg, source, use, user, at, relay, questionnaire, choices, parts, draw, fit }) =>
+    receive({ session, leg, source, use }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
@@ -937,10 +937,10 @@ export const SetTakes = endpoint(
         Relaying._leg({ leg }).is({ relay, material: questionnaire }),
         relayIsNotRetired({ relay }),
         Questioning._getQuestions({ questionnaire }).is({ choices, parts }),
-        compute(computations.useFit, { use: shape, choices, parts }, fit),
+        compute(computations.useFit, { use, choices, parts }, fit),
         is.among(fit, ["open"]),
       )
-        .then(Relaying.draw({ leg, source, shape }).responds({ draw }))
+        .then(Relaying.draw({ leg, source, use }).responds({ draw }))
         .then(respond({ draw }))
         .named("success"),
       where(
@@ -949,7 +949,7 @@ export const SetTakes = endpoint(
         Relaying._leg({ leg }).is({ relay, material: questionnaire }),
         relayIsNotRetired({ relay }),
         Questioning._getQuestions({ questionnaire }).is({ choices, parts }),
-        compute(computations.useFit, { use: shape, choices, parts }, fit),
+        compute(computations.useFit, { use, choices, parts }, fit),
         is.among(fit, ["closed", "unknown"]),
       )
         .then(respond({ error: "INVALID_USE" }))
@@ -969,7 +969,7 @@ export const SetTakes = endpoint(
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
-  { input: { required: ["session", "leg", "source", "shape"] } },
+  { input: { required: ["session", "leg", "source", "use"] } },
 );
 
 export const ClearTakes = endpoint(
@@ -1124,7 +1124,7 @@ export const TiedRoundCapturesPresentation = reaction(
           .named("plain"),
         where(
           Linking._getLinks({ source: round }).is({ target: run }),
-          theTakeOf({ leg }).is({ source, shape: "choices" }),
+          theTakeOf({ leg }).is({ source, use: "choices" }),
           theRoundOfLegInRun({ run, leg: source }).is({ round: carried }),
         )
           .then(
@@ -1136,7 +1136,7 @@ export const TiedRoundCapturesPresentation = reaction(
           .named("choices"),
         where(
           Linking._getLinks({ source: round }).is({ target: run }),
-          theTakeOf({ leg }).is({ source, shape: "parts" }),
+          theTakeOf({ leg }).is({ source, use: "parts" }),
           theRoundOfLegInRun({ run, leg: source }).is({ round: carried }),
         )
           .then(
@@ -1148,7 +1148,7 @@ export const TiedRoundCapturesPresentation = reaction(
           .named("parts"),
         where(
           Linking._getLinks({ source: round }).is({ target: run }),
-          theTakeOf({ leg }).is({ source, shape: "context" }),
+          theTakeOf({ leg }).is({ source, use: "context" }),
           theRoundOfLegInRun({ run, leg: source }).is({ round: carried }),
         )
           .then(

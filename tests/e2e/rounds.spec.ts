@@ -94,7 +94,7 @@ test("a relay runs its room: forty phones, a model participant, sorting, picks, 
   await call(page, "/live/relays/set-takes", {
     leg: second.leg,
     source: first.leg,
-    shape: "context",
+    use: "context",
   });
   await page.goto(`/staff/live/relay/${planned.relay}/edit`);
   await expect(page.getByRole("textbox", { name: "Title" }).nth(2)).toHaveValue("The stranger");

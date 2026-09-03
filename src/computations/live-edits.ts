@@ -55,10 +55,10 @@ interface Material {
   questions?: unknown;
 }
 
-/** What a round takes: the number of the round it takes from, and the shape. */
+/** What a round takes: the number of the round it takes from, and the use. */
 export interface RoundTakes {
   from: number;
-  shape: string;
+  use: string;
 }
 
 /** One round of a relay as this composition reads and writes it. */
@@ -129,7 +129,7 @@ function standingRounds(legs: unknown, materials: unknown): StandingRound[] {
     const question = asRecord(questions[0]);
     const draw = asRecord((Array.isArray(leg.draws) ? leg.draws : [])[0]);
     const source = asString(draw.source);
-    const shape = asString(draw.shape);
+    const use = asString(draw.use);
     const from = numbers.get(source) ?? 0;
     return {
       leg: asString(leg.leg),
@@ -139,7 +139,7 @@ function standingRounds(legs: unknown, materials: unknown): StandingRound[] {
       parts: asStrings(question.parts),
       cap: asNumber(question.cap),
       choices: asStrings(question.choices),
-      takes: from === 0 || shape === "" ? { from: 0, shape: "" } : { from, shape },
+      takes: from === 0 || use === "" ? { from: 0, use: "" } : { from, use },
     };
   });
 }
@@ -148,28 +148,28 @@ function standingRounds(legs: unknown, materials: unknown): StandingRound[] {
 function standingFace(legs: unknown, materials: unknown) {
   return standingRounds(legs, materials).map(({ leg: _leg, takes, ...round }) => ({
     number: round.number,
-    kind: roundKind({ choices: round.choices, parts: round.parts, use: takes.shape }),
+    kind: roundKind({ choices: round.choices, parts: round.parts, use: takes.use }),
     title: round.title,
     prompt: round.prompt,
     parts: round.parts,
     cap: round.cap,
     choices: round.choices,
-    takes: { from: takes.from, use: takes.shape },
+    takes: { from: takes.from, use: takes.use },
   }));
 }
 
-/** A take as the model writes it (`use`) or as a line carries it (`shape`); the two are one word. */
+/** A take as the model writes it and as a line carries it: a round number and a use. */
 function readTakes(value: unknown): RoundTakes | undefined {
-  if (value === undefined || value === null) return { from: 0, shape: "" };
+  if (value === undefined || value === null) return { from: 0, use: "" };
   if (typeof value !== "object" || Array.isArray(value)) return undefined;
   const record = value as Record<string, unknown>;
   const from = record.from ?? 0;
-  const shape = record.use ?? record.shape ?? "";
+  const use = record.use ?? "";
   if (typeof from !== "number" || !Number.isInteger(from) || from < 0) return undefined;
-  if (typeof shape !== "string") return undefined;
-  const named = shape.trim();
+  if (typeof use !== "string") return undefined;
+  const named = use.trim();
   if (named !== "" && !isCarryUse(named)) return undefined;
-  return from === 0 || named === "" ? { from: 0, shape: "" } : { from, shape: named };
+  return from === 0 || named === "" ? { from: 0, use: "" } : { from, use: named };
 }
 
 /** The kind a drafted round claims, or the one its boxes and take imply when it claims none. */
@@ -178,7 +178,7 @@ function readKind(
   round: { parts: string[]; choices: string[]; takes: RoundTakes },
 ): RoundKind | undefined {
   if (value === undefined || value === null || value === "") {
-    return roundKind({ choices: round.choices, parts: round.parts, use: round.takes.shape });
+    return roundKind({ choices: round.choices, parts: round.parts, use: round.takes.use });
   }
   return typeof value === "string" && (KINDS as string[]).includes(value)
     ? (value as RoundKind)
@@ -187,7 +187,7 @@ function readKind(
 
 /** Why a round's boxes, choices, and take do not fit its kind, or nothing when they do. */
 function misfit(kind: RoundKind, round: { parts: string[]; choices: string[]; takes: RoundTakes }) {
-  const use = round.takes.shape;
+  const use = round.takes.use;
   if (use !== "" && !CARRY_USES.some((entry) => entry.use === use && entry.kinds.includes(kind))) {
     return `A ${kind} round cannot take "${use}".`;
   }
@@ -332,12 +332,12 @@ function fieldLines(stands: StandingRound, drafted: DraftedRound): Line[] {
 }
 
 const sameTakes = (left: RoundTakes, right: RoundTakes) =>
-  left.from === right.from && left.shape === right.shape;
+  left.from === right.from && left.use === right.use;
 
 /** An `add` line's value: the round, what it takes, and the number it lands at. */
 function addLine(drafted: DraftedRound, position: number): Line {
   const { title, prompt, parts, cap, choices, takes } = drafted;
-  const kind = roundKind({ choices, parts, use: takes.shape });
+  const kind = roundKind({ choices, parts, use: takes.use });
   return {
     kind: "add",
     target: "",
@@ -424,7 +424,7 @@ function linesByIdentity(standing: StandingRound[], drafted: DraftedRound[]): Li
       lines.push({
         kind: "takes",
         target: stands.leg,
-        value: JSON.stringify({ from: 0, shape: "" }),
+        value: JSON.stringify({ from: 0, use: "" }),
       });
     }
   }
@@ -449,7 +449,7 @@ function linesByIdentity(standing: StandingRound[], drafted: DraftedRound[]): Li
   // The takes that remain, against the delivered relay's numbering.
   for (const { round, stands } of paired) {
     if (stands === undefined) continue;
-    const before = cleared.has(stands.leg) ? { from: 0, shape: "" } : stands.takes;
+    const before = cleared.has(stands.leg) ? { from: 0, use: "" } : stands.takes;
     if (!sameTakes(round.takes, before)) {
       lines.push({ kind: "takes", target: stands.leg, value: JSON.stringify(round.takes) });
     }
@@ -469,7 +469,7 @@ export function editRoundJson({
     parts: asStrings(round.parts),
     cap: asNumber(round.cap),
     choices: asStrings(round.choices),
-    takes: readTakes(round.takes) ?? { from: 0, shape: "" },
+    takes: readTakes(round.takes) ?? { from: 0, use: "" },
     position: asNumber(round.position),
   };
 }
@@ -500,9 +500,9 @@ export function editRoundTakesFrom({ round }: { round: unknown }): number {
   return takes === undefined ? 0 : takes.from;
 }
 
-export function editRoundTakesShape({ round }: { round: unknown }): string {
+export function editRoundTakesUse({ round }: { round: unknown }): string {
   const takes = readTakes(asRecord(round).takes);
-  return takes === undefined ? "" : takes.shape;
+  return takes === undefined ? "" : takes.use;
 }
 
 /** The number an added round lands at, and 0 when it simply goes last. */
@@ -530,7 +530,7 @@ export function editPosition({ value }: { value: string }): number {
   return takes === undefined ? 0 : takes.from;
 }
 
-export function editShape({ value }: { value: string }): string {
+export function editUse({ value }: { value: string }): string {
   const takes = readTakes(readJson(value));
-  return takes === undefined ? "" : takes.shape;
+  return takes === undefined ? "" : takes.use;
 }

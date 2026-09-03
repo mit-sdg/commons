@@ -30,7 +30,7 @@ export function fillerPiles(source: number): string[] {
 /** The round's question as a phone would meet it, with filler for what it takes. */
 export function RoundPreview({ round }: { round: RelayRound }) {
   const takes = round.takes[0] ?? null;
-  const use = takes?.shape ?? "";
+  const use = takes?.use ?? "";
   const carried = fillerPiles(takes?.sourceNumber ?? 0);
   const question: RoundQuestion = {
     question: round.leg,

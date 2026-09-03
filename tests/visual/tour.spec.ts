@@ -155,12 +155,12 @@ for (const theme of THEMES) {
     await call(page, "/live/relays/set-takes", {
       leg: second.leg,
       source: first.leg,
-      shape: "context",
+      use: "context",
     });
     await call(page, "/live/relays/set-takes", {
       leg: third.leg,
       source: first.leg,
-      shape: "choices",
+      use: "choices",
     });
 
     // The shelf, and what New offers.

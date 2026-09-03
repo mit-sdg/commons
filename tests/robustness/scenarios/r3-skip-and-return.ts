@@ -86,7 +86,7 @@ async function build(): Promise<{ relay: string; legs: string[] }> {
   const drawn = await host.call("/live/relays/set-takes", {
     leg: legs[1],
     source: legs[0],
-    shape: "context",
+    use: "context",
   });
   if (drawn.error) throw new Error(`set-takes: ${drawn.error}`);
   return { relay: planned.relay, legs };

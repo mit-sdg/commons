@@ -139,7 +139,7 @@ describe("what a round carries from an earlier one", () => {
       await post(
         edge,
         "/live/relays/set-takes",
-        { leg: second.leg, source: first.leg, shape: "picked" },
+        { leg: second.leg, source: first.leg, use: "picked" },
         cookie,
       ),
     );
@@ -148,7 +148,7 @@ describe("what a round carries from an earlier one", () => {
       await post(
         edge,
         "/live/relays/set-takes",
-        { leg: second.leg, source: first.leg, shape: "context" },
+        { leg: second.leg, source: first.leg, use: "context" },
         cookie,
       ),
     );
@@ -174,17 +174,17 @@ describe("what a round carries from an earlier one", () => {
     const each = await add("Each", [], []);
     const vote = await add("Vote", [], []);
     const runoff = await add("Runoff", [], []);
-    for (const [leg, shape] of [
+    for (const [leg, use] of [
       [stranger, "context"],
       [each, "parts"],
       [vote, "choices"],
     ] as const) {
-      await post(edge, "/live/relays/set-takes", { leg, source: verbs, shape }, cookie);
+      await post(edge, "/live/relays/set-takes", { leg, source: verbs, use }, cookie);
     }
     await post(
       edge,
       "/live/relays/set-takes",
-      { leg: runoff, source: vote, shape: "context" },
+      { leg: runoff, source: vote, use: "context" },
       cookie,
     );
 

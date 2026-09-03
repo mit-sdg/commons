@@ -9,8 +9,8 @@ import { Link } from "@/components/link";
 import { FormBadge, RETIRE_NOTE } from "@/components/live/quiz-meta";
 import {
   RoundToken,
-  shapeWords,
   TakesChip,
+  takeWords,
 } from "@/components/live/round-token";
 import { kindOf, NO_ROUNDS, type RelayRound } from "@/components/live/rounds";
 import { PageContainer, PageHeader } from "@/components/page";
@@ -264,15 +264,14 @@ function RoundCard({ round }: { round: RelayRound }) {
             ))}
           </div>
         ) : null}
-        {takes === undefined ? null : shapeWords(takes.shape) ===
-          takes.shape ? (
+        {takes === undefined ? null : takeWords(takes.use) === takes.use ? (
           <span className="font-mono text-muted-foreground text-[13px]">
             takes from {takes.sourceNumber}
           </span>
         ) : (
           <TakesChip
             from={takes.sourceNumber}
-            shape={takes.shape}
+            use={takes.use}
             standing="plain"
             className="self-start"
           />

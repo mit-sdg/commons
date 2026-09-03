@@ -144,7 +144,7 @@ export function RelayRunBoard({
   // A round that takes choices or context reads its source's wall too, so the
   // rows and the carried boxes can say which round they came from.
   const choiceSource =
-    shownTake === null || shownTake.shape === "parts"
+    shownTake === null || shownTake.use === "parts"
       ? null
       : (run.rounds.find((one) => one.leg === shownTake.source)?.round ?? null);
   const { data: sourceData } = useQuery(

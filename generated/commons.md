@@ -893,11 +893,11 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
   - Refuses `LEG_NOT_FOUND`: There is no such leg.
   - Refuses `NO_SUCH_POSITION`: There is no such place in this relay.
   - Refuses `FORWARD_DRAW`: A leg cannot come before what it draws on.
-- `draw(leg: Leg, source: Leg, shape: String) : return (draw: Draw)`
+- `draw(leg: Leg, source: Leg, use: String) : return (draw: Draw)`
   - Refuses `LEG_NOT_FOUND`: There is no such leg.
   - Refuses `NOT_SIBLINGS`: These legs do not share a relay.
   - Refuses `FORWARD_DRAW`: A leg cannot come before what it draws on.
-  - Refuses `INVALID_SHAPE`: A draw needs a shape.
+  - Refuses `USE_BLANK`: A draw needs a use.
 - `undraw(leg: Leg, source: Leg) : return (leg: Leg)`
   - Refuses `NO_DRAW`: This leg does not draw on that one.
 
@@ -908,8 +908,8 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
 - `_legs(relay: String) : many (leg: String, material: String, position: Number)`
 - `_leg(leg: String) : optional (relay: String, material: String, position: Number)`
 - `_legFor(material: String) : optional (leg: String, relay: String, position: Number)`
-- `_draws(leg: String) : many (draw: String, source: String, shape: String)`
-- `_drawsOn(source: String) : many (draw: String, leg: String, shape: String)`
+- `_draws(leg: String) : many (draw: String, source: String, use: String)`
+- `_drawsOn(source: String) : many (draw: String, leg: String, use: String)`
 - `_plan(relay: String) : optional (legs: Seq)`
 
 #### Instances
@@ -1467,9 +1467,9 @@ Concrete types:
 - `editRoundParts(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editRoundPosition(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 60.
 - `editRoundTakesFrom(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 52.
-- `editRoundTakesShape(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 56.
-- `editShape(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 90.
+- `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 56.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
+- `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 90.
 - `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 368.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 89.
 - `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 355.
@@ -2588,8 +2588,8 @@ the user named (username) — inputs (username); outputs (user); bindings () —
 ### what (leg) takes
 
 ```view
-what (leg) takes — inputs (leg); outputs (source, shape); bindings () — answers at most one (source, shape)
-  where Relaying._draws (leg) has (shape, source)
+what (leg) takes — inputs (leg); outputs (source, use); bindings () — answers at most one (source, use)
+  where Relaying._draws (leg) has (source, use)
 ```
 
 ## Formers
@@ -3906,7 +3906,7 @@ Authored path: `Live.relays.theRelay`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 23.
 
 ```former
-Former "the relay (relay)" — inputs (relay); bindings (title, createdAt, leg, material, position, roundTitle, question, prompt, choices, parts, cap, source, sourceNumber, shape, run, open, openedAt, closedAt, token, code, retired, ran); promises at most one record — forms:
+Former "the relay (relay)" — inputs (relay); bindings (title, createdAt, leg, material, position, roundTitle, question, prompt, choices, parts, cap, source, sourceNumber, use, run, open, openedAt, closedAt, token, code, retired, ran); promises at most one record — forms:
   a record of
     where Relaying._relay (relay) has (createdAt, title)
     where Trashing._isTrashed (item: relay) has (trashed: retired)
@@ -3925,12 +3925,12 @@ Former "the relay (relay)" — inputs (relay); bindings (title, createdAt, leg, 
         prompt
         question
         questionnaire: material
-        takes: each Relaying._draws (leg) has (shape, source)
+        takes: each Relaying._draws (leg) has (source, use)
           where Relaying._leg (leg: source) has (position: sourceNumber)
           form a record of
-            shape
             source
             sourceNumber
+            use
         title: roundTitle
     runs: each Publishing._editionsFor (material: relay) has (closedAt, edition: run, open, openedAt)
       where whether Sharing._sharesFor (subject: run) has (token)
@@ -14903,11 +14903,11 @@ where
   Relaying._legs (relay: drawn) has (leg: source, position: from)
   earlier, Suggesting.take (suggestion, kind: "add", value)
   drawing is editRoundJson (value)
-  shape is editRoundTakesShape (round: drawing)
-  shape is among ["context", "choices", "parts"]
+  use is editRoundTakesUse (round: drawing)
+  use is among ["context", "choices", "parts"]
   from is editRoundTakesFrom (round: drawing)
 then
-  Relaying.draw (leg: added, shape, source)
+  Relaying.draw (leg: added, source, use)
 ```
 
 ### Live.edits.TakenAddAddsRound:placed#5
@@ -15030,12 +15030,12 @@ where
   Suggesting._suggestion (suggestion) has (subject: relay)
   Relaying._relay (relay)
   Relaying._leg (leg: target) has (relay)
-  shape is editShape (value)
-  shape is among ["context", "choices", "parts"]
+  use is editUse (value)
+  use is among ["context", "choices", "parts"]
   position is editPosition (value)
   Relaying._legs (relay) has (leg: source, position)
 then
-  Relaying.draw (leg: target, shape, source)
+  Relaying.draw (leg: target, source, use)
 ```
 
 ### Live.edits.TakenTakesUndraws
@@ -15049,8 +15049,8 @@ where
   Suggesting._suggestion (suggestion) has (subject: relay)
   Relaying._relay (relay)
   Relaying._leg (leg: target) has (relay)
-  shape is editShape (value)
-  shape is among [""]
+  use is editUse (value)
+  use is among [""]
   Relaying._draws (leg: target) has (source)
 then
   Relaying.undraw (leg: target, source)
@@ -18080,7 +18080,7 @@ Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, shape, source)
+when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not host live runs" with (user)
@@ -18095,7 +18095,7 @@ Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, shape, source)
+when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
@@ -18111,7 +18111,7 @@ Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, shape, source)
+when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
@@ -18128,7 +18128,7 @@ Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, shape, source)
+when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
@@ -18136,10 +18136,10 @@ where
   Relaying._leg (leg) has (material: questionnaire, relay)
   view "(relay) is not retired" with (relay)
   Questioning._getQuestions (questionnaire) has (choices, parts)
-  fit is useFit (choices, parts, use: shape)
+  fit is useFit (choices, parts, use)
   fit is among ["open"]
 then
-  Relaying.draw (leg, shape, source)
+  Relaying.draw (leg, source, use)
 ```
 
 ### Live.relays.SetTakes:success#2
@@ -18149,9 +18149,9 @@ Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
 
 ```reaction
-when Relaying.draw (leg, shape, source, draw), asked by Live.relays.SetTakes:success
+when Relaying.draw (leg, source, use, draw), asked by Live.relays.SetTakes:success
 where
-  earlier, RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, shape, source)
+  earlier, RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
 then
   RequestBoundary.respond (draw, requestId)
 ```
@@ -18163,14 +18163,14 @@ Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, shape, source)
+when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Relaying._leg (leg) has (material: questionnaire, relay)
   view "(relay) is not retired" with (relay)
   Questioning._getQuestions (questionnaire) has (choices, parts)
-  fit is useFit (choices, parts, use: shape)
+  fit is useFit (choices, parts, use)
   fit is among ["closed", "unknown"]
 then
   RequestBoundary.respond (error: "INVALID_USE", requestId)
@@ -18187,7 +18187,7 @@ where
   Publishing._edition (edition: round) has (material: questionnaire)
   Relaying._legFor (material: questionnaire) has (leg)
   Linking._getLinks (source: round) has (target: run)
-  view "what (leg) takes" with (leg) has (shape: "choices", source)
+  view "what (leg) takes" with (leg) has (source, use: "choices")
   view "the round of (leg) in (run)" with (leg: source, run) has (round: carried)
 then
   RunSnapshotting.capture (subject: round, value: former "the presentation of (leg) taking from (sourceRound)" with (leg, sourceRound: carried))
@@ -18204,7 +18204,7 @@ where
   Publishing._edition (edition: round) has (material: questionnaire)
   Relaying._legFor (material: questionnaire) has (leg)
   Linking._getLinks (source: round) has (target: run)
-  view "what (leg) takes" with (leg) has (shape: "context", source)
+  view "what (leg) takes" with (leg) has (source, use: "context")
   view "the round of (leg) in (run)" with (leg: source, run) has (round: carried)
 then
   RunSnapshotting.capture (subject: round, value: former "the presentation of (leg) showing (sourceRound)" with (leg, sourceRound: carried))
@@ -18221,7 +18221,7 @@ where
   Publishing._edition (edition: round) has (material: questionnaire)
   Relaying._legFor (material: questionnaire) has (leg)
   Linking._getLinks (source: round) has (target: run)
-  view "what (leg) takes" with (leg) has (shape: "parts", source)
+  view "what (leg) takes" with (leg) has (source, use: "parts")
   view "the round of (leg) in (run)" with (leg: source, run) has (round: carried)
 then
   RunSnapshotting.capture (subject: round, value: former "the presentation of (leg) taking parts from (sourceRound)" with (leg, sourceRound: carried))
@@ -21023,7 +21023,7 @@ not listed here have no explicit input contract.
 - `/live/relays/retitle` — requires `session`, `relay`, `title`
 - `/live/relays/revise-round` — requires `session`, `leg`, `title`, `prompt`, `parts`, `cap`, `choices`
 - `/live/relays/run` — requires `session`, `run`
-- `/live/relays/set-takes` — requires `session`, `leg`, `source`, `shape`
+- `/live/relays/set-takes` — requires `session`, `leg`, `source`, `use`
 - `/live/relays/uses` — requires `session`
 - `/live/runs/close` — requires `session`, `run`
 - `/live/runs/launch` — requires `session`, `questionnaire`

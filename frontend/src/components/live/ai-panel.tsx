@@ -141,7 +141,7 @@ function LineBody({ line, round }: { line: OfferedLine; round: Round | null }) {
     const kind = typeof drafted.kind === "string" ? drafted.kind : "";
     const takes = record(drafted.takes);
     const from = typeof takes.from === "number" ? takes.from : 0;
-    const shape = typeof takes.shape === "string" ? takes.shape : "";
+    const use = typeof takes.use === "string" ? takes.use : "";
     const cap = typeof drafted.cap === "number" ? drafted.cap : 0;
     const boxes =
       partWords(strings(drafted.parts), cap) ||
@@ -157,9 +157,7 @@ function LineBody({ line, round }: { line: OfferedLine; round: Round | null }) {
               {kind}
             </span>
           )}
-          {from > 0 && shape !== "" ? (
-            <TakesChip from={from} shape={shape} />
-          ) : null}
+          {from > 0 && use !== "" ? <TakesChip from={from} use={use} /> : null}
         </span>
         {drafted.prompt ? (
           <span className="min-w-0 text-muted-foreground">
@@ -216,12 +214,12 @@ function LineBody({ line, round }: { line: OfferedLine; round: Round | null }) {
   }
   if (line.kind === "takes") {
     const drafted = record(readJson(line.value));
-    const shape = typeof drafted.shape === "string" ? drafted.shape : "";
+    const use = typeof drafted.use === "string" ? drafted.use : "";
     const from = typeof drafted.from === "number" ? drafted.from : 0;
-    if (shape === "" || from === 0) {
+    if (use === "" || from === 0) {
       return <Change>nothing</Change>;
     }
-    return <TakesChip from={from} shape={shape} />;
+    return <TakesChip from={from} use={use} />;
   }
   return <span className="min-w-0">{line.value}</span>;
 }

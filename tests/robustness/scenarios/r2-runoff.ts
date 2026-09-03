@@ -150,7 +150,7 @@ try {
   const drawn = await host.call("/live/relays/set-takes", {
     leg: added.leg,
     source: relay.legs[1],
-    shape: "choices",
+    use: "choices",
   });
   if (drawn.error) log.refused("the runoff takes its choices from the vote", "set-takes", drawn);
 

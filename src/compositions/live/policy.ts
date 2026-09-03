@@ -212,8 +212,8 @@ export const legSourcesHaveClosed = view(
 ).holds();
 
 /** What a round takes: this pass fills one source per round. */
-export const theTakeOf = view("what (leg) takes", ({ leg }, { source, shape }, _bindings) =>
-  where(Relaying._draws({ leg }).is({ source, shape })),
+export const theTakeOf = view("what (leg) takes", ({ leg }, { source, use }, _bindings) =>
+  where(Relaying._draws({ leg }).is({ source, use })),
 ).optional();
 
 export const legTakesNothing = view("(leg) takes nothing", ({ leg }, _outputs, _bindings) =>

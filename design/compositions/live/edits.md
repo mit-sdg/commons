@@ -53,9 +53,9 @@ editRoundTakesFrom(round: Json) : Number
   Reads the number of the round an added round takes from, and 0 when it
   takes nothing.
 
-editRoundTakesShape(round: Json) : String
-  Reads the shape of what an added round takes, and an empty string when it
-  takes nothing.
+editRoundTakesUse(round: Json) : String
+  Reads the use an added round makes of what it takes, and an empty string
+  when it takes nothing.
 
 editRoundPosition(round: Json) : Number
   Reads the number an added round lands at, and 0 when it goes last.
@@ -87,8 +87,8 @@ editChoices(value: String) : Strings
 editPosition(value: String) : Number
   Reads a `move` or `takes` line's value into a round number.
 
-editShape(value: String) : String
-  Reads a `takes` line's value into a shape, and an empty string when the
+editUse(value: String) : String
+  Reads a `takes` line's value into a use, and an empty string when the
   round takes nothing.
 ```
 

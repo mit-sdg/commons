@@ -9,7 +9,7 @@ export interface CopyableRound {
   parts: string[];
   cap: number;
   choices: string[];
-  takes?: { from: number; shape: string };
+  takes?: { from: number; use: string };
 }
 
 /** A standing relay, read into the shape copying replays. */
@@ -25,7 +25,7 @@ export function roundsToCopy(relay: FetchedRelay): CopyableRound[] {
       takes:
         takes === undefined
           ? undefined
-          : { from: takes.sourceNumber, shape: takes.shape },
+          : { from: takes.sourceNumber, use: takes.use },
     };
   });
 }
@@ -55,14 +55,14 @@ export async function copyRounds(
 
   for (const [index, round] of source.entries()) {
     const takes = round.takes;
-    if (takes === undefined || takes.shape === "") continue;
+    if (takes === undefined || takes.use === "") continue;
     const from = legs[takes.from - 1];
     const leg = legs[index];
     if (from === undefined || leg === undefined) continue;
     const drawn = await api["/live/relays/set-takes"]({
       leg,
       source: from,
-      shape: takes.shape,
+      use: takes.use,
     });
     if (isApiError(drawn)) return drawn;
   }

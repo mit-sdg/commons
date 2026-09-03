@@ -226,7 +226,7 @@ export function RoundEditor({
   const bare =
     written.parts.length === 0 &&
     written.choices.length === 0 &&
-    (takes === null || takes.shape === "context");
+    (takes === null || takes.use === "context");
   const kind: RoundKind = (bare ? chosenKind : null) ?? held;
   const open = usesFor(uses, kind);
 
@@ -281,7 +281,7 @@ export function RoundEditor({
       onChanged();
   }
 
-  async function setTakes(source: string, shape: string) {
+  async function setTakes(source: string, use: string) {
     setBusy(true);
     if (takes !== null) {
       const cleared = await api["/live/relays/clear-takes"]({
@@ -296,7 +296,7 @@ export function RoundEditor({
     const result = await api["/live/relays/set-takes"]({
       leg: round.leg,
       source,
-      shape,
+      use,
     });
     setBusy(false);
     if (
@@ -336,7 +336,7 @@ export function RoundEditor({
     setDraft(merged);
     await commit(merged);
     if (takes === null) return;
-    if (usesFor(uses, next).some((entry) => entry.use === takes.shape)) return;
+    if (usesFor(uses, next).some((entry) => entry.use === takes.use)) return;
     await setTakes(takes.source, firstUse(uses, next));
   }
 
@@ -344,8 +344,8 @@ export function RoundEditor({
   const repeats = draft.parts.length === 1 && draft.cap > 0;
   // A round that takes its parts or choices from another round is written
   // there, so this card only offers the side the round still holds itself.
-  const partsOpen = kind === "list" && takes?.shape !== "parts";
-  const choicesOpen = kind === "vote" && takes?.shape !== "choices";
+  const partsOpen = kind === "list" && takes?.use !== "parts";
+  const choicesOpen = kind === "vote" && takes?.use !== "choices";
 
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4 focus-within:outline focus-within:outline-2 focus-within:outline-primary focus-within:-outline-offset-2">
@@ -594,7 +594,7 @@ export function RoundEditor({
                   void clearTakes();
                   return;
                 }
-                void setTakes(value, takes?.shape ?? firstUse(uses, kind));
+                void setTakes(value, takes?.use ?? firstUse(uses, kind));
               }}
             >
               <SelectTrigger
@@ -626,9 +626,9 @@ export function RoundEditor({
                 <span className="inline-flex items-center gap-2">
                   <span className="text-muted-foreground">as</span>
                   {open.length > 1 &&
-                  open.some((entry) => entry.use === takes.shape) ? (
+                  open.some((entry) => entry.use === takes.use) ? (
                     <Select
-                      value={takes.shape}
+                      value={takes.use}
                       disabled={disabled}
                       onValueChange={(value) =>
                         void setTakes(takes.source, value)
@@ -650,11 +650,11 @@ export function RoundEditor({
                       </SelectContent>
                     </Select>
                   ) : (
-                    <span>{takes.shape}</span>
+                    <span>{takes.use}</span>
                   )}
                 </span>
                 <span id={`use-${round.leg}`} className="text-muted-foreground">
-                  {sentenceOf(uses, takes.shape)}
+                  {sentenceOf(uses, takes.use)}
                 </span>
               </>
             )}

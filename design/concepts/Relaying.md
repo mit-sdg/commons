@@ -8,7 +8,7 @@ Prevents: a leg drawing on a leg that comes after it; the order of legs changed 
 
 ## Principle
 
-Dana _plans_ a relay of three legs and _adds_ each: name it, vote on three of the names, explain your vote. She makes the second leg _draw_ its choices from the first leg's piles, and the third draw its prompt from whichever choice wins. She tries to _move_ the third leg above the second and is refused, because it would come before what it draws on. She tries to make the first leg draw on the third and is refused for the same reason. She thinks better of the vote's shape and _undraws_ it, then draws it again with the shape she wants. When she tries to _remove_ the first leg she is refused, because the second still draws on it. In class each leg opens when she says so; what the second leg carries from the first is decided at that moment, not when she planned it. Next term she _retitles_ the relay and runs it on a different concept without touching a draw.
+Dana _plans_ a relay of three legs and _adds_ each: name it, vote on three of the names, explain your vote. She makes the second leg _draw_ its choices from the first leg's piles, and the third draw its prompt from whichever choice wins. She tries to _move_ the third leg above the second and is refused, because it would come before what it draws on. She tries to make the first leg draw on the third and is refused for the same reason. She thinks better of the vote's use and _undraws_ it, then draws it again with the use she wants. When she tries to _remove_ the first leg she is refused, because the second still draws on it. In class each leg opens when she says so; what the second leg carries from the first is decided at that moment, not when she planned it. Next term she _retitles_ the relay and runs it on a different concept without touching a draw.
 
 ## Types
 
@@ -36,13 +36,13 @@ a set of Legs with
 a set of Draws with
   a leg     Leg
   a source  Leg
-  a shape   String
+  a use     String
 
 Rule: a title is trimmed first and is valid when it is nonblank and no longer than 200 characters.
 Rule: legs belong to their relay and stand in position order, contiguous from one; adding appends at the end, and removing closes the ranks behind what was removed.
 Rule: a draw's source stands earlier in the same relay than its leg, so a draw never points forward.
-Rule: a leg has at most one draw; drawing again sets its source and shape, so a leg draws on one leg at a time.
-Rule: a shape is a nonblank string; what a shape means — what the source produced and how much of it is carried — is the surrounding design's to say.
+Rule: a leg has at most one draw; drawing again sets its source and use, so a leg draws on one leg at a time.
+Rule: a use is a nonblank string; what a use means — what the source produced and how much of it is carried — is the surrounding design's to say.
 Rule: moving a leg is refused when the order it would make has any draw pointing forward.
 Rule: a leg is removed only while nothing draws on it; its own draws go with it.
 Rule: Relaying does not know what a material is, open a leg to anyone, or carry anything from one leg to the next; those are arranged outside the concept.
@@ -109,10 +109,10 @@ moveLeg (leg: Leg, position: Number) : return (leg: Leg, position: Number)
   then
     refuse FORWARD_DRAW "A leg cannot come before what it draws on."
 
-draw (leg: Leg, source: Leg, shape: String) : return (draw: Draw)
-  where leg and source exist, share a relay, source stands earlier than leg, and shape is nonblank
+draw (leg: Leg, source: Leg, use: String) : return (draw: Draw)
+  where leg and source exist, share a relay, source stands earlier than leg, and use is nonblank
   then
-    set leg's draw to source and shape, adding one when none stands
+    set leg's draw to source and use, adding one when none stands
     return draw
   where leg does not exist or source does not exist
   then
@@ -123,9 +123,9 @@ draw (leg: Leg, source: Leg, shape: String) : return (draw: Draw)
   where source stands at or after leg
   then
     refuse FORWARD_DRAW "A leg cannot come before what it draws on."
-  where shape is blank
+  where use is blank
   then
-    refuse INVALID_SHAPE "A draw needs a shape."
+    refuse USE_BLANK "A draw needs a use."
 
 undraw (leg: Leg, source: Leg) : return (leg: Leg)
   where a draw joins leg to source
@@ -159,18 +159,18 @@ _legFor (material: String) : optional (leg: String, relay: String, position: Num
   answers the leg whose material this is
   answers no row when no leg has the material
 
-_draws (leg: String) : many (draw: String, source: String, shape: String)
+_draws (leg: String) : many (draw: String, source: String, use: String)
   answers the leg's draws in the order they were made
   answers no rows when none match
 
-_drawsOn (source: String) : many (draw: String, leg: String, shape: String)
+_drawsOn (source: String) : many (draw: String, leg: String, use: String)
   answers every draw whose source is the leg, in the order they were made
   answers no rows when none match
 
 _plan (relay: String) : optional (legs: Seq)
   answers the relay's legs back as one value: an ordered sequence of
   `{ leg, material, position, draws }` entries in position order, each draws
-  entry `{ source, shape }` in the order the draws were made
+  entry `{ source, use }` in the order the draws were made
   answers one row with an empty sequence when the relay has no legs
   answers no row when the Relay does not exist
 ```

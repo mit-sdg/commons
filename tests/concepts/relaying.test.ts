@@ -105,23 +105,23 @@ for (const [floor, make] of floors) {
       expect(await relaying._legs({ relay: "ghost" })).toEqual([]);
     });
 
-    test("draw joins a leg to an earlier sibling and drawing again sets the shape", async () => {
+    test("draw joins a leg to an earlier sibling and drawing again sets the use", async () => {
       const relaying = await make();
       const { first, second, third } = await relayOfThree(relaying);
-      const { draw } = await relaying.draw({ leg: second, source: first, shape: "piles" });
+      const { draw } = await relaying.draw({ leg: second, source: first, use: "piles" });
       const { draw: again } = await relaying.draw({
         leg: second,
         source: first,
-        shape: "three piles",
+        use: "three piles",
       });
       expect(again).toBe(draw);
       expect(await relaying._draws({ leg: second })).toEqual([
-        { draw, source: first, shape: "three piles" },
+        { draw, source: first, use: "three piles" },
       ]);
-      const { draw: later } = await relaying.draw({ leg: third, source: first, shape: "winner" });
+      const { draw: later } = await relaying.draw({ leg: third, source: first, use: "winner" });
       expect(await relaying._drawsOn({ source: first })).toEqual([
-        { draw, leg: second, shape: "three piles" },
-        { draw: later, leg: third, shape: "winner" },
+        { draw, leg: second, use: "three piles" },
+        { draw: later, leg: third, use: "winner" },
       ]);
       expect(await relaying._draws({ leg: first })).toEqual([]);
       expect(await relaying._drawsOn({ source: third })).toEqual([]);
@@ -130,46 +130,46 @@ for (const [floor, make] of floors) {
     test("drawing again on another source moves the leg's one draw there", async () => {
       const relaying = await make();
       const { first, second, third } = await relayOfThree(relaying);
-      const { draw } = await relaying.draw({ leg: third, source: first, shape: "names" });
-      const { draw: again } = await relaying.draw({ leg: third, source: second, shape: "winner" });
+      const { draw } = await relaying.draw({ leg: third, source: first, use: "names" });
+      const { draw: again } = await relaying.draw({ leg: third, source: second, use: "winner" });
       expect(again).toBe(draw);
       expect(await relaying._draws({ leg: third })).toEqual([
-        { draw, source: second, shape: "winner" },
+        { draw, source: second, use: "winner" },
       ]);
       expect(await relaying._drawsOn({ source: first })).toEqual([]);
     });
 
-    test("draw refuses a missing leg, a stranger, a forward draw, and a blank shape", async () => {
+    test("draw refuses a missing leg, a stranger, a forward draw, and a blank use", async () => {
       const relaying = await make();
       const { first, second } = await relayOfThree(relaying);
       const { relay: other } = await relaying.plan({ author: "ada", title: "Other", at });
       const { leg: stranger } = await relaying.addLeg({ relay: other, material: "elsewhere" });
 
       expect(
-        await refusalOf(() => relaying.draw({ leg: "ghost", source: first, shape: "x" })),
+        await refusalOf(() => relaying.draw({ leg: "ghost", source: first, use: "x" })),
       ).toBeInstanceOf(refusalErrors.LegNotFound);
       expect(
-        await refusalOf(() => relaying.draw({ leg: second, source: "ghost", shape: "x" })),
+        await refusalOf(() => relaying.draw({ leg: second, source: "ghost", use: "x" })),
       ).toBeInstanceOf(refusalErrors.LegNotFound);
       expect(
-        await refusalOf(() => relaying.draw({ leg: second, source: stranger, shape: "x" })),
+        await refusalOf(() => relaying.draw({ leg: second, source: stranger, use: "x" })),
       ).toBeInstanceOf(refusalErrors.NotSiblings);
       expect(
-        await refusalOf(() => relaying.draw({ leg: first, source: second, shape: "x" })),
+        await refusalOf(() => relaying.draw({ leg: first, source: second, use: "x" })),
       ).toBeInstanceOf(refusalErrors.ForwardDraw);
       expect(
-        await refusalOf(() => relaying.draw({ leg: first, source: first, shape: "x" })),
+        await refusalOf(() => relaying.draw({ leg: first, source: first, use: "x" })),
       ).toBeInstanceOf(refusalErrors.ForwardDraw);
       expect(
-        await refusalOf(() => relaying.draw({ leg: second, source: first, shape: "  " })),
-      ).toBeInstanceOf(refusalErrors.InvalidShape);
+        await refusalOf(() => relaying.draw({ leg: second, source: first, use: "  " })),
+      ).toBeInstanceOf(refusalErrors.UseBlank);
       expect(await relaying._draws({ leg: second })).toEqual([]);
     });
 
     test("undraw removes the draw and refuses when none joins the pair", async () => {
       const relaying = await make();
       const { first, second } = await relayOfThree(relaying);
-      await relaying.draw({ leg: second, source: first, shape: "piles" });
+      await relaying.draw({ leg: second, source: first, use: "piles" });
       expect(await relaying.undraw({ leg: second, source: first })).toEqual({ leg: second });
       expect(await relaying._draws({ leg: second })).toEqual([]);
       expect(await refusalOf(() => relaying.undraw({ leg: second, source: first }))).toBeInstanceOf(
@@ -223,7 +223,7 @@ for (const [floor, make] of floors) {
     test("moveLeg refuses an order that would put a leg before what it draws on", async () => {
       const relaying = await make();
       const { relay, first, second, third } = await relayOfThree(relaying);
-      await relaying.draw({ leg: third, source: second, shape: "winner" });
+      await relaying.draw({ leg: third, source: second, use: "winner" });
       expect(await refusalOf(() => relaying.moveLeg({ leg: third, position: 1 }))).toBeInstanceOf(
         refusalErrors.ForwardDraw,
       );
@@ -249,8 +249,8 @@ for (const [floor, make] of floors) {
     test("removeLeg closes the ranks, takes its own draws, and refuses when one is drawn on", async () => {
       const relaying = await make();
       const { relay, first, second, third } = await relayOfThree(relaying);
-      await relaying.draw({ leg: second, source: first, shape: "piles" });
-      await relaying.draw({ leg: third, source: first, shape: "winner" });
+      await relaying.draw({ leg: second, source: first, use: "piles" });
+      await relaying.draw({ leg: third, source: first, use: "winner" });
 
       expect(await refusalOf(() => relaying.removeLeg({ leg: first }))).toBeInstanceOf(
         refusalErrors.LegDrawnOn,
@@ -269,7 +269,7 @@ for (const [floor, make] of floors) {
         { leg: third, material: "explain", position: 2 },
       ]);
       expect(await relaying._drawsOn({ source: first })).toEqual([
-        { draw: expect.any(String), leg: third, shape: "winner" },
+        { draw: expect.any(String), leg: third, use: "winner" },
       ]);
       expect(await relaying._draws({ leg: second })).toEqual([]);
       expect(await relaying._leg({ leg: second })).toEqual([]);
@@ -297,8 +297,8 @@ for (const [floor, make] of floors) {
     test("_plan answers the relay's legs with their draws in one row", async () => {
       const relaying = await make();
       const { relay, first, second, third } = await relayOfThree(relaying);
-      await relaying.draw({ leg: second, source: first, shape: "piles" });
-      await relaying.draw({ leg: third, source: second, shape: "winner" });
+      await relaying.draw({ leg: second, source: first, use: "piles" });
+      await relaying.draw({ leg: third, source: second, use: "winner" });
       expect(await relaying._plan({ relay })).toEqual([
         {
           legs: [
@@ -307,13 +307,13 @@ for (const [floor, make] of floors) {
               leg: second,
               material: "vote",
               position: 2,
-              draws: [{ source: first, shape: "piles" }],
+              draws: [{ source: first, use: "piles" }],
             },
             {
               leg: third,
               material: "explain",
               position: 3,
-              draws: [{ source: second, shape: "winner" }],
+              draws: [{ source: second, use: "winner" }],
             },
           ],
         },

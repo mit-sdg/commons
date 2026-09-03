@@ -149,8 +149,8 @@ export interface DeckRound {
   parts: string[];
   cap: number;
   choices: string[];
-  /** The round it takes from, by number, and the shape; absent when it takes nothing. */
-  takes?: { from: number; shape: "context" | "choices" | "parts" };
+  /** The round it takes from, by number, and the use; absent when it takes nothing. */
+  takes?: { from: number; use: "context" | "choices" | "parts" };
 }
 
 export interface DeckRelay {
@@ -177,7 +177,7 @@ export const DECK: DeckRelay[] = [
         parts: [],
         cap: 0,
         choices: [],
-        takes: { from: 1, shape: "context" },
+        takes: { from: 1, use: "context" },
       },
     ],
   },
@@ -212,7 +212,7 @@ export const DECK: DeckRelay[] = [
         parts: [],
         cap: 0,
         choices: [],
-        takes: { from: 1, shape: "choices" },
+        takes: { from: 1, use: "choices" },
       },
     ],
   },
@@ -255,7 +255,7 @@ export async function copyDeck(host: Client, key: string, title?: string): Promi
     const drawn = await host.call("/live/relays/set-takes", {
       leg: legs[index],
       source: legs[round.takes.from - 1],
-      shape: round.takes.shape,
+      use: round.takes.use,
     });
     if (drawn.error) throw new Error(`set-takes: ${drawn.error}`);
   }

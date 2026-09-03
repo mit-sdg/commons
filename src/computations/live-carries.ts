@@ -10,7 +10,7 @@ import { cardId } from "./live-rounds.ts";
 export type RoundKind = "write" | "list" | "vote";
 
 export interface CarryUse {
-  /** The word Relaying's draw stores as its shape. */
+  /** The word Relaying's draw stores as its use. */
   use: "context" | "choices" | "parts";
   /** The kinds of round the use is open to. */
   kinds: RoundKind[];

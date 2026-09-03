@@ -98,7 +98,7 @@ interface Round {
   parts: string[];
   cap: number;
   choices: string[];
-  takes: { source: string; sourceNumber: number; shape: string }[];
+  takes: { source: string; sourceNumber: number; use: string }[];
 }
 
 const offerings = async (edge: Edge, cookie: string, relay: string): Promise<Offering[]> => {
@@ -166,11 +166,11 @@ describe("the relay editing loop", () => {
       parts: ["one", "two", "three"],
       cap: 0,
       choices: [],
-      takes: { from: 0, shape: "" },
+      takes: { from: 0, use: "" },
       position: 1,
     });
     expect(JSON.parse(offering.lines[1].value)).toMatchObject({
-      takes: { from: 1, shape: "context" },
+      takes: { from: 1, use: "context" },
       position: 2,
     });
 
@@ -186,7 +186,7 @@ describe("the relay editing loop", () => {
     expect(built[0].parts).toEqual(["one", "two", "three"]);
     expect(built[0].prompt).toBe("Name three verbs from the passage.");
     expect(built[1].parts).toEqual([]);
-    expect(built[1].takes).toEqual([{ source: built[0].leg, sourceNumber: 1, shape: "context" }]);
+    expect(built[1].takes).toEqual([{ source: built[0].leg, sourceNumber: 1, use: "context" }]);
 
     const settled = await until(
       () => offerings(edge, cookie, relay),

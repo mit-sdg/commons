@@ -92,20 +92,20 @@ export function RoundStrip({
 }
 
 /** How a take reads beside its source round: the use, as the table serves it. */
-export function shapeWords(shape: string): string {
-  return `as ${shape}`;
+export function takeWords(use: string): string {
+  return `as ${use}`;
 }
 
 /** What a round takes: a chip naming the source round and the use. */
 export function TakesChip({
   from,
-  shape,
+  use,
   size = "md",
   standing = "done",
   className,
 }: {
   from: number;
-  shape: string;
+  use: string;
   size?: "md" | "lg";
   /** The source's disc: filled once it ran, outlined on a relay only written. */
   standing?: "done" | "plain";
@@ -133,7 +133,7 @@ export function TakesChip({
       >
         {from}
       </span>
-      {shapeWords(shape)}
+      {takeWords(use)}
     </span>
   );
 }

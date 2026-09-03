@@ -57,9 +57,9 @@ export type CarryUse = Output<"/live/relays/uses">["uses"][number];
 export function kindOf(round: {
   choices: string[];
   parts: string[];
-  takes: { shape: string }[];
+  takes: { use: string }[];
 }): RoundKind {
-  const use = round.takes[0]?.shape;
+  const use = round.takes[0]?.use;
   if (round.choices.length > 0 || use === "choices") return "vote";
   if (round.parts.length > 0 || use === "parts") return "list";
   return "write";
