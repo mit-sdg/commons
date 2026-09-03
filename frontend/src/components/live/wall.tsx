@@ -7,11 +7,13 @@ import {
   motion,
   useReducedMotion,
 } from "motion/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  Answer,
   Card,
   CarriesTo,
   Count,
+  faceCards,
   GhostCard,
   NewPile,
   Pile,
@@ -48,15 +50,40 @@ const TRAY_SHOWN = 24;
 /** How many of a context group's words a chip carries before the rest are a count. */
 const CONTEXT_SHOWN = 3;
 
-/** The widest a pile stands on the projector, the gap beside it, and the rows that fit. */
-const PROJECTED_PILE = 520;
+/** The gap beside a projected pile, the rows it lays out in, and the columns it may take. */
 const PROJECTED_GAP = 28;
 const PROJECTED_ROWS = 3;
+const PROJECTED_COLUMNS = 8;
 
-/** How the projector lays piles out: enough columns to hold them, packed past two rows. */
+/** The least a pile stands on the projector: across, down, packed down, and alone in its row. */
+const PROJECTED_LEAST = 190;
+const PROJECTED_ROW = 150;
+const PROJECTED_PACKED = 104;
+const PROJECTED_TALL = 320;
+
+/**
+ * How the projector lays piles out: the columns that hold them in three rows,
+ * each pile an even share of the wall but never narrower than it can be read,
+ * so a narrow projector takes fewer columns and more rows. Two rows or more
+ * share the height between them; one row stands tall and leaves the rest.
+ */
 function projected(count: number) {
-  const columns = Math.min(6, Math.max(3, Math.ceil(count / PROJECTED_ROWS)));
-  return { columns, packed: Math.ceil(count / columns) > 2 };
+  const columns = Math.min(
+    PROJECTED_COLUMNS,
+    Math.max(3, Math.ceil(count / PROJECTED_ROWS)),
+  );
+  const rows = Math.ceil(count / columns);
+  const share = `calc((100cqw - ${(columns - 1) * PROJECTED_GAP}px) / ${columns})`;
+  const packed = rows > 2;
+  return {
+    packed,
+    fill: rows > 1,
+    columns: `repeat(auto-fill, minmax(min(100%, max(${PROJECTED_LEAST}px, ${share})), 1fr))`,
+    rows:
+      rows > 1
+        ? `minmax(${packed ? PROJECTED_PACKED : PROJECTED_ROW}px, 1fr)`
+        : `minmax(${PROJECTED_TALL}px, auto)`,
+  };
 }
 
 /**
@@ -94,7 +121,7 @@ interface WallProps {
   eyebrow?: string;
   /** The number of the round picked piles carry into, when one takes from this wall. */
   carriesTo?: number;
-  /** The wall a vote round took its choices from; its piles stand faded beneath the bars. */
+  /** The wall this round took from: it names the groups carried in, and the cards under a bar. */
   sourceWall?: WallShape | null;
   /** The piles scroll under the question rather than run off the screen. */
   scroll?: boolean;
@@ -168,6 +195,8 @@ function StagedWall({
   const context = questionOf(seen)?.context ?? [];
   const writing = seen.open ? Math.max(0, seen.begun - seen.handedIn) : 0;
   const vote = choicesOf(seen).length > 0;
+  /** The round this wall's carried groups and choices came out of. */
+  const from = sourceWall?.number ?? null;
   const editable = hand !== undefined;
   const canDrag = hand !== undefined;
   const grid = projected(piles.length);
@@ -192,6 +221,9 @@ function StagedWall({
     <MotionConfig reducedMotion="user">
       <LayoutGroup>
         <section
+          // The projector's piles take their share of the wall's own width,
+          // which the wall has to be asked for.
+          style={big ? { containerType: "inline-size" } : undefined}
           className={cn(
             "flex min-h-0 flex-col gap-5 rounded-2xl border border-border bg-card",
             big
@@ -234,43 +266,67 @@ function StagedWall({
                   />
                 ) : null}
                 {context.length === 0 ? null : (
-                  <div className={cn("flex flex-wrap gap-2", big && "gap-3")}>
-                    {context.map((group) => {
-                      const values = distinctValues(group.cards);
-                      return (
-                        <div
-                          key={group.name}
-                          className={cn(
-                            "flex min-w-0 flex-col gap-0.5 rounded-lg border border-border bg-card",
-                            big
-                              ? "max-w-[420px] px-4 py-2.5"
-                              : "max-w-[260px] px-3 py-1.5",
-                          )}
-                        >
-                          <span
-                            dir="auto"
+                  <div className="flex flex-col gap-1.5">
+                    {/* The groups carried in are named by the round they come
+                        from: a name that also stands on this wall below is
+                        never read as this round's own. */}
+                    {from === null ? null : (
+                      <span
+                        className={cn(
+                          "flex items-center gap-2 text-muted-foreground",
+                          big ? "text-xl" : "text-sm",
+                        )}
+                      >
+                        from
+                        <RoundToken
+                          number={from}
+                          title={sourceWall?.title}
+                          size={big ? "lg" : "md"}
+                        />
+                      </span>
+                    )}
+                    <div className={cn("flex flex-wrap gap-2", big && "gap-3")}>
+                      {context.map((group) => {
+                        const values = distinctValues(group.cards);
+                        const held = values.length - CONTEXT_SHOWN;
+                        return (
+                          <div
+                            key={group.name}
                             className={cn(
-                              "truncate font-medium",
-                              big ? "text-xl" : "text-sm",
+                              "flex min-w-0 flex-col gap-0.5 rounded-lg border border-border bg-card",
+                              big
+                                ? "max-w-[420px] px-4 py-2.5"
+                                : "max-w-[260px] px-3 py-1.5",
                             )}
                           >
-                            {group.name}
-                          </span>
-                          <span
-                            dir="auto"
-                            className={cn(
-                              "truncate text-muted-foreground",
-                              big ? "text-lg" : "text-xs",
-                            )}
-                          >
-                            {values.slice(0, CONTEXT_SHOWN).join(" · ")}
-                            {values.length > CONTEXT_SHOWN
-                              ? ` +${values.length - CONTEXT_SHOWN}`
-                              : ""}
-                          </span>
-                        </div>
-                      );
-                    })}
+                            <span
+                              dir="auto"
+                              className={cn(
+                                "truncate font-medium",
+                                big ? "text-xl" : "text-sm",
+                              )}
+                            >
+                              {group.name}
+                            </span>
+                            <span
+                              className={cn(
+                                "flex min-w-0 items-baseline gap-1.5 text-muted-foreground",
+                                big ? "text-lg" : "text-xs",
+                              )}
+                            >
+                              <span dir="auto" className="truncate">
+                                {values.slice(0, CONTEXT_SHOWN).join(" · ")}
+                              </span>
+                              {held <= 0 ? null : (
+                                <span className="flex-none font-mono">
+                                  and {held} more
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
                 <p
@@ -283,12 +339,22 @@ function StagedWall({
                   {promptOf(seen)}
                 </p>
               </div>
-              <Figure
-                value={seen.handedIn}
-                of={seen.begun}
-                size={big ? "lg" : "md"}
-                className="flex-none"
-              />
+              {/* The one figure the room reads, with the noun it counts. */}
+              <span className="flex flex-none flex-col gap-1.5">
+                <Figure
+                  value={seen.handedIn}
+                  of={seen.begun}
+                  size={big ? "lg" : "md"}
+                />
+                <span
+                  className={cn(
+                    "text-muted-foreground leading-none",
+                    big ? "text-xl" : "text-sm",
+                  )}
+                >
+                  handed in
+                </span>
+              </span>
             </header>
           )}
 
@@ -299,7 +365,6 @@ function StagedWall({
               carriesTo={carriesTo}
               onPick={hand?.togglePick}
               big={big}
-              phone={phone}
               scroll={scroll}
             />
           ) : (
@@ -323,11 +388,14 @@ function StagedWall({
                   className={cn(
                     "flex flex-none flex-wrap items-center gap-2 rounded-[10px] border border-input border-dashed",
                     big
-                      ? "min-h-[72px] gap-3 rounded-[14px] p-4"
+                      ? "min-h-[72px] gap-3 rounded-[14px] border-foreground/50 p-4"
                       : phone
                         ? "min-h-11 p-2"
                         : "min-h-14 p-3",
                     trayEmpty && "min-h-9 p-2",
+                    // With no card of its own the tray is no wider than what
+                    // it holds, unless a hand can still drop a card back in.
+                    tray.length === 0 && !editable && "w-fit",
                   )}
                 >
                   <AnimatePresence initial={false}>
@@ -344,14 +412,19 @@ function StagedWall({
                           big
                             ? "max-w-[420px]"
                             : phone
-                              ? "px-2 py-1 text-[13px]"
+                              ? "px-2.5 py-1 text-sm"
                               : "max-w-[320px]"
                         }
                       />
                     ))}
                   </AnimatePresence>
                   {held === 0 ? null : (
-                    <span className="font-mono text-2xl text-muted-foreground">
+                    <span
+                      className={cn(
+                        "font-mono text-muted-foreground",
+                        big ? "text-2xl" : "text-sm",
+                      )}
+                    >
                       and {held} more
                     </span>
                   )}
@@ -361,15 +434,21 @@ function StagedWall({
                       <GhostCard key={index} big={big} />
                     ),
                   )}
+                  {/* The faint cards are answers on their way, not blanks. */}
+                  {writing === 0 ? null : (
+                    <span
+                      className={cn(
+                        "font-mono text-muted-foreground",
+                        big ? "text-2xl" : "text-sm",
+                      )}
+                    >
+                      still writing
+                    </span>
+                  )}
                 </motion.div>
               )}
 
-              <PileGrid
-                big={big}
-                phone={phone}
-                columns={grid.columns}
-                scroll={scroll}
-              >
+              <PileGrid big={big} phone={phone} grid={grid} scroll={scroll}>
                 <AnimatePresence initial={false}>
                   {piles.map((pile) => (
                     <Pile
@@ -446,40 +525,67 @@ function StagedWall({
 function PileGrid({
   big,
   phone,
-  columns,
+  grid,
   scroll,
   children,
 }: {
   big: boolean;
   phone: boolean;
-  /** How many piles stand to a row on the projector. */
-  columns: number;
+  /** How the projector lays its piles out, read against the wall's own width. */
+  grid: ReturnType<typeof projected>;
   scroll: boolean;
   children: React.ReactNode;
 }) {
+  const { ref, over } = useOverflow(scroll);
   return (
     <div
+      ref={ref}
       style={
         big
-          ? {
-              gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-              maxWidth: columns * (PROJECTED_PILE + PROJECTED_GAP),
-            }
+          ? { gridTemplateColumns: grid.columns, gridAutoRows: grid.rows }
           : undefined
       }
       className={cn(
         "grid gap-x-[18px] gap-y-[22px] pb-3",
         big
-          ? "flex-1 content-start grid-cols-2 gap-x-7 gap-y-[34px] lg:grid-cols-3"
+          ? "flex-1 gap-x-7 gap-y-[34px]"
           : phone
             ? "grid-cols-2 gap-x-3 gap-y-4"
             : "grid-cols-2 sm:grid-cols-3",
-        scroll && "min-h-0 overflow-y-auto",
+        // Rows that share the wall take the height they are given; a lone row
+        // of piles stands at the top of it.
+        big && !grid.fill && "content-start",
+        // The disc a picked pile carries hangs above the first row.
+        scroll && "min-h-0 overflow-y-auto pt-5",
+        // What the box cannot hold fades out, rather than stopping on a cut.
+        over &&
+          "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_56px),transparent)]",
       )}
     >
       {children}
     </div>
   );
+}
+
+/** Whether a box holds more than it shows, watched as the wall fills it. */
+function useOverflow(watch: boolean) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [over, setOver] = useState(false);
+
+  useEffect(() => {
+    const box = ref.current;
+    if (!watch || box === null) return;
+    const read = () => setOver(box.scrollHeight - box.clientHeight > 1);
+    read();
+    // The box is watched with the piles inside it: neither the wall growing a
+    // row nor the screen changing shape leaves the fade behind.
+    const watcher = new ResizeObserver(read);
+    watcher.observe(box);
+    for (const pile of box.children) watcher.observe(pile);
+    return () => watcher.disconnect();
+  });
+
+  return { ref, over };
 }
 
 /**
@@ -493,7 +599,6 @@ function VoteBars({
   carriesTo,
   onPick,
   big,
-  phone,
   scroll,
 }: {
   wall: WallShape;
@@ -501,7 +606,6 @@ function VoteBars({
   carriesTo?: number;
   onPick?: (pile: string) => void;
   big: boolean;
-  phone: boolean;
   scroll: boolean;
 }) {
   const rows = choicesOf(wall).map((choice) => {
@@ -520,17 +624,18 @@ function VoteBars({
         source === null || sourceWall === null
           ? []
           : cardsIn(sourceWall.cards, source.pile),
-      source,
     };
   });
   const most = Math.max(1, ...rows.map((row) => row.count));
   const side = big && rows.length <= 3;
+  const from = sourceWall?.number ?? null;
 
   return (
     <div
       className={cn(
         "flex flex-col gap-6",
-        scroll && "min-h-0 overflow-y-auto pb-3",
+        // The disc a picked choice carries hangs above its card.
+        scroll && "min-h-0 overflow-y-auto pt-5 pb-3",
       )}
     >
       <div
@@ -547,12 +652,14 @@ function VoteBars({
               ? undefined
               : () => onPick(pile.pile);
           const spread = (
-            <Spread
-              name={row.choice}
-              count={row.count}
-              cards={row.cards}
-              big={big}
-            />
+            <span className="relative z-10 inline-flex flex-none">
+              <Spread
+                name={row.choice}
+                count={row.count}
+                cards={row.cards}
+                big={big}
+              />
+            </span>
           );
           const count = (
             <Count
@@ -577,9 +684,14 @@ function VoteBars({
           return (
             <VoteRow
               key={row.choice}
+              label={`${row.choice}, ${voteWords(row.count)}`}
               picked={picked}
               onTap={tap}
-              className={side ? "flex-1 gap-4 p-0 pb-4" : undefined}
+              className={cn(
+                // A projected card carries a hairline the back row can see.
+                big && "border-foreground/50",
+                side && "flex-1 gap-4 p-0 pb-4",
+              )}
             >
               {picked && carriesTo !== undefined ? (
                 <CarriesTo number={carriesTo} big={big} />
@@ -588,12 +700,14 @@ function VoteBars({
                 <>
                   <span
                     dir="auto"
-                    className="flex flex-1 items-center justify-center break-words px-6 py-[30px] text-center text-4xl"
+                    className="flex flex-1 items-center justify-center break-words px-6 py-[30px] text-center font-display font-semibold text-4xl"
                   >
                     {row.choice}
                   </span>
-                  <span className="flex items-center gap-4 px-4">
-                    <span className="w-20">{count}</span>
+                  {/* The bar takes the width the row has left, so it still
+                      reads as a tally on a narrow screen. */}
+                  <span className="flex items-center gap-3 px-4">
+                    <span className="min-w-[2ch] flex-none">{count}</span>
                     {bar}
                     {spread}
                   </span>
@@ -622,40 +736,54 @@ function VoteBars({
           );
         })}
       </div>
+      {/* What each choice was made of, on the wall it came from — named by
+          that round, since a choice and its cards share a name. */}
       {sourceWall === null || !side ? null : (
-        <div className="flex gap-8">
-          <AnimatePresence initial={false}>
+        <div className="flex flex-col gap-3">
+          {from === null ? null : (
+            <span className="flex items-center gap-2 text-muted-foreground text-xl">
+              from
+              <RoundToken number={from} title={sourceWall.title} size="lg" />
+            </span>
+          )}
+          <div className="flex gap-8">
             {rows.map((row) => (
               <div key={row.choice} className="flex min-w-0 flex-1 flex-col">
-                {row.source === null ? null : (
-                  <Pile
-                    name={row.source.name}
-                    count={row.source.count}
-                    description={row.source.description}
-                    cards={row.cards}
-                    faded
-                    counted={false}
-                    big={big}
-                    packed
-                    phone={phone}
-                  />
+                {row.cards.length === 0 ? null : (
+                  <div className="flex flex-col gap-1.5 rounded-[14px] border border-foreground/40 border-dashed px-[22px] py-4 text-muted-foreground text-xl leading-[1.35]">
+                    {faceCards(row.cards, false).map((card) => (
+                      <Answer
+                        key={card.card}
+                        value={card.value}
+                        className="line-clamp-1"
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
             ))}
-          </AnimatePresence>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
+/** A choice's tally, as a screen reader reads it beside the name. */
+function voteWords(count: number): string {
+  return count === 1 ? "1 vote" : `${count} votes`;
+}
+
 /** One choice, standing and picked exactly as a pile does. */
 function VoteRow({
+  label,
   picked,
   onTap,
   className,
   children,
 }: {
+  /** The choice and its tally, for a reader who cannot see the bar. */
+  label: string;
   picked: boolean;
   onTap?: () => void;
   className?: string;
@@ -665,19 +793,6 @@ function VoteRow({
     <motion.div
       layout="position"
       transition={PILE_MOVE}
-      role={onTap === undefined ? undefined : "button"}
-      tabIndex={onTap === undefined ? undefined : 0}
-      onClick={onTap}
-      onKeyDown={
-        onTap === undefined
-          ? undefined
-          : (event) => {
-              if (event.target !== event.currentTarget) return;
-              if (event.key !== "Enter" && event.key !== " ") return;
-              event.preventDefault();
-              onTap();
-            }
-      }
       className={cn(
         "relative flex min-w-0 flex-col gap-2 rounded-xl border border-border bg-card px-4 py-3",
         picked && "outline outline-2 outline-primary -outline-offset-2",
@@ -685,6 +800,15 @@ function VoteRow({
         className,
       )}
     >
+      {onTap === undefined ? null : (
+        <button
+          type="button"
+          aria-pressed={picked}
+          aria-label={label}
+          onClick={onTap}
+          className="absolute inset-0 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        />
+      )}
       {children}
     </motion.div>
   );
