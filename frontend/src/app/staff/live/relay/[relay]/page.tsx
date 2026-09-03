@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Layers, Sparkles } from "lucide-react";
+import { ArrowLeft, Layers, Lock, Sparkles } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -166,7 +166,7 @@ function RelaySetup({
             disabled={busy}
             aria-label="Title"
             aria-invalid={title.trim() === ""}
-            className="h-auto border-transparent px-0 font-display text-3xl font-semibold shadow-none md:text-3xl"
+            className="h-auto border-transparent px-0 font-display text-2xl font-semibold shadow-none md:text-3xl"
             onChange={(event) => setTitle(event.target.value)}
             onBlur={() => void retitle()}
           />
@@ -196,6 +196,16 @@ function RelaySetup({
           )}
         </div>
       </header>
+
+      {openRun !== null ? (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
+          <Lock className="size-4 text-primary" />
+          <p className="flex-1 text-sm">{RUN_OPEN_MESSAGE}</p>
+          <Button size="sm" variant="outline" asChild>
+            <Link href={`/staff/live/run/${openRun.run}`}>Go to the run</Link>
+          </Button>
+        </div>
+      ) : null}
 
       {drafting ? (
         <AiPanel

@@ -33,7 +33,7 @@ const ON_PRIMARY =
 
 /**
  * The staff screen for a relay run: the rounds, the wall of the round in
- * hand, and the one button that opens the next round.
+ * hand, and the one button that moves the relay on.
  */
 export function RelayRunBoard({
   run,
@@ -74,7 +74,7 @@ export function RelayRunBoard({
     session && shown !== null
       ? () => api["/live/walls/read"]({ round: shown }).then(unwrap)
       : null,
-    [session, shown],
+    [session, shown, openRound],
   );
   const wall = wallData?.wall ?? null;
 
@@ -85,10 +85,10 @@ export function RelayRunBoard({
   }, [run.open, refetch]);
 
   useEffect(() => {
-    if (openRound === null) return;
+    if (!run.open) return;
     const timer = setInterval(refetchWall, POLL_MS);
     return () => clearInterval(timer);
-  }, [openRound, refetchWall]);
+  }, [run.open, refetchWall]);
 
   useEffect(() => {
     if (!modelSorts || openRound === null) return;
@@ -312,6 +312,7 @@ export function RelayRunBoard({
           ) : (
             <Wall
               wall={wall}
+              named={shown !== openRound}
               carriesTo={takesShown ? (next?.number ?? undefined) : undefined}
               edits={edits}
             />
@@ -320,8 +321,25 @@ export function RelayRunBoard({
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
           <div className="flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
+            {openEntry === null ? null : (
+              <Button
+                size="lg"
+                className="w-full justify-start gap-2 pr-3.5 pl-4"
+                onClick={() => void closeRound()}
+              >
+                Close
+                <RoundToken
+                  number={openEntry.number}
+                  title={openEntry.title}
+                  standing="open"
+                  size="sm"
+                  className={ON_PRIMARY}
+                />
+              </Button>
+            )}
             {next === null ? null : (
               <Button
+                variant={openEntry === null ? "default" : "outline"}
                 size="lg"
                 className="w-full justify-between gap-3 pr-3.5 pl-4"
                 disabled={refusal !== null}
@@ -335,7 +353,7 @@ export function RelayRunBoard({
                     title={next.title}
                     standing="next"
                     size="sm"
-                    className={ON_PRIMARY}
+                    className={openEntry === null ? ON_PRIMARY : undefined}
                   />
                 </span>
                 {takesShown ? (
@@ -345,27 +363,13 @@ export function RelayRunBoard({
                 ) : null}
               </Button>
             )}
-            {next === null || refusal === null ? null : (
+            {next === null || refusal === null || openEntry !== null ? null : (
               <p className="text-muted-foreground text-xs">{refusal}</p>
             )}
-            {openEntry === null ? null : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="self-start"
-                onClick={() => void closeRound()}
-              >
-                Close
-                <RoundToken
-                  number={openEntry.number}
-                  title={openEntry.title}
-                  standing="open"
-                  size="sm"
-                />
-              </Button>
-            )}
 
-            <div className="h-px bg-border" />
+            {next === null && openEntry === null ? null : (
+              <div className="h-px bg-border" />
+            )}
 
             <Switch
               on={modelSorts}

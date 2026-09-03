@@ -38,6 +38,7 @@ export function Wall({
   wall,
   big = false,
   phone = false,
+  named = big,
   eyebrow,
   carriesTo,
   sourceWall,
@@ -47,6 +48,7 @@ export function Wall({
   wall: WallShape;
   big?: boolean;
   phone?: boolean;
+  named?: boolean;
   /** The relay's title, small above the round token. */
   eyebrow?: string;
   /** The number of the round picked piles carry into, when one takes from this wall. */
@@ -60,7 +62,7 @@ export function Wall({
   const [name, setName] = useState("");
   const tray = trayOf(wall.cards);
   const piles = pilesByCount(wall.piles);
-  const writing = Math.max(0, wall.begun - wall.handedIn);
+  const writing = wall.open ? Math.max(0, wall.begun - wall.handedIn) : 0;
   const vote = choicesOf(wall).length > 0;
   const editable = edits !== undefined && wall.open;
   const canDrag = edits !== undefined;
@@ -85,12 +87,12 @@ export function Wall({
           ? "gap-9 border-0 bg-transparent p-0"
           : phone
             ? "gap-4 border-0 bg-transparent p-0"
-            : "px-7 pt-6 pb-8",
+            : "border-0 bg-transparent px-0 pt-5 pb-6 sm:border sm:bg-card sm:px-7 sm:pt-6 sm:pb-8",
         className,
       )}
     >
       {phone ? null : (
-        <header className="flex items-start justify-between gap-8">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
           <div className="flex min-w-0 flex-col gap-2.5">
             {eyebrow === undefined ? null : (
               <span
@@ -102,26 +104,24 @@ export function Wall({
                 {eyebrow}
               </span>
             )}
-            <span className="flex items-center gap-3">
-              {wall.number === null ? (
-                <span
-                  className={cn(
-                    "font-display font-semibold leading-none",
-                    big ? "text-[44px]" : "text-[28px]",
-                  )}
-                >
-                  {wall.title}
-                </span>
-              ) : (
-                <RoundToken
-                  number={wall.number}
-                  title={wall.title}
-                  standing={wall.open ? "open" : "done"}
-                  size={big ? "xl" : "lg"}
-                />
-              )}
-              {wall.open ? null : <span className="eyebrow">Closed</span>}
-            </span>
+            {wall.number === null ? (
+              <span
+                className={cn(
+                  "truncate font-display font-semibold leading-none",
+                  big ? "text-[44px]" : "text-[28px]",
+                )}
+              >
+                {wall.title}
+              </span>
+            ) : named ? (
+              <RoundToken
+                number={wall.number}
+                title={wall.title}
+                standing={wall.open ? "open" : "done"}
+                size={big ? "xl" : "md"}
+                className="min-w-0"
+              />
+            ) : null}
             <p
               dir="auto"
               className={cn(
@@ -156,6 +156,7 @@ export function Wall({
                   cards={cardsIn(sourceWall.cards, pile.pile)}
                   faded
                   big={big}
+                  phone={phone}
                 />
               ))}
             </PileGrid>
@@ -163,44 +164,46 @@ export function Wall({
         </>
       ) : (
         <>
-          <div
-            onDragOver={
-              editable ? (event) => event.preventDefault() : undefined
-            }
-            onDrop={
-              editable
-                ? (event) => {
-                    event.preventDefault();
-                    const card = event.dataTransfer.getData("text/plain");
-                    if (card !== "") edits.toTray(card);
-                  }
-                : undefined
-            }
-            className={cn(
-              "flex flex-wrap items-center gap-2 rounded-[10px] border border-input border-dashed",
-              big
-                ? "min-h-[72px] gap-3 rounded-[14px] p-4"
-                : phone
-                  ? "min-h-11 p-2"
-                  : "min-h-14 p-3",
-            )}
-          >
-            {tray.map((card) => (
-              <Card
-                key={card.card}
-                card={card}
-                big={big}
-                draggable={canDrag}
-                className={phone ? "px-2 py-1 text-[13px]" : undefined}
-              />
-            ))}
-            {Array.from(
-              { length: Math.min(writing, GHOSTS_SHOWN) },
-              (_, index) => (
-                <GhostCard key={index} big={big} />
-              ),
-            )}
-          </div>
+          {wall.open || tray.length > 0 ? (
+            <div
+              onDragOver={
+                editable ? (event) => event.preventDefault() : undefined
+              }
+              onDrop={
+                editable
+                  ? (event) => {
+                      event.preventDefault();
+                      const card = event.dataTransfer.getData("text/plain");
+                      if (card !== "") edits.toTray(card);
+                    }
+                  : undefined
+              }
+              className={cn(
+                "flex flex-none flex-wrap items-center gap-2 rounded-[10px] border border-input border-dashed",
+                big
+                  ? "min-h-[72px] gap-3 rounded-[14px] p-4"
+                  : phone
+                    ? "min-h-11 p-2"
+                    : "min-h-14 p-3",
+              )}
+            >
+              {tray.map((card) => (
+                <Card
+                  key={card.card}
+                  card={card}
+                  big={big}
+                  draggable={canDrag}
+                  className={phone ? "px-2 py-1 text-[13px]" : undefined}
+                />
+              ))}
+              {Array.from(
+                { length: Math.min(writing, GHOSTS_SHOWN) },
+                (_, index) => (
+                  <GhostCard key={index} big={big} />
+                ),
+              )}
+            </div>
+          ) : null}
 
           <PileGrid big={big} phone={phone}>
             {piles.map((pile) => (
@@ -239,7 +242,7 @@ export function Wall({
                     ? undefined
                     : () => edits.summarize?.(pile.pile)
                 }
-                className={phone ? "min-h-24 px-3.5 pt-3 pb-2.5" : undefined}
+                phone={phone}
               />
             ))}
             {editable ? <NewPile big={big} onDrop={openPile} /> : null}
@@ -279,7 +282,7 @@ function PileGrid({
 }: {
   big: boolean;
   phone: boolean;
-  /** The source piles under a vote round stand closer together, five to a row. */
+  /** The source piles under a vote round stand closer together, more to a row. */
   dense?: boolean;
   children: React.ReactNode;
 }) {
@@ -288,11 +291,13 @@ function PileGrid({
       className={cn(
         "grid gap-x-[18px] gap-y-[22px] pb-3",
         big
-          ? "grid-cols-3 gap-x-7 gap-y-[34px]"
+          ? "flex-1 grid-cols-2 gap-x-7 gap-y-[34px] lg:grid-cols-3"
           : phone
             ? "grid-cols-2 gap-x-3 gap-y-4"
             : "grid-cols-2 sm:grid-cols-3",
-        dense && big && "grid-cols-5 gap-x-6",
+        dense &&
+          big &&
+          "flex-none grid-cols-3 gap-x-6 lg:grid-cols-3 2xl:grid-cols-5",
       )}
     >
       {children}

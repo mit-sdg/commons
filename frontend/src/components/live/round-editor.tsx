@@ -30,6 +30,7 @@ const SHAPES = ["picked", "every", "top"] as const;
 const PARTS_MAX = 12;
 const CAP_MIN = 2;
 const CAP_MAX = 20;
+const CAP_START = 3;
 
 interface Draft {
   title: string;
@@ -181,20 +182,51 @@ export function RoundEditor({
   const repeats = draft.parts.length === 1 && draft.cap > 0;
 
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4">
-      <RoundToken number={round.number} size="lg" standing="next" />
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4 focus-within:outline focus-within:outline-2 focus-within:outline-primary focus-within:-outline-offset-2">
+      <RoundToken number={round.number} size="lg" standing="plain" />
 
       <div className="flex min-w-0 flex-col gap-3">
-        <Input
-          value={draft.title}
-          maxLength={200}
-          disabled={disabled}
-          aria-label="Title"
-          aria-invalid={draft.title.trim() === ""}
-          className="h-auto border-transparent px-0 font-display text-xl font-semibold shadow-none md:text-xl"
-          onChange={(event) => change({ title: event.target.value })}
-          onBlur={() => void commit(draft)}
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            value={draft.title}
+            maxLength={200}
+            disabled={disabled}
+            aria-label="Title"
+            aria-invalid={draft.title.trim() === ""}
+            className="h-auto min-w-0 flex-1 border-transparent px-0 font-display text-xl font-semibold shadow-none md:text-xl"
+            onChange={(event) => change({ title: event.target.value })}
+            onBlur={() => void commit(draft)}
+          />
+          <div className="flex flex-none gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Move up"
+              disabled={disabled || first}
+              onClick={() => void move(round.number - 1)}
+            >
+              <ArrowUp />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Move down"
+              disabled={disabled || last}
+              onClick={() => void move(round.number + 1)}
+            >
+              <ArrowDown />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Remove round"
+              disabled={disabled}
+              onClick={() => void remove()}
+            >
+              <X />
+            </Button>
+          </div>
+        </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`prompt-${round.leg}`}>Prompt</Label>
@@ -218,14 +250,14 @@ export function RoundEditor({
                   <span
                     // biome-ignore lint/suspicious/noArrayIndexKey: a part is its row, and a row carries no id
                     key={index}
-                    className="inline-flex items-center gap-1"
+                    className="group/part relative inline-flex items-center"
                   >
                     <Input
                       value={part}
                       maxLength={40}
                       disabled={disabled}
                       aria-label="Part"
-                      className="w-36"
+                      className="w-36 pr-8"
                       onChange={(event) => {
                         const parts = [...draft.parts];
                         parts[index] = event.target.value;
@@ -238,6 +270,7 @@ export function RoundEditor({
                       size="icon-xs"
                       aria-label="Remove part"
                       disabled={disabled}
+                      className="-translate-y-1/2 absolute top-1/2 right-1 opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100"
                       onClick={() =>
                         change(
                           {
@@ -268,26 +301,28 @@ export function RoundEditor({
                     type="checkbox"
                     checked={repeats}
                     disabled={disabled}
+                    className="size-4 rounded-sm border-input accent-primary"
                     onChange={(event) =>
-                      change({ cap: event.target.checked ? 3 : 0 }, true)
+                      change(
+                        { cap: event.target.checked ? CAP_START : 0 },
+                        true,
+                      )
                     }
                   />
-                  repeat up to
-                  {repeats ? (
-                    <Input
-                      type="number"
-                      min={CAP_MIN}
-                      max={CAP_MAX}
-                      value={draft.cap}
-                      disabled={disabled}
-                      aria-label="repeat up to"
-                      className="h-8 w-16"
-                      onChange={(event) =>
-                        change({ cap: Number(event.target.value) })
-                      }
-                      onBlur={() => void commit(draft)}
-                    />
-                  ) : null}
+                  Repeat up to
+                  <Input
+                    type="number"
+                    min={CAP_MIN}
+                    max={CAP_MAX}
+                    value={repeats ? draft.cap : CAP_START}
+                    disabled={disabled || !repeats}
+                    aria-label="Repeat up to"
+                    className="h-8 w-16"
+                    onChange={(event) =>
+                      change({ cap: Number(event.target.value) })
+                    }
+                    onBlur={() => void commit(draft)}
+                  />
                 </label>
               ) : null}
             </div>
@@ -373,36 +408,6 @@ export function RoundEditor({
           ) : null}
         </div>
       </div>
-
-      <div className="flex gap-0.5">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Move up"
-          disabled={disabled || first}
-          onClick={() => void move(round.number - 1)}
-        >
-          <ArrowUp />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Move down"
-          disabled={disabled || last}
-          onClick={() => void move(round.number + 1)}
-        >
-          <ArrowDown />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Remove round"
-          disabled={disabled}
-          onClick={() => void remove()}
-        >
-          <X />
-        </Button>
-      </div>
     </div>
   );
 }
@@ -476,7 +481,7 @@ function TakesPicker({
               onSet(source, shape);
             }}
           >
-            Change
+            Set
           </Button>
           <Button
             variant="ghost"
@@ -486,7 +491,7 @@ function TakesPicker({
               onClear();
             }}
           >
-            nothing
+            Take nothing
           </Button>
         </div>
       </PopoverContent>

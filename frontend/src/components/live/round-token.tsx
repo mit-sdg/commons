@@ -7,11 +7,11 @@ const DISC: Record<Size, string> = {
   sm: "size-5 text-[10px]",
   md: "size-[26px] text-xs",
   lg: "size-10 text-lg",
-  xl: "size-[60px] border-2 text-2xl",
+  xl: "size-[60px] border-2 text-[26px]",
 };
 
 const TOKEN: Record<Size, string> = {
-  sm: "gap-1.5 font-sans text-sm font-medium",
+  sm: "gap-2 font-sans text-sm font-medium",
   md: "gap-2 font-display text-[17px] font-semibold",
   lg: "gap-3 font-display text-[28px] font-semibold",
   xl: "gap-[18px] font-display text-[44px] font-semibold",
@@ -19,12 +19,13 @@ const TOKEN: Record<Size, string> = {
 
 /**
  * The one way a round is named anywhere: a numbered disc and a short title.
- * Open is ember, done is walnut, next is a dashed outline.
+ * Open is ember, done is walnut, next is a dashed outline, and plain is the
+ * walnut outline of a round that is only written.
  */
 export function RoundToken({
   number,
   title,
-  standing = "next",
+  standing = "plain",
   size = "md",
   className,
 }: {
@@ -53,6 +54,7 @@ export function RoundToken({
             "border-foreground bg-foreground text-background",
           standing === "next" &&
             "border-dashed border-muted-foreground text-muted-foreground",
+          standing === "plain" && "border-foreground text-foreground",
         )}
       >
         {number}

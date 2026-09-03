@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import {
+  choicesOf,
   type RelayRun,
   type RelayRunRound,
   type Wall as WallShape,
@@ -12,6 +13,7 @@ import { LoadingState } from "@/components/states";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 /** The wall keeps pace with the room the same way the dashboard does. */
 const POLL_MS = 3_000;
@@ -51,12 +53,25 @@ export function RelayProjector({
     take === null
       ? null
       : (run.rounds.find((round) => round.leg === take.source)?.round ?? null);
+  const carrier =
+    shownLeg === null
+      ? null
+      : (relay?.rounds.find(
+          (round) =>
+            round.takes[0]?.source === shownLeg &&
+            round.takes[0]?.shape === "picked",
+        ) ?? null);
+  const carriesTo =
+    carrier === null
+      ? undefined
+      : (run.rounds.find((round) => round.leg === carrier.leg)?.number ??
+        undefined);
 
   const { data: wallData, refetch: refetchWall } = useQuery(
     session && shownRound !== null
       ? () => api["/live/walls/read"]({ round: shownRound }).then(unwrap)
       : null,
-    [session, shownRound],
+    [session, shownRound, run.openRound],
   );
   const { data: sourceData } = useQuery(
     session && sourceRound !== null
@@ -76,10 +91,10 @@ export function RelayProjector({
   }, [run.open, refetch]);
 
   useEffect(() => {
-    if (openRound === null) return;
+    if (!run.open) return;
     const timer = setInterval(refetchWall, POLL_MS);
     return () => clearInterval(timer);
-  }, [openRound, refetchWall]);
+  }, [run.open, refetchWall]);
 
   const url = run.token === null ? null : joinUrl(run.token);
   const code = run.code;
@@ -108,21 +123,32 @@ export function RelayProjector({
     );
   }
 
+  const joining = run.open && url !== null && code !== null;
+  const filling = wall.piles.length > 0 || choicesOf(wall).length > 0;
+
   return (
     <div className="flex h-dvh flex-col gap-9 overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] py-[clamp(1.5rem,6dvh,64px)]">
       <Wall
         wall={wall}
         big
         eyebrow={run.title}
+        carriesTo={carriesTo}
         sourceWall={sourceWall}
-        className="min-h-0 flex-1 overflow-hidden"
+        className={cn(
+          "min-h-0 overflow-hidden",
+          filling || !joining ? "flex-1" : "flex-none",
+        )}
       />
-      {run.open && url !== null && code !== null ? (
-        <div className="flex flex-none justify-end">
-          <div className="w-52 flex-none">
-            <JoinCode url={url} code={code} />
+      {joining ? (
+        filling ? (
+          <div className="flex flex-none justify-end">
+            <JoinCode url={url} code={code} size="corner" />
           </div>
-        </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            <JoinCode url={url} code={code} size="room" />
+          </div>
+        )
       ) : null}
     </div>
   );

@@ -6,7 +6,8 @@
 
 import type { Output } from "@/lib/api";
 
-export type RoundStanding = "done" | "open" | "next";
+/** Done, open, and next are a run's standings; plain is a round that is only written. */
+export type RoundStanding = "done" | "open" | "next" | "plain";
 
 export type Wall = NonNullable<Output<"/live/walls/read">["wall"]>;
 export type WallCard = Wall["cards"][number];

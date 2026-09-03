@@ -4,45 +4,69 @@ import { useMemo } from "react";
 import { renderSVG } from "uqr";
 import { cn } from "@/lib/utils";
 
+/** How big the block stands, from a sidebar panel to a whole projected wall. */
+const SIZES = {
+  panel: { qr: "w-full max-w-70", code: "text-3xl", url: "text-sm" },
+  corner: { qr: "w-30 flex-none", code: "text-[40px]", url: "text-base" },
+  room: { qr: "w-46 flex-none", code: "text-[56px]", url: "text-xl" },
+  wall: {
+    qr: "w-full max-w-[min(42dvh,70vw)] rounded-2xl",
+    code: "text-4xl sm:text-5xl lg:text-6xl",
+    url: "text-lg sm:text-xl",
+  },
+} as const;
+
 /**
  * The join code, rendered in the browser from the address it encodes. The
  * readable address always stands beside it, so a room that cannot scan can
- * still type. The wall variant fills a projected screen.
+ * still type. The wall variant fills a projected screen; corner and room are
+ * the projector's two, sized to how full the wall already is.
  */
 export function JoinCode({
   url,
   code,
   wall = false,
+  size = "panel",
 }: {
   url: string;
   code: string;
   wall?: boolean;
+  size?: "panel" | "corner" | "room";
 }) {
   const svg = useMemo(() => renderSVG(url, { ecc: "M", border: 2 }), [url]);
   const entry = joinEntryUrl();
   const localOnly = isLoopback(entry);
+  const shape = wall ? "wall" : size;
+  const spec = SIZES[shape];
+  const beside = shape === "corner" || shape === "room";
   return (
-    <figure className="flex flex-col items-center gap-3">
+    <figure
+      className={cn(
+        "flex",
+        beside ? "flex-row items-center gap-6" : "flex-col items-center gap-3",
+      )}
+    >
       <div
         aria-label={`QR code for ${url}`}
         role="img"
         className={cn(
-          "w-full rounded-xl bg-white p-3 shadow-sm [&>svg]:h-auto [&>svg]:w-full",
-          wall ? "max-w-[min(42dvh,70vw)] rounded-2xl p-3" : "max-w-70",
+          "rounded-xl bg-white p-3 shadow-sm [&>svg]:h-auto [&>svg]:w-full",
+          spec.qr,
         )}
         // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is drawn locally by uqr from a same-origin URL this app builds, never from user content.
         dangerouslySetInnerHTML={{ __html: svg }}
       />
       <figcaption
         className={cn(
-          "flex flex-col items-center gap-1 text-center",
-          wall ? "gap-2" : "gap-1",
+          "flex flex-col",
+          beside ? "items-start gap-1 text-left" : "items-center text-center",
+          shape === "wall" ? "gap-2" : "gap-1",
         )}
       >
         <span
           className={cn(
             "select-all font-mono font-semibold tracking-[0.14em]",
-            wall ? "text-4xl sm:text-5xl lg:text-6xl" : "text-3xl",
+            spec.code,
           )}
         >
           {code}
@@ -50,7 +74,7 @@ export function JoinCode({
         <span
           className={cn(
             "select-all break-words font-mono text-muted-foreground",
-            wall ? "text-lg sm:text-xl" : "text-sm",
+            spec.url,
           )}
         >
           {entry}

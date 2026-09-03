@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { WallCard } from "@/components/live/rounds";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /** The drag payload that carries a pile, so dropping one on another folds it in. */
@@ -103,6 +104,7 @@ export function Pile({
   carriesTo,
   faded = false,
   big = false,
+  phone = false,
   selected = false,
   onDrop,
   onTap,
@@ -122,6 +124,7 @@ export function Pile({
   carriesTo?: number;
   faded?: boolean;
   big?: boolean;
+  phone?: boolean;
   selected?: boolean;
   onDrop?: (card: string) => void;
   onTap?: () => void;
@@ -133,7 +136,10 @@ export function Pile({
 }) {
   const [naming, setNaming] = useState<string | null>(null);
   const depth = count >= 8 ? "deep" : count >= 3 ? "thin" : "flat";
-  const peek = cards.slice(0, PEEK);
+  const mine = phone ? cards.filter((card) => card.mine) : [];
+  const peek = (
+    mine.length === 0 ? cards : [...mine, ...cards.filter((card) => !card.mine)]
+  ).slice(0, PEEK);
   const takesDrop = onDrop !== undefined || onMergeIn !== undefined;
   const interactive = onTap !== undefined && naming === null;
   const Tag = interactive ? "button" : "div";
@@ -168,7 +174,9 @@ export function Pile({
         "relative flex flex-col gap-2 rounded-[10px] border border-border bg-card text-left",
         big
           ? "min-h-[150px] rounded-[14px] px-[22px] pt-5 pb-[18px]"
-          : "min-h-[112px] px-4 pt-3.5 pb-3",
+          : phone
+            ? "min-h-24 px-3.5 pt-3 pb-2.5"
+            : "min-h-[112px] px-4 pt-3.5 pb-3",
         depth === "deep" &&
           "shadow-[0_5px_0_-2px_var(--card),0_6px_0_-2px_var(--border),0_11px_0_-5px_var(--card),0_12px_0_-5px_var(--border)]",
         depth === "thin" &&
@@ -220,7 +228,7 @@ export function Pile({
             }
             className={cn(
               "min-w-0 truncate font-display font-semibold leading-[1.15]",
-              big ? "text-[34px]" : "text-xl",
+              big ? "text-2xl xl:text-[34px]" : phone ? "text-lg" : "text-xl",
               onMergeIn !== undefined && "cursor-grab active:cursor-grabbing",
             )}
           >
@@ -244,7 +252,7 @@ export function Pile({
         <span
           className={cn(
             "flex-none font-mono tabular-nums",
-            big ? "text-[38px]" : "text-[22px]",
+            big ? "text-[38px]" : phone ? "text-lg" : "text-[22px]",
           )}
         >
           {count}
@@ -253,7 +261,11 @@ export function Pile({
       <div
         className={cn(
           "flex flex-col text-muted-foreground leading-[1.35]",
-          big ? "gap-1.5 text-xl" : "gap-[3px] text-[13px]",
+          big
+            ? "gap-1.5 text-xl"
+            : phone
+              ? "gap-[3px] text-xs"
+              : "gap-[3px] text-[13px]",
         )}
       >
         {peek.map((card) =>
@@ -275,16 +287,18 @@ export function Pile({
         )}
       </div>
       {onSummarize === undefined || interactive ? null : (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="xs"
+          className="mt-1 self-start"
           onClick={(event) => {
             event.stopPropagation();
             onSummarize();
           }}
-          className="self-start text-muted-foreground text-xs underline-offset-2 hover:text-foreground hover:underline"
         >
           Summarize
-        </button>
+        </Button>
       )}
     </Tag>
   );

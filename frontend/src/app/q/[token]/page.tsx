@@ -10,7 +10,7 @@ import {
   itemCountOf,
   QuestionCard as RoundQuestionCard,
 } from "@/components/live/phone-question";
-import { Figure, RoundStrip, RoundToken } from "@/components/live/round-token";
+import { Figure, RoundToken } from "@/components/live/round-token";
 import { standingOf, type Wall as WallShape } from "@/components/live/rounds";
 import { Wall } from "@/components/live/wall";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -690,10 +690,9 @@ function RelayPhone({
     return () => clearInterval(timer);
   }, [refresh]);
 
-  // After hand-in the wall shows where the answer landed, until the round closes.
-  const closed = wall !== null && !wall.open;
+  // After hand-in the wall shows where the answer landed, until the next round opens.
   useEffect(() => {
-    if (!submitted || response === null || closed) return;
+    if (!submitted || response === null || !runOpen) return;
     let cancelled = false;
     const read = async () => {
       try {
@@ -710,7 +709,7 @@ function RelayPhone({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [submitted, response, closed]);
+  }, [submitted, response, runOpen]);
 
   const remember = useCallback(
     (next: Record<string, string>, handedIn: boolean) => {
@@ -772,6 +771,7 @@ function RelayPhone({
   const openRound = relay.rounds.find(
     (candidate) => candidate.round !== null && candidate.open === true,
   );
+  const nextRound = relay.rounds.find((candidate) => candidate.round === null);
   const questions = relay.questions;
   const handedIn = submitted || refused;
   const answering = !handedIn && runOpen && round !== null && response !== null;
@@ -787,17 +787,24 @@ function RelayPhone({
             {relay.title}
           </h1>
           {openRound === undefined ? (
-            <RoundStrip
-              className="flex-none"
-              rounds={relay.rounds.map((candidate) => ({
-                number: candidate.number,
-                title: candidate.title,
-                standing: standingOf(candidate),
-              }))}
-            />
+            <span className="inline-flex flex-none items-center gap-1.5">
+              {relay.rounds.map((candidate) => (
+                <RoundToken
+                  key={candidate.number}
+                  number={candidate.number}
+                  title={
+                    candidate.number === nextRound?.number
+                      ? candidate.title
+                      : undefined
+                  }
+                  standing={standingOf(candidate)}
+                  size="sm"
+                />
+              ))}
+            </span>
           ) : (
             <RoundToken
-              className="min-w-0"
+              className="flex-none"
               number={openRound.number}
               title={openRound.title}
               standing="open"
@@ -818,13 +825,13 @@ function RelayPhone({
             </div>
             {wall !== null ? (
               <>
-                <Figure value={wall.handedIn} of={wall.begun} />
-                <Wall wall={wall} phone />
+                <Figure value={wall.handedIn} of={wall.begun} size="sm" />
+                <Wall wall={wall} phone carriesTo={nextRound?.number} />
               </>
             ) : null}
           </>
         ) : !runOpen ? (
-          <EmptyState icon={CircleSlash} title="This relay has been closed" />
+          <p className="py-16 text-center text-muted-foreground">Closed</p>
         ) : round === null ? (
           <p className="py-16 text-center text-muted-foreground">
             Next round soon

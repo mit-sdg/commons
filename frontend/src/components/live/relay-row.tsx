@@ -59,15 +59,11 @@ export function LiveRow({
       )}
     >
       <StateWord standing={standing} />
-      <span className="flex min-w-[10rem] flex-1 flex-wrap items-center gap-2 font-medium">
+      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2 font-medium">
         {title}
       </span>
       {middle}
-      {aside === undefined ? (
-        <span className="hidden min-w-[90px] sm:block" />
-      ) : (
-        <span className="min-w-[90px]">{aside}</span>
-      )}
+      <span className="hidden min-w-[90px] sm:block">{aside}</span>
       <span className="flex flex-wrap items-center gap-2">{actions}</span>
     </div>
   );

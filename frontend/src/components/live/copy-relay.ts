@@ -79,9 +79,66 @@ export async function copyRelay(
   return { relay };
 }
 
+const TAIL = new Set([
+  "a",
+  "an",
+  "and",
+  "as",
+  "at",
+  "but",
+  "by",
+  "for",
+  "from",
+  "if",
+  "in",
+  "into",
+  "nor",
+  "of",
+  "on",
+  "or",
+  "over",
+  "so",
+  "than",
+  "that",
+  "the",
+  "then",
+  "to",
+  "when",
+  "while",
+  "with",
+  "yet",
+]);
+
+/** The words joined, the last one without the mark it ends on. */
+function phrase(words: string[]): string {
+  const kept = [...words];
+  const last = kept.length - 1;
+  if (last >= 0) kept[last] = (kept[last] ?? "").replace(/[,;:.!?—–-]+$/, "");
+  return kept.join(" ");
+}
+
+/** How far into the words a whole phrase reaches: the last clause break, else the last word that can end one. */
+function clause(words: string[]): string {
+  for (let index = words.length - 1; index >= 1; index--) {
+    if (/[,;:.]$/.test(words[index] ?? "")) {
+      return phrase(words.slice(0, index + 1));
+    }
+  }
+  const kept = [...words];
+  while (kept.length > 1) {
+    const last = phrase([kept[kept.length - 1] ?? ""]).toLowerCase();
+    if (last !== "" && !TAIL.has(last)) break;
+    kept.pop();
+  }
+  return phrase(kept);
+}
+
 /** The relay a brief names, before the model has drafted anything into it. */
 export function titleFromBrief(brief: string): string {
-  const words = brief.trim().split(/\s+/).filter(Boolean).slice(0, 6);
-  const title = words.join(" ").slice(0, 60).trim();
+  const words = brief.trim().split(/\s+/).filter(Boolean);
+  const head = words.slice(0, 6);
+  const title = (words.length > 6 ? clause(head) : phrase(head))
+    .slice(0, 60)
+    .trim();
   return title === "" ? "New relay" : title;
 }

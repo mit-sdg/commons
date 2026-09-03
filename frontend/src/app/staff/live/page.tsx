@@ -1,6 +1,6 @@
 "use client";
 
-import { Layers, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -20,11 +20,11 @@ import {
   StateWord,
 } from "@/components/live/relay-row";
 import { Figure, RoundStrip } from "@/components/live/round-token";
-import { type RoundStanding, standingOf } from "@/components/live/rounds";
+import { standingOf } from "@/components/live/rounds";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
-import { EmptyState, ErrorState, LoadingState } from "@/components/states";
+import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
@@ -69,6 +69,7 @@ function LiveListContent() {
   const { session } = useAuth();
   const router = useRouter();
   const [showRetired, setShowRetired] = useState(false);
+  const [describing, setDescribing] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const {
@@ -188,81 +189,94 @@ function LiveListContent() {
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           Live
         </h1>
-        <Button disabled={busy} onClick={() => void plan("New relay")}>
-          New relay
-        </Button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            className={describing ? "border-primary text-primary" : undefined}
+            onClick={() => setDescribing((shown) => !shown)}
+          >
+            <Sparkles /> Describe
+          </Button>
+          <Button
+            disabled={busy}
+            className="bg-foreground text-background hover:bg-foreground/90"
+            onClick={() => void plan("New relay")}
+          >
+            New relay
+          </Button>
+        </div>
       </header>
 
-      <div className="mb-6 grid gap-6 rounded-xl border border-border bg-card p-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="flex flex-col gap-1.5">
-          {DECK.map((entry) => (
-            <div
-              key={entry.key}
-              className="flex flex-wrap items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
-            >
-              <span className="min-w-0 flex-1 truncate font-medium">
-                {entry.title}
-              </span>
-              <RoundStrip
-                rounds={entry.rounds.map((round, index) => ({
-                  number: index + 1,
-                  title: round.title,
-                  standing: "next" as RoundStanding,
-                }))}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={busy}
-                onClick={() => void copy(entry)}
-              >
-                Copy
-              </Button>
-            </div>
-          ))}
-        </div>
-        <DescribePanel />
-      </div>
+      {describing ? <DescribePanel /> : null}
 
-      {loading ? (
-        <LoadingState />
-      ) : error !== null ? (
-        <ErrorState message={error} onRetry={refetch} />
-      ) : entries.length === 0 ? (
-        <EmptyState
-          icon={Layers}
-          title="Nothing here yet"
-          action={
-            <Button
-              size="sm"
+      <div className="flex flex-col gap-6">
+        <div className="order-2 rounded-xl border border-border bg-card p-5 sm:order-1">
+          <div className="flex flex-col gap-1.5">
+            {DECK.map((entry) => (
+              <div
+                key={entry.key}
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
+              >
+                <span className="min-w-0 flex-1 break-words font-medium">
+                  {entry.title}
+                </span>
+                <RoundStrip
+                  rounds={entry.rounds.map((round, index) => ({
+                    number: index + 1,
+                    title: round.title,
+                    standing: "plain" as const,
+                  }))}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => void copy(entry)}
+                >
+                  Copy
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="order-1 sm:order-2">
+          {loading ? (
+            <LoadingState />
+          ) : error !== null ? (
+            <ErrorState message={error} onRetry={refetch} />
+          ) : entries.length === 0 ? (
+            <button
+              type="button"
               disabled={busy}
               onClick={() => void plan("New relay")}
+              className="flex min-h-14 w-full items-center justify-center rounded-xl border border-border border-dashed px-4 py-3 text-muted-foreground text-sm hover:text-foreground disabled:opacity-50"
             >
               New relay
-            </Button>
-          }
-        />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {entries.map((entry) =>
-            entry.kind === "relay" ? (
-              <RelayEntry
-                key={entry.relay.relay}
-                relay={entry.relay}
-                busy={busy}
-                onLaunch={() => void launch(entry.relay.relay)}
-                onWall={() => void wall(entry.relay.relay)}
-              />
-            ) : (
-              <QuestionnaireEntry
-                key={entry.questionnaire.questionnaire}
-                entry={entry.questionnaire}
-                onRetire={() => retire(entry.questionnaire.questionnaire)}
-              />
-            ),
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {entries.map((entry) =>
+                entry.kind === "relay" ? (
+                  <RelayEntry
+                    key={entry.relay.relay}
+                    relay={entry.relay}
+                    busy={busy}
+                    onLaunch={() => void launch(entry.relay.relay)}
+                    onWall={() => void wall(entry.relay.relay)}
+                  />
+                ) : (
+                  <QuestionnaireEntry
+                    key={entry.questionnaire.questionnaire}
+                    entry={entry.questionnaire}
+                    onRetire={() => retire(entry.questionnaire.questionnaire)}
+                  />
+                ),
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
 
       {retired.length > 0 ? (
         <section className="mt-8">
@@ -317,10 +331,7 @@ function DescribePanel() {
   }
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-xl border border-primary/30 bg-primary/5 p-4">
-      <p className="flex items-center gap-2 font-medium text-sm">
-        <Sparkles className="size-4" /> Describe
-      </p>
+    <div className="mb-6 flex flex-col gap-2.5 rounded-xl border border-primary/30 bg-primary/5 p-4">
       <Textarea
         value={request}
         onChange={(event) => setRequest(event.target.value)}
@@ -354,13 +365,9 @@ function RelayEntry({
   const standing = relayStanding(relay);
   const { begun, handedIn } = relay.figure;
 
-  // A closed relay has no open run to read a standing from, and every round
-  // it holds has run.
   const aside =
     standing === "open" && handedIn !== null && begun !== null ? (
       <Figure size="sm" value={handedIn} of={begun} />
-    ) : standing === "closed" && handedIn !== null ? (
-      <Figure size="sm" value={handedIn} />
     ) : standing === "launched" && relay.code !== null ? (
       <RoomCode code={relay.code} />
     ) : undefined;
@@ -382,7 +389,10 @@ function RelayEntry({
             rounds={relay.rounds.map((round) => ({
               number: round.number,
               title: round.title,
-              standing: standing === "closed" ? "done" : standingOf(round),
+              standing:
+                standing !== "open" && round.round === null
+                  ? "plain"
+                  : standingOf(round),
             }))}
           />
         )
@@ -403,7 +413,12 @@ function RelayEntry({
           </Button>
         ) : (
           <>
-            <Button variant="ghost" size="sm" asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex"
+              asChild
+            >
               <Link href={`/staff/live/relay/${relay.relay}`}>Edit</Link>
             </Button>
             <Button

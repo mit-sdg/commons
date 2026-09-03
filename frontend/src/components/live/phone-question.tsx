@@ -65,7 +65,10 @@ export function QuestionCard({
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
-      <h2 className="text-[15px] font-medium leading-[1.45]" dir="auto">
+      <h2
+        className="font-sans text-[15px] font-medium leading-[1.45]"
+        dir="auto"
+      >
         {question.prompt}
       </h2>
 
