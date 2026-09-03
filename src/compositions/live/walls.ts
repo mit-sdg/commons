@@ -202,6 +202,8 @@ export const theWall = former(
       compute(computations.participantQuestions, { value: presentation }, questions),
       whether(Relaying._legFor({ material: questionnaire }).is({ leg, position: number })),
       whether(Reasoning._lastFailureAbout({ about: round }).is({ account: failure, failedAt })),
+      // The run is the round's: read once for the wall, not once a card.
+      whether(theRunOf({ round }).is({ run })),
     ).form({
       round,
       number,
@@ -221,7 +223,6 @@ export const theWall = former(
       )
         .where(
           compute(computations.cardId, { response, item }, card),
-          theRunOf({ round }).is({ run }),
           Subscribing._isSubscribed({ user: participant, target: run }).is({ subscribed: model }),
           compute(computations.isSame, { left: response, right: viewer }, mine),
           compute(computations.partLabel, { value: presentation, item }, part),
