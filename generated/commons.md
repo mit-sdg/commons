@@ -866,6 +866,7 @@ Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
 - `_replyOf(asking: String) : optional (reply: String, answeredAt: Date)`
 - `_failureOf(asking: String) : optional (account: String, failedAt: Date)`
 - `_repliesAbout(about: String) : many (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)`
+- `_lastFailureAbout(about: String) : optional (asking: String, account: String, failedAt: Date)`
 
 #### Instances
 
@@ -1445,13 +1446,13 @@ Concrete types:
 
 ## Computations
 
-- `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 81.
+- `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 86.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 82.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 22.
 - `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 364.
-- `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 36.
-- `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 28.
+- `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 41.
+- `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 33.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 54.
 - `clarifiedPassage(request: String, question: String, answer: String) : String` — [Commons application](../design/application.md), line 430.
 - `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 418.
@@ -1472,12 +1473,13 @@ Concrete types:
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 90.
 - `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 368.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 89.
+- `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 28.
 - `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 355.
 - `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 352.
-- `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 40.
+- `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 45.
 - `legMaterials(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 30.
-- `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 69.
-- `lidPassage(pile: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 65.
+- `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 74.
+- `lidPassage(pile: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 70.
 - `noChoices(question: String) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 51.
 - `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 361.
 - `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 358.
@@ -1488,21 +1490,21 @@ Concrete types:
 - `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 445.
 - `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 449.
 - `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 453.
-- `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 85.
-- `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 77.
-- `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 73.
+- `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 90.
+- `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 82.
+- `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 78.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 78.
 - `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 373.
 - `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 378.
 - `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 384.
 - `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 381.
-- `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 32.
+- `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 37.
 - `pileCards(pile: String, categories: Json, values: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 68.
-- `placingLines(reply: String, categories: Json, values: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 56.
-- `placingPassage(value: Json, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 43.
-- `placingReading(reply: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 53.
-- `placingReason(reply: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 61.
-- `placingRepairPassage(value: Json, categories: Json, values: Json, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 49.
+- `placingLines(reply: String, categories: Json, values: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 61.
+- `placingPassage(value: Json, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 48.
+- `placingReading(reply: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 58.
+- `placingReason(reply: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 66.
+- `placingRepairPassage(value: Json, categories: Json, values: Json, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 54.
 - `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 461.
 - `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 466.
 - `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 470.
@@ -1833,6 +1835,16 @@ Authored path: `Forum.posts.readable`.
     Responding._submittedAnswers (subject: round) has (item, response)
     card is cardId (item, response)
     no Categorizing._getCategory (item: card)
+```
+
+### (round) has an ask that failed moments before (at)
+
+```view
+(round) has an ask that failed moments before (at) — inputs (round, at); outputs (); bindings (failedAt, standing)
+  where
+    Reasoning._lastFailureAbout (about: round) has (failedAt)
+    standing is failureStanding (at, failedAt)
+    standing is among ["fresh"]
 ```
 
 ### (round) has every card in a pile
@@ -4608,13 +4620,14 @@ Authored path: `Live.walls.theWall`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 5.
 
 ```former
-Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bindings (questionnaire, presentation, open, openedAt, closedAt, title, leg, number, questions, begun, handedIn, response, participant, item, value, card, pile, run, model, mine, part, category, name, description, held); promises at most one record — forms:
+Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bindings (questionnaire, presentation, open, openedAt, closedAt, title, leg, number, questions, begun, handedIn, response, participant, item, value, card, pile, run, model, mine, part, category, name, description, held, failure, failedAt); promises at most one record — forms:
   a record of
     where Publishing._edition (edition: round) has (closedAt, material: questionnaire, open, openedAt)
     where RunSnapshotting._snapshot (subject: round) has (value: presentation)
     where Questioning._getQuestionnaire (questionnaire) has (title)
     where questions is participantQuestions (value: presentation)
     where whether Relaying._legFor (material: questionnaire) has (leg, position: number)
+    where whether Reasoning._lastFailureAbout (about: round) has (account: failure, failedAt)
     begun: the count of Responding._responsesFor (subject: round) has (response: begun)
     cards: each Responding._submittedAnswers (subject: round) has (item, participant, response, value)
       where card is cardId (item, response)
@@ -4631,6 +4644,8 @@ Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bin
         pile
         value
     closedAt
+    failedAt
+    failure
     handedIn: the count of Responding._responsesFor (subject: round) has (response: handedIn, submitted: true)
     number
     open
@@ -14725,8 +14740,9 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  whether Reasoning._lastFailureAbout (about: relay) has (account: failure, failedAt)
 then
-  RequestBoundary.respond (offerings: former "the offerings about (relay)" with (relay), requestId)
+  RequestBoundary.respond (failedAt, failure, offerings: former "the offerings about (relay)" with (relay), requestId)
 ```
 
 ### Live.edits.ReplyOffersRelayEdits
@@ -18712,7 +18728,7 @@ then
 
 Authored path: `Live.walls.DescribePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 91.
+- Covered by [The wall](../design/compositions/live/walls.md), line 96.
 
 ```reaction
 when RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
@@ -18728,7 +18744,7 @@ then
 
 Authored path: `Live.walls.DescribePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 91.
+- Covered by [The wall](../design/compositions/live/walls.md), line 96.
 
 ```reaction
 when RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
@@ -18743,7 +18759,7 @@ then
 
 Authored path: `Live.walls.DescribePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 91.
+- Covered by [The wall](../design/compositions/live/walls.md), line 96.
 
 ```reaction
 when RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
@@ -18760,7 +18776,7 @@ then
 
 Authored path: `Live.walls.DescribePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 91.
+- Covered by [The wall](../design/compositions/live/walls.md), line 96.
 
 ```reaction
 when Categorizing.describeCategory (category: pile, description, result.category: described), asked by Live.walls.DescribePile:success
@@ -18808,7 +18824,7 @@ then
 
 Authored path: `Live.walls.MergePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 92.
+- Covered by [The wall](../design/compositions/live/walls.md), line 97.
 
 ```reaction
 when RequestBoundary.request (into, path: "/live/walls/merge-pile", pile, requestId, session)
@@ -18824,7 +18840,7 @@ then
 
 Authored path: `Live.walls.MergePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 92.
+- Covered by [The wall](../design/compositions/live/walls.md), line 97.
 
 ```reaction
 when RequestBoundary.request (into, path: "/live/walls/merge-pile", pile, requestId, session)
@@ -18839,7 +18855,7 @@ then
 
 Authored path: `Live.walls.MergePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 92.
+- Covered by [The wall](../design/compositions/live/walls.md), line 97.
 
 ```reaction
 when RequestBoundary.request (into, path: "/live/walls/merge-pile", pile, requestId, session)
@@ -18856,7 +18872,7 @@ then
 
 Authored path: `Live.walls.MergePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 92.
+- Covered by [The wall](../design/compositions/live/walls.md), line 97.
 
 ```reaction
 when Categorizing.mergeCategory (category: pile, into, result.into: merged), asked by Live.walls.MergePile:success
@@ -18881,7 +18897,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 93.
+- Covered by [The wall](../design/compositions/live/walls.md), line 98.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -18897,7 +18913,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 93.
+- Covered by [The wall](../design/compositions/live/walls.md), line 98.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -18912,7 +18928,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 93.
+- Covered by [The wall](../design/compositions/live/walls.md), line 98.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -18928,7 +18944,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 93.
+- Covered by [The wall](../design/compositions/live/walls.md), line 98.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -18947,7 +18963,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 93.
+- Covered by [The wall](../design/compositions/live/walls.md), line 98.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -18967,7 +18983,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 93.
+- Covered by [The wall](../design/compositions/live/walls.md), line 98.
 
 ```reaction
 when Categorizing.assign (category: pile, item: card, result.item: assigned), asked by Live.walls.MoveCard:success
@@ -18981,7 +18997,7 @@ then
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 94.
+- Covered by [The wall](../design/compositions/live/walls.md), line 99.
 
 ```reaction
 when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
@@ -18997,7 +19013,7 @@ then
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 94.
+- Covered by [The wall](../design/compositions/live/walls.md), line 99.
 
 ```reaction
 when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
@@ -19012,7 +19028,7 @@ then
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 94.
+- Covered by [The wall](../design/compositions/live/walls.md), line 99.
 
 ```reaction
 when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
@@ -19029,7 +19045,7 @@ then
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 94.
+- Covered by [The wall](../design/compositions/live/walls.md), line 99.
 
 ```reaction
 when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
@@ -19047,7 +19063,7 @@ then
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 94.
+- Covered by [The wall](../design/compositions/live/walls.md), line 99.
 
 ```reaction
 when Categorizing.ensureCategory (description: "", name, scope: round, category), asked by Live.walls.OpenPile:success
@@ -19061,7 +19077,7 @@ then
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 94.
+- Covered by [The wall](../design/compositions/live/walls.md), line 99.
 
 ```reaction
 when Categorizing.assign (category, item: card, result.item: assigned), asked by Live.walls.OpenPile:success#2
@@ -19075,7 +19091,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 95.
+- Covered by [The wall](../design/compositions/live/walls.md), line 100.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -19093,7 +19109,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 95.
+- Covered by [The wall](../design/compositions/live/walls.md), line 100.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -19109,7 +19125,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 95.
+- Covered by [The wall](../design/compositions/live/walls.md), line 100.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -19124,7 +19140,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 95.
+- Covered by [The wall](../design/compositions/live/walls.md), line 100.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -19141,7 +19157,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 95.
+- Covered by [The wall](../design/compositions/live/walls.md), line 100.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -19162,7 +19178,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 95.
+- Covered by [The wall](../design/compositions/live/walls.md), line 100.
 
 ```reaction
 when Pinning.pin (at, item: pile, priority, scope: round), asked by Live.walls.Pick:success
@@ -19204,7 +19220,7 @@ then
 
 Authored path: `Live.walls.Read`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 5.
-- Covered by [The wall](../design/compositions/live/walls.md), line 97.
+- Covered by [The wall](../design/compositions/live/walls.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/read", requestId, round, session)
@@ -19219,7 +19235,7 @@ then
 
 Authored path: `Live.walls.Read`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 5.
-- Covered by [The wall](../design/compositions/live/walls.md), line 97.
+- Covered by [The wall](../design/compositions/live/walls.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/read", requestId, round, session)
@@ -19235,7 +19251,7 @@ then
 
 Authored path: `Live.walls.RenamePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 98.
+- Covered by [The wall](../design/compositions/live/walls.md), line 103.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/rename-pile", pile, requestId, session)
@@ -19251,7 +19267,7 @@ then
 
 Authored path: `Live.walls.RenamePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 98.
+- Covered by [The wall](../design/compositions/live/walls.md), line 103.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/rename-pile", pile, requestId, session)
@@ -19266,7 +19282,7 @@ then
 
 Authored path: `Live.walls.RenamePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 98.
+- Covered by [The wall](../design/compositions/live/walls.md), line 103.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/rename-pile", pile, requestId, session)
@@ -19283,7 +19299,7 @@ then
 
 Authored path: `Live.walls.RenamePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 98.
+- Covered by [The wall](../design/compositions/live/walls.md), line 103.
 
 ```reaction
 when Categorizing.renameCategory (category: pile, name, result.category: renamed), asked by Live.walls.RenamePile:success
@@ -19356,7 +19372,7 @@ then
 
 Authored path: `Live.walls.Sort`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 13.
-- Covered by [The wall](../design/compositions/live/walls.md), line 99.
+- Covered by [The wall](../design/compositions/live/walls.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
@@ -19368,6 +19384,7 @@ where
   view "(round) has a card still in the tray" with (round)
   view "nothing is still out about (round)" with (round)
   view "no offering about (round) has lines left to take" with (round)
+  no view "(round) has an ask that failed moments before (at)" with (at, round)
   RunSnapshotting._snapshot (subject: round) has (value)
   Categorizing._categoriesWithItems (scope: round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
@@ -19380,7 +19397,7 @@ then
 
 Authored path: `Live.walls.Sort`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 13.
-- Covered by [The wall](../design/compositions/live/walls.md), line 99.
+- Covered by [The wall](../design/compositions/live/walls.md), line 104.
 
 ```reaction
 when Reasoning.ask (about: round, at, passage, reasoner: "gemini-flash", asking), asked by Live.walls.Sort:asked
@@ -19394,7 +19411,7 @@ then
 
 Authored path: `Live.walls.Sort`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 13.
-- Covered by [The wall](../design/compositions/live/walls.md), line 99.
+- Covered by [The wall](../design/compositions/live/walls.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
@@ -19406,11 +19423,32 @@ then
   RequestBoundary.respond (asked: false, requestId)
 ```
 
+### Live.walls.Sort:failing
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 13.
+- Covered by [The wall](../design/compositions/live/walls.md), line 104.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is open on an open run" with (round)
+  view "(round) has a card still in the tray" with (round)
+  view "nothing is still out about (round)" with (round)
+  view "no offering about (round) has lines left to take" with (round)
+  view "(round) has an ask that failed moments before (at)" with (at, round)
+then
+  RequestBoundary.respond (asked: false, requestId)
+```
+
 ### Live.walls.Sort:forbidden
 
 Authored path: `Live.walls.Sort`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 13.
-- Covered by [The wall](../design/compositions/live/walls.md), line 99.
+- Covered by [The wall](../design/compositions/live/walls.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
@@ -19425,7 +19463,7 @@ then
 
 Authored path: `Live.walls.Sort`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 13.
-- Covered by [The wall](../design/compositions/live/walls.md), line 99.
+- Covered by [The wall](../design/compositions/live/walls.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
@@ -19442,7 +19480,7 @@ then
 
 Authored path: `Live.walls.Sort`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 13.
-- Covered by [The wall](../design/compositions/live/walls.md), line 99.
+- Covered by [The wall](../design/compositions/live/walls.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
@@ -19460,7 +19498,7 @@ then
 
 Authored path: `Live.walls.Sort`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 13.
-- Covered by [The wall](../design/compositions/live/walls.md), line 99.
+- Covered by [The wall](../design/compositions/live/walls.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
@@ -19493,7 +19531,7 @@ then
 
 Authored path: `Live.walls.Summarize`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 100.
+- Covered by [The wall](../design/compositions/live/walls.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
@@ -19515,7 +19553,7 @@ then
 
 Authored path: `Live.walls.Summarize`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 100.
+- Covered by [The wall](../design/compositions/live/walls.md), line 105.
 
 ```reaction
 when Reasoning.ask (about: round, at, passage, reasoner: "gemini-flash", asking), asked by Live.walls.Summarize:asked
@@ -19529,7 +19567,7 @@ then
 
 Authored path: `Live.walls.Summarize`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 100.
+- Covered by [The wall](../design/compositions/live/walls.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
@@ -19545,7 +19583,7 @@ then
 
 Authored path: `Live.walls.Summarize`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 100.
+- Covered by [The wall](../design/compositions/live/walls.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
@@ -19563,7 +19601,7 @@ then
 
 Authored path: `Live.walls.Summarize`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 100.
+- Covered by [The wall](../design/compositions/live/walls.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
@@ -19578,7 +19616,7 @@ then
 
 Authored path: `Live.walls.Summarize`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 21.
-- Covered by [The wall](../design/compositions/live/walls.md), line 100.
+- Covered by [The wall](../design/compositions/live/walls.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
@@ -19639,7 +19677,7 @@ then
 
 Authored path: `Live.walls.ToTray`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 101.
+- Covered by [The wall](../design/compositions/live/walls.md), line 106.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/to-tray", requestId, session)
@@ -19655,7 +19693,7 @@ then
 
 Authored path: `Live.walls.ToTray`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 101.
+- Covered by [The wall](../design/compositions/live/walls.md), line 106.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/to-tray", requestId, session)
@@ -19670,7 +19708,7 @@ then
 
 Authored path: `Live.walls.ToTray`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 101.
+- Covered by [The wall](../design/compositions/live/walls.md), line 106.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/to-tray", requestId, session)
@@ -19687,7 +19725,7 @@ then
 
 Authored path: `Live.walls.ToTray`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 101.
+- Covered by [The wall](../design/compositions/live/walls.md), line 106.
 
 ```reaction
 when Categorizing.unassign (item: card, result.item: unassigned), asked by Live.walls.ToTray:success
@@ -19701,7 +19739,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 96.
+- Covered by [The wall](../design/compositions/live/walls.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
@@ -19717,7 +19755,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 96.
+- Covered by [The wall](../design/compositions/live/walls.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
@@ -19732,7 +19770,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 96.
+- Covered by [The wall](../design/compositions/live/walls.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
@@ -19749,7 +19787,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 96.
+- Covered by [The wall](../design/compositions/live/walls.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
@@ -19767,7 +19805,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 96.
+- Covered by [The wall](../design/compositions/live/walls.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
@@ -19785,7 +19823,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 96.
+- Covered by [The wall](../design/compositions/live/walls.md), line 101.
 
 ```reaction
 when Pinning.unpin (item: pile, scope: round), asked by Live.walls.Unpick:success

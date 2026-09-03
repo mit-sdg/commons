@@ -104,6 +104,17 @@ const anOfferingIsBeingTakenAbout = view(
     ),
 ).holds();
 
+/** The last ask about the round failed moments ago, so asking again now would only fail again. */
+const roundHasAFreshFailure = view(
+  "(round) has an ask that failed moments before (at)",
+  ({ round, at }, _o, { failedAt, standing }) =>
+    where(
+      Reasoning._lastFailureAbout({ about: round }).is({ failedAt }),
+      compute(computations.failureStanding, { failedAt, at }, standing),
+      is.among(standing, ["fresh"]),
+    ),
+).holds();
+
 const noOfferingIsBeingTakenAbout = view(
   "no offering about (round) has lines left to take",
   ({ round }, _o, _b) => where(no(anOfferingIsBeingTakenAbout({ round }))),
@@ -175,6 +186,8 @@ export const theWall = former(
       name,
       description,
       held,
+      failure,
+      failedAt,
     },
   ) =>
     where(
@@ -188,6 +201,7 @@ export const theWall = former(
       Questioning._getQuestionnaire({ questionnaire }).is({ title }),
       compute(computations.participantQuestions, { value: presentation }, questions),
       whether(Relaying._legFor({ material: questionnaire }).is({ leg, position: number })),
+      whether(Reasoning._lastFailureAbout({ about: round }).is({ account: failure, failedAt })),
     ).form({
       round,
       number,
@@ -196,6 +210,8 @@ export const theWall = former(
       openedAt,
       closedAt,
       questions,
+      failure,
+      failedAt,
       begun: each(Responding._responsesFor({ subject: round }).is({ response: begun })).count(),
       handedIn: each(
         Responding._responsesFor({ subject: round }).is({ response: handedIn, submitted: true }),
@@ -730,6 +746,7 @@ export const Sort = endpoint(
         roundHasACardInTheTray({ round }),
         noAskStandsAbout({ round }),
         noOfferingIsBeingTakenAbout({ round }),
+        no(roundHasAFreshFailure({ round, at })),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
         Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
@@ -772,6 +789,18 @@ export const Sort = endpoint(
       )
         .then(respond({ asked: false }))
         .named("taking"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsLive({ round }),
+        roundHasACardInTheTray({ round }),
+        noAskStandsAbout({ round }),
+        noOfferingIsBeingTakenAbout({ round }),
+        roundHasAFreshFailure({ round, at }),
+      )
+        .then(respond({ asked: false }))
+        .named("failing"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),

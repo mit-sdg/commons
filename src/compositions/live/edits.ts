@@ -8,6 +8,7 @@ import {
   reaction,
   when,
   where,
+  whether,
 } from "@mit-sdg/sync-engine/language";
 import { USE_WORDS } from "../../computations/live-carries.ts";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
@@ -176,10 +177,15 @@ export const theOfferings = former(
 
 export const Offerings = endpoint(
   "/live/edits/offerings",
-  ({ session, relay, user, at }) =>
+  ({ session, relay, user, at, failure, failedAt }) =>
     receive({ session, relay }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
-        .then(respond({ offerings: theOfferings({ relay }) }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        whether(Reasoning._lastFailureAbout({ about: relay }).is({ account: failure, failedAt })),
+      )
+        .then(respond({ offerings: theOfferings({ relay }), failure, failedAt }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))

@@ -146,6 +146,18 @@ export class MongoReasoningConcept {
     return doc === null ? [] : [{ account: doc.account, failedAt: doc.failedAt }];
   }
 
+  async _lastFailureAbout({ about }: { about: string }) {
+    const askings = await this.askings.find({ about }, { projection: { _id: 1 } }).toArray();
+    if (askings.length === 0) return [];
+    const doc = await this.failures.findOne(
+      { asking: { $in: askings.map((row) => row._id) } },
+      { sort: { failedAt: -1 } },
+    );
+    return doc === null
+      ? []
+      : [{ asking: doc.asking, account: doc.account, failedAt: doc.failedAt }];
+  }
+
   async _repliesAbout({ about }: { about: string }) {
     const askings = await this.askings.find({ about }).toArray();
     const byId = new Map(askings.map((doc) => [doc._id, doc]));

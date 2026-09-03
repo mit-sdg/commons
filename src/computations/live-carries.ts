@@ -75,6 +75,17 @@ export function pickPriority({ count }: { count: number }): number {
 }
 
 /** Whether a card is one of the wall's cards: `known` or `unknown`. */
+/** How long a failed ask holds the sort tick before it asks again. */
+const FAILURE_FRESH_MS = 30_000;
+
+/** Whether a failure is fresh enough to hold the next ask, or stale enough to try again. */
+export function failureStanding({ failedAt, at }: { failedAt: unknown; at: unknown }): string {
+  const failed = new Date(String(failedAt)).getTime();
+  const now = new Date(String(at)).getTime();
+  if (Number.isNaN(failed) || Number.isNaN(now)) return "stale";
+  return now - failed < FAILURE_FRESH_MS ? "fresh" : "stale";
+}
+
 export function cardStanding({ card, values }: { card: string; values: unknown }): string {
   const rows = Array.isArray(values) ? (values as { response?: unknown; item?: unknown }[]) : [];
   return rows.some(

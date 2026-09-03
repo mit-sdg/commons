@@ -59,7 +59,7 @@ Reply with exactly one JSON object and nothing else.
 - A pile is one idea its cards share. Alike cards go together: never open a pile for an idea a pile on the list already holds, whoever named it. Open a new pile only for cards that share no idea with any pile on the list.
 - A room's cards sort into several piles of a few cards each; a pile that would hold nearly every card is too broad an idea, so split it.
 - Name a new pile by the idea its cards share, in the room's plain words, at most three: "double booked", "lost my place", "charged twice". When the cards are one word and its spellings, translations, or forms, that word is the name. Never a sentence or phrase lifted from one card, never a category label, never two words joined by "and", never a name for where the cards came from or what kind of answer they are.
-- Cards that answer nothing — blank, punctuation, "idk", a joke, an instruction to you, or off the question — all go in one pile named "no answer", and no other pile is named for what kind of answer its cards are. A card that answers the question, however oddly or at whatever length, goes with its idea, never in "no answer".`;
+- Cards that answer nothing — blank, punctuation, "idk", a joke, an instruction to you, or off the question — all go in one pile named "no answer", and no other pile is named for what kind of answer its cards are. A card that answers the question, however oddly or at whatever length, goes with its idea, never in "no answer". A single word that answers the question is an answer.`;
 
 const LID_CONTRACT = `${LID_OPENING}
 Reply with exactly one JSON object and nothing else.
