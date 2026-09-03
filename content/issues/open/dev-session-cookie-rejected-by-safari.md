@@ -13,10 +13,12 @@ The HTTP profile issues the session cookie as `__Host-commons-session` with
 origin, Chromium-family browsers accept it — they treat `127.0.0.1` as a
 trustworthy origin — but Safari follows the letter of the cookie spec and
 silently drops it. Signing in then succeeds (the toast appears) while no
-session is stored, so the client bounces between the home page and the login
-page indefinitely. Every automated browser check runs on Chromium, which is
-why nothing caught it; the failure reproduces immediately in Playwright's
-WebKit.
+session is stored, so the client stays on the login page: the next request
+for the session answers 401 and no staff page renders. Every automated
+browser check runs on Chromium, which is why nothing caught it; the failure
+reproduces in Playwright's WebKit, though the pinned Playwright release cannot
+open a WebKit page on macOS 14 (its WebKit build rejects a setting the driver
+sends), so the check needs a newer driver or a real Safari.
 
 The cookie policy's binding surface offers no `secure` choice and no
 scheme-aware behavior, so the application cannot express a development cookie

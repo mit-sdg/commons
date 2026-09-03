@@ -143,9 +143,21 @@ export const List = endpoint("/live/quizzes/list", ({ session, user, at }) =>
 
 export const Get = endpoint("/live/quizzes/get", ({ session, questionnaire, user, at }) =>
   receive({ session, questionnaire }).then(
-    where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+    where(
+      now(at),
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      no(Relaying._legFor({ material: questionnaire })),
+    )
       .then(respond({ questionnaire: theQuestionnaire({ questionnaire }) }))
       .named("success"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      Relaying._legFor({ material: questionnaire }),
+    )
+      .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+      .named("round"),
     where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
@@ -181,6 +193,7 @@ export const Retitle = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
       )
         .then(Questioning.retitle({ questionnaire, title }).responds({ questionnaire: retitled }))
@@ -189,10 +202,18 @@ export const Retitle = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasAnOpenRun({ questionnaire }),
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._legFor({ material: questionnaire }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+        .named("round"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -208,6 +229,7 @@ export const SetDisclosure = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
       )
         .then(
@@ -220,10 +242,18 @@ export const SetDisclosure = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasAnOpenRun({ questionnaire }),
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._legFor({ material: questionnaire }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+        .named("round"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -251,6 +281,7 @@ export const AddQuestion = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
         theQuestionCount({ questionnaire }).is({ total: standing }),
         compute(computations.positionAfter, { position: standing }, position),
@@ -270,10 +301,18 @@ export const AddQuestion = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasAnOpenRun({ questionnaire }),
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._legFor({ material: questionnaire }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+        .named("round"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -307,6 +346,7 @@ export const ReviseQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire, position }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
       )
         .then(
@@ -325,10 +365,19 @@ export const ReviseQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasAnOpenRun({ questionnaire }),
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire }),
+        Relaying._legFor({ material: questionnaire }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+        .named("round"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -398,6 +447,7 @@ export const RemoveQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
       )
         .then(Questioning.removeQuestion({ question }).responds({ question: removed }))
@@ -407,10 +457,19 @@ export const RemoveQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasAnOpenRun({ questionnaire }),
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire }),
+        Relaying._legFor({ material: questionnaire }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+        .named("round"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -435,6 +494,7 @@ export const RaiseQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire, position }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
         is.gt(position, 1),
         compute(computations.positionBefore, { position }, target),
@@ -447,6 +507,7 @@ export const RaiseQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire, position: 1 }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
       )
         .then(respond({ error: "AT_EDGE" }))
@@ -455,10 +516,19 @@ export const RaiseQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasAnOpenRun({ questionnaire }),
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire }),
+        Relaying._legFor({ material: questionnaire }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+        .named("round"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -483,6 +553,7 @@ export const LowerQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire, position }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
         theQuestionCount({ questionnaire }).is({ total: standing }),
         is.lt(position, standing),
@@ -496,6 +567,7 @@ export const LowerQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire, position }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
         theQuestionCount({ questionnaire }).is({ total: standing }),
         is.ge(position, standing),
@@ -506,10 +578,19 @@ export const LowerQuestion = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Questioning._getQuestion({ question }).is({ questionnaire }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasAnOpenRun({ questionnaire }),
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Questioning._getQuestion({ question }).is({ questionnaire }),
+        Relaying._legFor({ material: questionnaire }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+        .named("round"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -532,6 +613,7 @@ export const Retire = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasNoOpenRun({ questionnaire }),
       )
         .then(Questioning.retire({ questionnaire }).responds({ questionnaire: retired }))
@@ -540,10 +622,18 @@ export const Retire = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        no(Relaying._legFor({ material: questionnaire })),
         questionnaireHasAnOpenRun({ questionnaire }),
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._legFor({ material: questionnaire }),
+      )
+        .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+        .named("round"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),

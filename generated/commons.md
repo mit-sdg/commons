@@ -1460,8 +1460,8 @@ Concrete types:
 ## Computations
 
 - `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 87.
-- `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 85.
-- `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 81.
+- `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 86.
+- `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 82.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 22.
 - `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 361.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 36.
@@ -1485,7 +1485,7 @@ Concrete types:
 - `editShape(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 90.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 365.
-- `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 88.
+- `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 89.
 - `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 352.
 - `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 349.
 - `isModelParticipant(participant: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 40.
@@ -1507,7 +1507,7 @@ Concrete types:
 - `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 91.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 83.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 79.
-- `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 77.
+- `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 78.
 - `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 370.
 - `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 375.
 - `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 381.
@@ -1531,10 +1531,10 @@ Concrete types:
 - `revisionPassage(request: String, form: String, material: Json) : String` — [Commons application](../design/application.md), line 423.
 - `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 384.
 - `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 387.
-- `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 66.
-- `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 69.
-- `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 73.
-- `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 63.
+- `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 67.
+- `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 70.
+- `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 74.
+- `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 64.
 - `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 454.
 - `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 393.
 - `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 403.
@@ -2674,7 +2674,7 @@ Former "the backlinks of (target)" — inputs (target); bindings (source); promi
 ### the board of (run)
 
 Authored path: `Live.runs.theRunBoard`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 51.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 52.
 
 ```former
 Former "the board of (run)" — inputs (run); bindings (questionnaire, title, form, open, openedAt, closedAt, token, code, started, handedIn, presentation, values, questions); promises at most one record — forms:
@@ -3543,7 +3543,7 @@ Former "the open flags ()" — inputs (); bindings (target, count); promises exa
 ### the open runs
 
 Authored path: `Live.runs.theOpenRuns`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 46.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 47.
 
 ```former
 Former "the open runs" — inputs (); bindings (run, questionnaire, presentation, title, form, openedAt, token, code); promises exactly one record — forms:
@@ -3772,7 +3772,7 @@ Former "the public posts of (author)" — inputs (author); bindings (post); prom
 ### the questionnaire (questionnaire)
 
 Authored path: `Live.quizzes.theQuestionnaire`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 52.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 55.
 
 ```former
 Former "the questionnaire (questionnaire)" — inputs (questionnaire); bindings (title, form, disclosure, createdAt, retired, question, prompt, choices, expected, explanation, position, run, open, openedAt, closedAt, token); promises at most one record — forms:
@@ -3805,7 +3805,7 @@ Former "the questionnaire (questionnaire)" — inputs (questionnaire); bindings 
 ### the questionnaires
 
 Authored path: `Live.quizzes.theQuestionnaires`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 47.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 50.
 
 ```former
 Former "the questionnaires" — inputs (); bindings (questionnaire, title, form, disclosure, createdAt, retired, run, token, questions, proposes); promises exactly one record — forms:
@@ -4110,7 +4110,7 @@ Former "the score outcome of (response)" — inputs (response); bindings (run, k
 ### the scores of (run)
 
 Authored path: `Live.runs.theRunScores`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 56.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 57.
 
 ```former
 Former "the scores of (run)" — inputs (run); bindings (key, disclosure, submission, participant, name, score, outOf); promises at most one record — forms:
@@ -15687,7 +15687,7 @@ then
 
 Authored path: `Live.quizzes.AddQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 23.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", prompt, questionnaire, requestId, session)
@@ -15698,17 +15698,34 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Live.quizzes.AddQuestion:run-open
+### Live.quizzes.AddQuestion:round
 
 Authored path: `Live.quizzes.AddQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 23.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", prompt, questionnaire, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  Relaying._legFor (material: questionnaire)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
+### Live.quizzes.AddQuestion:run-open
+
+Authored path: `Live.quizzes.AddQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 23.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
+
+```reaction
+when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", prompt, questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has an open run" with (questionnaire)
 then
   RequestBoundary.respond (error: "RUN_OPEN", requestId)
@@ -15718,7 +15735,7 @@ then
 
 Authored path: `Live.quizzes.AddQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 23.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/add-question", prompt, questionnaire, requestId, session)
@@ -15726,6 +15743,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
   view "the question count of (questionnaire)" with (questionnaire) has (total: standing)
   position is positionAfter (position: standing)
@@ -15737,7 +15755,7 @@ then
 
 Authored path: `Live.quizzes.AddQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 23.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 57.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
 
 ```reaction
 when Questioning.addQuestion (choices, expected, explanation, position, prompt, questionnaire, question), asked by Live.quizzes.AddQuestion:success
@@ -15751,7 +15769,7 @@ then
 
 Authored path: `Live.quizzes.Create`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 12.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
 
 ```reaction
 when RequestBoundary.request (disclosure, form, path: "/live/quizzes/create", requestId, session, title)
@@ -15766,7 +15784,7 @@ then
 
 Authored path: `Live.quizzes.Create`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 12.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
 
 ```reaction
 when RequestBoundary.request (disclosure, form, path: "/live/quizzes/create", requestId, session, title)
@@ -15782,7 +15800,7 @@ then
 
 Authored path: `Live.quizzes.Create`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 12.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 58.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
 
 ```reaction
 when Questioning.compose (at, author: user, disclosure, form, title, questionnaire), asked by Live.quizzes.Create:success
@@ -15795,8 +15813,8 @@ then
 ### Live.quizzes.Get:forbidden
 
 Authored path: `Live.quizzes.Get`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 51.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 54.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/get", questionnaire, requestId, session)
@@ -15807,11 +15825,27 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Live.quizzes.Get:round
+
+Authored path: `Live.quizzes.Get`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 54.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/get", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._legFor (material: questionnaire)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
 ### Live.quizzes.Get:success
 
 Authored path: `Live.quizzes.Get`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 51.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 59.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 54.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/get", questionnaire, requestId, session)
@@ -15819,6 +15853,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  no Relaying._legFor (material: questionnaire)
 then
   RequestBoundary.respond (questionnaire: former "the questionnaire (questionnaire)" with (questionnaire), requestId)
 ```
@@ -15826,8 +15861,8 @@ then
 ### Live.quizzes.List:forbidden
 
 Authored path: `Live.quizzes.List`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 46.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 49.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/list", requestId, session)
@@ -15841,8 +15876,8 @@ then
 ### Live.quizzes.List:success
 
 Authored path: `Live.quizzes.List`.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 46.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 60.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 49.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/list", requestId, session)
@@ -15858,7 +15893,7 @@ then
 
 Authored path: `Live.quizzes.LowerQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -15866,6 +15901,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (position, questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
   view "the question count of (questionnaire)" with (questionnaire) has (total: standing)
   position is at least standing
@@ -15877,7 +15913,7 @@ then
 
 Authored path: `Live.quizzes.LowerQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -15892,7 +15928,7 @@ then
 
 Authored path: `Live.quizzes.LowerQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -15904,11 +15940,11 @@ then
   RequestBoundary.respond (error: "QUESTION_NOT_FOUND", requestId)
 ```
 
-### Live.quizzes.LowerQuestion:run-open
+### Live.quizzes.LowerQuestion:round
 
 Authored path: `Live.quizzes.LowerQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -15916,6 +15952,24 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (questionnaire)
+  Relaying._legFor (material: questionnaire)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
+### Live.quizzes.LowerQuestion:run-open
+
+Authored path: `Live.quizzes.LowerQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestion (question) has (questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has an open run" with (questionnaire)
 then
   RequestBoundary.respond (error: "RUN_OPEN", requestId)
@@ -15925,7 +15979,7 @@ then
 
 Authored path: `Live.quizzes.LowerQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/lower-question", question, requestId, session)
@@ -15934,6 +15988,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (position, questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
   view "the question count of (questionnaire)" with (questionnaire) has (total: standing)
   position is less than standing
@@ -15947,7 +16002,7 @@ then
 
 Authored path: `Live.quizzes.LowerQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 37.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 61.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
 
 ```reaction
 when Questioning.swapQuestions (other: neighbor, question), asked by Live.quizzes.LowerQuestion:success
@@ -15961,7 +16016,7 @@ then
 
 Authored path: `Live.quizzes.RaiseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -15969,6 +16024,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (position: 1, questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
 then
   RequestBoundary.respond (error: "AT_EDGE", requestId)
@@ -15978,7 +16034,7 @@ then
 
 Authored path: `Live.quizzes.RaiseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -15993,7 +16049,7 @@ then
 
 Authored path: `Live.quizzes.RaiseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -16005,11 +16061,11 @@ then
   RequestBoundary.respond (error: "QUESTION_NOT_FOUND", requestId)
 ```
 
-### Live.quizzes.RaiseQuestion:run-open
+### Live.quizzes.RaiseQuestion:round
 
 Authored path: `Live.quizzes.RaiseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -16017,6 +16073,24 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (questionnaire)
+  Relaying._legFor (material: questionnaire)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
+### Live.quizzes.RaiseQuestion:run-open
+
+Authored path: `Live.quizzes.RaiseQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestion (question) has (questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has an open run" with (questionnaire)
 then
   RequestBoundary.respond (error: "RUN_OPEN", requestId)
@@ -16026,7 +16100,7 @@ then
 
 Authored path: `Live.quizzes.RaiseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/raise-question", question, requestId, session)
@@ -16035,6 +16109,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (position, questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
   position is greater than 1
   target is positionBefore (position)
@@ -16047,7 +16122,7 @@ then
 
 Authored path: `Live.quizzes.RaiseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 36.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 62.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
 
 ```reaction
 when Questioning.swapQuestions (other: neighbor, question), asked by Live.quizzes.RaiseQuestion:success
@@ -16061,7 +16136,7 @@ then
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
@@ -16076,7 +16151,7 @@ then
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
@@ -16088,11 +16163,11 @@ then
   RequestBoundary.respond (error: "QUESTION_NOT_FOUND", requestId)
 ```
 
-### Live.quizzes.RemoveQuestion:run-open
+### Live.quizzes.RemoveQuestion:round
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
@@ -16100,6 +16175,24 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (questionnaire)
+  Relaying._legFor (material: questionnaire)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
+### Live.quizzes.RemoveQuestion:run-open
+
+Authored path: `Live.quizzes.RemoveQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestion (question) has (questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has an open run" with (questionnaire)
 then
   RequestBoundary.respond (error: "RUN_OPEN", requestId)
@@ -16109,7 +16202,7 @@ then
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/remove-question", question, requestId, session)
@@ -16118,6 +16211,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
 then
   Questioning.removeQuestion (question)
@@ -16127,7 +16221,7 @@ then
 
 Authored path: `Live.quizzes.RemoveQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 25.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 63.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
 
 ```reaction
 when Questioning.removeQuestion (question, result.question: removed), asked by Live.quizzes.RemoveQuestion:success
@@ -16156,7 +16250,7 @@ then
 
 Authored path: `Live.quizzes.Retire`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
@@ -16167,17 +16261,34 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Live.quizzes.Retire:run-open
+### Live.quizzes.Retire:round
 
 Authored path: `Live.quizzes.Retire`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  Relaying._legFor (material: questionnaire)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
+### Live.quizzes.Retire:run-open
+
+Authored path: `Live.quizzes.Retire`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has an open run" with (questionnaire)
 then
   RequestBoundary.respond (error: "RUN_OPEN", requestId)
@@ -16187,7 +16298,7 @@ then
 
 Authored path: `Live.quizzes.Retire`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retire", questionnaire, requestId, session)
@@ -16195,6 +16306,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
 then
   Questioning.retire (questionnaire)
@@ -16204,7 +16316,7 @@ then
 
 Authored path: `Live.quizzes.Retire`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 20.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 64.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
 
 ```reaction
 when Questioning.retire (questionnaire, result.questionnaire: retired), asked by Live.quizzes.Retire:success
@@ -16218,7 +16330,7 @@ then
 
 Authored path: `Live.quizzes.Retitle`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 18.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 68.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
@@ -16229,17 +16341,34 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Live.quizzes.Retitle:run-open
+### Live.quizzes.Retitle:round
 
 Authored path: `Live.quizzes.Retitle`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 18.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 68.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  Relaying._legFor (material: questionnaire)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
+### Live.quizzes.Retitle:run-open
+
+Authored path: `Live.quizzes.Retitle`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 18.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 68.
+
+```reaction
+when RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has an open run" with (questionnaire)
 then
   RequestBoundary.respond (error: "RUN_OPEN", requestId)
@@ -16249,7 +16378,7 @@ then
 
 Authored path: `Live.quizzes.Retitle`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 18.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 68.
 
 ```reaction
 when RequestBoundary.request (path: "/live/quizzes/retitle", questionnaire, requestId, session, title)
@@ -16257,6 +16386,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
 then
   Questioning.retitle (questionnaire, title)
@@ -16266,7 +16396,7 @@ then
 
 Authored path: `Live.quizzes.Retitle`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 18.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 65.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 68.
 
 ```reaction
 when Questioning.retitle (questionnaire, title, result.questionnaire: retitled), asked by Live.quizzes.Retitle:success
@@ -16280,7 +16410,7 @@ then
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 69.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", prompt, question, requestId, session)
@@ -16295,7 +16425,7 @@ then
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 69.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", prompt, question, requestId, session)
@@ -16307,11 +16437,11 @@ then
   RequestBoundary.respond (error: "QUESTION_NOT_FOUND", requestId)
 ```
 
-### Live.quizzes.ReviseQuestion:run-open
+### Live.quizzes.ReviseQuestion:round
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 69.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", prompt, question, requestId, session)
@@ -16319,6 +16449,24 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (questionnaire)
+  Relaying._legFor (material: questionnaire)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
+### Live.quizzes.ReviseQuestion:run-open
+
+Authored path: `Live.quizzes.ReviseQuestion`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 69.
+
+```reaction
+when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", prompt, question, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Questioning._getQuestion (question) has (questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has an open run" with (questionnaire)
 then
   RequestBoundary.respond (error: "RUN_OPEN", requestId)
@@ -16328,7 +16476,7 @@ then
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 69.
 
 ```reaction
 when RequestBoundary.request (choices, expected, explanation, path: "/live/quizzes/revise-question", prompt, question, requestId, session)
@@ -16337,6 +16485,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Questioning._getQuestion (question) has (position, questionnaire)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
 then
   Questioning.reviseQuestion (choices, expected, explanation, position, prompt, question)
@@ -16346,7 +16495,7 @@ then
 
 Authored path: `Live.quizzes.ReviseQuestion`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 24.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 66.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 69.
 
 ```reaction
 when Questioning.reviseQuestion (choices, expected, explanation, position, prompt, question, result.question: revised), asked by Live.quizzes.ReviseQuestion:success
@@ -16360,7 +16509,7 @@ then
 
 Authored path: `Live.quizzes.SetDisclosure`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 19.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 70.
 
 ```reaction
 when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
@@ -16371,17 +16520,34 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Live.quizzes.SetDisclosure:run-open
+### Live.quizzes.SetDisclosure:round
 
 Authored path: `Live.quizzes.SetDisclosure`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 19.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 70.
 
 ```reaction
 when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  Relaying._legFor (material: questionnaire)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
+### Live.quizzes.SetDisclosure:run-open
+
+Authored path: `Live.quizzes.SetDisclosure`.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 19.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 70.
+
+```reaction
+when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has an open run" with (questionnaire)
 then
   RequestBoundary.respond (error: "RUN_OPEN", requestId)
@@ -16391,7 +16557,7 @@ then
 
 Authored path: `Live.quizzes.SetDisclosure`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 19.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 70.
 
 ```reaction
 when RequestBoundary.request (disclosure, path: "/live/quizzes/set-disclosure", questionnaire, requestId, session)
@@ -16399,6 +16565,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  no Relaying._legFor (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
 then
   Questioning.setDisclosure (disclosure, questionnaire)
@@ -16408,7 +16575,7 @@ then
 
 Authored path: `Live.quizzes.SetDisclosure`.
 - Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 19.
-- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 67.
+- Covered by [Quizzes and surveys](../design/compositions/live/quizzes.md), line 70.
 
 ```reaction
 when Questioning.setDisclosure (disclosure, questionnaire, result.questionnaire: changed), asked by Live.quizzes.SetDisclosure:success
@@ -16572,6 +16739,39 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Live.relays.ClearTakes:missing
+
+Authored path: `Live.relays.ClearTakes`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/relays/clear-takes", requestId, session, source)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._leg (leg)
+then
+  RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.relays.ClearTakes:retired
+
+Authored path: `Live.relays.ClearTakes`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/relays/clear-takes", requestId, session, source)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._leg (leg) has (relay)
+  view "(relay) is retired" with (relay)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
 ### Live.relays.ClearTakes:success
 
 Authored path: `Live.relays.ClearTakes`.
@@ -16584,6 +16784,8 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  Relaying._leg (leg) has (relay)
+  view "(relay) is not retired" with (relay)
 then
   Relaying.undraw (leg, source)
 ```
@@ -17072,6 +17274,39 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Live.relays.MoveRound:missing
+
+Authored path: `Live.relays.MoveRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 84.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/relays/move-round", position, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._leg (leg)
+then
+  RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.relays.MoveRound:retired
+
+Authored path: `Live.relays.MoveRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 84.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/relays/move-round", position, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._leg (leg) has (relay)
+  view "(relay) is retired" with (relay)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
 ### Live.relays.MoveRound:success
 
 Authored path: `Live.relays.MoveRound`.
@@ -17084,6 +17319,8 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  Relaying._leg (leg) has (relay)
+  view "(relay) is not retired" with (relay)
 then
   Relaying.moveLeg (leg, position)
 ```
@@ -17395,6 +17632,23 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Live.relays.RemoveRound:retired
+
+Authored path: `Live.relays.RemoveRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 88.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/relays/remove-round", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._leg (leg) has (relay)
+  view "(relay) is retired" with (relay)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
 ### Live.relays.RemoveRound:run-open
 
 Authored path: `Live.relays.RemoveRound`.
@@ -17424,7 +17678,8 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  Relaying._leg (leg) has (material: questionnaire)
+  Relaying._leg (leg) has (material: questionnaire, relay)
+  view "(relay) is not retired" with (relay)
   view "(questionnaire) has no open run" with (questionnaire)
 then
   Relaying.removeLeg (leg)
@@ -17647,7 +17902,8 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  Relaying._leg (leg) has (material: questionnaire)
+  Relaying._leg (leg) has (material: questionnaire, relay)
+  view "(relay) is not retired" with (relay)
   view "(questionnaire) has no open run" with (questionnaire)
 then
   Questioning.retitle (questionnaire, title)
@@ -17741,6 +17997,23 @@ where
   no Relaying._leg (leg)
 then
   RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.relays.ReviseRoundRefused:retired
+
+Authored path: `Live.relays.ReviseRoundRefused`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 92.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/relays/revise-round", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._leg (leg) has (relay)
+  view "(relay) is retired" with (relay)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
 ```
 
 ### Live.relays.ReviseRoundRefused:run-open
@@ -18008,8 +18281,8 @@ then
 ### Live.runs.Close:forbidden
 
 Authored path: `Live.runs.Close`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 41.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 93.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
@@ -18023,8 +18296,8 @@ then
 ### Live.runs.Close:success
 
 Authored path: `Live.runs.Close`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 41.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 93.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
@@ -18039,8 +18312,8 @@ then
 ### Live.runs.Close:success#2
 
 Authored path: `Live.runs.Close`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 41.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 93.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 42.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
 
 ```reaction
 when Publishing.close (at, edition: run, result.edition: closed), asked by Live.runs.Close:success
@@ -18054,7 +18327,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -18070,12 +18343,13 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Questioning.present (questionnaire, disclosure, expectations, form, presentation, proposes), asked by Live.runs.Launch
 where
   at is the current flow's instant
+  no Relaying._legFor (material: questionnaire)
   form is among ["quiz"]
   proposes is among [true]
   earlier, RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -18089,7 +18363,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:quiz#2
@@ -18103,7 +18377,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when RunSnapshotting.capture (subject: run, value: presentation, snapshot), asked by Live.runs.Launch:quiz#3
@@ -18117,7 +18391,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Scoring.establish (disclosure, expectations, subject: run, key), asked by Live.runs.Launch:quiz#4
@@ -18129,7 +18403,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.runs.Launch:quiz#5
@@ -18141,7 +18415,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Locating.ensure (subject: run, code), asked by Live.runs.Launch:quiz#6
@@ -18152,16 +18426,32 @@ then
   RequestBoundary.respond (code, requestId, run, token)
 ```
 
+### Live.runs.Launch:round#2
+
+Authored path: `Live.runs.Launch`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 7.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+
+```reaction
+when Questioning.present (questionnaire, disclosure, expectations, form, presentation, proposes), asked by Live.runs.Launch
+where
+  Relaying._legFor (material: questionnaire)
+  earlier, RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
+then
+  RequestBoundary.respond (error: "QUESTIONNAIRE_NOT_FOUND", requestId)
+```
+
 ### Live.runs.Launch:survey#2
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Questioning.present (questionnaire, disclosure, expectations, form, presentation, proposes), asked by Live.runs.Launch
 where
   at is the current flow's instant
+  no Relaying._legFor (material: questionnaire)
   form is among ["survey"]
   earlier, RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
   view "the active user of (session)" with (session) has (user)
@@ -18174,7 +18464,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:survey#2
@@ -18188,7 +18478,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when RunSnapshotting.capture (subject: run, value: presentation, snapshot), asked by Live.runs.Launch:survey#3
@@ -18200,7 +18490,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.runs.Launch:survey#4
@@ -18212,7 +18502,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Locating.ensure (subject: run, code), asked by Live.runs.Launch:survey#5
@@ -18227,11 +18517,12 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
 
 ```reaction
 when Questioning.present (questionnaire, disclosure, expectations, form, presentation, proposes), asked by Live.runs.Launch
 where
+  no Relaying._legFor (material: questionnaire)
   form is among ["quiz"]
   proposes is among [false]
   earlier, RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -18243,7 +18534,7 @@ then
 
 Authored path: `Live.runs.LaunchForbidden`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 16.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -18257,8 +18548,8 @@ then
 ### Live.runs.OpenRuns:forbidden
 
 Authored path: `Live.runs.OpenRuns`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 96.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 46.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 97.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/open", requestId, session)
@@ -18272,8 +18563,8 @@ then
 ### Live.runs.OpenRuns:success
 
 Authored path: `Live.runs.OpenRuns`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 45.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 96.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 46.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 97.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/open", requestId, session)
@@ -18288,8 +18579,8 @@ then
 ### Live.runs.Results:forbidden
 
 Authored path: `Live.runs.Results`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 50.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 97.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 51.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 98.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -18303,8 +18594,8 @@ then
 ### Live.runs.Results:quiz
 
 Authored path: `Live.runs.Results`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 50.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 97.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 51.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 98.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -18320,8 +18611,8 @@ then
 ### Live.runs.Results:survey
 
 Authored path: `Live.runs.Results`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 50.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 97.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 51.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 98.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)

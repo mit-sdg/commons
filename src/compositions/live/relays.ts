@@ -782,6 +782,7 @@ export const ReviseRound = endpoint(
     choices,
     user,
     at,
+    relay,
     questionnaire,
     material,
     question,
@@ -796,7 +797,8 @@ export const ReviseRound = endpoint(
           now(at),
           activeUser({ session }).is({ user }),
           mayHostLive({ user }),
-          Relaying._leg({ leg }).is({ material: questionnaire }),
+          Relaying._leg({ leg }).is({ relay, material: questionnaire }),
+          relayIsNotRetired({ relay }),
           questionnaireHasNoOpenRun({ questionnaire }),
         ).then(Questioning.retitle({ questionnaire, title }).responds()),
       )
@@ -825,7 +827,7 @@ export const ReviseRound = endpoint(
 
 export const ReviseRoundRefused = endpoint(
   "/live/relays/revise-round",
-  ({ session, leg, user, questionnaire }) =>
+  ({ session, leg, user, relay, questionnaire }) =>
     receive({ session, leg }).then(
       where(
         activeUser({ session }).is({ user }),
@@ -835,6 +837,14 @@ export const ReviseRoundRefused = endpoint(
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay }),
+        relayIsRetired({ relay }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
       where(activeUser({ session }).is({ user }), mayHostLive({ user }), no(Relaying._leg({ leg })))
         .then(respond({ error: "LEG_NOT_FOUND" }))
         .named("missing"),
@@ -846,13 +856,14 @@ export const ReviseRoundRefused = endpoint(
 
 export const RemoveRound = endpoint(
   "/live/relays/remove-round",
-  ({ session, leg, user, at, questionnaire, removed, material }) =>
+  ({ session, leg, user, at, relay, questionnaire, removed, material }) =>
     receive({ session, leg }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        Relaying._leg({ leg }).is({ material: questionnaire }),
+        Relaying._leg({ leg }).is({ relay, material: questionnaire }),
+        relayIsNotRetired({ relay }),
         questionnaireHasNoOpenRun({ questionnaire }),
       )
         .then(Relaying.removeLeg({ leg }).responds({ leg: removed, material }))
@@ -867,6 +878,14 @@ export const RemoveRound = endpoint(
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay }),
+        relayIsRetired({ relay }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -876,12 +895,29 @@ export const RemoveRound = endpoint(
 
 export const MoveRound = endpoint(
   "/live/relays/move-round",
-  ({ session, leg, position, user, at, moved, placed }) =>
+  ({ session, leg, position, user, at, relay, moved, placed }) =>
     receive({ session, leg, position }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay }),
+        relayIsNotRetired({ relay }),
+      )
         .then(Relaying.moveLeg({ leg, position }).responds({ leg: moved, position: placed }))
         .then(respond({ leg: moved, position: placed }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay }),
+        relayIsRetired({ relay }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), no(Relaying._leg({ leg })))
+        .then(respond({ error: "LEG_NOT_FOUND" }))
+        .named("missing"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -937,12 +973,29 @@ export const SetTakes = endpoint(
 
 export const ClearTakes = endpoint(
   "/live/relays/clear-takes",
-  ({ session, leg, source, user, at, cleared }) =>
+  ({ session, leg, source, user, at, relay, cleared }) =>
     receive({ session, leg, source }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay }),
+        relayIsNotRetired({ relay }),
+      )
         .then(Relaying.undraw({ leg, source }).responds({ leg: cleared }))
         .then(respond({ leg: cleared }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay }),
+        relayIsRetired({ relay }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), no(Relaying._leg({ leg })))
+        .then(respond({ error: "LEG_NOT_FOUND" }))
+        .named("missing"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
