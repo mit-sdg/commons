@@ -33,8 +33,8 @@ const FACES = {
   wide: {
     box: "min-h-[112px] px-4 pt-3.5 pb-3",
     name: "text-lg sm:text-xl",
-    count: "text-lg sm:text-[22px]",
-    peek: "gap-[3px] text-[13px]",
+    count: "text-lg sm:text-2xl",
+    peek: "gap-[3px] text-sm",
   },
   phone: {
     box: "min-h-24 px-3.5 pt-3 pb-2.5",
@@ -43,15 +43,15 @@ const FACES = {
     peek: "gap-1 text-sm",
   },
   big: {
-    box: "min-h-[150px] rounded-[14px] px-[22px] pt-5 pb-[18px]",
-    name: "text-2xl xl:text-[34px]",
-    count: "text-[38px]",
+    box: "min-h-[150px] rounded-xl px-[22px] pt-5 pb-[18px]",
+    name: "text-2xl xl:text-3xl",
+    count: "text-4xl",
     peek: "gap-1.5 text-xl",
   },
   packed: {
-    box: "min-h-[104px] rounded-[14px] px-4 pt-4 pb-3.5",
+    box: "min-h-[104px] rounded-xl px-4 pt-4 pb-3.5",
     name: "text-xl",
-    count: "text-[28px]",
+    count: "text-3xl",
     peek: "gap-1 text-base",
   },
 };
@@ -119,7 +119,7 @@ export function Card({
       )}
     >
       <motion.span
-        layout={!still}
+        layout={still ? false : "position"}
         layoutId={still ? undefined : card.card}
         transition={CARD_MOVE}
         initial={{ opacity: 0, y: 6 }}
@@ -127,9 +127,7 @@ export function Card({
         exit={{ opacity: 0, transition: { duration: 0.18 } }}
         className={cn(
           "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg border border-border bg-card shadow-[0_1px_0_var(--border)] leading-[1.3]",
-          big
-            ? "rounded-[10px] px-[18px] py-2.5 text-2xl"
-            : "px-3 py-[7px] text-[15px]",
+          big ? "px-[18px] py-2.5 text-2xl" : "px-3 py-[7px] text-sm",
           card.mine && "border-primary bg-primary/5",
           className,
         )}
@@ -358,6 +356,15 @@ export function Pile({
   // the face just make room. A landing is newer than any this pile has flown.
   const flownRank = useRef(0);
   const takesDrop = onDrop !== undefined || onMergeIn !== undefined;
+  // On a wall a hand sorts, a card on the face is dragged off it: back to the
+  // tray, onto another pile, or onto the new pile. It carries the same payload
+  // a card in the tray carries, and keeps the layoutId it flies by.
+  const canDragCards = onDrop !== undefined;
+  const takeCard = (event: React.DragEvent, card: string) => {
+    event.stopPropagation();
+    event.dataTransfer.setData("text/plain", card);
+    event.dataTransfer.effectAllowed = "move";
+  };
   const picking = onTap !== undefined && naming === null;
   const spread =
     cards.length === 0 ? null : (
@@ -382,10 +389,11 @@ export function Pile({
             event.dataTransfer.effectAllowed = "move";
           },
   };
-  // A name wraps between its words and is cut with a sign; it never breaks
-  // inside the one word the room reads the pile by.
+  // A name wraps between its words over two lines and is cut with a sign; it
+  // never breaks inside the one word the room reads the pile by, and it takes
+  // the width the count leaves rather than giving first.
   const nameClass = cn(
-    "relative z-10 min-w-0 overflow-hidden text-ellipsis break-normal font-display font-semibold leading-[1.15]",
+    "relative z-10 line-clamp-2 min-w-0 flex-1 break-normal font-display font-semibold leading-[1.15]",
     face.name,
     onMergeIn !== undefined && "cursor-grab active:cursor-grabbing",
   );
@@ -425,7 +433,7 @@ export function Pile({
           : undefined
       }
       className={cn(
-        "relative flex flex-col gap-2 rounded-[10px] border border-border bg-card text-left",
+        "relative flex flex-col gap-2 rounded-lg border border-border bg-card text-left",
         face.box,
         // A projector is read from the back of the room, where the hairline
         // that holds a card together on a laptop has gone.
@@ -451,7 +459,7 @@ export function Pile({
           aria-pressed={picked}
           aria-label={`${name}, ${countWords(count)}`}
           onClick={onTap}
-          className="absolute inset-0 rounded-[10px] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="absolute inset-0 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         />
       ) : null}
       {description !== "" ? (
@@ -494,7 +502,7 @@ export function Pile({
               if (event.key === "Enter") commitName();
               if (event.key === "Escape") setNaming(null);
             }}
-            className="h-7 min-w-0 flex-1 rounded-md border border-primary bg-card px-2 font-display font-semibold text-base"
+            className="h-7 min-w-0 flex-1 rounded-md border border-primary bg-card px-2 font-display font-semibold text-base outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           />
         )}
         <span className="relative z-10 flex flex-none items-center gap-1">
@@ -507,7 +515,10 @@ export function Pile({
           {big ? spread : null}
         </span>
       </div>
+      {/* The face's cards are a list, so a reader takes them one at a time
+          under the pile's name and count rather than as one run of words. */}
       <div
+        role="list"
         className={cn(
           "flex flex-col text-muted-foreground leading-[1.35]",
           face.peek,
@@ -516,14 +527,32 @@ export function Pile({
         <AnimatePresence initial={false}>
           {peek.map((card) =>
             card.mine ? (
-              <Card
+              <span
                 key={card.card}
-                card={card}
-                className="max-w-full self-start px-2 py-[3px] text-sm"
-              />
+                role="listitem"
+                className="flex min-w-0 max-w-full"
+              >
+                <Card
+                  card={card}
+                  draggable={canDragCards}
+                  className={cn(
+                    "max-w-full self-start px-2 py-[3px] text-sm",
+                    canDragCards && "relative z-10",
+                  )}
+                />
+              </span>
             ) : (
               <motion.span
                 key={card.card}
+                role="listitem"
+                draggable={canDragCards}
+                // Motion keeps `onDragStart` for its own gesture, so the card
+                // lays out its payload on the way down instead.
+                onDragStartCapture={
+                  canDragCards
+                    ? (event: React.DragEvent) => takeCard(event, card.card)
+                    : undefined
+                }
                 layout="position"
                 layoutId={card.card}
                 transition={CARD_MOVE}
@@ -539,6 +568,8 @@ export function Pile({
                 title={titleOf(card)}
                 className={cn(
                   "flex min-w-0 items-center gap-1.5",
+                  canDragCards &&
+                    "relative z-10 cursor-grab active:cursor-grabbing",
                   arriving.has(card.card) &&
                     "relative z-20 rounded-lg border border-border bg-card px-3 py-[7px] text-foreground shadow-md",
                 )}
@@ -586,6 +617,8 @@ export function CarriesTo({
 }) {
   return (
     <span
+      role="img"
+      aria-label={`carries into round ${number}`}
       className={cn(
         "absolute flex items-center justify-center rounded-full border-2 border-card bg-primary font-mono text-primary-foreground",
         big
@@ -617,7 +650,7 @@ export function NewPile({
         if (card !== "") onDrop(card);
       }}
       className={cn(
-        "flex items-center justify-center rounded-[10px] border border-input border-dashed text-muted-foreground",
+        "flex items-center justify-center rounded-lg border border-input border-dashed text-muted-foreground",
         big ? "min-h-[150px] text-xl" : "min-h-[112px] text-sm",
         className,
       )}

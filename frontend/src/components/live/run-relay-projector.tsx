@@ -166,7 +166,7 @@ export function RelayProjector({
 /** One word to the room, where the join block stands while there is one. */
 function Standing({ children }: { children: string }) {
   return (
-    <span className="flex-none font-display text-[40px] text-muted-foreground leading-none">
+    <span className="flex-none font-display text-4xl text-muted-foreground leading-none">
       {children}
     </span>
   );

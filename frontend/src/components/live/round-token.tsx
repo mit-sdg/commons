@@ -37,6 +37,10 @@ export function RoundToken({
 }) {
   return (
     <span
+      // A disc standing without its title names its round, so a strip of them
+      // is not read as a run of bare digits.
+      role={title === undefined ? "img" : undefined}
+      aria-label={title === undefined ? `Round ${number}` : undefined}
       className={cn(
         "inline-flex items-center whitespace-nowrap leading-none",
         TOKEN[size],
@@ -173,7 +177,7 @@ export function Figure({
         {of === undefined ? null : (
           <small
             className={cn(
-              "ml-1.5 font-sans font-normal text-muted-foreground",
+              "ml-1 font-sans font-normal text-muted-foreground",
               size === "sm"
                 ? "text-xs"
                 : size === "lg"
@@ -181,6 +185,7 @@ export function Figure({
                   : "text-sm",
             )}
           >
+            {" "}
             of {of}
           </small>
         )}

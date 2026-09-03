@@ -86,7 +86,7 @@ export function Spread({
               {cards.map((card) => (
                 <li
                   key={card.card}
-                  className="flex min-w-0 items-baseline gap-2.5 border-border border-b py-2 text-[15px] leading-[1.35] last:border-0"
+                  className="flex min-w-0 items-baseline gap-2.5 border-border border-b py-2 text-sm leading-[1.35] last:border-0"
                 >
                   <Answer value={card.value} className="flex-1" />
                   {card.part === "" ? null : (

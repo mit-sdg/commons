@@ -233,7 +233,7 @@ function StagedWall({
                   <span
                     className={cn(
                       "font-display text-muted-foreground leading-none",
-                      big ? "text-[22px]" : "text-sm",
+                      big ? "text-xl" : "text-sm",
                     )}
                   >
                     {eyebrow}
@@ -243,7 +243,7 @@ function StagedWall({
                   <span
                     className={cn(
                       "truncate font-display font-semibold leading-none",
-                      big ? "text-[44px]" : "text-[28px]",
+                      big ? "text-[44px]" : "text-3xl",
                     )}
                   >
                     {seen.title}
@@ -310,7 +310,7 @@ function StagedWall({
                                 {values.slice(0, CONTEXT_SHOWN).join(" · ")}
                               </span>
                               {held <= 0 ? null : (
-                                <span className="flex-none font-mono">
+                                <span className="flex-none">
                                   and {held} more
                                 </span>
                               )}
@@ -331,8 +331,14 @@ function StagedWall({
                   {promptOf(seen)}
                 </p>
               </div>
-              {/* The one figure the room reads, with the noun it counts. */}
-              <span className="flex flex-none flex-col gap-1.5">
+              {/* The one figure the room reads, with the noun it counts.
+                  It is read whole when it moves, never a number on its own. */}
+              <span
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                className="flex flex-none flex-col gap-1.5"
+              >
                 <Figure
                   value={seen.handedIn}
                   of={seen.begun}
@@ -462,7 +468,7 @@ function StagedWall({
                 onBlur={commitPile}
                 placeholder="Name the pile"
                 aria-label="Name the pile"
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               />
             </form>
           ) : null}
@@ -499,7 +505,7 @@ function Tray({
   onDragEnd?: () => void;
   onDrop?: (card: string) => void;
 }) {
-  const { ref, over } = useOverflow(true);
+  const { ref, edges } = useOverflow(true);
   const editable = onDrop !== undefined;
   return (
     <motion.div
@@ -516,10 +522,12 @@ function Tray({
           : undefined
       }
       className={cn(
-        "flex min-h-0 flex-col rounded-[10px] border border-input border-dashed",
+        "flex flex-col rounded-lg border border-input border-dashed",
+        // The column never falls below its head and the ghosts under it,
+        // however little height a narrow screen leaves it.
         big
-          ? "gap-3 rounded-[14px] border-foreground/50 p-[18px]"
-          : "gap-2 p-3",
+          ? "min-h-44 gap-3 rounded-xl border-foreground/50 p-[18px]"
+          : "min-h-28 gap-2 p-3",
         // The column holds as much as the piles beside it, not more.
         scroll
           ? "self-stretch"
@@ -539,18 +547,18 @@ function Tray({
           value={count}
           className={cn(
             "font-mono text-foreground tabular-nums",
-            big ? "text-[34px]" : "text-lg",
+            big ? "text-3xl" : "text-lg",
           )}
         />
       </div>
       <div
         ref={ref}
         className={cn(
-          "flex min-h-0 flex-col items-start",
+          // What the column cannot hold falls off its bottom under the fade,
+          // rather than painting past the column onto the wall.
+          "flex min-h-0 flex-col items-start overflow-hidden",
           big ? "gap-3" : "gap-2",
-          // What the column cannot hold fades out, rather than stopping on a cut.
-          over &&
-            "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_56px),transparent)]",
+          fading(edges),
         )}
       >
         {/* The faint cards are answers on their way, not blanks; they stand
@@ -641,7 +649,7 @@ function PileGrid({
   scroll: boolean;
   children: React.ReactNode;
 }) {
-  const { ref, over } = useOverflow(scroll);
+  const { ref, edges } = useOverflow(scroll);
   return (
     // The projector's piles take their share of the column's width, which
     // the column has to be asked for.
@@ -669,8 +677,7 @@ function PileGrid({
           // The disc a picked pile carries hangs above the first row.
           scroll && "min-h-0 overflow-y-auto pt-5",
           // What the box cannot hold fades out, rather than stopping on a cut.
-          over &&
-            "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_56px),transparent)]",
+          fading(edges),
         )}
       >
         {children}
@@ -679,25 +686,57 @@ function PileGrid({
   );
 }
 
-/** Whether a box holds more than it shows, watched as the wall fills it. */
+/** Which edges a box holds more past, watched as the wall fills it. */
+interface Edges {
+  top: boolean;
+  bottom: boolean;
+}
+
 function useOverflow(watch: boolean) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [over, setOver] = useState(false);
+  const [edges, setEdges] = useState<Edges>({ top: false, bottom: false });
 
   useEffect(() => {
     const box = ref.current;
     if (!watch || box === null) return;
-    const read = () => setOver(box.scrollHeight - box.clientHeight > 1);
+    const read = () =>
+      setEdges((current) => {
+        const top = box.scrollTop > 1;
+        const bottom = box.scrollHeight - box.clientHeight - box.scrollTop > 1;
+        return current.top === top && current.bottom === bottom
+          ? current
+          : { top, bottom };
+      });
     read();
     // The box is watched with the piles inside it: neither the wall growing a
-    // row nor the screen changing shape leaves the fade behind.
+    // row nor the screen changing shape leaves the fade behind, and scrolling
+    // moves it to whichever edge still holds more.
     const watcher = new ResizeObserver(read);
     watcher.observe(box);
     for (const pile of box.children) watcher.observe(pile);
-    return () => watcher.disconnect();
+    box.addEventListener("scroll", read, { passive: true });
+    return () => {
+      watcher.disconnect();
+      box.removeEventListener("scroll", read);
+    };
   });
 
-  return { ref, over };
+  return { ref, edges };
+}
+
+/**
+ * The fade at an edge a box holds more past: at the bottom while more is
+ * below, at the top once a row has been scrolled off it. A cut row is never a
+ * hard edge, so the room can tell there is more that way.
+ */
+function fading(edges: Edges): string | false {
+  if (edges.top && edges.bottom)
+    return "[mask-image:linear-gradient(to_bottom,transparent,#000_56px,#000_calc(100%_-_56px),transparent)]";
+  if (edges.top)
+    return "[mask-image:linear-gradient(to_bottom,transparent,#000_56px)]";
+  if (edges.bottom)
+    return "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_56px),transparent)]";
+  return false;
 }
 
 /**
@@ -862,7 +901,7 @@ function VoteBars({
             {rows.map((row) => (
               <div key={row.choice} className="flex min-w-0 flex-1 flex-col">
                 {row.cards.length === 0 ? null : (
-                  <div className="flex flex-col gap-1.5 rounded-[14px] border border-foreground/40 border-dashed px-[22px] py-4 text-muted-foreground text-xl leading-[1.35]">
+                  <div className="flex flex-col gap-1.5 rounded-xl border border-foreground/40 border-dashed px-[22px] py-4 text-muted-foreground text-xl leading-[1.35]">
                     {faceCards(row.cards, false).map((card) => (
                       <Answer
                         key={card.card}
