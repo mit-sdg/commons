@@ -2,6 +2,7 @@ import {
   compute,
   each,
   former,
+  is,
   no,
   now,
   reaction,
@@ -45,13 +46,14 @@ const {
   Responding,
   RoundLinking,
   RunSnapshotting,
+  Seating,
   Sharing,
 } = concepts;
 
 /** Whether a round's edition is open, and how many responses it drew. */
 export const theRoundFigure = former(
   "the figure of (round)",
-  ({ round }, { open, openedAt, closedAt, begun, handedIn }) =>
+  ({ round }, { open, openedAt, closedAt, begun, handedIn, modelResponse, participant, model }) =>
     where(Publishing._edition({ edition: round }).is({ open, openedAt, closedAt })).form({
       round,
       open,
@@ -61,6 +63,18 @@ export const theRoundFigure = former(
       handedIn: each(
         Responding._responsesFor({ subject: round }).is({ response: handedIn, submitted: true }),
       ).count(),
+      handedInByModel: each(
+        Responding._responsesFor({ subject: round }).is({
+          response: modelResponse,
+          participant,
+          submitted: true,
+        }),
+      )
+        .where(
+          compute(computations.isModelParticipant, { participant }, model),
+          is.among(model, [true]),
+        )
+        .count(),
     }),
 ).optional();
 
@@ -201,6 +215,7 @@ export const theRelayRun = former(
       roundTitle,
       round,
       takenFrom,
+      seat,
     },
   ) =>
     where(
@@ -218,6 +233,9 @@ export const theRelayRun = former(
       token: each(Sharing._sharesFor({ subject: run }).is({ token })).first(token),
       code,
       openRound,
+      seats: each(Seating._getSubscribers({ target: run }).is({ user: seat })).form({
+        participant: seat,
+      }),
       rounds: each(Relaying._legs({ relay }).is({ leg, material, position }))
         .where(
           Questioning._getQuestionnaire({ questionnaire: material }).is({ title: roundTitle }),
@@ -980,27 +998,84 @@ export const Close = endpoint(
   { input: { required: ["session", "run"] } },
 );
 
-/** One model participant per request, under an identity the dashboard minted and marked. */
+/**
+ * One seat per request, under an identity the dashboard minted and marked as
+ * the model's. The seat follows the run: the round open now reaches it, and so
+ * does every round that opens later, until it is dismissed.
+ */
 export const Invite = endpoint(
   "/live/relays/invite",
-  ({ session, run, device, user, at, round, participant, response }) =>
+  ({ session, run, device, user, at, participant }) =>
     receive({ session, run, device }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        theOpenRoundOf({ run }).is({ round }),
+        runIsOpen({ run }),
         compute(computations.modelParticipant, { device }, participant),
       )
-        .then(Responding.begin({ participant, subject: round, at }).responds({ response }))
-        .then(respond({ response, participant }))
+        .then(Seating.subscribe({ user: participant, target: run, at }).responds())
+        .then(respond({ participant }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayHostLive({ user }), runHasNoOpenRound({ run }))
-        .then(respond({ error: "NO_OPEN_ROUND" }))
-        .named("no-open-round"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), runIsClosed({ run }))
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
   { input: { required: ["session", "run", "device"] } },
+);
+
+/** A seat taken while a round is open answers that round at once. */
+export const SeatedParticipantAnswersOpenRound = reaction(({ participant, run, round, at }) =>
+  when(Seating.subscribe({ user: participant, target: run }).responds())
+    .where(now(at), theOpenRoundOf({ run }).is({ round }))
+    .then(Responding.begin({ participant, subject: round, at })),
+);
+
+/** A dismissed seat leaves the run: no later round reaches it. What it handed in stays. */
+export const Dismiss = endpoint(
+  "/live/relays/dismiss",
+  ({ session, run, participant, user }) =>
+    receive({ session, run, participant }).then(
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }))
+        .then(Seating.unsubscribe({ user: participant, target: run }).responds())
+        .then(respond({ participant }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "run", "participant"] } },
+);
+
+export const DismissAll = endpoint(
+  "/live/relays/dismiss-all",
+  ({ session, run, user }) =>
+    receive({ session, run }).then(
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }))
+        .then(Seating.clearTarget({ target: run }).responds())
+        .then(respond({ run }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "run"] } },
+);
+
+/**
+ * A round's presentation, once captured, is what a seat answers: every seat
+ * of the run begins a response to the round, exactly as a phone that was in
+ * the room would, and the model's reply follows from the begin.
+ */
+export const CapturedRoundSeatsParticipants = reaction(({ round, run, participant, at }) =>
+  when(RunSnapshotting.capture({ subject: round }).responds())
+    .where(
+      now(at),
+      RoundLinking._getLinks({ source: round }).is({ target: run }),
+      Seating._getSubscribers({ target: run }).is({ user: participant }),
+    )
+    .then(Responding.begin({ participant, subject: round, at })),
 );

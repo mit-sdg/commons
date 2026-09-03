@@ -31,6 +31,15 @@ which would survive the category projection and let the participant screen
 speak the composition's own sentences without duplicating the rules
 client-side.
 
+## Standing
+
+Decided for the live relay endpoints on 2026-09-02: the boundary should pass
+the refusal word beside its category (an engine change still to
+come); until it does, the client-side rules are the home of
+each distinction, and the words and their sentences live in
+`frontend/src/components/live/refusals.ts`. The questionnaire cases named
+above follow the same route.
+
 ## Acceptance condition
 
 Either the participation endpoints answer these cases as designed data whose

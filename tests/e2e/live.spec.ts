@@ -59,7 +59,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   const participant = await phone.newPage();
   await signIn(participant, NOAH);
   await participant.goto("/join");
-  await participant.getByRole("textbox", { name: "Session code" }).fill(code);
+  await participant.getByRole("textbox", { name: "Code" }).fill(code);
   await participant.getByRole("button", { name: "Join" }).click();
   await participant.waitForURL(/\/q\/[0-9a-f-]{36}$/);
   await participant.getByRole("button", { name: "Join" }).click();
@@ -95,7 +95,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   await participant.getByRole("menuitem", { name: "Sign out" }).click();
   await signIn(participant, PRIYA);
   await participant.goto("/join");
-  await participant.getByRole("textbox", { name: "Session code" }).fill(code);
+  await participant.getByRole("textbox", { name: "Code" }).fill(code);
   await participant.getByRole("button", { name: "Join" }).click();
   await participant.waitForURL(/\/q\/[0-9a-f-]{36}$/);
   await expect(participant.getByRole("button", { name: "Join" })).toBeVisible();
@@ -123,7 +123,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   const late = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const latecomer = await late.newPage();
   await latecomer.goto("/join");
-  await latecomer.getByRole("textbox", { name: "Session code" }).fill(code);
+  await latecomer.getByRole("textbox", { name: "Code" }).fill(code);
   await latecomer.getByRole("button", { name: "Join" }).click();
   await expect(latecomer.getByText("This quiz has been closed")).toBeVisible({ timeout: 15_000 });
 

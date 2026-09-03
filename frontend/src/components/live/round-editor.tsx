@@ -4,6 +4,11 @@ import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+  type RefusalAbout,
+  type RefusalWord,
+  saidRefusal,
+} from "@/components/live/refusals";
+import {
   RoundToken,
   shapeWords,
   TakesChip,
@@ -17,7 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { api, isApiError, type Output, publicErrorMessage } from "@/lib/api";
+import { api, isApiError, type Output } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export type RelayRound = NonNullable<
@@ -64,11 +69,68 @@ function same(left: Draft, right: Draft): boolean {
   );
 }
 
-function report(result: unknown, conflict: string): boolean {
+/** A refusal the screen has read: the word, and the round its sentence names. */
+interface Said {
+  word: RefusalWord;
+  about: RefusalAbout;
+}
+
+/** What a request asks of the round, which is what says how a refusal reads. */
+type RoundChange =
+  | { kind: "revise" }
+  | { kind: "remove" }
+  | { kind: "move"; to: number }
+  | { kind: "takes"; source: string };
+
+/**
+ * Which refusal stands behind a conflict, read from the relay this page holds:
+ * the round is in the open run, another round still takes from it, or the
+ * order asked for would put a round before what it takes from.
+ */
+function roundRefusal(
+  change: RoundChange,
+  round: RelayRound,
+  rounds: RelayRound[],
+  inRun: boolean,
+): Said {
+  const inTheRun: Said = { word: "RUN_OPEN", about: { round: round.number } };
+  if (change.kind === "revise") return inTheRun;
+
+  const drawnOn =
+    rounds.find((entry) =>
+      entry.takes.some((takes) => takes.source === round.leg),
+    ) ?? null;
+  if (change.kind === "remove") {
+    return inRun || drawnOn === null
+      ? inTheRun
+      : { word: "LEG_DRAWN_ON", about: { round: drawnOn.number } };
+  }
+  const sourceOf = (leg: string | undefined) =>
+    rounds.find((entry) => entry.leg === leg) ?? null;
+  if (change.kind === "takes") {
+    const chosen = sourceOf(change.source);
+    return {
+      word: "FORWARD_DRAW",
+      about: chosen === null ? {} : { source: chosen.number },
+    };
+  }
+  if (drawnOn !== null && change.to >= drawnOn.number)
+    return { word: "FORWARD_DRAW", about: { round: drawnOn.number } };
+  const from = sourceOf(round.takes[0]?.source);
+  return from !== null && change.to <= from.number
+    ? { word: "FORWARD_DRAW", about: { source: from.number } }
+    : { word: "FORWARD_DRAW", about: {} };
+}
+
+function report(result: unknown, said: Said | null): boolean {
   if (!isApiError(result)) return true;
-  toast.error(
-    result.error === "CONFLICT" ? conflict : publicErrorMessage(result.error),
-  );
+  const read =
+    result.error === "CONFLICT"
+      ? said
+      : result.error === "NOT_FOUND"
+        ? { word: "ROUND_GONE" as const, about: {} }
+        : null;
+  toast.error(saidRefusal(result.error, read?.word ?? null, read?.about));
   return false;
 }
 
@@ -119,7 +181,7 @@ export function RoundEditor({
       choices: wanted.choices,
     });
     setBusy(false);
-    if (report(result, "This round is in the run. It stays as it is."))
+    if (report(result, roundRefusal({ kind: "revise" }, round, rounds, locked)))
       onChanged();
   }
 
@@ -136,14 +198,18 @@ export function RoundEditor({
       position: to,
     });
     setBusy(false);
-    if (report(result, publicErrorMessage("CONFLICT"))) onChanged();
+    if (
+      report(result, roundRefusal({ kind: "move", to }, round, rounds, locked))
+    )
+      onChanged();
   }
 
   async function remove() {
     setBusy(true);
     const result = await api["/live/relays/remove-round"]({ leg: round.leg });
     setBusy(false);
-    if (report(result, publicErrorMessage("CONFLICT"))) onChanged();
+    if (report(result, roundRefusal({ kind: "remove" }, round, rounds, locked)))
+      onChanged();
   }
 
   async function setTakes(source: string, shape: string) {
@@ -153,7 +219,7 @@ export function RoundEditor({
         leg: round.leg,
         source: takes.source,
       });
-      if (!report(cleared, publicErrorMessage("CONFLICT"))) {
+      if (!report(cleared, null)) {
         setBusy(false);
         return;
       }
@@ -164,7 +230,13 @@ export function RoundEditor({
       shape,
     });
     setBusy(false);
-    if (report(result, publicErrorMessage("CONFLICT"))) onChanged();
+    if (
+      report(
+        result,
+        roundRefusal({ kind: "takes", source }, round, rounds, locked),
+      )
+    )
+      onChanged();
   }
 
   async function clearTakes() {
@@ -175,7 +247,7 @@ export function RoundEditor({
       source: takes.source,
     });
     setBusy(false);
-    if (report(result, publicErrorMessage("CONFLICT"))) onChanged();
+    if (report(result, null)) onChanged();
   }
 
   const disabled = locked || busy;

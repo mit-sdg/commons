@@ -22,7 +22,7 @@ Opening a round is publishing a second time, with the round's questionnaire as t
 
 ## The model participant
 
-[Live.relays.Invite](reaction:Live.relays.Invite) begins a response to the open round under a participant identity the dashboard minted and marked as the model's, one per request; the dashboard sends as many requests as seats were asked for. From there the wall page's reactions and the participant worker hand the model's response in exactly as a phone would, on the participant's own clock. The only trace on any read is the small mark on its cards.
+A model participant holds a seat in the run. [Live.relays.Invite](reaction:Live.relays.Invite) takes one seat per request, under a participant identity the dashboard minted and marked as the model's, by subscribing that participant to the run in Seating; the dashboard sends as many requests as seats were asked for, before the first round or between rounds as readily as during one. A seat follows the run: [Live.relays.SeatedParticipantAnswersOpenRound](reaction:Live.relays.SeatedParticipantAnswersOpenRound) begins the new seat's response to the round open at that moment, and [Live.relays.CapturedRoundSeatsParticipants](reaction:Live.relays.CapturedRoundSeatsParticipants) begins a response for every seat of the run once a round's presentation is captured, so the seats invited on round one answer round two without a second invitation. From the begin on, the wall page's reactions and the participant worker hand the model's response in exactly as a phone would, on the participant's own clock. [Live.relays.Dismiss](reaction:Live.relays.Dismiss) drops one seat and [Live.relays.DismissAll](reaction:Live.relays.DismissAll) every seat; a dismissed seat is reached by no later round, and what it already handed in stays on the wall. Inviting into a closed run is refused with `CLOSED`. The run's read carries the seats, in the order they were taken, and the round's figure how many of its hand-ins were the model's; the only trace on any wall is the small mark on the model's cards.
 
 ## What a phone meets
 
@@ -42,6 +42,8 @@ Live.relays.AddRound at /live/relays/add-round
 Live.relays.ClearTakes at /live/relays/clear-takes
 Live.relays.Close at /live/relays/close
 Live.relays.CloseRound at /live/relays/close-round
+Live.relays.Dismiss at /live/relays/dismiss
+Live.relays.DismissAll at /live/relays/dismiss-all
 Live.relays.Get at /live/relays/get
 Live.relays.Invite at /live/relays/invite
 Live.relays.Launch at /live/relays/launch

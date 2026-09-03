@@ -214,7 +214,6 @@ export function Pile({
   const rest = Math.max(0, count - peek.length);
   const takesDrop = onDrop !== undefined || onMergeIn !== undefined;
   const interactive = onTap !== undefined && naming === null;
-  const Tag = interactive ? "button" : "div";
 
   function commitName() {
     if (naming === null) return;
@@ -224,9 +223,20 @@ export function Pile({
   }
 
   return (
-    <Tag
-      type={interactive ? "button" : undefined}
+    <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
       onClick={interactive ? onTap : undefined}
+      onKeyDown={
+        interactive
+          ? (event) => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              onTap?.();
+            }
+          : undefined
+      }
       onDragOver={takesDrop ? (event) => event.preventDefault() : undefined}
       onDrop={
         takesDrop
@@ -361,7 +371,7 @@ export function Pile({
           ),
         )}
       </div>
-      {onSummarize === undefined || interactive ? null : (
+      {onSummarize === undefined ? null : (
         <Button
           type="button"
           variant="outline"
@@ -375,7 +385,7 @@ export function Pile({
           Summarize
         </Button>
       )}
-    </Tag>
+    </div>
   );
 }
 

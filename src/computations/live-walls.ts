@@ -53,10 +53,11 @@ export const PARTICIPANT_OPENING = "You answer a classroom question as one parti
 const PLACING_CONTRACT = `${PLACING_OPENING}
 Reply with exactly one JSON object and nothing else.
 
-{"kind":"placed","placements":[{"card":"c1","pile":"Worked examples"}]}
+{"kind":"placed","placements":[{"card":"c1","pile":"worked examples"}]}
 - Place every card listed below, once each, naming it by its label.
-- "pile" is the name of a pile on the list, or a short new pile name of your own.
-- Keep a new pile's name to three words at most, and open as few as the answers allow.`;
+- "pile" is the name of a pile on the list, or the name of a new pile.
+- Alike cards go together: never open a pile for an idea a pile on the list already holds, whoever named it. Open a new pile only for cards that belong with none on the list.
+- Name a new pile the way someone in the room would say it out loud: the word or two the cards themselves use, at most three, in the cards' own case. Never a category label, never two words joined by "and", never a name for where the cards came from or what kind of answer they are.`;
 
 const LID_CONTRACT = `${LID_OPENING}
 Reply with exactly one JSON object and nothing else.

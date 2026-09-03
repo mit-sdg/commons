@@ -167,6 +167,8 @@ describe("application-owned design integration", () => {
       "Scoring.Item is Questioning.Question",
       "Scoring.Subject is Publishing.Edition",
       "Scoring.Submission is Responding.Response",
+      "Seating.Person is LiveParticipant",
+      "Seating.Target is Publishing.Edition",
       "Sharing.Subject is Publishing.Edition",
       "RunSnapshotting.Subject is Publishing.Edition",
       "RunSnapshotting.Value is LiveRunSnapshot",

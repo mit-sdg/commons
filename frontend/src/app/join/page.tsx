@@ -22,7 +22,7 @@ export default function JoinPage() {
     try {
       const result = await api["/live/p/locate"]({ code });
       if (isApiError(result)) {
-        setMessage("We couldn't find that code. Check all six characters.");
+        setMessage("No run has that code.");
         return;
       }
       router.push(`/q/${result.token}`);
@@ -42,16 +42,13 @@ export default function JoinPage() {
           <Radio aria-hidden="true" className="size-6" />
         </span>
         <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Join a live session
+          Join
         </h1>
-        <p className="mt-2 text-muted-foreground">
-          Enter the six-character code shown by your instructor.
-        </p>
       </div>
 
       <form className="space-y-4" onSubmit={join}>
         <div className="space-y-2">
-          <Label htmlFor="join-code">Session code</Label>
+          <Label htmlFor="join-code">Code</Label>
           <Input
             id="join-code"
             autoFocus

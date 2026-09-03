@@ -1,29 +1,34 @@
 "use client";
 
 import { ArrowLeft, Presentation, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
 import { ModelRow } from "@/components/live/model-row";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
+import {
+  type RefusalAbout,
+  type RefusalWord,
+  refusalSentence,
+  saidRefusal,
+} from "@/components/live/refusals";
 import { RoundStrip, RoundToken } from "@/components/live/round-token";
 import {
-  modelCards,
   pickedPiles,
-  questionOf,
+  type Relay,
   type RelayRun,
   type RelayRunRound,
+  type RelayTake,
   roundStanding,
   trayOf,
-  type Wall as WallShape,
 } from "@/components/live/rounds";
 import { Wall, type WallEdits } from "@/components/live/wall";
 import { PageContainer } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
-import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
+import { api, isApiError, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { fullTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -40,6 +45,15 @@ const REFUSAL_ID = "open-refusal";
 /** The disc on the primary button takes the button's own colour. */
 const ON_PRIMARY =
   "text-current [&>span:first-child]:border-solid [&>span:first-child]:border-current [&>span:first-child]:text-current";
+
+/** A refusal the screen has read: the word, and the round its sentence names. */
+interface Refusal {
+  word: RefusalWord;
+  about: RefusalAbout;
+}
+
+/** What a refused request is read as, once the screen has seen the state again. */
+type Reader = (error: string) => Refusal | null | Promise<Refusal | null>;
 
 /**
  * The staff screen for a relay run: the rounds, the wall of the round in
@@ -58,10 +72,6 @@ export function RelayRunBoard({
   const [shownLeg, setShownLeg] = useState<string | null>(null);
   const [modelSorts, setModelSorts] = useState(false);
   const [askedFor, setAskedFor] = useState<string | null>(null);
-  const [invited, setInvited] = useState<{
-    round: string;
-    seats: number;
-  } | null>(null);
 
   const { data: relayData } = useQuery(
     session
@@ -80,15 +90,7 @@ export function RelayRunBoard({
       ? null
       : (run.rounds.find((round) => round.leg === shownLeg)?.round ?? null);
   const next = run.rounds.find((round) => round.round === null) ?? null;
-  const take =
-    next === null
-      ? null
-      : (relay?.rounds.find((round) => round.leg === next.leg)?.takes[0] ??
-        null);
-  const source =
-    take === null
-      ? null
-      : (run.rounds.find((round) => round.leg === take.source) ?? null);
+  const { take, source } = takeOf(run, relay, next);
   const shown = openRound ?? chosen ?? source?.round ?? lastClosed(closed);
 
   const {
@@ -145,6 +147,14 @@ export function RelayRunBoard({
     round: string;
     piles: string[];
   } | null>(null);
+  /** A pick still in flight, whose taps stand until the wall they wrote arrives. */
+  const picking = useRef(false);
+
+  useEffect(() => {
+    if (picking.current) return;
+    setTapped(null);
+  }, [wall]);
+
   const picks =
     tapped !== null && tapped.round === shown ? tapped.piles : polled;
   const takesShown =
@@ -153,45 +163,82 @@ export function RelayRunBoard({
     source.round === shown &&
     source.figure.open === false;
 
-  async function send(request: Promise<unknown>) {
+  /** Sends one request; a refusal is said in the word the screen reads for it. */
+  async function send(request: Promise<unknown>, read: Reader) {
     const result = await request;
-    if (isApiError(result)) {
-      toast.error(publicErrorMessage(result.error));
-      return false;
-    }
-    return true;
+    if (!isApiError(result)) return true;
+    const refusal = await read(result.error);
+    toast.error(
+      saidRefusal(result.error, refusal?.word ?? null, refusal?.about),
+    );
+    return false;
   }
+
+  /** The run as it now stands, so a refusal is said from what is true. */
+  async function freshRun(): Promise<RelayRun | null> {
+    const answer = await api["/live/relays/run"]({ run: run.run });
+    refetch();
+    return isApiError(answer) ? null : answer.run;
+  }
+
+  /** A refused wall edit: the pile or card is gone, or the run has closed. */
+  function goneOrClosed(gone: "PILE_GONE" | "CARD_GONE"): Reader {
+    return async (error) => {
+      if (error === "NOT_FOUND") return { word: gone, about: {} };
+      if (error !== "CONFLICT") return null;
+      const fresh = await freshRun();
+      return fresh !== null && !fresh.open
+        ? { word: "CLOSED", about: {} }
+        : null;
+    };
+  }
+
+  /** A refused seat: the run has closed under the row. */
+  const seatRefused: Reader = async () => {
+    const fresh = await freshRun();
+    return fresh !== null && !fresh.open ? { word: "CLOSED", about: {} } : null;
+  };
 
   const edits: WallEdits | undefined =
     shown === null
       ? undefined
       : {
           moveCard: (card, pile) => {
-            void send(api["/live/walls/move-card"]({ card, pile })).then(
-              refetchWall,
-            );
+            void send(
+              api["/live/walls/move-card"]({ card, pile }),
+              goneOrClosed("PILE_GONE"),
+            ).then(refetchWall);
           },
           toTray: (card) => {
-            void send(api["/live/walls/to-tray"]({ card })).then(refetchWall);
+            void send(
+              api["/live/walls/to-tray"]({ card }),
+              goneOrClosed("CARD_GONE"),
+            ).then(refetchWall);
           },
           openPile: (card, name) => {
             void send(
               api["/live/walls/open-pile"]({ round: shown, name, card }),
+              goneOrClosed("CARD_GONE"),
             ).then(refetchWall);
           },
           renamePile: (pile, name) => {
-            void send(api["/live/walls/rename-pile"]({ pile, name })).then(
-              refetchWall,
-            );
+            void send(
+              api["/live/walls/rename-pile"]({ pile, name }),
+              goneOrClosed("PILE_GONE"),
+            ).then(refetchWall);
           },
           mergePile: (pile, into) => {
-            void send(api["/live/walls/merge-pile"]({ pile, into })).then(
-              refetchWall,
-            );
+            void send(
+              api["/live/walls/merge-pile"]({ pile, into }),
+              goneOrClosed("PILE_GONE"),
+            ).then(refetchWall);
           },
           summarize: (pile) => {
-            void send(api["/live/walls/summarize"]({ pile })).then(() => {
-              toast.success("Summarizing…");
+            void send(
+              api["/live/walls/summarize"]({ pile }),
+              goneOrClosed("PILE_GONE"),
+            ).then((sent) => {
+              if (sent) toast.success("Summarizing…");
             });
           },
           togglePick:
@@ -201,31 +248,59 @@ export function RelayRunBoard({
                     ? picks.filter((one) => one !== pile)
                     : [...picks, pile];
                   setTapped({ round: shown, piles });
+                  picking.current = true;
                   void send(
                     api["/live/walls/pick"]({ round: shown, piles }),
-                  ).then(refetchWall);
+                    goneOrClosed("PILE_GONE"),
+                  ).then(() => {
+                    picking.current = false;
+                    refetchWall();
+                  });
                 }
               : undefined,
         };
 
   async function openNext() {
     if (next === null) return;
-    if (
-      await send(
-        api["/live/relays/open-round"]({ run: run.run, leg: next.leg }),
-      )
-    )
-      refetch();
+    const leg = next.leg;
+    const opened = await send(
+      api["/live/relays/open-round"]({ run: run.run, leg }),
+      async () => {
+        const fresh = await freshRun();
+        return fresh === null
+          ? null
+          : refusalFor({
+              run: fresh,
+              relay,
+              leg,
+              picks: takesShown ? picks.length : null,
+            });
+      },
+    );
+    if (opened) refetch();
   }
 
   async function closeRound() {
-    if (openRound === null) return;
-    if (await send(api["/live/relays/close-round"]({ round: openRound })))
-      refetch();
+    if (openRound === null || openEntry === null) return;
+    const number = openEntry.number;
+    await send(
+      api["/live/relays/close-round"]({ round: openRound }),
+      async () => {
+        const fresh = await freshRun();
+        return fresh !== null && !fresh.open
+          ? { word: "CLOSED", about: {} }
+          : { word: "ROUND_CLOSED", about: { round: number } };
+      },
+    );
+    refetch();
   }
 
   async function closeRun() {
-    if (await send(api["/live/relays/close"]({ run: run.run }))) refetch();
+    await send(api["/live/relays/close"]({ run: run.run }), () => ({
+      word: "CLOSED",
+      about: {},
+    }));
+    refetch();
   }
 
   function sortsChange(on: boolean) {
@@ -234,45 +309,59 @@ export function RelayRunBoard({
   }
 
   async function invite(seats: number) {
-    const round = openRound;
     for (let seat = 0; seat < seats; seat += 1) {
       const taken = await send(
         api["/live/relays/invite"]({
           run: run.run,
           device: crypto.randomUUID(),
         }),
+        seatRefused,
       );
       if (!taken) break;
-      if (round !== null)
-        setInvited((standing) => ({
-          round,
-          seats: (standing?.round === round ? standing.seats : 0) + 1,
-        }));
     }
     refetch();
     refetchWall();
   }
 
-  const participants = wall === null ? 0 : modelParticipants(wall);
+  async function dismiss() {
+    const seat = run.seats.at(-1);
+    if (seat === undefined) return;
+    await send(
+      api["/live/relays/dismiss"]({
+        run: run.run,
+        participant: seat.participant,
+      }),
+      seatRefused,
+    );
+    refetch();
+  }
+
+  async function dismissAll() {
+    await send(api["/live/relays/dismiss-all"]({ run: run.run }), seatRefused);
+    refetch();
+  }
+
   const writing =
-    invited === null || invited.round !== openRound
+    openEntry === null
       ? 0
-      : Math.max(0, invited.seats - participants);
+      : Math.max(0, run.seats.length - (openEntry.figure.handedInByModel ?? 0));
   const sorting =
     modelSorts &&
     openRound !== null &&
     askedFor === openRound &&
     wall !== null &&
     trayOf(wall.cards).length > 0;
+  /** Nothing is left to open, so the switch and the seats have nothing to act on. */
+  const everyRoundRan = run.open && openRound === null && next === null;
 
   const refusal = refusalFor({
-    open: run.open,
-    openRound,
-    next,
-    source,
-    take,
+    run,
+    relay,
+    leg: next?.leg ?? null,
     picks: takesShown ? picks.length : null,
   });
+  const refusalLine =
+    refusal === null ? null : refusalSentence(refusal.word, refusal.about);
 
   return (
     <PageContainer width="wide">
@@ -309,10 +398,10 @@ export function RelayRunBoard({
           </Button>
           {run.open ? (
             <ConfirmAction
-              trigger={<Button variant="destructive">Close</Button>}
+              trigger={<Button variant="destructive">Close run</Button>}
               title="Close this run?"
               description="Nobody can join or hand in after this. The walls stay."
-              confirmLabel="Close"
+              confirmLabel="Close run"
               destructive
               onConfirm={closeRun}
             />
@@ -394,43 +483,52 @@ export function RelayRunBoard({
               </Button>
             )}
             {!run.open || next === null ? null : (
-              <Button
-                variant={openEntry === null ? "default" : "outline"}
-                size="lg"
-                className="w-full justify-between gap-3 pr-3.5 pl-4"
-                disabled={refusal !== null}
-                title={refusal ?? undefined}
-                aria-describedby={refusal === null ? undefined : REFUSAL_ID}
-                onClick={() => void openNext()}
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  Open
-                  <RoundToken
-                    number={next.number}
-                    title={next.title}
-                    standing="next"
-                    size="sm"
-                    className={openEntry === null ? ON_PRIMARY : undefined}
-                  />
-                </span>
-                {takesShown ? (
-                  <span className="flex-none font-mono text-xs opacity-80">
-                    {picks.length} {picks.length === 1 ? "pile" : "piles"}
+              <>
+                <Button
+                  variant={openEntry === null ? "default" : "outline"}
+                  size="lg"
+                  className="w-full justify-between gap-3 pr-3.5 pl-4"
+                  disabled={refusalLine !== null}
+                  title={refusalLine ?? undefined}
+                  aria-describedby={
+                    refusalLine === null ? undefined : REFUSAL_ID
+                  }
+                  onClick={() => void openNext()}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    Open
+                    <RoundToken
+                      number={next.number}
+                      title={next.title}
+                      standing="next"
+                      size="sm"
+                      className={openEntry === null ? ON_PRIMARY : undefined}
+                    />
                   </span>
-                ) : null}
-              </Button>
+                  {takesShown ? (
+                    <span className="flex-none font-mono text-xs opacity-80">
+                      {picks.length} {picks.length === 1 ? "pile" : "piles"}
+                    </span>
+                  ) : null}
+                </Button>
+                {refusalLine === null ? null : (
+                  <p id={REFUSAL_ID} className="text-muted-foreground text-xs">
+                    {refusalLine}
+                  </p>
+                )}
+              </>
             )}
-            {!run.open || next === null || refusal === null ? null : (
-              <p id={REFUSAL_ID} className="text-muted-foreground text-xs">
-                {refusal}
+            {everyRoundRan ? (
+              <p className="text-muted-foreground text-xs">
+                Every round has run.
               </p>
-            )}
+            ) : null}
 
             {run.open && (next !== null || openEntry !== null) ? (
               <div className="h-px bg-border" />
             ) : null}
 
-            {run.open ? (
+            {run.open && !everyRoundRan ? (
               <>
                 <div className="flex items-center gap-2.5">
                   <Switch
@@ -445,10 +543,11 @@ export function RelayRunBoard({
                   ) : null}
                 </div>
                 <ModelRow
-                  count={participants}
+                  count={run.seats.length}
                   writing={writing}
-                  disabled={openRound === null}
                   onInvite={invite}
+                  onDismiss={dismiss}
+                  onDismissAll={dismissAll}
                 />
 
                 <div className="h-px bg-border" />
@@ -525,16 +624,6 @@ function rememberSorts(run: string, on: boolean): void {
   }
 }
 
-/** A model participant writes one card per box, so its seats are the cards over the boxes. */
-function modelParticipants(wall: WallShape): number {
-  const question = questionOf(wall);
-  const boxes =
-    question === null
-      ? 1
-      : Math.max(1, question.cap >= 2 ? question.cap : question.parts.length);
-  return Math.ceil(modelCards(wall) / boxes);
-}
-
 /** The closed round whose wall stands until another is shown or opened. */
 function lastClosed(closed: RelayRunRound[]): string | null {
   let latest: RelayRunRound | null = null;
@@ -548,29 +637,50 @@ function lastClosed(closed: RelayRunRound[]): string | null {
   return latest?.round ?? null;
 }
 
-/** Why the next round cannot open, in the words the refusal stands for. */
+/** What a round takes from an earlier one, and how that source stands in this run. */
+function takeOf(
+  run: RelayRun,
+  relay: Relay | null,
+  round: RelayRunRound | null,
+): { take: RelayTake | null; source: RelayRunRound | null } {
+  const take =
+    round === null
+      ? null
+      : (relay?.rounds.find((one) => one.leg === round.leg)?.takes[0] ?? null);
+  const source =
+    take === null
+      ? null
+      : (run.rounds.find((one) => one.leg === take.source) ?? null);
+  return { take, source };
+}
+
+/** Why a round does not open, in the words the open-round refusals stand for. */
 function refusalFor({
-  open,
-  openRound,
-  next,
-  source,
-  take,
+  run,
+  relay,
+  leg,
   picks,
 }: {
-  open: boolean;
-  openRound: string | null;
-  next: RelayRunRound | null;
-  source: RelayRunRound | null;
-  take: { shape: string } | null;
+  run: RelayRun;
+  relay: Relay | null;
+  leg: string | null;
   picks: number | null;
-}): string | null {
-  if (!open) return "The run is closed.";
-  if (openRound !== null) return "Close the open round first.";
-  if (next === null) return "Every round has run.";
+}): Refusal | null {
+  if (!run.open) return { word: "CLOSED", about: {} };
+  const open = run.rounds.find((round) => round.figure.open === true) ?? null;
+  if (open !== null)
+    return { word: "ROUND_OPEN", about: { round: open.number } };
+  const round =
+    leg === null ? null : (run.rounds.find((one) => one.leg === leg) ?? null);
+  if (round === null) return null;
+  if (round.round !== null)
+    return { word: "ROUND_DONE", about: { round: round.number } };
+  const { take, source } = takeOf(run, relay, round);
   if (source !== null && source.round === null)
-    return "Open the round it takes from first.";
+    return { word: "SOURCE_UNRUN", about: { round: source.number } };
   if (source !== null && source.figure.open === true)
-    return "Close the round it takes from first.";
-  if (take?.shape === "picked" && picks === 0) return "Pick at least one pile.";
+    return { word: "SOURCE_OPEN", about: { round: source.number } };
+  if (take?.shape === "picked" && picks === 0)
+    return { word: "NOTHING_PICKED", about: {} };
   return null;
 }

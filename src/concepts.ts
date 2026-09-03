@@ -180,6 +180,7 @@ const registrations = {
   RoundLinking: linking,
   RoundReasoning: reasoning,
   Scoring: scoring,
+  Seating: subscribing,
   Sessioning: sessioning,
   Sharing: sharing,
   RunSnapshotting: snapshotting,

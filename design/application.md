@@ -249,6 +249,10 @@ instantiate Subscribing with
   Person is Authenticating.User
   Target is Conversing.Conversation
 
+instantiate Subscribing as Seating with
+  Person is LiveParticipant
+  Target is Publishing.Edition
+
 instantiate Tagging with
   Target is Posting.Post
 
@@ -325,7 +329,7 @@ serves. Adopting a candidate is what turns drafted material into an ordinary
 editable questionnaire; nothing else crosses from the drafting line into the
 live domain.
 
-A relay is a Relaying relay whose legs' materials are one-question questionnaires of the survey form, so `LiveMaterial` has two owners the way `Lockable` does: Publishing releases a questionnaire as a quiz, survey, or round, and a relay as the run those rounds belong to. RoundLinking ties each round's edition to its run, and PickLinking records which Piling categories — the piles — a closed round carried into the next. `LiveItem` widens Responding's item: a question with parts is answered one part at a time, each part its own item. Piling is a second Categorizing instance scoped by the round's edition, holding `LiveCard` identities the wall computations mint. RoundReasoning, RoundInsisting, and Suggesting share `LiveSubject`, which has three owners: the round being sorted, the model participant's response being answered, and the relay being drafted; the reactions that read a reply tell them apart by which concept answers for the subject. The forum's one Categorizing scope is the reserved constant `forum`, a Commons decision like `commons`.
+A relay is a Relaying relay whose legs' materials are one-question questionnaires of the survey form, so `LiveMaterial` has two owners the way `Lockable` does: Publishing releases a questionnaire as a quiz, survey, or round, and a relay as the run those rounds belong to. RoundLinking ties each round's edition to its run, PickLinking records which Piling categories — the piles — a closed round carried into the next, and Seating holds the run's model seats: a `LiveParticipant` the dashboard invited follows the run, and every round that opens reaches it. `LiveItem` widens Responding's item: a question with parts is answered one part at a time, each part its own item. Piling is a second Categorizing instance scoped by the round's edition, holding `LiveCard` identities the wall computations mint. RoundReasoning, RoundInsisting, and Suggesting share `LiveSubject`, which has three owners: the round being sorted, the model participant's response being answered, and the relay being drafted; the reactions that read a reply tell them apart by which concept answers for the subject. The forum's one Categorizing scope is the reserved constant `forum`, a Commons decision like `commons`.
 
 DraftTrashing marks an author deliberately leaving an unfinished draft line.
 The drafting composition applies it to the canonical root brief and uses the

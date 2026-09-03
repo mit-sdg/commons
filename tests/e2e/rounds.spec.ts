@@ -172,10 +172,10 @@ test("a deck relay runs its room: forty phones, a model participant, sorting, pi
   ]);
 
   // Close the run; the wall of round one reads back with its piles and counts.
-  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close run", exact: true }).click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: "Close", exact: true })
+    .getByRole("button", { name: "Close run", exact: true })
     .first()
     .click();
   const closed = await until(

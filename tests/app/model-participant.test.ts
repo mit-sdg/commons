@@ -140,8 +140,12 @@ describe("the model participant and the wall", () => {
     const invited = await json(
       await post(edge, "/live/relays/invite", { run, device: "seat-1" }, cookie),
     );
-    const response = invited.response as string;
     expect(invited.participant).toBe("model:seat-1");
+    const [seated] = await until(
+      async () => await edge.application.concepts.Responding._responsesFor({ subject: round }),
+      (responses) => responses.length === 1,
+    );
+    const response = seated!.response;
 
     // Inviting the model raised an ask; the reasoner answers it.
     const asked = await until(
@@ -272,5 +276,107 @@ describe("the model participant and the wall", () => {
     const kept = await readWall();
     expect(kept.piles.find((entry) => entry.pile === byHand)?.name).toBe("Sorted");
     expect(kept.piles.filter((entry) => entry.picked !== null).length).toBe(2);
+  }, 90_000);
+
+  test("seats belong to the run: invited once, the model answers every later round until dismissed", async () => {
+    const planned = await json(
+      await post(edge, "/live/relays/plan", { title: "Three rounds" }, cookie),
+    );
+    const relay = planned.relay as string;
+    const legs: string[] = [];
+    for (const title of ["First", "Second", "Third"]) {
+      const added = await json(
+        await post(
+          edge,
+          "/live/relays/add-round",
+          { relay, title, prompt: `${title} question`, parts: [], cap: 0, choices: [] },
+          cookie,
+        ),
+      );
+      legs.push(added.leg as string);
+    }
+    const launched = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
+    const run = launched.run as string;
+
+    interface Run {
+      seats: { participant: string }[];
+      openRound: string | null;
+      rounds: { round: string | null; figure: { handedIn: number; handedInByModel: number } }[];
+    }
+    const readRun = async () => {
+      const body = await json(await post(edge, "/live/relays/run", { run }, cookie));
+      return body.run as unknown as Run;
+    };
+    const handedInOn = async (round: string) =>
+      (await edge.application.concepts.Responding._responsesFor({ subject: round })).filter(
+        (response) => response.submitted,
+      ).length;
+    const later = () => new Date(Date.now() + 60_000);
+    const playRound = async (round: string, seats: number) => {
+      await until(
+        async () => await edge.application.concepts.Responding._responsesFor({ subject: round }),
+        (responses) => responses.length === seats,
+      );
+      await until(
+        async () => await edge.application.concepts.RoundReasoning._pending(),
+        (pending) => pending.length === seats,
+      );
+      await serveReasoner(edge);
+      await serveParticipantsOnce(edge.application.concepts, later);
+      return await until(
+        async () => await handedInOn(round),
+        (count) => count === seats,
+      );
+    };
+
+    // A seat taken before any round opens waits for the first.
+    const first = await json(
+      await post(edge, "/live/relays/invite", { run, device: "seat-a" }, cookie),
+    );
+    expect(first.participant).toBe("model:seat-a");
+    expect((await readRun()).seats.length).toBe(1);
+
+    const opened = await json(
+      await post(edge, "/live/relays/open-round", { run, leg: legs[0] }, cookie),
+    );
+    const roundOne = opened.round as string;
+    await post(edge, "/live/relays/invite", { run, device: "seat-b" }, cookie);
+    await post(edge, "/live/relays/invite", { run, device: "seat-c" }, cookie);
+    expect((await readRun()).seats.length).toBe(3);
+    expect(await playRound(roundOne, 3)).toBe(3);
+    const afterOne = await readRun();
+    expect(afterOne.rounds[0]?.figure.handedInByModel).toBe(3);
+
+    // Round two reaches the same three seats with no second invitation.
+    await post(edge, "/live/relays/close-round", { round: roundOne }, cookie);
+    const second = await json(
+      await post(edge, "/live/relays/open-round", { run, leg: legs[1] }, cookie),
+    );
+    const roundTwo = second.round as string;
+    expect(await playRound(roundTwo, 3)).toBe(3);
+    expect((await readRun()).seats.length).toBe(3);
+
+    // A dismissed seat is reached by no later round; dismissing every seat empties the run.
+    await post(edge, "/live/relays/dismiss", { run, participant: "model:seat-b" }, cookie);
+    expect((await readRun()).seats.length).toBe(2);
+    await post(edge, "/live/relays/close-round", { round: roundTwo }, cookie);
+    const third = await json(
+      await post(edge, "/live/relays/open-round", { run, leg: legs[2] }, cookie),
+    );
+    const roundThree = third.round as string;
+    expect(await playRound(roundThree, 2)).toBe(2);
+    const begun = await edge.application.concepts.Responding._responsesFor({ subject: roundThree });
+    expect(begun.map((response) => response.participant).sort()).toEqual([
+      "model:seat-a",
+      "model:seat-c",
+    ]);
+    expect((await post(edge, "/live/relays/dismiss-all", { run }, cookie)).status).toBe(200);
+    expect((await readRun()).seats.length).toBe(0);
+
+    // A closed run seats nobody.
+    await post(edge, "/live/relays/close", { run }, cookie);
+    expect(
+      (await post(edge, "/live/relays/invite", { run, device: "seat-d" }, cookie)).status,
+    ).toBe(409);
   }, 90_000);
 });

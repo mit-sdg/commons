@@ -298,10 +298,10 @@ test("the tour", async ({ browser, page }) => {
 
   // Close the run: the wall kept, the phone closed, the list after.
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close run", exact: true }).click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: "Close", exact: true })
+    .getByRole("button", { name: "Close run", exact: true })
     .first()
     .click();
   await until(

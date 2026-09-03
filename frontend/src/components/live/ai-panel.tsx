@@ -3,6 +3,7 @@
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { refusalSentence, saidRefusal } from "@/components/live/refusals";
 import { RoundToken, TakesChip } from "@/components/live/round-token";
 import { Spinner } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,27 @@ function partWords(parts: string[], cap: number): string {
   return parts.join(" · ");
 }
 
+/** A line as the panel shows it: the round it is about, under its number. */
+interface Shown {
+  line: OfferedLine;
+  round: Round | null;
+  number: number;
+}
+
+/**
+ * What a refused line says. The boundary answers a category, and the panel
+ * reads the word behind it from the round the line names: a line about a round
+ * whose run is open is held back, whatever the line changes.
+ */
+function refusalWords(error: string, shown: Shown): string {
+  if (shown.line.standing !== "pending") return "Taken, but nothing changed.";
+  if (error === "NOT_FOUND") return saidRefusal(error, "ROUND_GONE");
+  if (error !== "CONFLICT") return saidRefusal(error, null);
+  return shown.round === null
+    ? "Refused. Nothing changed."
+    : refusalSentence("RUN_OPEN", { round: shown.number });
+}
+
 /**
  * The number each line's round carries, so a line names it the way every
  * other screen does: the relay as it now stands, the round as it last stood
@@ -67,7 +89,7 @@ function numbered(
   lines: OfferedLine[],
   rounds: Round[],
   stood: Map<string, Round>,
-): { line: OfferedLine; round: Round | null; number: number }[] {
+): Shown[] {
   let adds = 0;
   return lines.map((line) => {
     const round =
@@ -211,7 +233,10 @@ export function AiPanel({
   const [nothing, setNothing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [took, setTook] = useState<number | null>(null);
-  const [stopped, setStopped] = useState<string | null>(null);
+  const [stopped, setStopped] = useState<{
+    line: string;
+    error: string;
+  } | null>(null);
   const [stood, setStood] = useState<Map<string, Round>>(new Map());
   const known = useRef<Set<string>>(new Set());
   const sentAt = useRef<number | null>(null);
@@ -309,7 +334,7 @@ export function AiPanel({
       ? await api["/live/edits/take"]({ suggestion: line.suggestion })
       : await api["/live/edits/decline"]({ suggestion: line.suggestion });
     if (isApiError(result)) {
-      setStopped(line.suggestion);
+      setStopped({ line: line.suggestion, error: result.error });
       return false;
     }
     return true;
@@ -342,6 +367,8 @@ export function AiPanel({
     offering === null
       ? 0
       : offering.lines.filter((line) => line.standing === "pending").length;
+  const shown =
+    offering === null ? [] : numbered(offering.lines, rounds, stood);
 
   return (
     <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
@@ -382,14 +409,15 @@ export function AiPanel({
           {offering === null ||
           offering.lines.every((line) => line.kind === "keep") ? null : (
             <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-              {numbered(offering.lines, rounds, stood).map(
-                ({ line, round, number }) => (
+              {shown.map((entry) => {
+                const { line, round, number } = entry;
+                return (
                   <div
                     key={line.suggestion}
                     className={cn(
                       "flex flex-wrap items-center gap-2.5 px-3 py-2 text-sm",
                       line.standing !== "pending" && "opacity-45",
-                      line.suggestion === stopped && "bg-destructive/5",
+                      line.suggestion === stopped?.line && "bg-destructive/5",
                     )}
                   >
                     <span className="w-full flex-none whitespace-nowrap font-mono text-[10.5px] text-muted-foreground uppercase tracking-[0.06em] sm:w-[104px]">
@@ -425,16 +453,14 @@ export function AiPanel({
                         </Button>
                       </span>
                     ) : null}
-                    {line.suggestion === stopped ? (
+                    {line.suggestion === stopped?.line ? (
                       <p className="w-full text-destructive sm:pl-[114px]">
-                        {line.standing === "pending"
-                          ? "Refused. Nothing changed."
-                          : "Taken, but nothing changed."}
+                        {refusalWords(stopped.error, entry)}
                       </p>
                     ) : null}
                   </div>
-                ),
-              )}
+                );
+              })}
             </div>
           )}
           {offering !== null &&

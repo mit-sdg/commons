@@ -11,6 +11,7 @@ import {
   QuestionCard as RoundQuestionCard,
 } from "@/components/live/phone-question";
 import { Card as AnswerCard } from "@/components/live/pile";
+import { refusalSentence, saidRefusal } from "@/components/live/refusals";
 import { Figure, RoundToken } from "@/components/live/round-token";
 import {
   choicesOf,
@@ -636,6 +637,22 @@ function Line({ children }: { children: React.ReactNode }) {
   return <p className="py-16 text-center text-muted-foreground">{children}</p>;
 }
 
+/**
+ * What that line says while no round is open. The face carries every round with
+ * its standing, so the rounds say whether the first is still to come, another
+ * follows, or every one has run.
+ */
+function waitingLine(relay: Relay): string {
+  if (!relay.open) return refusalSentence("CLOSED");
+  const first = relay.rounds[0];
+  if (first === undefined) return "Next round soon.";
+  if (relay.rounds.every((round) => round.round === null))
+    return `Round ${first.number} opens soon.`;
+  if (relay.rounds.every((round) => round.round !== null))
+    return "Every round has run.";
+  return "Next round soon.";
+}
+
 /** A response is per round, so each round keeps its own slot on the device. */
 function roundSlot(participant: string, round: string): string {
   return `${participant}:${round}`;
@@ -697,6 +714,10 @@ function RelayPhone({
           : await api["/live/p/begin"]({ token, device: deviceId() });
         if (held.current !== round) return;
         if (isApiError(result)) {
+          // Begin is refused for a closed run, for a run with no round open,
+          // and for a phone that already handed this round in. The fresh face
+          // says which: the first two leave no round to answer, and the line
+          // over them is the run's; a round still open leaves the hand-in.
           setRefusedRound(round);
           await refresh();
           return;
@@ -769,40 +790,54 @@ function RelayPhone({
       setAnswers(next);
       remember(next, false);
       setRefusal(null);
-      void persistAnswer(item, value).then((saved) => {
+      void persistAnswer(item, value).then(async (saved) => {
         if (saved) return;
         // A refused answer must not stand on the screen as one that landed.
         const back = { ...next, [item]: before };
         setAnswers(back);
         remember(back, false);
+        // An answer is refused when the round closed under the phone, and the
+        // fresh face says so: the round-closed line takes the form's place.
+        // A phone that still has a round to answer met the network instead.
+        await refresh();
         setRefusal("That answer didn't save. Try again.");
       });
     },
-    [answers, remember, persistAnswer],
+    [answers, remember, persistAnswer, refresh],
   );
 
   /**
-   * A refused hand-in settles which refusal it was. The wall answers only for
-   * a response that is in, so it is the receipt: it tells a second tab of one
-   * phone that the first tab already handed this very response in. Anything
-   * else leaves the round to say whether there is still a form to hand in.
+   * A refused hand-in reads which word stands behind it. The wall answers only
+   * for a response that is in, so it is the receipt: it tells a second tab of
+   * one phone that the first tab already handed this very response in. Failing
+   * that, the fresh face says whether the round closed, and the round-closed
+   * line takes the form's place. A hand-in that never reached Commons carries
+   * no word, so it keeps its own sentence.
    */
-  const settle = useCallback(async () => {
-    if (response === null) return;
-    try {
-      const standing = await api["/live/p/wall"]({ response });
-      if (!isApiError(standing) && standing.wall !== null) {
-        setSubmitted(true);
-        setWall(standing.wall);
-        remember(answers, true);
-        return;
+  const settle = useCallback(
+    async (error: string | null) => {
+      if (response === null) return;
+      try {
+        const standing = await api["/live/p/wall"]({ response });
+        if (!isApiError(standing) && standing.wall !== null) {
+          if (error !== null) toast.error(refusalSentence("ALREADY_SUBMITTED"));
+          setSubmitted(true);
+          setWall(standing.wall);
+          remember(answers, true);
+          return;
+        }
+      } catch {
+        // Out of reach is not refused; the line stands until a hand-in lands.
       }
-    } catch {
-      // Out of reach is not refused; the line stands until a hand-in lands.
-    }
-    setRefusal("That didn't hand in. Try again.");
-    await refresh();
-  }, [response, answers, remember, refresh]);
+      await refresh();
+      setRefusal(
+        error === null
+          ? "That didn't hand in. Try again."
+          : saidRefusal(error, null),
+      );
+    },
+    [response, answers, remember, refresh],
+  );
 
   const handIn = useCallback(async () => {
     if (response === null) return;
@@ -815,19 +850,19 @@ function RelayPhone({
         if (trimmed === "") continue;
         const saved = await persistAnswer(item, trimmed);
         if (!saved) {
-          await settle();
+          await settle(null);
           return;
         }
       }
       const result = await api["/live/p/submit"]({ response });
       if (isApiError(result)) {
-        await settle();
+        await settle(result.error);
         return;
       }
       setSubmitted(true);
       remember(answers, true);
     } catch {
-      await settle();
+      await settle(null);
     } finally {
       setBusy(false);
     }
@@ -903,7 +938,7 @@ function RelayPhone({
               {voted === undefined ? null : <AnswerCard card={voted} />}
               {runOpen ? null : (
                 <p className="text-muted-foreground text-sm">
-                  The run is closed.
+                  {refusalSentence("CLOSED")}
                 </p>
               )}
             </div>
@@ -916,10 +951,8 @@ function RelayPhone({
           </>
         ) : missed ? (
           <Line>The round closed before you handed in.</Line>
-        ) : !runOpen ? (
-          <Line>The run is closed.</Line>
-        ) : round === null ? (
-          <Line>Next round soon</Line>
+        ) : !runOpen || round === null ? (
+          <Line>{waitingLine(relay)}</Line>
         ) : response === null ? (
           <LoadingState label="Opening…" />
         ) : (

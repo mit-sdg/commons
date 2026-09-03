@@ -402,7 +402,7 @@ export async function invite(host: Client, run: string, count: number) {
   const replies = [];
   for (let seat = 0; seat < count; seat += 1) {
     replies.push(
-      await host.call<{ response: string; participant: string }>("/live/relays/invite", {
+      await host.call<{ participant: string }>("/live/relays/invite", {
         run,
         device: `model-${crypto.randomUUID()}`,
       }),

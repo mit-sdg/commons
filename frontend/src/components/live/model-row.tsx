@@ -8,31 +8,32 @@ import { Input } from "@/components/ui/input";
 const SEATS = 5;
 
 /**
- * The model participants on a round: how many have handed in, how many seats
- * are still writing, and a seat count to invite more. One seat is one request,
- * so the dashboard sends as many as were asked for.
+ * The model participants of a run: the seats taken, how many of them are still
+ * writing the open round, and the buttons that take or drop seats. One seat is
+ * one request, so the dashboard sends as many as were asked for.
  */
 export function ModelRow({
   count,
   writing = 0,
-  disabled = false,
   onInvite,
+  onDismiss,
+  onDismissAll,
 }: {
   count: number;
   writing?: number;
-  disabled?: boolean;
   onInvite: (seats: number) => void | Promise<void>;
+  onDismiss: () => void | Promise<void>;
+  onDismissAll: () => void | Promise<void>;
 }) {
   const [seats, setSeats] = useState(String(SEATS));
   const [busy, setBusy] = useState(false);
   const asked = Number(seats);
   const usable = Number.isInteger(asked) && asked > 0 && asked <= 100;
 
-  async function invite() {
-    if (!usable) return;
+  async function act(work: () => void | Promise<void>) {
     setBusy(true);
     try {
-      await onInvite(asked);
+      await work();
     } finally {
       setBusy(false);
     }
@@ -40,14 +41,34 @@ export function ModelRow({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
         <span className="flex items-center gap-2 text-sm">
           Model participants
           <span className="font-mono text-muted-foreground tabular-nums">
             {count}
           </span>
         </span>
-        <span className="flex items-center gap-1.5">
+        {count > 0 ? (
+          <span className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="xs"
+              disabled={busy}
+              onClick={() => void act(onDismiss)}
+            >
+              Dismiss
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              disabled={busy}
+              onClick={() => void act(onDismissAll)}
+            >
+              Dismiss all
+            </Button>
+          </span>
+        ) : null}
+        <span className="ml-auto flex items-center gap-1.5">
           <Input
             value={seats}
             inputMode="numeric"
@@ -58,8 +79,8 @@ export function ModelRow({
           <Button
             size="sm"
             variant="outline"
-            disabled={disabled || busy || !usable}
-            onClick={() => void invite()}
+            disabled={busy || !usable}
+            onClick={() => void act(() => onInvite(asked))}
           >
             Invite
           </Button>
