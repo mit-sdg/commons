@@ -121,35 +121,40 @@ export function QuestionCard({
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
       {context.length === 0 ? null : (
-        <div
-          className={cn(
-            "grid gap-2",
-            context.length === 1 ? "grid-cols-1" : "grid-cols-2",
-          )}
-        >
-          {context.map((group) => {
-            const values = distinctValues(group.cards);
-            const held = Math.max(0, values.length - WORDS_SHOWN);
-            return (
-              <div
-                key={group.name}
-                className="min-w-0 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5"
-              >
-                <p className="truncate font-medium text-xs" dir="auto">
-                  {group.name}
-                </p>
-                {values.length === 0 ? null : (
-                  <p
-                    dir="auto"
-                    className="text-muted-foreground text-xs leading-[1.45]"
-                  >
-                    {values.slice(0, WORDS_SHOWN).join(" · ")}
-                    {held === 0 ? "" : ` and ${held} more`}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-muted-foreground text-xs">
+            From an earlier round
+          </span>
+          <div
+            className={cn(
+              "grid gap-2",
+              context.length === 1 ? "grid-cols-1" : "grid-cols-2",
+            )}
+          >
+            {context.map((group) => {
+              const values = distinctValues(group.cards);
+              const held = Math.max(0, values.length - WORDS_SHOWN);
+              return (
+                <div
+                  key={group.name}
+                  className="min-w-0 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5"
+                >
+                  <p className="truncate font-medium text-xs" dir="auto">
+                    {group.name}
                   </p>
-                )}
-              </div>
-            );
-          })}
+                  {values.length === 0 ? null : (
+                    <p
+                      dir="auto"
+                      className="text-muted-foreground text-xs leading-[1.45]"
+                    >
+                      {values.slice(0, WORDS_SHOWN).join(" · ")}
+                      {held === 0 ? "" : ` and ${held} more`}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -164,22 +169,12 @@ export function QuestionCard({
       {question.choices.length > 0 ? (
         <div className="flex flex-col gap-2">
           {question.choices.map((choice) => (
-            <button
+            <Choice
               key={choice}
-              type="button"
-              dir="auto"
-              // Colour alone does not carry selection to a screen reader.
-              aria-pressed={answers[chosen] === choice}
-              onClick={() => onAnswer(chosen, choice)}
-              className={cn(
-                "rounded-md border border-border px-4 py-3 text-start text-sm transition-colors",
-                answers[chosen] === choice
-                  ? "border-primary bg-primary/10 font-medium text-primary"
-                  : "hover:bg-muted",
-              )}
-            >
-              {choice}
-            </button>
+              choice={choice}
+              picked={answers[chosen] === choice}
+              onPick={() => onAnswer(chosen, choice)}
+            />
           ))}
         </div>
       ) : question.parts.length === 0 ? (
@@ -240,6 +235,47 @@ export function QuestionCard({
         })
       )}
     </section>
+  );
+}
+
+/**
+ * One choice of a vote. The mark is what says a row is a choice and not a box:
+ * a ring that fills when this is the one picked. Colour alone carries the pick
+ * to nobody, so the row is pressed as well as marked.
+ */
+export function Choice({
+  choice,
+  picked,
+  onPick,
+}: {
+  choice: string;
+  picked: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      dir="auto"
+      aria-pressed={picked}
+      onClick={onPick}
+      className={cn(
+        "flex items-center gap-3 rounded-md border border-border px-4 py-3 text-start text-sm transition-colors",
+        picked
+          ? "border-primary bg-primary/10 font-medium text-primary"
+          : "hover:bg-muted",
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "flex size-4 flex-none items-center justify-center rounded-full border-[1.5px]",
+          picked ? "border-primary" : "border-input",
+        )}
+      >
+        {picked ? <span className="size-2 rounded-full bg-primary" /> : null}
+      </span>
+      <span className="min-w-0 flex-1">{choice}</span>
+    </button>
   );
 }
 

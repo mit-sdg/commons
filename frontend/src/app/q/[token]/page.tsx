@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { HandInBar } from "@/components/live/phone-bar";
 import {
   answeredOf,
+  Choice,
   itemCountOf,
   QuestionCard as RoundQuestionCard,
   wholeOf,
@@ -25,7 +26,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { api, isApiError, type Output } from "@/lib/api";
+import { type ApiError, api, isApiError, type Output } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +63,38 @@ const explanationOf = (row: OutcomeReceipt): string | undefined =>
 const FACE_POLL_MS = 5_000;
 const OUTCOME_POLL_MS = 1_500;
 const ROUND_POLL_MS = 3_000;
+
+/** What a phone out of reach says, and what it says with answers on it. */
+const NO_CONNECTION = "No connection. Try again.";
+const ANSWERS_KEPT = "No connection. Your answers stay on this phone.";
+
+/**
+ * The words that mean the phone never reached Commons — the transport's own,
+ * and the boundary's for a request it could not carry through. The client
+ * answers a network failure with a value, not a throw, so an error like any
+ * other arrives where a refusal would; none of these says a word about the
+ * token, so the round stays on the screen and the next poll picks it up.
+ */
+const OUT_OF_REACH = new Set([
+  "ABORTED",
+  "BAD_JSON",
+  "BAD_STATUS",
+  "HEADER_RESOLUTION_FAILED",
+  "INTERNAL_ERROR",
+  "NETWORK_ERROR",
+  "RESPONSE_TOO_LARGE",
+  "TIMED_OUT",
+  "TRANSPORT_ERROR",
+  "UNAVAILABLE",
+]);
+
+/** Whether a refused request says anything at all about what was asked. */
+function outOfReach(result: unknown): boolean {
+  return isApiError(result) && OUT_OF_REACH.has(result.error);
+}
+
+/** Where a written answer landed: on the server, refused, or nowhere. */
+type Landing = "saved" | "refused" | "unreachable";
 
 /** A device identifier that survives reloads; secure-context APIs may be absent on lecture-hall LANs. */
 function deviceId(): string {
@@ -120,12 +153,14 @@ function writeProgress(
 /**
  * Committed answers go out one at a time per item, and an unchanged value is
  * never sent twice, so a blur landing on a write still in flight cannot
- * overtake it. A write that did not land answers false; what to say about it,
- * and what to do with the value on the screen, belongs to the screen.
+ * overtake it. A write says where it landed; what to say about it, and what to
+ * do with the value on the screen, belongs to the screen. A refused value is
+ * not on the server and never will be; an unreachable one is only not there
+ * yet, so the screen keeps it and the hand-in sends it again.
  */
 function useAnswerSender(response: string | null) {
   const sent = useRef<Record<string, string>>({});
-  const pending = useRef<Record<string, Promise<boolean>>>({});
+  const pending = useRef<Record<string, Promise<Landing>>>({});
 
   const forget = useCallback(() => {
     sent.current = {};
@@ -133,11 +168,12 @@ function useAnswerSender(response: string | null) {
   }, []);
 
   const persistAnswer = useCallback(
-    (question: string, value: string): Promise<boolean> => {
-      if (response === null) return Promise.resolve(false);
-      const prior = pending.current[question] ?? Promise.resolve(true);
-      const write = prior.then(async () => {
-        if (sent.current[question] === value) return true;
+    (question: string, value: string): Promise<Landing> => {
+      if (response === null) return Promise.resolve<Landing>("refused");
+      const prior =
+        pending.current[question] ?? Promise.resolve<Landing>("saved");
+      const write = prior.then(async (): Promise<Landing> => {
+        if (sent.current[question] === value) return "saved";
         try {
           const result = await api["/live/p/answer"]({
             response,
@@ -146,13 +182,12 @@ function useAnswerSender(response: string | null) {
           });
           if (!isApiError(result)) {
             sent.current[question] = value;
-            return true;
+            return "saved";
           }
+          return outOfReach(result) ? "unreachable" : "refused";
         } catch {
-          // A transport failure and a refusal come to the same thing here: the
-          // value is not on the server, and the local draft still holds it.
+          return "unreachable";
         }
-        return false;
       });
       pending.current[question] = write;
       return write;
@@ -180,6 +215,8 @@ export default function ParticipantPage() {
   const [outcomeError, setOutcomeError] = useState<string | null>(null);
   const [outcomeRetry, setOutcomeRetry] = useState(0);
   const [busy, setBusy] = useState(false);
+  /** A hand-in that landed while this phone watched: the receipt is said once. */
+  const [justHandedIn, setJustHandedIn] = useState(false);
   const { persistAnswer, forget } = useAnswerSender(response);
   const submissionUncertain = useRef(false);
   const reconciledResponse = useRef<string | null>(null);
@@ -218,6 +255,12 @@ export default function ParticipantPage() {
   const loadFace = useCallback(async () => {
     try {
       const result = await api["/live/p/arrive"]({ token });
+      // Out of reach says nothing about the token: what is on the screen —
+      // the round, the relay, the answers — stays, and the next poll recovers.
+      if (outOfReach(result)) {
+        setFaceError(NO_CONNECTION);
+        return null;
+      }
       if (isApiError(result)) {
         setMissing(true);
         setFaceError(null);
@@ -231,10 +274,19 @@ export default function ParticipantPage() {
       setRelay("relay" in result ? (result.relay ?? null) : null);
       return arrived ?? null;
     } catch {
-      setFaceError("No connection. Try again.");
+      setFaceError(NO_CONNECTION);
       return null;
     }
   }, [token]);
+
+  /**
+   * One flag says whether this phone is reaching Commons, whichever request
+   * found out: the poll raises it, and anything that gets through lowers it,
+   * so a line never outlives the drop that put it up.
+   */
+  const reached = useCallback((got: boolean) => {
+    setFaceError(got ? null : NO_CONNECTION);
+  }, []);
 
   // Arrive.
   useEffect(() => {
@@ -247,11 +299,14 @@ export default function ParticipantPage() {
   // the interval down and rebuild it.
   const arrived = face !== null;
   const open = face?.open ?? false;
+  // A phone that never got through polls too, so a drop on the way in comes
+  // back on its own rather than waiting on the Retry.
+  const reaching = faceError !== null && !arrived && relay === null;
   useEffect(() => {
-    if (!arrived || !open || submitted) return;
+    if (!reaching && (!arrived || !open || submitted)) return;
     const timer = setInterval(() => void loadFace(), FACE_POLL_MS);
     return () => clearInterval(timer);
-  }, [arrived, open, submitted, loadFace]);
+  }, [reaching, arrived, open, submitted, loadFace]);
 
   // After hand-in, poll the outcome until the grade lands (surveys answer at once).
   useEffect(() => {
@@ -268,6 +323,10 @@ export default function ParticipantPage() {
       try {
         const result = await api["/live/p/outcome"]({ response });
         if (cancelled) return;
+        if (outOfReach(result)) {
+          setOutcomeError(NO_CONNECTION);
+          return;
+        }
         if (isApiError(result)) {
           setOutcomeError("Result did not load. Try again.");
           return;
@@ -283,7 +342,7 @@ export default function ParticipantPage() {
         }
       } catch {
         if (!cancelled) {
-          setOutcomeError("No connection. Try again.");
+          setOutcomeError(NO_CONNECTION);
         }
       }
     };
@@ -299,6 +358,11 @@ export default function ParticipantPage() {
       const result = me
         ? await api["/live/p/begin-signed"]({ token })
         : await api["/live/p/begin"]({ token, device: deviceId() });
+      // Out of reach nobody has joined anything; the Join button stands.
+      if (outOfReach(result)) {
+        toast.error(NO_CONNECTION);
+        return;
+      }
       if (isApiError(result)) {
         const current = await loadFace();
         if (current?.open) setAlreadyIn(true);
@@ -345,8 +409,14 @@ export default function ParticipantPage() {
         answers: next,
         submitted: false,
       });
-      void persistAnswer(question, value).then((saved) => {
-        if (saved) return;
+      void persistAnswer(question, value).then((landing) => {
+        if (landing === "saved") return;
+        // Out of reach the answer is not refused, only not sent: it stays on
+        // the phone, and the hand-in sends it again.
+        if (landing === "unreachable") {
+          setFaceError(ANSWERS_KEPT);
+          return;
+        }
         // A refused answer must not stand on the screen as one that landed.
         const back = { ...next, [question]: held };
         setAnswers(back);
@@ -366,6 +436,7 @@ export default function ParticipantPage() {
       if (response === null || participant === null) return;
       submissionUncertain.current = false;
       setSubmitted(true);
+      setJustHandedIn(true);
       if (received !== undefined) {
         setOutcome(received);
         setOutcomeError(null);
@@ -414,13 +485,25 @@ export default function ParticipantPage() {
       for (const [question, value] of Object.entries(answers)) {
         const trimmed = value.trim();
         if (trimmed === "") continue;
-        const saved = await persistAnswer(question, trimmed);
-        if (!saved) {
+        const landing = await persistAnswer(question, trimmed);
+        if (landing === "unreachable") {
+          setFaceError(ANSWERS_KEPT);
+          return;
+        }
+        if (landing === "refused") {
           toast.error("That answer didn't save. Try again.");
           return;
         }
       }
       const result = await api["/live/p/submit"]({ response });
+      // A hand-in out of reach may still have landed, with only its answer
+      // lost on the way back, so the outcome is asked before the line stands.
+      if (outOfReach(result)) {
+        submissionUncertain.current = true;
+        if (await recoverSubmission()) return;
+        setFaceError(ANSWERS_KEPT);
+        return;
+      }
       if (isApiError(result)) {
         submissionUncertain.current = true;
         if (await recoverSubmission()) return;
@@ -482,6 +565,8 @@ export default function ParticipantPage() {
         relay={relay}
         participant={participant}
         signedIn={me !== null}
+        offline={faceError !== null}
+        onReach={reached}
         refresh={loadFace}
       />
     );
@@ -504,7 +589,7 @@ export default function ParticipantPage() {
 
   if (submitted) {
     return (
-      <Shell title={face.title}>
+      <Shell title={face.title} said={justHandedIn ? "Handed in" : ""}>
         <OutcomeView
           outcome={outcome}
           isQuiz={isQuiz}
@@ -575,8 +660,13 @@ export default function ParticipantPage() {
             role="alert"
             className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm"
           >
-            <span>No connection. Your answers stay on this phone.</span>
-            <Button size="sm" variant="outline" onClick={() => void loadFace()}>
+            <span>{ANSWERS_KEPT}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Retry the connection"
+              onClick={() => void loadFace()}
+            >
               Retry
             </Button>
           </div>
@@ -597,7 +687,8 @@ export default function ParticipantPage() {
           Object.values(answers).filter((value) => value.trim() !== "").length
         }
         of={face.questions.length}
-        disabled={busy || (isQuiz && !complete)}
+        busy={busy}
+        refusal={isQuiz && !complete ? refusalSentence("INCOMPLETE") : null}
         onHandIn={() => void submit()}
       />
     </Shell>
@@ -606,13 +697,27 @@ export default function ParticipantPage() {
 
 function Shell({
   title,
+  said = "",
   children,
 }: {
   title?: string;
+  /** What just happened on this phone, said once, whatever the screen shows. */
+  said?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="mx-auto min-h-dvh w-full max-w-xl px-4 py-6">
+      {/* The region stands through every screen the phone passes, so the word
+          that lands in it is a change and is announced; a region that mounts
+          already carrying its words says nothing. */}
+      <span
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {said}
+      </span>
       {title !== undefined && (
         <h1
           className="mb-6 font-display text-2xl font-semibold tracking-tight"
@@ -681,12 +786,18 @@ function RelayPhone({
   relay,
   participant,
   signedIn,
+  offline,
+  onReach,
   refresh,
 }: {
   token: string;
   relay: Relay;
   participant: string;
   signedIn: boolean;
+  /** Nothing this phone sends is getting through: the screen keeps what it has. */
+  offline: boolean;
+  /** Whether a request got through, said to the one flag both screens read. */
+  onReach: (reached: boolean) => void;
   refresh: () => Promise<Face | null>;
 }) {
   const round = relay.openRound;
@@ -701,9 +812,18 @@ function RelayPhone({
   const [refusal, setRefusal] = useState<string | null>(null);
   const [wall, setWall] = useState<WallShape | null>(null);
   const [busy, setBusy] = useState(false);
+  /** A hand-in that landed while this phone watched: the receipt takes focus. */
+  const [justHandedIn, setJustHandedIn] = useState(false);
   /** The response the missed line has already asked the wall about, asked once. */
   const asked = useRef<string | null>(null);
+  const receipt = useRef<HTMLHeadingElement>(null);
   const { persistAnswer, forget } = useAnswerSender(response);
+
+  // The receipt takes the focus the hand-in button held, so nothing is dropped
+  // to the page; the Shell's polite region says the same word once.
+  useEffect(() => {
+    if (justHandedIn) receipt.current?.focus();
+  }, [justHandedIn]);
 
   // A new round is a fresh response: forget the one before and begin again.
   // The round the screen holds is a ref, so beginning it cannot restart this.
@@ -719,15 +839,34 @@ function RelayPhone({
     setRefusedRound(null);
     setRefusal(null);
     setWall(null);
+    setJustHandedIn(false);
 
     forget();
     if (!runOpen || stored !== null) return;
+    let cancelled = false;
+    const going = () => !cancelled && held.current === round;
     void (async () => {
-      try {
-        const result = signedIn
-          ? await api["/live/p/begin-signed"]({ token })
-          : await api["/live/p/begin"]({ token, device: deviceId() });
-        if (held.current !== round) return;
+      // A phone out of reach has begun nothing, and nothing it met says the
+      // round is not there: it asks again on the round's own cadence, so a
+      // drop on the way in costs a poll rather than the round.
+      while (going()) {
+        let result: Output<"/live/p/begin"> | ApiError | null = null;
+        try {
+          result = signedIn
+            ? await api["/live/p/begin-signed"]({ token })
+            : await api["/live/p/begin"]({ token, device: deviceId() });
+        } catch {
+          result = null;
+        }
+        if (!going()) return;
+        if (result === null || outOfReach(result)) {
+          onReach(false);
+          await new Promise<void>((wake) => {
+            setTimeout(wake, ROUND_POLL_MS);
+          });
+          continue;
+        }
+        onReach(true);
         if (isApiError(result)) {
           // Begin is refused for a closed run, for a run with no round open,
           // and for a phone that already handed this round in. The fresh face
@@ -743,11 +882,13 @@ function RelayPhone({
           answers: {},
           submitted: false,
         });
-      } catch {
-        toast.error("Could not join. Try again.");
+        return;
       }
     })();
-  }, [token, participant, round, runOpen, signedIn, forget, refresh]);
+    return () => {
+      cancelled = true;
+    };
+  }, [token, participant, round, runOpen, signedIn, forget, refresh, onReach]);
 
   // A closed run opens no round, so a phone that reloads into one has nothing
   // to begin: it reads the last round it handed in off the device and keeps
@@ -794,22 +935,29 @@ function RelayPhone({
   useEffect(() => {
     if (!submitted || response === null) return;
     let cancelled = false;
+    // The handle exists before the first read runs, so a finished wall can
+    // stop the ticking that carried it.
+    const handle: { timer?: ReturnType<typeof setInterval> } = {};
+    const stop = () => {
+      if (handle.timer !== undefined) clearInterval(handle.timer);
+    };
     const read = async () => {
       try {
         const result = await api["/live/p/wall"]({ response });
         if (cancelled || isApiError(result) || result.wall === null) return;
         setWall(result.wall);
+        // A closed run's wall is finished once it lands; a read that never
+        // landed leaves the tick running, so a drop costs one cadence.
+        if (!runOpen) stop();
       } catch {
         // The wall is a read; the next tick tries again.
       }
     };
     void read();
-    const timer = runOpen
-      ? setInterval(() => void read(), ROUND_POLL_MS)
-      : null;
+    handle.timer = setInterval(() => void read(), ROUND_POLL_MS);
     return () => {
       cancelled = true;
-      if (timer !== null) clearInterval(timer);
+      stop();
     };
   }, [submitted, response, runOpen]);
 
@@ -841,8 +989,17 @@ function RelayPhone({
       setAnswers(next);
       remember(next, false);
       setRefusal(null);
-      void persistAnswer(item, value).then(async (saved) => {
-        if (saved) return;
+      void persistAnswer(item, value).then(async (landing) => {
+        if (landing === "saved") {
+          onReach(true);
+          return;
+        }
+        // Out of reach the answer is not refused, only not sent yet: it stays
+        // on the phone, and the hand-in sends it again.
+        if (landing === "unreachable") {
+          onReach(false);
+          return;
+        }
         // A refused answer must not stand on the screen as one that landed.
         const back = { ...next, [item]: before };
         setAnswers(back);
@@ -854,7 +1011,7 @@ function RelayPhone({
         setRefusal("That answer didn't save. Try again.");
       });
     },
-    [answers, remember, persistAnswer, refresh],
+    [answers, remember, persistAnswer, refresh, onReach],
   );
 
   /** Every box the round captured, answered: what a hand-in is taken on. */
@@ -878,13 +1035,21 @@ function RelayPhone({
         const standing = await api["/live/p/wall"]({ response });
         if (!isApiError(standing) && standing.wall !== null) {
           if (error !== null) toast.error(refusalSentence("ALREADY_SUBMITTED"));
+          onReach(true);
           setSubmitted(true);
+          setJustHandedIn(true);
           setWall(standing.wall);
           remember(answers, true);
           return;
         }
       } catch {
         // Out of reach is not refused; the line stands until a hand-in lands.
+      }
+      // Nothing got through, so nothing is refused: the answers stay on the
+      // phone and Hand in stands, as the connection line says.
+      if (error !== null && OUT_OF_REACH.has(error)) {
+        onReach(false);
+        return;
       }
       await refresh();
       setRefusal(
@@ -898,7 +1063,7 @@ function RelayPhone({
             ),
       );
     },
-    [response, answers, whole, remember, refresh],
+    [response, answers, whole, remember, refresh, onReach],
   );
 
   const handIn = useCallback(async () => {
@@ -916,8 +1081,12 @@ function RelayPhone({
       for (const [item, value] of Object.entries(answers)) {
         const trimmed = value.trim();
         if (trimmed === "") continue;
-        const saved = await persistAnswer(item, trimmed);
-        if (!saved) {
+        const landing = await persistAnswer(item, trimmed);
+        if (landing === "unreachable") {
+          onReach(false);
+          return;
+        }
+        if (landing === "refused") {
           await settle(null);
           return;
         }
@@ -927,14 +1096,16 @@ function RelayPhone({
         await settle(result.error);
         return;
       }
+      onReach(true);
       setSubmitted(true);
+      setJustHandedIn(true);
       remember(answers, true);
     } catch {
       await settle(null);
     } finally {
       setBusy(false);
     }
-  }, [response, answers, whole, persistAnswer, remember, settle]);
+  }, [response, answers, whole, persistAnswer, remember, settle, onReach]);
 
   const openRound = relay.rounds.find(
     (candidate) => candidate.round !== null && candidate.open === true,
@@ -946,6 +1117,13 @@ function RelayPhone({
   const handedIn =
     submitted || (refusedRound !== null && refusedRound === round);
   const answering = !handedIn && runOpen && round !== null && response !== null;
+  // Out of reach the screen keeps the round it has and says so in one line: a
+  // phone with answers on it is told they stay there.
+  const connection = offline
+    ? answering
+      ? ANSWERS_KEPT
+      : NO_CONNECTION
+    : null;
   // A round that closes before this phone hands in takes its answers with it:
   // nothing it wrote became a card, so the round leaves it only the word that
   // it closed. What was handed in stands, on the wall the phone keeps reading.
@@ -990,7 +1168,7 @@ function RelayPhone({
   }, [wall]);
 
   return (
-    <Shell>
+    <Shell said={justHandedIn ? "Handed in" : ""}>
       <div className={cn("flex flex-col gap-5", answering && "pb-28")}>
         <header className="flex items-center justify-between gap-4">
           <h1
@@ -1026,6 +1204,23 @@ function RelayPhone({
           )}
         </header>
 
+        {connection === null ? null : (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm"
+          >
+            <span>{connection}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Retry the connection"
+              onClick={() => void refresh()}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+
         {handedIn ? (
           <>
             <div className="flex flex-col items-center gap-2 pt-1 pb-2 text-center">
@@ -1034,7 +1229,14 @@ function RelayPhone({
                 strokeWidth={1.5}
                 className="size-10 text-muted-foreground"
               />
-              <h2 className="font-display text-lg font-semibold">Handed in</h2>
+              {/* The receipt takes the focus the hand-in button held. */}
+              <h2
+                ref={receipt}
+                tabIndex={-1}
+                className="font-display text-lg font-semibold outline-none"
+              >
+                Handed in
+              </h2>
               {landed === null || landed.mine.length === 0 ? null : (
                 <div className="flex flex-wrap justify-center gap-2">
                   {/* These cards stand where the phone landed, off the wall's
@@ -1105,7 +1307,8 @@ function RelayPhone({
         <HandInBar
           answered={answeredOf(questions, answers)}
           of={itemCountOf(questions)}
-          disabled={busy || !whole}
+          busy={busy}
+          refusal={whole ? null : refusalSentence("INCOMPLETE")}
           onHandIn={() => void handIn()}
         />
       ) : null}
@@ -1144,22 +1347,12 @@ function QuestionCard({
         {choices.length > 0 ? (
           <div className="flex flex-col gap-2">
             {choices.map((choice) => (
-              <button
+              <Choice
                 key={choice}
-                type="button"
-                dir="auto"
-                // Colour alone does not carry selection to a screen reader.
-                aria-pressed={value === choice}
-                onClick={() => onAnswer(choice)}
-                className={cn(
-                  "rounded-md border border-border px-4 py-3 text-start text-sm transition-colors",
-                  value === choice
-                    ? "border-primary bg-primary/10 font-medium text-primary"
-                    : "hover:bg-muted",
-                )}
-              >
-                {choice}
-              </button>
+                choice={choice}
+                picked={value === choice}
+                onPick={() => onAnswer(choice)}
+              />
             ))}
           </div>
         ) : (

@@ -62,7 +62,10 @@ export default function JoinPage() {
               );
               setMessage(null);
             }}
-            className="h-14 text-center font-mono text-2xl tracking-[0.16em] uppercase"
+            // The placeholder says where the code is; it drops the field's own
+            // mono uppercase so a sentence reads as one.
+            placeholder="The code on the wall"
+            className="h-14 text-center font-mono text-2xl tracking-[0.16em] uppercase placeholder:font-sans placeholder:text-base placeholder:normal-case placeholder:tracking-normal"
           />
           <p
             id="join-error"
