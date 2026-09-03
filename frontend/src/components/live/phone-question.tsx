@@ -54,6 +54,24 @@ export function itemCountOf(questions: RoundQuestion[]): number {
   );
 }
 
+/**
+ * A round is whole when every box it captured has an answer — a repeated box
+ * asks for one of its own. The round refuses a hand-in that is not whole, and
+ * decides it the same way, so the button is dead exactly where it would be
+ * refused.
+ */
+export function wholeOf(
+  questions: RoundQuestion[],
+  answers: Record<string, string>,
+): boolean {
+  return questions.every((question) => {
+    const items = itemsOf(question);
+    return question.cap >= 2
+      ? filled(answers, items) > 0
+      : filled(answers, items) === items.length;
+  });
+}
+
 export function QuestionCard({
   question,
   answers,

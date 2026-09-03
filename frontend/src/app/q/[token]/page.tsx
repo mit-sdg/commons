@@ -9,6 +9,7 @@ import {
   answeredOf,
   itemCountOf,
   QuestionCard as RoundQuestionCard,
+  wholeOf,
 } from "@/components/live/phone-question";
 import { Card as AnswerCard } from "@/components/live/pile";
 import { refusalSentence, saidRefusal } from "@/components/live/refusals";
@@ -16,6 +17,7 @@ import { Figure, RoundToken } from "@/components/live/round-token";
 import {
   choicesOf,
   standingOf,
+  trayOf,
   type Wall as WallShape,
 } from "@/components/live/rounds";
 import { Wall } from "@/components/live/wall";
@@ -659,6 +661,25 @@ function roundSlot(participant: string, round: string): string {
 }
 
 /**
+ * The last round this phone handed in, read from the slots the device keeps.
+ * A closed run opens no round to begin again, so what it handed in is on the
+ * device alone — and that response is the one wall it still has to read.
+ */
+function lastHandedIn(
+  token: string,
+  participant: string,
+  relay: Relay,
+): string | null {
+  let kept: string | null = null;
+  for (const round of relay.rounds) {
+    if (round.round === null) continue;
+    const stored = readProgress(token, roundSlot(participant, round.round));
+    if (stored?.submitted === true) kept = stored.response;
+  }
+  return kept;
+}
+
+/**
  * The phone in a relay run: the round that is open, answered and handed in,
  * then the wall of where the answer landed. A round is a response of its own,
  * so the phone begins again when the next round opens.
@@ -736,6 +757,19 @@ function RelayPhone({
     })();
   }, [token, participant, round, runOpen, signedIn, forget, refresh]);
 
+  // A closed run opens no round, so a phone that reloads into one has nothing
+  // to begin: it reads the last round it handed in off the device and keeps
+  // that wall under the closed line. A round it never handed in has no wall.
+  useEffect(() => {
+    if (runOpen || round !== null || response !== null) return;
+    const kept = lastHandedIn(token, participant, relay);
+    if (kept === null) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- the device says which response the closed run left */
+    setResponse(kept);
+    setSubmitted(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [runOpen, round, response, token, participant, relay]);
+
   // Two tabs of one phone share the round's slot on the device. What one tab
   // writes there — an answer, a hand-in — the other reads on the storage event.
   useEffect(() => {
@@ -761,9 +795,12 @@ function RelayPhone({
     return () => clearInterval(timer);
   }, [refresh, runOpen]);
 
-  // After hand-in the wall shows where the answer landed, until the next round opens.
+  // After hand-in the wall shows where the answer landed, until the next round
+  // opens. Only a response that is in has a wall to read, so nothing is asked
+  // for one that never handed in. A closed run's wall is finished: it is read
+  // once and stays on the screen.
   useEffect(() => {
-    if (!submitted || response === null || !runOpen) return;
+    if (!submitted || response === null) return;
     let cancelled = false;
     const read = async () => {
       try {
@@ -775,10 +812,12 @@ function RelayPhone({
       }
     };
     void read();
-    const timer = setInterval(() => void read(), ROUND_POLL_MS);
+    const timer = runOpen
+      ? setInterval(() => void read(), ROUND_POLL_MS)
+      : null;
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      if (timer !== null) clearInterval(timer);
     };
   }, [submitted, response, runOpen]);
 
@@ -826,6 +865,12 @@ function RelayPhone({
     [answers, remember, persistAnswer, refresh],
   );
 
+  /** Every box the round captured, answered: what a hand-in is taken on. */
+  const whole = useMemo(
+    () => wholeOf(relay.questions, answers),
+    [relay.questions, answers],
+  );
+
   /**
    * A refused hand-in reads which word stands behind it. The wall answers only
    * for a response that is in, so it is the receipt: it tells a second tab of
@@ -853,10 +898,15 @@ function RelayPhone({
       setRefusal(
         error === null
           ? "That didn't hand in. Try again."
-          : saidRefusal(error, null),
+          : // A hand-in refused with a box still blank is the round's own
+            // rule: every box it captured is answered, or it is not in.
+            saidRefusal(
+              error,
+              error === "CONFLICT" && !whole ? "INCOMPLETE" : null,
+            ),
       );
     },
-    [response, answers, remember, refresh],
+    [response, answers, whole, remember, refresh],
   );
 
   const handIn = useCallback(async () => {
@@ -902,12 +952,6 @@ function RelayPhone({
   // nothing it wrote became a card, so the round leaves it only the word that
   // it closed. What was handed in stands, on the wall the phone keeps reading.
   const missed = round === null && response !== null && !submitted;
-  // A vote wall carries bars, not cards, so the choice this phone cast has
-  // nowhere to stand on it but here.
-  const voted =
-    wall !== null && choicesOf(wall).length > 0
-      ? wall.cards.find((card) => card.mine)
-      : undefined;
 
   // The wall answers only for a response that is in, so it is the receipt here
   // too: a tab whose sibling handed this round in reads it there, once, before
@@ -931,6 +975,21 @@ function RelayPhone({
       cancelled = true;
     };
   }, [missed, response, answers, remember]);
+
+  // Where you landed, on a screen one hand holds: this phone's own cards
+  // first, then the piles, each wearing this phone's card on its face. The
+  // rest of the tray is a count — a room writes more cards than a phone can
+  // read. A vote wall carries bars, not cards, and holds no tray to count.
+  const landed = useMemo(() => {
+    if (wall === null) return null;
+    const mine = wall.cards.filter((card) => card.mine);
+    if (choicesOf(wall).length > 0) return { wall, mine, inTray: 0 };
+    return {
+      wall: { ...wall, cards: wall.cards.filter((card) => card.pile !== null) },
+      mine,
+      inTray: trayOf(wall.cards).filter((card) => !card.mine).length,
+    };
+  }, [wall]);
 
   return (
     <Shell>
@@ -978,19 +1037,36 @@ function RelayPhone({
                 className="size-10 text-muted-foreground"
               />
               <h2 className="font-display text-lg font-semibold">Handed in</h2>
-              {voted === undefined ? null : <AnswerCard card={voted} />}
+              {landed === null || landed.mine.length === 0 ? null : (
+                <div className="flex flex-wrap justify-center gap-2">
+                  {/* These cards stand where the phone landed, off the wall's
+                      own layout, so they hold still while it sorts below. */}
+                  {landed.mine.map((card) => (
+                    <AnswerCard key={card.card} card={card} still />
+                  ))}
+                </div>
+              )}
               {round !== null && runOpen ? null : (
                 <p className="text-muted-foreground text-sm">
                   {waitingLine(relay)}
                 </p>
               )}
             </div>
-            {wall !== null ? (
+            {landed === null ? null : (
               <>
-                <Figure value={wall.handedIn} of={wall.begun} size="sm" />
-                <Wall wall={wall} phone carriesTo={nextRound?.number} />
+                <Figure
+                  value={landed.wall.handedIn}
+                  of={landed.wall.begun}
+                  size="sm"
+                />
+                {landed.inTray === 0 ? null : (
+                  <p className="text-muted-foreground text-sm">
+                    and {landed.inTray} more in the tray
+                  </p>
+                )}
+                <Wall wall={landed.wall} phone carriesTo={nextRound?.number} />
               </>
-            ) : null}
+            )}
           </>
         ) : missed ? (
           <Line>
@@ -1026,7 +1102,7 @@ function RelayPhone({
         <HandInBar
           answered={answeredOf(questions, answers)}
           of={itemCountOf(questions)}
-          disabled={busy}
+          disabled={busy || !whole}
           onHandIn={() => void handIn()}
         />
       ) : null}
