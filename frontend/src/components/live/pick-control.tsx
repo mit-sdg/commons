@@ -159,12 +159,15 @@ export function PickControl({
             max={TOP_MOST}
             value={String(top)}
             aria-label="Top piles"
+            // The number belongs to Top, so it takes nothing in the modes
+            // that ignore it.
+            disabled={mode !== "top"}
             onFocus={(event) => event.currentTarget.select()}
             onChange={(event) => {
               const typed = Number(event.currentTarget.value.trim());
               if (Number.isInteger(typed)) onTop(clamp(typed));
             }}
-            className="mr-0.5 h-6 w-7 rounded-[4px] border border-input bg-card text-center font-mono text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+            className="mr-0.5 h-6 w-7 rounded-[4px] border border-input bg-card text-center font-mono text-xs [appearance:textfield] disabled:cursor-default disabled:text-muted-foreground [&::-webkit-inner-spin-button]:appearance-none"
           />
         </div>
         <Segment on={mode === "all"} onClick={() => onMode("all")}>

@@ -44,15 +44,15 @@ export function ModelRow({
       <div className="flex items-center gap-2">
         <span className="flex items-center gap-2 whitespace-nowrap text-sm">
           Model participants
-          <span className="font-mono text-muted-foreground tabular-nums">
-            {count}
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {count} seated
           </span>
         </span>
         <span className="ml-auto flex flex-none items-center gap-1.5">
           <Input
             value={seats}
             inputMode="numeric"
-            aria-label="Model participants"
+            aria-label="Seats to invite"
             onChange={(event) => setSeats(event.target.value)}
             className="h-8 w-[52px] px-2.5 text-center"
           />

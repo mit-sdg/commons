@@ -51,6 +51,9 @@ const STRIP_TOKEN = "flex min-w-0 rounded-full px-1 py-0.5";
 const ON_PRIMARY =
   "text-current [&>span:first-child]:border-solid [&>span:first-child]:border-current [&>span:first-child]:text-current";
 
+/** A refusal for the state the click asked for, which the screen does not say twice. */
+const AS_ASKED = "as-asked";
+
 /** A refusal the screen has read: the word, and the round its sentence names. */
 interface Refusal {
   word: RefusalWord;
@@ -58,7 +61,9 @@ interface Refusal {
 }
 
 /** What a refused request is read as, once the screen has seen the state again. */
-type Reader = (error: string) => Refusal | null | Promise<Refusal | null>;
+type Reading = Refusal | typeof AS_ASKED | null;
+
+type Reader = (error: string) => Reading | Promise<Reading>;
 
 /**
  * The staff screen for a relay run: the rounds, the wall of the round in
@@ -81,6 +86,9 @@ export function RelayRunBoard({
   } | null>(null);
   const [modelSorts, setModelSorts] = useState(false);
   const [askedFor, setAskedFor] = useState<string | null>(null);
+  /** A move in flight, which takes the buttons out until it lands. */
+  const sending = useRef(false);
+  const [busy, setBusy] = useState(false);
 
   const { data: relayData } = useQuery(
     session
@@ -206,6 +214,15 @@ export function RelayRunBoard({
     source !== null &&
     source.round === shown &&
     source.figure.open === false;
+  /**
+   * The round the shown wall's picks carry into: the one about to take them
+   * while the run is on, and afterwards the one that took them, so a pick
+   * stands as history on a wall looked at again.
+   */
+  const carriesTo =
+    takesShown && run.open
+      ? (next?.number ?? undefined)
+      : (drawerOf(run, relay, shownEntry)?.number ?? undefined);
 
   /** Sends the whole picked set, which stands on the screen until the wall lands. */
   function applyPick(piles: string[]) {
@@ -233,11 +250,28 @@ export function RelayRunBoard({
   async function send(request: Promise<unknown>, read: Reader) {
     const result = await request;
     if (!isApiError(result)) return true;
-    const refusal = await read(result.error);
+    const reading = await read(result.error);
+    if (reading === AS_ASKED) return false;
     toast.error(
-      saidRefusal(result.error, refusal?.word ?? null, refusal?.about),
+      saidRefusal(result.error, reading?.word ?? null, reading?.about),
     );
     return false;
+  }
+
+  /**
+   * One move at a time: the second click of a doubled click is the same
+   * intent, so the button is out while the first is in flight.
+   */
+  async function move(work: () => Promise<void>) {
+    if (sending.current) return;
+    sending.current = true;
+    setBusy(true);
+    try {
+      await work();
+    } finally {
+      sending.current = false;
+      setBusy(false);
+    }
   }
 
   /** The run as it now stands, so a refusal is said from what is true. */
@@ -311,20 +345,21 @@ export function RelayRunBoard({
         };
 
   async function openNext() {
-    if (next === null) return;
+    if (next === null || refusal !== null) return;
     const leg = next.leg;
     const opened = await send(
       api["/live/relays/open-round"]({ run: run.run, leg }),
       async () => {
         const fresh = await freshRun();
-        return fresh === null
-          ? null
-          : refusalFor({
-              run: fresh,
-              relay,
-              leg,
-              picks: takesShown ? picks.length : null,
-            });
+        if (fresh === null) return null;
+        const asked = fresh.rounds.find((round) => round.leg === leg) ?? null;
+        if (asked !== null && asked.round !== null) return AS_ASKED;
+        return refusalFor({
+          run: fresh,
+          relay,
+          leg,
+          picks: takesShown ? picks.length : null,
+        });
       },
     );
     if (opened) refetch();
@@ -332,16 +367,15 @@ export function RelayRunBoard({
 
   async function closeRound() {
     if (openRound === null || openEntry === null) return;
+    const round = openRound;
     const number = openEntry.number;
-    await send(
-      api["/live/relays/close-round"]({ round: openRound }),
-      async () => {
-        const fresh = await freshRun();
-        return fresh !== null && !fresh.open
-          ? { word: "CLOSED", about: {} }
-          : { word: "ROUND_CLOSED", about: { round: number } };
-      },
-    );
+    await send(api["/live/relays/close-round"]({ round }), async () => {
+      const fresh = await freshRun();
+      if (fresh !== null && !fresh.open) return { word: "CLOSED", about: {} };
+      const asked = fresh?.rounds.find((one) => one.round === round) ?? null;
+      if (asked !== null && asked.figure.open === false) return AS_ASKED;
+      return { word: "ROUND_CLOSED", about: { round: number } };
+    });
     refetch();
   }
 
@@ -410,6 +444,9 @@ export function RelayRunBoard({
     leg: next?.leg ?? null,
     picks: takesShown ? picks.length : null,
   });
+  const openRefused = refusal !== null;
+  /** Open is the run's own move only while nothing else is in hand. */
+  const openPrimary = openEntry === null && !openRefused;
   /** The Close button says the round is open, so only the unseen reasons are printed. */
   const refusalLine =
     refusal === null || refusal.word === "ROUND_OPEN"
@@ -434,7 +471,10 @@ export function RelayRunBoard({
           </h1>
           <div className="-mx-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
             {run.rounds.map((round) => {
-              const standing = roundStanding(round);
+              // A closed run has no next round, so one that never ran is only
+              // written.
+              const ran = roundStanding(round);
+              const standing = ran === "next" && !run.open ? "plain" : ran;
               const token = (
                 <RoundToken
                   number={round.number}
@@ -505,9 +545,7 @@ export function RelayRunBoard({
               destructive
               onConfirm={closeRun}
             />
-          ) : (
-            <span className="text-muted-foreground text-sm">Closed</span>
-          )}
+          ) : null}
         </div>
       </header>
 
@@ -518,7 +556,7 @@ export function RelayRunBoard({
       ) : null}
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+        <div className="order-2 flex min-w-0 flex-col gap-3 lg:order-1">
           {wall === null ? (
             wallError !== null ? (
               <ErrorState message={wallError} onRetry={refetchWall} />
@@ -533,124 +571,155 @@ export function RelayRunBoard({
             <Wall
               wall={wall}
               named={shown !== openRound}
-              carriesTo={takesShown ? (next?.number ?? undefined) : undefined}
+              carriesTo={carriesTo}
               sourceWall={sourceWall}
               edits={run.open ? edits : undefined}
             />
           )}
         </div>
 
-        <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
-          <div className="flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
-            {!run.open || openEntry === null ? null : (
-              <Button
-                size="lg"
-                className="w-full justify-start gap-2 pr-3.5 pl-4"
-                onClick={() => void closeRound()}
-              >
-                Close
-                <RoundToken
-                  number={openEntry.number}
-                  title={openEntry.title}
-                  standing="open"
-                  size="sm"
-                  className={ON_PRIMARY}
-                />
-              </Button>
-            )}
-            {!run.open || next === null ? null : (
-              <>
-                {takesShown ? (
-                  <PickControl
-                    mode={pick.mode}
-                    top={pick.top}
-                    onMode={pick.setMode}
-                    onTop={pick.setTop}
-                  />
-                ) : null}
-                <Button
-                  variant={openEntry === null ? "default" : "outline"}
-                  size="lg"
-                  className="w-full justify-between gap-3 pr-3.5 pl-4"
-                  disabled={refusal !== null}
-                  title={refusalLine ?? undefined}
-                  aria-describedby={
-                    refusalLine === null ? undefined : REFUSAL_ID
-                  }
-                  onClick={() => void openNext()}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    Open
+        {/* The run's moves stand before the wall on a narrow screen, so
+            closing a round is never a scroll past every pile. */}
+        <aside className="order-1 flex flex-col gap-4 lg:sticky lg:top-6 lg:order-2">
+          {!run.open ? (
+            <p className="text-muted-foreground text-sm">The run is closed.</p>
+          ) : (
+            <>
+              <div className="flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
+                {openEntry === null ? null : (
+                  <Button
+                    size="lg"
+                    className="w-full justify-start gap-2 pr-3.5 pl-4"
+                    disabled={busy}
+                    onClick={() => void move(closeRound)}
+                  >
+                    Close
                     <RoundToken
-                      number={next.number}
-                      title={next.title}
-                      standing="next"
+                      number={openEntry.number}
+                      title={openEntry.title}
+                      standing="open"
                       size="sm"
-                      className={openEntry === null ? ON_PRIMARY : undefined}
+                      className={ON_PRIMARY}
                     />
-                  </span>
-                  {takesShown ? (
-                    <span className="flex-none font-mono text-xs opacity-80">
-                      {picks.length} {picks.length === 1 ? "pile" : "piles"}
-                    </span>
-                  ) : null}
-                </Button>
-                {refusalLine === null ? null : (
-                  <p id={REFUSAL_ID} className="text-muted-foreground text-xs">
-                    {refusalLine}
-                  </p>
+                  </Button>
                 )}
-              </>
-            )}
-            {everyRoundRan ? (
-              <p className="text-muted-foreground text-xs">
-                Every round has run.
-              </p>
-            ) : null}
-
-            {run.open && (next !== null || openEntry !== null) ? (
-              <div className="h-px bg-border" />
-            ) : null}
-
-            {run.open && !everyRoundRan ? (
-              <>
-                {voting ? null : (
-                  <div className="flex items-center gap-2.5">
-                    <Switch
-                      on={modelSorts}
-                      label="Model sorts"
-                      onChange={sortsChange}
-                    />
-                    {sorting ? (
-                      <span className="text-muted-foreground text-xs">
-                        sorting…
-                      </span>
+                {next === null ? null : (
+                  <>
+                    {takesShown ? (
+                      <PickControl
+                        mode={pick.mode}
+                        top={pick.top}
+                        onMode={pick.setMode}
+                        onTop={pick.setTop}
+                      />
                     ) : null}
-                  </div>
+                    {/* Refused, the button keeps its focus and its words: it
+                        is out by aria, not greyed past reading. */}
+                    <Button
+                      variant={openPrimary ? "default" : "outline"}
+                      size="lg"
+                      className={cn(
+                        "w-full justify-between gap-3 pr-3.5 pl-4",
+                        openRefused &&
+                          "cursor-default text-muted-foreground hover:bg-background hover:text-muted-foreground dark:hover:bg-input/30",
+                      )}
+                      aria-disabled={openRefused || busy}
+                      title={refusalLine ?? undefined}
+                      aria-describedby={
+                        refusalLine === null ? undefined : REFUSAL_ID
+                      }
+                      onClick={() => {
+                        if (openRefused || busy) return;
+                        void move(openNext);
+                      }}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        Open
+                        <RoundToken
+                          number={next.number}
+                          title={next.title}
+                          standing="next"
+                          size="sm"
+                          className={openPrimary ? ON_PRIMARY : undefined}
+                        />
+                      </span>
+                      {takesShown ? (
+                        <span
+                          className={cn(
+                            "flex-none font-mono text-xs",
+                            !openRefused && "opacity-80",
+                          )}
+                        >
+                          {picks.length} {picks.length === 1 ? "pile" : "piles"}
+                        </span>
+                      ) : null}
+                    </Button>
+                    {refusalLine === null ? null : (
+                      <p
+                        id={REFUSAL_ID}
+                        className="text-muted-foreground text-xs"
+                      >
+                        {refusalLine}
+                      </p>
+                    )}
+                  </>
                 )}
-                <ModelRow
-                  count={run.seats.length}
-                  writing={writing}
-                  onInvite={invite}
-                  onDismiss={dismiss}
-                  onDismissAll={dismissAll}
-                />
+                {everyRoundRan ? (
+                  <p className="text-muted-foreground text-xs">
+                    Every round has run.
+                  </p>
+                ) : null}
 
-                <div className="h-px bg-border" />
-              </>
-            ) : null}
+                {next !== null || openEntry !== null ? (
+                  <div className="h-px bg-border" />
+                ) : null}
 
-            <Button variant="outline" size="sm" className="self-start" asChild>
-              <Link href={`/staff/live/relay/${run.relay}/edit?draft=1`}>
-                <Sparkles /> Draft a round
-              </Link>
-            </Button>
-          </div>
+                {everyRoundRan ? null : (
+                  <>
+                    {voting ? null : (
+                      <div className="flex items-center gap-2.5">
+                        <Switch
+                          on={modelSorts}
+                          label="Model sorts"
+                          onChange={sortsChange}
+                        />
+                        {sorting ? (
+                          <span className="text-muted-foreground text-xs">
+                            sorting…
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
+                    <ModelRow
+                      count={run.seats.length}
+                      writing={writing}
+                      onInvite={invite}
+                      onDismiss={dismiss}
+                      onDismissAll={dismissAll}
+                    />
 
-          {!run.open || run.token === null || run.code === null ? null : (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <JoinCode url={joinUrl(run.token)} code={run.code} />
-            </div>
+                    <div className="h-px bg-border" />
+                  </>
+                )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="self-start"
+                  asChild
+                >
+                  <Link href={`/staff/live/relay/${run.relay}/edit?draft=1`}>
+                    <Sparkles /> Draft a round
+                  </Link>
+                </Button>
+              </div>
+
+              {run.token === null || run.code === null ? null : (
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <JoinCode url={joinUrl(run.token)} code={run.code} />
+                </div>
+              )}
+            </>
           )}
         </aside>
       </div>
@@ -738,6 +807,23 @@ function takeOf(
       ? null
       : (run.rounds.find((one) => one.leg === take.source) ?? null);
   return { take, source };
+}
+
+/** The round that took from this one and has run, whose disc a picked pile keeps. */
+function drawerOf(
+  run: RelayRun,
+  relay: Relay | null,
+  round: RelayRunRound | null,
+): RelayRunRound | null {
+  if (round === null || relay === null) return null;
+  return (
+    run.rounds.find(
+      (one) =>
+        one.round !== null &&
+        relay.rounds.find((written) => written.leg === one.leg)?.takes[0]
+          ?.source === round.leg,
+    ) ?? null
+  );
 }
 
 /** Why a round does not open, in the words the open-round refusals stand for. */
