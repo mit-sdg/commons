@@ -212,6 +212,7 @@ export function RoundEditor({
   rounds,
   locked,
   note = null,
+  proposal = null,
   onChanged,
 }: {
   round: RelayRound;
@@ -220,6 +221,8 @@ export function RoundEditor({
   locked: boolean;
   /** The one sentence saying why it is locked, said once at the card's top. */
   note?: string | null;
+  /** What the AI proposes for this round, drawn across the card's top. */
+  proposal?: React.ReactNode;
   onChanged: () => void;
 }) {
   const saved: Draft = {
@@ -382,6 +385,7 @@ export function RoundEditor({
 
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4 focus-within:outline focus-within:outline-2 focus-within:outline-primary focus-within:-outline-offset-2">
+      {proposal === null ? null : <div className="col-span-2">{proposal}</div>}
       <RoundToken number={round.number} size="lg" standing="plain" />
 
       <div className="flex min-w-0 flex-col gap-3">
