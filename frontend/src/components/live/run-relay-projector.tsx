@@ -122,8 +122,11 @@ export function RelayProjector({
     );
   }
 
-  const joining = run.open && wall.open && url !== null && code !== null;
-  const filling = wall.piles.length > 0 || choicesOf(wall).length > 0;
+  // The room can join for as long as the run is open, between rounds as much
+  // as during one; the wall's own token says which round closed.
+  const joining = run.open && url !== null && code !== null;
+  const filling =
+    !wall.open || wall.piles.length > 0 || choicesOf(wall).length > 0;
 
   return (
     <div className="flex h-dvh flex-col gap-9 overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] py-[clamp(1.5rem,6dvh,64px)]">
@@ -150,7 +153,7 @@ export function RelayProjector({
           </div>
         )
       ) : (
-        <Standing>{run.open ? "Closed" : "The run is closed."}</Standing>
+        <Standing>The run is closed.</Standing>
       )}
     </div>
   );
