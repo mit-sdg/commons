@@ -106,7 +106,7 @@ export function RelayProjector({
           {run.title}
         </h1>
         {!run.open ? (
-          <Standing>The run has ended</Standing>
+          <Standing>The run is closed.</Standing>
         ) : url === null || code === null ? null : (
           <JoinCode url={url} code={code} wall />
         )}
@@ -149,7 +149,7 @@ export function RelayProjector({
           </div>
         )
       ) : (
-        <Standing>{run.open ? "Closed" : "The run has ended"}</Standing>
+        <Standing>{run.open ? "Closed" : "The run is closed."}</Standing>
       )}
     </div>
   );

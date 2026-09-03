@@ -41,34 +41,14 @@ export function ModelRow({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-        <span className="flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-2">
+        <span className="flex items-center gap-2 whitespace-nowrap text-sm">
           Model participants
           <span className="font-mono text-muted-foreground tabular-nums">
             {count}
           </span>
         </span>
-        {count > 0 ? (
-          <span className="flex items-center gap-0.5">
-            <Button
-              variant="ghost"
-              size="xs"
-              disabled={busy}
-              onClick={() => void act(onDismiss)}
-            >
-              Dismiss
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              disabled={busy}
-              onClick={() => void act(onDismissAll)}
-            >
-              Dismiss all
-            </Button>
-          </span>
-        ) : null}
-        <span className="ml-auto flex items-center gap-1.5">
+        <span className="ml-auto flex flex-none items-center gap-1.5">
           <Input
             value={seats}
             inputMode="numeric"
@@ -86,6 +66,26 @@ export function ModelRow({
           </Button>
         </span>
       </div>
+      {count > 0 ? (
+        <div className="-ml-2 flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="xs"
+            disabled={busy}
+            onClick={() => void act(onDismiss)}
+          >
+            Dismiss one
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            disabled={busy}
+            onClick={() => void act(onDismissAll)}
+          >
+            Dismiss all
+          </Button>
+        </div>
+      ) : null}
       {writing > 0 ? (
         <p className="text-muted-foreground text-xs">{writing} writing</p>
       ) : null}

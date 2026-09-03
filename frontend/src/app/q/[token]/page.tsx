@@ -688,6 +688,8 @@ function RelayPhone({
   const [refusal, setRefusal] = useState<string | null>(null);
   const [wall, setWall] = useState<WallShape | null>(null);
   const [busy, setBusy] = useState(false);
+  /** The response the missed line has already asked the wall about, asked once. */
+  const asked = useRef<string | null>(null);
   const { persistAnswer, forget } = useAnswerSender(response);
 
   // A new round is a fresh response: forget the one before and begin again.
@@ -733,6 +735,24 @@ function RelayPhone({
       }
     })();
   }, [token, participant, round, runOpen, signedIn, forget, refresh]);
+
+  // Two tabs of one phone share the round's slot on the device. What one tab
+  // writes there — an answer, a hand-in — the other reads on the storage event.
+  useEffect(() => {
+    if (round === null) return;
+    const slot = roundSlot(participant, round);
+    const key = progressKey(token, slot);
+    const read = (event: StorageEvent) => {
+      if (event.key !== key) return;
+      const stored = readProgress(token, slot);
+      if (stored === null) return;
+      setResponse(stored.response);
+      setAnswers(stored.answers);
+      setSubmitted(stored.submitted);
+    };
+    window.addEventListener("storage", read);
+    return () => window.removeEventListener("storage", read);
+  }, [token, participant, round]);
 
   // The next round opening is what the phone watches for; a closed run opens none.
   useEffect(() => {
@@ -889,6 +909,29 @@ function RelayPhone({
       ? wall.cards.find((card) => card.mine)
       : undefined;
 
+  // The wall answers only for a response that is in, so it is the receipt here
+  // too: a tab whose sibling handed this round in reads it there, once, before
+  // the missed line stands.
+  useEffect(() => {
+    if (!missed || response === null || asked.current === response) return;
+    asked.current = response;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const standing = await api["/live/p/wall"]({ response });
+        if (cancelled || isApiError(standing) || standing.wall === null) return;
+        setSubmitted(true);
+        setWall(standing.wall);
+        remember(answers, true);
+      } catch {
+        // Out of reach is not a hand-in; the missed line stands.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [missed, response, answers, remember]);
+
   return (
     <Shell>
       <div className={cn("flex flex-col gap-5", answering && "pb-28")}>
@@ -936,9 +979,9 @@ function RelayPhone({
               />
               <h2 className="font-display text-lg font-semibold">Handed in</h2>
               {voted === undefined ? null : <AnswerCard card={voted} />}
-              {runOpen ? null : (
+              {round !== null && runOpen ? null : (
                 <p className="text-muted-foreground text-sm">
-                  {refusalSentence("CLOSED")}
+                  {waitingLine(relay)}
                 </p>
               )}
             </div>
@@ -950,7 +993,11 @@ function RelayPhone({
             ) : null}
           </>
         ) : missed ? (
-          <Line>The round closed before you handed in.</Line>
+          <Line>
+            The round closed before you handed in.
+            <br />
+            {waitingLine(relay)}
+          </Line>
         ) : !runOpen || round === null ? (
           <Line>{waitingLine(relay)}</Line>
         ) : response === null ? (

@@ -17,7 +17,6 @@ import {
   LiveRow,
   type LiveStanding,
   RoomCode,
-  StateWord,
 } from "@/components/live/relay-row";
 import { Figure, RoundStrip } from "@/components/live/round-token";
 import { standingOf } from "@/components/live/rounds";
@@ -68,7 +67,6 @@ function when(value: unknown): number {
 function LiveListContent() {
   const { session } = useAuth();
   const router = useRouter();
-  const [showRetired, setShowRetired] = useState(false);
   const [describing, setDescribing] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -93,7 +91,6 @@ function LiveListContent() {
 
   const questionnaires = shelf?.questionnaires ?? [];
   const relays = relayList?.relays ?? [];
-  const retired = questionnaires.filter((entry) => entry.retired);
 
   const entries: Entry[] = [
     ...relays.map(
@@ -103,15 +100,13 @@ function LiveListContent() {
         relay,
       }),
     ),
-    ...questionnaires
-      .filter((entry) => !entry.retired)
-      .map(
-        (questionnaire): Entry => ({
-          kind: "questionnaire",
-          at: when(questionnaire.createdAt),
-          questionnaire,
-        }),
-      ),
+    ...questionnaires.map(
+      (questionnaire): Entry => ({
+        kind: "questionnaire",
+        at: when(questionnaire.createdAt),
+        questionnaire,
+      }),
+    ),
   ].sort((left, right) => right.at - left.at);
 
   function refetch() {
@@ -277,25 +272,6 @@ function LiveListContent() {
           )}
         </div>
       </div>
-
-      {retired.length > 0 ? (
-        <section className="mt-8">
-          <button
-            type="button"
-            onClick={() => setShowRetired((shown) => !shown)}
-            className="flex items-center gap-2 text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
-          >
-            <StateWord standing="closed" /> ({retired.length})
-          </button>
-          {showRetired ? (
-            <div className="mt-3 flex flex-col gap-2">
-              {retired.map((entry) => (
-                <QuestionnaireEntry key={entry.questionnaire} entry={entry} />
-              ))}
-            </div>
-          ) : null}
-        </section>
-      ) : null}
     </PageContainer>
   );
 }

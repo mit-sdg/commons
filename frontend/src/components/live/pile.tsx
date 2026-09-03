@@ -20,28 +20,24 @@ const FACES = {
     box: "min-h-[112px] px-4 pt-3.5 pb-3",
     name: "text-lg sm:text-xl",
     count: "text-lg sm:text-[22px]",
-    rest: "text-[11px] sm:text-[13px]",
     peek: "gap-[3px] text-[13px]",
   },
   phone: {
     box: "min-h-24 px-3.5 pt-3 pb-2.5",
     name: "text-lg",
     count: "text-lg",
-    rest: "text-[11px]",
     peek: "gap-[3px] text-xs",
   },
   big: {
     box: "min-h-[150px] rounded-[14px] px-[22px] pt-5 pb-[18px]",
     name: "text-2xl xl:text-[34px]",
     count: "text-[38px]",
-    rest: "text-xl",
     peek: "gap-1.5 text-xl",
   },
   packed: {
     box: "min-h-[104px] rounded-[14px] px-4 pt-4 pb-3.5",
     name: "text-xl",
     count: "text-[28px]",
-    rest: "text-sm",
     peek: "gap-1 text-base",
   },
 };
@@ -211,7 +207,6 @@ export function Pile({
   const peek = (
     mine.length === 0 ? cards : [...mine, ...cards.filter((card) => !card.mine)]
   ).slice(0, PEEK);
-  const rest = Math.max(0, count - peek.length);
   const takesDrop = onDrop !== undefined || onMergeIn !== undefined;
   const interactive = onTap !== undefined && naming === null;
 
@@ -328,23 +323,11 @@ export function Pile({
             className="h-7 min-w-0 flex-1 rounded-md border border-primary bg-card px-2 font-display font-semibold text-base"
           />
         )}
-        <span className="flex flex-none items-baseline gap-2">
-          {rest === 0 || !counted ? null : (
-            <span
-              className={cn(
-                "font-mono tabular-nums text-muted-foreground",
-                face.rest,
-              )}
-            >
-              +{rest}
-            </span>
-          )}
-          {counted ? (
-            <span className={cn("font-mono tabular-nums", face.count)}>
-              {count}
-            </span>
-          ) : null}
-        </span>
+        {counted ? (
+          <span className={cn("flex-none font-mono tabular-nums", face.count)}>
+            {count}
+          </span>
+        ) : null}
       </div>
       <div
         className={cn(

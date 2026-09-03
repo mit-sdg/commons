@@ -18,8 +18,8 @@ import { cn } from "@/lib/utils";
 /** How many faint cards stand in the tray for answers still being written. */
 const GHOSTS_SHOWN = 5;
 
-/** How many unsorted cards the tray shows before the rest become a count. */
-const TRAY_SHOWN = { big: 24, wide: 14, phone: 8 };
+/** How many unsorted cards the projector shows before the rest become a count. */
+const TRAY_SHOWN = 24;
 
 /** The widest a pile stands on the projector, the gap beside it, and the rows that fit. */
 const PROJECTED_PILE = 520;
@@ -96,12 +96,9 @@ export function Wall({
   const editable = edits !== undefined && wall.open;
   const canDrag = edits !== undefined;
   const grid = projected(piles.length);
-  const shown = big
-    ? TRAY_SHOWN.big
-    : phone
-      ? TRAY_SHOWN.phone
-      : TRAY_SHOWN.wide;
-  const { tray, held } = trayShown(unsorted, shown);
+  const { tray, held } = big
+    ? trayShown(unsorted, TRAY_SHOWN)
+    : { tray: unsorted, held: 0 };
   const trayEmpty = tray.length === 0 && writing === 0;
 
   function openPile(card: string) {
@@ -164,7 +161,6 @@ export function Wall({
               className={cn(
                 "font-display leading-[1.25]",
                 big ? "text-[44px] leading-[1.2]" : "text-2xl",
-                wall.open ? undefined : "text-muted-foreground",
               )}
             >
               {promptOf(wall)}
@@ -228,12 +224,7 @@ export function Wall({
                 />
               ))}
               {held === 0 ? null : (
-                <span
-                  className={cn(
-                    "font-mono text-muted-foreground",
-                    big ? "text-2xl" : phone ? "text-[13px]" : "text-[15px]",
-                  )}
-                >
+                <span className="font-mono text-2xl text-muted-foreground">
                   and {held} more
                 </span>
               )}

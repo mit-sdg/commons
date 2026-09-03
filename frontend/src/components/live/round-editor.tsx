@@ -609,8 +609,9 @@ export function AddRoundCard({
         <Input
           value={title}
           maxLength={200}
+          placeholder="Title"
           aria-label="Title"
-          className="h-auto border-transparent px-0 font-display text-xl font-semibold shadow-none md:text-xl"
+          className="h-auto px-3 py-1.5 font-display text-xl font-semibold md:text-xl"
           onChange={(event) => setTitle(event.target.value)}
         />
         <div className="flex flex-col gap-1.5">

@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowRight, Radio } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -38,9 +37,6 @@ export default function JoinPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
       <div className="mb-8 text-center">
-        <span className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Radio aria-hidden="true" className="size-6" />
-        </span>
         <h1 className="font-display text-3xl font-semibold tracking-tight">
           Join
         </h1>
@@ -79,7 +75,7 @@ export default function JoinPage() {
           </p>
         </div>
         <Button className="h-11 w-full" disabled={busy || code.length !== 6}>
-          {busy ? "Joining…" : "Join"} <ArrowRight />
+          {busy ? "Joining…" : "Join"}
         </Button>
       </form>
     </div>

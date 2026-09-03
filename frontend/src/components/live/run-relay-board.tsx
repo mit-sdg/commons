@@ -15,6 +15,7 @@ import {
 } from "@/components/live/refusals";
 import { RoundStrip, RoundToken } from "@/components/live/round-token";
 import {
+  choicesOf,
   pickedPiles,
   type Relay,
   type RelayRun,
@@ -30,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import { api, isApiError, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fullTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** Fast enough that the room sees itself answer, slow enough to be polite. */
@@ -104,6 +104,9 @@ export function RelayRunBoard({
     [session, shown, openRound],
   );
   const wall = wallData?.wall ?? null;
+  /** A vote round has nothing to sort: every answer is one of the choices. */
+  const voting =
+    openRound !== null && wall !== null && choicesOf(wall).length > 0;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the switch is standing consent the browser holds, which only a read can say
@@ -123,7 +126,7 @@ export function RelayRunBoard({
   }, [run.open, refetchWall]);
 
   useEffect(() => {
-    if (!modelSorts || openRound === null) return;
+    if (!modelSorts || openRound === null || voting) return;
     let live = true;
     const sort = async () => {
       const answer = await api["/live/walls/sort"]({ round: openRound });
@@ -136,7 +139,7 @@ export function RelayRunBoard({
       live = false;
       clearInterval(timer);
     };
-  }, [modelSorts, openRound]);
+  }, [modelSorts, openRound, voting]);
 
   const openEntry =
     run.rounds.find(
@@ -360,8 +363,11 @@ export function RelayRunBoard({
     leg: next?.leg ?? null,
     picks: takesShown ? picks.length : null,
   });
+  /** The Close button says the round is open, so only the unseen reasons are printed. */
   const refusalLine =
-    refusal === null ? null : refusalSentence(refusal.word, refusal.about);
+    refusal === null || refusal.word === "ROUND_OPEN"
+      ? null
+      : refusalSentence(refusal.word, refusal.about);
 
   return (
     <PageContainer width="wide">
@@ -400,15 +406,13 @@ export function RelayRunBoard({
             <ConfirmAction
               trigger={<Button variant="destructive">Close run</Button>}
               title="Close this run?"
-              description="Nobody can join or hand in after this. The walls stay."
+              description="Nobody can join or hand in after this."
               confirmLabel="Close run"
               destructive
               onConfirm={closeRun}
             />
           ) : (
-            <span className="text-muted-foreground text-sm">
-              Closed {fullTime(run.closedAt)}
-            </span>
+            <span className="text-muted-foreground text-sm">Closed</span>
           )}
         </div>
       </header>
@@ -488,7 +492,7 @@ export function RelayRunBoard({
                   variant={openEntry === null ? "default" : "outline"}
                   size="lg"
                   className="w-full justify-between gap-3 pr-3.5 pl-4"
-                  disabled={refusalLine !== null}
+                  disabled={refusal !== null}
                   title={refusalLine ?? undefined}
                   aria-describedby={
                     refusalLine === null ? undefined : REFUSAL_ID
@@ -530,18 +534,20 @@ export function RelayRunBoard({
 
             {run.open && !everyRoundRan ? (
               <>
-                <div className="flex items-center gap-2.5">
-                  <Switch
-                    on={modelSorts}
-                    label="Model sorts"
-                    onChange={sortsChange}
-                  />
-                  {sorting ? (
-                    <span className="text-muted-foreground text-xs">
-                      sorting…
-                    </span>
-                  ) : null}
-                </div>
+                {voting ? null : (
+                  <div className="flex items-center gap-2.5">
+                    <Switch
+                      on={modelSorts}
+                      label="Model sorts"
+                      onChange={sortsChange}
+                    />
+                    {sorting ? (
+                      <span className="text-muted-foreground text-xs">
+                        sorting…
+                      </span>
+                    ) : null}
+                  </div>
+                )}
                 <ModelRow
                   count={run.seats.length}
                   writing={writing}

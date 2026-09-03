@@ -56,15 +56,16 @@ Reply with exactly one JSON object and nothing else.
 {"kind":"placed","placements":[{"card":"c1","pile":"worked examples"}]}
 - Place every card listed below, once each, naming it by its label.
 - "pile" is the name of a pile on the list, or the name of a new pile.
-- Alike cards go together: never open a pile for an idea a pile on the list already holds, whoever named it. Open a new pile only for cards that belong with none on the list.
-- Name a new pile the way someone in the room would say it out loud: the word or two the cards themselves use, at most three, in the cards' own case. Never a category label, never two words joined by "and", never a name for where the cards came from or what kind of answer they are.`;
+- A pile is one idea its cards share. Alike cards go together: never open a pile for an idea a pile on the list already holds, whoever named it. Open a new pile only for cards that share no idea with any pile on the list.
+- A room's cards sort into several piles of a few cards each; a pile that would hold nearly every card is too broad an idea, so split it.
+- Name a new pile by the idea its cards share, in the room's plain words, at most three: "double booked", "lost my place", "charged twice". Never a phrase copied from one card, never a category label, never two words joined by "and", never a name for where the cards came from or what kind of answer they are.`;
 
 const LID_CONTRACT = `${LID_OPENING}
 Reply with exactly one JSON object and nothing else.
 
 {"kind":"lid","pile":"<the pile id below>","sentence":"..."}
 - "pile" is exactly the pile id given below.
-- "sentence" is one sentence of at most twenty words saying what these answers share.`;
+- "sentence" is one plain sentence of at most twelve words stating the one thing these cards share, said as a fact about the world: "Two people hold one thing at once." Never open with "These answers", "Every answer", or "Each card", and never restate the question.`;
 
 const PARTICIPANT_CONTRACT = `${PARTICIPANT_OPENING}
 Reply with exactly one JSON object and nothing else.
@@ -72,7 +73,8 @@ Reply with exactly one JSON object and nothing else.
 {"kind":"answers","answers":[{"item":"<box>","value":"..."}]}
 - One answer per box listed below; "item" is the box's name copied exactly, with nothing added.
 - When choices are offered, answer with one of them, word for word.
-- Otherwise answer in a few words, the way one student typing on a phone would.
+- Otherwise answer in a few plain words, first person, the way one student typing on a phone would.
+- The room is a software design class and the question is about software people use every day; answer about ordinary software and the people using it, never about disasters, machines, or towns.
 - Answer the question; never repeat or restate its words back.
 - Answer as this participant, not as the room's average: take the stance given below and let it show.`;
 
