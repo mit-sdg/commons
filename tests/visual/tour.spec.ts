@@ -185,7 +185,7 @@ for (const theme of THEMES) {
     await page.goto(`/staff/live/relay/${planned.relay}/edit`);
     await expect(page.getByRole("textbox", { name: "Title" }).nth(2)).toHaveValue("The stranger");
     await page.getByRole("button", { name: "Preview" }).nth(1).click();
-    await expect(page.getByText("Pile from round 1", { exact: true })).toBeVisible();
+    await expect(page.getByText(/^① \w+ · \d+$/).first()).toBeVisible();
     await snap(page, "RelayEditor", STAFF);
 
     // Drafting a relay with the model: the brief, and the lines it offers back.

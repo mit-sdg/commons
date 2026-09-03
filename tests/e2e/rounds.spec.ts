@@ -186,7 +186,10 @@ test("a relay runs its room: forty phones, a model participant, sorting, picks, 
   await page.getByRole("button", { name: /^Open.*The stranger/ }).click();
   const roundTwo = await until(
     () => call<Face>(page, "/live/p/arrive", { token }),
-    (value) => value.relay?.openRound !== null && value.relay?.openRound !== roundOne,
+    (value) =>
+      value.relay?.openRound !== null &&
+      value.relay?.openRound !== roundOne &&
+      (value.relay?.questions.length ?? 0) > 0,
   );
   const shown = roundTwo.relay?.questions[0];
   expect(shown?.choices).toEqual([]);
