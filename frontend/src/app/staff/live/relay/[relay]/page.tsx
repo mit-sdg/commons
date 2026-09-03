@@ -233,8 +233,9 @@ const BEFORE_CLASS_KEY = "live.before-class";
 /** What to do on the day, one line each, in the room's words. */
 const BEFORE_CLASS = [
   "Launch. Open Project on the room's screen.",
-  "Read the code aloud. The room joins at the address under it.",
-  "Open round 1. Turn on Model sorts, or drag cards into piles.",
+  "Read the code and the address aloud. The room joins there.",
+  "Open round 1 when the phones are out. The count starts with the round.",
+  "Turn on Model sorts, or drag cards into piles.",
   "Close the round. Tap the piles to pick, then open the next round.",
   "Close the run when the room is done. The walls stay.",
 ];
