@@ -359,7 +359,9 @@ export function Pile({
   // On a wall a hand sorts, a card on the face is dragged off it: back to the
   // tray, onto another pile, or onto the new pile. It carries the same payload
   // a card in the tray carries, and keeps the layoutId it flies by.
-  const canDragCards = onDrop !== undefined;
+  // A hand drags cards off the face while the round is sorted; once picking
+  // is on, the whole face is the pick button.
+  const canDragCards = onDrop !== undefined && onTap === undefined;
   const takeCard = (event: React.DragEvent, card: string) => {
     event.stopPropagation();
     event.dataTransfer.setData("text/plain", card);
