@@ -94,15 +94,7 @@ import {
   useFit,
   useStanding,
 } from "./computations/live-carries.ts";
-import {
-  cardId,
-  isModelParticipant,
-  isSame,
-  modelParticipant,
-  noChoices,
-  oneBoxCap,
-  oneBoxParts,
-} from "./computations/live-rounds.ts";
+import { cardId, isSame, noChoices, oneBoxCap, oneBoxParts } from "./computations/live-rounds.ts";
 import { positionAfter, positionBefore, receiptKind } from "./computations/live-quizzes.ts";
 import {
   answerReceipt,
@@ -186,9 +178,7 @@ const registrations = {
   Revising: revising,
   Roling: roling,
   Rostering: rostering,
-  RoundLinking: linking,
   Scoring: scoring,
-  Seating: subscribing,
   Sessioning: sessioning,
   Sharing: sharing,
   RunSnapshotting: snapshotting,
@@ -252,9 +242,7 @@ export const learningConcepts = conceptSet(registrations, {
   pilesOnWall,
   cardStanding,
   briefStanding,
-  isModelParticipant,
   isSame,
-  modelParticipant,
   noChoices,
   oneBoxCap,
   oneBoxParts,

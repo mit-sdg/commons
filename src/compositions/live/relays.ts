@@ -22,6 +22,7 @@ import {
   legTakesNothing,
   mayHostLive,
   mayNotHostLive,
+  participantIsSeated,
   questionnaireHasAnOpenRun,
   questionnaireHasNoOpenRun,
   relayHasAnOpenRun,
@@ -32,10 +33,13 @@ import {
   roundHasPicks,
   runHasAnOpenRound,
   runHasNoOpenRound,
+  runIsARelayRun,
   runIsClosed,
   runIsOpen,
+  seatIsNotDismissed,
   theOpenRoundOf,
   theRoundOfLegInRun,
+  theRunOf,
   theTakeOf,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
@@ -49,16 +53,17 @@ const {
   Relaying,
   Responding,
   Retiring,
-  RoundLinking,
+  Linking,
   RunSnapshotting,
-  Seating,
   Sharing,
+  Subscribing,
+  Trashing,
 } = concepts;
 
 /** Whether a round's edition is open, and how many responses it drew. */
 export const theRoundFigure = former(
   "the figure of (round)",
-  ({ round }, { open, openedAt, closedAt, begun, handedIn, modelResponse, participant, model }) =>
+  ({ round }, { open, openedAt, closedAt, begun, handedIn, modelResponse, participant, run }) =>
     where(Publishing._edition({ edition: round }).is({ open, openedAt, closedAt })).form({
       round,
       open,
@@ -75,10 +80,7 @@ export const theRoundFigure = former(
           submitted: true,
         }),
       )
-        .where(
-          compute(computations.isModelParticipant, { participant }, model),
-          is.among(model, [true]),
-        )
+        .where(theRunOf({ round }).is({ run }), participantIsSeated({ participant, run }))
         .count(),
     }),
 ).optional();
@@ -212,7 +214,7 @@ export const theRelay = former(
           closedAt,
           token,
           code,
-          rounds: each(RoundLinking._getBacklinks({ target: run }).is({ source: ran })).form({
+          rounds: each(Linking._getBacklinks({ target: run }).is({ source: ran })).form({
             round: ran,
             figure: whether(theRoundFigure({ round: ran })),
           }),
@@ -258,9 +260,9 @@ export const theRelayRun = former(
       token: each(Sharing._sharesFor({ subject: run }).is({ token })).first(token),
       code,
       openRound,
-      seats: each(Seating._getSubscribers({ target: run }).is({ user: seat })).form({
-        participant: seat,
-      }),
+      seats: each(Subscribing._getSubscribers({ target: run }).is({ user: seat }))
+        .where(seatIsNotDismissed({ participant: seat }))
+        .form({ participant: seat }),
       rounds: each(Relaying._legs({ relay }).is({ leg, material, position }))
         .where(
           Questioning._getQuestionnaire({ questionnaire: material }).is({ title: roundTitle }),
@@ -1096,7 +1098,7 @@ export const OpenRound = endpoint(
       )
       .then(
         where(compute(computations.soleTarget, { target: run }, tie)).then(
-          RoundLinking.setLinks({ source: round, targets: tie }).responds(),
+          Linking.setLinks({ source: round, targets: tie }).responds(),
         ),
       )
       .then(respond({ round })),
@@ -1112,7 +1114,7 @@ export const OpenRound = endpoint(
  */
 export const TiedRoundCapturesPresentation = reaction(
   ({ round, run, questionnaire, leg, source, carried }) =>
-    when(RoundLinking.setLinks({ source: round }).responds())
+    when(Linking.setLinks({ source: round }).responds())
       .where(
         Publishing._edition({ edition: round }).is({ material: questionnaire }),
         Relaying._legFor({ material: questionnaire }).is({ leg }),
@@ -1122,7 +1124,7 @@ export const TiedRoundCapturesPresentation = reaction(
           .then(RunSnapshotting.capture({ subject: round, value: theRoundPresentation({ leg }) }))
           .named("plain"),
         where(
-          RoundLinking._getLinks({ source: round }).is({ target: run }),
+          Linking._getLinks({ source: round }).is({ target: run }),
           theTakeOf({ leg }).is({ source, shape: "choices" }),
           theRoundOfLegInRun({ run, leg: source }).is({ round: carried }),
         )
@@ -1134,7 +1136,7 @@ export const TiedRoundCapturesPresentation = reaction(
           )
           .named("choices"),
         where(
-          RoundLinking._getLinks({ source: round }).is({ target: run }),
+          Linking._getLinks({ source: round }).is({ target: run }),
           theTakeOf({ leg }).is({ source, shape: "parts" }),
           theRoundOfLegInRun({ run, leg: source }).is({ round: carried }),
         )
@@ -1146,7 +1148,7 @@ export const TiedRoundCapturesPresentation = reaction(
           )
           .named("parts"),
         where(
-          RoundLinking._getLinks({ source: round }).is({ target: run }),
+          Linking._getLinks({ source: round }).is({ target: run }),
           theTakeOf({ leg }).is({ source, shape: "context" }),
           theRoundOfLegInRun({ run, leg: source }).is({ round: carried }),
         )
@@ -1272,23 +1274,23 @@ export const Close = endpoint(
 );
 
 /**
- * One seat per request, under an identity the dashboard minted and marked as
- * the model's. The seat follows the run: the round open now reaches it, and so
- * does every round that opens later, until it is dismissed.
+ * One seat per request, under a participant identity the dashboard minted for
+ * it. A seat is a subscription to the run, which is what makes the participant
+ * the model's: the round open now reaches it, and so does every round that
+ * opens later, until it is dismissed.
  */
 export const Invite = endpoint(
   "/live/relays/invite",
-  ({ session, run, device, user, at, participant }) =>
+  ({ session, run, device, user, at }) =>
     receive({ session, run, device }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         runIsOpen({ run }),
-        compute(computations.modelParticipant, { device }, participant),
       )
-        .then(Seating.subscribe({ user: participant, target: run, at }).responds())
-        .then(respond({ participant }))
+        .then(Subscribing.subscribe({ user: device, target: run, at }).responds())
+        .then(respond({ participant: device }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayHostLive({ user }), runIsClosed({ run }))
         .then(respond({ error: "CLOSED" }))
@@ -1302,40 +1304,50 @@ export const Invite = endpoint(
 
 /** A seat taken while a round is open answers that round at once. */
 export const SeatedParticipantAnswersOpenRound = reaction(({ participant, run, round, at }) =>
-  when(Seating.subscribe({ user: participant, target: run }).responds())
-    .where(now(at), theOpenRoundOf({ run }).is({ round }))
+  when(Subscribing.subscribe({ user: participant, target: run }).responds())
+    .where(now(at), runIsARelayRun({ run }), theOpenRoundOf({ run }).is({ round }))
     .then(Responding.begin({ participant, subject: round, at })),
 );
 
-/** A dismissed seat leaves the run: no later round reaches it. What it handed in stays. */
+/**
+ * A dismissed seat leaves the run: no later round reaches it. What it handed
+ * in stays, and stays marked, because dismissing trashes the participant
+ * rather than dropping its seat.
+ */
 export const Dismiss = endpoint(
   "/live/relays/dismiss",
-  ({ session, run, participant, user }) =>
+  ({ session, run, participant, user, at }) =>
     receive({ session, run, participant }).then(
-      where(activeUser({ session }).is({ user }), mayHostLive({ user }))
-        .then(Seating.unsubscribe({ user: participant, target: run }).responds())
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        participantIsSeated({ participant, run }),
+        seatIsNotDismissed({ participant }),
+      )
+        .then(Trashing.trash({ item: participant, by: user, at }).responds())
         .then(respond({ participant }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(participantIsSeated({ participant, run })),
+      )
+        .then(respond({ error: "NOT_SEATED" }))
+        .named("not-seated"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        participantIsSeated({ participant, run }),
+        no(seatIsNotDismissed({ participant })),
+      )
+        .then(respond({ participant }))
+        .named("already-dismissed"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
   { input: { required: ["session", "run", "participant"] } },
-);
-
-export const DismissAll = endpoint(
-  "/live/relays/dismiss-all",
-  ({ session, run, user }) =>
-    receive({ session, run }).then(
-      where(activeUser({ session }).is({ user }), mayHostLive({ user }))
-        .then(Seating.clearTarget({ target: run }).responds())
-        .then(respond({ run }))
-        .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
-  { input: { required: ["session", "run"] } },
 );
 
 /**
@@ -1347,8 +1359,9 @@ export const CapturedRoundSeatsParticipants = reaction(({ round, run, participan
   when(RunSnapshotting.capture({ subject: round }).responds())
     .where(
       now(at),
-      RoundLinking._getLinks({ source: round }).is({ target: run }),
-      Seating._getSubscribers({ target: run }).is({ user: participant }),
+      theRunOf({ round }).is({ run }),
+      Subscribing._getSubscribers({ target: run }).is({ user: participant }),
+      seatIsNotDismissed({ participant }),
     )
     .then(Responding.begin({ participant, subject: round, at })),
 );

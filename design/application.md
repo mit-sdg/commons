@@ -55,6 +55,22 @@ concrete LiveSubject
 
 concrete ForumScope
   The reserved scope `forum` under which the forum's categories are named.
+
+concrete Subscriber
+  Who follows something: a Commons user following a forum conversation, or a
+  live participant the dashboard seated in a relay run.
+
+concrete Subscribable
+  What is followed: a forum conversation, or a Publishing edition that is a
+  relay run, whose every round reaches the seated.
+
+concrete Linkable
+  What links or is linked to: a forum post, or a Publishing edition — a round's
+  edition links to the run it opened in.
+
+concrete Trashable
+  What a person may move to trash: a forum post, or a seated live participant
+  the dashboard dismissed, whose cards keep their mark because the seat stays.
 ```
 
 ## Instances
@@ -134,16 +150,12 @@ instantiate Itemizing with
   Item is Assigning.Assignment
 
 instantiate Linking with
-  Source is Posting.Post
-  Target is Posting.Post
+  Source is Linkable
+  Target is Linkable
 
 instantiate Linking as AdoptLinking with
   Source is Drafting.Brief
   Target is Questioning.Questionnaire
-
-instantiate Linking as RoundLinking with
-  Source is Publishing.Edition
-  Target is Publishing.Edition
 
 instantiate Linking as PickLinking with
   Source is Publishing.Edition
@@ -245,12 +257,8 @@ instantiate Submitting with
   Artifact is Posting.Post
 
 instantiate Subscribing with
-  Person is Authenticating.User
-  Target is Conversing.Conversation
-
-instantiate Subscribing as Seating with
-  Person is LiveParticipant
-  Target is Publishing.Edition
+  Person is Subscriber
+  Target is Subscribable
 
 instantiate Tagging with
   Target is Posting.Post
@@ -266,7 +274,7 @@ instantiate Tracking with
 
 instantiate Trashing with
   User is Authenticating.User
-  Item is Posting.Post
+  Item is Trashable
 
 instantiate Vouching as PasswordResetVouching with
   Subject is Authenticating.User
@@ -328,7 +336,7 @@ serves. Adopting a candidate is what turns drafted material into an ordinary
 editable questionnaire; nothing else crosses from the drafting line into the
 live domain.
 
-A relay is a Relaying relay whose legs' materials are one-question questionnaires of the survey form, so `LiveMaterial` has two owners the way `Lockable` does: Publishing releases a questionnaire as a quiz, survey, or round, and a relay as the run those rounds belong to. RoundLinking ties each round's edition to its run, PickLinking records which Piling categories — the piles — a closed round carried into the next, and Seating holds the run's model seats: a `LiveParticipant` the dashboard invited follows the run, and every round that opens reaches it. `LiveItem` widens Responding's item: a question with parts is answered one part at a time, each part its own item. Piling is a second Categorizing instance scoped by the round's edition, holding `LiveCard` identities the wall computations mint. Reasoning, Insisting, and Suggesting share `LiveSubject`; every reaction that reads a reply or a complaint binds the concept that answers for its subject, so a reply about a brief never reaches a wall's reactions and a reply about a round never reaches drafting's. The forum's one Categorizing scope is the reserved constant `forum`, a Commons decision like `commons`.
+A relay is a Relaying relay whose legs' materials are one-question questionnaires of the survey form, so `LiveMaterial` has two owners the way `Lockable` does: Publishing releases a questionnaire as a quiz, survey, or round, and a relay as the run those rounds belong to. Linking ties each round's edition to its run, PickLinking records which Piling categories — the piles — a closed round carried into the next, and Seating holds the run's model seats: a `LiveParticipant` the dashboard invited follows the run, and every round that opens reaches it. `LiveItem` widens Responding's item: a question with parts is answered one part at a time, each part its own item. Piling is a second Categorizing instance scoped by the round's edition, holding `LiveCard` identities the wall computations mint. Reasoning, Insisting, and Suggesting share `LiveSubject`; every reaction that reads a reply or a complaint binds the concept that answers for its subject, so a reply about a brief never reaches a wall's reactions and a reply about a round never reaches drafting's. The forum's one Categorizing scope is the reserved constant `forum`, a Commons decision like `commons`.
 
 DraftTrashing marks an author deliberately leaving an unfinished draft line.
 The drafting composition applies it to the canonical root brief and uses the

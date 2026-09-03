@@ -116,7 +116,7 @@ export const runIsNotKeyed = view("(run) has no key", ({ run }, _outputs, _bindi
   where(no(Scoring._keyFor({ subject: run }))),
 ).holds();
 
-const { Piling, PickLinking, Relaying, Retiring, RoundLinking } = concepts;
+const { Linking, Piling, PickLinking, Relaying, Retiring, Subscribing, Trashing } = concepts;
 
 export const relayHasAnOpenRun = view("(relay) has an open run", ({ relay }, _outputs, _bindings) =>
   where(Publishing._hasOpenEditionFor({ material: relay }).is({ open: true })),
@@ -134,10 +134,10 @@ export const relayIsNotRetired = view("(relay) is not retired", ({ relay }, _out
   where(Retiring._isTrashed({ item: relay }).is({ trashed: false })),
 ).holds();
 
-/** The run's rounds are the editions RoundLinking ties to it; at most one is open. */
+/** The run's rounds are the editions Linking ties to it; at most one is open. */
 export const theOpenRoundOf = view("the open round of (run)", ({ run }, { round }, _bindings) =>
   where(
-    RoundLinking._getBacklinks({ target: run }).is({ source: round }),
+    Linking._getBacklinks({ target: run }).is({ source: round }),
     Publishing._edition({ edition: run }).is({ open: true }),
     Publishing._edition({ edition: round }).is({ open: true }),
   ),
@@ -182,7 +182,7 @@ export const theRoundOfLegInRun = view(
   ({ run, leg }, { round, open }, { material }) =>
     where(
       Relaying._leg({ leg }).is({ material }),
-      RoundLinking._getBacklinks({ target: run }).is({ source: round }),
+      Linking._getBacklinks({ target: run }).is({ source: round }),
       Publishing._edition({ edition: round }).is({ material, open }),
     ),
 ).optional();
@@ -235,12 +235,35 @@ export const pileIsOfRound = view(
     where(Piling._getCategoryDetail({ category: pile }).is({ scope: round })),
 ).holds();
 
-/** A round's run is the edition RoundLinking tied it to when the round opened. */
+/** The run a round belongs to: the edition Linking tied it to when the round opened. */
+export const theRunOf = view("the run of (round)", ({ round }, { run }, _bindings) =>
+  where(Linking._getLinks({ source: round }).is({ target: run })),
+).optional();
+
+/**
+ * A participant is the model's when it holds a seat on the run: the dashboard
+ * subscribed it, and the subscription outlives a dismissal so the cards it
+ * wrote keep their mark.
+ */
+export const participantIsSeated = view(
+  "(participant) holds a seat on (run)",
+  ({ participant, run }, _outputs, _bindings) =>
+    where(Subscribing._isSubscribed({ user: participant, target: run }).is({ subscribed: true })),
+).holds();
+
+/** A dismissed seat is a trashed participant: no later round reaches it. */
+export const seatIsNotDismissed = view(
+  "(participant)'s seat is not dismissed",
+  ({ participant }, _outputs, _bindings) =>
+    where(Trashing._isTrashed({ item: participant }).is({ trashed: false })),
+).holds();
+
+/** A round's run is the edition Linking tied it to when the round opened. */
 export const roundIsOfAnOpenRun = view(
   "(round) is of an open run",
   ({ round }, _outputs, { run }) =>
     where(
-      RoundLinking._getLinks({ source: round }).is({ target: run }),
+      Linking._getLinks({ source: round }).is({ target: run }),
       Publishing._edition({ edition: run }).is({ open: true }),
     ),
 ).holds();
@@ -249,7 +272,7 @@ export const roundIsOfAClosedRun = view(
   "(round) is of a closed run",
   ({ round }, _outputs, { run }) =>
     where(
-      RoundLinking._getLinks({ source: round }).is({ target: run }),
+      Linking._getLinks({ source: round }).is({ target: run }),
       Publishing._edition({ edition: run }).is({ open: false }),
     ),
 ).holds();

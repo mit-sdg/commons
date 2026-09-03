@@ -423,7 +423,16 @@ export function RelayRunBoard({
   }
 
   async function dismissAll() {
-    await send(api["/live/relays/dismiss-all"]({ run: run.run }), seatRefused);
+    for (const seat of run.seats) {
+      const dismissed = await send(
+        api["/live/relays/dismiss"]({
+          run: run.run,
+          participant: seat.participant,
+        }),
+        seatRefused,
+      );
+      if (!dismissed) break;
+    }
     refetch();
   }
 

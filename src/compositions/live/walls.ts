@@ -18,12 +18,14 @@ import {
   cardIsOfAClosedRun,
   mayHostLive,
   mayNotHostLive,
+  participantIsSeated,
   pileIsNotOfAClosedRun,
   pileIsOfAClosedRun,
   roundIsLive,
   roundIsNotLive,
   roundIsNotOfAClosedRun,
   roundIsOfAClosedRun,
+  theRunOf,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
@@ -37,6 +39,7 @@ const {
   Insisting,
   Reasoning,
   RunSnapshotting,
+  Subscribing,
   Suggesting,
 } = concepts;
 
@@ -137,6 +140,7 @@ export const theWall = former(
       value,
       card,
       pile,
+      run,
       model,
       mine,
       part,
@@ -174,7 +178,8 @@ export const theWall = former(
       )
         .where(
           compute(computations.cardId, { response, item }, card),
-          compute(computations.isModelParticipant, { participant }, model),
+          theRunOf({ round }).is({ run }),
+          Subscribing._isSubscribed({ user: participant, target: run }).is({ subscribed: model }),
           compute(computations.isSame, { left: response, right: viewer }, mine),
           compute(computations.partLabel, { value: presentation, item }, part),
           whether(Piling._getCategory({ item: card }).is({ category: pile })),
@@ -343,17 +348,17 @@ export const FailedAskGivesUp = reaction(({ asking, round }) =>
 );
 
 /**
- * A response begun under an identity the dashboard marked as the model's puts
- * the round's face before the reasoner, seeded by that identity so forty
+ * A response begun under a participant that holds a seat on the round's run
+ * puts the round's face before the reasoner, seeded by that identity so forty
  * invited participants do not all say the same thing.
  */
 export const BegunModelResponseAsksMind = reaction(
-  ({ participant, round, response, model, value, passage, at }) =>
+  ({ participant, round, run, response, value, passage, at }) =>
     when(Responding.begin({ participant, subject: round }).responds({ response }))
       .where(
         now(at),
-        compute(computations.isModelParticipant, { participant }, model),
-        is.among(model, [true]),
+        theRunOf({ round }).is({ run }),
+        participantIsSeated({ participant, run }),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
         compute(computations.participantPassage, { value, participant }, passage),
       )

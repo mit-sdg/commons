@@ -22,7 +22,7 @@ A pile's sentence is its Piling description. [Live.walls.Summarize](reaction:Liv
 
 ## The model participant
 
-When a response begins under a participant the dashboard marked as the model's, [Live.walls.BegunModelResponseAsksMind](reaction:Live.walls.BegunModelResponseAsksMind) puts the round's face before Reasoning as a participant would read it — [participantPassage](computation:participantPassage), seeded by the participant identity so forty invited participants do not all say the same thing — and asks for one answer per part. The participant worker on the floor then plays the phone: once the reply stands and the participant's own jittered delay has passed, it answers each item through Responding and hands in, so the cards land in the tray like anyone else's and are placed by the same sorting. A reply the worker cannot read leaves that participant begun and never handed in, which the figure shows as one still writing.
+When a response begins under a participant that holds a seat on the round's run — a Subscribing subscription the dashboard made — [Live.walls.BegunModelResponseAsksMind](reaction:Live.walls.BegunModelResponseAsksMind) puts the round's face before Reasoning as a participant would read it — [participantPassage](computation:participantPassage), seeded by the participant identity so forty invited participants do not all say the same thing — and asks for one answer per part. The participant worker on the floor then plays the phone: once the reply stands and the participant's own jittered delay has passed, it answers each item through Responding and hands in, so the cards land in the tray like anyone else's and are placed by the same sorting. A reply the worker cannot read leaves that participant begun and never handed in, which the figure shows as one still writing.
 
 ```computations
 cardStanding(card: String, values: Json) : String
@@ -36,12 +36,6 @@ pilesOnWall(piles: Json, categories: Json) : Strings
 cardId(response: String, item: String) : String
   Mints the wall's identity for one answer from its response and item, so a
   card names neither.
-
-isModelParticipant(participant: String) : Bool
-  Says whether a participant identity is one the dashboard minted for the model.
-
-modelParticipant(device: String) : String
-  Marks a dashboard-minted device identity as the model's.
 
 isSame(left: String, right: String) : Bool
   Says whether two identities are the same, which is how a phone's own cards are marked.

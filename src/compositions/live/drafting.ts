@@ -96,6 +96,7 @@ export const ReplyDraftProposes = reaction(({ asking, reply, brief, kind, form, 
   when(Reasoning.answer({ asking, reply }).responds())
     .where(
       Reasoning._asking({ asking }).is({ about: brief }),
+      Drafting._brief({ brief }),
       theDraftRoot({ brief }).is({ abandoned: false }),
       compute(computations.parseKind, { reply }, kind),
       is.among(kind, ["draft"]),
@@ -109,6 +110,7 @@ export const ReplyQuestionAsks = reaction(({ asking, reply, brief, kind, questio
   when(Reasoning.answer({ asking, reply }).responds())
     .where(
       Reasoning._asking({ asking }).is({ about: brief }),
+      Drafting._brief({ brief }),
       theDraftRoot({ brief }).is({ abandoned: false }),
       compute(computations.parseKind, { reply }, kind),
       is.among(kind, ["question"]),
@@ -122,6 +124,7 @@ export const CorrectionQuestionComplains = reaction(({ asking, reply, brief, kin
   when(Reasoning.answer({ asking, reply }).responds())
     .where(
       Reasoning._asking({ asking }).is({ about: brief }),
+      Drafting._brief({ brief }),
       theDraftRoot({ brief }).is({ abandoned: false }),
       compute(computations.parseKind, { reply }, kind),
       is.among(kind, ["question"]),
@@ -142,6 +145,7 @@ export const ReplyNeitherComplains = reaction(({ asking, reply, brief, kind, rea
   when(Reasoning.answer({ asking, reply }).responds())
     .where(
       Reasoning._asking({ asking }).is({ about: brief }),
+      Drafting._brief({ brief }),
       theDraftRoot({ brief }).is({ abandoned: false }),
       compute(computations.parseKind, { reply }, kind),
       is.among(kind, ["neither"]),
@@ -175,6 +179,7 @@ export const ComplaintRetriesTheAsk = reaction(
     when(Insisting.complain({ aim: brief, offering, account }).responds())
       .where(
         now(at),
+        Drafting._brief({ brief }),
         theDraftRoot({ brief }).is({ abandoned: false }),
         Insisting._standingFor({ aim: brief }),
         Drafting._brief({ brief }).is({ request }),
@@ -186,7 +191,11 @@ export const ComplaintRetriesTheAsk = reaction(
 /** Once patience is spent, the brief stalls honestly and the insistence closes. */
 export const SpentPatienceStallsTheBrief = reaction(({ brief }) =>
   when(Insisting.complain({ aim: brief }).responds())
-    .where(theDraftRoot({ brief }).is({ abandoned: false }), Insisting._spentFor({ aim: brief }))
+    .where(
+      Drafting._brief({ brief }),
+      theDraftRoot({ brief }).is({ abandoned: false }),
+      Insisting._spentFor({ aim: brief }),
+    )
     .then(
       Drafting.stall({
         brief,
@@ -201,6 +210,7 @@ export const FailedAskStallsTheBrief = reaction(({ asking, brief, account }) =>
   when(Reasoning.fail({ asking }).responds())
     .where(
       Reasoning._asking({ asking }).is({ about: brief }),
+      Drafting._brief({ brief }),
       theDraftRoot({ brief }).is({ abandoned: false }),
     )
     .then(

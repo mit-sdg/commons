@@ -1,13 +1,12 @@
 /**
  * The floor's participant worker: it plays the phone for every response begun
- * under an identity the dashboard marked as the model's. Once the reasoner's
+ * under a participant that holds a seat on the round's run. Once the reasoner's
  * reply stands and the participant's own delay has passed, it answers each box
  * through Responding and hands in, so the model's cards land in the tray like
  * anyone else's.
  */
 
 import { participantAnswers } from "../computations/live-walls.ts";
-import { isModelParticipant } from "../computations/live-rounds.ts";
 
 type Awaitable<Value> = Value | PromiseLike<Value>;
 
@@ -30,6 +29,14 @@ interface Reply {
   reply: string;
 }
 
+interface Link {
+  target: string;
+}
+
+interface Seated {
+  subscribed: boolean;
+}
+
 export interface ParticipantFloor {
   Publishing: {
     _openEditions(input: Record<string, never>): Awaitable<OpenEdition[]>;
@@ -41,6 +48,12 @@ export interface ParticipantFloor {
   };
   Reasoning: {
     _repliesAbout(input: { about: string }): Awaitable<Reply[]>;
+  };
+  Linking: {
+    _getLinks(input: { source: string }): Awaitable<Link[]>;
+  };
+  Subscribing: {
+    _isSubscribed(input: { user: string; target: string }): Awaitable<Seated>;
   };
   RunSnapshotting: {
     _snapshot(input: { subject: string }): Awaitable<Snapshot[]>;
@@ -88,12 +101,19 @@ export async function serveParticipantsOnce(
   const editions = await concepts.Publishing._openEditions({});
   let handedIn = 0;
   for (const { edition } of editions) {
+    // A round's edition is linked to its run; a quiz or survey run is linked to nothing.
+    const [link] = await concepts.Linking._getLinks({ source: edition });
+    if (link === undefined) continue;
     const [snapshot] = await concepts.RunSnapshotting._snapshot({ subject: edition });
     if (snapshot === undefined) continue;
     const responses = await concepts.Responding._responsesFor({ subject: edition });
     for (const response of responses) {
       if (response.submitted) continue;
-      if (!isModelParticipant({ participant: response.participant })) continue;
+      const { subscribed } = await concepts.Subscribing._isSubscribed({
+        user: response.participant,
+        target: link.target,
+      });
+      if (!subscribed) continue;
       try {
         if (await playOne(concepts, response, snapshot.value, now())) handedIn += 1;
       } catch {

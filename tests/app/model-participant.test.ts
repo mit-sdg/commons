@@ -140,7 +140,7 @@ describe("the model participant and the wall", () => {
     const invited = await json(
       await post(edge, "/live/relays/invite", { run, device: "seat-1" }, cookie),
     );
-    expect(invited.participant).toBe("model:seat-1");
+    expect(invited.participant).toBe("seat-1");
     const [seated] = await until(
       async () => await edge.application.concepts.Responding._responsesFor({ subject: round }),
       (responses) => responses.length === 1,
@@ -333,7 +333,7 @@ describe("the model participant and the wall", () => {
     const first = await json(
       await post(edge, "/live/relays/invite", { run, device: "seat-a" }, cookie),
     );
-    expect(first.participant).toBe("model:seat-a");
+    expect(first.participant).toBe("seat-a");
     expect((await readRun()).seats.length).toBe(1);
 
     const opened = await json(
@@ -357,7 +357,7 @@ describe("the model participant and the wall", () => {
     expect((await readRun()).seats.length).toBe(3);
 
     // A dismissed seat is reached by no later round; dismissing every seat empties the run.
-    await post(edge, "/live/relays/dismiss", { run, participant: "model:seat-b" }, cookie);
+    await post(edge, "/live/relays/dismiss", { run, participant: "seat-b" }, cookie);
     expect((await readRun()).seats.length).toBe(2);
     await post(edge, "/live/relays/close-round", { round: roundTwo }, cookie);
     const third = await json(
@@ -366,12 +366,22 @@ describe("the model participant and the wall", () => {
     const roundThree = third.round as string;
     expect(await playRound(roundThree, 2)).toBe(2);
     const begun = await edge.application.concepts.Responding._responsesFor({ subject: roundThree });
-    expect(begun.map((response) => response.participant).sort()).toEqual([
-      "model:seat-a",
-      "model:seat-c",
-    ]);
-    expect((await post(edge, "/live/relays/dismiss-all", { run }, cookie)).status).toBe(200);
+    expect(begun.map((response) => response.participant).sort()).toEqual(["seat-a", "seat-c"]);
+    // Dismissing every seat is one request per seat, as inviting is; the dismissed keep their cards.
+    for (const seat of (await readRun()).seats) {
+      expect(
+        (await post(edge, "/live/relays/dismiss", { run, participant: seat.participant }, cookie))
+          .status,
+      ).toBe(200);
+    }
     expect((await readRun()).seats.length).toBe(0);
+    expect(
+      (await post(edge, "/live/relays/dismiss", { run, participant: "seat-b" }, cookie)).status,
+    ).toBe(200);
+    expect(
+      (await json(await post(edge, "/live/relays/dismiss", { run, participant: "nobody" }, cookie)))
+        .error,
+    ).toBe("NOT_FOUND");
 
     // A closed run seats nobody.
     await post(edge, "/live/relays/close", { run }, cookie);
