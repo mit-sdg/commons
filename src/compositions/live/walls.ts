@@ -58,8 +58,12 @@ const PATIENCE = 2;
  */
 const roundIsAWall = view(
   "(round) is a round with a captured question",
-  ({ round }, _outputs, _bindings) =>
-    where(Publishing._edition({ edition: round }), RunSnapshotting._snapshot({ subject: round })),
+  ({ round }, _outputs, { questionnaire }) =>
+    where(
+      Publishing._edition({ edition: round }).is({ material: questionnaire }),
+      Relaying._legFor({ material: questionnaire }),
+      RunSnapshotting._snapshot({ subject: round }),
+    ),
 ).holds();
 
 /** Whether any card of the round is still in the tray. */
@@ -84,6 +88,25 @@ const anAskStandsAbout = view("an ask about (round) is still out", ({ round }, _
 
 const noAskStandsAbout = view("nothing is still out about (round)", ({ round }, _o, _b) =>
   where(no(Reasoning._pending({}).is({ about: round }))),
+).holds();
+
+/**
+ * A placing reply that landed is taken line by line; until its last line is
+ * taken the tray still shows the cards it places, and a tick that asked again
+ * would place them twice.
+ */
+const anOfferingIsBeingTakenAbout = view(
+  "an offering about (round) still has lines to take",
+  ({ round }, _o, { offering }) =>
+    where(
+      Suggesting._offeringsAbout({ subject: round }).is({ offering }),
+      Suggesting._pendingIn({ offering }),
+    ),
+).holds();
+
+const noOfferingIsBeingTakenAbout = view(
+  "no offering about (round) has lines left to take",
+  ({ round }, _o, _b) => where(no(anOfferingIsBeingTakenAbout({ round }))),
 ).holds();
 
 const pileExists = view("(pile) is a pile", ({ pile }, _outputs, _bindings) =>
@@ -690,7 +713,10 @@ export const MergedPileIsUnpicked = reaction(({ category }) =>
 
 /**
  * The dashboard asks on its own poll while its switch says the model sorts, so
- * the endpoint decides for itself whether there is anything to ask about.
+ * the endpoint decides for itself whether there is anything to ask about. An
+ * insistence standing with no ask in flight does not hold the tick: a reply
+ * lost on its way is neither failed nor answered, and the next usable reply
+ * settles the insistence as any does.
  */
 export const Sort = endpoint(
   "/live/walls/sort",
@@ -703,7 +729,7 @@ export const Sort = endpoint(
         roundIsLive({ round }),
         roundHasACardInTheTray({ round }),
         noAskStandsAbout({ round }),
-        no(Insisting._unsettledFor({ aim: round })),
+        noOfferingIsBeingTakenAbout({ round }),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
         Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
@@ -742,10 +768,10 @@ export const Sort = endpoint(
         roundIsLive({ round }),
         roundHasACardInTheTray({ round }),
         noAskStandsAbout({ round }),
-        Insisting._unsettledFor({ aim: round }),
+        anOfferingIsBeingTakenAbout({ round }),
       )
         .then(respond({ asked: false }))
-        .named("insisting"),
+        .named("taking"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),

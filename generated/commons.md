@@ -1859,9 +1859,10 @@ Authored path: `Forum.posts.readable`.
 ### (round) is a round with a captured question
 
 ```view
-(round) is a round with a captured question — inputs (round); outputs (); bindings ()
+(round) is a round with a captured question — inputs (round); outputs (); bindings (questionnaire)
   where
-    Publishing._edition (edition: round)
+    Publishing._edition (edition: round) has (material: questionnaire)
+    Relaying._legFor (material: questionnaire)
     RunSnapshotting._snapshot (subject: round)
 ```
 
@@ -2254,11 +2255,27 @@ an ask about (round) is still out — inputs (round); outputs (); bindings ()
   where Reasoning._pending () has (about: round)
 ```
 
+### an offering about (round) still has lines to take
+
+```view
+an offering about (round) still has lines to take — inputs (round); outputs (); bindings (offering)
+  where
+    Suggesting._offeringsAbout (subject: round) has (offering)
+    Suggesting._pendingIn (offering)
+```
+
 ### every round (leg) takes from has closed in (run)
 
 ```view
 every round (leg) takes from has closed in (run) — inputs (run, leg); outputs (); bindings ()
   where no view "(leg) takes from a round not yet closed in (run)" with (leg, run)
+```
+
+### no offering about (round) has lines left to take
+
+```view
+no offering about (round) has lines left to take — inputs (round); outputs (); bindings ()
+  where no view "an offering about (round) still has lines to take" with (round)
 ```
 
 ### nothing is still out about (round)
@@ -4532,6 +4549,7 @@ Authored path: `Forum.moderation.theTrashBin`.
 ```former
 Former "the trash bin ()" — inputs (); bindings (item, trashedBy, trashedAt); promises exactly one record — forms:
   each Trashing._getTrashed () has (item, trashedAt, trashedBy)
+    where Posting._getPost (post: item)
     form a record of
       item
       trashedAt
@@ -10711,6 +10729,22 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Forum.moderation.PurgeItem:missing
+
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 5.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 48.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  no Posting._getPost (post: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Forum.moderation.PurgeItem:success
 
 Authored path: `Forum.moderation.PurgeItem`.
@@ -10722,6 +10756,7 @@ when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
+  Posting._getPost (post: item)
 then
   Trashing.purge (item)
 ```
@@ -10755,6 +10790,22 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Forum.moderation.RestoreItem:missing
+
+Authored path: `Forum.moderation.RestoreItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 49.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  no Posting._getPost (post: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Forum.moderation.RestoreItem:success
 
 Authored path: `Forum.moderation.RestoreItem`.
@@ -10766,6 +10817,7 @@ when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
+  Posting._getPost (post: item)
 then
   Trashing.restore (item)
 ```
@@ -19315,7 +19367,7 @@ where
   view "(round) is open on an open run" with (round)
   view "(round) has a card still in the tray" with (round)
   view "nothing is still out about (round)" with (round)
-  no Insisting._unsettledFor (aim: round)
+  view "no offering about (round) has lines left to take" with (round)
   RunSnapshotting._snapshot (subject: round) has (value)
   Categorizing._categoriesWithItems (scope: round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
@@ -19369,25 +19421,6 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Live.walls.Sort:insisting
-
-Authored path: `Live.walls.Sort`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 13.
-- Covered by [The wall](../design/compositions/live/walls.md), line 99.
-
-```reaction
-when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(round) is open on an open run" with (round)
-  view "(round) has a card still in the tray" with (round)
-  view "nothing is still out about (round)" with (round)
-  Insisting._unsettledFor (aim: round)
-then
-  RequestBoundary.respond (asked: false, requestId)
-```
-
 ### Live.walls.Sort:nothing-to-sort
 
 Authored path: `Live.walls.Sort`.
@@ -19419,6 +19452,25 @@ where
   view "(round) is open on an open run" with (round)
   view "(round) has a card still in the tray" with (round)
   view "an ask about (round) is still out" with (round)
+then
+  RequestBoundary.respond (asked: false, requestId)
+```
+
+### Live.walls.Sort:taking
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 13.
+- Covered by [The wall](../design/compositions/live/walls.md), line 99.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is open on an open run" with (round)
+  view "(round) has a card still in the tray" with (round)
+  view "nothing is still out about (round)" with (round)
+  view "an offering about (round) still has lines to take" with (round)
 then
   RequestBoundary.respond (asked: false, requestId)
 ```

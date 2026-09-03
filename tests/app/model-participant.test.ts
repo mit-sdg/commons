@@ -1,3 +1,4 @@
+import type { Db } from "mongodb";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
@@ -98,9 +99,11 @@ interface Wall {
 describe("the model participant and the wall", () => {
   let edge: Edge;
   let cookie: string;
+  let database: Db;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    database = await testDb();
+    edge = createEdge(mongoImplementations(database));
     cookie = await registerHost(edge);
   });
 
@@ -390,4 +393,60 @@ describe("the model participant and the wall", () => {
       (await post(edge, "/live/relays/invite", { run, device: "seat-d" }, cookie)).status,
     ).toBe(409);
   }, 90_000);
+
+  test("a reply lost on its way costs one tick, not the round: the next tick asks again", async () => {
+    const planned = await json(
+      await post(edge, "/live/relays/plan", { title: "Lost reply" }, cookie),
+    );
+    const relay = planned.relay as string;
+    const added = await json(
+      await post(
+        edge,
+        "/live/relays/add-round",
+        { relay, title: "One word", prompt: "One word.", parts: [], cap: 0, choices: [] },
+        cookie,
+      ),
+    );
+    const launched = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
+    const opened = await json(
+      await post(edge, "/live/relays/open-round", { run: launched.run, leg: added.leg }, cookie),
+    );
+    const round = opened.round as string;
+    const token = launched.token as string;
+    const face = await json(await post(edge, "/live/p/arrive", { token }));
+    const question = (face.relay as { questions: { question: string }[] }).questions[0]!.question;
+    for (const [device, value] of [
+      ["p-1", "an unsortable scribble"],
+      ["p-2", "save"],
+    ] as const) {
+      const begun = await json(await post(edge, "/live/p/begin", { token, device }));
+      await post(edge, "/live/p/answer", { response: begun.response, question, value });
+      await post(edge, "/live/p/submit", { response: begun.response });
+    }
+
+    // The tick asks; the scripted mind's reply is unusable, so an insistence
+    // opens and its retry goes out.
+    const first = await json(await post(edge, "/live/walls/sort", { round }, cookie));
+    expect(first.asked).toBe(true);
+    await serveOnePass(edge.application.concepts.Reasoning, scriptedMind());
+    const insisting = await until(
+      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: round }),
+      (rows) => rows.length > 0,
+    );
+    expect(insisting.length).toBe(1);
+    const outWithRetry = await json(await post(edge, "/live/walls/sort", { round }, cookie));
+    expect(outWithRetry.asked).toBe(false);
+
+    // The retry's reply is lost: nothing is pending, the insistence still stands.
+    await database
+      .collection<{ pending: boolean }>("reasoning.askings")
+      .updateMany({ pending: true }, { $set: { pending: false } });
+    expect(await edge.application.concepts.Reasoning._pending()).toEqual([]);
+    expect((await edge.application.concepts.Insisting._unsettledFor({ aim: round })).length).toBe(
+      1,
+    );
+
+    const again = await json(await post(edge, "/live/walls/sort", { round }, cookie));
+    expect(again.asked).toBe(true);
+  });
 });

@@ -3641,7 +3641,7 @@ export type CommonsWire = {
     };
     output: {
       "trashed": {
-        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_getTrashed"]>>>, ["item"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_getTrashed"]>>>, ["item"]>]>>;
         "trashedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_getTrashed"]>>>, ["trashedAt"]>>;
         "trashedBy": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_getTrashed"]>>>, ["trashedBy"]>>;
       }[];
@@ -3650,23 +3650,23 @@ export type CommonsWire = {
   };
   "/trash/purge": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_CATEGORIZED" | "ITEM_NOT_TRASHED" | "NODE_HAS_CHILDREN" | "NODE_NOT_FOUND" | "POST_NOT_FOUND" | "RESOLUTION_NOT_FOUND" | "TARGET_NOT_LOCKED" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_CATEGORIZED" | "ITEM_NOT_TRASHED" | "NODE_HAS_CHILDREN" | "NODE_NOT_FOUND" | "NOT_FOUND" | "POST_NOT_FOUND" | "RESOLUTION_NOT_FOUND" | "TARGET_NOT_LOCKED" };
   };
   "/trash/restore": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_TRASHED" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_TRASHED" | "NOT_FOUND" };
   };
   "/trash/trash": {
     input: {
@@ -7168,7 +7168,7 @@ export type CommonsWireHttp = {
     input: Record<string, never>;
     output: {
       "trashed": {
-        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_getTrashed"]>>>, ["item"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_getTrashed"]>>>, ["item"]>]>>;
         "trashedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_getTrashed"]>>>, ["trashedAt"]>>;
         "trashedBy": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_getTrashed"]>>>, ["trashedBy"]>>;
       }[];
@@ -7177,7 +7177,7 @@ export type CommonsWireHttp = {
   };
   "/trash/purge": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>]>>;
     };
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
@@ -7186,7 +7186,7 @@ export type CommonsWireHttp = {
   };
   "/trash/restore": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>]>>;
     };
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
