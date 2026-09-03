@@ -100,7 +100,14 @@ export function RelayRunBoard({
     shownLeg === null || shownLeg.under !== openRound
       ? null
       : (run.rounds.find((round) => round.leg === shownLeg.leg)?.round ?? null);
-  const next = run.rounds.find((round) => round.round === null) ?? null;
+  /** The unrun round the strip was tapped for, which Open then offers instead of the first. */
+  const [chosenNext, setChosenNext] = useState<string | null>(null);
+  const next =
+    run.rounds.find(
+      (round) => round.leg === chosenNext && round.round === null,
+    ) ??
+    run.rounds.find((round) => round.round === null) ??
+    null;
   const { take, source } = takeOf(run, relay, next);
   const shown = chosen ?? openRound ?? source?.round ?? lastClosed(closed);
 
@@ -436,17 +443,41 @@ export function RelayRunBoard({
                   size="md"
                 />
               );
-              return standing === "done" ? (
+              // A closed round's token shows its wall; the open round's takes
+              // the screen back to it; an unrun round's is what Open offers.
+              if (standing === "done" || standing === "open") {
+                const pressed = round.round === shown;
+                return (
+                  <button
+                    key={round.leg}
+                    type="button"
+                    aria-pressed={pressed}
+                    onClick={() =>
+                      setShownLeg(
+                        standing === "open"
+                          ? null
+                          : { leg: round.leg, under: openRound },
+                      )
+                    }
+                    className={cn(
+                      STRIP_TOKEN,
+                      pressed && "ring-1 ring-primary/60",
+                    )}
+                  >
+                    {token}
+                  </button>
+                );
+              }
+              const offered = run.open && round.leg === next?.leg;
+              return run.open ? (
                 <button
                   key={round.leg}
                   type="button"
-                  aria-pressed={round.round === shown}
-                  onClick={() =>
-                    setShownLeg({ leg: round.leg, under: openRound })
-                  }
+                  aria-pressed={offered}
+                  onClick={() => setChosenNext(round.leg)}
                   className={cn(
                     STRIP_TOKEN,
-                    round.round === shown && "ring-1 ring-primary/60",
+                    offered && "ring-1 ring-primary/60",
                   )}
                 >
                   {token}
