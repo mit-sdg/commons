@@ -112,7 +112,7 @@ try {
 
   // Two model participants, invited from the dashboard's knob.
   await dashboard.setViewportSize({ width: 1440, height: 900 });
-  await dashboard.getByRole("textbox", { name: "Seats to invite" }).fill(String(MODELS));
+  await dashboard.getByRole("textbox", { name: "Seats" }).fill(String(MODELS));
   await log.timed(
     `${MODELS} model participants hand in`,
     async () => {

@@ -319,7 +319,7 @@ export function QuizQuestionEditor({
           <Label>Choices</Label>
           {written ? (
             <p className="text-muted-foreground text-sm">
-              Participants write their answer.
+              No choices. The answer is written.
             </p>
           ) : (
             <div className="space-y-2">

@@ -95,7 +95,7 @@ async function seatsShown(page: Page): Promise<number | null> {
       `(() => {
        const rows = Array.from(document.querySelectorAll("span"));
        const row = rows.find(
-         (one) => one.firstChild?.nodeValue?.trim() === "Model participants",
+         (one) => one.firstChild?.nodeValue?.trim() === "Model seats",
        );
        const count = row?.querySelector("span")?.textContent?.trim() ?? "";
        return count === "" ? null : count;
@@ -335,7 +335,7 @@ try {
 
   // Between the rounds: forty seats invited from A, which is forty requests.
   await laptopA.setViewportSize({ width: 1440, height: 900 });
-  await laptopA.getByRole("textbox", { name: "Seats to invite" }).fill(String(SEATS));
+  await laptopA.getByRole("textbox", { name: "Seats" }).fill(String(SEATS));
   const took = await log.timed(
     `${SEATS} seats invited from laptop A`,
     async () => {
@@ -371,7 +371,7 @@ try {
   // One seat dropped from the other laptop.
   await laptopB.setViewportSize({ width: 1440, height: 900 });
   await log.timed("dismiss one seat from laptop B", async () => {
-    await laptopB.getByRole("button", { name: "Dismiss one", exact: true }).click();
+    await laptopB.getByRole("button", { name: "Dismiss last", exact: true }).click();
     await until(seated, (count) => count === SEATS - 1, 20);
   });
   const left = await seated();

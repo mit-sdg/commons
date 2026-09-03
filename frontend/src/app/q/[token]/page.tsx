@@ -231,9 +231,7 @@ export default function ParticipantPage() {
       setRelay("relay" in result ? (result.relay ?? null) : null);
       return arrived ?? null;
     } catch {
-      setFaceError(
-        "We couldn't reach Commons. Check your connection and try again.",
-      );
+      setFaceError("No connection. Try again.");
       return null;
     }
   }, [token]);
@@ -271,7 +269,7 @@ export default function ParticipantPage() {
         const result = await api["/live/p/outcome"]({ response });
         if (cancelled) return;
         if (isApiError(result)) {
-          setOutcomeError("Your result couldn't be loaded. Try again.");
+          setOutcomeError("Result did not load. Try again.");
           return;
         }
         setOutcomeError(null);
@@ -285,9 +283,7 @@ export default function ParticipantPage() {
         }
       } catch {
         if (!cancelled) {
-          setOutcomeError(
-            "Your result couldn't be loaded. Check your connection and try again.",
-          );
+          setOutcomeError("No connection. Try again.");
         }
       }
     };
@@ -315,7 +311,7 @@ export default function ParticipantPage() {
         submitted: false,
       });
     } catch {
-      toast.error("Could not join. Check your connection and try again.");
+      toast.error("Could not join. Try again.");
     } finally {
       setBusy(false);
     }
@@ -436,7 +432,7 @@ export default function ParticipantPage() {
     } catch {
       submissionUncertain.current = true;
       if (await recoverSubmission()) return;
-      toast.error("Could not hand in. Check your connection and try again.");
+      toast.error("Could not hand in. Try again.");
     } finally {
       setBusy(false);
     }
@@ -579,9 +575,7 @@ export default function ParticipantPage() {
             role="alert"
             className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm"
           >
-            <span>
-              Connection interrupted. Your answers remain on this device.
-            </span>
+            <span>No connection. Your answers stay on this phone.</span>
             <Button size="sm" variant="outline" onClick={() => void loadFace()}>
               Retry
             </Button>
@@ -644,14 +638,13 @@ function Line({ children }: { children: React.ReactNode }) {
  * closed line says what the student can see, in the words the rounds use.
  */
 function waitingLine(relay: Relay): string {
-  if (!relay.open) return "No more rounds.";
-  const first = relay.rounds[0];
-  if (first === undefined) return "No round yet.";
-  if (relay.rounds.every((round) => round.round === null))
-    return `Round ${first.number} has not opened.`;
-  if (relay.rounds.every((round) => round.round !== null))
+  if (!relay.open) return refusalSentence("CLOSED");
+  if (
+    relay.rounds.length > 0 &&
+    relay.rounds.every((round) => round.round !== null)
+  )
     return "Every round has run.";
-  return "The next round has not opened.";
+  return refusalSentence("NO_OPEN_ROUND");
 }
 
 /** A response is per round, so each round keeps its own slot on the device. */
@@ -751,7 +744,7 @@ function RelayPhone({
           submitted: false,
         });
       } catch {
-        toast.error("Could not join. Check your connection and try again.");
+        toast.error("Could not join. Try again.");
       }
     })();
   }, [token, participant, round, runOpen, signedIn, forget, refresh]);

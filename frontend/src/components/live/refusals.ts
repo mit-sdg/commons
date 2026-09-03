@@ -51,7 +51,7 @@ const SENTENCES: Record<RefusalWord, (about: RefusalAbout) => string> = {
       ? "Open the round it takes from first."
       : `Run round ${round} first. This one takes from it.`,
   NOTHING_PICKED: () => "Pick at least one pile.",
-  CLOSED: () => "The run is closed.",
+  CLOSED: () => "No more rounds.",
   ROUND_CLOSED: ({ round }) =>
     round === undefined ? "The round is closed." : `Round ${round} is closed.`,
   RUN_OPEN: ({ round }) =>

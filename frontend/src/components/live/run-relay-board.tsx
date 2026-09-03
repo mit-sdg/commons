@@ -586,7 +586,7 @@ export function RelayRunBoard({
 
       {error !== null ? (
         <p className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-sm">
-          {error} Showing the last wall that arrived.
+          {error} This wall is stale.
         </p>
       ) : null}
 
@@ -617,7 +617,9 @@ export function RelayRunBoard({
             closing a round is never a scroll past every pile. */}
         <aside className="order-1 flex flex-col gap-4 lg:sticky lg:top-6 lg:order-2">
           {!run.open ? (
-            <p className="text-muted-foreground text-sm">The run is closed.</p>
+            <p className="text-muted-foreground text-sm">
+              {refusalSentence("CLOSED")}
+            </p>
           ) : (
             <>
               <div className="flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">

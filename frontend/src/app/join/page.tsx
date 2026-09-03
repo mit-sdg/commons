@@ -26,9 +26,7 @@ export default function JoinPage() {
       }
       router.push(`/q/${result.token}`);
     } catch {
-      setMessage(
-        "We couldn't reach Commons. Check your connection and try again.",
-      );
+      setMessage("No connection. Try again.");
     } finally {
       setBusy(false);
     }

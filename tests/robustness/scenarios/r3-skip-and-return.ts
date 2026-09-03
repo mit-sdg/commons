@@ -54,7 +54,7 @@ const SAYS = {
   SOURCE_OPEN: (round: number) => `Close round ${round} first. This one takes from it.`,
   SOURCE_UNRUN: (round: number) => `Run round ${round} first. This one takes from it.`,
   NOTHING_PICKED: "Pick at least one pile.",
-  CLOSED: "The run is closed.",
+  CLOSED: "No more rounds.",
   ALREADY_SUBMITTED: "You already handed in.",
   INCOMPLETE: "Answer every box first.",
 };

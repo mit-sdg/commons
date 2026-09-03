@@ -183,7 +183,7 @@ function QuizRunDashboard() {
 
       {error !== null ? (
         <p className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-sm">
-          {error} Showing the last board that arrived.
+          {error} This board is stale.
         </p>
       ) : null}
 

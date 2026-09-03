@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
+import { refusalSentence } from "@/components/live/refusals";
 import {
   choicesOf,
   type RelayRun,
@@ -105,7 +106,7 @@ export function RelayProjector({
           {run.title}
         </h1>
         {!run.open ? (
-          <Standing>The run is closed.</Standing>
+          <Standing>{refusalSentence("CLOSED")}</Standing>
         ) : url === null || code === null ? null : (
           <JoinCode url={url} code={code} wall />
         )}
@@ -150,7 +151,7 @@ export function RelayProjector({
           </div>
         ) : null
       ) : (
-        <Standing>The run is closed.</Standing>
+        <Standing>{refusalSentence("CLOSED")}</Standing>
       )}
     </div>
   );

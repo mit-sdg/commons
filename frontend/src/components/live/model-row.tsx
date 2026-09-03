@@ -43,7 +43,7 @@ export function ModelRow({
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <span className="flex items-center gap-2 whitespace-nowrap text-sm">
-          Model participants
+          Model seats
           <span className="text-muted-foreground text-xs tabular-nums">
             {count} seated
           </span>
@@ -52,7 +52,7 @@ export function ModelRow({
           <Input
             value={seats}
             inputMode="numeric"
-            aria-label="Seats to invite"
+            aria-label="Seats"
             onChange={(event) => setSeats(event.target.value)}
             className="h-8 w-[52px] px-2.5 text-center"
           />
@@ -74,7 +74,7 @@ export function ModelRow({
             disabled={busy}
             onClick={() => void act(onDismiss)}
           >
-            Dismiss one
+            Dismiss last
           </Button>
           <Button
             variant="ghost"

@@ -35,7 +35,7 @@ function isKind(value: string | null): value is Kind {
 
 /** The grain of a relay brief: the rounds, and what the later one is handed. */
 const RELAY_EXAMPLE =
-  "two rounds: three verbs for a concept, then a stranger guesses it from the verbs alone";
+  "two rounds: one word for what a shopping cart does, then a vote on the words the room gave";
 
 /** The brief the author is drafting against, kept across a reload. */
 const BRIEF_STORAGE_KEY = "commons-live-draft-brief";
@@ -326,9 +326,7 @@ function DraftPageContent() {
       }
 
       setAdopting(false);
-      setAdoptNote(
-        "Adopted — the questionnaire will appear under Live shortly.",
-      );
+      setAdoptNote("Adopted. It appears under Live.");
       resumePolling();
     },
     [author, brief, resumePolling, router],
@@ -375,7 +373,7 @@ function DraftPageContent() {
                 </Button>
               }
               title="Leave this draft?"
-              description="It will leave your unfinished drafts and stay available as read-only history."
+              description="It leaves your unfinished drafts. The history stays."
               confirmLabel="Leave draft"
               destructive
               onConfirm={abandon}
@@ -464,12 +462,11 @@ function DraftPageContent() {
         <div className="space-y-8">
           {abandoned ? (
             <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-              This draft was left unfinished. It is retained as read-only
-              history.
+              Unfinished. Read-only.
             </div>
           ) : !ownsLine ? (
             <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-              This draft belongs to another author and is read-only.
+              Another author's draft. Read-only.
             </div>
           ) : null}
           {lineError !== null ? (

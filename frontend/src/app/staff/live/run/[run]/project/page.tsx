@@ -110,7 +110,7 @@ function QuizProjector() {
           </p>
           {error !== null ? (
             <p className="text-amber-700 text-sm dark:text-amber-300">
-              Connection interrupted. Showing the last update.
+              No connection.
             </p>
           ) : null}
         </>

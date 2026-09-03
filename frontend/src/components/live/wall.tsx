@@ -532,7 +532,7 @@ function Tray({
           big ? "text-xl" : "text-sm",
         )}
       >
-        Unsorted
+        Tray
         <Count
           value={count}
           className={cn(

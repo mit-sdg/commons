@@ -235,7 +235,7 @@ const BEFORE_CLASS = [
   "Launch. Open Project on the room's screen.",
   "Read the code aloud. The room joins at the address under it.",
   "Open round 1. Turn on Model sorts, or drag cards into piles.",
-  "Close the round. Tap the piles to carry, then open the next round.",
+  "Close the round. Tap the piles to pick, then open the next round.",
   "Close the run when the room is done. The walls stay.",
 ];
 

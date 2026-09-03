@@ -144,7 +144,7 @@ export function QuestionCard({
                     className="text-muted-foreground text-xs leading-[1.45]"
                   >
                     {values.slice(0, WORDS_SHOWN).join(" · ")}
-                    {held === 0 ? "" : ` +${held}`}
+                    {held === 0 ? "" : ` and ${held} more`}
                   </p>
                 )}
               </div>

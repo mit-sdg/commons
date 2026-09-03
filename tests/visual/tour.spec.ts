@@ -292,7 +292,7 @@ for (const theme of THEMES) {
 
     // One model participant takes a seat, then the model sorts the wall.
     await desk(page);
-    await page.getByRole("textbox", { name: "Seats to invite" }).fill("1");
+    await page.getByRole("textbox", { name: "Seats" }).fill("1");
     await page.getByRole("button", { name: "Invite" }).click();
     await until(
       () => call<WallRead>(page, "/live/walls/read", { round: roundOne }),

@@ -18,8 +18,7 @@ type Round = NonNullable<Output<"/live/relays/get">["relay"]>["rounds"][number];
 const POLL_MS = 2_000;
 const WAIT_MS = 60_000;
 
-const EXAMPLE =
-  "add a third round where the room explains what the stranger missed";
+const EXAMPLE = "add a third round: a vote on the words the room gave";
 
 const VERB: Record<string, string> = {
   add: "add round",
@@ -517,17 +516,17 @@ export function AiPanel({
                     {line.standing !== "pending" ? (
                       <span className="flex-none text-muted-foreground text-xs">
                         {unmoved.has(line.suggestion)
-                          ? "Nothing changed."
+                          ? "No change."
                           : line.standing === "taken"
-                            ? "Applied"
-                            : "Declined"}
+                            ? "Accepted"
+                            : "Refused"}
                       </span>
                     ) : (
                       <span className="flex flex-none gap-1">
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label="Take"
+                          aria-label="Accept"
                           disabled={busy}
                           onClick={() => void settle(line, true)}
                         >
@@ -536,7 +535,7 @@ export function AiPanel({
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label="Decline"
+                          aria-label="Refuse"
                           disabled={busy}
                           onClick={() => void settle(line, false)}
                         >
@@ -571,7 +570,7 @@ export function AiPanel({
                 disabled={busy}
                 onClick={() => void settleAll(offering, false)}
               >
-                Dismiss
+                Refuse all
               </Button>
             </div>
           ) : null}

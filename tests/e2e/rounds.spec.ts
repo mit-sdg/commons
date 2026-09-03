@@ -147,7 +147,7 @@ test("a relay runs its room: forty phones, a model participant, sorting, picks, 
   expect(handedIn.wall?.handedIn).toBe(PHONES);
 
   // One model participant, invited from the dashboard, hands in on its own clock.
-  await page.getByRole("textbox", { name: "Seats to invite" }).fill("1");
+  await page.getByRole("textbox", { name: "Seats" }).fill("1");
   await page.getByRole("button", { name: "Invite" }).click();
   const withModel = await until(
     () => call<WallRead>(page, "/live/walls/read", { round: roundOne }),

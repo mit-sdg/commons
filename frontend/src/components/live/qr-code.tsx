@@ -83,8 +83,7 @@ export function JoinCode({
         </span>
         {localOnly ? (
           <span className="max-w-md text-amber-700 text-xs dark:text-amber-300">
-            This address only works on this device. Set PUBLIC_ORIGIN to a
-            public or LAN address before inviting participants.
+            This address works on this device only. Set PUBLIC_ORIGIN.
           </span>
         ) : null}
       </figcaption>

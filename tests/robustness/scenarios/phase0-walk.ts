@@ -212,7 +212,7 @@ try {
   );
   await until(
     async () => (await projector.evaluate("document.body.innerText").catch(() => "")) as string,
-    (text) => !/Unsorted\s+[1-9]/.test(text),
+    (text) => !/Tray\s+[1-9]/.test(text),
     20,
   );
   log.note(
@@ -266,7 +266,7 @@ try {
   await words(projector, "08-projector-flood");
   // Reload every screen while the flood is on.
   await reloadTimed(dashboard, "dashboard", () =>
-    dashboard.getByText("Unsorted").first().waitFor({ timeout: 15000 }),
+    dashboard.getByText("Tray").first().waitFor({ timeout: 15000 }),
   );
   await reloadTimed(projector, "projector", () =>
     projector.getByText("Three verbs").first().waitFor({ timeout: 15000 }),
@@ -286,7 +286,7 @@ try {
   const settledTwo = Date.now();
   await until(
     async () => (await projector.evaluate("document.body.innerText").catch(() => "")) as string,
-    (text) => !/Unsorted\s+[1-9]/.test(text),
+    (text) => !/Tray\s+[1-9]/.test(text),
     20,
   );
   log.note(`the projector's tray emptied ${Date.now() - settledTwo}ms after the server settled`);
