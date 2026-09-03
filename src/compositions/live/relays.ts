@@ -48,7 +48,7 @@ const {
   Categorizing,
   Linking,
   Locating,
-  PickLinking,
+  Pinning,
   Publishing,
   Questioning,
   Relaying,
@@ -405,7 +405,7 @@ export const theRoundPresentationTaking = former(
         .form({
           item: question,
           prompt,
-          choices: each(PickLinking._getLinks({ source: sourceRound }).is({ target: pile }))
+          choices: each(Pinning._getPinned({ scope: sourceRound }).is({ item: pile }))
             .where(Categorizing._getCategoryDetail({ category: pile }).is({ name }))
             .distinct(name),
           expected,
@@ -464,7 +464,7 @@ export const theRoundPresentationTakingParts = former(
           choices,
           expected,
           explanation,
-          parts: each(PickLinking._getLinks({ source: sourceRound }).is({ target: pile }))
+          parts: each(Pinning._getPinned({ scope: sourceRound }).is({ item: pile }))
             .where(Categorizing._getCategoryDetail({ category: pile }).is({ name }))
             .distinct(name),
           cap,
@@ -524,7 +524,7 @@ export const theRoundPresentationShowing = former(
         explanation,
         parts,
         cap,
-        context: each(PickLinking._getLinks({ source: sourceRound }).is({ target: pile }))
+        context: each(Pinning._getPinned({ scope: sourceRound }).is({ item: pile }))
           .where(
             Categorizing._getCategoryDetail({ category: pile }).is({ name }),
             Categorizing._categoriesWithItems({ scope: sourceRound }).is({ categories }),

@@ -66,21 +66,12 @@ export function useFit({
   return entry !== undefined && entry.kinds.includes(kind) ? "open" : "closed";
 }
 
-/** Which of the named piles stand on this wall, in the order named; the rest are dropped. */
-export function pilesOnWall({
-  piles,
-  categories,
-}: {
-  piles: string[];
-  categories: unknown;
-}): string[] {
-  const standing = new Set(
-    (Array.isArray(categories) ? (categories as { category?: unknown }[]) : []).map((pile) =>
-      typeof pile.category === "string" ? pile.category : "",
-    ),
-  );
-  const named = Array.isArray(piles) ? piles.filter((pile) => typeof pile === "string") : [];
-  return [...new Set(named)].filter((pile) => standing.has(pile));
+/**
+ * The priority a pile picked after `count` others takes: the first pile picked
+ * stands highest, so the picked read back in the order they were taken.
+ */
+export function pickPriority({ count }: { count: number }): number {
+  return -count;
 }
 
 /** Whether a card is one of the wall's cards: `known` or `unknown`. */

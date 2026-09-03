@@ -6,7 +6,7 @@ A round's wall is every answer the room handed in, as cards, sorted into named p
 
 ## Sorting by hand
 
-[Live.walls.OpenPile](reaction:Live.walls.OpenPile) names a pile and puts a card in it in one request, which is what dragging a card onto empty space does; naming a pile that already exists on this wall reaches it rather than making another. [Live.walls.MoveCard](reaction:Live.walls.MoveCard) moves a card into a pile, [Live.walls.ToTray](reaction:Live.walls.ToTray) sends it back to the tray, [Live.walls.RenamePile](reaction:Live.walls.RenamePile) renames a pile, and [Live.walls.MergePile](reaction:Live.walls.MergePile) folds one pile into another, every card moving with it. A card is only ever placed on its own wall: opening a pile with, or moving, a card that is not one of the round's — [cardStanding](computation:cardStanding) — is refused `CARD_NOT_FOUND`. [Live.walls.Pick](reaction:Live.walls.Pick) records which piles of a closed round carry into a round that takes the picked piles: the dashboard sends the whole picked set each time a pile is tapped, and PickLinking holds it under the round; a name that is no pile of this wall is dropped from the set — [pilesOnWall](computation:pilesOnWall) — so nothing from another wall can be carried.
+[Live.walls.OpenPile](reaction:Live.walls.OpenPile) names a pile and puts a card in it in one request, which is what dragging a card onto empty space does; naming a pile that already exists on this wall reaches it rather than making another. [Live.walls.MoveCard](reaction:Live.walls.MoveCard) moves a card into a pile, [Live.walls.ToTray](reaction:Live.walls.ToTray) sends it back to the tray, [Live.walls.RenamePile](reaction:Live.walls.RenamePile) renames a pile, and [Live.walls.MergePile](reaction:Live.walls.MergePile) folds one pile into another, every card moving with it. A card is only ever placed on its own wall: opening a pile with, or moving, a card that is not one of the round's — [cardStanding](computation:cardStanding) — is refused `CARD_NOT_FOUND`. [Live.walls.Pick](reaction:Live.walls.Pick) picks a pile of a closed round to carry into a round that takes the picked piles, and [Live.walls.Unpick](reaction:Live.walls.Unpick) unpicks it: a pick is a Pinning pin in the round's scope, one request per pile, so two dashboards never overwrite each other's whole set, and the first pile picked stands highest so the picked read back in the order they were taken. A pile that is not on this wall is refused `NOT_FOUND`, so nothing from another wall can be carried; picking a picked pile, or unpicking an unpicked one, changes nothing. A pile merged away is unpinned — [Live.walls.MergedPileIsUnpicked](reaction:Live.walls.MergedPileIsUnpicked).
 
 ## Sorting by the model
 
@@ -29,9 +29,9 @@ cardStanding(card: String, values: Json) : String
   Answers `known` when the card is one of the wall's cards, minted from a value
   the room handed in, and `unknown` otherwise.
 
-pilesOnWall(piles: Json, categories: Json) : Strings
-  Answers the named piles that stand on the wall, in the order named and
-  without repeats; a name that is no pile of this wall is left out.
+pickPriority(count: Number) : Number
+  The priority a pile picked after `count` others takes, so the first pile
+  picked stands highest and the picked read back in the order they were taken.
 
 cardId(response: String, item: String) : String
   Mints the wall's identity for one answer from its response and item, so a
@@ -93,6 +93,7 @@ Live.walls.MergePile at /live/walls/merge-pile
 Live.walls.MoveCard at /live/walls/move-card
 Live.walls.OpenPile at /live/walls/open-pile
 Live.walls.Pick at /live/walls/pick
+Live.walls.Unpick at /live/walls/unpick
 Live.walls.Read at /live/walls/read
 Live.walls.RenamePile at /live/walls/rename-pile
 Live.walls.Sort at /live/walls/sort

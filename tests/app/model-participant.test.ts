@@ -222,7 +222,7 @@ describe("the model participant and the wall", () => {
       "These answers all say something about",
     );
 
-    await post(edge, "/live/walls/pick", { round, piles: [pile] }, cookie);
+    await post(edge, "/live/walls/pick", { round, pile }, cookie);
     const picked = await until(readWall, (wall) =>
       wall.piles.some((entry) => entry.picked !== null),
     );
@@ -247,9 +247,9 @@ describe("the model participant and the wall", () => {
 
     // A closed round of an open run is where staff pick, so its wall still takes writes.
     expect((await post(edge, "/live/relays/close-round", { round }, cookie)).status).toBe(200);
-    expect(
-      (await post(edge, "/live/walls/pick", { round, piles: [pile, byHand] }, cookie)).status,
-    ).toBe(200);
+    expect((await post(edge, "/live/walls/pick", { round, pile: byHand }, cookie)).status).toBe(
+      200,
+    );
     expect(
       (await post(edge, "/live/walls/rename-pile", { pile: byHand, name: "Sorted" }, cookie))
         .status,
@@ -264,7 +264,8 @@ describe("the model participant and the wall", () => {
       ["/live/walls/rename-pile", { pile: byHand, name: "Too late" }],
       ["/live/walls/merge-pile", { pile: byHand, into: pile }],
       ["/live/walls/describe-pile", { pile: byHand, description: "Too late" }],
-      ["/live/walls/pick", { round, piles: [] }],
+      ["/live/walls/pick", { round, pile: byHand }],
+      ["/live/walls/unpick", { round, pile: byHand }],
       ["/live/walls/summarize", { pile: byHand }],
     ];
     for (const [path, body] of writes) {

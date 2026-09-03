@@ -21,10 +21,12 @@ import {
   participantIsSeated,
   pileIsNotOfAClosedRun,
   pileIsOfAClosedRun,
+  pileIsOfRound,
   roundIsLive,
   roundIsNotLive,
   roundIsNotOfAClosedRun,
   roundIsOfAClosedRun,
+  thePickCount,
   theRunOf,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
@@ -32,7 +34,7 @@ import { computations, concepts } from "../../concepts.ts";
 const {
   Categorizing,
   Insisting,
-  PickLinking,
+  Pinning,
   Publishing,
   Questioning,
   Reasoning,
@@ -107,9 +109,11 @@ const pileHoldsACard = view("(pile) holds a card", ({ pile }, _outputs, _binding
   where(Categorizing._getItems({ category: pile })),
 ).holds();
 
-/** Which pile of the round carries forward, when this one does. */
+/** Which pile of the round carries forward, when this one does: a pinned pile. */
 const thePickOn = former("the pick of (pile) on (round)", ({ round, pile }, _bindings) =>
-  where(PickLinking._getLinks({ source: round }).is({ target: pile })).form({ picked: pile }),
+  where(Pinning._isPinned({ item: pile, scope: round }).is({ pinned: true })).form({
+    picked: pile,
+  }),
 ).optional();
 
 /**
@@ -577,23 +581,38 @@ export const DescribePile = endpoint(
   { input: { required: ["session", "pile", "description"] } },
 );
 
-/** The dashboard sends the whole picked set each time a pile is tapped. */
+/**
+ * Picking a pile pins it in the round's scope; the dashboard sends one request
+ * per pile it picks or unpicks, so two dashboards never overwrite each other's
+ * whole set. The first pile picked stands highest, so the picked read back in
+ * the order they were taken.
+ */
 export const Pick = endpoint(
   "/live/walls/pick",
-  ({ session, round, piles, user, at, categories, onWall, picked }) =>
-    receive({ session, round, piles }).then(
+  ({ session, round, pile, user, at, taken, priority }) =>
+    receive({ session, round, pile }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        Publishing._edition({ edition: round }),
         roundIsNotOfAClosedRun({ round }),
-        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
-        compute(computations.pilesOnWall, { piles, categories }, onWall),
+        pileIsOfRound({ pile, round }),
+        Pinning._isPinned({ item: pile, scope: round }).is({ pinned: false }),
+        thePickCount({ round }).is({ taken }),
+        compute(computations.pickPriority, { count: taken }, priority),
       )
-        .then(PickLinking.setLinks({ source: round, targets: onWall }).responds({ source: picked }))
-        .then(respond({ round: picked }))
+        .then(Pinning.pin({ item: pile, scope: round, priority, at }).responds())
+        .then(respond({ pile }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        pileIsOfRound({ pile, round }),
+        Pinning._isPinned({ item: pile, scope: round }).is({ pinned: true }),
+      )
+        .then(respond({ pile }))
+        .named("already-picked"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -604,8 +623,8 @@ export const Pick = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        no(Publishing._edition({ edition: round })),
         roundIsNotOfAClosedRun({ round }),
+        no(pileIsOfRound({ pile, round })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("missing"),
@@ -613,7 +632,60 @@ export const Pick = endpoint(
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
-  { input: { required: ["session", "round", "piles"] } },
+  { input: { required: ["session", "round", "pile"] } },
+);
+
+/** Unpicking a pile unpins it; unpicking one that is not picked changes nothing. */
+export const Unpick = endpoint(
+  "/live/walls/unpick",
+  ({ session, round, pile, user }) =>
+    receive({ session, round, pile }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        pileIsOfRound({ pile, round }),
+        Pinning._isPinned({ item: pile, scope: round }).is({ pinned: true }),
+      )
+        .then(Pinning.unpin({ item: pile, scope: round }).responds())
+        .then(respond({ pile }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        pileIsOfRound({ pile, round }),
+        Pinning._isPinned({ item: pile, scope: round }).is({ pinned: false }),
+      )
+        .then(respond({ pile }))
+        .named("not-picked"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsOfAClosedRun({ round }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        no(pileIsOfRound({ pile, round })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "round", "pile"] } },
+);
+
+/** A pile merged away is no longer on the wall, so it is no longer picked. */
+export const MergedPileIsUnpicked = reaction(({ category }) =>
+  when(Categorizing.mergeCategory({ category }).responds()).then(
+    Pinning.clearItem({ item: category }),
+  ),
 );
 
 /**

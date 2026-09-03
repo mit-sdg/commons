@@ -116,7 +116,7 @@ export const runIsNotKeyed = view("(run) has no key", ({ run }, _outputs, _bindi
   where(no(Scoring._keyFor({ subject: run }))),
 ).holds();
 
-const { Categorizing, Linking, PickLinking, Relaying, Subscribing, Trashing } = concepts;
+const { Categorizing, Linking, Pinning, Relaying, Subscribing, Trashing } = concepts;
 
 export const relayHasAnOpenRun = view("(relay) has an open run", ({ relay }, _outputs, _bindings) =>
   where(Publishing._hasOpenEditionFor({ material: relay }).is({ open: true })),
@@ -220,13 +220,18 @@ export const legTakesNothing = view("(leg) takes nothing", ({ leg }, _outputs, _
   where(no(Relaying._draws({ leg }))),
 ).holds();
 
+/** How many piles the round has picked so far, which is the next pick's place in the order. */
+export const thePickCount = view("the pick count of (round)", ({ round }, { taken }, _bindings) =>
+  where(count(Pinning._getPinned, { scope: round }, taken)),
+).one();
+
 export const roundHasPicks = view("(round) has piles picked", ({ round }, _outputs, _bindings) =>
-  where(PickLinking._getLinks({ source: round })),
+  where(Pinning._getPinned({ scope: round })),
 ).holds();
 
 export const roundHasNoPicks = view(
   "(round) has no piles picked",
-  ({ round }, _outputs, _bindings) => where(no(PickLinking._getLinks({ source: round }))),
+  ({ round }, _outputs, _bindings) => where(no(Pinning._getPinned({ scope: round }))),
 ).holds();
 
 export const pileIsOfRound = view(

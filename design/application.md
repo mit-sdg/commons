@@ -66,6 +66,14 @@ concrete Trashable
   ended, which retires it; or a seated live participant the dashboard dismissed,
   whose cards keep their mark because the seat stays.
 
+concrete Pinnable
+  What is held above the rest: a forum post pinned in its conversation, or a
+  pile a staff member picked to carry into the next round.
+
+concrete PinScope
+  Where pins stand: a forum conversation, or a Publishing edition that is a
+  round, whose pinned piles are the ones picked.
+
 concrete CategoryScope
   Where a category's name is unique: the forum, under the reserved scope `forum`,
   or a Publishing edition that is a round, whose categories are the piles on its
@@ -153,10 +161,6 @@ instantiate Linking as AdoptLinking with
   Source is Drafting.Brief
   Target is Questioning.Questionnaire
 
-instantiate Linking as PickLinking with
-  Source is Publishing.Edition
-  Target is Categorizing.Category
-
 instantiate Locking with
   Target is Lockable
 
@@ -181,8 +185,8 @@ instantiate Noting with
   Learner is Authenticating.User
 
 instantiate Pinning with
-  Item is Posting.Post
-  Scope is Conversing.Conversation
+  Item is Pinnable
+  Scope is PinScope
 
 instantiate Posting with
   Author is Authenticating.User
@@ -332,7 +336,7 @@ serves. Adopting a candidate is what turns drafted material into an ordinary
 editable questionnaire; nothing else crosses from the drafting line into the
 live domain.
 
-A relay is a Relaying relay whose legs' materials are one-question questionnaires of the survey form, so `LiveMaterial` has two owners the way `Lockable` does: Publishing releases a questionnaire as a quiz, survey, or round, and a relay as the run those rounds belong to. Linking ties each round's edition to its run, PickLinking records which categories — the piles — a closed round carried into the next, and Seating holds the run's model seats: a `LiveParticipant` the dashboard invited follows the run, and every round that opens reaches it. `LiveItem` widens Responding's item: a question with parts is answered one part at a time, each part its own item. Piles are Categorizing categories whose scope is the round's edition, holding `LiveCard` identities the wall computations mint; the forum's categories stand in the `forum` scope beside them. Reasoning, Insisting, and Suggesting share `LiveSubject`; every reaction that reads a reply or a complaint binds the concept that answers for its subject, so a reply about a brief never reaches a wall's reactions and a reply about a round never reaches drafting's. The forum's one Categorizing scope is the reserved constant `forum`, a Commons decision like `commons`.
+A relay is a Relaying relay whose legs' materials are one-question questionnaires of the survey form, so `LiveMaterial` has two owners the way `Lockable` does: Publishing releases a questionnaire as a quiz, survey, or round, and a relay as the run those rounds belong to. Linking ties each round's edition to its run, the picked piles of a closed round are Pinning pins in the round's scope, read back in the order they were taken, and Seating holds the run's model seats: a `LiveParticipant` the dashboard invited follows the run, and every round that opens reaches it. `LiveItem` widens Responding's item: a question with parts is answered one part at a time, each part its own item. Piles are Categorizing categories whose scope is the round's edition, holding `LiveCard` identities the wall computations mint; the forum's categories stand in the `forum` scope beside them. Reasoning, Insisting, and Suggesting share `LiveSubject`; every reaction that reads a reply or a complaint binds the concept that answers for its subject, so a reply about a brief never reaches a wall's reactions and a reply about a round never reaches drafting's. The forum's one Categorizing scope is the reserved constant `forum`, a Commons decision like `commons`.
 
 DraftTrashing marks an author deliberately leaving an unfinished draft line.
 The drafting composition applies it to the canonical root brief and uses the

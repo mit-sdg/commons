@@ -226,15 +226,39 @@ export function RelayRunBoard({
       ? (next?.number ?? undefined)
       : (drawerOf(run, relay, shownEntry)?.number ?? undefined);
 
-  /** Sends the whole picked set, which stands on the screen until the wall lands. */
+  /**
+   * Sends the difference between the picked set on the screen and the one
+   * wanted, one request per pile, in the order wanted; the wanted set stands
+   * on the screen until the wall lands.
+   */
   function applyPick(piles: string[]) {
     if (shown === null) return;
-    setTapped({ round: shown, piles });
+    const round = shown;
+    const before = picks;
+    setTapped({ round, piles });
     picking.current = true;
-    void send(
-      api["/live/walls/pick"]({ round: shown, piles }),
-      goneOrClosed("PILE_GONE"),
-    ).then(() => {
+    void (async () => {
+      for (const pile of before) {
+        if (piles.includes(pile)) continue;
+        if (
+          !(await send(
+            api["/live/walls/unpick"]({ round, pile }),
+            goneOrClosed("PILE_GONE"),
+          ))
+        )
+          break;
+      }
+      for (const pile of piles) {
+        if (before.includes(pile)) continue;
+        if (
+          !(await send(
+            api["/live/walls/pick"]({ round, pile }),
+            goneOrClosed("PILE_GONE"),
+          ))
+        )
+          break;
+      }
+    })().then(() => {
       picking.current = false;
       refetchWall();
     });

@@ -237,7 +237,8 @@ describe("what a round carries from an earlier one", () => {
       await post(edge, "/live/relays/open-round", { run, leg: stranger }, cookie),
     );
     expect(early.error).toBe("CONFLICT");
-    await post(edge, "/live/walls/pick", { round, piles: [keeping.pile, sending.pile] }, cookie);
+    await post(edge, "/live/walls/pick", { round, pile: keeping.pile }, cookie);
+    await post(edge, "/live/walls/pick", { round, pile: sending.pile }, cookie);
 
     // Context: the question as authored, with the piles and their cards above it.
     const shown = await json(
@@ -309,7 +310,7 @@ describe("what a round carries from an earlier one", () => {
 
     // A vote's groups carry like piles: the winner shown as context, without its ballots.
     const won = voteWall.piles.find((pile) => pile.name === "keeping")?.pile;
-    await post(edge, "/live/walls/pick", { round: voting.round, piles: [won] }, cookie);
+    await post(edge, "/live/walls/pick", { round: voting.round, pile: won }, cookie);
     const after = await json(
       await post(edge, "/live/relays/open-round", { run, leg: runoff }, cookie),
     );
