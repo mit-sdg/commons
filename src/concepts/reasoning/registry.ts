@@ -11,5 +11,8 @@ export const reasoning = registerConcept({
     ASKING_NOT_FOUND: AskingNotFound,
     ALREADY_SETTLED: AlreadySettled,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoReasoningConcept(database) },
+  floors: {
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoReasoningConcept(database, instance),
+  },
 });

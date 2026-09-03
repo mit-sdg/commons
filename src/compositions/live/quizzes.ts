@@ -21,12 +21,13 @@ import {
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
-const { Publishing, Questioning, Sharing } = concepts;
+const { Publishing, Questioning, Relaying, Sharing } = concepts;
 
 /**
  * Every questionnaire on the staff shelf, newest first, with its open run when
  * one stands — and what launching needs: how many questions it holds, and
- * whether any proposes an expected answer.
+ * whether any proposes an expected answer. A relay round's questionnaire is
+ * reached through its relay and never stands here on its own.
  */
 export const theQuestionnaires = former(
   "the questionnaires",
@@ -45,6 +46,7 @@ export const theQuestionnaires = former(
       }),
     )
       .where(
+        no(Relaying._legFor({ material: questionnaire })),
         whether(
           Publishing._editionsFor({ material: questionnaire }).is({ edition: run, open: true }),
         ),

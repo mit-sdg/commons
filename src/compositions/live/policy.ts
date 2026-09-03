@@ -115,3 +115,106 @@ export const runIsAKeyedQuiz = view(
 export const runIsNotKeyed = view("(run) has no key", ({ run }, _outputs, _bindings) =>
   where(no(Scoring._keyFor({ subject: run }))),
 ).holds();
+
+const { Piling, PickLinking, Relaying, RoundLinking } = concepts;
+
+/** The run's rounds are the editions RoundLinking ties to it; at most one is open. */
+export const theOpenRoundOf = view("the open round of (run)", ({ run }, { round }, _bindings) =>
+  where(
+    RoundLinking._getBacklinks({ target: run }).is({ source: round }),
+    Publishing._edition({ edition: run }).is({ open: true }),
+    Publishing._edition({ edition: round }).is({ open: true }),
+  ),
+).optional();
+
+export const runHasAnOpenRound = view("(run) has a round open", ({ run }, _outputs, _bindings) =>
+  where(theOpenRoundOf({ run })),
+).holds();
+
+export const runHasNoOpenRound = view("(run) has no round open", ({ run }, _outputs, _bindings) =>
+  where(no(theOpenRoundOf({ run }))),
+).holds();
+
+export const runIsARelayRun = view("(run) is a relay run", ({ run }, _outputs, { relay }) =>
+  where(Publishing._edition({ edition: run }).is({ material: relay }), Relaying._relay({ relay })),
+).holds();
+
+export const runIsAQuestionnaireRun = view(
+  "(run) is a questionnaire run",
+  ({ run }, _outputs, _bindings) => where(RunSnapshotting._snapshot({ subject: run })),
+).holds();
+
+export const legIsOfRun = view("(leg) is a round of (run)", ({ run, leg }, _outputs, { relay }) =>
+  where(
+    Publishing._edition({ edition: run }).is({ material: relay }),
+    Relaying._leg({ leg }).is({ relay }),
+  ),
+).holds();
+
+export const legIsNotOfRun = view(
+  "(leg) is not a round of (run)",
+  ({ run, leg }, _outputs, { relay }) =>
+    where(
+      Publishing._edition({ edition: run }).is({ material: relay }),
+      Relaying._leg({ leg }).is.not({ relay }),
+    ),
+).holds();
+
+/** The edition a round got when it opened in this run, if it did. */
+export const theRoundOfLegInRun = view(
+  "the round of (leg) in (run)",
+  ({ run, leg }, { round, open }, { material }) =>
+    where(
+      Relaying._leg({ leg }).is({ material }),
+      RoundLinking._getBacklinks({ target: run }).is({ source: round }),
+      Publishing._edition({ edition: round }).is({ material, open }),
+    ),
+).optional();
+
+export const legRanInRun = view("(leg) already ran in (run)", ({ run, leg }, _outputs, _bindings) =>
+  where(theRoundOfLegInRun({ run, leg })),
+).holds();
+
+export const legHasNotRunInRun = view(
+  "(leg) has not run in (run)",
+  ({ run, leg }, _outputs, _bindings) => where(no(theRoundOfLegInRun({ run, leg }))),
+).holds();
+
+/** A source is unclosed while it has no closed round in this run. */
+export const legHasAnOpenSource = view(
+  "(leg) takes from a round not yet closed in (run)",
+  ({ run, leg }, _outputs, { source }) =>
+    where(
+      Relaying._draws({ leg }).is({ source }),
+      no(theRoundOfLegInRun({ run, leg: source }).is({ open: false })),
+    ),
+).holds();
+
+export const legSourcesHaveClosed = view(
+  "every round (leg) takes from has closed in (run)",
+  ({ run, leg }, _outputs, _bindings) => where(no(legHasAnOpenSource({ run, leg }))),
+).holds();
+
+/** What a round takes: this pass fills one source per round. */
+export const theTakeOf = view("what (leg) takes", ({ leg }, { source, shape }, _bindings) =>
+  where(Relaying._draws({ leg }).is({ source, shape })),
+).optional();
+
+export const legTakesNothing = view("(leg) takes nothing", ({ leg }, _outputs, _bindings) =>
+  where(no(Relaying._draws({ leg }))),
+).holds();
+
+export const roundHasPicks = view("(round) has piles picked", ({ round }, _outputs, _bindings) =>
+  where(PickLinking._getLinks({ source: round })),
+).holds();
+
+export const roundHasNoPicks = view(
+  "(round) has no piles picked",
+  ({ round }, _outputs, _bindings) => where(no(PickLinking._getLinks({ source: round }))),
+).holds();
+
+export const pileIsOfRound = view(
+  "(pile) is on the wall of (round)",
+  ({ pile, round }, _outputs, _bindings) =>
+    where(Piling._getCategoryDetail({ category: pile }).is({ scope: round })),
+).holds();

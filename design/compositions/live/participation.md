@@ -25,6 +25,11 @@ by [snapshotTitle](computation:snapshotTitle) and
 [participantQuestions](computation:participantQuestions) deliberately removes
 the captured standards and explanations.
 
+When the token opens onto a relay run instead, Arrive forms the face of the
+relay run, which the relays page owns — the rounds as number, title, and
+standing, and the open round's question — under `relay` rather than `face`,
+so the join page knows which kind of room it entered.
+
 [Live.participation.Begin](reaction:Live.participation.Begin) starts — or
 rejoins — an anonymous response under the device identifier, and
 [Live.participation.BeginSigned](reaction:Live.participation.BeginSigned) does
@@ -32,13 +37,18 @@ the same under the caller's account when a session rides the request; the join
 page calls whichever matches its login state. Responding holds one response
 per participant and run, so a reloaded phone finds its answers standing, and a
 participant who already handed in is refused rather than counted twice. A
-closed run answers `CLOSED` before anything begins.
+closed run answers `CLOSED` before anything begins. In a relay run both
+endpoints begin the response to the round that is open, so a phone holds one
+response per round under the same token, and a run with no round open answers
+`NO_OPEN_ROUND`.
 
 [Live.participation.Answer](reaction:Live.participation.Answer) records one
-value per question, replacing in place; a question outside the run answers
+value per item, replacing in place; an item outside the run answers
 `NOT_PART`, and a closed run answers `CLOSED`. Membership is decided against
 the run's captured presentation, so a later edit cannot add or remove a
-question from an existing room.
+question from an existing room. An item is a question, or one part of a
+question with parts — `question#n` — so a phone answering three labeled
+boxes records three answers, each a card on the wall.
 [Live.participation.Submit](reaction:Live.participation.Submit) is the
 deliberate hand-in. A survey may be handed in as it stands; a quiz must answer
 every captured question, else `INCOMPLETE`. Both the form and completeness rule
@@ -62,7 +72,11 @@ participant's value to its feedback kind: a choice with a standard is graded,
 a written answer with a standard is read against that reference, and an answer
 without a standard is marked ungraded. Only the first kind is ever described
 as right or wrong. The score arrives blank until grading lands, which
-is why the screen polls. A response not yet handed in answers `NOT_SUBMITTED`.
+is why the screen polls. A response not yet handed in answers `NOT_SUBMITTED`. After handing in to a
+round, [Live.participation.Wall](reaction:Live.participation.Wall) reads the
+wall of that round, which the wall page owns, with the holder's own cards
+marked, and nothing else identified — where you landed, shown only once
+you have handed in; a response still in progress answers `NOT_SUBMITTED`.
 The two revealing levels derive their ordered rows from the same immutable run
 value with [answerReceipt](computation:answerReceipt) and
 [explanationReceipt](computation:explanationReceipt); joining is a pure
@@ -76,4 +90,5 @@ Live.participation.BeginSigned at /live/p/begin-signed
 Live.participation.Locate at /live/p/locate
 Live.participation.Outcome at /live/p/outcome
 Live.participation.Submit at /live/p/submit
+Live.participation.Wall at /live/p/wall
 ```

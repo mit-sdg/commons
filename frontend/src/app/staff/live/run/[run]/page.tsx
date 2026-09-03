@@ -14,6 +14,7 @@ import {
   RunScoreBoard,
   scoresOf,
 } from "@/components/live/run-board";
+import { RelayRunBoard } from "@/components/live/run-relay-board";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -27,7 +28,42 @@ import { fullTime } from "@/lib/format";
 /** Fast enough that the room sees itself answer, slow enough to be polite. */
 const POLL_MS = 3_000;
 
+/**
+ * One address serves both kinds of run. A run whose material is a relay
+ * answers here with its rounds; anything else is a questionnaire run and
+ * meets the board below.
+ */
 function RunDashboardContent() {
+  const { run } = useParams<{ run: string }>();
+  const { session } = useAuth();
+
+  const { data, loading, error, refetch } = useQuery(
+    session ? () => api["/live/relays/run"]({ run }).then(unwrap) : null,
+    [session, run],
+  );
+
+  const relayRun = data?.run ?? null;
+
+  if (loading && data === null) {
+    return (
+      <PageContainer width="wide">
+        <LoadingState label="Loading the board…" />
+      </PageContainer>
+    );
+  }
+  if (error !== null && data === null) {
+    return (
+      <PageContainer width="wide">
+        <ErrorState message={error} onRetry={refetch} />
+      </PageContainer>
+    );
+  }
+  if (relayRun !== null)
+    return <RelayRunBoard run={relayRun} error={error} refetch={refetch} />;
+  return <QuizRunDashboard />;
+}
+
+function QuizRunDashboard() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 

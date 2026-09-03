@@ -55,6 +55,7 @@ describe("composed application reads", () => {
     });
     await app.concepts.Conversing.reply({ item: reply, parent: node, at: later });
     const { category } = await app.concepts.Categorizing.createCategory({
+      scope: "forum",
       name: "Design",
       description: "Questions about the design",
     });

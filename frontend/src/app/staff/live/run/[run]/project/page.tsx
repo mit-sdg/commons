@@ -4,6 +4,7 @@ import { Radio } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
+import { RelayProjector } from "@/components/live/run-relay-projector";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useQuery } from "@/hooks/use-query";
@@ -13,12 +14,38 @@ import { useAuth } from "@/lib/auth";
 /** The wall keeps pace with the room the same way the dashboard does. */
 const POLL_MS = 3_000;
 
-/**
- * The projected join page: the title, the code, the address, and how many are
- * in. Everything else — answers, scores, controls — stays on the dashboard,
- * so this screen can face the room.
- */
+/** A relay run projects its wall; anything else projects the join page below. */
 function ProjectorContent() {
+  const { run } = useParams<{ run: string }>();
+  const { session } = useAuth();
+
+  const { data, loading, error, refetch } = useQuery(
+    session ? () => api["/live/relays/run"]({ run }).then(unwrap) : null,
+    [session, run],
+  );
+
+  const relayRun = data?.run ?? null;
+
+  if (loading && data === null) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <LoadingState label="Loading…" />
+      </div>
+    );
+  }
+  if (error !== null && data === null) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center px-6">
+        <ErrorState message={error} onRetry={refetch} />
+      </div>
+    );
+  }
+  if (relayRun !== null)
+    return <RelayProjector run={relayRun} refetch={refetch} />;
+  return <QuizProjector />;
+}
+
+function QuizProjector() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 

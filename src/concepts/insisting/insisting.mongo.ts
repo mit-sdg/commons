@@ -24,10 +24,11 @@ export class MongoInsistingConcept {
   private readonly complaints: Collection<ComplaintDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 
-  constructor(db: Db) {
-    this.insistences = db.collection<InsistenceDoc>("insisting.insistences");
-    this.complaints = db.collection<ComplaintDoc>("insisting.complaints");
-    this.counters = db.collection("insisting.counters");
+  constructor(db: Db, instance = "Insisting") {
+    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
+    this.insistences = db.collection<InsistenceDoc>(`${prefix}.insistences`);
+    this.complaints = db.collection<ComplaintDoc>(`${prefix}.complaints`);
+    this.counters = db.collection(`${prefix}.counters`);
   }
 
   async #nextSeq(name: string): Promise<number> {

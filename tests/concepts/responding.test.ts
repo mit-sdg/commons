@@ -171,6 +171,29 @@ for (const [floor, make] of floors) {
       expect(await responding._valuesForSubject({ subject: "no-such" })).toEqual({ values: [] });
     });
 
+    test("_submittedAnswers answers the same rows, one by one", async () => {
+      const responding = await make();
+      const first = await responding.begin({ participant: "leon", subject: "quiz", at });
+      const second = await responding.begin({ participant: "mira", subject: "quiz", at: later });
+      await responding.answer({ response: first.response, item: "q2", value: "b" });
+      await responding.answer({ response: first.response, item: "q1", value: "a" });
+      await responding.answer({ response: second.response, item: "q1", value: "z" });
+      // An unsubmitted response contributes nothing.
+      const third = await responding.begin({ participant: "ada", subject: "quiz", at: later });
+      await responding.answer({ response: third.response, item: "q1", value: "not handed in" });
+      await responding.submit({ response: second.response, at: later });
+      await responding.submit({ response: first.response, at });
+
+      const rows = await responding._submittedAnswers({ subject: "quiz" });
+      expect(rows).toEqual([
+        { response: first.response, participant: "leon", item: "q2", value: "b" },
+        { response: first.response, participant: "leon", item: "q1", value: "a" },
+        { response: second.response, participant: "mira", item: "q1", value: "z" },
+      ]);
+      expect(await responding._valuesForSubject({ subject: "quiz" })).toEqual({ values: rows });
+      expect(await responding._submittedAnswers({ subject: "no-such" })).toEqual([]);
+    });
+
     test("queries answer nothing for responses and pairings that do not exist", async () => {
       const responding = await make();
       expect(await responding._response({ response: "no-such" })).toEqual([]);

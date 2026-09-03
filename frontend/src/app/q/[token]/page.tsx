@@ -4,6 +4,15 @@ import { CheckCircle2, CircleSlash } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { HandInBar } from "@/components/live/phone-bar";
+import {
+  answeredOf,
+  itemCountOf,
+  QuestionCard as RoundQuestionCard,
+} from "@/components/live/phone-question";
+import { Figure, RoundStrip, RoundToken } from "@/components/live/round-token";
+import { standingOf, type Wall as WallShape } from "@/components/live/rounds";
+import { Wall } from "@/components/live/wall";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +21,10 @@ import { api, isApiError, type Output } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-type Face = NonNullable<Output<"/live/p/arrive">["face"]>;
+type Arrival = Output<"/live/p/arrive">;
+type Face = NonNullable<Extract<Arrival, { face: unknown }>["face"]>;
+/** A relay run answers Arrive under `relay`: the rounds, and the open one's question. */
+type Relay = NonNullable<Extract<Arrival, { relay: unknown }>["relay"]>;
 type Question = Face["questions"][number];
 type Outcome = Output<"/live/p/outcome">;
 
@@ -41,6 +53,7 @@ const explanationOf = (row: OutcomeReceipt): string | undefined =>
 
 const FACE_POLL_MS = 5_000;
 const OUTCOME_POLL_MS = 1_500;
+const ROUND_POLL_MS = 3_000;
 
 /** A device identifier that survives reloads; secure-context APIs may be absent on lecture-hall LANs. */
 function deviceId(): string {
@@ -96,10 +109,57 @@ function writeProgress(
   }
 }
 
+/**
+ * Committed answers go out one at a time per item, and an unchanged value is
+ * never sent twice, so a blur landing on a write still in flight cannot
+ * overtake it.
+ */
+function useAnswerSender(response: string | null) {
+  const sent = useRef<Record<string, string>>({});
+  const pending = useRef<Record<string, Promise<boolean>>>({});
+
+  const forget = useCallback(() => {
+    sent.current = {};
+    pending.current = {};
+  }, []);
+
+  const persistAnswer = useCallback(
+    (question: string, value: string): Promise<boolean> => {
+      if (response === null) return Promise.resolve(false);
+      const prior = pending.current[question] ?? Promise.resolve(true);
+      const write = prior.then(async () => {
+        if (sent.current[question] === value) return true;
+        try {
+          const result = await api["/live/p/answer"]({
+            response,
+            question,
+            value,
+          });
+          if (!isApiError(result)) {
+            sent.current[question] = value;
+            return true;
+          }
+        } catch {
+          // The same recovery sentence covers a transport failure and a
+          // refusal: the local draft remains available for another attempt.
+        }
+        toast.error("That answer was not saved. Try again.");
+        return false;
+      });
+      pending.current[question] = write;
+      return write;
+    },
+    [response],
+  );
+
+  return { persistAnswer, forget };
+}
+
 export default function ParticipantPage() {
   const { token } = useParams<{ token: string }>();
   const { me, loading: authLoading, logout } = useAuth();
   const [face, setFace] = useState<Face | null>(null);
+  const [relay, setRelay] = useState<Relay | null>(null);
   const [missing, setMissing] = useState(false);
   const [faceError, setFaceError] = useState<string | null>(null);
   const [participant, setParticipant] = useState<string | null>(null);
@@ -112,8 +172,7 @@ export default function ParticipantPage() {
   const [outcomeError, setOutcomeError] = useState<string | null>(null);
   const [outcomeRetry, setOutcomeRetry] = useState(0);
   const [busy, setBusy] = useState(false);
-  const sent = useRef<Record<string, string>>({});
-  const pending = useRef<Record<string, Promise<boolean>>>({});
+  const { persistAnswer, forget } = useAnswerSender(response);
   const submissionUncertain = useRef(false);
   const reconciledResponse = useRef<string | null>(null);
   const signedParticipant = me === null ? null : String(me.user);
@@ -143,11 +202,10 @@ export default function ParticipantPage() {
     setOutcome(null);
     setProgressReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */
-    sent.current = {};
-    pending.current = {};
+    forget();
     submissionUncertain.current = false;
     reconciledResponse.current = null;
-  }, [authLoading, signedParticipant, token]);
+  }, [authLoading, signedParticipant, token, forget]);
 
   const loadFace = useCallback(async () => {
     try {
@@ -159,8 +217,11 @@ export default function ParticipantPage() {
       }
       setMissing(false);
       setFaceError(null);
-      setFace(result.face ?? null);
-      return result.face ?? null;
+      // One token opens onto either a questionnaire run or a relay run.
+      const arrived = "relay" in result ? null : result.face;
+      setFace(arrived ?? null);
+      setRelay("relay" in result ? (result.relay ?? null) : null);
+      return arrived ?? null;
     } catch {
       setFaceError(
         "We couldn't reach Commons. Check your connection and try again.",
@@ -267,35 +328,6 @@ export default function ParticipantPage() {
       });
     },
     [response, participant, answers, token],
-  );
-
-  const persistAnswer = useCallback(
-    (question: string, value: string): Promise<boolean> => {
-      if (response === null) return Promise.resolve(false);
-      const prior = pending.current[question] ?? Promise.resolve(true);
-      const write = prior.then(async () => {
-        if (sent.current[question] === value) return true;
-        try {
-          const result = await api["/live/p/answer"]({
-            response,
-            question,
-            value,
-          });
-          if (!isApiError(result)) {
-            sent.current[question] = value;
-            return true;
-          }
-        } catch {
-          // The same recovery sentence covers a transport failure and a
-          // refusal: the local draft remains available for another attempt.
-        }
-        toast.error("That answer was not saved. Try again.");
-        return false;
-      });
-      pending.current[question] = write;
-      return write;
-    },
-    [response],
   );
 
   const answer = useCallback(
@@ -419,6 +451,25 @@ export default function ParticipantPage() {
     );
   }
 
+  if (relay !== null) {
+    if (!progressReady || participant === null) {
+      return (
+        <Shell>
+          <LoadingState label="Opening…" />
+        </Shell>
+      );
+    }
+    return (
+      <RelayPhone
+        token={token}
+        relay={relay}
+        participant={participant}
+        signedIn={me !== null}
+        refresh={loadFace}
+      />
+    );
+  }
+
   if (face === null || !progressReady || !progressBelongsToViewer) {
     if (faceError !== null) {
       return (
@@ -526,30 +577,14 @@ export default function ParticipantPage() {
           />
         ))}
       </div>
-      <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur">
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
-          <span
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-            className="text-sm text-muted-foreground"
-          >
-            {
-              Object.values(answers).filter((value) => value.trim() !== "")
-                .length
-            }{" "}
-            of {face.questions.length} answered
-          </span>
-          <Button
-            // A thumb-sized target: the default h-9 falls under the 44px floor.
-            className="h-11"
-            onClick={() => void submit()}
-            disabled={busy || (isQuiz && !complete)}
-          >
-            Hand in
-          </Button>
-        </div>
-      </div>
+      <HandInBar
+        answered={
+          Object.values(answers).filter((value) => value.trim() !== "").length
+        }
+        of={face.questions.length}
+        disabled={busy || (isQuiz && !complete)}
+        onHandIn={() => void submit()}
+      />
     </Shell>
   );
 }
@@ -573,6 +608,251 @@ function Shell({
       )}
       {children}
     </div>
+  );
+}
+
+/** A response is per round, so each round keeps its own slot on the device. */
+function roundSlot(participant: string, round: string): string {
+  return `${participant}:${round}`;
+}
+
+/**
+ * The phone in a relay run: the round that is open, answered and handed in,
+ * then the wall of where the answer landed. A round is a response of its own,
+ * so the phone begins again when the next round opens.
+ */
+function RelayPhone({
+  token,
+  relay,
+  participant,
+  signedIn,
+  refresh,
+}: {
+  token: string;
+  relay: Relay;
+  participant: string;
+  signedIn: boolean;
+  refresh: () => Promise<Face | null>;
+}) {
+  const round = relay.openRound;
+  const runOpen = relay.open;
+  const held = useRef<string | null>(null);
+  const [response, setResponse] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [refused, setRefused] = useState(false);
+  const [wall, setWall] = useState<WallShape | null>(null);
+  const [busy, setBusy] = useState(false);
+  const { persistAnswer, forget } = useAnswerSender(response);
+
+  // A new round is a fresh response: forget the one before and begin again.
+  // The round the screen holds is a ref, so beginning it cannot restart this.
+  useEffect(() => {
+    if (round === null || round === held.current) return;
+    held.current = round;
+    const slot = roundSlot(participant, round);
+    const stored = readProgress(token, slot);
+
+    setResponse(stored?.response ?? null);
+    setAnswers(stored?.answers ?? {});
+    setSubmitted(stored?.submitted ?? false);
+    setRefused(false);
+    setWall(null);
+
+    forget();
+    if (!runOpen || stored !== null) return;
+    void (async () => {
+      try {
+        const result = signedIn
+          ? await api["/live/p/begin-signed"]({ token })
+          : await api["/live/p/begin"]({ token, device: deviceId() });
+        if (held.current !== round) return;
+        if (isApiError(result)) {
+          setRefused(true);
+          await refresh();
+          return;
+        }
+        setResponse(result.response);
+        writeProgress(token, slot, {
+          response: result.response,
+          answers: {},
+          submitted: false,
+        });
+      } catch {
+        toast.error("Could not join. Check your connection and try again.");
+      }
+    })();
+  }, [token, participant, round, runOpen, signedIn, forget, refresh]);
+
+  // The next round opening is what the phone watches for.
+  useEffect(() => {
+    const timer = setInterval(() => void refresh(), ROUND_POLL_MS);
+    return () => clearInterval(timer);
+  }, [refresh]);
+
+  // After hand-in the wall shows where the answer landed, until the round closes.
+  const closed = wall !== null && !wall.open;
+  useEffect(() => {
+    if (!submitted || response === null || closed) return;
+    let cancelled = false;
+    const read = async () => {
+      try {
+        const result = await api["/live/p/wall"]({ response });
+        if (cancelled || isApiError(result) || result.wall === null) return;
+        setWall(result.wall);
+      } catch {
+        // The wall is a read; the next tick tries again.
+      }
+    };
+    void read();
+    const timer = setInterval(() => void read(), ROUND_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [submitted, response, closed]);
+
+  const remember = useCallback(
+    (next: Record<string, string>, handedIn: boolean) => {
+      if (response === null || held.current === null) return;
+      writeProgress(token, roundSlot(participant, held.current), {
+        response,
+        answers: next,
+        submitted: handedIn,
+      });
+    },
+    [response, token, participant],
+  );
+
+  const draft = useCallback(
+    (item: string, value: string) => {
+      const next = { ...answers, [item]: value };
+      setAnswers(next);
+      remember(next, false);
+    },
+    [answers, remember],
+  );
+
+  const answer = useCallback(
+    (item: string, value: string) => {
+      const next = { ...answers, [item]: value };
+      setAnswers(next);
+      remember(next, false);
+      void persistAnswer(item, value);
+    },
+    [answers, remember, persistAnswer],
+  );
+
+  const handIn = useCallback(async () => {
+    if (response === null) return;
+    setBusy(true);
+    try {
+      // Hand-in flushes anything typed but not yet committed by a blur.
+      for (const [item, value] of Object.entries(answers)) {
+        const trimmed = value.trim();
+        if (trimmed === "") continue;
+        const saved = await persistAnswer(item, trimmed);
+        if (!saved) return;
+      }
+      const result = await api["/live/p/submit"]({ response });
+      if (isApiError(result)) {
+        toast.error("Could not hand in. Try again.");
+        await refresh();
+        return;
+      }
+      setSubmitted(true);
+      remember(answers, true);
+    } catch {
+      toast.error("Could not hand in. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }, [response, answers, persistAnswer, remember, refresh]);
+
+  const openRound = relay.rounds.find(
+    (candidate) => candidate.round !== null && candidate.open === true,
+  );
+  const questions = relay.questions;
+  const handedIn = submitted || refused;
+  const answering = !handedIn && runOpen && round !== null && response !== null;
+
+  return (
+    <Shell>
+      <div className={cn("flex flex-col gap-5", answering && "pb-28")}>
+        <header className="flex items-center justify-between gap-4">
+          <h1
+            className="min-w-0 truncate font-display text-[22px] font-semibold tracking-tight"
+            dir="auto"
+          >
+            {relay.title}
+          </h1>
+          {openRound === undefined ? (
+            <RoundStrip
+              className="flex-none"
+              rounds={relay.rounds.map((candidate) => ({
+                number: candidate.number,
+                title: candidate.title,
+                standing: standingOf(candidate),
+              }))}
+            />
+          ) : (
+            <RoundToken
+              className="min-w-0"
+              number={openRound.number}
+              title={openRound.title}
+              standing="open"
+              size="sm"
+            />
+          )}
+        </header>
+
+        {handedIn ? (
+          <>
+            <div className="flex flex-col items-center gap-2 pt-1 pb-2 text-center">
+              <CheckCircle2
+                aria-hidden="true"
+                strokeWidth={1.5}
+                className="size-10 text-muted-foreground"
+              />
+              <h2 className="font-display text-lg font-semibold">Handed in</h2>
+            </div>
+            {wall !== null ? (
+              <>
+                <Figure value={wall.handedIn} of={wall.begun} />
+                <Wall wall={wall} phone />
+              </>
+            ) : null}
+          </>
+        ) : !runOpen ? (
+          <EmptyState icon={CircleSlash} title="This relay has been closed" />
+        ) : round === null ? (
+          <p className="py-16 text-center text-muted-foreground">
+            Next round soon
+          </p>
+        ) : response === null ? (
+          <LoadingState label="Opening…" />
+        ) : (
+          questions.map((question) => (
+            <RoundQuestionCard
+              key={question.question}
+              question={question}
+              answers={answers}
+              onAnswer={answer}
+              onDraft={draft}
+            />
+          ))
+        )}
+      </div>
+
+      {answering ? (
+        <HandInBar
+          answered={answeredOf(questions, answers)}
+          of={itemCountOf(questions)}
+          disabled={busy}
+          onHandIn={() => void handIn()}
+        />
+      ) : null}
+    </Shell>
   );
 }
 

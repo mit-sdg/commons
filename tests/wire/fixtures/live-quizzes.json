@@ -273,12 +273,16 @@
               "question": "uuid#8",
               "prompt": "Which gas do plants take in?",
               "choices": ["Oxygen", "Carbon dioxide"],
+              "parts": [],
+              "cap": 0,
               "position": 1
             },
             {
               "question": "uuid#9",
               "prompt": "Name the light-capturing pigment.",
               "choices": [],
+              "parts": [],
+              "cap": 0,
               "position": 2
             }
           ]
@@ -357,17 +361,17 @@
           "receipt": [
             {
               "item": "uuid#8",
-              "kind": "graded",
               "prompt": "Which gas do plants take in?",
-              "standard": "Carbon dioxide",
-              "value": "Carbon dioxide"
+              "value": "Carbon dioxide",
+              "kind": "graded",
+              "standard": "Carbon dioxide"
             },
             {
               "item": "uuid#9",
-              "kind": "reference",
               "prompt": "Name the light-capturing pigment.",
-              "standard": "Chlorophyll",
-              "value": "Chlorophyll"
+              "value": "Chlorophyll",
+              "kind": "reference",
+              "standard": "Chlorophyll"
             }
           ]
         }
@@ -402,11 +406,14 @@
               "choices": ["Oxygen", "Carbon dioxide"],
               "expected": "Carbon dioxide",
               "explanation": "Photosynthesis fixes carbon.",
+              "parts": [],
+              "cap": 0,
               "position": 1,
               "values": [
                 {
-                  "participant": "phone-1",
                   "response": "uuid#12",
+                  "participant": "phone-1",
+                  "part": "",
                   "value": "Carbon dioxide"
                 }
               ]
@@ -417,11 +424,14 @@
               "choices": [],
               "expected": "Chlorophyll",
               "explanation": "",
+              "parts": [],
+              "cap": 0,
               "position": 2,
               "values": [
                 {
-                  "participant": "phone-1",
                   "response": "uuid#12",
+                  "participant": "phone-1",
+                  "part": "",
                   "value": "Chlorophyll"
                 }
               ]

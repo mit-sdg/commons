@@ -67,16 +67,20 @@ snapshotForm(value: LiveRunSnapshot) : String
   Reads the captured questionnaire form.
 
 snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean
-  Says whether the captured presentation contains the question identity.
+  Says whether the captured presentation contains the item identity — a
+  question, or one part of a question with parts.
 
 snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean
-  Says whether the answers include every captured question identity.
+  Says whether the answers include every captured item: each question without
+  parts, each labeled part, and at least one repetition of a repeated box.
 
 participantQuestions(value: LiveRunSnapshot) : Seq
-  Projects ordered participant questions without standards or explanations.
+  Projects ordered participant questions with prompt, choices, parts, and cap,
+  without standards or explanations.
 
 boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq
-  Enriches ordered captured questions with the run's submitted values.
+  Enriches ordered captured questions with the run's submitted values, each
+  value naming the part it answers.
 
 answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq
   Joins submitted answers to captured questions without explanations.

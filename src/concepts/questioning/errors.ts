@@ -11,4 +11,5 @@ export class DuplicateChoices extends Error {}
 export class InvalidExpected extends Error {}
 export class InvalidReference extends Error {}
 export class InvalidExplanation extends Error {}
+export class InvalidParts extends Error {}
 export class NotSiblings extends Error {}

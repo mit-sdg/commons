@@ -27,6 +27,7 @@ import { publishing } from "./concepts/publishing/registry.ts";
 import { questioning } from "./concepts/questioning/registry.ts";
 import { reacting } from "./concepts/reacting/registry.ts";
 import { reasoning } from "./concepts/reasoning/registry.ts";
+import { relaying } from "./concepts/relaying/registry.ts";
 import { responding } from "./concepts/responding/registry.ts";
 import { resolving } from "./concepts/resolving/registry.ts";
 import { revising } from "./concepts/revising/registry.ts";
@@ -38,6 +39,7 @@ import { sharing } from "./concepts/sharing/registry.ts";
 import { snapshotting } from "./concepts/snapshotting/registry.ts";
 import { submitting } from "./concepts/submitting/registry.ts";
 import { subscribing } from "./concepts/subscribing/registry.ts";
+import { suggesting } from "./concepts/suggesting/registry.ts";
 import { tagging } from "./concepts/tagging/registry.ts";
 import { tasking } from "./concepts/tasking/registry.ts";
 import { tracking } from "./concepts/tracking/registry.ts";
@@ -59,18 +61,57 @@ import {
   repairPassage,
   revisionPassage,
 } from "./computations/live-drafting.ts";
+import {
+  editCap,
+  editChoices,
+  editParts,
+  editPosition,
+  editPrompt,
+  editRoundCap,
+  editRoundChoices,
+  editRoundJson,
+  editRoundParts,
+  editShape,
+  editTitle,
+  legMaterials,
+  relayDraftPassage,
+  relayDraftReading,
+  relayDraftReason,
+  relayDraftRepairPassage,
+  relayEditLines,
+} from "./computations/live-edits.ts";
 import { soleTarget } from "./computations/live-links.ts";
+import {
+  cardId,
+  everyPile,
+  isModelParticipant,
+  isSame,
+  modelParticipant,
+  topPiles,
+} from "./computations/live-rounds.ts";
 import { positionAfter, positionBefore, receiptKind } from "./computations/live-quizzes.ts";
 import {
   answerReceipt,
   boardQuestions,
   explanationReceipt,
+  partLabel,
   participantQuestions,
   snapshotForm,
   snapshotHasQuestion,
   snapshotIsWhole,
   snapshotTitle,
 } from "./computations/live-snapshots.ts";
+import {
+  lidLines,
+  lidPassage,
+  participantAnswers,
+  participantPassage,
+  placingLines,
+  placingPassage,
+  placingReading,
+  placingReason,
+  placingRepairPassage,
+} from "./computations/live-walls.ts";
 import {
   passwordResetCooldownStart,
   passwordResetExpiry,
@@ -115,6 +156,8 @@ const registrations = {
   Notifying: notifying,
   Noting: noting,
   PasswordResetVouching: vouching,
+  PickLinking: linking,
+  Piling: categorizing,
   Pinning: pinning,
   Posting: posting,
   Profiling: profiling,
@@ -122,17 +165,22 @@ const registrations = {
   Questioning: questioning,
   Reacting: reacting,
   Reasoning: reasoning,
+  Relaying: relaying,
   Responding: responding,
   Resolving: resolving,
   Revising: revising,
   Roling: roling,
   Rostering: rostering,
+  RoundInsisting: insisting,
+  RoundLinking: linking,
+  RoundReasoning: reasoning,
   Scoring: scoring,
   Sessioning: sessioning,
   Sharing: sharing,
   RunSnapshotting: snapshotting,
   Submitting: submitting,
   Subscribing: subscribing,
+  Suggesting: suggesting,
   Tagging: tagging,
   TaskNotifying: notifying,
   Tasking: tasking,
@@ -144,16 +192,34 @@ export const learningConcepts = conceptSet(registrations, {
   answerReceipt,
   boardQuestions,
   capabilitiesAreKnown,
+  cardId,
   clarifiedPassage,
   draftTitle,
   draftingPassage,
+  editCap,
+  editChoices,
+  editParts,
+  editPosition,
+  editPrompt,
+  editRoundCap,
+  editRoundChoices,
+  editRoundJson,
+  editRoundParts,
+  editShape,
+  editTitle,
   explanationReceipt,
+  legMaterials,
   parseKind,
   parsedForm,
   parsedMaterial,
   parsedQuestion,
   parsedReason,
   participantQuestions,
+  relayDraftPassage,
+  relayDraftReading,
+  relayDraftReason,
+  relayDraftRepairPassage,
+  relayEditLines,
   repairPassage,
   revisionPassage,
   soleTarget,
@@ -161,6 +227,12 @@ export const learningConcepts = conceptSet(registrations, {
   positionBefore,
   receiptKind,
   effectiveCapabilities,
+  everyPile,
+  isModelParticipant,
+  isSame,
+  modelParticipant,
+  partLabel,
+  topPiles,
   invitationMailHtml,
   invitationMailText,
   notificationMailHtml,
@@ -175,6 +247,15 @@ export const learningConcepts = conceptSet(registrations, {
   snapshotHasQuestion,
   snapshotIsWhole,
   snapshotTitle,
+  lidLines,
+  lidPassage,
+  participantAnswers,
+  participantPassage,
+  placingLines,
+  placingPassage,
+  placingReading,
+  placingReason,
+  placingRepairPassage,
   subjectIsAddress,
   taskListMailHtml,
   taskListMailSubject,

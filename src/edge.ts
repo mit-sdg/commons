@@ -13,6 +13,7 @@ const PUBLIC_PATHS = new Set([
   "/live/p/locate",
   "/live/p/outcome",
   "/live/p/submit",
+  "/live/p/wall",
   "/auth/accept-invitation",
   "/auth/invitation",
   "/auth/request-password-reset",

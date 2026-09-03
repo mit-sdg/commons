@@ -12,5 +12,8 @@ export const insisting = registerConcept({
     PATIENCE_SPENT: PatienceSpent,
     NOT_INSISTING: NotInsisting,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoInsistingConcept(database) },
+  floors: {
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoInsistingConcept(database, instance),
+  },
 });

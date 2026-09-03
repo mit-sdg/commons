@@ -63,6 +63,8 @@ for (const [floor, make] of floors) {
           choices: ["chlorophyll", "carotene"],
           expected: "chlorophyll",
           explanation: "It captures light.",
+          parts: [],
+          cap: 0,
           position: 1,
         },
       ]);
@@ -143,6 +145,8 @@ for (const [floor, make] of floors) {
           choices: ["x"],
           expected: "x",
           explanation: "",
+          parts: [],
+          cap: 0,
           position: 2,
         },
       ]);
@@ -153,6 +157,8 @@ for (const [floor, make] of floors) {
           choices: ["a", "b"],
           expected: "b",
           explanation: "because",
+          parts: [],
+          cap: 0,
           position: 1,
         },
       ]);
@@ -719,8 +725,22 @@ for (const [floor, make] of floors) {
         {
           form: "quiz",
           material: [
-            { prompt: "First?", choices: ["a", "b"], expected: "b", explanation: "because" },
-            { prompt: "Second?", choices: [], expected: "", explanation: "" },
+            {
+              prompt: "First?",
+              choices: ["a", "b"],
+              expected: "b",
+              explanation: "because",
+              parts: [],
+              cap: 0,
+            },
+            {
+              prompt: "Second?",
+              choices: [],
+              expected: "",
+              explanation: "",
+              parts: [],
+              cap: 0,
+            },
           ],
         },
       ]);
@@ -783,6 +803,8 @@ for (const [floor, make] of floors) {
               choices: ["a", "b"],
               expected: "b",
               explanation: "Because",
+              parts: [],
+              cap: 0,
               position: 1,
             },
             {
@@ -791,6 +813,8 @@ for (const [floor, make] of floors) {
               choices: [],
               expected: "A reference",
               explanation: "Read more",
+              parts: [],
+              cap: 0,
               position: 2,
             },
           ],
@@ -984,6 +1008,340 @@ for (const [floor, make] of floors) {
       });
       expect(await questioning._references({ questionnaire })).toEqual([]);
       expect(await questioning._references({ questionnaire: "no-such" })).toEqual([]);
+    });
+
+    test("setParts gives a question labeled boxes or one box repeated to a cap", async () => {
+      const questioning = await make();
+      const { questionnaire } = await questioning.compose({
+        author: "lee",
+        title: "Warm-up",
+        form: "survey",
+        disclosure: "score",
+        at,
+      });
+      const { question: boxes } = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Name three.",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 1,
+      });
+      const { question: repeated } = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Name up to six.",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 2,
+      });
+      // A new question takes no parts.
+      expect((await questioning._getQuestion({ question: boxes }))[0]).toMatchObject({
+        parts: [],
+        cap: 0,
+      });
+
+      expect(
+        await questioning.setParts({
+          question: boxes,
+          parts: ["  one  ", "two", "three"],
+          cap: 0,
+        }),
+      ).toEqual({ question: boxes });
+      expect((await questioning._getQuestion({ question: boxes }))[0]).toMatchObject({
+        parts: ["one", "two", "three"],
+        cap: 0,
+      });
+
+      expect(
+        await questioning.setParts({ question: repeated, parts: [" a thing "], cap: 6 }),
+      ).toEqual({ question: repeated });
+      expect((await questioning._getQuestion({ question: repeated }))[0]).toMatchObject({
+        parts: ["a thing"],
+        cap: 6,
+      });
+
+      // Clearing puts a question back to taking one answer.
+      await questioning.setParts({ question: repeated, parts: [], cap: 0 });
+      expect((await questioning._getQuestion({ question: repeated }))[0]).toMatchObject({
+        parts: [],
+        cap: 0,
+      });
+    });
+
+    test("setParts refuses parts and a cap that are not valid together", async () => {
+      const questioning = await make();
+      const { questionnaire } = await questioning.compose({
+        author: "lee",
+        title: "Warm-up",
+        form: "survey",
+        disclosure: "score",
+        at,
+      });
+      const { question } = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Name three.",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 1,
+      });
+      for (const invalid of [
+        { parts: [], cap: 3 },
+        { parts: ["one", "two"], cap: 3 },
+        { parts: ["one"], cap: 1 },
+        { parts: ["one"], cap: 21 },
+        { parts: ["one"], cap: -1 },
+        { parts: ["one"], cap: 2.5 },
+        { parts: Array.from({ length: 13 }, (_, index) => `part ${index}`), cap: 0 },
+        { parts: ["   "], cap: 0 },
+        { parts: ["x".repeat(41)], cap: 0 },
+        { parts: ["One", " one "], cap: 0 },
+      ]) {
+        const err = await refusal(() => questioning.setParts({ question, ...invalid }));
+        expect(err).toBeInstanceOf(refusalErrors.InvalidParts);
+      }
+      // A boundary of each valid pairing stands.
+      await questioning.setParts({
+        question,
+        parts: Array.from({ length: 12 }, (_, index) => `part ${index}`),
+        cap: 0,
+      });
+      await questioning.setParts({ question, parts: ["x".repeat(40)], cap: 20 });
+      expect((await questioning._getQuestion({ question }))[0]).toMatchObject({
+        parts: ["x".repeat(40)],
+        cap: 20,
+      });
+    });
+
+    test("setParts refuses an unknown question and a retired questionnaire", async () => {
+      const questioning = await make();
+      expect(
+        await refusal(() => questioning.setParts({ question: "no-such", parts: [], cap: 0 })),
+      ).toBeInstanceOf(refusalErrors.QuestionNotFound);
+
+      const { questionnaire } = await questioning.compose({
+        author: "lee",
+        title: "Retired",
+        form: "quiz",
+        disclosure: "score",
+        at,
+      });
+      const { question } = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Anything?",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 1,
+      });
+      await questioning.retire({ questionnaire });
+      expect(
+        await refusal(() => questioning.setParts({ question, parts: ["one"], cap: 0 })),
+      ).toBeInstanceOf(refusalErrors.QuestionnaireRetired);
+    });
+
+    test("a question offers choices or takes parts, never both", async () => {
+      const questioning = await make();
+      const { questionnaire } = await questioning.compose({
+        author: "lee",
+        title: "Quiz",
+        form: "quiz",
+        disclosure: "score",
+        at,
+      });
+      const { question: chosen } = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Which pigment?",
+        choices: ["a", "b"],
+        expected: "a",
+        explanation: "",
+        position: 1,
+      });
+      expect(
+        await refusal(() => questioning.setParts({ question: chosen, parts: ["one"], cap: 0 })),
+      ).toBeInstanceOf(refusalErrors.InvalidParts);
+      // Clearing parts is always allowed, choices or not.
+      expect(await questioning.setParts({ question: chosen, parts: [], cap: 0 })).toEqual({
+        question: chosen,
+      });
+
+      const { question: parted } = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Name three.",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 2,
+      });
+      await questioning.setParts({ question: parted, parts: ["one", "two", "three"], cap: 0 });
+      expect(
+        await refusal(() =>
+          questioning.reviseQuestion({
+            question: parted,
+            prompt: "Name three.",
+            choices: ["a", "b"],
+            expected: "a",
+            explanation: "",
+            position: 2,
+          }),
+        ),
+      ).toBeInstanceOf(refusalErrors.InvalidParts);
+      // The question is untouched, and revising it without choices still stands.
+      expect((await questioning._getQuestion({ question: parted }))[0]).toMatchObject({
+        prompt: "Name three.",
+        choices: [],
+        parts: ["one", "two", "three"],
+        cap: 0,
+      });
+      await questioning.reviseQuestion({
+        question: parted,
+        prompt: "Name three things.",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 2,
+      });
+      expect((await questioning._getQuestion({ question: parted }))[0]).toMatchObject({
+        prompt: "Name three things.",
+        parts: ["one", "two", "three"],
+        cap: 0,
+      });
+    });
+
+    test("parts and cap are carried by _getQuestions, _material, and present", async () => {
+      const questioning = await make();
+      const { questionnaire } = await questioning.compose({
+        author: "lee",
+        title: "Warm-up",
+        form: "survey",
+        disclosure: "score",
+        at,
+      });
+      const { question } = await questioning.addQuestion({
+        questionnaire,
+        prompt: "Name three.",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 1,
+      });
+      await questioning.setParts({ question, parts: ["one", "two", "three"], cap: 0 });
+
+      expect(await questioning._getQuestions({ questionnaire })).toEqual([
+        {
+          question,
+          prompt: "Name three.",
+          choices: [],
+          expected: "",
+          explanation: "",
+          parts: ["one", "two", "three"],
+          cap: 0,
+          position: 1,
+        },
+      ]);
+      expect(await questioning._material({ questionnaire })).toEqual([
+        {
+          form: "survey",
+          material: [
+            {
+              prompt: "Name three.",
+              choices: [],
+              expected: "",
+              explanation: "",
+              parts: ["one", "two", "three"],
+              cap: 0,
+            },
+          ],
+        },
+      ]);
+      const presented = await questioning.present({ questionnaire });
+      expect(presented.presentation.questions).toEqual([
+        {
+          item: question,
+          prompt: "Name three.",
+          choices: [],
+          expected: "",
+          explanation: "",
+          parts: ["one", "two", "three"],
+          cap: 0,
+          position: 1,
+        },
+      ]);
+    });
+
+    test("_materials answers several questionnaires in the order asked for", async () => {
+      const questioning = await make();
+      expect(await questioning._materials({ questionnaires: [] })).toEqual({ materials: [] });
+
+      const first = await questioning.compose({
+        author: "lee",
+        title: "Warm-up",
+        form: "survey",
+        disclosure: "score",
+        at,
+      });
+      const second = await questioning.compose({
+        author: "lee",
+        title: "Quiz",
+        form: "quiz",
+        disclosure: "score",
+        at,
+      });
+      await questioning.addQuestion({
+        questionnaire: first.questionnaire,
+        prompt: "Second?",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 2,
+      });
+      const { question } = await questioning.addQuestion({
+        questionnaire: first.questionnaire,
+        prompt: "First?",
+        choices: [],
+        expected: "",
+        explanation: "",
+        position: 1,
+      });
+      await questioning.setParts({ question, parts: ["a thing"], cap: 4 });
+
+      // The given order, questions in position order, and no entry at all for
+      // an identity that names no questionnaire.
+      expect(
+        await questioning._materials({
+          questionnaires: [second.questionnaire, "no-such", first.questionnaire],
+        }),
+      ).toEqual({
+        materials: [
+          { questionnaire: second.questionnaire, title: "Quiz", questions: [] },
+          {
+            questionnaire: first.questionnaire,
+            title: "Warm-up",
+            questions: [
+              {
+                prompt: "First?",
+                choices: [],
+                expected: "",
+                explanation: "",
+                parts: ["a thing"],
+                cap: 4,
+              },
+              {
+                prompt: "Second?",
+                choices: [],
+                expected: "",
+                explanation: "",
+                parts: [],
+                cap: 0,
+              },
+            ],
+          },
+        ],
+      });
+      expect(await questioning._materials({ questionnaires: ["no-such"] })).toEqual({
+        materials: [],
+      });
     });
 
     test("unknown questionnaires refuse with QUESTIONNAIRE_NOT_FOUND", async () => {

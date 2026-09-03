@@ -1,4 +1,6 @@
 import type { ReasonerConfiguration } from "./configuration.ts";
+import { scriptedEditsReply } from "./scripted-edits.ts";
+import { scriptedWallReply } from "./scripted-walls.ts";
 
 type Awaitable<Value> = Value | PromiseLike<Value>;
 
@@ -88,6 +90,8 @@ export function geminiMind(configuration: ReasonerConfiguration): Mind {
  */
 export function scriptedMind(): Mind {
   return ({ passage }) => {
+    const roundReply = scriptedWallReply(passage) ?? scriptedEditsReply(passage);
+    if (roundReply !== undefined) return Promise.resolve(roundReply);
     // Markers are read from the author's own words — the correction, the
     // clarification answer, or the request — never from the contract text or
     // prior material that precedes them: those mention every form.

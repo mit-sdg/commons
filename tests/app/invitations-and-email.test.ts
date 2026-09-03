@@ -349,6 +349,7 @@ describe("invitations and email", () => {
       "/live/p/locate",
       "/live/p/outcome",
       "/live/p/submit",
+      "/live/p/wall",
       "/setup/register-admin",
     ]);
     const response = await edge.fetch(

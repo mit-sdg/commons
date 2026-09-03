@@ -351,6 +351,8 @@ describe("the live quiz loop", () => {
           choices: string[];
           expected: string;
           explanation: string;
+          parts: string[];
+          cap: number;
           position: number;
         }[];
       };
@@ -367,9 +369,11 @@ describe("the live quiz loop", () => {
 
       const arrived = await json(await post(edge, "/live/p/arrive", { token: launch.token }));
       expect((arrived.face as { questions: unknown[] }).questions).toEqual(
-        presentation.questions.map(({ item, prompt, choices, position }) => ({
+        presentation.questions.map(({ item, prompt, choices, parts, cap, position }) => ({
           question: item,
           prompt,
+          parts,
+          cap,
           choices,
           position,
         })),

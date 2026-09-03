@@ -2,6 +2,7 @@ import { createEdge } from "../edge.ts";
 import type { MailConfiguration } from "../email/configuration.ts";
 import { startMailWorker } from "../email/worker.ts";
 import type { ReasonerConfiguration } from "../reasoning/configuration.ts";
+import { startParticipantWorker } from "../reasoning/participant.ts";
 import { startReasonerWorker } from "../reasoning/worker.ts";
 import { commonsMigrations, runMigrations } from "../migrations/index.ts";
 import { constructConceptFloor } from "./concept-floor.ts";
@@ -79,6 +80,12 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
     reasoner === undefined
       ? undefined
       : startReasonerWorker(edge.application.concepts.Reasoning, reasoner);
+  const roundReasonerWorker =
+    reasoner === undefined
+      ? undefined
+      : startReasonerWorker(edge.application.concepts.RoundReasoning, reasoner);
+  const participantWorker =
+    reasoner === undefined ? undefined : startParticipantWorker(edge.application.concepts);
   const resource = floor.resources.length === 0 ? floor.name : floor.resources.join(", ");
   console.log(`commons: storing concept state in ${resource}.`);
   console.log(
@@ -105,6 +112,8 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
         await server.stop();
         await mailWorker?.stop();
         await reasonerWorker?.stop();
+        await roundReasonerWorker?.stop();
+        await participantWorker?.stop();
       } finally {
         await floor.close();
       }

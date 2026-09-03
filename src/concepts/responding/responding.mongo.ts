@@ -164,19 +164,19 @@ export class MongoRespondingConcept {
     return [{ answers: docs.map((entry) => ({ item: entry.item, value: entry.value })) }];
   }
 
-  async _valuesForSubject({ subject }: { subject: string }) {
+  async _submittedAnswers({ subject }: { subject: string }) {
     const submitted = await this.responses
       .find({ subject, submitted: true })
       .sort({ submittedAt: 1, seq: 1 })
       .toArray();
-    const values: { response: string; participant: string; item: string; value: string }[] = [];
+    const rows: { response: string; participant: string; item: string; value: string }[] = [];
     for (const response of submitted) {
       const answers = await this.answers
         .find({ response: response._id })
         .sort({ seq: 1 })
         .toArray();
       for (const answer of answers) {
-        values.push({
+        rows.push({
           response: response._id,
           participant: response.participant,
           item: answer.item,
@@ -184,6 +184,11 @@ export class MongoRespondingConcept {
         });
       }
     }
-    return { values };
+    return rows;
+  }
+
+  /** The same answers `_submittedAnswers` gives, handed over as one value. */
+  async _valuesForSubject({ subject }: { subject: string }) {
+    return { values: await this._submittedAnswers({ subject }) };
   }
 }

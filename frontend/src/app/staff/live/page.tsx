@@ -1,17 +1,32 @@
 "use client";
 
-import { Archive, ClipboardList, Pencil, Plus, Sparkles } from "lucide-react";
+import { Layers, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
+import {
+  type CopyableRelay,
+  copyRelay,
+  titleFromBrief,
+} from "@/components/live/copy-relay";
+import { DECK } from "@/components/live/deck";
 import { FormBadge, QUIZ_NOT_READY_MESSAGE } from "@/components/live/quiz-meta";
+import {
+  LiveRow,
+  type LiveStanding,
+  RoomCode,
+  StateWord,
+} from "@/components/live/relay-row";
+import { Figure, RoundStrip } from "@/components/live/round-token";
+import { type RoundStanding, standingOf } from "@/components/live/rounds";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
-import { PageContainer, PageHeader } from "@/components/page";
+import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
 import {
   api,
@@ -21,33 +36,138 @@ import {
   unwrap,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fullTime, relativeTime } from "@/lib/format";
+import { toDate } from "@/lib/format";
 
+type Relay = Output<"/live/relays/list">["relays"][number];
 type Shelved = Output<"/live/quizzes/list">["questionnaires"][number];
-type OpenRun = Output<"/live/runs/open">["runs"][number];
 
-function LiveShelfContent() {
+type Entry =
+  | { kind: "relay"; at: number; relay: Relay }
+  | { kind: "questionnaire"; at: number; questionnaire: Shelved };
+
+const EXAMPLE =
+  "two rounds: three verbs for a concept, then a stranger guesses it from the verbs alone";
+
+function relayStanding(relay: Relay): LiveStanding {
+  if (relay.openRound !== null) return "open";
+  if (relay.run !== null) return "launched";
+  if (relay.runs > 0) return "closed";
+  return "authored";
+}
+
+function questionnaireStanding(entry: Shelved): LiveStanding {
+  if (entry.openRun !== null) return "open";
+  if (entry.retired) return "closed";
+  return "authored";
+}
+
+function when(value: unknown): number {
+  return toDate(value)?.getTime() ?? 0;
+}
+
+function LiveListContent() {
   const { session } = useAuth();
+  const router = useRouter();
   const [showRetired, setShowRetired] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const {
     data: shelf,
-    loading,
-    error,
-    refetch,
+    loading: loadingShelf,
+    error: shelfError,
+    refetch: refetchShelf,
   } = useQuery(
     session ? () => api["/live/quizzes/list"]({}).then(unwrap) : null,
     [session],
   );
-  const { data: live, refetch: refetchLive } = useQuery(
-    session ? () => api["/live/runs/open"]({}).then(unwrap) : null,
+  const {
+    data: relayList,
+    loading: loadingRelays,
+    error: relayError,
+    refetch: refetchRelays,
+  } = useQuery(
+    session ? () => api["/live/relays/list"]({}).then(unwrap) : null,
     [session],
   );
 
   const questionnaires = shelf?.questionnaires ?? [];
-  const standing = questionnaires.filter((entry) => !entry.retired);
+  const relays = relayList?.relays ?? [];
   const retired = questionnaires.filter((entry) => entry.retired);
-  const openRuns = live?.runs ?? [];
+
+  const entries: Entry[] = [
+    ...relays.map(
+      (relay): Entry => ({
+        kind: "relay",
+        at: when(relay.createdAt),
+        relay,
+      }),
+    ),
+    ...questionnaires
+      .filter((entry) => !entry.retired)
+      .map(
+        (questionnaire): Entry => ({
+          kind: "questionnaire",
+          at: when(questionnaire.createdAt),
+          questionnaire,
+        }),
+      ),
+  ].sort((left, right) => right.at - left.at);
+
+  function refetch() {
+    refetchShelf();
+    refetchRelays();
+  }
+
+  async function plan(title: string) {
+    setBusy(true);
+    const result = await api["/live/relays/plan"]({ title });
+    setBusy(false);
+    if (isApiError(result)) {
+      toast.error(publicErrorMessage(result.error));
+      return;
+    }
+    router.push(`/staff/live/relay/${result.relay}`);
+  }
+
+  async function copy(source: CopyableRelay) {
+    setBusy(true);
+    const result = await copyRelay(source);
+    setBusy(false);
+    if (isApiError(result)) {
+      toast.error(publicErrorMessage(result.error));
+      return;
+    }
+    router.push(`/staff/live/relay/${result.relay}`);
+  }
+
+  async function launch(relay: string) {
+    setBusy(true);
+    const result = await api["/live/relays/launch"]({ relay });
+    if (isApiError(result)) {
+      setBusy(false);
+      toast.error(publicErrorMessage(result.error));
+      return;
+    }
+    router.push(`/staff/live/run/${result.run}`);
+  }
+
+  // A closed relay's runs are only on the relay itself, so the wall is reached
+  // by reading it back and going to the run it ran last.
+  async function wall(relay: string) {
+    setBusy(true);
+    const result = await api["/live/relays/get"]({ relay });
+    setBusy(false);
+    if (isApiError(result)) {
+      toast.error(publicErrorMessage(result.error));
+      return;
+    }
+    const run = result.relay?.runs[0]?.run;
+    if (run === undefined) {
+      toast.error(publicErrorMessage("NOT_FOUND"));
+      return;
+    }
+    router.push(`/staff/live/run/${run}`);
+  }
 
   async function retire(questionnaire: string) {
     const result = await api["/live/quizzes/retire"]({ questionnaire });
@@ -55,102 +175,92 @@ function LiveShelfContent() {
       toast.error(publicErrorMessage(result.error));
       return;
     }
-    toast.success("Retired");
     refetch();
-    refetchLive();
   }
 
+  const loading =
+    (loadingShelf && shelf === null) || (loadingRelays && relayList === null);
+  const error = shelfError ?? relayError;
+
   return (
-    <PageContainer>
-      <PageHeader
-        eyebrow="Live"
-        title="Quizzes and surveys"
-        actions={
-          <>
-            <Button variant="outline" asChild>
-              <Link href="/staff/live/draft">
-                <Sparkles /> Draft with AI
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href="/staff/live/new">
-                <Plus /> New quiz or survey
-              </Link>
-            </Button>
-          </>
-        }
-      />
+    <PageContainer width="wide">
+      <header className="mb-5 flex items-end justify-between gap-6">
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+          Live
+        </h1>
+        <Button disabled={busy} onClick={() => void plan("New relay")}>
+          New relay
+        </Button>
+      </header>
 
-      {openRuns.length > 0 ? (
-        <section className="mb-8 rounded-xl border border-primary/40 bg-primary/5 p-4">
-          <p className="eyebrow mb-3 flex items-center gap-2 text-primary">
-            <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
-            Live now
-          </p>
-          <ul className="space-y-2">
-            {openRuns.map((run: OpenRun) => (
-              <li
-                key={run.run}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-card px-4 py-3"
+      <div className="mb-6 grid gap-6 rounded-xl border border-border bg-card p-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex flex-col gap-1.5">
+          {DECK.map((entry) => (
+            <div
+              key={entry.key}
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
+            >
+              <span className="min-w-0 flex-1 truncate font-medium">
+                {entry.title}
+              </span>
+              <RoundStrip
+                rounds={entry.rounds.map((round, index) => ({
+                  number: index + 1,
+                  title: round.title,
+                  standing: "next" as RoundStanding,
+                }))}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => void copy(entry)}
               >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{run.title}</p>
-                  <p className="text-muted-foreground text-xs">
-                    Opened {relativeTime(run.openedAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FormBadge form={run.form} />
-                  <Button size="sm" asChild>
-                    <Link href={`/staff/live/run/${run.run}`}>
-                      Open dashboard
-                    </Link>
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+                Copy
+              </Button>
+            </div>
+          ))}
+        </div>
+        <DescribePanel />
+      </div>
 
-      {loading && shelf === null ? (
-        <LoadingState label="Loading quizzes and surveys…" />
-      ) : error ? (
+      {loading ? (
+        <LoadingState />
+      ) : error !== null ? (
         <ErrorState message={error} onRetry={refetch} />
-      ) : questionnaires.length === 0 ? (
+      ) : entries.length === 0 ? (
         <EmptyState
-          icon={ClipboardList}
-          title="No quizzes or surveys yet"
+          icon={Layers}
+          title="Nothing here yet"
           action={
-            <Button size="sm" asChild>
-              <Link href="/staff/live/new">
-                <Plus /> New quiz or survey
-              </Link>
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={() => void plan("New relay")}
+            >
+              New relay
             </Button>
           }
         />
       ) : (
-        <div className="space-y-2">
-          {standing.map((entry) => (
-            <ShelfRow
-              key={entry.questionnaire}
-              entry={entry}
-              onRetire={() => retire(entry.questionnaire)}
-            />
-          ))}
-          {standing.length === 0 ? (
-            <EmptyState
-              icon={Archive}
-              title="Everything is retired"
-              action={
-                <Button size="sm" asChild>
-                  <Link href="/staff/live/new">
-                    <Plus /> New quiz or survey
-                  </Link>
-                </Button>
-              }
-            />
-          ) : null}
+        <div className="flex flex-col gap-2">
+          {entries.map((entry) =>
+            entry.kind === "relay" ? (
+              <RelayEntry
+                key={entry.relay.relay}
+                relay={entry.relay}
+                busy={busy}
+                onLaunch={() => void launch(entry.relay.relay)}
+                onWall={() => void wall(entry.relay.relay)}
+              />
+            ) : (
+              <QuestionnaireEntry
+                key={entry.questionnaire.questionnaire}
+                entry={entry.questionnaire}
+                onRetire={() => retire(entry.questionnaire.questionnaire)}
+              />
+            ),
+          )}
         </div>
       )}
 
@@ -161,13 +271,12 @@ function LiveShelfContent() {
             onClick={() => setShowRetired((shown) => !shown)}
             className="flex items-center gap-2 text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
           >
-            <Archive className="size-4" />
-            {showRetired ? "Hide" : "Show"} retired ({retired.length})
+            <StateWord standing="closed" /> ({retired.length})
           </button>
           {showRetired ? (
-            <div className="mt-3 space-y-2 opacity-60">
+            <div className="mt-3 flex flex-col gap-2">
               {retired.map((entry) => (
-                <ShelfRow key={entry.questionnaire} entry={entry} />
+                <QuestionnaireEntry key={entry.questionnaire} entry={entry} />
               ))}
             </div>
           ) : null}
@@ -177,15 +286,151 @@ function LiveShelfContent() {
   );
 }
 
-function ShelfRow({
+/** A brief, and the relay it plans: the model drafts the rounds on the setup page. */
+function DescribePanel() {
+  const router = useRouter();
+  const [request, setRequest] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function draft() {
+    const brief = request.trim();
+    if (brief === "") return;
+    setBusy(true);
+    const planned = await api["/live/relays/plan"]({
+      title: titleFromBrief(brief),
+    });
+    if (isApiError(planned)) {
+      setBusy(false);
+      toast.error(publicErrorMessage(planned.error));
+      return;
+    }
+    const asked = await api["/live/edits/draft"]({
+      relay: planned.relay,
+      request: brief,
+    });
+    if (isApiError(asked)) {
+      setBusy(false);
+      toast.error(publicErrorMessage(asked.error));
+      return;
+    }
+    router.push(`/staff/live/relay/${planned.relay}?draft=${asked.asking}`);
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5 rounded-xl border border-primary/30 bg-primary/5 p-4">
+      <p className="flex items-center gap-2 font-medium text-sm">
+        <Sparkles className="size-4" /> Describe
+      </p>
+      <Textarea
+        value={request}
+        onChange={(event) => setRequest(event.target.value)}
+        placeholder={EXAMPLE}
+        rows={4}
+        className="min-h-24 bg-card"
+      />
+      <Button
+        size="sm"
+        className="self-start"
+        disabled={busy || request.trim() === ""}
+        onClick={() => void draft()}
+      >
+        Draft
+      </Button>
+    </div>
+  );
+}
+
+function RelayEntry({
+  relay,
+  busy,
+  onLaunch,
+  onWall,
+}: {
+  relay: Relay;
+  busy: boolean;
+  onLaunch: () => void;
+  onWall: () => void;
+}) {
+  const standing = relayStanding(relay);
+  const { begun, handedIn } = relay.figure;
+
+  // A closed relay has no open run to read a standing from, and every round
+  // it holds has run.
+  const aside =
+    standing === "open" && handedIn !== null && begun !== null ? (
+      <Figure size="sm" value={handedIn} of={begun} />
+    ) : standing === "closed" && handedIn !== null ? (
+      <Figure size="sm" value={handedIn} />
+    ) : standing === "launched" && relay.code !== null ? (
+      <RoomCode code={relay.code} />
+    ) : undefined;
+
+  return (
+    <LiveRow
+      standing={standing}
+      title={
+        <Link
+          href={`/staff/live/relay/${relay.relay}`}
+          className="min-w-0 break-words hover:text-primary"
+        >
+          {relay.title}
+        </Link>
+      }
+      middle={
+        relay.rounds.length === 0 ? null : (
+          <RoundStrip
+            rounds={relay.rounds.map((round) => ({
+              number: round.number,
+              title: round.title,
+              standing: standing === "closed" ? "done" : standingOf(round),
+            }))}
+          />
+        )
+      }
+      aside={aside}
+      actions={
+        standing === "open" || standing === "launched" ? (
+          <Button
+            size="sm"
+            variant={standing === "open" ? "default" : "outline"}
+            asChild
+          >
+            <Link href={`/staff/live/run/${relay.run}`}>Run</Link>
+          </Button>
+        ) : standing === "closed" ? (
+          <Button variant="ghost" size="sm" disabled={busy} onClick={onWall}>
+            Wall
+          </Button>
+        ) : (
+          <>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/staff/live/relay/${relay.relay}`}>Edit</Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || relay.rounds.length === 0}
+              onClick={onLaunch}
+            >
+              Launch
+            </Button>
+          </>
+        )
+      }
+    />
+  );
+}
+
+function QuestionnaireEntry({
   entry,
   onRetire,
 }: {
   entry: Shelved;
   onRetire?: () => Promise<void>;
 }) {
-  // The same two conditions the detail page states, read off the shelf entry so
-  // the row never offers a launch the sheet would refuse.
+  const standing = questionnaireStanding(entry);
+  // The two conditions the desk states, read off the entry so the row never
+  // offers a launch the sheet would refuse.
   const launchHint =
     entry.questions === 0
       ? "Add a question first."
@@ -194,75 +439,65 @@ function ShelfRow({
         : undefined;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-center">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
+    <LiveRow
+      standing={standing}
+      title={
+        <>
           <Link
             href={`/staff/live/${entry.questionnaire}`}
-            className="min-w-0 break-words font-medium hover:text-primary"
+            className="min-w-0 break-words hover:text-primary"
           >
             {entry.title}
           </Link>
           <FormBadge form={entry.form} />
-          {entry.retired ? <Badge variant="outline">Retired</Badge> : null}
+        </>
+      }
+      actions={
+        <>
           {entry.openRun !== null ? (
-            <Badge variant="secondary">Run open</Badge>
-          ) : null}
-        </div>
-        <p className="mt-1 whitespace-nowrap text-muted-foreground text-xs">
-          Created {fullTime(entry.createdAt)}
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/staff/live/${entry.questionnaire}`}>
-            <Pencil /> {entry.retired ? "View" : "Edit"}
-          </Link>
-        </Button>
-
-        {entry.openRun !== null ? (
-          <Button size="sm" asChild>
-            <Link href={`/staff/live/run/${entry.openRun}`}>View run</Link>
-          </Button>
-        ) : entry.retired ? null : (
-          <RunLaunchButton
-            questionnaire={entry.questionnaire}
-            disabled={launchHint !== undefined}
-            hint={launchHint}
-            size="sm"
-            variant="outline"
-          />
-        )}
-
-        {onRetire && entry.openRun === null ? (
-          <ConfirmAction
-            trigger={
-              <Button variant="ghost" size="sm">
-                <Archive /> Retire
+            <Button size="sm" asChild>
+              <Link href={`/staff/live/run/${entry.openRun}`}>Run</Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={`/staff/live/${entry.questionnaire}`}>Edit</Link>
               </Button>
-            }
-            title={`Retire “${entry.title}”?`}
-            description="It can no longer be edited or launched. Past runs and their answers are retained."
-            confirmLabel="Retire"
-            destructive
-            onConfirm={onRetire}
-          />
-        ) : null}
-      </div>
-
-      {/* The hint must be readable on a phone, where there is no hover. */}
-      {launchHint !== undefined && entry.openRun === null && !entry.retired ? (
-        <p className="w-full text-muted-foreground text-xs">{launchHint}</p>
-      ) : null}
-    </div>
+              {entry.retired ? null : (
+                <RunLaunchButton
+                  questionnaire={entry.questionnaire}
+                  disabled={launchHint !== undefined}
+                  hint={launchHint}
+                  size="sm"
+                  variant="outline"
+                />
+              )}
+            </>
+          )}
+          {onRetire && entry.openRun === null && !entry.retired ? (
+            <ConfirmAction
+              trigger={
+                <Button variant="ghost" size="sm">
+                  Retire
+                </Button>
+              }
+              title={`Retire “${entry.title}”?`}
+              description="It can no longer be edited or launched. Past runs and their answers are retained."
+              confirmLabel="Retire"
+              destructive
+              onConfirm={onRetire}
+            />
+          ) : null}
+        </>
+      }
+    />
   );
 }
 
-export default function LiveShelfPage() {
+export default function LiveListPage() {
   return (
     <RequireCapability capability="live:host">
-      <LiveShelfContent />
+      <LiveListContent />
     </RequireCapability>
   );
 }
