@@ -22,10 +22,10 @@ export const CARRY_USES: readonly CarryUse[] = [
   {
     use: "context",
     kinds: ["write", "list", "vote"],
-    sentence: "The picked groups appear above the prompt.",
+    sentence: "The picked piles appear above the prompt.",
   },
-  { use: "choices", kinds: ["vote"], sentence: "The picked groups are the choices." },
-  { use: "parts", kinds: ["list"], sentence: "The picked groups are the boxes, one each." },
+  { use: "choices", kinds: ["vote"], sentence: "The picked piles are the choices." },
+  { use: "parts", kinds: ["list"], sentence: "The picked piles are the boxes, one each." },
 ];
 
 export const USE_WORDS: readonly string[] = CARRY_USES.map((entry) => entry.use);
