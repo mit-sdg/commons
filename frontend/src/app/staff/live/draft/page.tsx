@@ -362,9 +362,7 @@ function DraftPageContent() {
             className="inline-flex items-center gap-1 hover:text-foreground"
           >
             <ArrowLeft className="size-3" />
-            {refining !== null
-              ? "Back to the questionnaire"
-              : "Back to quizzes and surveys"}
+            {refining !== null ? "Back to the questionnaire" : "Live"}
           </Link>
         }
         title={refining !== null ? "Refine with AI" : "Draft with AI"}
@@ -399,7 +397,11 @@ function DraftPageContent() {
           >
             <TabsList>
               {KINDS.map((entry) => (
-                <TabsTrigger key={entry.kind} value={entry.kind}>
+                <TabsTrigger
+                  key={entry.kind}
+                  value={entry.kind}
+                  className="text-foreground/70"
+                >
                   {entry.label}
                 </TabsTrigger>
               ))}

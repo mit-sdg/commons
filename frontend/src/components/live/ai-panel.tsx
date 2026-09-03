@@ -29,7 +29,7 @@ const VERB: Record<string, string> = {
   prompt: "set prompt",
   parts: "set parts",
   choices: "set choices",
-  takes: "takes",
+  takes: "set takes",
 };
 
 function readJson(value: string): unknown {
@@ -62,6 +62,8 @@ function partWords(parts: string[], cap: number): string {
 interface Shown {
   line: OfferedLine;
   round: Round | null;
+  /** The round as it stood when the line was taken, so "was" says what was. */
+  was: Round | null;
   number: number;
 }
 
@@ -89,25 +91,30 @@ function numbered(
   lines: OfferedLine[],
   rounds: Round[],
   stood: Map<string, Round>,
+  froze: Map<string, Round>,
 ): Shown[] {
   let adds = 0;
   return lines.map((line) => {
+    const was = froze.get(line.suggestion) ?? null;
     const round =
       rounds.find((entry) => entry.leg === line.target) ??
       stood.get(line.target) ??
       null;
-    if (round !== null) return { line, round, number: round.number };
+    if (round !== null)
+      return { line, round, was: was ?? round, number: round.number };
     const drafted = record(readJson(line.value));
     const made =
       line.standing === "taken"
         ? (rounds.find((entry) => entry.title === drafted.title) ?? null)
         : null;
-    if (made !== null) return { line, round: made, number: made.number };
+    if (made !== null)
+      return { line, round: made, was: was ?? made, number: made.number };
     adds += 1;
     const lands = drafted.position;
     return {
       line,
       round,
+      was,
       number:
         typeof lands === "number" && lands > 0 ? lands : rounds.length + adds,
     };
@@ -132,14 +139,36 @@ function LineBody({ line, round }: { line: OfferedLine; round: Round | null }) {
   if (line.kind === "add") {
     const drafted = record(readJson(line.value));
     const kind = typeof drafted.kind === "string" ? drafted.kind : "";
+    const takes = record(drafted.takes);
+    const from = typeof takes.from === "number" ? takes.from : 0;
+    const shape = typeof takes.shape === "string" ? takes.shape : "";
+    const cap = typeof drafted.cap === "number" ? drafted.cap : 0;
+    const boxes =
+      partWords(strings(drafted.parts), cap) ||
+      strings(drafted.choices).join(" · ");
     return (
-      <span className="flex min-w-0 items-baseline gap-2">
-        {kind === "" ? null : (
-          <span className="flex-none font-mono text-[11px] text-muted-foreground">
-            {kind}
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="flex min-w-0 flex-wrap items-baseline gap-2">
+          <span className="min-w-0 font-medium">
+            {String(drafted.title ?? "")}
           </span>
+          {kind === "" ? null : (
+            <span className="flex-none text-muted-foreground capitalize">
+              {kind}
+            </span>
+          )}
+          {from > 0 && shape !== "" ? (
+            <TakesChip from={from} shape={shape} />
+          ) : null}
+        </span>
+        {drafted.prompt ? (
+          <span className="min-w-0 text-muted-foreground">
+            {String(drafted.prompt)}
+          </span>
+        ) : null}
+        {boxes === "" ? null : (
+          <span className="min-w-0 text-muted-foreground">{boxes}</span>
         )}
-        <span className="min-w-0">{String(drafted.title ?? "")}</span>
       </span>
     );
   }
@@ -157,7 +186,7 @@ function LineBody({ line, round }: { line: OfferedLine; round: Round | null }) {
     const was = line.kind === "title" ? round?.title : round?.prompt;
     return (
       <>
-        {was ? <Was>{was}</Was> : null}
+        {was && was !== line.value ? <Was>{was}</Was> : null}
         <Change>{line.value}</Change>
       </>
     );
@@ -169,7 +198,7 @@ function LineBody({ line, round }: { line: OfferedLine; round: Round | null }) {
     const to = partWords(strings(drafted.parts), cap);
     return (
       <>
-        {was === "" ? null : <Was>{was}</Was>}
+        {was === "" || was === to ? null : <Was>{was}</Was>}
         <Change>{to === "" ? "nothing" : to}</Change>
       </>
     );
@@ -180,7 +209,7 @@ function LineBody({ line, round }: { line: OfferedLine; round: Round | null }) {
     const to = drafted.join(" · ");
     return (
       <>
-        {was === "" ? null : <Was>{was}</Was>}
+        {was === "" || was === to ? null : <Was>{was}</Was>}
         <Change>{to === "" ? "nothing" : to}</Change>
       </>
     );
@@ -248,6 +277,8 @@ export function AiPanel({
     error: string;
   } | null>(null);
   const [stood, setStood] = useState<Map<string, Round>>(new Map());
+  const [froze, setFroze] = useState<Map<string, Round>>(new Map());
+  const [unmoved, setUnmoved] = useState<Set<string>>(new Set());
   const known = useRef<Set<string>>(new Set());
   const sentAt = useRef<number | null>(null);
 
@@ -261,6 +292,13 @@ export function AiPanel({
         ]),
     );
   }, [rounds]);
+
+  /** The relay as the panel compares it: every round, whole, in order. */
+  const readRelay = useCallback(async (): Promise<string | null> => {
+    const result = await api["/live/relays/get"]({ relay });
+    if (isApiError(result) || result.relay === null) return null;
+    return JSON.stringify(result.relay.rounds);
+  }, [relay]);
 
   const read = useCallback(async () => {
     const result = await api["/live/edits/offerings"]({ relay });
@@ -350,10 +388,38 @@ export function AiPanel({
     return true;
   }
 
+  /** The round a line is about, held as it stands before the line is taken. */
+  function freeze(line: OfferedLine) {
+    const round =
+      rounds.find((entry) => entry.leg === line.target) ??
+      stood.get(line.target) ??
+      null;
+    if (round === null) return;
+    setFroze((last) => new Map(last).set(line.suggestion, round));
+  }
+
+  /**
+   * A concept can refuse what a line asks while the take itself succeeds, and
+   * the relay reading back word for word is what says so.
+   */
+  function markUnmoved(
+    line: OfferedLine,
+    before: string | null,
+    after: string,
+  ) {
+    if (before === null || before !== after) return;
+    setUnmoved((last) => new Set(last).add(line.suggestion));
+  }
+
   async function settle(line: OfferedLine, take: boolean) {
     setBusy(true);
     setStopped(null);
-    await apply(line, take);
+    const before = take ? await readRelay() : null;
+    if (take) freeze(line);
+    if ((await apply(line, take)) && take) {
+      const after = await readRelay();
+      if (after !== null) markUnmoved(line, before, after);
+    }
     setBusy(false);
     await read();
     onChanged();
@@ -363,9 +429,16 @@ export function AiPanel({
   async function settleAll(offering: Offering, take: boolean) {
     setBusy(true);
     setStopped(null);
+    let before = take ? await readRelay() : null;
     for (const line of offering.lines) {
       if (line.standing !== "pending") continue;
+      if (take) freeze(line);
       if (!(await apply(line, take))) break;
+      if (!take) continue;
+      const after = await readRelay();
+      if (after === null) continue;
+      markUnmoved(line, before, after);
+      before = after;
     }
     setBusy(false);
     await read();
@@ -378,7 +451,7 @@ export function AiPanel({
       ? 0
       : offering.lines.filter((line) => line.standing === "pending").length;
   const shown =
-    offering === null ? [] : numbered(offering.lines, rounds, stood);
+    offering === null ? [] : numbered(offering.lines, rounds, stood, froze);
 
   return (
     <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
@@ -420,13 +493,15 @@ export function AiPanel({
           offering.lines.every((line) => line.kind === "keep") ? null : (
             <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
               {shown.map((entry) => {
-                const { line, round, number } = entry;
+                const { line, was, number } = entry;
                 return (
                   <div
                     key={line.suggestion}
                     className={cn(
                       "flex flex-wrap items-center gap-2.5 px-3 py-2 text-sm",
-                      line.standing !== "pending" && "opacity-45",
+                      line.standing !== "pending" &&
+                        !unmoved.has(line.suggestion) &&
+                        "opacity-45",
                       line.suggestion === stopped?.line && "bg-destructive/5",
                     )}
                   >
@@ -439,9 +514,17 @@ export function AiPanel({
                         size="sm"
                         standing={line.kind === "add" ? "next" : "plain"}
                       />
-                      <LineBody line={line} round={round} />
+                      <LineBody line={line} round={was} />
                     </span>
-                    {line.standing === "pending" ? (
+                    {line.standing !== "pending" ? (
+                      <span className="flex-none text-muted-foreground text-xs">
+                        {unmoved.has(line.suggestion)
+                          ? "Nothing changed."
+                          : line.standing === "taken"
+                            ? "Applied"
+                            : "Declined"}
+                      </span>
+                    ) : (
                       <span className="flex flex-none gap-1">
                         <Button
                           variant="ghost"
@@ -462,7 +545,7 @@ export function AiPanel({
                           <X />
                         </Button>
                       </span>
-                    ) : null}
+                    )}
                     {line.suggestion === stopped?.line ? (
                       <p className="w-full text-destructive sm:pl-[114px]">
                         {refusalWords(stopped.error, entry)}

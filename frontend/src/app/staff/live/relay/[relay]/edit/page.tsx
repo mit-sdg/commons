@@ -6,10 +6,17 @@ import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
 import { AiPanel } from "@/components/live/ai-panel";
-import { AddRoundCard, RoundEditor } from "@/components/live/round-editor";
+import { refusalSentence } from "@/components/live/refusals";
+import {
+  AddRoundCard,
+  RoundEditor,
+  TITLE_FIELD,
+} from "@/components/live/round-editor";
+import { NO_ROUNDS } from "@/components/live/rounds";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hooks/use-query";
@@ -21,6 +28,7 @@ import {
   unwrap,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 type Relay = NonNullable<Output<"/live/relays/get">["relay"]>;
 
@@ -82,10 +90,19 @@ function RelaySetup({
   const searchParams = useSearchParams();
   const link = searchParams.get("draft");
   const [title, setTitle] = useState(relay.title);
-  const [drafting, setDrafting] = useState(link !== null);
+  // The panel opens itself once lines are waiting, and after that only the
+  // button closes it — so a line settled to nothing does not take it away.
+  const [shown, setShown] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
   const openRun = relay.runs.find((run) => run.open) ?? null;
+  const { data: offered } = useQuery(
+    () => api["/live/edits/offerings"]({ relay: relay.relay }).then(unwrap),
+    [relay],
+  );
+  const pending = (offered?.offerings[0]?.lines ?? []).filter(
+    (line) => line.standing === "pending" && line.kind !== "keep",
+  ).length;
   const { data: running } = useQuery(
     openRun === null
       ? null
@@ -98,9 +115,17 @@ function RelaySetup({
       .map((round) => round.leg),
   );
 
+  if (shown === null && (link !== null || pending > 0)) setShown(true);
+  const drafting = shown ?? false;
+
   async function retitle() {
     const wanted = title.trim();
-    if (wanted === "" || wanted === relay.title) return;
+    // A title cleared and left behind is not a title: the saved one comes back.
+    if (wanted === "") {
+      setTitle(relay.title);
+      return;
+    }
+    if (wanted === relay.title) return;
     setBusy(true);
     const result = await api["/live/relays/retitle"]({
       relay: relay.relay,
@@ -157,41 +182,56 @@ function RelaySetup({
           >
             <ArrowLeft className="size-3" /> Overview
           </Link>
-          <Input
-            value={title}
-            maxLength={200}
-            disabled={busy}
-            aria-label="Title"
-            aria-invalid={title.trim() === ""}
-            className="h-auto border-transparent px-0 font-display text-2xl font-semibold shadow-none md:text-3xl"
-            onChange={(event) => setTitle(event.target.value)}
-            onBlur={() => void retitle()}
-          />
+          <span className="flex flex-wrap items-center gap-3">
+            <Input
+              value={title}
+              maxLength={200}
+              disabled={busy || relay.retired}
+              aria-label="Title"
+              aria-invalid={title.trim() === ""}
+              className={cn(TITLE_FIELD, "min-w-0 flex-1 text-2xl md:text-3xl")}
+              onChange={(event) => setTitle(event.target.value)}
+              onBlur={() => void retitle()}
+            />
+            {relay.retired ? <Badge variant="outline">Retired</Badge> : null}
+          </span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            className={drafting ? "border-primary text-primary" : undefined}
-            onClick={() => setDrafting((shown) => !shown)}
-          >
-            <Sparkles /> Draft with AI
-          </Button>
-          {openRun === null ? (
+        {relay.retired ? null : (
+          <div className="flex flex-wrap items-center gap-2">
             <Button
-              disabled={busy || relay.rounds.length === 0}
-              onClick={() => void launch()}
+              variant="outline"
+              className={drafting ? "border-primary text-primary" : undefined}
+              onClick={() => setShown(!drafting)}
             >
-              Launch
+              <Sparkles /> Draft with AI
+              {pending > 0 ? (
+                <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary font-mono text-[11px] text-primary-foreground">
+                  {pending}
+                </span>
+              ) : null}
             </Button>
-          ) : (
-            <Button asChild>
-              <Link href={`/staff/live/run/${openRun.run}`}>Run</Link>
-            </Button>
-          )}
-        </div>
+            {openRun === null ? (
+              <span
+                className="inline-flex"
+                title={relay.rounds.length === 0 ? NO_ROUNDS : undefined}
+              >
+                <Button
+                  disabled={busy || relay.rounds.length === 0}
+                  onClick={() => void launch()}
+                >
+                  Launch
+                </Button>
+              </span>
+            ) : (
+              <Button asChild>
+                <Link href={`/staff/live/run/${openRun.run}`}>Run</Link>
+              </Button>
+            )}
+          </div>
+        )}
       </header>
 
-      {drafting ? (
+      {drafting && !relay.retired ? (
         <AiPanel
           relay={relay.relay}
           rounds={relay.rounds}
@@ -206,11 +246,18 @@ function RelaySetup({
             key={round.leg}
             round={round}
             rounds={relay.rounds}
-            locked={reached.has(round.leg)}
+            locked={relay.retired || reached.has(round.leg)}
+            note={
+              reached.has(round.leg)
+                ? refusalSentence("RUN_OPEN", { round: round.number })
+                : null
+            }
             onChanged={onChanged}
           />
         ))}
-        <AddRoundCard disabled={busy} onAdd={addRound} />
+        {relay.retired ? null : (
+          <AddRoundCard disabled={busy} onAdd={addRound} />
+        )}
       </div>
     </PageContainer>
   );

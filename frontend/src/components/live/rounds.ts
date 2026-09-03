@@ -9,6 +9,9 @@
 import { useEffect, useState } from "react";
 import { api, isApiError, type Output } from "@/lib/api";
 
+/** Why a relay cannot launch yet, said the way a questionnaire says its own. */
+export const NO_ROUNDS = "Add a round first.";
+
 /** Done, open, and next are a run's standings; plain is a round that is only written. */
 export type RoundStanding = "done" | "open" | "next" | "plain";
 

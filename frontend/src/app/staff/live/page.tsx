@@ -13,7 +13,7 @@ import {
 } from "@/components/live/quiz-meta";
 import { LiveRow, RoomCode } from "@/components/live/relay-row";
 import { Figure, RoundStrip } from "@/components/live/round-token";
-import { standingOf } from "@/components/live/rounds";
+import { NO_ROUNDS, standingOf } from "@/components/live/rounds";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -286,12 +286,16 @@ function RelayEntry({
   const live = relay.run !== null;
   const { begun, handedIn } = relay.figure;
 
-  const aside =
-    relay.openRound !== null && handedIn !== null && begun !== null ? (
-      <Figure size="sm" value={handedIn} of={begun} />
-    ) : live && relay.code !== null ? (
-      <RoomCode code={relay.code} />
-    ) : undefined;
+  // A live row carries both: the figure of the round that is open, and the
+  // code the room is still joined by under it.
+  const aside = !live ? undefined : (
+    <span className="flex flex-col gap-1">
+      {relay.openRound !== null && handedIn !== null && begun !== null ? (
+        <Figure size="sm" value={handedIn} of={begun} />
+      ) : null}
+      {relay.code === null ? null : <RoomCode code={relay.code} />}
+    </span>
+  );
 
   return (
     <LiveRow
@@ -330,14 +334,19 @@ function RelayEntry({
             <Button variant="ghost" size="sm" asChild>
               <Link href={`/staff/live/relay/${relay.relay}/edit`}>Edit</Link>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={busy || relay.rounds.length === 0}
-              onClick={onLaunch}
+            <span
+              className="inline-flex"
+              title={relay.rounds.length === 0 ? NO_ROUNDS : undefined}
             >
-              <Radio /> Launch
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={busy || relay.rounds.length === 0}
+                onClick={onLaunch}
+              >
+                <Radio /> Launch
+              </Button>
+            </span>
             <ConfirmAction
               trigger={
                 <Button variant="ghost" size="sm">

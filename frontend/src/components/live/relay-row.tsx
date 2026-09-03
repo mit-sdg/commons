@@ -58,7 +58,9 @@ export function LiveRow({
       )}
     >
       {stateColumn ? <StateWord live={live} /> : null}
-      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2 font-medium">
+      {/* Half the row is the title's own: the strip and the actions wrap under
+          it rather than squeezing it to one letter per line. */}
+      <span className="flex min-w-0 shrink grow basis-1/2 flex-wrap items-center gap-2 font-medium">
         {title}
       </span>
       {middle}

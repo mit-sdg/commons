@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -59,6 +59,9 @@ function NewLiveContent() {
   const [disclosure, setDisclosure] = useState<Disclosure>("score");
   const [source, setSource] = useState(BLANK);
   const [busy, setBusy] = useState(false);
+  // A form nobody has touched says nothing about the title it is missing.
+  const [touched, setTouched] = useState(false);
+  const missing = touched && title.trim() === "";
 
   const { data: shelf } = useQuery(
     session ? () => api["/live/quizzes/list"]({}).then(unwrap) : null,
@@ -135,6 +138,7 @@ function NewLiveContent() {
 
   async function create() {
     const trimmed = title.trim();
+    setTouched(true);
     if (trimmed === "") return;
     setBusy(true);
     if (kind === "relay") await createRelay(trimmed);
@@ -153,13 +157,25 @@ function NewLiveContent() {
           </Link>
         }
         title="New"
+        actions={
+          <Button variant="outline" asChild>
+            <Link href={`/staff/live/draft?kind=${kind}`}>
+              <Sparkles /> Draft with AI
+            </Link>
+          </Button>
+        }
       />
 
       <div className="space-y-6">
         <Tabs value={kind} onValueChange={chooseKind}>
           <TabsList>
             {KINDS.map((entry) => (
-              <TabsTrigger key={entry.kind} value={entry.kind} disabled={busy}>
+              <TabsTrigger
+                key={entry.kind}
+                value={entry.kind}
+                disabled={busy}
+                className="text-foreground/70"
+              >
                 {entry.label}
               </TabsTrigger>
             ))}
@@ -172,12 +188,13 @@ function NewLiveContent() {
             id="live-title"
             value={title}
             maxLength={200}
-            aria-invalid={title.trim() === ""}
+            aria-invalid={missing}
             disabled={busy}
             placeholder="e.g. Lecture 7 check-in"
             onChange={(event) => setTitle(event.target.value)}
+            onBlur={() => setTouched(true)}
           />
-          {title.trim() === "" ? (
+          {missing ? (
             <p className="text-xs text-destructive">Enter a title.</p>
           ) : null}
         </div>

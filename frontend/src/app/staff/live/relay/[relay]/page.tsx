@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Layers, Radio } from "lucide-react";
+import { ArrowLeft, ChevronRight, Layers, Radio } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import {
   shapeWords,
   TakesChip,
 } from "@/components/live/round-token";
-import type { RelayRound } from "@/components/live/rounds";
+import { kindOf, NO_ROUNDS, type RelayRound } from "@/components/live/rounds";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -99,6 +99,7 @@ function RelayOverviewContent() {
   return (
     <PageContainer>
       <PageHeader
+        className="max-w-4xl"
         eyebrow={
           <Link
             href="/staff/live"
@@ -126,12 +127,17 @@ function RelayOverviewContent() {
                 <Link href={`/staff/live/run/${openRun.run}`}>Run</Link>
               </Button>
             ) : (
-              <Button
-                disabled={busy || found.retired || found.rounds.length === 0}
-                onClick={() => void launch()}
+              <span
+                className="inline-flex"
+                title={found.rounds.length === 0 ? NO_ROUNDS : undefined}
               >
-                <Radio /> Launch
-              </Button>
+                <Button
+                  disabled={busy || found.retired || found.rounds.length === 0}
+                  onClick={() => void launch()}
+                >
+                  <Radio /> Launch
+                </Button>
+              </span>
             )}
             {openRun === null && !found.retired ? (
               <ConfirmAction
@@ -178,13 +184,21 @@ function RelayOverviewContent() {
                     href={`/staff/live/run/${run.run}`}
                     className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
                   >
-                    <span className="text-sm">
-                      Opened {fullTime(run.openedAt)}
-                      {run.closedAt !== null
-                        ? ` · closed ${fullTime(run.closedAt)}`
-                        : ""}
+                    <span className="flex min-w-0 flex-col gap-1">
+                      <span className="text-sm">
+                        Opened {fullTime(run.openedAt)}
+                        {run.closedAt !== null
+                          ? ` · closed ${fullTime(run.closedAt)}`
+                          : ""}
+                      </span>
+                      <span className="font-mono text-muted-foreground text-[13px]">
+                        {ranWords(run.rounds)}
+                      </span>
                     </span>
-                    {run.open ? <Badge>Open</Badge> : null}
+                    <span className="flex items-center gap-2">
+                      {run.open ? <Badge>Open</Badge> : null}
+                      <ChevronRight className="size-4 text-muted-foreground" />
+                    </span>
                   </Link>
                 </li>
               ))}
@@ -196,6 +210,20 @@ function RelayOverviewContent() {
   );
 }
 
+/**
+ * What a run came to: the rounds that ran and what the room handed in over
+ * them. The former numbers no round of a past run, so the row counts them.
+ */
+function ranWords(rounds: { figure: { handedIn: number | null } }[]): string {
+  if (rounds.length === 0) return "No round ran.";
+  const handedIn = rounds.reduce(
+    (total, round) => total + (round.figure.handedIn ?? 0),
+    0,
+  );
+  const word = rounds.length === 1 ? "round" : "rounds";
+  return `${rounds.length} ${word} · ${handedIn} handed in`;
+}
+
 /** One round as it stands: what it asks, what it offers, and what it takes. */
 function RoundCard({ round }: { round: RelayRound }) {
   const takes = round.takes[0];
@@ -203,7 +231,12 @@ function RoundCard({ round }: { round: RelayRound }) {
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4">
       <RoundToken number={round.number} size="lg" standing="plain" />
       <div className="flex min-w-0 flex-col gap-3">
-        <h3 className="font-display text-xl font-semibold">{round.title}</h3>
+        <span className="flex flex-wrap items-baseline gap-2.5">
+          <h3 className="font-display text-xl font-semibold">{round.title}</h3>
+          <span className="text-muted-foreground text-sm capitalize">
+            {kindOf(round)}
+          </span>
+        </span>
         {round.prompt === "" ? null : (
           <p dir="auto" className="min-w-0 text-sm">
             {round.prompt}

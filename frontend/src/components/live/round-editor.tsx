@@ -38,6 +38,29 @@ export type RelayRound = NonNullable<
 
 const KINDS: RoundKind[] = ["write", "list", "vote"];
 
+/**
+ * A title that still reads as the heading it is, with a rule under it saying
+ * it can be typed into — and no filled slab of its own in the dark.
+ */
+export const TITLE_FIELD =
+  "h-auto rounded-none border-transparent border-b-border bg-transparent px-0 font-display font-semibold shadow-none focus-visible:border-b-primary dark:bg-transparent";
+
+/** What a part is called until it is named, so an empty box shows its place. */
+const PART_WORDS = [
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+];
+
 /** The source select's word for a round that takes nothing; no leg reads so. */
 const NOTHING = "nothing";
 
@@ -154,12 +177,15 @@ export function RoundEditor({
   round,
   rounds,
   locked,
+  note = null,
   onChanged,
 }: {
   round: RelayRound;
   rounds: RelayRound[];
-  /** A run is open: the round may be read but never rewritten. */
+  /** The round may be read but never rewritten. */
   locked: boolean;
+  /** The one sentence saying why it is locked, said once at the card's top. */
+  note?: string | null;
   onChanged: () => void;
 }) {
   const saved: Draft = {
@@ -170,10 +196,19 @@ export function RoundEditor({
     choices: round.choices,
   };
   const [draft, setDraft] = useState<Draft>(saved);
+  const [seen, setSeen] = useState<Draft>(saved);
   const [busy, setBusy] = useState(false);
   const [chosenKind, setChosenKind] = useState<RoundKind | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const uses = useCarryUses();
+
+  // The round can change under the card — a drafting line taken, another tab —
+  // and a draft written against the round as it was is dropped for the one
+  // that now stands, so the card never writes a stale round back out.
+  if (!same(cleaned(saved), cleaned(seen))) {
+    setSeen(saved);
+    setDraft(saved);
+  }
 
   const takes = round.takes[0] ?? null;
   const earlier = rounds.filter((entry) => entry.number < round.number);
@@ -211,6 +246,12 @@ export function RoundEditor({
     setBusy(false);
     if (report(result, roundRefusal({ kind: "revise" }, round, rounds, locked)))
       onChanged();
+  }
+
+  /** A title cleared and left behind is not a title: the saved one comes back. */
+  function leaveTitle() {
+    if (draft.title.trim() === "") change({ title: round.title });
+    else void commit(draft);
   }
 
   function change(next: Partial<Draft>, write = false) {
@@ -311,16 +352,19 @@ export function RoundEditor({
       <RoundToken number={round.number} size="lg" standing="plain" />
 
       <div className="flex min-w-0 flex-col gap-3">
+        {note === null ? null : (
+          <p className="text-muted-foreground text-sm">{note}</p>
+        )}
         <div className="flex items-center gap-2">
           <Input
             value={draft.title}
             maxLength={200}
             disabled={disabled}
-            aria-label="Title"
+            aria-label={`Round ${round.number} title`}
             aria-invalid={draft.title.trim() === ""}
-            className="h-auto min-w-0 flex-1 border-transparent px-0 font-display text-xl font-semibold shadow-none md:text-xl"
+            className={cn(TITLE_FIELD, "min-w-0 flex-1 text-xl md:text-xl")}
             onChange={(event) => change({ title: event.target.value })}
-            onBlur={() => void commit(draft)}
+            onBlur={() => leaveTitle()}
           />
           <div className="flex flex-none gap-0.5">
             <Button
@@ -353,7 +397,11 @@ export function RoundEditor({
           </div>
         </div>
 
-        <div className="inline-flex w-fit gap-0.5 rounded-md border border-border p-0.5">
+        <div
+          role="group"
+          aria-label={`Round ${round.number} kind`}
+          className="inline-flex w-fit gap-0.5 rounded-md border border-border p-0.5"
+        >
           {KINDS.map((entry) => (
             <button
               key={entry}
@@ -402,7 +450,8 @@ export function RoundEditor({
                         value={part}
                         maxLength={40}
                         disabled={disabled}
-                        aria-label="Part"
+                        aria-label={`Round ${round.number} part ${index + 1}`}
+                        placeholder={PART_WORDS[index] ?? ""}
                         className="w-36 pr-8"
                         onChange={(event) => {
                           const parts = [...draft.parts];
@@ -490,7 +539,7 @@ export function RoundEditor({
                         value={choice}
                         maxLength={500}
                         disabled={disabled}
-                        aria-label="Choice"
+                        aria-label={`Round ${round.number} choice ${index + 1}`}
                         className="w-56"
                         onChange={(event) => {
                           const choices = [...draft.choices];
@@ -574,31 +623,37 @@ export function RoundEditor({
             </Select>
             {takes === null ? null : (
               <>
-                <span className="text-muted-foreground">as</span>
-                {open.length > 1 &&
-                open.some((entry) => entry.use === takes.shape) ? (
-                  <Select
-                    value={takes.shape}
-                    disabled={disabled}
-                    onValueChange={(value) =>
-                      void setTakes(takes.source, value)
-                    }
-                  >
-                    <SelectTrigger size="sm" aria-label="Use">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {open.map((entry) => (
-                        <SelectItem key={entry.use} value={entry.use}>
-                          {entry.use}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <span>{takes.shape}</span>
-                )}
-                <span className="text-muted-foreground">
+                <span className="inline-flex items-center gap-2">
+                  <span className="text-muted-foreground">as</span>
+                  {open.length > 1 &&
+                  open.some((entry) => entry.use === takes.shape) ? (
+                    <Select
+                      value={takes.shape}
+                      disabled={disabled}
+                      onValueChange={(value) =>
+                        void setTakes(takes.source, value)
+                      }
+                    >
+                      <SelectTrigger
+                        size="sm"
+                        aria-label="Use"
+                        aria-describedby={`use-${round.leg}`}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {open.map((entry) => (
+                          <SelectItem key={entry.use} value={entry.use}>
+                            {entry.use}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span>{takes.shape}</span>
+                  )}
+                </span>
+                <span id={`use-${round.leg}`} className="text-muted-foreground">
                   {sentenceOf(uses, takes.shape)}
                 </span>
               </>
@@ -663,7 +718,7 @@ export function AddRoundCard({
           value={title}
           maxLength={200}
           placeholder="Title"
-          aria-label="Title"
+          aria-label="New round title"
           className="h-auto px-3 py-1.5 font-display text-xl font-semibold md:text-xl"
           onChange={(event) => setTitle(event.target.value)}
         />
@@ -689,7 +744,7 @@ export function AddRoundCard({
               setWriting(false);
             }}
           >
-            + Round
+            Add
           </Button>
           <Button
             variant="ghost"
