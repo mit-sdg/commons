@@ -21,7 +21,7 @@ export default function JoinPage() {
     try {
       const result = await api["/live/p/locate"]({ code });
       if (isApiError(result)) {
-        setMessage("No run has that code.");
+        setMessage("No room has that code.");
         return;
       }
       router.push(`/q/${result.token}`);

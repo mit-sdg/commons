@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   answeredOf,
+  boxName,
   itemCountOf,
   type RoundQuestion,
   wholeOf,
@@ -60,5 +61,20 @@ describe("the figure on the hand-in bar", () => {
 
   test("counts every box the round asks after", () => {
     expect(itemCountOf([write, list, repeated, vote])).toBe(8);
+  });
+});
+
+describe("what a repeated question's boxes are called", () => {
+  test("a lone box keeps the part", () => {
+    expect(boxName("a verb", 0, 1)).toBe("a verb");
+  });
+
+  test("boxes beside each other say where they sit", () => {
+    expect(boxName("a verb", 0, 3)).toBe("a verb, one of three");
+    expect(boxName("a verb", 2, 3)).toBe("a verb, three of three");
+  });
+
+  test("a part the round left blank leaves the place alone", () => {
+    expect(boxName("", 1, 2)).toBe("two of two");
   });
 });

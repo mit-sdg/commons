@@ -428,9 +428,7 @@ export default function ParticipantPage() {
       if (isApiError(result)) {
         submissionUncertain.current = true;
         if (await recoverSubmission()) return;
-        toast.error(
-          "Could not hand in. Check every answer and make sure the quiz is still open.",
-        );
+        toast.error("Could not hand in. Try again.");
         await loadFace();
         return;
       }
@@ -642,17 +640,18 @@ function Line({ children }: { children: React.ReactNode }) {
 /**
  * What that line says while no round is open. The face carries every round with
  * its standing, so the rounds say whether the first is still to come, another
- * follows, or every one has run.
+ * follows, or every one has run. A phone is never told about the run: the
+ * closed line says what the student can see, in the words the rounds use.
  */
 function waitingLine(relay: Relay): string {
-  if (!relay.open) return refusalSentence("CLOSED");
+  if (!relay.open) return "No more rounds.";
   const first = relay.rounds[0];
-  if (first === undefined) return "Next round soon.";
+  if (first === undefined) return "No round yet.";
   if (relay.rounds.every((round) => round.round === null))
-    return `Round ${first.number} opens soon.`;
+    return `Round ${first.number} has not opened.`;
   if (relay.rounds.every((round) => round.round !== null))
     return "Every round has run.";
-  return "Next round soon.";
+  return "The next round has not opened.";
 }
 
 /** A response is per round, so each round keeps its own slot on the device. */
@@ -897,7 +896,7 @@ function RelayPhone({
       await refresh();
       setRefusal(
         error === null
-          ? "That didn't hand in. Try again."
+          ? "Not handed in. Try again."
           : // A hand-in refused with a box still blank is the round's own
             // rule: every box it captured is answered, or it is not in.
             saidRefusal(
@@ -911,6 +910,12 @@ function RelayPhone({
 
   const handIn = useCallback(async () => {
     if (response === null) return;
+    // The button is dead where the round would refuse, so this is the second
+    // door: a hand-in reaching here unwhole is told the round's own rule.
+    if (!whole) {
+      setRefusal(refusalSentence("INCOMPLETE"));
+      return;
+    }
     setBusy(true);
     setRefusal(null);
     try {
@@ -936,7 +941,7 @@ function RelayPhone({
     } finally {
       setBusy(false);
     }
-  }, [response, answers, persistAnswer, remember, settle]);
+  }, [response, answers, whole, persistAnswer, remember, settle]);
 
   const openRound = relay.rounds.find(
     (candidate) => candidate.round !== null && candidate.open === true,
@@ -1054,14 +1059,19 @@ function RelayPhone({
             </div>
             {landed === null ? null : (
               <>
-                <Figure
-                  value={landed.wall.handedIn}
-                  of={landed.wall.begun}
-                  size="sm"
-                />
+                {/* The figure counts the room, not this phone, so it says so. */}
+                <p className="flex items-baseline gap-2 text-muted-foreground text-sm">
+                  <Figure
+                    className="min-w-0"
+                    value={landed.wall.handedIn}
+                    of={landed.wall.begun}
+                    size="sm"
+                  />
+                  handed in
+                </p>
                 {landed.inTray === 0 ? null : (
                   <p className="text-muted-foreground text-sm">
-                    and {landed.inTray} more in the tray
+                    {landed.inTray} more in the tray
                   </p>
                 )}
                 <Wall wall={landed.wall} phone carriesTo={nextRound?.number} />
@@ -1124,6 +1134,7 @@ function QuestionCard({
   onDraft: (value: string) => void;
 }) {
   const choices = question.choices;
+  const promptId = `prompt-${question.question}`;
 
   return (
     <Card>
@@ -1133,7 +1144,9 @@ function QuestionCard({
           <span className="w-6 shrink-0 text-muted-foreground tabular-nums">
             {index + 1}.
           </span>
-          <span className="min-w-0 flex-1">{question.prompt}</span>
+          <span className="min-w-0 flex-1" id={promptId}>
+            {question.prompt}
+          </span>
         </h2>
         {choices.length > 0 ? (
           <div className="flex flex-col gap-2">
@@ -1164,6 +1177,8 @@ function QuestionCard({
           <Input
             className="h-11"
             dir="auto"
+            // The prompt above is the box's name; the placeholder is not one.
+            aria-labelledby={promptId}
             defaultValue={value}
             placeholder="Your answer"
             onChange={(event) => onDraft(event.currentTarget.value)}

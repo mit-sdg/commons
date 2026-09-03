@@ -20,6 +20,32 @@ export interface RoundQuestion {
 /** How many of a group's words a phone shows before the rest are counted. */
 const WORDS_SHOWN = 4;
 
+const COUNTING_WORDS = [
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+];
+
+/**
+ * What one box of a repeated question is called. Every box carries the same
+ * part, so where it sits is what tells it from the others: "a verb, two of
+ * three". A lone box is told apart from nothing, so it keeps the part alone.
+ */
+export function boxName(part: string, index: number, of: number): string {
+  if (of <= 1) return part;
+  const place = `${COUNTING_WORDS[index] ?? index + 1} of ${
+    COUNTING_WORDS[of - 1] ?? of
+  }`;
+  return part === "" ? place : `${part}, ${place}`;
+}
+
 /**
  * Every item a question is answered under: itself when it has no parts, one
  * `question#n` per labeled part, or `question#1..cap` for a repeated box.
@@ -90,6 +116,7 @@ export function QuestionCard({
   const chosen = items[0] ?? question.question;
   const [shown, setShown] = useState(() => Math.max(1, filled(answers, items)));
   const context = question.context ?? [];
+  const promptId = `prompt-${question.question}`;
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
@@ -129,6 +156,7 @@ export function QuestionCard({
       <h2
         className="font-sans text-[15px] font-medium leading-[1.45]"
         dir="auto"
+        id={promptId}
       >
         {question.prompt}
       </h2>
@@ -158,6 +186,7 @@ export function QuestionCard({
         <WrittenBox
           item={question.question}
           value={answers[question.question] ?? ""}
+          labelledBy={promptId}
           placeholder="Your answer"
           onAnswer={onAnswer}
           onDraft={onDraft}
@@ -166,12 +195,12 @@ export function QuestionCard({
         <>
           <div className="flex flex-col gap-1">
             <PartLabel>{question.parts[0] ?? ""}</PartLabel>
-            {items.slice(0, shown).map((item) => (
+            {items.slice(0, shown).map((item, index) => (
               <WrittenBox
                 key={item}
                 item={item}
                 value={answers[item] ?? ""}
-                label={question.parts[0] ?? ""}
+                label={boxName(question.parts[0] ?? "", index, shown)}
                 onAnswer={onAnswer}
                 onDraft={onDraft}
               />
@@ -231,6 +260,7 @@ function WrittenBox({
   item,
   value,
   label,
+  labelledBy,
   placeholder,
   onAnswer,
   onDraft,
@@ -238,6 +268,8 @@ function WrittenBox({
   item: string;
   value: string;
   label?: string;
+  /** The prompt that names the box, when the box stands under it alone. */
+  labelledBy?: string;
   placeholder?: string;
   onAnswer: (item: string, value: string) => void;
   onDraft: (item: string, value: string) => void;
@@ -246,7 +278,8 @@ function WrittenBox({
     <Input
       className="h-11"
       dir="auto"
-      aria-label={label}
+      aria-label={label === "" ? undefined : label}
+      aria-labelledby={labelledBy}
       defaultValue={value}
       placeholder={placeholder}
       onChange={(event) => onDraft(item, event.currentTarget.value)}
