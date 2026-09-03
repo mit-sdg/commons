@@ -30,6 +30,23 @@ for (const [floor, make] of floors) {
       expect(err).toBeInstanceOf(refusalErrors.TargetAlreadyLocked);
     });
 
+    test("many locks asked in one instant leave one holder and refuse the rest", async () => {
+      const locking = await make();
+      const at = new Date("2026-03-01T17:00:00Z");
+      const outcomes = await Promise.all(
+        Array.from({ length: 20 }, () =>
+          locking.lock({ target: "report-1", at }).then(
+            () => "held",
+            (error: unknown) =>
+              error instanceof refusalErrors.TargetAlreadyLocked ? "refused" : "faulted",
+          ),
+        ),
+      );
+      expect(outcomes.filter((outcome) => outcome === "held")).toHaveLength(1);
+      expect(outcomes.filter((outcome) => outcome === "refused")).toHaveLength(19);
+      expect(await locking._getLocked({})).toEqual([{ target: "report-1", lockedAt: at }]);
+    });
+
     test("unlock releases the hold", async () => {
       const locking = await make();
       await locking.lock({ target: "report-1", at: new Date("2026-03-01T17:00:00Z") });

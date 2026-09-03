@@ -48,6 +48,7 @@ const {
   Categorizing,
   Linking,
   Locating,
+  Locking,
   Pinning,
   Publishing,
   Questioning,
@@ -58,6 +59,9 @@ const {
   Subscribing,
   Trashing,
 } = concepts;
+
+/** The reserved Pinning scope in which a pinned run is one the model sorts. */
+const SORTING = "sorting";
 
 /** Whether a round's edition is open, and how many responses it drew. */
 export const theRoundFigure = former(
@@ -242,6 +246,7 @@ export const theRelayRun = former(
       round,
       takenFrom,
       seat,
+      modelSorts,
     },
   ) =>
     where(
@@ -249,6 +254,7 @@ export const theRelayRun = former(
       Relaying._relay({ relay }).is({ title }),
       whether(Locating._for({ subject: run }).is({ code })),
       whether(theOpenRoundOf({ run }).is({ round: openRound })),
+      Pinning._isPinned({ item: run, scope: SORTING }).is({ pinned: modelSorts }),
     ).form({
       run,
       relay,
@@ -259,6 +265,7 @@ export const theRelayRun = former(
       token: each(Sharing._sharesFor({ subject: run }).is({ token })).first(token),
       code,
       openRound,
+      modelSorts,
       seats: each(Subscribing._getSubscribers({ target: run }).is({ user: seat }))
         .where(seatIsNotDismissed({ participant: seat }))
         .form({ participant: seat }),
@@ -1046,8 +1053,11 @@ export const Launch = endpoint(
 /**
  * Opening a round is publishing a second time with the round's questionnaire
  * as the material. A round that takes from an earlier one opens only once
- * that round has closed in this run and some of its piles are picked; then the
- * round is published and tied to its run. The tie is what captures the
+ * that round has closed in this run and some of its piles are picked. The run
+ * is locked before the round is published: the lock is the run's "a round is
+ * open" held where one holder at a time is the rule, so two dashboards that
+ * tap Open in one instant open one round and the other is refused. The round
+ * is then published and tied to its run; the tie is what captures the
  * presentation, below. Every later stage reads the leg and the run afresh;
  * only the request and the stages' returns cross.
  */
@@ -1066,13 +1076,8 @@ export const OpenRound = endpoint(
           legHasNotRunInRun({ run, leg }),
           legSourcesHaveClosed({ run, leg }),
           legTakesNothing({ leg }),
-          Relaying._leg({ leg }).is({ material: questionnaire }),
         )
-          .then(
-            Publishing.publish({ author: user, material: questionnaire, at }).responds({
-              edition: round,
-            }),
-          )
+          .then(Locking.lock({ target: run, at }).responds())
           .named("plain"),
         where(
           now(at),
@@ -1086,14 +1091,19 @@ export const OpenRound = endpoint(
           theTakeOf({ leg }).is({ source }),
           theRoundOfLegInRun({ run, leg: source }).is({ round: sourceRound }),
           roundHasPicks({ round: sourceRound }),
-          Relaying._leg({ leg }).is({ material: questionnaire }),
         )
-          .then(
-            Publishing.publish({ author: user, material: questionnaire, at }).responds({
-              edition: round,
-            }),
-          )
+          .then(Locking.lock({ target: run, at }).responds())
           .named("taking"),
+      )
+      .then(
+        where(
+          activeUser({ session }).is({ user }),
+          Relaying._leg({ leg }).is({ material: questionnaire }),
+        ).then(
+          Publishing.publish({ author: user, material: questionnaire, at }).responds({
+            edition: round,
+          }),
+        ),
       )
       .then(
         where(compute(computations.soleTarget, { target: run }, tie)).then(
@@ -1225,6 +1235,17 @@ export const OpenRoundRefused = endpoint(
     ),
 );
 
+/** A round that closes gives the run's lock back, whichever path closed it. */
+export const ClosedRoundUnlocksRun = reaction(({ round, run }) =>
+  when(Publishing.close({ edition: round }).responds())
+    .where(
+      Linking._getLinks({ source: round }).is({ target: run }),
+      runIsARelayRun({ run }),
+      Locking._isLocked({ target: run }).is({ locked: true }),
+    )
+    .then(Locking.unlock({ target: run })),
+);
+
 export const CloseRound = endpoint(
   "/live/relays/close-round",
   ({ session, round, user, at, closed }) =>
@@ -1265,6 +1286,74 @@ export const Close = endpoint(
         .then(Publishing.close({ edition: run, at }).responds({ edition: closed }))
         .then(respond({ run: closed }))
         .named("bare"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "run"] } },
+);
+
+/**
+ * "Model sorts" is the run's switch, the same on every dashboard: the run
+ * pinned in the reserved scope `sorting`. A staff member who flips it flips
+ * it for the room; the dashboards that are open keep the cadence.
+ */
+export const SortByModel = endpoint(
+  "/live/relays/sort-by-model",
+  ({ session, run, user, at }) =>
+    receive({ session, run }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        runIsOpen({ run }),
+        Pinning._isPinned({ item: run, scope: SORTING }).is({ pinned: false }),
+      )
+        .then(Pinning.pin({ item: run, scope: SORTING, priority: 0, at }).responds())
+        .then(respond({ run, modelSorts: true }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        runIsOpen({ run }),
+        Pinning._isPinned({ item: run, scope: SORTING }).is({ pinned: true }),
+      )
+        .then(respond({ run, modelSorts: true }))
+        .named("already"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), runIsClosed({ run }))
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "run"] } },
+);
+
+export const SortByHand = endpoint(
+  "/live/relays/sort-by-hand",
+  ({ session, run, user }) =>
+    receive({ session, run }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        runIsOpen({ run }),
+        Pinning._isPinned({ item: run, scope: SORTING }).is({ pinned: true }),
+      )
+        .then(Pinning.unpin({ item: run, scope: SORTING }).responds())
+        .then(respond({ run, modelSorts: false }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        runIsOpen({ run }),
+        Pinning._isPinned({ item: run, scope: SORTING }).is({ pinned: false }),
+      )
+        .then(respond({ run, modelSorts: false }))
+        .named("already"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), runIsClosed({ run }))
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),

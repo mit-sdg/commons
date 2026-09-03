@@ -16,7 +16,8 @@ concrete MailKey
   A stable deduplication key supplied by an application workflow.
 
 concrete Lockable
-  A post or conversation identity that moderation may lock.
+  A post or conversation identity that moderation may lock, or a Publishing
+  edition that is a relay run, locked while one of its rounds is open.
 
 concrete TaskSubject
   A task-list group or task identity that a task-domain notification is about and links to.
@@ -67,12 +68,14 @@ concrete Trashable
   whose cards keep their mark because the seat stays.
 
 concrete Pinnable
-  What is held above the rest: a forum post pinned in its conversation, or a
-  pile a staff member picked to carry into the next round.
+  What is held above the rest: a forum post pinned in its conversation, a
+  pile a staff member picked to carry into the next round, or a relay run the
+  model sorts.
 
 concrete PinScope
-  Where pins stand: a forum conversation, or a Publishing edition that is a
-  round, whose pinned piles are the ones picked.
+  Where pins stand: a forum conversation; a Publishing edition that is a
+  round, whose pinned piles are the ones picked; or the reserved constant
+  `sorting`, in which a pinned run is one the model sorts.
 
 concrete CategoryScope
   Where a category's name is unique: the forum, under the reserved scope `forum`,
@@ -293,8 +296,8 @@ uses a Posting post as its artifact. Invitation, notification, and password-rese
 Posting owns post identities. Forum features attach their own state to a post
 without taking ownership of it. Conversing separately owns conversation
 identities; subscriptions, unread scopes, pins, role contexts, and locks can use
-a conversation. Locking also accepts a post directly, so its target role has two
-valid owners. Roling also receives the reserved application-wide context
+a conversation. Locking also accepts a post directly, and a relay run, whose lock
+is held while a round of it is open, so its target role has three valid owners. Roling also receives the reserved application-wide context
 `commons`; because that value is a Commons constant rather than a concept-owned
 identity, it has no second type binding, and it names the deployment as a whole
 rather than any one area of it, so no capability held there belongs to the forum
