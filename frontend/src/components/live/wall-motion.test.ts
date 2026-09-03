@@ -4,11 +4,12 @@ import {
   apply,
   diff,
   dropped,
+  LANDING_GAP_MS,
   type Move,
   merged,
-  movesPerStep,
   placed,
-  STEPS_TO_SETTLE,
+  schedule,
+  WAVE_MS,
 } from "./wall-motion";
 
 const wall = (cards: [string, string | null][], piles: string[]) => ({
@@ -137,25 +138,57 @@ describe("the wall when nothing is left to move", () => {
   });
 });
 
-describe("how many moves a step plays", () => {
-  test("a quota fixed at arrival settles a burst in six steps, one read afresh does not", () => {
-    const burst = 93;
-    const quota = movesPerStep(burst);
-    let fixedSteps = 0;
-    for (let left = burst; left > 0; left -= quota) fixedSteps += 1;
-    expect(fixedSteps).toBeLessThanOrEqual(STEPS_TO_SETTLE);
-    let afreshSteps = 0;
-    for (let left = burst; left > 0; left -= movesPerStep(left))
-      afreshSteps += 1;
-    expect(afreshSteps).toBeGreaterThan(STEPS_TO_SETTLE * 3);
+describe("when a snapshot's moves play", () => {
+  const moves: Move[] = [
+    { kind: "open", pile: "p3" },
+    { kind: "arrive", card: "d" },
+    { kind: "place", card: "a", pile: "p3" },
+    { kind: "return", card: "c" },
+    { kind: "leave", card: "e" },
+    { kind: "close", pile: "p2" },
+  ];
+
+  test("piles open at once, landings follow a gap apart, and leaving and closing wait for the last landing", () => {
+    expect(schedule(moves)).toEqual([
+      { move: { kind: "open", pile: "p3" }, at: 0 },
+      { move: { kind: "arrive", card: "d" }, at: 0 },
+      { move: { kind: "place", card: "a", pile: "p3" }, at: LANDING_GAP_MS },
+      { move: { kind: "return", card: "c" }, at: 2 * LANDING_GAP_MS },
+      { move: { kind: "leave", card: "e" }, at: 2 * LANDING_GAP_MS },
+      { move: { kind: "close", pile: "p2" }, at: 2 * LANDING_GAP_MS },
+    ]);
   });
 
-  test("a few moves play one at a time, and a room's worth settle within six steps", () => {
-    expect(movesPerStep(0)).toBe(1);
-    expect(movesPerStep(3)).toBe(1);
-    expect(movesPerStep(6)).toBe(1);
-    expect(movesPerStep(7)).toBe(2);
-    expect(movesPerStep(366)).toBe(61);
-    expect(Math.ceil(366 / movesPerStep(366))).toBeLessThanOrEqual(6);
+  test("a room's worth of cards lands inside the window, evenly spread", () => {
+    const burst: Move[] = Array.from({ length: 60 }, (_, index) => ({
+      kind: "place",
+      card: `c${index}`,
+      pile: "p1",
+    }));
+    const timed = schedule(burst);
+    const times = timed.map((entry) => entry.at);
+    expect(Math.max(...times)).toBeLessThanOrEqual(WAVE_MS);
+    expect(Math.max(...times)).toBeCloseTo(WAVE_MS, 5);
+    expect(new Set(times).size).toBe(60);
+    for (let index = 1; index < times.length; index += 1) {
+      expect(times[index] - times[index - 1]).toBeCloseTo(WAVE_MS / 59, 5);
+    }
+  });
+
+  test("a few cards keep the full gap, and one card lands at once", () => {
+    const three = schedule([
+      { kind: "place", card: "a", pile: "p1" },
+      { kind: "place", card: "b", pile: "p1" },
+      { kind: "place", card: "c", pile: "p1" },
+    ]);
+    expect(three.map((entry) => entry.at)).toEqual([
+      0,
+      LANDING_GAP_MS,
+      2 * LANDING_GAP_MS,
+    ]);
+    expect(schedule([{ kind: "place", card: "a", pile: "p1" }])).toEqual([
+      { move: { kind: "place", card: "a", pile: "p1" }, at: 0 },
+    ]);
+    expect(schedule([])).toEqual([]);
   });
 });

@@ -197,42 +197,78 @@ export const PILE_MOVE = {
   mass: 1,
 } as const;
 
-const STEP_MS = 380;
+/** The window a snapshot's landings are spread over, and how far apart they are at most. */
+export const WAVE_MS = 900;
+export const LANDING_GAP_MS = 40;
 
-/**
- * How many steps a snapshot's moves are spread over at most, so the shown
- * wall reaches the server's inside one poll however many cards arrived: a
- * few moves play one at a time, a room's worth play several to a step.
- */
-export const STEPS_TO_SETTLE = 6;
-
-/**
- * The moves one step plays, fixed when a snapshot arrives from what it has to
- * play, so the whole diff settles within STEPS_TO_SETTLE. Read afresh each
- * step it would shrink with the remainder and a burst would trail off for
- * many times as long.
- */
-export function movesPerStep(pending: number): number {
-  return Math.max(1, Math.ceil(pending / STEPS_TO_SETTLE));
+export interface Timed {
+  move: Move;
+  /** Milliseconds from the wave's start. */
+  at: number;
 }
 
 /**
- * The wall to draw. `wall` is the latest snapshot; `shown` trails it by a
- * step's worth of moves at a time until the two agree, never more than about
- * one poll behind. `edit` changes the shown wall at once — a hand move
- * already seen by the person who made it — and the snapshot that follows
- * finds nothing left to play for it. With `instant`, or before the first
- * snapshot, the shown wall is the target.
+ * When each of a snapshot's moves plays, from the wave's start. Piles open at
+ * once, empty, so every landing has its slot from the first frame; landings
+ * are spread over the window at most a gap apart, the gap shrinking so the
+ * window never grows however many cards came; what leaves or closes goes
+ * after the last landing.
+ */
+export function schedule(moves: Move[]): Timed[] {
+  const opens = moves.filter((move) => move.kind === "open");
+  const landings = moves.filter(
+    (move) =>
+      move.kind === "arrive" || move.kind === "place" || move.kind === "return",
+  );
+  const afterwards = moves.filter(
+    (move) => move.kind === "leave" || move.kind === "close",
+  );
+  const gap =
+    landings.length <= 1
+      ? 0
+      : Math.min(LANDING_GAP_MS, WAVE_MS / (landings.length - 1));
+  const last = landings.length === 0 ? 0 : (landings.length - 1) * gap;
+  return [
+    ...opens.map((move) => ({ move, at: 0 })),
+    ...landings.map((move, index) => ({ move, at: index * gap })),
+    ...afterwards.map((move) => ({ move, at: last })),
+  ];
+}
+
+/** The wall with each pile's count as it was when the wave began. */
+function withCounts<Wall extends Staged>(
+  wall: Wall,
+  counts: Map<string, number>,
+): Wall {
+  return {
+    ...wall,
+    piles: wall.piles.map((pile) => ({
+      ...pile,
+      count: counts.get(pile.pile) ?? pile.count,
+    })),
+  };
+}
+
+/**
+ * The wall to draw. `wall` is the latest snapshot; `shown` trails it by one
+ * wave: a snapshot's moves are scheduled from the moment it arrives and each
+ * plays at its time, so every card is seen to land inside the window. While
+ * a wave plays, `holding` is the tray as it stood when the wave began, so the
+ * shelf keeps every slot a card is flying from, and the piles keep the counts
+ * they had, so the counts tick once, after the last landing. A snapshot that
+ * arrives mid-wave reschedules what is left from the wall as shown. `edit`
+ * changes the shown wall at once — a hand move already seen by the person who
+ * made it — and the snapshot that follows finds nothing left to play for it.
+ * With `instant`, or before the first snapshot, the shown wall is the target.
  */
 export function useStagedWall<Wall extends Staged>(
   wall: Wall | null,
-  {
-    instant = false,
-    step = STEP_MS,
-  }: { instant?: boolean; step?: number } = {},
+  { instant = false }: { instant?: boolean } = {},
 ): {
   shown: Wall | null;
   settled: boolean;
+  /** The tray's cards, in order, as the playing wave found them; null when settled. */
+  holding: string[] | null;
   /** Changes the shown wall at once; `card` names the card the hand just placed. */
   edit: (change: (wall: Wall) => Wall, card?: string) => void;
   /** When each card last landed on the shown wall, later landings higher. */
@@ -240,66 +276,125 @@ export function useStagedWall<Wall extends Staged>(
 } {
   const [shown, setShown] = useState<Wall | null>(wall);
   const [settled, setSettled] = useState(true);
+  const [holding, setHolding] = useState<string[] | null>(null);
   const target = useRef<Wall | null>(wall);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // The step's quota, set from the first diff against each new target.
-  const quota = useRef(0);
+  // The shown wall as the timers last left it, read when the next one fires.
+  const current = useRef<Wall | null>(wall);
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  // The counts the piles keep while a wave plays; null between waves.
+  const counts = useRef<Map<string, number> | null>(null);
   // The order cards landed in, so a pile's face shows what arrived last.
   const landings = useRef(new Map<string, number>());
   const stamp = useCallback((card: string) => {
     landings.current.set(card, landings.current.size + 1);
   }, []);
 
-  useEffect(() => {
-    target.current = wall;
-    quota.current = 0;
+  const show = useCallback((next: Wall | null) => {
+    current.current = next;
+    setShown(next);
+  }, []);
 
-    // Every move is played off the clock, so the snapshot that arrives never
-    // changes the wall in the render that took it.
-    function play() {
-      timer.current = null;
-      setShown((current) => {
-        const next = target.current;
-        if (next === null) return null;
-        if (current === null || instant) return next;
-        const moves = diff(current, next);
-        if (quota.current === 0) quota.current = movesPerStep(moves.length);
-        const playing = quota.current;
-        setSettled(moves.length <= playing);
-        if (moves.length === 0) return adopt(current, next);
-        if (moves.length > playing && timer.current === null) {
-          timer.current = setTimeout(play, step);
-        }
-        let played = current;
-        for (const move of moves.slice(0, playing)) {
-          played = apply(played, next, move);
+  const clear = useCallback(() => {
+    for (const timer of timers.current) clearTimeout(timer);
+    timers.current.clear();
+  }, []);
+
+  const finish = useCallback(
+    (next: Wall) => {
+      counts.current = null;
+      setHolding(null);
+      setSettled(true);
+      const was = current.current;
+      show(was === null ? next : adopt(was, next));
+    },
+    [show],
+  );
+
+  // Every move is played off the clock, so the snapshot that arrives never
+  // changes the wall in the render that took it.
+  const start = useCallback(() => {
+    const next = target.current;
+    if (next === null) {
+      counts.current = null;
+      setHolding(null);
+      setSettled(true);
+      show(null);
+      return;
+    }
+    const was = current.current;
+    if (was === null || instant) {
+      finish(next);
+      return;
+    }
+    const moves = diff(was, next);
+    if (moves.length === 0) {
+      finish(next);
+      return;
+    }
+    if (counts.current === null) {
+      counts.current = new Map(
+        was.piles.map((pile) => [pile.pile, pile.count]),
+      );
+      setHolding(
+        was.cards.filter((card) => card.pile === null).map((card) => card.card),
+      );
+    }
+    setSettled(false);
+    const timed = schedule(moves);
+    const times = [...new Set(timed.map((entry) => entry.at))].sort(
+      (a, b) => a - b,
+    );
+    const lastTime = times[times.length - 1];
+    for (const at of times) {
+      const due = timed
+        .filter((entry) => entry.at === at)
+        .map((entry) => entry.move);
+      const timer = setTimeout(() => {
+        timers.current.delete(timer);
+        const goal = target.current;
+        const standing = current.current;
+        if (goal === null || standing === null) return;
+        let played = standing;
+        for (const move of due) {
+          played = apply(played, goal, move);
           if (move.kind === "arrive" || move.kind === "place") stamp(move.card);
         }
-        return played;
-      });
+        if (at === lastTime) {
+          finish(played);
+        } else {
+          show(
+            counts.current === null
+              ? played
+              : withCounts(played, counts.current),
+          );
+        }
+      }, at);
+      timers.current.add(timer);
     }
+  }, [instant, finish, show, stamp]);
 
-    if (timer.current === null) timer.current = setTimeout(play, 0);
-  }, [wall, instant, step, stamp]);
+  useEffect(() => {
+    target.current = wall;
+    clear();
+    const timer = setTimeout(() => {
+      timers.current.delete(timer);
+      start();
+    }, 0);
+    timers.current.add(timer);
+  }, [wall, clear, start]);
 
-  useEffect(
-    () => () => {
-      if (timer.current !== null) clearTimeout(timer.current);
-      // The slot is cleared with the timer: a mount that follows this one
-      // reads it to decide whether a step is already coming, and a stale id
-      // left standing would stop the wall from ever moving again.
-      timer.current = null;
-    },
-    [],
-  );
+  useEffect(() => clear, [clear]);
 
   const edit = useCallback(
     (change: (wall: Wall) => Wall, card?: string) => {
-      setShown((current) => (current === null ? current : change(current)));
+      // The hand's change is seen whole, counts included, for the rest of the wave.
+      counts.current = null;
+      const standing = current.current;
+      if (standing !== null) show(change(standing));
       if (target.current !== null) target.current = change(target.current);
       if (card !== undefined) stamp(card);
     },
-    [stamp],
+    [show, stamp],
   );
 
   const landed = useCallback(
@@ -310,6 +405,7 @@ export function useStagedWall<Wall extends Staged>(
   return {
     shown: instant ? wall : shown,
     settled: instant ? true : settled,
+    holding: instant ? null : holding,
     edit,
     landed,
   };
