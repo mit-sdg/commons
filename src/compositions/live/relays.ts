@@ -45,15 +45,14 @@ import {
 import { computations, concepts } from "../../concepts.ts";
 
 const {
+  Categorizing,
+  Linking,
   Locating,
   PickLinking,
-  Piling,
   Publishing,
   Questioning,
   Relaying,
   Responding,
-  Retiring,
-  Linking,
   RunSnapshotting,
   Sharing,
   Subscribing,
@@ -110,7 +109,7 @@ export const theRelays = former(
   ) =>
     each(Relaying._relays({}).is({ relay, title, createdAt }))
       .where(
-        Retiring._isTrashed({ item: relay }).is({ trashed: retired }),
+        Trashing._isTrashed({ item: relay }).is({ trashed: retired }),
         whether(Publishing._editionsFor({ material: relay }).is({ edition: run, open: true })),
         whether(Locating._for({ subject: run }).is({ code })),
         whether(theOpenRoundOf({ run }).is({ round: openRound })),
@@ -169,7 +168,7 @@ export const theRelay = former(
   ) =>
     where(
       Relaying._relay({ relay }).is({ title, createdAt }),
-      Retiring._isTrashed({ item: relay }).is({ trashed: retired }),
+      Trashing._isTrashed({ item: relay }).is({ trashed: retired }),
     ).form({
       relay,
       title,
@@ -407,7 +406,7 @@ export const theRoundPresentationTaking = former(
           item: question,
           prompt,
           choices: each(PickLinking._getLinks({ source: sourceRound }).is({ target: pile }))
-            .where(Piling._getCategoryDetail({ category: pile }).is({ name }))
+            .where(Categorizing._getCategoryDetail({ category: pile }).is({ name }))
             .distinct(name),
           expected,
           explanation,
@@ -466,7 +465,7 @@ export const theRoundPresentationTakingParts = former(
           expected,
           explanation,
           parts: each(PickLinking._getLinks({ source: sourceRound }).is({ target: pile }))
-            .where(Piling._getCategoryDetail({ category: pile }).is({ name }))
+            .where(Categorizing._getCategoryDetail({ category: pile }).is({ name }))
             .distinct(name),
           cap,
           position,
@@ -527,8 +526,8 @@ export const theRoundPresentationShowing = former(
         cap,
         context: each(PickLinking._getLinks({ source: sourceRound }).is({ target: pile }))
           .where(
-            Piling._getCategoryDetail({ category: pile }).is({ name }),
-            Piling._categoriesWithItems({ scope: sourceRound }).is({ categories }),
+            Categorizing._getCategoryDetail({ category: pile }).is({ name }),
+            Categorizing._categoriesWithItems({ scope: sourceRound }).is({ categories }),
             Responding._valuesForSubject({ subject: sourceRound }).is({ values }),
             compute(computations.pileCards, { pile, categories, values }, cards),
           )
@@ -665,7 +664,7 @@ export const Retire = endpoint(
         relayHasNoOpenRun({ relay }),
         relayIsNotRetired({ relay }),
       )
-        .then(Retiring.trash({ item: relay, by: user, at }).responds({ item: retired }))
+        .then(Trashing.trash({ item: relay, by: user, at }).responds({ item: retired }))
         .then(respond({ relay: retired }))
         .named("success"),
       where(

@@ -30,14 +30,14 @@ import {
 import { computations, concepts } from "../../concepts.ts";
 
 const {
+  Categorizing,
+  Insisting,
   PickLinking,
-  Piling,
   Publishing,
   Questioning,
+  Reasoning,
   Relaying,
   Responding,
-  Insisting,
-  Reasoning,
   RunSnapshotting,
   Subscribing,
   Suggesting,
@@ -67,7 +67,7 @@ const roundHasACardInTheTray = view(
     where(
       Responding._submittedAnswers({ subject: round }).is({ response, item }),
       compute(computations.cardId, { response, item }, card),
-      no(Piling._getCategory({ item: card })),
+      no(Categorizing._getCategory({ item: card })),
     ),
 ).holds();
 
@@ -85,11 +85,11 @@ const noAskStandsAbout = view("nothing is still out about (round)", ({ round }, 
 ).holds();
 
 const pileExists = view("(pile) is a pile", ({ pile }, _outputs, _bindings) =>
-  where(Piling._getCategoryDetail({ category: pile })),
+  where(Categorizing._getCategoryDetail({ category: pile })),
 ).holds();
 
 const pileDoesNotExist = view("(pile) is no pile", ({ pile }, _outputs, _bindings) =>
-  where(no(Piling._getCategoryDetail({ category: pile }))),
+  where(no(Categorizing._getCategoryDetail({ category: pile }))),
 ).holds();
 
 /** A card is one of the round's own cards; a card from another wall is none of this one's. */
@@ -104,7 +104,7 @@ const cardIsOnTheWallOf = view(
 ).holds();
 
 const pileHoldsACard = view("(pile) holds a card", ({ pile }, _outputs, _bindings) =>
-  where(Piling._getItems({ category: pile })),
+  where(Categorizing._getItems({ category: pile })),
 ).holds();
 
 /** Which pile of the round carries forward, when this one does. */
@@ -182,15 +182,15 @@ export const theWall = former(
           Subscribing._isSubscribed({ user: participant, target: run }).is({ subscribed: model }),
           compute(computations.isSame, { left: response, right: viewer }, mine),
           compute(computations.partLabel, { value: presentation, item }, part),
-          whether(Piling._getCategory({ item: card }).is({ category: pile })),
+          whether(Categorizing._getCategory({ item: card }).is({ category: pile })),
         )
         .form({ card, value, part, pile, model, mine }),
-      piles: each(Piling._categoriesIn({ scope: round }).is({ category, name, description }))
+      piles: each(Categorizing._categoriesIn({ scope: round }).is({ category, name, description }))
         .form({
           pile: category,
           name,
           description,
-          count: each(Piling._getItems({ category }).is({ item: held })).count(),
+          count: each(Categorizing._getItems({ category }).is({ item: held })).count(),
         })
         .splicing(whether(thePickOn({ round, pile: category }))),
     }),
@@ -213,7 +213,7 @@ export const HandedInBallotsJoinTheirPiles = reaction(
         is.among(kind, ["choice"]),
         compute(computations.cardId, { response, item }, card),
       )
-      .then(Piling.file({ scope: round, name: value, item: card })),
+      .then(Categorizing.file({ scope: round, name: value, item: card })),
 );
 
 /** The model's placing reply becomes an offering of suggestions about the round. */
@@ -224,7 +224,7 @@ export const ReplyPlacesCards = reaction(
         now(at),
         Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
-        Piling._categoriesWithItems({ scope: round }).is({ categories }),
+        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         compute(computations.placingReading, { reply, categories, values }, reading),
         is.among(reading, ["placed"]),
@@ -240,7 +240,7 @@ export const ReplyOffersLid = reaction(
         now(at),
         Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
-        Piling._categoriesWithItems({ scope: round }).is({ categories }),
+        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         compute(computations.placingReading, { reply, categories, values }, reading),
         is.among(reading, ["lid"]),
@@ -255,7 +255,7 @@ export const ReplyUnusableComplains = reaction(
       .where(
         Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
-        Piling._categoriesWithItems({ scope: round }).is({ categories }),
+        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         compute(computations.placingReading, { reply, categories, values }, reading),
         is.among(reading, ["neither"]),
@@ -278,7 +278,7 @@ export const TakenPlaceAssignsCard = reaction(({ suggestion, kind, target, value
       roundIsAWall({ round }),
       is.among(kind, ["place"]),
     )
-    .then(Piling.assign({ item: target, category: value })),
+    .then(Categorizing.assign({ item: target, category: value })),
 );
 
 /** Two cards opening the same new pile in one reply land together. */
@@ -289,7 +289,7 @@ export const TakenOpenMakesPile = reaction(({ suggestion, kind, target, value, r
       roundIsAWall({ round }),
       is.among(kind, ["open"]),
     )
-    .then(Piling.file({ scope: round, name: value, item: target })),
+    .then(Categorizing.file({ scope: round, name: value, item: target })),
 );
 
 export const TakenLidDescribesPile = reaction(({ suggestion, kind, target, value, round }) =>
@@ -299,7 +299,7 @@ export const TakenLidDescribesPile = reaction(({ suggestion, kind, target, value
       roundIsAWall({ round }),
       is.among(kind, ["lid"]),
     )
-    .then(Piling.describeCategory({ category: target, description: value })),
+    .then(Categorizing.describeCategory({ category: target, description: value })),
 );
 
 /** A usable reply settles whatever was being insisted on for the round. */
@@ -318,7 +318,7 @@ export const ComplaintRetriesTheAsk = reaction(
         roundIsAWall({ round }),
         Insisting._standingFor({ aim: round }),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
-        Piling._categoriesWithItems({ scope: round }).is({ categories }),
+        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         compute(
           computations.placingRepairPassage,
@@ -391,8 +391,12 @@ export const OpenPile = endpoint(
         roundIsNotOfAClosedRun({ round }),
         cardIsOnTheWallOf({ card, round }),
       )
-        .then(Piling.ensureCategory({ scope: round, name, description: "" }).responds({ category }))
-        .then(Piling.assign({ item: card, category }).responds({ item: assigned }))
+        .then(
+          Categorizing.ensureCategory({ scope: round, name, description: "" }).responds({
+            category,
+          }),
+        )
+        .then(Categorizing.assign({ item: card, category }).responds({ item: assigned }))
         .then(respond({ pile: category, card: assigned }))
         .named("success"),
       where(
@@ -427,10 +431,10 @@ export const MoveCard = endpoint(
         mayHostLive({ user }),
         pileExists({ pile }),
         pileIsNotOfAClosedRun({ pile }),
-        Piling._getCategoryDetail({ category: pile }).is({ scope: round }),
+        Categorizing._getCategoryDetail({ category: pile }).is({ scope: round }),
         cardIsOnTheWallOf({ card, round }),
       )
-        .then(Piling.assign({ item: card, category: pile }).responds({ item: assigned }))
+        .then(Categorizing.assign({ item: card, category: pile }).responds({ item: assigned }))
         .then(respond({ card: assigned, pile }))
         .named("success"),
       where(
@@ -438,7 +442,7 @@ export const MoveCard = endpoint(
         mayHostLive({ user }),
         pileExists({ pile }),
         pileIsNotOfAClosedRun({ pile }),
-        Piling._getCategoryDetail({ category: pile }).is({ scope: round }),
+        Categorizing._getCategoryDetail({ category: pile }).is({ scope: round }),
         no(cardIsOnTheWallOf({ card, round })),
       )
         .then(respond({ error: "CARD_NOT_FOUND" }))
@@ -470,7 +474,7 @@ export const ToTray = endpoint(
         mayHostLive({ user }),
         cardIsNotOfAClosedRun({ card }),
       )
-        .then(Piling.unassign({ item: card }).responds({ item: unassigned }))
+        .then(Categorizing.unassign({ item: card }).responds({ item: unassigned }))
         .then(respond({ card: unassigned }))
         .named("success"),
       where(
@@ -497,7 +501,7 @@ export const RenamePile = endpoint(
         mayHostLive({ user }),
         pileIsNotOfAClosedRun({ pile }),
       )
-        .then(Piling.renameCategory({ category: pile, name }).responds({ category: renamed }))
+        .then(Categorizing.renameCategory({ category: pile, name }).responds({ category: renamed }))
         .then(respond({ pile: renamed }))
         .named("success"),
       where(
@@ -525,7 +529,7 @@ export const MergePile = endpoint(
         mayHostLive({ user }),
         pileIsNotOfAClosedRun({ pile }),
       )
-        .then(Piling.mergeCategory({ category: pile, into }).responds({ into: merged }))
+        .then(Categorizing.mergeCategory({ category: pile, into }).responds({ into: merged }))
         .then(respond({ pile: merged }))
         .named("success"),
       where(
@@ -553,7 +557,7 @@ export const DescribePile = endpoint(
         pileIsNotOfAClosedRun({ pile }),
       )
         .then(
-          Piling.describeCategory({ category: pile, description }).responds({
+          Categorizing.describeCategory({ category: pile, description }).responds({
             category: described,
           }),
         )
@@ -584,7 +588,7 @@ export const Pick = endpoint(
         mayHostLive({ user }),
         Publishing._edition({ edition: round }),
         roundIsNotOfAClosedRun({ round }),
-        Piling._categoriesWithItems({ scope: round }).is({ categories }),
+        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         compute(computations.pilesOnWall, { piles, categories }, onWall),
       )
         .then(PickLinking.setLinks({ source: round, targets: onWall }).responds({ source: picked }))
@@ -629,7 +633,7 @@ export const Sort = endpoint(
         noAskStandsAbout({ round }),
         no(Insisting._unsettledFor({ aim: round })),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
-        Piling._categoriesWithItems({ scope: round }).is({ categories }),
+        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         compute(computations.placingPassage, { value, categories, values }, passage),
       )
@@ -687,8 +691,8 @@ export const Summarize = endpoint(
         mayHostLive({ user }),
         pileIsNotOfAClosedRun({ pile }),
         pileHoldsACard({ pile }),
-        Piling._getCategoryDetail({ category: pile }).is({ scope: round }),
-        Piling._categoriesWithItems({ scope: round }).is({ categories }),
+        Categorizing._getCategoryDetail({ category: pile }).is({ scope: round }),
+        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         compute(computations.lidPassage, { pile, categories, values }, passage),
       )

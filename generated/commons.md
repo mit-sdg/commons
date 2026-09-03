@@ -193,11 +193,8 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 #### Instances
 
 - `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 107.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 109.
-  - `Scope` is `ForumScope` — [Commons application](../design/application.md), line 108.
-- `Piling` — instance of `Categorizing` — [Commons application](../design/application.md), line 111.
-  - `Item` is `LiveCard` — [Commons application](../design/application.md), line 113.
-  - `Scope` is `Publishing.Edition` — [Commons application](../design/application.md), line 112.
+  - `Item` is `Categorizable` — [Commons application](../design/application.md), line 109.
+  - `Scope` is `CategoryScope` — [Commons application](../design/application.md), line 108.
 
 ### Conversing
 
@@ -227,8 +224,8 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Instances
 
-- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 115.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 116.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 111.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 112.
 
 ### Drafting
 
@@ -279,9 +276,9 @@ Defined in [Drafting](../design/concepts/Drafting.md), line 1.
 
 #### Instances
 
-- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 118.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 119.
-  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 120.
+- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 114.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 115.
+  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 116.
 
 ### Flagging
 
@@ -303,9 +300,9 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Instances
 
-- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 126.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 128.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 127.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 122.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 124.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 123.
 
 ### Formatting
 
@@ -322,8 +319,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Instances
 
-- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 130.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 131.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 126.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 127.
 
 ### Grading
 
@@ -360,12 +357,12 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Instances
 
-- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 133.
-  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 137.
-  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 138.
-  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 134.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 136.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 135.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 129.
+  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 133.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 134.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 130.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 132.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 131.
 
 ### Grouping
 
@@ -400,8 +397,8 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Instances
 
-- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 140.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 141.
+- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 136.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 137.
 
 ### Insisting
 
@@ -427,8 +424,8 @@ Defined in [Insisting](../design/concepts/Insisting.md), line 1.
 
 #### Instances
 
-- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 143.
-  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 144.
+- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 139.
+  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 140.
 
 ### Inviting
 
@@ -454,8 +451,8 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Instances
 
-- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 146.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 147.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 142.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 143.
 
 ### Itemizing
 
@@ -484,8 +481,8 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Instances
 
-- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 149.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 150.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 145.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 146.
 
 ### Linking
 
@@ -505,15 +502,15 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Instances
 
-- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 156.
-  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 157.
-  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 158.
-- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 152.
-  - `Source` is `Linkable` — [Commons application](../design/application.md), line 153.
-  - `Target` is `Linkable` — [Commons application](../design/application.md), line 154.
-- `PickLinking` — instance of `Linking` — [Commons application](../design/application.md), line 160.
-  - `Source` is `Publishing.Edition` — [Commons application](../design/application.md), line 161.
-  - `Target` is `Piling.Category` — [Commons application](../design/application.md), line 162.
+- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 152.
+  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 153.
+  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 154.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 148.
+  - `Source` is `Linkable` — [Commons application](../design/application.md), line 149.
+  - `Target` is `Linkable` — [Commons application](../design/application.md), line 150.
+- `PickLinking` — instance of `Linking` — [Commons application](../design/application.md), line 156.
+  - `Source` is `Publishing.Edition` — [Commons application](../design/application.md), line 157.
+  - `Target` is `Categorizing.Category` — [Commons application](../design/application.md), line 158.
 
 ### Locating
 
@@ -532,8 +529,8 @@ Defined in [Locating](../design/concepts/Locating.md), line 1.
 
 #### Instances
 
-- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 167.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 168.
+- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 163.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 164.
 
 ### Locking
 
@@ -553,8 +550,8 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Instances
 
-- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 164.
-  - `Target` is `Lockable` — [Commons application](../design/application.md), line 165.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 160.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 161.
 
 ### Mailing
 
@@ -579,8 +576,8 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Instances
 
-- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 170.
-  - `Key` is `MailKey` — [Commons application](../design/application.md), line 171.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 166.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 167.
 
 ### Notifying
 
@@ -604,14 +601,14 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Instances
 
-- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 173.
-  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 176.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 174.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 175.
-- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 178.
-  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 181.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 179.
-  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 180.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 169.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 172.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 170.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 171.
+- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 174.
+  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 177.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 175.
+  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 176.
 
 ### Noting
 
@@ -649,9 +646,9 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Instances
 
-- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 183.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 184.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 185.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 179.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 180.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 181.
 
 ### Pinning
 
@@ -674,9 +671,9 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Instances
 
-- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 187.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 188.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 189.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 183.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 184.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 185.
 
 ### Posting
 
@@ -699,8 +696,8 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Instances
 
-- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 191.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 192.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 187.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 188.
 
 ### Profiling
 
@@ -725,8 +722,8 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Instances
 
-- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 194.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 195.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 190.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 191.
 
 ### Publishing
 
@@ -749,9 +746,9 @@ Defined in [Publishing](../design/concepts/Publishing.md), line 1.
 
 #### Instances
 
-- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 197.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 198.
-  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 199.
+- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 193.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 194.
+  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 195.
 
 ### Questioning
 
@@ -823,8 +820,8 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
 
 #### Instances
 
-- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 201.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 202.
+- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 197.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 198.
 
 ### Reacting
 
@@ -847,9 +844,9 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Instances
 
-- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 204.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 205.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 206.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 200.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 201.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 202.
 
 ### Reasoning
 
@@ -875,9 +872,9 @@ Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
 
 #### Instances
 
-- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 208.
-  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 209.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 210.
+- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 204.
+  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 205.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 206.
 
 ### Relaying
 
@@ -920,9 +917,9 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
 
 #### Instances
 
-- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 212.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 213.
-  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 214.
+- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 208.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 209.
+  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 210.
 
 ### Resolving
 
@@ -942,10 +939,10 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Instances
 
-- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 221.
-  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 224.
-  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 223.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 222.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 217.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 220.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 219.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 218.
 
 ### Responding
 
@@ -977,10 +974,10 @@ Defined in [Responding](../design/concepts/Responding.md), line 1.
 
 #### Instances
 
-- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 216.
-  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 219.
-  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 218.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 217.
+- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 212.
+  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 215.
+  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 214.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 213.
 
 ### Revising
 
@@ -999,8 +996,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Instances
 
-- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 226.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 227.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 222.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 223.
 
 ### Roling
 
@@ -1037,9 +1034,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Instances
 
-- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 229.
-  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 231.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 230.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 225.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 227.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 226.
 
 ### Rostering
 
@@ -1094,8 +1091,8 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Instances
 
-- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 233.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 234.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 229.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 230.
 
 ### Scoring
 
@@ -1120,10 +1117,10 @@ Defined in [Scoring](../design/concepts/Scoring.md), line 1.
 
 #### Instances
 
-- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 236.
-  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 238.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 237.
-  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 239.
+- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 232.
+  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 234.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 233.
+  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 235.
 
 ### Sessioning
 
@@ -1143,8 +1140,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 245.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 246.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 241.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 242.
 
 ### Sharing
 
@@ -1163,8 +1160,8 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 
 #### Instances
 
-- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 248.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 249.
+- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 244.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 245.
 
 ### Snapshotting
 
@@ -1181,9 +1178,9 @@ Defined in [Snapshotting](../design/concepts/Snapshotting.md), line 1.
 
 #### Instances
 
-- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 241.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 242.
-  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 243.
+- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 237.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 238.
+  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 239.
 
 ### Submitting
 
@@ -1208,10 +1205,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 254.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 257.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 256.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 255.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 250.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 253.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 252.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 251.
 
 ### Subscribing
 
@@ -1233,9 +1230,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 259.
-  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 260.
-  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 261.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 255.
+  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 256.
+  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 257.
 
 ### Suggesting
 
@@ -1263,8 +1260,8 @@ Defined in [Suggesting](../design/concepts/Suggesting.md), line 1.
 
 #### Instances
 
-- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 251.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 252.
+- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 247.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 248.
 
 ### Tagging
 
@@ -1292,8 +1289,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 263.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 264.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 259.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 260.
 
 ### Tasking
 
@@ -1344,9 +1341,9 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 266.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 268.
-  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 267.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 262.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 264.
+  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 263.
 
 ### Tracking
 
@@ -1370,10 +1367,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 270.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 272.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 273.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 271.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 266.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 268.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 269.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 267.
 
 ### Trashing
 
@@ -1395,18 +1392,15 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Instances
 
-- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 84.
-  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 86.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 85.
-- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 122.
-  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 124.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 123.
-- `Retiring` — instance of `Trashing` — [Commons application](../design/application.md), line 88.
-  - `Item` is `Relaying.Relay` — [Commons application](../design/application.md), line 90.
+- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 88.
+  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 90.
   - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 89.
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 275.
-  - `Item` is `Trashable` — [Commons application](../design/application.md), line 277.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 276.
+- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 118.
+  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 120.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 119.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 271.
+  - `Item` is `Trashable` — [Commons application](../design/application.md), line 273.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 272.
 
 ### Vouching
 
@@ -1427,28 +1421,28 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Instances
 
-- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 279.
-  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 280.
+- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 275.
+  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 276.
 
 ## Application types
 
 Concrete types:
 
-- `ForumScope` — [Commons application](../design/application.md), line 56.
-- `Linkable` — [Commons application](../design/application.md), line 67.
-- `LiveCard` — [Commons application](../design/application.md), line 45.
+- `Categorizable` — [Commons application](../design/application.md), line 74.
+- `CategoryScope` — [Commons application](../design/application.md), line 69.
+- `Linkable` — [Commons application](../design/application.md), line 60.
 - `LiveItem` — [Commons application](../design/application.md), line 41.
 - `LiveMaterial` — [Commons application](../design/application.md), line 37.
 - `LiveParticipant` — [Commons application](../design/application.md), line 24.
 - `LiveReasoner` — [Commons application](../design/application.md), line 29.
 - `LiveRunSnapshot` — [Commons application](../design/application.md), line 33.
-- `LiveSubject` — [Commons application](../design/application.md), line 49.
+- `LiveSubject` — [Commons application](../design/application.md), line 45.
 - `Lockable` — [Commons application](../design/application.md), line 18.
 - `MailKey` — [Commons application](../design/application.md), line 15.
-- `Subscribable` — [Commons application](../design/application.md), line 63.
-- `Subscriber` — [Commons application](../design/application.md), line 59.
+- `Subscribable` — [Commons application](../design/application.md), line 56.
+- `Subscriber` — [Commons application](../design/application.md), line 52.
 - `TaskSubject` — [Commons application](../design/application.md), line 21.
-- `Trashable` — [Commons application](../design/application.md), line 71.
+- `Trashable` — [Commons application](../design/application.md), line 64.
 
 ## Computations
 
@@ -1456,13 +1450,13 @@ Concrete types:
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 86.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 82.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 22.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 364.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 360.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 36.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 28.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 54.
-- `clarifiedPassage(request: String, question: String, answer: String) : String` — [Commons application](../design/application.md), line 430.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 418.
-- `draftingPassage(request: String) : String` — [Commons application](../design/application.md), line 422.
+- `clarifiedPassage(request: String, question: String, answer: String) : String` — [Commons application](../design/application.md), line 426.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 414.
+- `draftingPassage(request: String) : String` — [Commons application](../design/application.md), line 418.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 81.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 84.
 - `editParts(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 78.
@@ -1477,32 +1471,32 @@ Concrete types:
 - `editRoundTakesShape(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 56.
 - `editShape(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 90.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 368.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 364.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 89.
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 355.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 352.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 351.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 348.
 - `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 40.
 - `legMaterials(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 30.
 - `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 69.
 - `lidPassage(pile: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 65.
 - `noChoices(question: String) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 51.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 361.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 358.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 357.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 354.
 - `oneBoxCap(question: String) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 48.
 - `oneBoxParts(question: String) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 44.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 438.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 442.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 445.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 449.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 453.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 434.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 438.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 441.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 445.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 449.
 - `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 85.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 77.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 73.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 78.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 373.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 378.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 384.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 381.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 369.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 374.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 380.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 377.
 - `pileCards(pile: String, categories: Json, values: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 68.
 - `pilesOnWall(piles: Json, categories: Json) : Strings` — [The wall](../design/compositions/live/walls.md), line 32.
 - `placingLines(reply: String, categories: Json, values: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 56.
@@ -1510,30 +1504,30 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 53.
 - `placingReason(reply: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 61.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 49.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 461.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 466.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 470.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 457.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 462.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 466.
 - `relayDraftPassage(request: String, legs: Json, materials: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 26.
 - `relayDraftReading(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 37.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 40.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 33.
 - `relayEditLines(reply: String, legs: Json, materials: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 44.
-- `repairPassage(request: String, offering: String, account: String) : String` — [Commons application](../design/application.md), line 434.
-- `revisionPassage(request: String, form: String, material: Json) : String` — [Commons application](../design/application.md), line 426.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 387.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 390.
+- `repairPassage(request: String, offering: String, account: String) : String` — [Commons application](../design/application.md), line 430.
+- `revisionPassage(request: String, form: String, material: Json) : String` — [Commons application](../design/application.md), line 422.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 383.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 386.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 67.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 70.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 74.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 64.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 457.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 396.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 406.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 400.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 403.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 415.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 409.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 412.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 453.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 392.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 402.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 396.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 399.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 411.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 405.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 408.
 - `useFit(use: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 62.
 - `useStanding(use: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 58.
 
@@ -1565,7 +1559,7 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
 ```view
 (pile) is on the wall of a closed run — inputs (pile); outputs (); bindings (round)
   where
-    Piling._getCategoryDetail (category: pile) has (scope: round)
+    Categorizing._getCategoryDetail (category: pile) has (scope: round)
     view "(round) is of a closed run" with (round)
 ```
 
@@ -1574,7 +1568,7 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
 ```view
 (card) is in a pile of a closed run — inputs (card); outputs (); bindings (category)
   where
-    Piling._getCategory (item: card) has (category)
+    Categorizing._getCategory (item: card) has (category)
     view "(pile) is on the wall of a closed run" with (pile: category)
 ```
 
@@ -1692,21 +1686,21 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
 
 ```view
 (pile) holds a card — inputs (pile); outputs (); bindings ()
-  where Piling._getItems (category: pile)
+  where Categorizing._getItems (category: pile)
 ```
 
 ### (pile) is a pile
 
 ```view
 (pile) is a pile — inputs (pile); outputs (); bindings ()
-  where Piling._getCategoryDetail (category: pile)
+  where Categorizing._getCategoryDetail (category: pile)
 ```
 
 ### (pile) is no pile
 
 ```view
 (pile) is no pile — inputs (pile); outputs (); bindings ()
-  where no Piling._getCategoryDetail (category: pile)
+  where no Categorizing._getCategoryDetail (category: pile)
 ```
 
 ### (pile) is not on the wall of a closed run
@@ -1791,14 +1785,14 @@ Authored path: `Forum.posts.readable`.
 
 ```view
 (relay) is not retired — inputs (relay); outputs (); bindings ()
-  where Retiring._isTrashed (item: relay) has (trashed: false)
+  where Trashing._isTrashed (item: relay) has (trashed: false)
 ```
 
 ### (relay) is retired
 
 ```view
 (relay) is retired — inputs (relay); outputs (); bindings ()
-  where Retiring._isTrashed (item: relay) has (trashed: true)
+  where Trashing._isTrashed (item: relay) has (trashed: true)
 ```
 
 ### (response) answers every question
@@ -1832,7 +1826,7 @@ Authored path: `Forum.posts.readable`.
   where
     Responding._submittedAnswers (subject: round) has (item, response)
     card is cardId (item, response)
-    no Piling._getCategory (item: card)
+    no Categorizing._getCategory (item: card)
 ```
 
 ### (round) has every card in a pile
@@ -3664,8 +3658,8 @@ Former "the presentation of (leg) showing (sourceRound)" — inputs (leg, source
         cap
         choices
         context: each PickLinking._getLinks (source: sourceRound) has (target: pile)
-          where Piling._getCategoryDetail (category: pile) has (name)
-          where Piling._categoriesWithItems (scope: sourceRound) has (categories)
+          where Categorizing._getCategoryDetail (category: pile) has (name)
+          where Categorizing._categoriesWithItems (scope: sourceRound) has (categories)
           where Responding._valuesForSubject (subject: sourceRound) has (values)
           where cards is pileCards (categories, pile, values)
           form a record of
@@ -3698,7 +3692,7 @@ Former "the presentation of (leg) taking from (sourceRound)" — inputs (leg, so
       form a record of
         cap
         choices: the distinct name of each PickLinking._getLinks (source: sourceRound) has (target: pile)
-          where Piling._getCategoryDetail (category: pile) has (name)
+          where Categorizing._getCategoryDetail (category: pile) has (name)
         expected
         explanation
         item: question
@@ -3730,7 +3724,7 @@ Former "the presentation of (leg) taking parts from (sourceRound)" — inputs (l
         explanation
         item: question
         parts: the distinct name of each PickLinking._getLinks (source: sourceRound) has (target: pile)
-          where Piling._getCategoryDetail (category: pile) has (name)
+          where Categorizing._getCategoryDetail (category: pile) has (name)
         position
         prompt
     title
@@ -3902,7 +3896,7 @@ Authored path: `Live.relays.theRelay`.
 Former "the relay (relay)" — inputs (relay); bindings (title, createdAt, leg, material, position, roundTitle, question, prompt, choices, parts, cap, source, sourceNumber, shape, run, open, openedAt, closedAt, token, code, retired, ran); promises at most one record — forms:
   a record of
     where Relaying._relay (relay) has (createdAt, title)
-    where Retiring._isTrashed (item: relay) has (trashed: retired)
+    where Trashing._isTrashed (item: relay) has (trashed: retired)
     createdAt
     relay
     retired
@@ -3950,7 +3944,7 @@ Authored path: `Live.relays.theRelays`.
 ```former
 Former "the relays" — inputs (); bindings (relay, title, createdAt, leg, material, position, roundTitle, run, code, openRound, round, open, runs, past, retired); promises exactly one record — forms:
   each Relaying._relays () has (createdAt, relay, title)
-    where Retiring._isTrashed (item: relay) has (trashed: retired)
+    where Trashing._isTrashed (item: relay) has (trashed: retired)
     where whether Publishing._editionsFor (material: relay) has (edition: run, open: true)
     where whether Locating._for (subject: run) has (code)
     where whether view "the open round of (run)" with (run) has (round: openRound)
@@ -4597,7 +4591,7 @@ Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bin
       where Subscribing._isSubscribed (target: run, user: participant) has (subscribed: model)
       where mine is isSame (left: response, right: viewer)
       where part is partLabel (item, value: presentation)
-      where whether Piling._getCategory (item: card) has (category: pile)
+      where whether Categorizing._getCategory (item: card) has (category: pile)
       form a record of
         card
         mine
@@ -4610,9 +4604,9 @@ Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bin
     number
     open
     openedAt
-    piles: each Piling._categoriesIn (scope: round) has (category, description, name)
+    piles: each Categorizing._categoriesIn (scope: round) has (category, description, name)
       form a record of
-        count: the count of Piling._getItems (category) has (item: held)
+        count: the count of Categorizing._getItems (category) has (item: held)
         description
         name
         pile: category
@@ -17780,7 +17774,7 @@ where
   view "(relay) has no open run" with (relay)
   view "(relay) is not retired" with (relay)
 then
-  Retiring.trash (at, by: user, item: relay)
+  Trashing.trash (at, by: user, item: relay)
 ```
 
 ### Live.relays.Retire:success#2
@@ -17790,7 +17784,7 @@ Authored path: `Live.relays.Retire`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 88.
 
 ```reaction
-when Retiring.trash (at, by: user, item: relay, result.item: retired), asked by Live.relays.Retire:success
+when Trashing.trash (at, by: user, item: relay, result.item: retired), asked by Live.relays.Retire:success
 where
   earlier, RequestBoundary.request (path: "/live/relays/retire", relay, requestId, session)
 then
@@ -18642,7 +18636,7 @@ where
   view "(round) is a round with a captured question" with (round)
   Insisting._standingFor (aim: round)
   RunSnapshotting._snapshot (subject: round) has (value)
-  Piling._categoriesWithItems (scope: round) has (categories)
+  Categorizing._categoriesWithItems (scope: round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   passage is placingRepairPassage (account, categories, offering, value, values)
 then
@@ -18694,7 +18688,7 @@ where
   view "(user) may host live runs" with (user)
   view "(pile) is not on the wall of a closed run" with (pile)
 then
-  Piling.describeCategory (category: pile, description)
+  Categorizing.describeCategory (category: pile, description)
 ```
 
 ### Live.walls.DescribePile:success#2
@@ -18704,7 +18698,7 @@ Authored path: `Live.walls.DescribePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 91.
 
 ```reaction
-when Piling.describeCategory (category: pile, description, result.category: described), asked by Live.walls.DescribePile:success
+when Categorizing.describeCategory (category: pile, description, result.category: described), asked by Live.walls.DescribePile:success
 where
   earlier, RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
 then
@@ -18742,7 +18736,7 @@ where
   kind is among ["choice"]
   card is cardId (item, response)
 then
-  Piling.file (item: card, name: value, scope: round)
+  Categorizing.file (item: card, name: value, scope: round)
 ```
 
 ### Live.walls.MergePile:closed
@@ -18790,7 +18784,7 @@ where
   view "(user) may host live runs" with (user)
   view "(pile) is not on the wall of a closed run" with (pile)
 then
-  Piling.mergeCategory (category: pile, into)
+  Categorizing.mergeCategory (category: pile, into)
 ```
 
 ### Live.walls.MergePile:success#2
@@ -18800,7 +18794,7 @@ Authored path: `Live.walls.MergePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 92.
 
 ```reaction
-when Piling.mergeCategory (category: pile, into, result.into: merged), asked by Live.walls.MergePile:success
+when Categorizing.mergeCategory (category: pile, into, result.into: merged), asked by Live.walls.MergePile:success
 where
   earlier, RequestBoundary.request (into, path: "/live/walls/merge-pile", pile, requestId, session)
 then
@@ -18867,7 +18861,7 @@ where
   view "(user) may host live runs" with (user)
   view "(pile) is a pile" with (pile)
   view "(pile) is not on the wall of a closed run" with (pile)
-  Piling._getCategoryDetail (category: pile) has (scope: round)
+  Categorizing._getCategoryDetail (category: pile) has (scope: round)
   no view "(card) is a card of (round)" with (card, round)
 then
   RequestBoundary.respond (error: "CARD_NOT_FOUND", requestId)
@@ -18887,10 +18881,10 @@ where
   view "(user) may host live runs" with (user)
   view "(pile) is a pile" with (pile)
   view "(pile) is not on the wall of a closed run" with (pile)
-  Piling._getCategoryDetail (category: pile) has (scope: round)
+  Categorizing._getCategoryDetail (category: pile) has (scope: round)
   view "(card) is a card of (round)" with (card, round)
 then
-  Piling.assign (category: pile, item: card)
+  Categorizing.assign (category: pile, item: card)
 ```
 
 ### Live.walls.MoveCard:success#2
@@ -18900,7 +18894,7 @@ Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 93.
 
 ```reaction
-when Piling.assign (category: pile, item: card, result.item: assigned), asked by Live.walls.MoveCard:success
+when Categorizing.assign (category: pile, item: card, result.item: assigned), asked by Live.walls.MoveCard:success
 where
   earlier, RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
 then
@@ -18970,7 +18964,7 @@ where
   view "(round) is not of a closed run" with (round)
   view "(card) is a card of (round)" with (card, round)
 then
-  Piling.ensureCategory (description: "", name, scope: round)
+  Categorizing.ensureCategory (description: "", name, scope: round)
 ```
 
 ### Live.walls.OpenPile:success#2
@@ -18980,11 +18974,11 @@ Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 94.
 
 ```reaction
-when Piling.ensureCategory (description: "", name, scope: round, category), asked by Live.walls.OpenPile:success
+when Categorizing.ensureCategory (description: "", name, scope: round, category), asked by Live.walls.OpenPile:success
 where
   earlier, RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
 then
-  Piling.assign (category, item: card)
+  Categorizing.assign (category, item: card)
 ```
 
 ### Live.walls.OpenPile:success#3
@@ -18994,7 +18988,7 @@ Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 94.
 
 ```reaction
-when Piling.assign (category, item: card, result.item: assigned), asked by Live.walls.OpenPile:success#2
+when Categorizing.assign (category, item: card, result.item: assigned), asked by Live.walls.OpenPile:success#2
 where
   earlier, RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
 then
@@ -19063,7 +19057,7 @@ where
   view "(user) may host live runs" with (user)
   Publishing._edition (edition: round)
   view "(round) is not of a closed run" with (round)
-  Piling._categoriesWithItems (scope: round) has (categories)
+  Categorizing._categoriesWithItems (scope: round) has (categories)
   onWall is pilesOnWall (categories, piles)
 then
   PickLinking.setLinks (source: round, targets: onWall)
@@ -19187,7 +19181,7 @@ where
   view "(user) may host live runs" with (user)
   view "(pile) is not on the wall of a closed run" with (pile)
 then
-  Piling.renameCategory (category: pile, name)
+  Categorizing.renameCategory (category: pile, name)
 ```
 
 ### Live.walls.RenamePile:success#2
@@ -19197,7 +19191,7 @@ Authored path: `Live.walls.RenamePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 97.
 
 ```reaction
-when Piling.renameCategory (category: pile, name, result.category: renamed), asked by Live.walls.RenamePile:success
+when Categorizing.renameCategory (category: pile, name, result.category: renamed), asked by Live.walls.RenamePile:success
 where
   earlier, RequestBoundary.request (name, path: "/live/walls/rename-pile", pile, requestId, session)
 then
@@ -19215,7 +19209,7 @@ where
   at is the current flow's instant
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Piling._categoriesWithItems (scope: round) has (categories)
+  Categorizing._categoriesWithItems (scope: round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   reading is placingReading (categories, reply, values)
   reading is among ["lid"]
@@ -19235,7 +19229,7 @@ where
   at is the current flow's instant
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Piling._categoriesWithItems (scope: round) has (categories)
+  Categorizing._categoriesWithItems (scope: round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   reading is placingReading (categories, reply, values)
   reading is among ["placed"]
@@ -19254,7 +19248,7 @@ when Reasoning.answer (asking, reply)
 where
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Piling._categoriesWithItems (scope: round) has (categories)
+  Categorizing._categoriesWithItems (scope: round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   reading is placingReading (categories, reply, values)
   reading is among ["neither"]
@@ -19280,7 +19274,7 @@ where
   view "nothing is still out about (round)" with (round)
   no Insisting._unsettledFor (aim: round)
   RunSnapshotting._snapshot (subject: round) has (value)
-  Piling._categoriesWithItems (scope: round) has (categories)
+  Categorizing._categoriesWithItems (scope: round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   passage is placingPassage (categories, value, values)
 then
@@ -19414,8 +19408,8 @@ where
   view "(user) may host live runs" with (user)
   view "(pile) is not on the wall of a closed run" with (pile)
   view "(pile) holds a card" with (pile)
-  Piling._getCategoryDetail (category: pile) has (scope: round)
-  Piling._categoriesWithItems (scope: round) has (categories)
+  Categorizing._getCategoryDetail (category: pile) has (scope: round)
+  Categorizing._categoriesWithItems (scope: round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   passage is lidPassage (categories, pile, values)
 then
@@ -19513,7 +19507,7 @@ where
   view "(round) is a round with a captured question" with (round)
   kind is among ["lid"]
 then
-  Piling.describeCategory (category: target, description: value)
+  Categorizing.describeCategory (category: target, description: value)
 ```
 
 ### Live.walls.TakenOpenMakesPile
@@ -19528,7 +19522,7 @@ where
   view "(round) is a round with a captured question" with (round)
   kind is among ["open"]
 then
-  Piling.file (item: target, name: value, scope: round)
+  Categorizing.file (item: target, name: value, scope: round)
 ```
 
 ### Live.walls.TakenPlaceAssignsCard
@@ -19543,7 +19537,7 @@ where
   view "(round) is a round with a captured question" with (round)
   kind is among ["place"]
 then
-  Piling.assign (category: value, item: target)
+  Categorizing.assign (category: value, item: target)
 ```
 
 ### Live.walls.ToTray:closed
@@ -19591,7 +19585,7 @@ where
   view "(user) may host live runs" with (user)
   view "(card) is in no pile of a closed run" with (card)
 then
-  Piling.unassign (item: card)
+  Categorizing.unassign (item: card)
 ```
 
 ### Live.walls.ToTray:success#2
@@ -19601,7 +19595,7 @@ Authored path: `Live.walls.ToTray`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 100.
 
 ```reaction
-when Piling.unassign (item: card, result.item: unassigned), asked by Live.walls.ToTray:success
+when Categorizing.unassign (item: card, result.item: unassigned), asked by Live.walls.ToTray:success
 where
   earlier, RequestBoundary.request (card, path: "/live/walls/to-tray", requestId, session)
 then

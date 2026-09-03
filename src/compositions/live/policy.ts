@@ -116,7 +116,7 @@ export const runIsNotKeyed = view("(run) has no key", ({ run }, _outputs, _bindi
   where(no(Scoring._keyFor({ subject: run }))),
 ).holds();
 
-const { Linking, Piling, PickLinking, Relaying, Retiring, Subscribing, Trashing } = concepts;
+const { Categorizing, Linking, PickLinking, Relaying, Subscribing, Trashing } = concepts;
 
 export const relayHasAnOpenRun = view("(relay) has an open run", ({ relay }, _outputs, _bindings) =>
   where(Publishing._hasOpenEditionFor({ material: relay }).is({ open: true })),
@@ -127,11 +127,11 @@ export const relayHasNoOpenRun = view("(relay) has no open run", ({ relay }, _ou
 ).holds();
 
 export const relayIsRetired = view("(relay) is retired", ({ relay }, _outputs, _bindings) =>
-  where(Retiring._isTrashed({ item: relay }).is({ trashed: true })),
+  where(Trashing._isTrashed({ item: relay }).is({ trashed: true })),
 ).holds();
 
 export const relayIsNotRetired = view("(relay) is not retired", ({ relay }, _outputs, _bindings) =>
-  where(Retiring._isTrashed({ item: relay }).is({ trashed: false })),
+  where(Trashing._isTrashed({ item: relay }).is({ trashed: false })),
 ).holds();
 
 /** The run's rounds are the editions Linking ties to it; at most one is open. */
@@ -232,7 +232,7 @@ export const roundHasNoPicks = view(
 export const pileIsOfRound = view(
   "(pile) is on the wall of (round)",
   ({ pile, round }, _outputs, _bindings) =>
-    where(Piling._getCategoryDetail({ category: pile }).is({ scope: round })),
+    where(Categorizing._getCategoryDetail({ category: pile }).is({ scope: round })),
 ).holds();
 
 /** The run a round belongs to: the edition Linking tied it to when the round opened. */
@@ -299,7 +299,7 @@ export const pileIsOfAClosedRun = view(
   "(pile) is on the wall of a closed run",
   ({ pile }, _outputs, { round }) =>
     where(
-      Piling._getCategoryDetail({ category: pile }).is({ scope: round }),
+      Categorizing._getCategoryDetail({ category: pile }).is({ scope: round }),
       roundIsOfAClosedRun({ round }),
     ),
 ).holds();
@@ -314,7 +314,7 @@ export const cardIsOfAClosedRun = view(
   "(card) is in a pile of a closed run",
   ({ card }, _outputs, { category }) =>
     where(
-      Piling._getCategory({ item: card }).is({ category }),
+      Categorizing._getCategory({ item: card }).is({ category }),
       pileIsOfAClosedRun({ pile: category }),
     ),
 ).holds();
