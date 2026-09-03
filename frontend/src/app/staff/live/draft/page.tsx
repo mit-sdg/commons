@@ -466,7 +466,7 @@ function DraftPageContent() {
             </div>
           ) : !ownsLine ? (
             <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-              Another author's draft. Read-only.
+              Another author’s draft. Read-only.
             </div>
           ) : null}
           {lineError !== null ? (
