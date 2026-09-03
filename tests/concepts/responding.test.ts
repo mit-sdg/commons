@@ -59,6 +59,19 @@ for (const [floor, make] of floors) {
       expect((await responding._response({ response: first.response }))[0]?.startedAt).toEqual(at);
     });
 
+    test("a blank value is refused, and a value is kept trimmed", async () => {
+      const responding = await make();
+      const { response } = await responding.begin({ participant: "leon", subject: "quiz", at });
+      for (const value of ["", "   ", "\n\t"]) {
+        const err = await refusal(() => responding.answer({ response, item: "q1", value }));
+        expect(err).toBeInstanceOf(refusalErrors.AnswerBlank);
+      }
+      await responding.answer({ response, item: "q1", value: "  Chlorophyll  " });
+      expect(await responding._answers({ response })).toEqual([
+        { item: "q1", value: "Chlorophyll" },
+      ]);
+    });
+
     test("answers keep first-answer order, and answering again replaces in place", async () => {
       const responding = await make();
       const { response } = await responding.begin({ participant: "leon", subject: "quiz", at });

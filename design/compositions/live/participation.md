@@ -44,7 +44,10 @@ response per round under the same token, and a run with no round open answers
 
 [Live.participation.Answer](reaction:Live.participation.Answer) records one
 value per item, replacing in place; an item outside the run answers
-`NOT_PART`, and a closed run answers `CLOSED`. Membership is decided against
+`NOT_PART`, and a closed run answers `CLOSED`. A value is trimmed and a blank
+one is refused with Responding's own sentence, so an empty box is never an
+answer: nothing blank reaches the wall, and a quiz left blank is `INCOMPLETE`
+rather than handed in empty. Membership is decided against
 the run's captured presentation, so a later edit cannot add or remove a
 question from an existing room. An item is a question, or one part of a
 question with parts — `question#n` — so a phone answering three labeled

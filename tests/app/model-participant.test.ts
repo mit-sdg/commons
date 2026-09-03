@@ -240,5 +240,37 @@ describe("the model participant and the wall", () => {
       wall.cards.some((entry) => entry.card === card && entry.pile === byHand),
     );
     expect(rehomed.piles.some((entry) => entry.name === "By hand")).toBe(true);
+
+    // A closed round of an open run is where staff pick, so its wall still takes writes.
+    expect((await post(edge, "/live/relays/close-round", { round }, cookie)).status).toBe(200);
+    expect(
+      (await post(edge, "/live/walls/pick", { round, piles: [pile, byHand] }, cookie)).status,
+    ).toBe(200);
+    expect(
+      (await post(edge, "/live/walls/rename-pile", { pile: byHand, name: "Sorted" }, cookie))
+        .status,
+    ).toBe(200);
+
+    // Once the run has closed, every wall write is refused and the wall still reads.
+    expect((await post(edge, "/live/relays/close", { run }, cookie)).status).toBe(200);
+    const writes: [string, Record<string, unknown>][] = [
+      ["/live/walls/open-pile", { round, name: "Too late", card }],
+      ["/live/walls/move-card", { card, pile }],
+      ["/live/walls/to-tray", { card }],
+      ["/live/walls/rename-pile", { pile: byHand, name: "Too late" }],
+      ["/live/walls/merge-pile", { pile: byHand, into: pile }],
+      ["/live/walls/describe-pile", { pile: byHand, description: "Too late" }],
+      ["/live/walls/pick", { round, piles: [] }],
+      ["/live/walls/summarize", { pile: byHand }],
+    ];
+    for (const [path, body] of writes) {
+      expect([path, (await post(edge, path, body, cookie)).status]).toEqual([path, 409]);
+    }
+    const late = await json(await post(edge, "/live/walls/sort", { round }, cookie));
+    expect(late.asked).toBe(false);
+
+    const kept = await readWall();
+    expect(kept.piles.find((entry) => entry.pile === byHand)?.name).toBe("Sorted");
+    expect(kept.piles.filter((entry) => entry.picked !== null).length).toBe(2);
   }, 90_000);
 });

@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { Link } from "@/components/link";
 import { AiPanel } from "@/components/live/ai-panel";
 import { copyRelay, relayToCopy } from "@/components/live/copy-relay";
-import { RUN_OPEN_MESSAGE } from "@/components/live/quiz-meta";
 import { AddRoundCard, RoundEditor } from "@/components/live/round-editor";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -25,6 +24,9 @@ import {
 import { useAuth } from "@/lib/auth";
 
 type Relay = NonNullable<Output<"/live/relays/get">["relay"]>;
+
+/** Live's Describe sends a brief on its way here and names the ask; every other link only opens the panel. */
+const ASK = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 function RelaySetupContent() {
   const { relay } = useParams<{ relay: string }>();
@@ -79,12 +81,23 @@ function RelaySetup({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const link = searchParams.get("draft");
   const [title, setTitle] = useState(relay.title);
-  const [drafting, setDrafting] = useState(searchParams.get("draft") !== null);
+  const [drafting, setDrafting] = useState(link !== null);
   const [busy, setBusy] = useState(false);
 
   const openRun = relay.runs.find((run) => run.open) ?? null;
-  const locked = openRun !== null;
+  const { data: running } = useQuery(
+    openRun === null
+      ? null
+      : () => api["/live/relays/run"]({ run: openRun.run }).then(unwrap),
+    [openRun?.run, relay],
+  );
+  const reached = new Set(
+    (running?.run?.rounds ?? [])
+      .filter((round) => round.round !== null)
+      .map((round) => round.leg),
+  );
 
   async function retitle() {
     const wanted = title.trim();
@@ -139,11 +152,7 @@ function RelaySetup({
     });
     setBusy(false);
     if (isApiError(result)) {
-      toast.error(
-        result.error === "CONFLICT"
-          ? RUN_OPEN_MESSAGE
-          : publicErrorMessage(result.error),
-      );
+      toast.error(publicErrorMessage(result.error));
       return false;
     }
     onChanged();
@@ -200,7 +209,9 @@ function RelaySetup({
       {openRun !== null ? (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
           <Lock className="size-4 text-primary" />
-          <p className="flex-1 text-sm">{RUN_OPEN_MESSAGE}</p>
+          <p className="flex-1 text-sm">
+            A run is open. Rounds it has reached are fixed.
+          </p>
           <Button size="sm" variant="outline" asChild>
             <Link href={`/staff/live/run/${openRun.run}`}>Go to the run</Link>
           </Button>
@@ -211,7 +222,7 @@ function RelaySetup({
         <AiPanel
           relay={relay.relay}
           rounds={relay.rounds}
-          pending={searchParams.get("draft") !== null}
+          pending={link !== null && ASK.test(link)}
           onChanged={onChanged}
         />
       ) : null}
@@ -222,7 +233,7 @@ function RelaySetup({
             key={round.leg}
             round={round}
             rounds={relay.rounds}
-            locked={locked}
+            locked={reached.has(round.leg)}
             onChanged={onChanged}
           />
         ))}

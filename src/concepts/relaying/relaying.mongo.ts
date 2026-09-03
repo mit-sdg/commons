@@ -169,9 +169,9 @@ export class MongoRelayingConcept {
     if (shape.trim() === "") {
       throw new InvalidShape("A draw needs a shape.");
     }
-    const standing = await this.draws.findOne({ leg, source });
+    const standing = await this.draws.findOne({ leg });
     if (standing !== null) {
-      await this.draws.updateOne({ _id: standing._id }, { $set: { shape } });
+      await this.draws.updateOne({ _id: standing._id }, { $set: { source, shape } });
       return { draw: standing._id };
     }
     const draw = crypto.randomUUID();

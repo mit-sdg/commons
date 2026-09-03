@@ -1,5 +1,5 @@
 import type { Collection, Db } from "mongodb";
-import { AlreadySubmitted, NoParticipant, ResponseNotFound } from "./errors.ts";
+import { AlreadySubmitted, AnswerBlank, NoParticipant, ResponseNotFound } from "./errors.ts";
 
 interface ResponseDoc {
   _id: string;
@@ -76,10 +76,14 @@ export class MongoRespondingConcept {
   }
 
   async answer({ response, item, value }: { response: string; item: string; value: string }) {
+    const said = value.trim();
+    if (said === "") {
+      throw new AnswerBlank("An answer needs something in it.");
+    }
     await this.#inProgress(response);
     const existing = await this.answers.findOne({ response, item });
     if (existing !== null) {
-      await this.answers.updateOne({ _id: existing._id }, { $set: { value } });
+      await this.answers.updateOne({ _id: existing._id }, { $set: { value: said } });
       return { response };
     }
     const seq = await this.#nextSeq("answers");
@@ -87,7 +91,7 @@ export class MongoRespondingConcept {
       _id: crypto.randomUUID(),
       response,
       item,
-      value,
+      value: said,
       seq,
     });
     return { response };

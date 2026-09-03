@@ -13,7 +13,18 @@ import {
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
-import { mayHostLive, mayNotHostLive, runIsClosed, runIsOpen } from "./policy.ts";
+import {
+  cardIsNotOfAClosedRun,
+  cardIsOfAClosedRun,
+  mayHostLive,
+  mayNotHostLive,
+  pileIsNotOfAClosedRun,
+  pileIsOfAClosedRun,
+  roundIsLive,
+  roundIsNotLive,
+  roundIsNotOfAClosedRun,
+  roundIsOfAClosedRun,
+} from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
 const {
@@ -231,19 +242,14 @@ export const TakenPlaceAssignsCard = reaction(({ suggestion, kind, target, value
 );
 
 /** Two cards opening the same new pile in one reply land together. */
-export const TakenOpenMakesPile = reaction(({ suggestion, kind, target, value, round, category }) =>
+export const TakenOpenMakesPile = reaction(({ suggestion, kind, target, value, round }) =>
   when(Suggesting.take({ suggestion }).responds({ kind, target, value }))
     .where(
       Suggesting._suggestion({ suggestion }).is({ subject: round }),
       roundIsAWall({ round }),
       is.among(kind, ["open"]),
     )
-    .then(
-      Piling.ensureCategory({ scope: round, name: value, description: "" }).responds({
-        category,
-      }),
-    )
-    .then(Piling.assign({ item: target, category })),
+    .then(Piling.file({ scope: round, name: value, item: target })),
 );
 
 export const TakenLidDescribesPile = reaction(({ suggestion, kind, target, value, round }) =>
@@ -338,11 +344,23 @@ export const OpenPile = endpoint(
   "/live/walls/open-pile",
   ({ session, round, name, card, user, at, category, assigned }) =>
     receive({ session, round, name, card }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+      )
         .then(Piling.ensureCategory({ scope: round, name, description: "" }).responds({ category }))
         .then(Piling.assign({ item: card, category }).responds({ item: assigned }))
         .then(respond({ pile: category, card: assigned }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsOfAClosedRun({ round }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -359,10 +377,18 @@ export const MoveCard = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         pileExists({ pile }),
+        pileIsNotOfAClosedRun({ pile }),
       )
         .then(Piling.assign({ item: card, category: pile }).responds({ item: assigned }))
         .then(respond({ card: assigned, pile }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsOfAClosedRun({ pile }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
       where(activeUser({ session }).is({ user }), mayHostLive({ user }), pileDoesNotExist({ pile }))
         .then(respond({ error: "CATEGORY_NOT_FOUND" }))
         .named("missing"),
@@ -377,10 +403,22 @@ export const ToTray = endpoint(
   "/live/walls/to-tray",
   ({ session, card, user, at, unassigned }) =>
     receive({ session, card }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        cardIsNotOfAClosedRun({ card }),
+      )
         .then(Piling.unassign({ item: card }).responds({ item: unassigned }))
         .then(respond({ card: unassigned }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        cardIsOfAClosedRun({ card }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -392,10 +430,22 @@ export const RenamePile = endpoint(
   "/live/walls/rename-pile",
   ({ session, pile, name, user, at, renamed }) =>
     receive({ session, pile, name }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsNotOfAClosedRun({ pile }),
+      )
         .then(Piling.renameCategory({ category: pile, name }).responds({ category: renamed }))
         .then(respond({ pile: renamed }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsOfAClosedRun({ pile }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -408,10 +458,22 @@ export const MergePile = endpoint(
   "/live/walls/merge-pile",
   ({ session, pile, into, user, at, merged }) =>
     receive({ session, pile, into }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsNotOfAClosedRun({ pile }),
+      )
         .then(Piling.mergeCategory({ category: pile, into }).responds({ into: merged }))
         .then(respond({ pile: merged }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsOfAClosedRun({ pile }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -423,7 +485,12 @@ export const DescribePile = endpoint(
   "/live/walls/describe-pile",
   ({ session, pile, description, user, at, described }) =>
     receive({ session, pile, description }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsNotOfAClosedRun({ pile }),
+      )
         .then(
           Piling.describeCategory({ category: pile, description }).responds({
             category: described,
@@ -431,6 +498,13 @@ export const DescribePile = endpoint(
         )
         .then(respond({ pile: described }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsOfAClosedRun({ pile }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -448,6 +522,7 @@ export const Pick = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Publishing._edition({ edition: round }),
+        roundIsNotOfAClosedRun({ round }),
       )
         .then(PickLinking.setLinks({ source: round, targets: piles }).responds({ source: picked }))
         .then(respond({ round: picked }))
@@ -455,7 +530,15 @@ export const Pick = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        roundIsOfAClosedRun({ round }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
         no(Publishing._edition({ edition: round })),
+        roundIsNotOfAClosedRun({ round }),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("missing"),
@@ -478,7 +561,7 @@ export const Sort = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        runIsOpen({ run: round }),
+        roundIsLive({ round }),
         roundHasACardInTheTray({ round }),
         noAskStandsAbout({ round }),
         no(RoundInsisting._unsettledFor({ aim: round })),
@@ -494,17 +577,13 @@ export const Sort = endpoint(
         )
         .then(respond({ asked: true, asking }))
         .named("asked"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        runIsClosed({ run: round }),
-      )
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), roundIsNotLive({ round }))
         .then(respond({ asked: false }))
         .named("closed"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        runIsOpen({ run: round }),
+        roundIsLive({ round }),
         roundHasEveryCardInAPile({ round }),
       )
         .then(respond({ asked: false }))
@@ -512,7 +591,7 @@ export const Sort = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        runIsOpen({ run: round }),
+        roundIsLive({ round }),
         roundHasACardInTheTray({ round }),
         anAskStandsAbout({ round }),
       )
@@ -521,7 +600,7 @@ export const Sort = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        runIsOpen({ run: round }),
+        roundIsLive({ round }),
         roundHasACardInTheTray({ round }),
         noAskStandsAbout({ round }),
         RoundInsisting._unsettledFor({ aim: round }),
@@ -543,6 +622,7 @@ export const Summarize = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        pileIsNotOfAClosedRun({ pile }),
         Piling._getCategoryDetail({ category: pile }).is({ scope: round }),
         Piling._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
@@ -555,6 +635,13 @@ export const Summarize = endpoint(
         )
         .then(respond({ asked: true, asking }))
         .named("asked"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsOfAClosedRun({ pile }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
       where(activeUser({ session }).is({ user }), mayHostLive({ user }), pileDoesNotExist({ pile }))
         .then(respond({ error: "CATEGORY_NOT_FOUND" }))
         .named("missing"),

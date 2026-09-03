@@ -11,7 +11,12 @@ import {
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
-import { mayHostLive, mayNotHostLive } from "./policy.ts";
+import {
+  mayHostLive,
+  mayNotHostLive,
+  questionnaireHasAnOpenRun,
+  questionnaireHasNoOpenRun,
+} from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
 const { Questioning, Relaying, RoundInsisting, RoundReasoning, Suggesting } = concepts;
@@ -172,14 +177,45 @@ export const Offerings = endpoint(
   { input: { required: ["session", "relay"] } },
 );
 
+/**
+ * A line is taken on its own request, so the asks that apply it read only their
+ * own line. A line about a round whose run is open is refused before anything
+ * changes, as the setup page's own edits are.
+ */
 export const Take = endpoint(
   "/live/edits/take",
-  ({ session, suggestion, user, at, taken }) =>
+  ({ session, suggestion, user, at, taken, target, questionnaire }) =>
     receive({ session, suggestion }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Suggesting._suggestion({ suggestion }).is({ target }),
+        Relaying._leg({ leg: target }).is({ material: questionnaire }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+      )
         .then(Suggesting.take({ suggestion }).responds({ suggestion: taken }))
         .then(respond({ suggestion: taken }))
-        .named("success"),
+        .named("round"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Suggesting._suggestion({ suggestion }).is({ target }),
+        no(Relaying._leg({ leg: target })),
+      )
+        .then(Suggesting.take({ suggestion }).responds({ suggestion: taken }))
+        .then(respond({ suggestion: taken }))
+        .named("relay"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Suggesting._suggestion({ suggestion }).is({ target }),
+        Relaying._leg({ leg: target }).is({ material: questionnaire }),
+        questionnaireHasAnOpenRun({ questionnaire }),
+      )
+        .then(respond({ error: "RUN_OPEN" }))
+        .named("run-open"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -200,32 +236,6 @@ export const Decline = endpoint(
         .named("forbidden"),
     ),
   { input: { required: ["session", "suggestion"] } },
-);
-
-/**
- * Every line of an offering still pending is taken at once. One sibling fans
- * the taking over those lines and another answers the request, because a fanned
- * path would answer it once per line.
- */
-export const TakeAll = endpoint(
-  "/live/edits/take-all",
-  ({ session, offering, user, suggestion }) =>
-    receive({ session, offering }).then(
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        Suggesting._pendingIn({ offering }).is({ suggestion }),
-      )
-        .then(Suggesting.take({ suggestion }))
-        .named("take-each"),
-      where(activeUser({ session }).is({ user }), mayHostLive({ user }))
-        .then(respond({ taken: true }))
-        .named("answer"),
-      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
-  { input: { required: ["session", "offering"] } },
 );
 
 /**
@@ -251,6 +261,14 @@ export const TakenAddAddsRound = reaction(
     at,
     questionnaire,
     question,
+    added,
+    landing,
+    position,
+    drawing,
+    drawn,
+    shape,
+    from,
+    source,
   }) =>
     when(Suggesting.take({ suggestion }).responds({ kind: "add", value }))
       .where(
@@ -296,7 +314,28 @@ export const TakenAddAddsRound = reaction(
         where(
           Questioning._getQuestion({ question }).is({ questionnaire }),
           Suggesting._suggestion({ suggestion }).is({ subject: placed }),
-        ).then(Relaying.addLeg({ relay: placed, material: questionnaire })),
+        ).then(
+          Relaying.addLeg({ relay: placed, material: questionnaire }).responds({ leg: added }),
+        ),
+      )
+      .then(
+        where(
+          compute(computations.editRoundJson, { value }, landing),
+          compute(computations.editRoundPosition, { round: landing }, position),
+          is.gt(position, 0),
+        )
+          .then(Relaying.moveLeg({ leg: added, position }))
+          .named("placed"),
+        where(
+          compute(computations.editRoundJson, { value }, drawing),
+          compute(computations.editRoundTakesShape, { round: drawing }, shape),
+          is.among(shape, ["picked", "every", "top"]),
+          compute(computations.editRoundTakesFrom, { round: drawing }, from),
+          Relaying._leg({ leg: added }).is({ relay: drawn }),
+          Relaying._legs({ relay: drawn }).is({ leg: source, position: from }),
+        )
+          .then(Relaying.draw({ leg: added, source, shape }))
+          .named("drawn"),
       ),
 );
 

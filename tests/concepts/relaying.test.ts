@@ -127,24 +127,16 @@ for (const [floor, make] of floors) {
       expect(await relaying._drawsOn({ source: third })).toEqual([]);
     });
 
-    test("_draws keeps the order the draws were made even after a shape is set", async () => {
+    test("drawing again on another source moves the leg's one draw there", async () => {
       const relaying = await make();
       const { first, second, third } = await relayOfThree(relaying);
-      const { draw: fromFirst } = await relaying.draw({
-        leg: third,
-        source: first,
-        shape: "names",
-      });
-      const { draw: fromSecond } = await relaying.draw({
-        leg: third,
-        source: second,
-        shape: "winner",
-      });
-      await relaying.draw({ leg: third, source: first, shape: "all the names" });
+      const { draw } = await relaying.draw({ leg: third, source: first, shape: "names" });
+      const { draw: again } = await relaying.draw({ leg: third, source: second, shape: "winner" });
+      expect(again).toBe(draw);
       expect(await relaying._draws({ leg: third })).toEqual([
-        { draw: fromFirst, source: first, shape: "all the names" },
-        { draw: fromSecond, source: second, shape: "winner" },
+        { draw, source: second, shape: "winner" },
       ]);
+      expect(await relaying._drawsOn({ source: first })).toEqual([]);
     });
 
     test("draw refuses a missing leg, a stranger, a forward draw, and a blank shape", async () => {
@@ -305,21 +297,23 @@ for (const [floor, make] of floors) {
     test("_plan answers the relay's legs with their draws in one row", async () => {
       const relaying = await make();
       const { relay, first, second, third } = await relayOfThree(relaying);
+      await relaying.draw({ leg: second, source: first, shape: "piles" });
       await relaying.draw({ leg: third, source: second, shape: "winner" });
-      await relaying.draw({ leg: third, source: first, shape: "names" });
       expect(await relaying._plan({ relay })).toEqual([
         {
           legs: [
             { leg: first, material: "name-it", position: 1, draws: [] },
-            { leg: second, material: "vote", position: 2, draws: [] },
+            {
+              leg: second,
+              material: "vote",
+              position: 2,
+              draws: [{ source: first, shape: "piles" }],
+            },
             {
               leg: third,
               material: "explain",
               position: 3,
-              draws: [
-                { source: second, shape: "winner" },
-                { source: first, shape: "names" },
-              ],
+              draws: [{ source: second, shape: "winner" }],
             },
           ],
         },

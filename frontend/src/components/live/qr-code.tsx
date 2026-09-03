@@ -20,7 +20,9 @@ const SIZES = {
  * The join code, rendered in the browser from the address it encodes. The
  * readable address always stands beside it, so a room that cannot scan can
  * still type. The wall variant fills a projected screen; corner and room are
- * the projector's two, sized to how full the wall already is.
+ * the projector's two, sized to how full the wall already is. An address
+ * only this machine can reach is a deployment matter, so it is said on the
+ * staff panel alone and never in front of a room.
  */
 export function JoinCode({
   url,
@@ -35,8 +37,8 @@ export function JoinCode({
 }) {
   const svg = useMemo(() => renderSVG(url, { ecc: "M", border: 2 }), [url]);
   const entry = joinEntryUrl();
-  const localOnly = isLoopback(entry);
   const shape = wall ? "wall" : size;
+  const localOnly = shape === "panel" && isLoopback(entry);
   const spec = SIZES[shape];
   const beside = shape === "corner" || shape === "room";
   return (

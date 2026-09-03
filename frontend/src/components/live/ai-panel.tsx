@@ -59,19 +59,36 @@ function partWords(parts: string[], cap: number): string {
 
 /**
  * The number each line's round carries, so a line names it the way every
- * other screen does. An added round has no leg yet: it lands past the ones
- * that stand, behind any round added ahead of it in the same offering.
+ * other screen does: the relay as it now stands, the round as it last stood
+ * for one a taken line has removed, the round a taken `add` made, and the
+ * number an add still pending lands at.
  */
 function numbered(
   lines: OfferedLine[],
   rounds: Round[],
+  stood: Map<string, Round>,
 ): { line: OfferedLine; round: Round | null; number: number }[] {
   let adds = 0;
   return lines.map((line) => {
-    const round = rounds.find((entry) => entry.leg === line.target) ?? null;
+    const round =
+      rounds.find((entry) => entry.leg === line.target) ??
+      stood.get(line.target) ??
+      null;
     if (round !== null) return { line, round, number: round.number };
+    const drafted = record(readJson(line.value));
+    const made =
+      line.standing === "taken"
+        ? (rounds.find((entry) => entry.title === drafted.title) ?? null)
+        : null;
+    if (made !== null) return { line, round: made, number: made.number };
     adds += 1;
-    return { line, round, number: rounds.length + adds };
+    const lands = drafted.position;
+    return {
+      line,
+      round,
+      number:
+        typeof lands === "number" && lands > 0 ? lands : rounds.length + adds,
+    };
   });
 }
 
@@ -194,8 +211,21 @@ export function AiPanel({
   const [nothing, setNothing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [took, setTook] = useState<number | null>(null);
+  const [stopped, setStopped] = useState<string | null>(null);
+  const [stood, setStood] = useState<Map<string, Round>>(new Map());
   const known = useRef<Set<string>>(new Set());
   const sentAt = useRef<number | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a round a taken line has removed is gone from the relay, and only the panel still holds it
+    setStood(
+      (last) =>
+        new Map([
+          ...last,
+          ...rounds.map((round) => [round.leg, round] as const),
+        ]),
+    );
+  }, [rounds]);
 
   const read = useCallback(async () => {
     const result = await api["/live/edits/offerings"]({ relay });
@@ -257,6 +287,7 @@ export function AiPanel({
     const brief = request.trim();
     if (brief === "") return;
     setNothing(false);
+    setStopped(null);
     setTook(null);
     setBusy(true);
     const offered = await read();
@@ -272,72 +303,34 @@ export function AiPanel({
     setWaiting(true);
   }
 
-  async function settle(line: OfferedLine, take: boolean) {
-    setBusy(true);
+  /** One line, settled on its own request, so a refusal stops where it fell. */
+  async function apply(line: OfferedLine, take: boolean): Promise<boolean> {
     const result = take
       ? await api["/live/edits/take"]({ suggestion: line.suggestion })
       : await api["/live/edits/decline"]({ suggestion: line.suggestion });
-    setBusy(false);
     if (isApiError(result)) {
-      toast.error(publicErrorMessage(result.error));
-      return;
+      setStopped(line.suggestion);
+      return false;
     }
-    await read();
-    onChanged();
+    return true;
   }
 
-  // Two added rounds in one request cross each other's material, so added
-  // rounds go one request at a time.
-  async function acceptAll(offering: Offering) {
-    const outstanding = offering.lines.filter(
-      (line) => line.standing === "pending",
-    );
-    const adds = outstanding.filter((line) => line.kind === "add").length;
+  async function settle(line: OfferedLine, take: boolean) {
     setBusy(true);
-    if (adds > 1) {
-      for (const line of outstanding) {
-        const result = await api["/live/edits/take"]({
-          suggestion: line.suggestion,
-        });
-        if (isApiError(result)) {
-          setBusy(false);
-          toast.error(publicErrorMessage(result.error));
-          await read();
-          onChanged();
-          return;
-        }
-      }
-    } else {
-      const result = await api["/live/edits/take-all"]({
-        offering: offering.offering,
-      });
-      if (isApiError(result)) {
-        setBusy(false);
-        toast.error(publicErrorMessage(result.error));
-        return;
-      }
-    }
+    setStopped(null);
+    await apply(line, take);
     setBusy(false);
     await read();
     onChanged();
   }
 
-  async function dismissAll(offering: Offering) {
-    const outstanding = offering.lines.filter(
-      (line) => line.standing === "pending",
-    );
+  /** The lines still pending, in order, until one is refused. */
+  async function settleAll(offering: Offering, take: boolean) {
     setBusy(true);
-    for (const line of outstanding) {
-      const result = await api["/live/edits/decline"]({
-        suggestion: line.suggestion,
-      });
-      if (isApiError(result)) {
-        setBusy(false);
-        toast.error(publicErrorMessage(result.error));
-        await read();
-        onChanged();
-        return;
-      }
+    setStopped(null);
+    for (const line of offering.lines) {
+      if (line.standing !== "pending") continue;
+      if (!(await apply(line, take))) break;
     }
     setBusy(false);
     await read();
@@ -379,18 +372,24 @@ export function AiPanel({
         </div>
 
         <div className="flex flex-col gap-2.5">
-          {nothing && offering === null ? (
+          {nothing ? (
             <p className="text-muted-foreground text-sm">Nothing came back.</p>
           ) : null}
-          {offering === null ? null : (
+          {offering !== null &&
+          offering.lines.every((line) => line.kind === "keep") ? (
+            <p className="text-muted-foreground text-sm">Nothing to change.</p>
+          ) : null}
+          {offering === null ||
+          offering.lines.every((line) => line.kind === "keep") ? null : (
             <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-              {numbered(offering.lines, rounds).map(
+              {numbered(offering.lines, rounds, stood).map(
                 ({ line, round, number }) => (
                   <div
                     key={line.suggestion}
                     className={cn(
                       "flex flex-wrap items-center gap-2.5 px-3 py-2 text-sm",
                       line.standing !== "pending" && "opacity-45",
+                      line.suggestion === stopped && "bg-destructive/5",
                     )}
                   >
                     <span className="w-full flex-none whitespace-nowrap font-mono text-[10.5px] text-muted-foreground uppercase tracking-[0.06em] sm:w-[104px]">
@@ -426,17 +425,26 @@ export function AiPanel({
                         </Button>
                       </span>
                     ) : null}
+                    {line.suggestion === stopped ? (
+                      <p className="w-full text-destructive sm:pl-[114px]">
+                        {line.standing === "pending"
+                          ? "Refused. Nothing changed."
+                          : "Taken, but nothing changed."}
+                      </p>
+                    ) : null}
                   </div>
                 ),
               )}
             </div>
           )}
-          {offering !== null && outstanding > 0 ? (
+          {offering !== null &&
+          outstanding > 0 &&
+          !offering.lines.every((line) => line.kind === "keep") ? (
             <div className="flex gap-2">
               <Button
                 size="sm"
                 disabled={busy}
-                onClick={() => void acceptAll(offering)}
+                onClick={() => void settleAll(offering, true)}
               >
                 Accept all
               </Button>
@@ -444,7 +452,7 @@ export function AiPanel({
                 variant="outline"
                 size="sm"
                 disabled={busy}
-                onClick={() => void dismissAll(offering)}
+                onClick={() => void settleAll(offering, false)}
               >
                 Dismiss
               </Button>

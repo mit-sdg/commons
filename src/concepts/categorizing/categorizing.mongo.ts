@@ -132,6 +132,12 @@ export class MongoCategorizingConcept {
     return { into };
   }
 
+  async file({ scope, name, item }: { scope: string; name: string; item: string }) {
+    const { category } = await this.ensureCategory({ scope, name, description: "" });
+    await this.assign({ item, category });
+    return { category };
+  }
+
   async assign({ item, category }: { item: string; category: string }) {
     const home = await this.categories.findOne({ _id: category });
     if (home === null) {

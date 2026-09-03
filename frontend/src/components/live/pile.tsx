@@ -11,6 +11,41 @@ const PILE_MIME = "application/x-commons-pile";
 /** How many cards a stack shows on its face; the rest are the stack's depth. */
 const PEEK = 3;
 
+/** What stands on a card whose answer is nothing but spaces. */
+const BLANK = "\u2014";
+
+/** How a pile's face is sized on each surface; a full projector packs its piles. */
+const FACES = {
+  wide: {
+    box: "min-h-[112px] px-4 pt-3.5 pb-3",
+    name: "text-lg sm:text-xl",
+    count: "text-lg sm:text-[22px]",
+    rest: "text-[11px] sm:text-[13px]",
+    peek: "gap-[3px] text-[13px]",
+  },
+  phone: {
+    box: "min-h-24 px-3.5 pt-3 pb-2.5",
+    name: "text-lg",
+    count: "text-lg",
+    rest: "text-[11px]",
+    peek: "gap-[3px] text-xs",
+  },
+  big: {
+    box: "min-h-[150px] rounded-[14px] px-[22px] pt-5 pb-[18px]",
+    name: "text-2xl xl:text-[34px]",
+    count: "text-[38px]",
+    rest: "text-xl",
+    peek: "gap-1.5 text-xl",
+  },
+  packed: {
+    box: "min-h-[104px] rounded-[14px] px-4 pt-4 pb-3.5",
+    name: "text-xl",
+    count: "text-[28px]",
+    rest: "text-sm",
+    peek: "gap-1 text-base",
+  },
+};
+
 export function ModelTag({ big = false }: { big?: boolean }) {
   return (
     <span
@@ -59,7 +94,7 @@ export function Card({
             }
       }
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card shadow-[0_1px_0_var(--border)] leading-[1.3]",
+        "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg border border-border bg-card shadow-[0_1px_0_var(--border)] leading-[1.3]",
         big
           ? "rounded-[10px] px-[18px] py-2.5 text-2xl"
           : "px-3 py-[7px] text-[15px]",
@@ -67,13 +102,36 @@ export function Card({
         draggable && "cursor-grab active:cursor-grabbing",
         className,
       )}
-      title={card.part === "" ? undefined : card.part}
+      title={titleOf(card)}
     >
-      {card.value}
+      <Answer value={card.value} className="line-clamp-3" />
       {card.model ? <ModelTag big={big} /> : null}
       {card.mine ? <YouTag /> : null}
     </span>
   );
+}
+
+/** An answer as it reads on a card: wrapped, cut after its lines, never nothing. */
+function Answer({ value, className }: { value: string; className: string }) {
+  const blank = value.trim() === "";
+  return (
+    <span
+      dir="auto"
+      className={cn(
+        "min-w-0 break-words",
+        className,
+        blank && "text-muted-foreground/60",
+      )}
+    >
+      {blank ? BLANK : value}
+    </span>
+  );
+}
+
+/** The whole answer, with the part it answers, for a card that had to be cut. */
+function titleOf(card: WallCard): string | undefined {
+  if (card.value.trim() === "") return undefined;
+  return card.part === "" ? card.value : `${card.part} \u00b7 ${card.value}`;
 }
 
 /** A faint card for an answer still being written. */
@@ -103,7 +161,9 @@ export function Pile({
   picked = false,
   carriesTo,
   faded = false,
+  counted = true,
   big = false,
+  packed = false,
   phone = false,
   selected = false,
   onDrop,
@@ -123,7 +183,11 @@ export function Pile({
   /** The number of the round the pile carries into, shown on a picked pile. */
   carriesTo?: number;
   faded?: boolean;
+  /** A pile standing under a vote round shows what it holds, not how many. */
+  counted?: boolean;
   big?: boolean;
+  /** A projector wall with more piles than two rows draws them smaller. */
+  packed?: boolean;
   phone?: boolean;
   selected?: boolean;
   onDrop?: (card: string) => void;
@@ -135,11 +199,19 @@ export function Pile({
   className?: string;
 }) {
   const [naming, setNaming] = useState<string | null>(null);
+  const face = big
+    ? packed
+      ? FACES.packed
+      : FACES.big
+    : phone
+      ? FACES.phone
+      : FACES.wide;
   const depth = count >= 8 ? "deep" : count >= 3 ? "thin" : "flat";
   const mine = phone ? cards.filter((card) => card.mine) : [];
   const peek = (
     mine.length === 0 ? cards : [...mine, ...cards.filter((card) => !card.mine)]
   ).slice(0, PEEK);
+  const rest = Math.max(0, count - peek.length);
   const takesDrop = onDrop !== undefined || onMergeIn !== undefined;
   const interactive = onTap !== undefined && naming === null;
   const Tag = interactive ? "button" : "div";
@@ -172,11 +244,7 @@ export function Pile({
       }
       className={cn(
         "relative flex flex-col gap-2 rounded-[10px] border border-border bg-card text-left",
-        big
-          ? "min-h-[150px] rounded-[14px] px-[22px] pt-5 pb-[18px]"
-          : phone
-            ? "min-h-24 px-3.5 pt-3 pb-2.5"
-            : "min-h-[112px] px-4 pt-3.5 pb-3",
+        face.box,
         depth === "deep" &&
           "shadow-[0_5px_0_-2px_var(--card),0_6px_0_-2px_var(--border),0_11px_0_-5px_var(--card),0_12px_0_-5px_var(--border)]",
         depth === "thin" &&
@@ -204,7 +272,7 @@ export function Pile({
         <p
           className={cn(
             "font-display text-foreground leading-[1.3]",
-            big ? "text-2xl" : "text-base",
+            big ? (packed ? "text-xl" : "text-2xl") : "text-base",
           )}
         >
           {description}
@@ -226,9 +294,10 @@ export function Pile({
             onDoubleClick={
               onRename === undefined ? undefined : () => setNaming(name)
             }
+            dir="auto"
             className={cn(
-              "min-w-0 truncate font-display font-semibold leading-[1.15]",
-              big ? "text-2xl xl:text-[34px]" : phone ? "text-lg" : "text-xl",
+              "min-w-0 break-words font-display font-semibold leading-[1.15]",
+              face.name,
               onMergeIn !== undefined && "cursor-grab active:cursor-grabbing",
             )}
           >
@@ -249,23 +318,28 @@ export function Pile({
             className="h-7 min-w-0 flex-1 rounded-md border border-primary bg-card px-2 font-display font-semibold text-base"
           />
         )}
-        <span
-          className={cn(
-            "flex-none font-mono tabular-nums",
-            big ? "text-[38px]" : phone ? "text-lg" : "text-[22px]",
+        <span className="flex flex-none items-baseline gap-2">
+          {rest === 0 || !counted ? null : (
+            <span
+              className={cn(
+                "font-mono tabular-nums text-muted-foreground",
+                face.rest,
+              )}
+            >
+              +{rest}
+            </span>
           )}
-        >
-          {count}
+          {counted ? (
+            <span className={cn("font-mono tabular-nums", face.count)}>
+              {count}
+            </span>
+          ) : null}
         </span>
       </div>
       <div
         className={cn(
           "flex flex-col text-muted-foreground leading-[1.35]",
-          big
-            ? "gap-1.5 text-xl"
-            : phone
-              ? "gap-[3px] text-xs"
-              : "gap-[3px] text-[13px]",
+          face.peek,
         )}
       >
         {peek.map((card) =>
@@ -273,14 +347,15 @@ export function Pile({
             <Card
               key={card.card}
               card={card}
-              className="self-start px-2 py-[3px] text-xs"
+              className="max-w-full self-start px-2 py-[3px] text-xs"
             />
           ) : (
             <span
               key={card.card}
-              className="flex items-center gap-1.5 truncate"
+              title={titleOf(card)}
+              className="flex min-w-0 items-center gap-1.5"
             >
-              <span className="truncate">{card.value}</span>
+              <Answer value={card.value} className="line-clamp-1" />
               {card.model ? <ModelTag big={big} /> : null}
             </span>
           ),

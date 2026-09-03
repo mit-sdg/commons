@@ -43,11 +43,38 @@ const twoRounds = () =>
     },
   ]);
 
+/** The two standing rounds delivered the other way about, keeping their numbers. */
+const swapped = () =>
+  relay([
+    {
+      number: 2,
+      title: "The stranger",
+      prompt: "Which verb best fits the stranger?",
+      parts: ["answer"],
+      cap: 0,
+      choices: [],
+      takes: { from: 0, shape: "" },
+    },
+    {
+      number: 1,
+      title: "Three verbs",
+      prompt: "Name three verbs from the passage.",
+      parts: ["one", "two", "three"],
+      cap: 0,
+      choices: [],
+      takes: { from: 0, shape: "" },
+    },
+  ]);
+
 export function scriptedEditsReply(passage: string): string | undefined {
   if (!passage.includes(CONTRACT)) return undefined;
   const written = passage.split("The brief:\n")[1] ?? "";
   const brief = written.split(`\n\n${REPAIR}`)[0].toLowerCase();
-  const answer = brief.includes("three verbs") ? twoRounds() : oneRound();
+  const answer = brief.includes("swap")
+    ? swapped()
+    : brief.includes("three verbs")
+      ? twoRounds()
+      : oneRound();
   if (passage.includes(REPAIR)) return answer;
   return brief.includes("unreadable") ? "this reply is not JSON at all" : answer;
 }

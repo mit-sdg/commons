@@ -218,3 +218,69 @@ export const pileIsOfRound = view(
   ({ pile, round }, _outputs, _bindings) =>
     where(Piling._getCategoryDetail({ category: pile }).is({ scope: round })),
 ).holds();
+
+/** A round's run is the edition RoundLinking tied it to when the round opened. */
+export const roundIsOfAnOpenRun = view(
+  "(round) is of an open run",
+  ({ round }, _outputs, { run }) =>
+    where(
+      RoundLinking._getLinks({ source: round }).is({ target: run }),
+      Publishing._edition({ edition: run }).is({ open: true }),
+    ),
+).holds();
+
+export const roundIsOfAClosedRun = view(
+  "(round) is of a closed run",
+  ({ round }, _outputs, { run }) =>
+    where(
+      RoundLinking._getLinks({ source: round }).is({ target: run }),
+      Publishing._edition({ edition: run }).is({ open: false }),
+    ),
+).holds();
+
+export const roundIsNotOfAClosedRun = view(
+  "(round) is not of a closed run",
+  ({ round }, _outputs, _bindings) => where(no(roundIsOfAClosedRun({ round }))),
+).holds();
+
+/** A round is live while its own edition and the run it belongs to are both open. */
+export const roundIsLive = view(
+  "(round) is open on an open run",
+  ({ round }, _outputs, _bindings) =>
+    where(runIsOpen({ run: round }), roundIsOfAnOpenRun({ round })),
+).holds();
+
+export const roundIsNotLive = view(
+  "(round) is not open on an open run",
+  ({ round }, _outputs, _bindings) => where(no(roundIsLive({ round }))),
+).holds();
+
+/** A pile stands in its round's scope, so that round's run governs every write to it. */
+export const pileIsOfAClosedRun = view(
+  "(pile) is on the wall of a closed run",
+  ({ pile }, _outputs, { round }) =>
+    where(
+      Piling._getCategoryDetail({ category: pile }).is({ scope: round }),
+      roundIsOfAClosedRun({ round }),
+    ),
+).holds();
+
+export const pileIsNotOfAClosedRun = view(
+  "(pile) is not on the wall of a closed run",
+  ({ pile }, _outputs, _bindings) => where(no(pileIsOfAClosedRun({ pile }))),
+).holds();
+
+/** A card reaches its round through the pile holding it; a card in the tray reaches none. */
+export const cardIsOfAClosedRun = view(
+  "(card) is in a pile of a closed run",
+  ({ card }, _outputs, { category }) =>
+    where(
+      Piling._getCategory({ item: card }).is({ category }),
+      pileIsOfAClosedRun({ pile: category }),
+    ),
+).holds();
+
+export const cardIsNotOfAClosedRun = view(
+  "(card) is in no pile of a closed run",
+  ({ card }, _outputs, _bindings) => where(no(cardIsOfAClosedRun({ card }))),
+).holds();

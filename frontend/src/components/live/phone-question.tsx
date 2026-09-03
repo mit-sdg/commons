@@ -61,6 +61,9 @@ export function QuestionCard({
 }) {
   const items = itemsOf(question);
   const repeated = question.parts.length > 0 && question.cap >= 2;
+  // A choice is one answer, so it lands on the question's first item — the
+  // question itself, or the first part when the round carries parts.
+  const chosen = items[0] ?? question.question;
   const [shown, setShown] = useState(() => Math.max(1, filled(answers, items)));
 
   return (
@@ -80,11 +83,11 @@ export function QuestionCard({
               type="button"
               dir="auto"
               // Colour alone does not carry selection to a screen reader.
-              aria-pressed={answers[question.question] === choice}
-              onClick={() => onAnswer(question.question, choice)}
+              aria-pressed={answers[chosen] === choice}
+              onClick={() => onAnswer(chosen, choice)}
               className={cn(
                 "rounded-md border border-border px-4 py-3 text-start text-sm transition-colors",
-                answers[question.question] === choice
+                answers[chosen] === choice
                   ? "border-primary bg-primary/10 font-medium text-primary"
                   : "hover:bg-muted",
               )}
@@ -161,7 +164,11 @@ function PartLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** The field stays uncontrolled — typing drafts, blur commits. */
+/**
+ * The field stays uncontrolled — typing drafts, blur commits. Every blur
+ * commits: the draft it would compare against is the same state typing just
+ * wrote, and the sender is what knows a value it has already sent.
+ */
 function WrittenBox({
   item,
   value,
@@ -189,7 +196,7 @@ function WrittenBox({
         const next = event.currentTarget.value.trim();
         if (next === "") return;
         event.currentTarget.value = next;
-        if (next !== value) onAnswer(item, next);
+        onAnswer(item, next);
       }}
     />
   );

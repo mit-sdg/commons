@@ -9,7 +9,8 @@ and two scopes may each have a category of the same name without confusion.
 ## Principle
 
 Priya creates a Homework category in the course forum and assigns a quiz to
-it. Assigning the quiz to Exams moves it there. Unassigning it leaves it with
+it. Assigning the quiz to Exams moves it there. Filing a lab under Labs in one
+step reaches the Labs category or makes it, and puts the lab there. Unassigning it leaves it with
 no category, and a second unassignment is refused. A second category named
 Homework in the forum is also refused, and asking again for the category named
 Homework reaches the one that already exists rather than making another — while
@@ -105,6 +106,17 @@ mergeCategory(category: Category, into: Category) : return (into: Category)
   where category and into do not share a scope
   then
     refuse DIFFERENT_SCOPES "These categories are not in the same scope."
+
+file(scope: Scope, name: String, item: Item) : return (category: Category)
+  where some category in scope has this name
+  then
+    set item's home to that category, replacing any prior home
+    return category
+  where no category in scope has this name
+  then
+    add a new category with scope, name, and an empty description
+    set item's home to it, replacing any prior home
+    return category
 
 assign(item: Item, category: Category) : return (item: Item)
   where category in categories

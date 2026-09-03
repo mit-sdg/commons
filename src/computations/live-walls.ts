@@ -72,7 +72,30 @@ Reply with exactly one JSON object and nothing else.
 - One answer per box listed below; "item" is the box's name copied exactly, with nothing added.
 - When choices are offered, answer with one of them, word for word.
 - Otherwise answer in a few words, the way one student typing on a phone would.
-- Answer as this participant, not as the room's average.`;
+- Answer the question; never repeat or restate its words back.
+- Answer as this participant, not as the room's average: take the stance given below and let it show.`;
+
+/** The stances a room of participants is dealt, one per participant, by its identity. */
+const STANCES = [
+  "the student who answers from a concrete example they saw this week",
+  "the student who answers with the plainest everyday word",
+  "the student who reaches for the odd case nobody else thinks of",
+  "the student who answers from the user's frustration",
+  "the student who answers from what the software must remember",
+  "the student who answers in the words of a shop or a bank, not a textbook",
+  "the student who disagrees with the obvious answer",
+  "the student who answers from a phone app they use daily",
+  "the student who thinks about what could go wrong",
+  "the student who answers quickly and briefly, first thing that comes",
+  "the student who answers from a course or classroom situation",
+  "the student who thinks about two people using the same thing",
+];
+
+function stanceOf(participant: string): string {
+  let hash = 0;
+  for (const char of participant) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return STANCES[hash % STANCES.length] as string;
+}
 
 const asString = (value: unknown): string => (typeof value === "string" ? value : "");
 
@@ -190,7 +213,7 @@ export function participantPassage({
     question === undefined || question.choices.length === 0
       ? ""
       : `\n\nChoose from: ${question.choices.join(" | ")}`;
-  return `${PARTICIPANT_CONTRACT}\n\nYou are participant ${participant}.\n\nThe question:\n${question?.prompt ?? ""}${choices}\n\nThe boxes to answer, one line each:\n${boxes.join("\n")}`;
+  return `${PARTICIPANT_CONTRACT}\n\nYou are participant ${participant}, ${stanceOf(participant)}.\n\nThe question:\n${question?.prompt ?? ""}${choices}\n\nThe boxes to answer, one line each:\n${boxes.join("\n")}`;
 }
 
 /**

@@ -28,6 +28,15 @@ export function modelParticipant({ device }: { device: string }): string {
   return `${MODEL_PREFIX}${device}`;
 }
 
+/** A round that offers carried choices is one box: no parts. */
+export function oneBoxParts({ question: _question }: { question: string }): string[] {
+  return [];
+}
+
+export function oneBoxCap({ question: _question }: { question: string }): number {
+  return 0;
+}
+
 export function isSame({ left, right }: { left: string; right: string }): boolean {
   return left === right;
 }

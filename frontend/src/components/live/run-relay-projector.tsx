@@ -21,7 +21,8 @@ const POLL_MS = 3_000;
 /**
  * The relay run on the projector: the wall of the open round, full screen,
  * with the join code in the corner. Before the first round it is the title
- * and the code; after the run closes it is the last wall.
+ * and the code; between rounds and once the run has ended the wall stands,
+ * and the word for where the room is takes the join block's place.
  */
 export function RelayProjector({
   run,
@@ -36,7 +37,7 @@ export function RelayProjector({
     session
       ? () => api["/live/relays/get"]({ relay: run.relay }).then(unwrap)
       : null,
-    [session, run.relay],
+    [session, run.relay, run],
   );
   const relay = relayData?.relay ?? null;
 
@@ -56,11 +57,8 @@ export function RelayProjector({
   const carrier =
     shownLeg === null
       ? null
-      : (relay?.rounds.find(
-          (round) =>
-            round.takes[0]?.source === shownLeg &&
-            round.takes[0]?.shape === "picked",
-        ) ?? null);
+      : (relay?.rounds.find((round) => round.takes[0]?.source === shownLeg) ??
+        null);
   const carriesTo =
     carrier === null
       ? undefined
@@ -82,7 +80,6 @@ export function RelayProjector({
 
   const wall: WallShape | null = wallData?.wall ?? null;
   const sourceWall: WallShape | null = sourceData?.wall ?? null;
-  const openRound = run.openRound;
 
   useEffect(() => {
     if (!run.open) return;
@@ -99,7 +96,7 @@ export function RelayProjector({
   const url = run.token === null ? null : joinUrl(run.token);
   const code = run.code;
 
-  if (run.open && openRound === null && closedRound === null) {
+  if (shownRound === null) {
     return (
       <div className="flex h-dvh flex-col items-center justify-center gap-[clamp(0.75rem,3dvh,2.5rem)] overflow-hidden px-12 py-12 text-center">
         <h1
@@ -108,7 +105,9 @@ export function RelayProjector({
         >
           {run.title}
         </h1>
-        {url === null || code === null ? null : (
+        {!run.open ? (
+          <Standing>The run has ended</Standing>
+        ) : url === null || code === null ? null : (
           <JoinCode url={url} code={code} wall />
         )}
       </div>
@@ -123,7 +122,7 @@ export function RelayProjector({
     );
   }
 
-  const joining = run.open && url !== null && code !== null;
+  const joining = run.open && wall.open && url !== null && code !== null;
   const filling = wall.piles.length > 0 || choicesOf(wall).length > 0;
 
   return (
@@ -136,7 +135,7 @@ export function RelayProjector({
         sourceWall={sourceWall}
         className={cn(
           "min-h-0 overflow-hidden",
-          filling || !joining ? "flex-1" : "flex-none",
+          joining && !filling ? "flex-initial" : "flex-1",
         )}
       />
       {joining ? (
@@ -145,12 +144,23 @@ export function RelayProjector({
             <JoinCode url={url} code={code} size="corner" />
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 items-center justify-center">
+          <div className="flex flex-auto shrink-0 items-center justify-center">
             <JoinCode url={url} code={code} size="room" />
           </div>
         )
-      ) : null}
+      ) : (
+        <Standing>{run.open ? "Closed" : "The run has ended"}</Standing>
+      )}
     </div>
+  );
+}
+
+/** One word to the room, where the join block stands while there is one. */
+function Standing({ children }: { children: string }) {
+  return (
+    <span className="flex-none font-display text-[40px] text-muted-foreground leading-none">
+      {children}
+    </span>
   );
 }
 

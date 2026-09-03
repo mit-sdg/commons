@@ -173,6 +173,7 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
   - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
   - Refuses `SAME_CATEGORY`: A category cannot be merged into itself.
   - Refuses `DIFFERENT_SCOPES`: These categories are not in the same scope.
+- `file(scope: Scope, name: String, item: Item) : return (category: Category)`
 - `assign(item: Item, category: Category) : return (item: Item)`
   - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
 - `unassign(item: Item) : return (item: Item)`
@@ -966,6 +967,7 @@ Defined in [Responding](../design/concepts/Responding.md), line 1.
 - `answer(response: Response, item: Item, value: String) : return (response: Response)`
   - Refuses `RESPONSE_NOT_FOUND`: There is no such response.
   - Refuses `ALREADY_SUBMITTED`: This was already handed in.
+  - Refuses `BLANK_ANSWER`: An answer needs something in it.
 - `submit(response: Response, at: Date) : return (response: Response)`
   - Refuses `RESPONSE_NOT_FOUND`: There is no such response.
   - Refuses `ALREADY_SUBMITTED`: This was already handed in.
@@ -1458,17 +1460,20 @@ Concrete types:
 - `clarifiedPassage(request: String, question: String, answer: String) : String` — [Commons application](../design/application.md), line 419.
 - `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 407.
 - `draftingPassage(request: String) : String` — [Commons application](../design/application.md), line 411.
-- `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 65.
-- `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 68.
-- `editParts(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 62.
-- `editPosition(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 71.
-- `editPrompt(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
-- `editRoundCap(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 56.
-- `editRoundChoices(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
-- `editRoundJson(value: String) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 44.
-- `editRoundParts(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 53.
-- `editShape(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 74.
-- `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 47.
+- `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 77.
+- `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 80.
+- `editParts(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 74.
+- `editPosition(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 83.
+- `editPrompt(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 62.
+- `editRoundCap(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 68.
+- `editRoundChoices(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 71.
+- `editRoundJson(value: String) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 45.
+- `editRoundParts(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 65.
+- `editRoundPosition(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 56.
+- `editRoundTakesFrom(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 48.
+- `editRoundTakesShape(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 52.
+- `editShape(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 86.
+- `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 357.
 - `everyPile(categories: Json) : Strings` — [The wall](../design/compositions/live/walls.md), line 79.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 88.
@@ -1482,6 +1487,8 @@ Concrete types:
 - `modelParticipant(device: String) : String` — [The wall](../design/compositions/live/walls.md), line 35.
 - `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 350.
 - `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 347.
+- `oneBoxCap(question: String) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 36.
+- `oneBoxParts(question: String) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 32.
 - `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 427.
 - `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 431.
 - `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 434.
@@ -1529,6 +1536,40 @@ Concrete types:
 ## Views
 
 _Views name reusable conditions. Multiple `where` blocks are alternatives._
+
+### (round) is of a closed run
+
+```view
+(round) is of a closed run — inputs (round); outputs (); bindings (run)
+  where
+    RoundLinking._getLinks (source: round) has (target: run)
+    Publishing._edition (edition: run) has (open: false)
+```
+
+### (pile) is on the wall of a closed run
+
+```view
+(pile) is on the wall of a closed run — inputs (pile); outputs (); bindings (round)
+  where
+    Piling._getCategoryDetail (category: pile) has (scope: round)
+    view "(round) is of a closed run" with (round)
+```
+
+### (card) is in a pile of a closed run
+
+```view
+(card) is in a pile of a closed run — inputs (card); outputs (); bindings (category)
+  where
+    Piling._getCategory (item: card) has (category)
+    view "(pile) is on the wall of a closed run" with (pile: category)
+```
+
+### (card) is in no pile of a closed run
+
+```view
+(card) is in no pile of a closed run — inputs (card); outputs (); bindings ()
+  where no view "(card) is in a pile of a closed run" with (card)
+```
 
 ### (item) is intact
 
@@ -1631,6 +1672,13 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
 ```view
 (pile) is no pile — inputs (pile); outputs (); bindings ()
   where no Piling._getCategoryDetail (category: pile)
+```
+
+### (pile) is not on the wall of a closed run
+
+```view
+(pile) is not on the wall of a closed run — inputs (pile); outputs (); bindings ()
+  where no view "(pile) is on the wall of a closed run" with (pile)
 ```
 
 ### (post) is not readable
@@ -1754,6 +1802,45 @@ Authored path: `Forum.posts.readable`.
     RunSnapshotting._snapshot (subject: round)
 ```
 
+### (round) is not of a closed run
+
+```view
+(round) is not of a closed run — inputs (round); outputs (); bindings ()
+  where no view "(round) is of a closed run" with (round)
+```
+
+### (round) is of an open run
+
+```view
+(round) is of an open run — inputs (round); outputs (); bindings (run)
+  where
+    RoundLinking._getLinks (source: round) has (target: run)
+    Publishing._edition (edition: run) has (open: true)
+```
+
+### (run) is open to participation
+
+```view
+(run) is open to participation — inputs (run); outputs (); bindings ()
+  where Publishing._edition (edition: run) has (open: true)
+```
+
+### (round) is open on an open run
+
+```view
+(round) is open on an open run — inputs (round); outputs (); bindings ()
+  where
+    view "(run) is open to participation" with (run: round)
+    view "(round) is of an open run" with (round)
+```
+
+### (round) is not open on an open run
+
+```view
+(round) is not open on an open run — inputs (round); outputs (); bindings ()
+  where no view "(round) is open on an open run" with (round)
+```
+
 ### the open round of (run)
 
 ```view
@@ -1799,13 +1886,6 @@ the open round of (run) — inputs (run); outputs (round); bindings () — answe
 ```view
 (run) is closed — inputs (run); outputs (); bindings ()
   where Publishing._edition (edition: run) has (open: false)
-```
-
-### (run) is open to participation
-
-```view
-(run) is open to participation — inputs (run); outputs (); bindings ()
-  where Publishing._edition (edition: run) has (open: true)
 ```
 
 ### (target) is public
@@ -2434,7 +2514,7 @@ _the authored explanation; this section records the generated shape._
 ### the answers outcome of (response)
 
 Authored path: `Live.participation.theAnswersOutcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 65.
+- Covered by [Participation](../design/compositions/live/participation.md), line 68.
 
 ```former
 Former "the answers outcome of (response)" — inputs (response); bindings (run, key, presentation, disclosure, score, outOf, answers, receipt); promises at most one record — forms:
@@ -2834,7 +2914,7 @@ Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, sectio
 ### the explained outcome of (response)
 
 Authored path: `Live.participation.theExplanationsOutcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 66.
+- Covered by [Participation](../design/compositions/live/participation.md), line 69.
 
 ```former
 Former "the explained outcome of (response)" — inputs (response); bindings (run, key, presentation, disclosure, score, outOf, answers, receipt); promises at most one record — forms:
@@ -3497,7 +3577,9 @@ Former "the presentation of (leg) taking from (sourceRound)" — inputs (leg, so
     where Questioning._getQuestionnaire (questionnaire) has (disclosure, form, title)
     disclosure
     form
-    questions: each Questioning._getQuestions (questionnaire) has (cap, expected, explanation, parts, position, prompt, question)
+    questions: each Questioning._getQuestions (questionnaire) has (expected, explanation, position, prompt, question)
+      where parts is oneBoxParts (question)
+      where cap is oneBoxCap (question)
       form a record of
         cap
         choices: the distinct name of each PickLinking._getLinks (source: sourceRound) has (target: pile)
@@ -3860,7 +3942,7 @@ Former "the run (run)" — inputs (run); bindings (relay, title, open, openedAt,
 ### the score outcome of (response)
 
 Authored path: `Live.participation.theScoreOutcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 64.
+- Covered by [Participation](../design/compositions/live/participation.md), line 67.
 
 ```former
 Former "the score outcome of (response)" — inputs (response); bindings (run, key, disclosure, score, outOf); promises at most one record — forms:
@@ -14239,7 +14321,7 @@ then
 
 Authored path: `Live.edits.Decline`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 80.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 92.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/decline", requestId, session, suggestion)
@@ -14254,7 +14336,7 @@ then
 
 Authored path: `Live.edits.Decline`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 80.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 92.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/decline", requestId, session, suggestion)
@@ -14270,7 +14352,7 @@ then
 
 Authored path: `Live.edits.Decline`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 80.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 92.
 
 ```reaction
 when Suggesting.decline (suggestion, result.suggestion: declined), asked by Live.edits.Decline:success
@@ -14284,7 +14366,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 81.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 93.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14299,7 +14381,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 81.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 93.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14315,7 +14397,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 81.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 93.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14335,7 +14417,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 81.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 93.
 
 ```reaction
 when RoundReasoning.ask (about: relay, at, passage, reasoner: "gemini-flash", asking), asked by Live.edits.Draft:success
@@ -14378,7 +14460,7 @@ then
 
 Authored path: `Live.edits.Offerings`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 82.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/offerings", relay, requestId, session)
@@ -14393,7 +14475,7 @@ then
 
 Authored path: `Live.edits.Offerings`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 82.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/offerings", relay, requestId, session)
@@ -14461,7 +14543,7 @@ then
 
 Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 83.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
@@ -14472,11 +14554,11 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Live.edits.Take:success
+### Live.edits.Take:relay
 
 Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 83.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
@@ -14484,68 +14566,75 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  Suggesting._suggestion (suggestion) has (target)
+  no Relaying._leg (leg: target)
 then
   Suggesting.take (suggestion)
 ```
 
-### Live.edits.Take:success#2
+### Live.edits.Take:relay#2
 
 Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 83.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 95.
 
 ```reaction
-when Suggesting.take (suggestion, result.suggestion: taken), asked by Live.edits.Take:success
+when Suggesting.take (suggestion, result.suggestion: taken), asked by Live.edits.Take:relay
 where
   earlier, RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
 then
   RequestBoundary.respond (requestId, suggestion: taken)
 ```
 
-### Live.edits.TakeAll:answer
+### Live.edits.Take:round
 
-Authored path: `Live.edits.TakeAll`.
+Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 84.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 95.
 
 ```reaction
-when RequestBoundary.request (offering, path: "/live/edits/take-all", requestId, session)
+when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-then
-  RequestBoundary.respond (requestId, taken: true)
-```
-
-### Live.edits.TakeAll:forbidden
-
-Authored path: `Live.edits.TakeAll`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 84.
-
-```reaction
-when RequestBoundary.request (offering, path: "/live/edits/take-all", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not host live runs" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Live.edits.TakeAll:take-each
-
-Authored path: `Live.edits.TakeAll`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 84.
-
-```reaction
-when RequestBoundary.request (offering, path: "/live/edits/take-all", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  Suggesting._pendingIn (offering) has (suggestion)
+  Suggesting._suggestion (suggestion) has (target)
+  Relaying._leg (leg: target) has (material: questionnaire)
+  view "(questionnaire) has no open run" with (questionnaire)
 then
   Suggesting.take (suggestion)
+```
+
+### Live.edits.Take:round#2
+
+Authored path: `Live.edits.Take`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 95.
+
+```reaction
+when Suggesting.take (suggestion, result.suggestion: taken), asked by Live.edits.Take:round
+where
+  earlier, RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
+then
+  RequestBoundary.respond (requestId, suggestion: taken)
+```
+
+### Live.edits.Take:run-open
+
+Authored path: `Live.edits.Take`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 95.
+
+```reaction
+when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Suggesting._suggestion (suggestion) has (target)
+  Relaying._leg (leg: target) has (material: questionnaire)
+  view "(questionnaire) has an open run" with (questionnaire)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
 ```
 
 ### Live.edits.TakenAddAddsRound
@@ -14610,6 +14699,41 @@ where
   Suggesting._suggestion (suggestion) has (subject: placed)
 then
   Relaying.addLeg (material: questionnaire, relay: placed)
+```
+
+### Live.edits.TakenAddAddsRound:drawn#5
+
+Authored path: `Live.edits.TakenAddAddsRound`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 13.
+
+```reaction
+when Relaying.addLeg (material: questionnaire, relay: placed, leg: added), asked by Live.edits.TakenAddAddsRound#4
+where
+  Relaying._leg (leg: added) has (relay: drawn)
+  Relaying._legs (relay: drawn) has (leg: source, position: from)
+  earlier, Suggesting.take (suggestion, kind: "add", value)
+  drawing is editRoundJson (value)
+  shape is editRoundTakesShape (round: drawing)
+  shape is among ["picked", "every", "top"]
+  from is editRoundTakesFrom (round: drawing)
+then
+  Relaying.draw (leg: added, shape, source)
+```
+
+### Live.edits.TakenAddAddsRound:placed#5
+
+Authored path: `Live.edits.TakenAddAddsRound`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 13.
+
+```reaction
+when Relaying.addLeg (material: questionnaire, relay: placed, leg: added), asked by Live.edits.TakenAddAddsRound#4
+where
+  earlier, Suggesting.take (suggestion, kind: "add", value)
+  landing is editRoundJson (value)
+  position is editRoundPosition (round: landing)
+  position is greater than 0
+then
+  Relaying.moveLeg (leg: added, position)
 ```
 
 ### Live.edits.TakenChoicesReviseRound
@@ -14761,7 +14885,7 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 45.
-- Covered by [Participation](../design/compositions/live/participation.md), line 86.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
@@ -14776,7 +14900,7 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 45.
-- Covered by [Participation](../design/compositions/live/participation.md), line 86.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
@@ -14792,7 +14916,7 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 45.
-- Covered by [Participation](../design/compositions/live/participation.md), line 86.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
@@ -14808,7 +14932,7 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 45.
-- Covered by [Participation](../design/compositions/live/participation.md), line 86.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
 
 ```reaction
 when Responding.answer (item: question, response, value, result.response: answered), asked by Live.participation.Answer:success
@@ -14822,7 +14946,7 @@ then
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 87.
+- Covered by [Participation](../design/compositions/live/participation.md), line 90.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/arrive", requestId, token)
@@ -14834,7 +14958,7 @@ then
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 87.
+- Covered by [Participation](../design/compositions/live/participation.md), line 90.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Arrive
@@ -14849,7 +14973,7 @@ then
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 87.
+- Covered by [Participation](../design/compositions/live/participation.md), line 90.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Arrive
@@ -14864,7 +14988,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 88.
+- Covered by [Participation](../design/compositions/live/participation.md), line 91.
 
 ```reaction
 when RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
@@ -14876,7 +15000,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 88.
+- Covered by [Participation](../design/compositions/live/participation.md), line 91.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -14891,7 +15015,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 88.
+- Covered by [Participation](../design/compositions/live/participation.md), line 91.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -14908,7 +15032,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 88.
+- Covered by [Participation](../design/compositions/live/participation.md), line 91.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -14925,7 +15049,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 88.
+- Covered by [Participation](../design/compositions/live/participation.md), line 91.
 
 ```reaction
 when Responding.begin (at, participant: device, subject: run, response), asked by Live.participation.Begin:open#2
@@ -14939,7 +15063,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 88.
+- Covered by [Participation](../design/compositions/live/participation.md), line 91.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -14957,7 +15081,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 88.
+- Covered by [Participation](../design/compositions/live/participation.md), line 91.
 
 ```reaction
 when Responding.begin (at, participant: device, subject: round, response), asked by Live.participation.Begin:round#2
@@ -14971,7 +15095,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/begin-signed", requestId, session, token)
@@ -14983,7 +15107,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -14998,7 +15122,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -15015,7 +15139,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -15033,7 +15157,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
 
 ```reaction
 when Responding.begin (at, participant: user, subject: run, response), asked by Live.participation.BeginSigned:open#2
@@ -15047,7 +15171,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -15066,7 +15190,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
 
 ```reaction
 when Responding.begin (at, participant: user, subject: round, response), asked by Live.participation.BeginSigned:round#2
@@ -15080,7 +15204,7 @@ then
 
 Authored path: `Live.participation.Locate`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 10.
-- Covered by [Participation](../design/compositions/live/participation.md), line 90.
+- Covered by [Participation](../design/compositions/live/participation.md), line 93.
 
 ```reaction
 when RequestBoundary.request (code, path: "/live/p/locate", requestId)
@@ -15092,7 +15216,7 @@ then
 
 Authored path: `Live.participation.Locate`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 10.
-- Covered by [Participation](../design/compositions/live/participation.md), line 90.
+- Covered by [Participation](../design/compositions/live/participation.md), line 93.
 
 ```reaction
 when Locating.locate (code, subject: run), asked by Live.participation.Locate
@@ -15106,8 +15230,8 @@ then
 ### Live.participation.Outcome:answers
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 61.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 64.
+- Covered by [Participation](../design/compositions/live/participation.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -15121,8 +15245,8 @@ then
 ### Live.participation.Outcome:explanations
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 61.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 64.
+- Covered by [Participation](../design/compositions/live/participation.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -15136,8 +15260,8 @@ then
 ### Live.participation.Outcome:in-progress
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 61.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 64.
+- Covered by [Participation](../design/compositions/live/participation.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -15150,8 +15274,8 @@ then
 ### Live.participation.Outcome:score
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 61.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 64.
+- Covered by [Participation](../design/compositions/live/participation.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -15165,8 +15289,8 @@ then
 ### Live.participation.Outcome:survey
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 61.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 64.
+- Covered by [Participation](../design/compositions/live/participation.md), line 94.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
@@ -15180,8 +15304,8 @@ then
 ### Live.participation.Submit:closed
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
+- Covered by [Participation](../design/compositions/live/participation.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
@@ -15195,8 +15319,8 @@ then
 ### Live.participation.Submit:quiz-incomplete
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
+- Covered by [Participation](../design/compositions/live/participation.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
@@ -15214,8 +15338,8 @@ then
 ### Live.participation.Submit:quiz-whole
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
+- Covered by [Participation](../design/compositions/live/participation.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
@@ -15234,8 +15358,8 @@ then
 ### Live.participation.Submit:quiz-whole#2
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
+- Covered by [Participation](../design/compositions/live/participation.md), line 95.
 
 ```reaction
 when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:quiz-whole
@@ -15248,8 +15372,8 @@ then
 ### Live.participation.Submit:survey
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
+- Covered by [Participation](../design/compositions/live/participation.md), line 95.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
@@ -15267,8 +15391,8 @@ then
 ### Live.participation.Submit:survey#2
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 52.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 55.
+- Covered by [Participation](../design/compositions/live/participation.md), line 95.
 
 ```reaction
 when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:survey
@@ -15281,7 +15405,7 @@ then
 ### Live.participation.SubmittedResponseIsGraded
 
 Authored path: `Live.participation.SubmittedResponseIsGraded`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 62.
 
 ```reaction
 when Responding.submit (response)
@@ -15296,8 +15420,8 @@ then
 ### Live.participation.Wall:in-progress
 
 Authored path: `Live.participation.Wall`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 76.
-- Covered by [Participation](../design/compositions/live/participation.md), line 93.
+- Covered by [Participation](../design/compositions/live/participation.md), line 79.
+- Covered by [Participation](../design/compositions/live/participation.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/wall", requestId, response)
@@ -15310,8 +15434,8 @@ then
 ### Live.participation.Wall:submitted
 
 Authored path: `Live.participation.Wall`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 76.
-- Covered by [Participation](../design/compositions/live/participation.md), line 93.
+- Covered by [Participation](../design/compositions/live/participation.md), line 79.
+- Covered by [Participation](../design/compositions/live/participation.md), line 96.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/wall", requestId, response)
@@ -16060,7 +16184,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 32.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
 
 ```reaction
 when RequestBoundary.request (cap, choices, parts, path: "/live/relays/add-round", prompt, relay, requestId, session, title)
@@ -16075,7 +16199,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 32.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
 
 ```reaction
 when RequestBoundary.request (cap, choices, parts, path: "/live/relays/add-round", prompt, relay, requestId, session, title)
@@ -16091,7 +16215,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 32.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
 
 ```reaction
 when RequestBoundary.request (cap, choices, parts, path: "/live/relays/add-round", prompt, relay, requestId, session, title)
@@ -16108,7 +16232,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 32.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
 
 ```reaction
 when Questioning.compose (at, author: user, disclosure: "score", form: "survey", title, questionnaire), asked by Live.relays.AddRound:success
@@ -16122,7 +16246,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 32.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
 
 ```reaction
 when Questioning.addQuestion (choices, expected: "", explanation: "", position: 1, prompt, questionnaire, question), asked by Live.relays.AddRound:success#2
@@ -16136,7 +16260,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 32.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
 
 ```reaction
 when Questioning.setParts (cap, parts, question), asked by Live.relays.AddRound:success#3
@@ -16151,7 +16275,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 32.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
 
 ```reaction
 when Relaying.addLeg (material: questionnaire, relay, leg, position), asked by Live.relays.AddRound:success#4
@@ -16166,7 +16290,7 @@ then
 
 Authored path: `Live.relays.ClearTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 33.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/clear-takes", requestId, session, source)
@@ -16181,7 +16305,7 @@ then
 
 Authored path: `Live.relays.ClearTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 33.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/clear-takes", requestId, session, source)
@@ -16197,7 +16321,7 @@ then
 
 Authored path: `Live.relays.ClearTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 33.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
 
 ```reaction
 when Relaying.undraw (leg, source, result.leg: cleared), asked by Live.relays.ClearTakes:success
@@ -16211,7 +16335,7 @@ then
 
 Authored path: `Live.relays.Close`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 34.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close", requestId, run, session)
@@ -16229,7 +16353,7 @@ then
 
 Authored path: `Live.relays.Close`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 34.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
 
 ```reaction
 when Publishing.close (at, edition: run, result.edition: closed), asked by Live.relays.Close:bare
@@ -16243,7 +16367,7 @@ then
 
 Authored path: `Live.relays.Close`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 34.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close", requestId, run, session)
@@ -16258,7 +16382,7 @@ then
 
 Authored path: `Live.relays.Close`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 34.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close", requestId, run, session)
@@ -16275,7 +16399,7 @@ then
 
 Authored path: `Live.relays.Close`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 34.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
 
 ```reaction
 when Publishing.close (at, edition: round, result.edition: closedRound), asked by Live.relays.Close:with-round
@@ -16289,7 +16413,7 @@ then
 
 Authored path: `Live.relays.Close`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 34.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
 
 ```reaction
 when Publishing.close (at, edition: run, result.edition: closed), asked by Live.relays.Close:with-round#2
@@ -16303,7 +16427,7 @@ then
 
 Authored path: `Live.relays.CloseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 35.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 44.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close-round", requestId, round, session)
@@ -16318,7 +16442,7 @@ then
 
 Authored path: `Live.relays.CloseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 35.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 44.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close-round", requestId, round, session)
@@ -16334,7 +16458,7 @@ then
 
 Authored path: `Live.relays.CloseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 35.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 44.
 
 ```reaction
 when Publishing.close (at, edition: round, result.edition: closed), asked by Live.relays.CloseRound:success
@@ -16348,7 +16472,7 @@ then
 
 Authored path: `Live.relays.Get`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 11.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 36.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/get", relay, requestId, session)
@@ -16363,7 +16487,7 @@ then
 
 Authored path: `Live.relays.Get`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 11.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 36.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/get", relay, requestId, session)
@@ -16379,7 +16503,7 @@ then
 
 Authored path: `Live.relays.Invite`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 46.
 
 ```reaction
 when RequestBoundary.request (device, path: "/live/relays/invite", requestId, run, session)
@@ -16394,7 +16518,7 @@ then
 
 Authored path: `Live.relays.Invite`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 46.
 
 ```reaction
 when RequestBoundary.request (device, path: "/live/relays/invite", requestId, run, session)
@@ -16410,7 +16534,7 @@ then
 
 Authored path: `Live.relays.Invite`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 46.
 
 ```reaction
 when RequestBoundary.request (device, path: "/live/relays/invite", requestId, run, session)
@@ -16428,7 +16552,7 @@ then
 
 Authored path: `Live.relays.Invite`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 46.
 
 ```reaction
 when Responding.begin (at, participant, subject: round, response), asked by Live.relays.Invite:success
@@ -16442,7 +16566,7 @@ then
 
 Authored path: `Live.relays.Launch`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 15.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 38.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/launch", relay, requestId, session)
@@ -16457,7 +16581,7 @@ then
 
 Authored path: `Live.relays.Launch`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 15.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 38.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/launch", relay, requestId, session)
@@ -16473,7 +16597,7 @@ then
 
 Authored path: `Live.relays.Launch`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 15.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 38.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/launch", relay, requestId, session)
@@ -16490,7 +16614,7 @@ then
 
 Authored path: `Live.relays.Launch`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 15.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 38.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
 
 ```reaction
 when Publishing.publish (at, author: user, material: relay, edition: run), asked by Live.relays.Launch:success
@@ -16502,7 +16626,7 @@ then
 
 Authored path: `Live.relays.Launch`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 15.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 38.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.relays.Launch:success#2
@@ -16514,7 +16638,7 @@ then
 
 Authored path: `Live.relays.Launch`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 15.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 38.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
 
 ```reaction
 when Locating.ensure (subject: run, code), asked by Live.relays.Launch:success#3
@@ -16529,7 +16653,7 @@ then
 
 Authored path: `Live.relays.List`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 11.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 48.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/list", requestId, session)
@@ -16544,7 +16668,7 @@ then
 
 Authored path: `Live.relays.List`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 11.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 48.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/list", requestId, session)
@@ -16560,7 +16684,7 @@ then
 
 Authored path: `Live.relays.MoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 40.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 49.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/move-round", position, requestId, session)
@@ -16575,7 +16699,7 @@ then
 
 Authored path: `Live.relays.MoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 40.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 49.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/move-round", position, requestId, session)
@@ -16591,7 +16715,7 @@ then
 
 Authored path: `Live.relays.MoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 40.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 49.
 
 ```reaction
 when Relaying.moveLeg (leg, position, result.leg: moved, result.position: placed), asked by Live.relays.MoveRound:success
@@ -16605,7 +16729,7 @@ then
 
 Authored path: `Live.relays.OpenRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 50.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -16630,7 +16754,7 @@ then
 
 Authored path: `Live.relays.OpenRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 50.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: round), asked by Live.relays.OpenRound:picked
@@ -16645,7 +16769,7 @@ then
 
 Authored path: `Live.relays.OpenRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 50.
 
 ```reaction
 when RoundLinking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:picked#2
@@ -16659,7 +16783,7 @@ then
 
 Authored path: `Live.relays.OpenRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 50.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -16682,7 +16806,7 @@ then
 
 Authored path: `Live.relays.OpenRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 50.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: round), asked by Live.relays.OpenRound:plain
@@ -16697,7 +16821,7 @@ then
 
 Authored path: `Live.relays.OpenRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 50.
 
 ```reaction
 when RoundLinking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:plain#2
@@ -16711,7 +16835,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -16735,7 +16859,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: round), asked by Live.relays.OpenRoundCarrying:every
@@ -16753,7 +16877,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when PickLinking.setLinks (source: carried, targets), asked by Live.relays.OpenRoundCarrying:every:every-pick#2
@@ -16769,7 +16893,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when RoundLinking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRoundCarrying:every:every-pick#3
@@ -16783,7 +16907,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: round), asked by Live.relays.OpenRoundCarrying:every
@@ -16801,7 +16925,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when PickLinking.setLinks (source: carried, targets), asked by Live.relays.OpenRoundCarrying:every:top-pick#2
@@ -16817,7 +16941,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when RoundLinking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRoundCarrying:every:top-pick#3
@@ -16831,7 +16955,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -16855,7 +16979,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: round), asked by Live.relays.OpenRoundCarrying:top
@@ -16873,7 +16997,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when PickLinking.setLinks (source: carried, targets), asked by Live.relays.OpenRoundCarrying:top:every-pick#2
@@ -16889,7 +17013,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when RoundLinking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRoundCarrying:top:every-pick#3
@@ -16903,7 +17027,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: round), asked by Live.relays.OpenRoundCarrying:top
@@ -16921,7 +17045,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when PickLinking.setLinks (source: carried, targets), asked by Live.relays.OpenRoundCarrying:top:top-pick#2
@@ -16937,7 +17061,7 @@ then
 
 Authored path: `Live.relays.OpenRoundCarrying`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 42.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```reaction
 when RoundLinking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRoundCarrying:top:top-pick#3
@@ -16951,7 +17075,7 @@ then
 
 Authored path: `Live.relays.OpenRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 52.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -16967,7 +17091,7 @@ then
 
 Authored path: `Live.relays.OpenRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 52.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -16982,7 +17106,7 @@ then
 
 Authored path: `Live.relays.OpenRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 52.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -16998,7 +17122,7 @@ then
 
 Authored path: `Live.relays.OpenRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 52.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -17021,7 +17145,7 @@ then
 
 Authored path: `Live.relays.OpenRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 52.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -17040,7 +17164,7 @@ then
 
 Authored path: `Live.relays.OpenRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 52.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -17058,7 +17182,7 @@ then
 
 Authored path: `Live.relays.OpenRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 17.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 52.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
@@ -17078,7 +17202,7 @@ then
 
 Authored path: `Live.relays.Plan`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 44.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 53.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/plan", requestId, session, title)
@@ -17093,7 +17217,7 @@ then
 
 Authored path: `Live.relays.Plan`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 44.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 53.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/plan", requestId, session, title)
@@ -17109,7 +17233,7 @@ then
 
 Authored path: `Live.relays.Plan`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 44.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 53.
 
 ```reaction
 when Relaying.plan (at, author: user, title, relay), asked by Live.relays.Plan:success
@@ -17123,7 +17247,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 45.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 54.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/remove-round", requestId, session)
@@ -17138,7 +17262,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 45.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 54.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/remove-round", requestId, session)
@@ -17155,7 +17279,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 45.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 54.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/remove-round", requestId, session)
@@ -17173,7 +17297,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 45.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 54.
 
 ```reaction
 when Relaying.removeLeg (leg, result.leg: removed, material), asked by Live.relays.RemoveRound:success
@@ -17185,7 +17309,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 45.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 54.
 
 ```reaction
 when Questioning.retire (questionnaire: material), asked by Live.relays.RemoveRound:success#2
@@ -17200,7 +17324,7 @@ then
 
 Authored path: `Live.relays.Retitle`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 46.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 55.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retitle", relay, requestId, session, title)
@@ -17215,7 +17339,7 @@ then
 
 Authored path: `Live.relays.Retitle`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 46.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 55.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retitle", relay, requestId, session, title)
@@ -17231,7 +17355,7 @@ then
 
 Authored path: `Live.relays.Retitle`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 46.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 55.
 
 ```reaction
 when Relaying.retitle (relay, title, result.relay: retitled), asked by Live.relays.Retitle:success
@@ -17245,7 +17369,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 56.
 
 ```reaction
 when RequestBoundary.request (cap, choices, leg, parts, path: "/live/relays/revise-round", prompt, requestId, session, title)
@@ -17263,7 +17387,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 56.
 
 ```reaction
 when Questioning.retitle (questionnaire, title), asked by Live.relays.ReviseRound
@@ -17279,7 +17403,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 56.
 
 ```reaction
 when Questioning.setParts (cap: 0, parts: [], question, result.question: held), asked by Live.relays.ReviseRound#2
@@ -17294,7 +17418,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 56.
 
 ```reaction
 when Questioning.reviseQuestion (choices, expected: "", explanation: "", position, prompt, question: held, result.question: revised), asked by Live.relays.ReviseRound#3
@@ -17308,7 +17432,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 56.
 
 ```reaction
 when Questioning.setParts (cap, parts, question: revised, result.question: again), asked by Live.relays.ReviseRound#4
@@ -17322,7 +17446,7 @@ then
 
 Authored path: `Live.relays.ReviseRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 48.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 57.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/revise-round", requestId, session)
@@ -17337,7 +17461,7 @@ then
 
 Authored path: `Live.relays.ReviseRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 48.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 57.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/revise-round", requestId, session)
@@ -17353,7 +17477,7 @@ then
 
 Authored path: `Live.relays.ReviseRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 48.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 57.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/revise-round", requestId, session)
@@ -17370,7 +17494,7 @@ then
 
 Authored path: `Live.relays.Run`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 21.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 49.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 58.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/run", requestId, run, session)
@@ -17385,7 +17509,7 @@ then
 
 Authored path: `Live.relays.Run`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 21.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 49.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 58.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/run", requestId, run, session)
@@ -17401,7 +17525,7 @@ then
 
 Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 50.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 59.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, shape, source)
@@ -17416,7 +17540,7 @@ then
 
 Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 50.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 59.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, shape, source)
@@ -17432,7 +17556,7 @@ then
 
 Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 50.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 59.
 
 ```reaction
 when Relaying.draw (leg, shape, source, draw), asked by Live.relays.SetTakes:success
@@ -17839,6 +17963,22 @@ then
   RoundReasoning.ask (about: round, at, passage, reasoner: "gemini-flash")
 ```
 
+### Live.walls.DescribePile:closed
+
+Authored path: `Live.walls.DescribePile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 21.
+- Covered by [The wall](../design/compositions/live/walls.md), line 91.
+
+```reaction
+when RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(pile) is on the wall of a closed run" with (pile)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
 ### Live.walls.DescribePile:forbidden
 
 Authored path: `Live.walls.DescribePile`.
@@ -17866,6 +18006,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  view "(pile) is not on the wall of a closed run" with (pile)
 then
   Piling.describeCategory (category: pile, description)
 ```
@@ -17899,6 +18040,22 @@ then
   RoundInsisting.giveUp (aim: round)
 ```
 
+### Live.walls.MergePile:closed
+
+Authored path: `Live.walls.MergePile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 9.
+- Covered by [The wall](../design/compositions/live/walls.md), line 92.
+
+```reaction
+when RequestBoundary.request (into, path: "/live/walls/merge-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(pile) is on the wall of a closed run" with (pile)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
 ### Live.walls.MergePile:forbidden
 
 Authored path: `Live.walls.MergePile`.
@@ -17926,6 +18083,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  view "(pile) is not on the wall of a closed run" with (pile)
 then
   Piling.mergeCategory (category: pile, into)
 ```
@@ -17942,6 +18100,22 @@ where
   earlier, RequestBoundary.request (into, path: "/live/walls/merge-pile", pile, requestId, session)
 then
   RequestBoundary.respond (pile: merged, requestId)
+```
+
+### Live.walls.MoveCard:closed
+
+Authored path: `Live.walls.MoveCard`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 9.
+- Covered by [The wall](../design/compositions/live/walls.md), line 93.
+
+```reaction
+when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(pile) is on the wall of a closed run" with (pile)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
 ### Live.walls.MoveCard:forbidden
@@ -17988,6 +18162,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   view "(pile) is a pile" with (pile)
+  view "(pile) is not on the wall of a closed run" with (pile)
 then
   Piling.assign (category: pile, item: card)
 ```
@@ -18004,6 +18179,22 @@ where
   earlier, RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
 then
   RequestBoundary.respond (card: assigned, pile, requestId)
+```
+
+### Live.walls.OpenPile:closed
+
+Authored path: `Live.walls.OpenPile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 9.
+- Covered by [The wall](../design/compositions/live/walls.md), line 94.
+
+```reaction
+when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is of a closed run" with (round)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
 ### Live.walls.OpenPile:forbidden
@@ -18033,6 +18224,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  view "(round) is not of a closed run" with (round)
 then
   Piling.ensureCategory (description: "", name, scope: round)
 ```
@@ -18065,6 +18257,22 @@ then
   RequestBoundary.respond (card: assigned, pile: category, requestId)
 ```
 
+### Live.walls.Pick:closed
+
+Authored path: `Live.walls.Pick`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 9.
+- Covered by [The wall](../design/compositions/live/walls.md), line 95.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/pick", piles, requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is of a closed run" with (round)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
 ### Live.walls.Pick:forbidden
 
 Authored path: `Live.walls.Pick`.
@@ -18092,6 +18300,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   no Publishing._edition (edition: round)
+  view "(round) is not of a closed run" with (round)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -18109,6 +18318,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   Publishing._edition (edition: round)
+  view "(round) is not of a closed run" with (round)
 then
   PickLinking.setLinks (source: round, targets: piles)
 ```
@@ -18186,6 +18396,22 @@ then
   RequestBoundary.respond (requestId, wall: former "the wall of (round) as (viewer) sees it" with (round, viewer: ""))
 ```
 
+### Live.walls.RenamePile:closed
+
+Authored path: `Live.walls.RenamePile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 9.
+- Covered by [The wall](../design/compositions/live/walls.md), line 97.
+
+```reaction
+when RequestBoundary.request (name, path: "/live/walls/rename-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(pile) is on the wall of a closed run" with (pile)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
 ### Live.walls.RenamePile:forbidden
 
 Authored path: `Live.walls.RenamePile`.
@@ -18213,6 +18439,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  view "(pile) is not on the wall of a closed run" with (pile)
 then
   Piling.renameCategory (category: pile, name)
 ```
@@ -18302,7 +18529,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run: round)
+  view "(round) is open on an open run" with (round)
   view "(round) has a card still in the tray" with (round)
   view "nothing is still out about (round)" with (round)
   no RoundInsisting._unsettledFor (aim: round)
@@ -18339,7 +18566,7 @@ when RequestBoundary.request (path: "/live/walls/sort", requestId, round, sessio
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  view "(run) is closed" with (run: round)
+  view "(round) is not open on an open run" with (round)
 then
   RequestBoundary.respond (asked: false, requestId)
 ```
@@ -18370,7 +18597,7 @@ when RequestBoundary.request (path: "/live/walls/sort", requestId, round, sessio
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run: round)
+  view "(round) is open on an open run" with (round)
   view "(round) has a card still in the tray" with (round)
   view "nothing is still out about (round)" with (round)
   RoundInsisting._unsettledFor (aim: round)
@@ -18389,7 +18616,7 @@ when RequestBoundary.request (path: "/live/walls/sort", requestId, round, sessio
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run: round)
+  view "(round) is open on an open run" with (round)
   view "(round) has every card in a pile" with (round)
 then
   RequestBoundary.respond (asked: false, requestId)
@@ -18406,7 +18633,7 @@ when RequestBoundary.request (path: "/live/walls/sort", requestId, round, sessio
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run: round)
+  view "(round) is open on an open run" with (round)
   view "(round) has a card still in the tray" with (round)
   view "an ask about (round) is still out" with (round)
 then
@@ -18439,6 +18666,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  view "(pile) is not on the wall of a closed run" with (pile)
   Piling._getCategoryDetail (category: pile) has (scope: round)
   Piling._categoriesWithItems (scope: round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
@@ -18459,6 +18687,22 @@ where
   earlier, RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
 then
   RequestBoundary.respond (asked: true, asking, requestId)
+```
+
+### Live.walls.Summarize:closed
+
+Authored path: `Live.walls.Summarize`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 21.
+- Covered by [The wall](../design/compositions/live/walls.md), line 99.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(pile) is on the wall of a closed run" with (pile)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
 ### Live.walls.Summarize:forbidden
@@ -18519,20 +18763,7 @@ where
   view "(round) is a round with a captured question" with (round)
   kind is among ["open"]
 then
-  Piling.ensureCategory (description: "", name: value, scope: round)
-```
-
-### Live.walls.TakenOpenMakesPile#2
-
-Authored path: `Live.walls.TakenOpenMakesPile`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 15.
-
-```reaction
-when Piling.ensureCategory (description: "", name: value, scope: round, category), asked by Live.walls.TakenOpenMakesPile
-where
-  earlier, Suggesting.take (suggestion, kind, target, value)
-then
-  Piling.assign (category, item: target)
+  Piling.file (item: target, name: value, scope: round)
 ```
 
 ### Live.walls.TakenPlaceAssignsCard
@@ -18548,6 +18779,22 @@ where
   kind is among ["place"]
 then
   Piling.assign (category: value, item: target)
+```
+
+### Live.walls.ToTray:closed
+
+Authored path: `Live.walls.ToTray`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 9.
+- Covered by [The wall](../design/compositions/live/walls.md), line 100.
+
+```reaction
+when RequestBoundary.request (card, path: "/live/walls/to-tray", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(card) is in a pile of a closed run" with (card)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
 ### Live.walls.ToTray:forbidden
@@ -18577,6 +18824,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  view "(card) is in no pile of a closed run" with (card)
 then
   Piling.unassign (item: card)
 ```
@@ -19839,7 +20087,6 @@ not listed here have no explicit input contract.
 - `/live/edits/draft` — requires `session`, `relay`, `request`
 - `/live/edits/offerings` — requires `session`, `relay`
 - `/live/edits/take` — requires `session`, `suggestion`
-- `/live/edits/take-all` — requires `session`, `offering`
 - `/live/p/answer` — requires `response`, `question`, `value`
 - `/live/p/arrive` — requires `token`
 - `/live/p/begin` — requires `token`, `device`

@@ -11,9 +11,12 @@ import { RoundStrip, RoundToken } from "@/components/live/round-token";
 import {
   modelCards,
   pickedPiles,
+  questionOf,
   type RelayRun,
   type RelayRunRound,
   roundStanding,
+  trayOf,
+  type Wall as WallShape,
 } from "@/components/live/rounds";
 import { Wall, type WallEdits } from "@/components/live/wall";
 import { PageContainer } from "@/components/page";
@@ -22,10 +25,17 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { fullTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** Fast enough that the room sees itself answer, slow enough to be polite. */
 const POLL_MS = 3_000;
+
+/** The switch is standing consent for a run, so it is kept where the run's own page finds it. */
+const SORTS_KEY = "commons-live-sorts:";
+
+/** The disabled Open button names the line that says why. */
+const REFUSAL_ID = "open-refusal";
 
 /** The disc on the primary button takes the button's own colour. */
 const ON_PRIMARY =
@@ -47,12 +57,17 @@ export function RelayRunBoard({
   const { session } = useAuth();
   const [shownLeg, setShownLeg] = useState<string | null>(null);
   const [modelSorts, setModelSorts] = useState(false);
+  const [askedFor, setAskedFor] = useState<string | null>(null);
+  const [invited, setInvited] = useState<{
+    round: string;
+    seats: number;
+  } | null>(null);
 
   const { data: relayData } = useQuery(
     session
       ? () => api["/live/relays/get"]({ relay: run.relay }).then(unwrap)
       : null,
-    [session, run.relay],
+    [session, run.relay, run],
   );
   const relay = relayData?.relay ?? null;
 
@@ -64,7 +79,17 @@ export function RelayRunBoard({
     shownLeg === null
       ? null
       : (run.rounds.find((round) => round.leg === shownLeg)?.round ?? null);
-  const shown = openRound ?? chosen ?? lastClosed(closed);
+  const next = run.rounds.find((round) => round.round === null) ?? null;
+  const take =
+    next === null
+      ? null
+      : (relay?.rounds.find((round) => round.leg === next.leg)?.takes[0] ??
+        null);
+  const source =
+    take === null
+      ? null
+      : (run.rounds.find((round) => round.leg === take.source) ?? null);
+  const shown = openRound ?? chosen ?? source?.round ?? lastClosed(closed);
 
   const {
     data: wallData,
@@ -77,6 +102,11 @@ export function RelayRunBoard({
     [session, shown, openRound],
   );
   const wall = wallData?.wall ?? null;
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the switch is standing consent the browser holds, which only a read can say
+    setModelSorts(recalledSorts(run.run));
+  }, [run.run]);
 
   useEffect(() => {
     if (!run.open) return;
@@ -92,26 +122,24 @@ export function RelayRunBoard({
 
   useEffect(() => {
     if (!modelSorts || openRound === null) return;
-    const timer = setInterval(() => {
-      void api["/live/walls/sort"]({ round: openRound });
-    }, POLL_MS);
-    return () => clearInterval(timer);
+    let live = true;
+    const sort = async () => {
+      const answer = await api["/live/walls/sort"]({ round: openRound });
+      if (!live || isApiError(answer)) return;
+      if (answer.asked) setAskedFor(openRound);
+    };
+    void sort();
+    const timer = setInterval(() => void sort(), POLL_MS);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
   }, [modelSorts, openRound]);
 
   const openEntry =
     run.rounds.find(
       (round) => round.round === openRound && round.round !== null,
     ) ?? null;
-  const next = run.rounds.find((round) => round.round === null) ?? null;
-  const take =
-    next === null
-      ? null
-      : (relay?.rounds.find((round) => round.leg === next.leg)?.takes[0] ??
-        null);
-  const source =
-    take === null
-      ? null
-      : (run.rounds.find((round) => round.leg === take.source) ?? null);
   const polled = wall === null ? [] : pickedPiles(wall);
   const [tapped, setTapped] = useState<{
     round: string;
@@ -166,17 +194,18 @@ export function RelayRunBoard({
               toast.success("Summarizing…");
             });
           },
-          togglePick: takesShown
-            ? (pile) => {
-                const piles = picks.includes(pile)
-                  ? picks.filter((one) => one !== pile)
-                  : [...picks, pile];
-                setTapped({ round: shown, piles });
-                void send(
-                  api["/live/walls/pick"]({ round: shown, piles }),
-                ).then(refetchWall);
-              }
-            : undefined,
+          togglePick:
+            takesShown && run.open
+              ? (pile) => {
+                  const piles = picks.includes(pile)
+                    ? picks.filter((one) => one !== pile)
+                    : [...picks, pile];
+                  setTapped({ round: shown, piles });
+                  void send(
+                    api["/live/walls/pick"]({ round: shown, piles }),
+                  ).then(refetchWall);
+                }
+              : undefined,
         };
 
   async function openNext() {
@@ -199,7 +228,13 @@ export function RelayRunBoard({
     if (await send(api["/live/relays/close"]({ run: run.run }))) refetch();
   }
 
+  function sortsChange(on: boolean) {
+    setModelSorts(on);
+    rememberSorts(run.run, on);
+  }
+
   async function invite(seats: number) {
+    const round = openRound;
     for (let seat = 0; seat < seats; seat += 1) {
       const taken = await send(
         api["/live/relays/invite"]({
@@ -207,11 +242,28 @@ export function RelayRunBoard({
           device: crypto.randomUUID(),
         }),
       );
-      if (!taken) return;
+      if (!taken) break;
+      if (round !== null)
+        setInvited((standing) => ({
+          round,
+          seats: (standing?.round === round ? standing.seats : 0) + 1,
+        }));
     }
     refetch();
     refetchWall();
   }
+
+  const participants = wall === null ? 0 : modelParticipants(wall);
+  const writing =
+    invited === null || invited.round !== openRound
+      ? 0
+      : Math.max(0, invited.seats - participants);
+  const sorting =
+    modelSorts &&
+    openRound !== null &&
+    askedFor === openRound &&
+    wall !== null &&
+    trayOf(wall.cards).length > 0;
 
   const refusal = refusalFor({
     open: run.open,
@@ -264,7 +316,11 @@ export function RelayRunBoard({
               destructive
               onConfirm={closeRun}
             />
-          ) : null}
+          ) : (
+            <span className="text-muted-foreground text-sm">
+              Closed {fullTime(run.closedAt)}
+            </span>
+          )}
         </div>
       </header>
 
@@ -321,7 +377,7 @@ export function RelayRunBoard({
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
           <div className="flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
-            {openEntry === null ? null : (
+            {!run.open || openEntry === null ? null : (
               <Button
                 size="lg"
                 className="w-full justify-start gap-2 pr-3.5 pl-4"
@@ -337,13 +393,14 @@ export function RelayRunBoard({
                 />
               </Button>
             )}
-            {next === null ? null : (
+            {!run.open || next === null ? null : (
               <Button
                 variant={openEntry === null ? "default" : "outline"}
                 size="lg"
                 className="w-full justify-between gap-3 pr-3.5 pl-4"
                 disabled={refusal !== null}
                 title={refusal ?? undefined}
+                aria-describedby={refusal === null ? undefined : REFUSAL_ID}
                 onClick={() => void openNext()}
               >
                 <span className="flex min-w-0 items-center gap-2">
@@ -363,26 +420,40 @@ export function RelayRunBoard({
                 ) : null}
               </Button>
             )}
-            {next === null || refusal === null || openEntry !== null ? null : (
-              <p className="text-muted-foreground text-xs">{refusal}</p>
+            {!run.open || next === null || refusal === null ? null : (
+              <p id={REFUSAL_ID} className="text-muted-foreground text-xs">
+                {refusal}
+              </p>
             )}
 
-            {next === null && openEntry === null ? null : (
+            {run.open && (next !== null || openEntry !== null) ? (
               <div className="h-px bg-border" />
-            )}
+            ) : null}
 
-            <Switch
-              on={modelSorts}
-              label="Model sorts"
-              onChange={setModelSorts}
-            />
-            <ModelRow
-              count={wall === null ? 0 : modelCards(wall)}
-              disabled={openRound === null}
-              onInvite={invite}
-            />
+            {run.open ? (
+              <>
+                <div className="flex items-center gap-2.5">
+                  <Switch
+                    on={modelSorts}
+                    label="Model sorts"
+                    onChange={sortsChange}
+                  />
+                  {sorting ? (
+                    <span className="text-muted-foreground text-xs">
+                      sorting…
+                    </span>
+                  ) : null}
+                </div>
+                <ModelRow
+                  count={participants}
+                  writing={writing}
+                  disabled={openRound === null}
+                  onInvite={invite}
+                />
 
-            <div className="h-px bg-border" />
+                <div className="h-px bg-border" />
+              </>
+            ) : null}
 
             <Button variant="outline" size="sm" className="self-start" asChild>
               <Link href={`/staff/live/relay/${run.relay}?draft=1`}>
@@ -391,7 +462,7 @@ export function RelayRunBoard({
             </Button>
           </div>
 
-          {run.token === null || run.code === null ? null : (
+          {!run.open || run.token === null || run.code === null ? null : (
             <div className="rounded-xl border border-border bg-card p-4">
               <JoinCode url={joinUrl(run.token)} code={run.code} />
             </div>
@@ -436,6 +507,32 @@ function Switch({
       {label}
     </button>
   );
+}
+
+function recalledSorts(run: string): boolean {
+  try {
+    return window.localStorage.getItem(SORTS_KEY + run) === "on";
+  } catch {
+    return false;
+  }
+}
+
+function rememberSorts(run: string, on: boolean): void {
+  try {
+    window.localStorage.setItem(SORTS_KEY + run, on ? "on" : "off");
+  } catch {
+    // A browser that refuses storage still sorts; it just starts each load off.
+  }
+}
+
+/** A model participant writes one card per box, so its seats are the cards over the boxes. */
+function modelParticipants(wall: WallShape): number {
+  const question = questionOf(wall);
+  const boxes =
+    question === null
+      ? 1
+      : Math.max(1, question.cap >= 2 ? question.cap : question.parts.length);
+  return Math.ceil(modelCards(wall) / boxes);
 }
 
 /** The closed round whose wall stands until another is shown or opened. */

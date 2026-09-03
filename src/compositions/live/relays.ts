@@ -351,22 +351,25 @@ export const theRoundPresentationTaking = former(
           prompt,
           expected,
           explanation,
+          position,
+        }),
+      )
+        .where(
+          compute(computations.oneBoxParts, { question }, parts),
+          compute(computations.oneBoxCap, { question }, cap),
+        )
+        .form({
+          item: question,
+          prompt,
+          choices: each(PickLinking._getLinks({ source: sourceRound }).is({ target: pile }))
+            .where(Piling._getCategoryDetail({ category: pile }).is({ name }))
+            .distinct(name),
+          expected,
+          explanation,
           parts,
           cap,
           position,
         }),
-      ).form({
-        item: question,
-        prompt,
-        choices: each(PickLinking._getLinks({ source: sourceRound }).is({ target: pile }))
-          .where(Piling._getCategoryDetail({ category: pile }).is({ name }))
-          .distinct(name),
-        expected,
-        explanation,
-        parts,
-        cap,
-        position,
-      }),
     }),
 ).optional();
 

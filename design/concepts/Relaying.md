@@ -41,7 +41,7 @@ a set of Draws with
 Rule: a title is trimmed first and is valid when it is nonblank and no longer than 200 characters.
 Rule: legs belong to their relay and stand in position order, contiguous from one; adding appends at the end, and removing closes the ranks behind what was removed.
 Rule: a draw's source stands earlier in the same relay than its leg, so a draw never points forward.
-Rule: at most one draw joins a leg to a source; drawing again on the same source sets the shape.
+Rule: a leg has at most one draw; drawing again sets its source and shape, so a leg draws on one leg at a time.
 Rule: a shape is a nonblank string; what a shape means — what the source produced and how much of it is carried — is the surrounding design's to say.
 Rule: moving a leg is refused when the order it would make has any draw pointing forward.
 Rule: a leg is removed only while nothing draws on it; its own draws go with it.
@@ -112,7 +112,7 @@ moveLeg (leg: Leg, position: Number) : return (leg: Leg, position: Number)
 draw (leg: Leg, source: Leg, shape: String) : return (draw: Draw)
   where leg and source exist, share a relay, source stands earlier than leg, and shape is nonblank
   then
-    set the draw of leg on source to shape, adding one when none stands
+    set leg's draw to source and shape, adding one when none stands
     return draw
   where leg does not exist or source does not exist
   then

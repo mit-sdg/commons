@@ -104,7 +104,7 @@ describe("the relay-drafting reply boundary", () => {
     });
     for (const line of lines) {
       expect(line.kind).toBe("add");
-      expect(JSON.parse(line.value)).not.toHaveProperty("takes");
+      expect(JSON.parse(line.value)).toHaveProperty("takes", { from: 0, shape: "" });
     }
   });
 
@@ -133,7 +133,7 @@ describe("the relay-drafting reply boundary", () => {
 });
 
 describe("the lines that turn the standing relay into the drafted one", () => {
-  test("a relay drafted as it already stands changes nothing", () => {
+  test("a relay drafted as it already stands offers one keep line", () => {
     const reply = relay([
       round(),
       round({
@@ -143,7 +143,56 @@ describe("the lines that turn the standing relay into the drafted one", () => {
         takes: { from: 1, shape: "picked" },
       }),
     ]);
-    expect(relayEditLines({ reply, legs, materials })).toEqual([]);
+    expect(relayEditLines({ reply, legs, materials })).toEqual([
+      { kind: "keep", target: "", value: "" },
+    ]);
+  });
+
+  test("rounds delivered with their numbers keep their identity: a swap is one move", () => {
+    const reply = relay([
+      round({
+        number: 2,
+        title: "The stranger",
+        prompt: "Which verb best fits the stranger?",
+        parts: ["answer"],
+      }),
+      round({ number: 1 }),
+    ]);
+    expect(relayEditLines({ reply, legs, materials })).toEqual([
+      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, shape: "" }) },
+      { kind: "move", target: "leg-2", value: "1" },
+    ]);
+  });
+
+  test("a numbered reply removes the standing round it no longer names and adds where a new one lands", () => {
+    const reply = relay([
+      round({ number: 0, title: "Warm-up", prompt: "How is the pace?", parts: [] }),
+      round({
+        number: 2,
+        title: "The stranger",
+        prompt: "Which verb best fits the stranger?",
+        parts: ["answer"],
+        takes: { from: 1, shape: "picked" },
+      }),
+    ]);
+    expect(relayEditLines({ reply, legs, materials })).toEqual([
+      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, shape: "" }) },
+      { kind: "remove", target: "leg-1", value: "" },
+      {
+        kind: "add",
+        target: "",
+        value: JSON.stringify({
+          title: "Warm-up",
+          prompt: "How is the pace?",
+          parts: [],
+          cap: 0,
+          choices: [],
+          takes: { from: 0, shape: "" },
+          position: 1,
+        }),
+      },
+      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 1, shape: "picked" }) },
+    ]);
   });
 
   test("a round within both reaches gives one line per changed field", () => {
@@ -166,7 +215,7 @@ describe("the lines that turn the standing relay into the drafted one", () => {
     ]);
   });
 
-  test("a drafted round past the relay's reach is added, without a takes line", () => {
+  test("a drafted round past the relay's reach is added, carrying its takes and where it lands", () => {
     const reply = relay([
       round(),
       round({
@@ -187,6 +236,8 @@ describe("the lines that turn the standing relay into the drafted one", () => {
           parts: [],
           cap: 0,
           choices: [],
+          takes: { from: 2, shape: "top" },
+          position: 3,
         }),
       },
     ]);
@@ -214,7 +265,7 @@ describe("reading one line back into what a concept takes", () => {
       choices: [],
     });
     const parsed = editRoundJson({ value });
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       title: "Why",
       prompt: "Why that one?",
       parts: ["one"],
@@ -229,7 +280,7 @@ describe("reading one line back into what a concept takes", () => {
   });
 
   test("an unreadable add line reads as an empty round, which Questioning refuses", () => {
-    expect(editRoundJson({ value: "nonsense" })).toEqual({
+    expect(editRoundJson({ value: "nonsense" })).toMatchObject({
       title: "",
       prompt: "",
       parts: [],

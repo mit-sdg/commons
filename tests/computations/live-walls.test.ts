@@ -162,7 +162,7 @@ describe("the lid", () => {
 describe("the model participant", () => {
   test("the passage names one box per part and seeds by the participant", () => {
     const passage = participantPassage({ value: presentation, participant: "model:d2" });
-    expect(passage).toContain("You are participant model:d2.");
+    expect(passage).toContain("You are participant model:d2, the student");
     expect(passage).toContain("q1#1 — First");
     expect(passage).toContain("q1#2 — Second");
   });

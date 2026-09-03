@@ -10,8 +10,13 @@ import {
   itemCountOf,
   QuestionCard as RoundQuestionCard,
 } from "@/components/live/phone-question";
+import { Card as AnswerCard } from "@/components/live/pile";
 import { Figure, RoundToken } from "@/components/live/round-token";
-import { standingOf, type Wall as WallShape } from "@/components/live/rounds";
+import {
+  choicesOf,
+  standingOf,
+  type Wall as WallShape,
+} from "@/components/live/rounds";
 import { Wall } from "@/components/live/wall";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -112,7 +117,8 @@ function writeProgress(
 /**
  * Committed answers go out one at a time per item, and an unchanged value is
  * never sent twice, so a blur landing on a write still in flight cannot
- * overtake it.
+ * overtake it. A write that did not land answers false; what to say about it,
+ * and what to do with the value on the screen, belongs to the screen.
  */
 function useAnswerSender(response: string | null) {
   const sent = useRef<Record<string, string>>({});
@@ -140,10 +146,9 @@ function useAnswerSender(response: string | null) {
             return true;
           }
         } catch {
-          // The same recovery sentence covers a transport failure and a
-          // refusal: the local draft remains available for another attempt.
+          // A transport failure and a refusal come to the same thing here: the
+          // value is not on the server, and the local draft still holds it.
         }
-        toast.error("That answer was not saved. Try again.");
         return false;
       });
       pending.current[question] = write;
@@ -333,6 +338,7 @@ export default function ParticipantPage() {
   const answer = useCallback(
     (question: string, value: string) => {
       if (response === null || participant === null) return;
+      const held = answers[question] ?? "";
       const next = { ...answers, [question]: value };
       setAnswers(next);
       writeProgress(token, participant, {
@@ -340,7 +346,18 @@ export default function ParticipantPage() {
         answers: next,
         submitted: false,
       });
-      void persistAnswer(question, value);
+      void persistAnswer(question, value).then((saved) => {
+        if (saved) return;
+        // A refused answer must not stand on the screen as one that landed.
+        const back = { ...next, [question]: held };
+        setAnswers(back);
+        writeProgress(token, participant, {
+          response,
+          answers: back,
+          submitted: false,
+        });
+        toast.error("That answer didn't save. Try again.");
+      });
     },
     [response, participant, answers, token, persistAnswer],
   );
@@ -399,7 +416,10 @@ export default function ParticipantPage() {
         const trimmed = value.trim();
         if (trimmed === "") continue;
         const saved = await persistAnswer(question, trimmed);
-        if (!saved) return;
+        if (!saved) {
+          toast.error("That answer didn't save. Try again.");
+          return;
+        }
       }
       const result = await api["/live/p/submit"]({ response });
       if (isApiError(result)) {
@@ -611,6 +631,11 @@ function Shell({
   );
 }
 
+/** Where the phone stands, in one line, when it has no round to answer. */
+function Line({ children }: { children: React.ReactNode }) {
+  return <p className="py-16 text-center text-muted-foreground">{children}</p>;
+}
+
 /** A response is per round, so each round keeps its own slot on the device. */
 function roundSlot(participant: string, round: string): string {
   return `${participant}:${round}`;
@@ -640,7 +665,10 @@ function RelayPhone({
   const [response, setResponse] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [refused, setRefused] = useState(false);
+  /** The round whose begin was refused, kept only while that round stands. */
+  const [refusedRound, setRefusedRound] = useState<string | null>(null);
+  /** What the last refusal was, said in one line over the answer form. */
+  const [refusal, setRefusal] = useState<string | null>(null);
   const [wall, setWall] = useState<WallShape | null>(null);
   const [busy, setBusy] = useState(false);
   const { persistAnswer, forget } = useAnswerSender(response);
@@ -656,7 +684,8 @@ function RelayPhone({
     setResponse(stored?.response ?? null);
     setAnswers(stored?.answers ?? {});
     setSubmitted(stored?.submitted ?? false);
-    setRefused(false);
+    setRefusedRound(null);
+    setRefusal(null);
     setWall(null);
 
     forget();
@@ -668,7 +697,7 @@ function RelayPhone({
           : await api["/live/p/begin"]({ token, device: deviceId() });
         if (held.current !== round) return;
         if (isApiError(result)) {
-          setRefused(true);
+          setRefusedRound(round);
           await refresh();
           return;
         }
@@ -684,11 +713,12 @@ function RelayPhone({
     })();
   }, [token, participant, round, runOpen, signedIn, forget, refresh]);
 
-  // The next round opening is what the phone watches for.
+  // The next round opening is what the phone watches for; a closed run opens none.
   useEffect(() => {
+    if (!runOpen) return;
     const timer = setInterval(() => void refresh(), ROUND_POLL_MS);
     return () => clearInterval(timer);
-  }, [refresh]);
+  }, [refresh, runOpen]);
 
   // After hand-in the wall shows where the answer landed, until the next round opens.
   useEffect(() => {
@@ -734,47 +764,95 @@ function RelayPhone({
 
   const answer = useCallback(
     (item: string, value: string) => {
+      const before = answers[item] ?? "";
       const next = { ...answers, [item]: value };
       setAnswers(next);
       remember(next, false);
-      void persistAnswer(item, value);
+      setRefusal(null);
+      void persistAnswer(item, value).then((saved) => {
+        if (saved) return;
+        // A refused answer must not stand on the screen as one that landed.
+        const back = { ...next, [item]: before };
+        setAnswers(back);
+        remember(back, false);
+        setRefusal("That answer didn't save. Try again.");
+      });
     },
     [answers, remember, persistAnswer],
   );
 
+  /**
+   * A refused hand-in settles which refusal it was. The wall answers only for
+   * a response that is in, so it is the receipt: it tells a second tab of one
+   * phone that the first tab already handed this very response in. Anything
+   * else leaves the round to say whether there is still a form to hand in.
+   */
+  const settle = useCallback(async () => {
+    if (response === null) return;
+    try {
+      const standing = await api["/live/p/wall"]({ response });
+      if (!isApiError(standing) && standing.wall !== null) {
+        setSubmitted(true);
+        setWall(standing.wall);
+        remember(answers, true);
+        return;
+      }
+    } catch {
+      // Out of reach is not refused; the line stands until a hand-in lands.
+    }
+    setRefusal("That didn't hand in. Try again.");
+    await refresh();
+  }, [response, answers, remember, refresh]);
+
   const handIn = useCallback(async () => {
     if (response === null) return;
     setBusy(true);
+    setRefusal(null);
     try {
       // Hand-in flushes anything typed but not yet committed by a blur.
       for (const [item, value] of Object.entries(answers)) {
         const trimmed = value.trim();
         if (trimmed === "") continue;
         const saved = await persistAnswer(item, trimmed);
-        if (!saved) return;
+        if (!saved) {
+          await settle();
+          return;
+        }
       }
       const result = await api["/live/p/submit"]({ response });
       if (isApiError(result)) {
-        toast.error("Could not hand in. Try again.");
-        await refresh();
+        await settle();
         return;
       }
       setSubmitted(true);
       remember(answers, true);
     } catch {
-      toast.error("Could not hand in. Try again.");
+      await settle();
     } finally {
       setBusy(false);
     }
-  }, [response, answers, persistAnswer, remember, refresh]);
+  }, [response, answers, persistAnswer, remember, settle]);
 
   const openRound = relay.rounds.find(
     (candidate) => candidate.round !== null && candidate.open === true,
   );
   const nextRound = relay.rounds.find((candidate) => candidate.round === null);
   const questions = relay.questions;
-  const handedIn = submitted || refused;
+  // Begin answers the same response over again; it refuses only a participant
+  // already handed in. Refused against a round still open, it says: you are in.
+  const handedIn =
+    submitted || (refusedRound !== null && refusedRound === round);
   const answering = !handedIn && runOpen && round !== null && response !== null;
+  // A round that closes before this phone hands in takes its answers with it:
+  // nothing it wrote became a card, so the round leaves it only the word that
+  // it closed. What was handed in stands, on the wall the phone keeps reading.
+  const missed = round === null && response !== null && !submitted;
+  // A vote wall carries bars, not cards, so the choice this phone cast has
+  // nowhere to stand on it but here.
+  const voted =
+    wall !== null && choicesOf(wall).length > 0
+      ? wall.cards.find((card) => card.mine)
+      : undefined;
 
   return (
     <Shell>
@@ -822,6 +900,12 @@ function RelayPhone({
                 className="size-10 text-muted-foreground"
               />
               <h2 className="font-display text-lg font-semibold">Handed in</h2>
+              {voted === undefined ? null : <AnswerCard card={voted} />}
+              {runOpen ? null : (
+                <p className="text-muted-foreground text-sm">
+                  The run is closed.
+                </p>
+              )}
             </div>
             {wall !== null ? (
               <>
@@ -830,24 +914,31 @@ function RelayPhone({
               </>
             ) : null}
           </>
+        ) : missed ? (
+          <Line>The round closed before you handed in.</Line>
         ) : !runOpen ? (
-          <p className="py-16 text-center text-muted-foreground">Closed</p>
+          <Line>The run is closed.</Line>
         ) : round === null ? (
-          <p className="py-16 text-center text-muted-foreground">
-            Next round soon
-          </p>
+          <Line>Next round soon</Line>
         ) : response === null ? (
           <LoadingState label="Opening…" />
         ) : (
-          questions.map((question) => (
-            <RoundQuestionCard
-              key={question.question}
-              question={question}
-              answers={answers}
-              onAnswer={answer}
-              onDraft={draft}
-            />
-          ))
+          <>
+            {refusal === null ? null : (
+              <p role="alert" className="text-destructive text-sm">
+                {refusal}
+              </p>
+            )}
+            {questions.map((question) => (
+              <RoundQuestionCard
+                key={question.question}
+                question={question}
+                answers={answers}
+                onAnswer={answer}
+                onDraft={draft}
+              />
+            ))}
+          </>
         )}
       </div>
 
@@ -911,7 +1002,9 @@ function QuestionCard({
           </div>
         ) : (
           // The field stays uncontrolled — typing drafts, blur commits — so
-          // nothing has to be synced from props into state during render.
+          // nothing has to be synced from props into state during render. Every
+          // blur commits: the draft it would compare against is the same state
+          // typing just wrote, and the sender knows what it has already sent.
           <Input
             className="h-11"
             dir="auto"
@@ -922,7 +1015,7 @@ function QuestionCard({
               const next = event.currentTarget.value.trim();
               if (next === "") return;
               event.currentTarget.value = next;
-              if (next !== value) onAnswer(next);
+              onAnswer(next);
             }}
           />
         )}

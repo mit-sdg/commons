@@ -165,24 +165,27 @@ describe("the relay editing loop", () => {
       parts: ["one", "two", "three"],
       cap: 0,
       choices: [],
+      takes: { from: 0, shape: "" },
+      position: 1,
+    });
+    expect(JSON.parse(offering.lines[1].value)).toMatchObject({
+      takes: { from: 1, shape: "picked" },
+      position: 2,
     });
 
-    // Each add line is taken on its own; see content/issues/open for what a
-    // take-all carrying several of them does.
     for (const line of offering.lines) {
       await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie);
     }
     const built = await until(
       () => rounds(edge, cookie, relay),
-      (all) => all.length === 2,
+      (all) => all.length === 2 && all[1].takes.length === 1,
     );
     expect(built.map((round) => round.title)).toEqual(["Three verbs", "The stranger"]);
     expect(built.map((round) => round.number)).toEqual([1, 2]);
     expect(built[0].parts).toEqual(["one", "two", "three"]);
     expect(built[0].prompt).toBe("Name three verbs from the passage.");
     expect(built[1].parts).toEqual(["answer"]);
-    // An added round carries no takes line; what it takes is set afterward.
-    expect(built[1].takes).toEqual([]);
+    expect(built[1].takes).toEqual([{ source: built[0].leg, sourceNumber: 1, shape: "picked" }]);
 
     const settled = await until(
       () => offerings(edge, cookie, relay),
@@ -190,8 +193,7 @@ describe("the relay editing loop", () => {
     );
     expect(settled[0].lines.every((line) => line.standing === "taken")).toBe(true);
 
-    // Drafted again, the same two rounds keep their identities and only the
-    // takes the second round is missing are offered.
+    // Drafted again unchanged, the relay as it stands is offered as one keep line.
     const second = await draft(
       edge,
       cookie,
@@ -199,17 +201,28 @@ describe("the relay editing loop", () => {
       "Two rounds: three verbs from the passage, then the stranger.",
       1,
     );
-    expect(second.lines.map((line) => line.kind)).toEqual(["takes"]);
-    expect(second.lines[0].target).toBe(built[1].leg);
-    expect(JSON.parse(second.lines[0].value)).toEqual({ from: 1, shape: "picked" });
+    expect(second.lines.map((line) => line.kind)).toEqual(["keep"]);
 
-    await post(edge, "/live/edits/take-all", { offering: second.offering }, cookie);
-    const drawn = await until(
+    // Delivered the other way about with their numbers kept, the two rounds
+    // are offered as one move and the takes the stranger drops; taking the
+    // move reorders the standing rounds rather than rewriting them.
+    const third = await draft(edge, cookie, relay, "Swap the two rounds.", 2);
+    expect(third.lines.map((line) => [line.kind, line.target])).toEqual([
+      ["takes", built[1].leg],
+      ["move", built[1].leg],
+    ]);
+    for (const line of third.lines) {
+      await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie);
+    }
+    const swapped = await until(
       () => rounds(edge, cookie, relay),
-      (all) => all[1].takes.length === 1,
+      (all) => all[0].title === "The stranger",
     );
-    expect(drawn[1].takes).toEqual([{ source: built[0].leg, sourceNumber: 1, shape: "picked" }]);
-    expect(drawn.map((round) => round.title)).toEqual(["Three verbs", "The stranger"]);
+    expect(swapped.map((round) => [round.leg, round.number])).toEqual([
+      [built[1].leg, 1],
+      [built[0].leg, 2],
+    ]);
+    expect(swapped[0].takes).toEqual([]);
   });
 
   test("a round drafted again is revised in place, and a declined line changes nothing", async () => {

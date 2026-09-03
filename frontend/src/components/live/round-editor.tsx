@@ -3,7 +3,6 @@
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { RUN_OPEN_MESSAGE } from "@/components/live/quiz-meta";
 import {
   RoundToken,
   shapeWords,
@@ -120,7 +119,8 @@ export function RoundEditor({
       choices: wanted.choices,
     });
     setBusy(false);
-    if (report(result, RUN_OPEN_MESSAGE)) onChanged();
+    if (report(result, "This round is in the run. It stays as it is."))
+      onChanged();
   }
 
   function change(next: Partial<Draft>, write = false) {
