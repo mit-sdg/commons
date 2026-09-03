@@ -1,3 +1,4 @@
+import { adoptLinkingStore } from "../../src/migrations/20260902T000200-adopt-linking-store.ts";
 import type { Db } from "mongodb";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { MongoAuthenticatingConcept } from "../../src/concepts/authenticating/authenticating.mongo.ts";
@@ -211,15 +212,56 @@ describe("migrating a database written before this release", () => {
     expect(messages.length).toBeGreaterThan(0);
     expect(await ledgerOf(database).countDocuments({})).toBe(commonsMigrations.length);
 
-    // Every migration is recorded, so a restart does no work and logs nothing.
+    // Every migration is recorded, so a restart does no work and says so once.
     const second: string[] = [];
     await runMigrations(database, commonsMigrations, (message) => second.push(message));
-    expect(second).toEqual([]);
+    expect(second).toEqual(["commons: no migrations pending."]);
 
     // And an empty database is simply already correct.
     const fresh = await testDb();
     await runMigrations(fresh, commonsMigrations, silent);
     expect(await ledgerOf(fresh).countDocuments({})).toBe(commonsMigrations.length);
+  });
+
+  test("drafting-brief links move to AdoptLinking's store, a row already there is kept, and new links sequence after the moved", async () => {
+    const database = await testDb();
+    type LinkDoc = { _id: string; targets: string[]; seq: number };
+    const links = database.collection<LinkDoc>("linking.links");
+    const adoptLinks = database.collection<LinkDoc>("adoptLinking.links");
+    await database
+      .collection<{ _id: string }>("drafting.briefs")
+      .insertMany([{ _id: "brief-1" }, { _id: "brief-2" }]);
+    await links.insertMany([
+      { _id: "post-1", targets: ["post-2"], seq: 1 },
+      { _id: "brief-1", targets: ["questionnaire-1"], seq: 7 },
+      { _id: "brief-2", targets: ["questionnaire-2-old"], seq: 3 },
+    ]);
+    await adoptLinks.insertOne({ _id: "brief-2", targets: ["questionnaire-2-new"], seq: 9 });
+
+    const outcome = await adoptLinkingStore.up(database);
+    expect(outcome.summary).toContain("moved 1");
+    expect(outcome.summary).toContain("1 already there kept");
+    expect(await links.find({}).toArray()).toEqual([
+      { _id: "post-1", targets: ["post-2"], seq: 1 },
+    ]);
+    expect(await adoptLinks.findOne({ _id: "brief-1" })).toEqual({
+      _id: "brief-1",
+      targets: ["questionnaire-1"],
+      seq: 7,
+    });
+    expect(await adoptLinks.findOne({ _id: "brief-2" })).toEqual({
+      _id: "brief-2",
+      targets: ["questionnaire-2-new"],
+      seq: 9,
+    });
+    expect(
+      await database
+        .collection<{ _id: string; value: number }>("adoptLinking.counters")
+        .findOne({ _id: "links" }),
+    ).toEqual({
+      _id: "links",
+      value: 7,
+    });
   });
 
   test("every migration is idempotent, because the ledger is an optimisation rather than a guarantee", async () => {

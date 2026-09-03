@@ -41,6 +41,18 @@ filesystem; MongoDB data, credential rotation, and backups remain platform
 responsibilities. Route public traffic only to the declared application port.
 The backend loopback port is internal and must not be published.
 
+## Migrations on first start
+
+Startup runs the pending migrations under `src/migrations/` against the
+database before the edge accepts traffic, and records each one it applied.
+This release carries two that rewrite stored rows: the forum's categories
+take a `forum` scope, and drafting-brief links move out of the shared
+Linking store into AdoptLinking's own. Both are forward-only. Take a backup
+before the first start of this release. A rollback to the previous build
+writes rows in the old shape that a later redeploy does not revisit, because
+the migrations are already recorded as applied; restore the backup instead
+of rolling forward over such rows.
+
 The public health endpoint checks backend readiness on every request, and backend
 readiness includes a MongoDB operation:
 

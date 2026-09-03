@@ -22,10 +22,31 @@ export const adoptLinkingStore: Migration = {
     );
     const moving = (await links.find({}).toArray()).filter((row) => briefIds.has(row._id));
     if (moving.length === 0) return { summary: "no drafting-brief links in the shared store" };
-    for (const row of moving) {
-      await adoptLinks.updateOne({ _id: row._id }, { $set: row }, { upsert: true });
+    // A row already at the destination is the newer one; it stays as it is.
+    const settled = new Set(
+      (
+        await adoptLinks
+          .find({ _id: { $in: moving.map((row) => row._id) } }, { projection: { _id: 1 } })
+          .toArray()
+      ).map((row) => row._id),
+    );
+    const moved = moving.filter((row) => !settled.has(row._id));
+    for (const row of moved) {
+      await adoptLinks.insertOne(row);
+    }
+    // New links sequence after every row that moved, so back-links keep their order.
+    const highest = Math.max(0, ...moved.map((row) => row.seq));
+    if (highest > 0) {
+      await database
+        .collection<{ _id: string; value: number }>("adoptLinking.counters")
+        .updateOne({ _id: "links" }, { $max: { value: highest } }, { upsert: true });
     }
     await links.deleteMany({ _id: { $in: moving.map((row) => row._id) } });
-    return { summary: `moved ${moving.length} drafting-brief link(s) to AdoptLinking's store` };
+    const kept = moving.length - moved.length;
+    return {
+      summary:
+        `moved ${moved.length} drafting-brief link(s) to AdoptLinking's store` +
+        (kept === 0 ? "" : `, ${kept} already there kept`),
+    };
   },
 };
