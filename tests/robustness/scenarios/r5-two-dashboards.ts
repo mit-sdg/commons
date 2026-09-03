@@ -335,7 +335,7 @@ try {
 
   // Between the rounds: forty seats invited from A, which is forty requests.
   await laptopA.setViewportSize({ width: 1440, height: 900 });
-  await laptopA.getByRole("textbox", { name: "Model participants" }).fill(String(SEATS));
+  await laptopA.getByRole("textbox", { name: "Seats to invite" }).fill(String(SEATS));
   const took = await log.timed(
     `${SEATS} seats invited from laptop A`,
     async () => {
