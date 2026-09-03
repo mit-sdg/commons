@@ -49,7 +49,7 @@ export function Spread({
             variant="ghost"
             size={big || phone ? "icon-lg" : "icon-sm"}
             aria-label={`Spread ${name}`}
-            className="text-muted-foreground"
+            className="text-muted-foreground max-sm:size-10"
           >
             <Maximize2 className={big ? "size-6" : undefined} />
           </Button>

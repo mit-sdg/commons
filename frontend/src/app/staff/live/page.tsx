@@ -454,7 +454,7 @@ function RetiredEntry({
     <LiveRow
       live={false}
       stateColumn={stateColumn}
-      className="opacity-60"
+      className="opacity-80"
       middle={
         rounds.length === 0 ? null : (
           <RoundStrip

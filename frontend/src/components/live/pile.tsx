@@ -467,6 +467,7 @@ export function Pile({
               type="button"
               variant="outline"
               size={phone ? "sm" : "xs"}
+              className="max-sm:h-9 max-sm:px-3"
               aria-label={`Summarize ${name}`}
               onClick={onSummarize}
             >
