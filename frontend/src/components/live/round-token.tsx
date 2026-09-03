@@ -101,11 +101,14 @@ export function TakesChip({
   from,
   shape,
   size = "md",
+  standing = "done",
   className,
 }: {
   from: number;
   shape: string;
   size?: "md" | "lg";
+  /** The source's disc: filled once it ran, outlined on a relay only written. */
+  standing?: "done" | "plain";
   className?: string;
 }) {
   return (
@@ -121,7 +124,10 @@ export function TakesChip({
       from
       <span
         className={cn(
-          "inline-flex flex-none items-center justify-center rounded-full bg-foreground font-mono text-background",
+          "inline-flex flex-none items-center justify-center rounded-full font-mono",
+          standing === "done"
+            ? "bg-foreground text-background"
+            : "border-[1.5px] border-foreground text-foreground",
           size === "lg" ? "size-6 text-xs" : "size-[18px] text-[10px]",
         )}
       >

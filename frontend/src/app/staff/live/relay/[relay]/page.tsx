@@ -273,6 +273,7 @@ function RoundCard({ round }: { round: RelayRound }) {
           <TakesChip
             from={takes.sourceNumber}
             shape={takes.shape}
+            standing="plain"
             className="self-start"
           />
         )}
