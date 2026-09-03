@@ -25,6 +25,51 @@ const typedLinks = (source: string) =>
     ),
   ].map(([, kind, name]) => ({ kind, name }));
 
+describe("a concept registered under two names", () => {
+  test("reaches a floor that reads the name and keeps its own collections", async () => {
+    const conceptSet = readFileSync(join(root, "src/concepts.ts"), "utf8");
+    const registrations = [...conceptSet.matchAll(/^  (\w+): (\w+),$/gm)].map(
+      ([, name, module]) => ({
+        name,
+        module,
+      }),
+    );
+    const byModule = new Map<string, string[]>();
+    for (const { name, module } of registrations) {
+      byModule.set(module, [...(byModule.get(module) ?? []), name]);
+    }
+    const shared = [...byModule].filter(([, names]) => names.length > 1);
+    expect(shared.length).toBeGreaterThan(0);
+
+    for (const [module, names] of shared) {
+      const registry = (await import(join(conceptsRoot, module, "registry.ts"))) as Record<
+        string,
+        { floors: { mongo: (deps: { database: unknown }, instance: string) => unknown } }
+      >;
+      const concept = registry[module];
+      expect(concept, module).toBeDefined();
+      const collectionsOf = (instance: string) => {
+        const seen: string[] = [];
+        const database = { collection: (name: string) => (seen.push(name), {}) };
+        concept!.floors.mongo({ database }, instance);
+        return seen;
+      };
+      const perName = names.map((name) => [name, collectionsOf(name)] as const);
+      for (const [name, collections] of perName) {
+        expect(collections.length, `${module} as ${name}`).toBeGreaterThan(0);
+        for (const [other, theirs] of perName) {
+          if (other === name) continue;
+          for (const collection of collections) {
+            expect(theirs, `${module}: ${name} and ${other} share ${collection}`).not.toContain(
+              collection,
+            );
+          }
+        }
+      }
+    }
+  });
+});
+
 describe("application-owned design integration", () => {
   test("every authored concept is registered through the concept-set module", () => {
     const conceptSet = readFileSync(join(root, "src/concepts.ts"), "utf8");

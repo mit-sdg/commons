@@ -154,6 +154,8 @@ function RelayOverviewContent() {
       />
 
       <div className="max-w-4xl space-y-8">
+        <BeforeClass />
+
         <section className="space-y-3">
           <h2 className="font-display text-xl font-semibold">
             Rounds{" "}
@@ -225,6 +227,77 @@ function ranWords(rounds: { figure: { handedIn: number | null } }[]): string {
 }
 
 /** One round as it stands: what it asks, what it offers, and what it takes. */
+/** Whether the lecturer left the fold open, remembered in this browser. */
+const BEFORE_CLASS_KEY = "live.before-class";
+
+/** What to do on the day, one line each, in the room's words. */
+const BEFORE_CLASS = [
+  "Launch. Open Project on the room's screen.",
+  "Read the code aloud. The room joins at the address under it.",
+  "Open round 1. Turn on Model sorts, or drag cards into piles.",
+  "Close the round. Tap the piles to carry, then open the next round.",
+  "Close the run when the room is done. The walls stay.",
+];
+
+function recalledBeforeClass(): boolean {
+  try {
+    return window.localStorage.getItem(BEFORE_CLASS_KEY) === "open";
+  } catch {
+    // A browser that refuses storage starts closed.
+    return false;
+  }
+}
+
+/**
+ * One row, closed until tapped, and the choice kept so a lecturer who knows
+ * the app never meets it twice.
+ */
+function BeforeClass() {
+  const [open, setOpen] = useState(recalledBeforeClass);
+
+  function toggle() {
+    const next = !open;
+    setOpen(next);
+    try {
+      window.localStorage.setItem(BEFORE_CLASS_KEY, next ? "open" : "closed");
+    } catch {
+      // The choice lasts the page.
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-border bg-card">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="before-class"
+        onClick={toggle}
+        className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left font-medium outline-none hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      >
+        Before class
+        <ChevronRight
+          aria-hidden
+          className={`size-4 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
+        />
+      </button>
+      <ol
+        id="before-class"
+        hidden={!open}
+        className="flex flex-col gap-2 border-border border-t px-4 pt-3 pb-4 text-sm"
+      >
+        {BEFORE_CLASS.map((line, index) => (
+          <li key={line} className="flex gap-3">
+            <span className="w-4 flex-none font-mono text-muted-foreground">
+              {index + 1}
+            </span>
+            {line}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 function RoundCard({ round }: { round: RelayRound }) {
   const takes = round.takes[0];
   return (
