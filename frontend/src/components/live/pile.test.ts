@@ -30,6 +30,16 @@ describe("the cards a pile shows on its face", () => {
     expect(names(faceCards(cards, true))).toEqual(["mine", "d", "c"]);
   });
 
+  test("shows the cards that landed last when the wall says when they landed", () => {
+    const cards = [card("a"), card("b"), card("c"), card("d")];
+    const landedAt: Record<string, number> = { a: 4, c: 3 };
+    expect(names(faceCards(cards, false, (id) => landedAt[id] ?? 0))).toEqual([
+      "a",
+      "c",
+      "d",
+    ]);
+  });
+
   test("leaves the holder's own cards out where they are nobody's", () => {
     const cards = [card("a"), card("mine", true), card("c")];
     expect(names(faceCards(cards, false))).toEqual(["c", "mine", "a"]);

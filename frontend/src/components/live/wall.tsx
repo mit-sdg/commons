@@ -55,11 +55,10 @@ const PROJECTED_GAP = 28;
 const PROJECTED_ROWS = 3;
 const PROJECTED_COLUMNS = 8;
 
-/** The least a pile stands on the projector: across, down, packed down, and alone in its row. */
+/** The least a pile stands on the projector: across, down, and packed down. */
 const PROJECTED_LEAST = 190;
 const PROJECTED_ROW = 150;
 const PROJECTED_PACKED = 104;
-const PROJECTED_TALL = 320;
 
 /**
  * How the projector lays piles out: the columns that hold them in three rows,
@@ -79,10 +78,10 @@ function projected(count: number) {
     packed,
     fill: rows > 1,
     columns: `repeat(auto-fill, minmax(min(100%, max(${PROJECTED_LEAST}px, ${share})), 1fr))`,
-    rows:
-      rows > 1
-        ? `minmax(${packed ? PROJECTED_PACKED : PROJECTED_ROW}px, 1fr)`
-        : `minmax(${PROJECTED_TALL}px, auto)`,
+    // Rows take their content's height above a floor, so a face with a lid
+    // and three cards never runs past its box; a wall with more rows than fit
+    // scrolls.
+    rows: `minmax(${rows > 1 ? (packed ? PROJECTED_PACKED : PROJECTED_ROW) : PROJECTED_LEAST}px, max-content)`,
   };
 }
 
@@ -150,7 +149,9 @@ function StagedWall({
   const [name, setName] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
   const reduced = useReducedMotion() ?? false;
-  const { shown, edit } = useStagedWall(wall, { instant: reduced });
+  const { shown, settled, edit, landed } = useStagedWall(wall, {
+    instant: reduced,
+  });
   const seen = shown ?? wall;
 
   // A hand edit lands on the wall the hand is looking at as well as on the
@@ -161,7 +162,7 @@ function StagedWall({
       : {
           ...edits,
           moveCard: (card, pile) => {
-            edit(placed(card, pile));
+            edit(placed(card, pile), card);
             edits.moveCard(card, pile);
           },
           toTray: (card) => {
@@ -184,7 +185,7 @@ function StagedWall({
         };
 
   const unsorted = trayOf(seen.cards);
-  const piles = pilesByCount(seen.piles);
+  const piles = useSettledOrder(seen.piles, settled);
   const context = questionOf(seen)?.context ?? [];
   const writing = seen.open ? Math.max(0, seen.begun - seen.handedIn) : 0;
   const vote = choicesOf(seen).length > 0;
@@ -408,6 +409,7 @@ function StagedWall({
                           big={big}
                           packed={grid.packed}
                           follow={scroll}
+                          landed={landed}
                           onDrop={
                             editable
                               ? (card) => hand.moveCard(card, pile.pile)
@@ -586,6 +588,43 @@ function Tray({
       </div>
     </motion.div>
   );
+}
+
+/**
+ * The piles by count, re-sorted only when the wall has nothing left to play:
+ * a pile that moves while cards are still landing crosses the others for no
+ * reason the room can follow. A pile that opens mid-play takes the end; one
+ * that closes leaves.
+ */
+function useSettledOrder<Pile extends { pile: string; count: number }>(
+  piles: Pile[],
+  settled: boolean,
+): Pile[] {
+  const [order, setOrder] = useState<string[]>([]);
+  let next: string[];
+  if (settled) {
+    next = pilesByCount(piles).map((pile) => pile.pile);
+  } else {
+    const present = new Set(piles.map((pile) => pile.pile));
+    const kept = order.filter((pile) => present.has(pile));
+    const known = new Set(kept);
+    next = [
+      ...kept,
+      ...piles.filter((pile) => !known.has(pile.pile)).map((pile) => pile.pile),
+    ];
+  }
+  // The order is state carried from the last render, brought up to date here.
+  if (
+    next.length !== order.length ||
+    next.some((id, index) => id !== order[index])
+  ) {
+    setOrder(next);
+  }
+  const byId = new Map(piles.map((pile) => [pile.pile, pile]));
+  return next.flatMap((id) => {
+    const pile = byId.get(id);
+    return pile === undefined ? [] : [pile];
+  });
 }
 
 function PileGrid({

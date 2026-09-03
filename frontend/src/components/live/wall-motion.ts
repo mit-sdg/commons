@@ -233,7 +233,10 @@ export function useStagedWall<Wall extends Staged>(
 ): {
   shown: Wall | null;
   settled: boolean;
-  edit: (change: (wall: Wall) => Wall) => void;
+  /** Changes the shown wall at once; `card` names the card the hand just placed. */
+  edit: (change: (wall: Wall) => Wall, card?: string) => void;
+  /** When each card last landed on the shown wall, later landings higher. */
+  landed: (card: string) => number;
 } {
   const [shown, setShown] = useState<Wall | null>(wall);
   const [settled, setSettled] = useState(true);
@@ -241,6 +244,11 @@ export function useStagedWall<Wall extends Staged>(
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // The step's quota, set from the first diff against each new target.
   const quota = useRef(0);
+  // The order cards landed in, so a pile's face shows what arrived last.
+  const landings = useRef(new Map<string, number>());
+  const stamp = useCallback((card: string) => {
+    landings.current.set(card, landings.current.size + 1);
+  }, []);
 
   useEffect(() => {
     target.current = wall;
@@ -263,14 +271,16 @@ export function useStagedWall<Wall extends Staged>(
           timer.current = setTimeout(play, step);
         }
         let played = current;
-        for (const move of moves.slice(0, playing))
+        for (const move of moves.slice(0, playing)) {
           played = apply(played, next, move);
+          if (move.kind === "arrive" || move.kind === "place") stamp(move.card);
+        }
         return played;
       });
     }
 
     if (timer.current === null) timer.current = setTimeout(play, 0);
-  }, [wall, instant, step]);
+  }, [wall, instant, step, stamp]);
 
   useEffect(
     () => () => {
@@ -283,14 +293,24 @@ export function useStagedWall<Wall extends Staged>(
     [],
   );
 
-  const edit = useCallback((change: (wall: Wall) => Wall) => {
-    setShown((current) => (current === null ? current : change(current)));
-    if (target.current !== null) target.current = change(target.current);
-  }, []);
+  const edit = useCallback(
+    (change: (wall: Wall) => Wall, card?: string) => {
+      setShown((current) => (current === null ? current : change(current)));
+      if (target.current !== null) target.current = change(target.current);
+      if (card !== undefined) stamp(card);
+    },
+    [stamp],
+  );
+
+  const landed = useCallback(
+    (card: string) => landings.current.get(card) ?? 0,
+    [],
+  );
 
   return {
     shown: instant ? wall : shown,
     settled: instant ? true : settled,
     edit,
+    landed,
   };
 }

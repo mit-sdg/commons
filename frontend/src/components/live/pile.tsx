@@ -19,6 +19,12 @@ const PILE_MIME = "application/x-commons-pile";
 /** How many cards a stack shows on its face; the rest are the stack's depth. */
 const PEEK = 3;
 
+/** How long after a card lands the wall scrolls to its pile: the pile's spring. */
+const FOLLOW_AFTER_MS = 450;
+
+/** How long a card crossing the wall keeps its card face: the card's spring. */
+const FLIGHT_MS = 600;
+
 /** What stands on a card whose answer is nothing but spaces. */
 const BLANK = "—";
 
@@ -211,11 +217,21 @@ export function Count({
 /**
  * The three cards a stack shows on its face: the holder's own first, then the
  * cards that landed last, so a room watching a pile fill sees them arrive.
+ * `landed` ranks a card by when it last landed on the shown wall; without it
+ * the wall's own order stands in.
  */
-export function faceCards(cards: WallCard[], own: boolean): WallCard[] {
+export function faceCards(
+  cards: WallCard[],
+  own: boolean,
+  landed: (card: string) => number = () => 0,
+): WallCard[] {
   const mine = own ? cards.filter((card) => card.mine) : [];
   const rest = own ? cards.filter((card) => !card.mine) : cards;
-  return [...mine, ...rest.slice(-PEEK).reverse()].slice(0, PEEK);
+  const byLanding = rest
+    .map((card, index) => ({ card, rank: landed(card.card), index }))
+    .sort((left, right) => right.rank - left.rank || right.index - left.index)
+    .map((entry) => entry.card);
+  return [...mine, ...byLanding].slice(0, PEEK);
 }
 
 /** A pile's count, as a screen reader reads it beside the name. */
@@ -241,6 +257,7 @@ export function Pile({
   phone = false,
   selected = false,
   follow = false,
+  landed,
   onDrop,
   onTap,
   onRename,
@@ -264,6 +281,8 @@ export function Pile({
   selected?: boolean;
   /** A pile in a scrolling wall comes into view as a card lands in it. */
   follow?: boolean;
+  /** When a card last landed on the shown wall, so the face shows the latest. */
+  landed?: (card: string) => number;
   onDrop?: (card: string) => void;
   onTap?: () => void;
   onRename?: (name: string) => void;
@@ -284,11 +303,47 @@ export function Pile({
     const grew = count > counted.current;
     counted.current = count;
     if (!follow || !grew) return;
-    box.current?.scrollIntoView({
-      block: "nearest",
-      behavior: reduced ? "auto" : "smooth",
-    });
+    // The pile may move as its count re-sorts it; the wall follows it to
+    // where it settles, once the spring has carried it there.
+    const timer = setTimeout(
+      () =>
+        box.current?.scrollIntoView({
+          block: "nearest",
+          behavior: reduced ? "auto" : "smooth",
+        }),
+      reduced ? 0 : FOLLOW_AFTER_MS,
+    );
+    return () => clearTimeout(timer);
   }, [count, follow, reduced]);
+  // A card crossing the wall into this pile is drawn as a card, over the piles
+  // it passes, and settles into its line on the face.
+  const [arriving, setArriving] = useState<Set<string>>(() => new Set());
+  const landing = (card: string, on: boolean) =>
+    setArriving((current) => {
+      if (current.has(card) === on) return current;
+      const next = new Set(current);
+      if (on) next.add(card);
+      else next.delete(card);
+      return next;
+    });
+  // A flight interrupted by the next layout never reports its end, so the
+  // card mark is dropped on the spring's clock as well.
+  const settleTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const takeOff = (card: string) => {
+    landing(card, true);
+    const standing = settleTimers.current.get(card);
+    if (standing !== undefined) clearTimeout(standing);
+    settleTimers.current.set(
+      card,
+      setTimeout(() => landing(card, false), FLIGHT_MS),
+    );
+  };
+  useEffect(
+    () => () => {
+      for (const timer of settleTimers.current.values()) clearTimeout(timer);
+    },
+    [],
+  );
 
   const face = big
     ? packed
@@ -298,7 +353,10 @@ export function Pile({
       ? FACES.phone
       : FACES.wide;
   const depth = count >= 8 ? "deep" : count >= 3 ? "thin" : "flat";
-  const peek = faceCards(cards, phone);
+  const peek = faceCards(cards, phone, landed);
+  // Only the card that just landed flies in as a card; the lines already on
+  // the face just make room. A landing is newer than any this pile has flown.
+  const flownRank = useRef(0);
   const takesDrop = onDrop !== undefined || onMergeIn !== undefined;
   const picking = onTap !== undefined && naming === null;
   const spread =
@@ -342,6 +400,8 @@ export function Pile({
   return (
     <motion.div
       ref={box}
+      // A pile crossing another passes over it when it holds more cards.
+      style={flying || arriving.size > 0 ? { zIndex: 10 + count } : undefined}
       layout="position"
       transition={PILE_MOVE}
       initial={{ opacity: 0, scale: 0.94 }}
@@ -376,7 +436,6 @@ export function Pile({
           "shadow-[0_5px_0_-2px_var(--card),0_6px_0_-2px_var(--border)]",
         (picked || selected) &&
           "outline outline-2 outline-primary -outline-offset-2",
-        flying && "z-10",
         picking && "cursor-pointer hover:border-foreground/40",
         className,
       )}
@@ -465,11 +524,24 @@ export function Pile({
             ) : (
               <motion.span
                 key={card.card}
+                layout="position"
                 layoutId={card.card}
                 transition={CARD_MOVE}
                 exit={{ opacity: 0 }}
+                onLayoutAnimationStart={() => {
+                  const rank = landed?.(card.card) ?? 0;
+                  if (rank > flownRank.current) {
+                    flownRank.current = rank;
+                    takeOff(card.card);
+                  }
+                }}
+                onLayoutAnimationComplete={() => landing(card.card, false)}
                 title={titleOf(card)}
-                className="flex min-w-0 items-center gap-1.5"
+                className={cn(
+                  "flex min-w-0 items-center gap-1.5",
+                  arriving.has(card.card) &&
+                    "relative z-20 rounded-lg border border-border bg-card px-3 py-[7px] text-foreground shadow-md",
+                )}
               >
                 <Answer value={card.value} className="line-clamp-1" />
                 {card.model ? <ModelTag big={big} /> : null}
