@@ -54,7 +54,7 @@ async function registerHost(edge: Edge) {
 async function serveReasoner(edge: Edge, rounds = 4) {
   const mind = scriptedMind();
   for (let round = 0; round < rounds; round += 1) {
-    const served = await serveOnePass(edge.application.concepts.RoundReasoning, mind);
+    const served = await serveOnePass(edge.application.concepts.Reasoning, mind);
     if (served === 0) break;
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
@@ -149,12 +149,12 @@ describe("the model participant and the wall", () => {
 
     // Inviting the model raised an ask; the reasoner answers it.
     const asked = await until(
-      async () => await edge.application.concepts.RoundReasoning._pending(),
+      async () => await edge.application.concepts.Reasoning._pending(),
       (pending) => pending.length > 0,
     );
     expect(asked.length).toBe(1);
     await serveReasoner(edge);
-    const replies = await edge.application.concepts.RoundReasoning._repliesAbout({
+    const replies = await edge.application.concepts.Reasoning._repliesAbout({
       about: response,
     });
     expect(replies.length).toBe(1);
@@ -200,7 +200,7 @@ describe("the model participant and the wall", () => {
 
     // An unusable reply is stood upon once, and the retry settles the insistence.
     const insisted = await until(
-      async () => await edge.application.concepts.RoundInsisting._for({ aim: round }),
+      async () => await edge.application.concepts.Insisting._for({ aim: round }),
       (rows) => rows.every((row) => row.settled),
     );
     expect(insisted.every((row) => row.satisfied)).toBe(true);
@@ -318,7 +318,7 @@ describe("the model participant and the wall", () => {
         (responses) => responses.length === seats,
       );
       await until(
-        async () => await edge.application.concepts.RoundReasoning._pending(),
+        async () => await edge.application.concepts.Reasoning._pending(),
         (pending) => pending.length === seats,
       );
       await serveReasoner(edge);

@@ -20,7 +20,7 @@ import {
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
-const { Questioning, Relaying, RoundInsisting, RoundReasoning, Suggesting } = concepts;
+const { Questioning, Relaying, Insisting, Reasoning, Suggesting } = concepts;
 
 /** The one reasoner name this composition asks for; the floor decides what answers it. */
 const REASONER = "gemini-flash";
@@ -49,7 +49,7 @@ export const Draft = endpoint(
         compute(computations.relayDraftPassage, { request, legs, materials }, passage),
       )
         .then(
-          RoundReasoning.ask({ reasoner: REASONER, about: relay, passage, at }).responds({
+          Reasoning.ask({ reasoner: REASONER, about: relay, passage, at }).responds({
             asking,
           }),
         )
@@ -85,10 +85,10 @@ export const Draft = endpoint(
  */
 export const ReplyOffersRelayEdits = reaction(
   ({ asking, reply, relay, reading, legs, questionnaires, materials, lines, at }) =>
-    when(RoundReasoning.answer({ asking, reply }).responds())
+    when(Reasoning.answer({ asking, reply }).responds())
       .where(
         now(at),
-        RoundReasoning._asking({ asking }).is({ about: relay }),
+        Reasoning._asking({ asking }).is({ about: relay }),
         Relaying._relay({ relay }),
         compute(computations.relayDraftReading, { reply }, reading),
         is.among(reading, ["relay"]),
@@ -101,15 +101,15 @@ export const ReplyOffersRelayEdits = reaction(
 );
 
 export const ReplyUnusableComplains = reaction(({ asking, reply, relay, reading, account }) =>
-  when(RoundReasoning.answer({ asking, reply }).responds())
+  when(Reasoning.answer({ asking, reply }).responds())
     .where(
-      RoundReasoning._asking({ asking }).is({ about: relay }),
+      Reasoning._asking({ asking }).is({ about: relay }),
       Relaying._relay({ relay }),
       compute(computations.relayDraftReading, { reply }, reading),
       is.among(reading, ["neither"]),
       compute(computations.relayDraftReason, { reply }, account),
     )
-    .then(RoundInsisting.complain({ aim: relay, patience: PATIENCE, offering: reply, account })),
+    .then(Insisting.complain({ aim: relay, patience: PATIENCE, offering: reply, account })),
 );
 
 /**
@@ -118,40 +118,40 @@ export const ReplyUnusableComplains = reaction(({ asking, reply, relay, reading,
  * unusable, so the brief and the relay it was written against travel with it.
  */
 export const ComplaintRetriesTheAsk = reaction(({ relay, offering, account, asked, passage, at }) =>
-  when(RoundInsisting.complain({ aim: relay, offering, account }).responds())
+  when(Insisting.complain({ aim: relay, offering, account }).responds())
     .where(
       now(at),
       Relaying._relay({ relay }),
-      RoundInsisting._standingFor({ aim: relay }),
-      RoundReasoning._repliesAbout({ about: relay }).is({ reply: offering, passage: asked }),
+      Insisting._standingFor({ aim: relay }),
+      Reasoning._repliesAbout({ about: relay }).is({ reply: offering, passage: asked }),
       compute(computations.relayDraftRepairPassage, { passage: asked, offering, account }, passage),
     )
-    .then(RoundReasoning.ask({ reasoner: REASONER, about: relay, passage, at })),
+    .then(Reasoning.ask({ reasoner: REASONER, about: relay, passage, at })),
 );
 
 /** A reading that turned into lines settles whatever was being insisted on. */
 export const OfferedEditsSatisfyInsistence = reaction(({ relay }) =>
   when(Suggesting.offer({ subject: relay }).responds())
-    .where(Relaying._relay({ relay }), RoundInsisting._unsettledFor({ aim: relay }))
-    .then(RoundInsisting.satisfy({ aim: relay })),
+    .where(Relaying._relay({ relay }), Insisting._unsettledFor({ aim: relay }))
+    .then(Insisting.satisfy({ aim: relay })),
 );
 
 /** Once patience is spent, the insistence closes and the panel reads that nothing came. */
 export const SpentPatienceGivesUp = reaction(({ relay }) =>
-  when(RoundInsisting.complain({ aim: relay }).responds())
-    .where(Relaying._relay({ relay }), RoundInsisting._spentFor({ aim: relay }))
-    .then(RoundInsisting.giveUp({ aim: relay })),
+  when(Insisting.complain({ aim: relay }).responds())
+    .where(Relaying._relay({ relay }), Insisting._spentFor({ aim: relay }))
+    .then(Insisting.giveUp({ aim: relay })),
 );
 
 /** A reasoner that could not be reached leaves nothing waiting silently. */
 export const FailedAskGivesUp = reaction(({ asking, relay }) =>
-  when(RoundReasoning.fail({ asking }).responds())
+  when(Reasoning.fail({ asking }).responds())
     .where(
-      RoundReasoning._asking({ asking }).is({ about: relay }),
+      Reasoning._asking({ asking }).is({ about: relay }),
       Relaying._relay({ relay }),
-      RoundInsisting._unsettledFor({ aim: relay }),
+      Insisting._unsettledFor({ aim: relay }),
     )
-    .then(RoundInsisting.giveUp({ aim: relay })),
+    .then(Insisting.giveUp({ aim: relay })),
 );
 
 /** Every offering about a relay, newest first, with its lines in order and where each stands. */

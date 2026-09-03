@@ -34,8 +34,8 @@ const {
   Questioning,
   Relaying,
   Responding,
-  RoundInsisting,
-  RoundReasoning,
+  Insisting,
+  Reasoning,
   RunSnapshotting,
   Suggesting,
 } = concepts;
@@ -74,11 +74,11 @@ const roundHasEveryCardInAPile = view(
 ).holds();
 
 const anAskStandsAbout = view("an ask about (round) is still out", ({ round }, _o, _b) =>
-  where(RoundReasoning._pending({}).is({ about: round })),
+  where(Reasoning._pending({}).is({ about: round })),
 ).holds();
 
 const noAskStandsAbout = view("nothing is still out about (round)", ({ round }, _o, _b) =>
-  where(no(RoundReasoning._pending({}).is({ about: round }))),
+  where(no(Reasoning._pending({}).is({ about: round }))),
 ).holds();
 
 const pileExists = view("(pile) is a pile", ({ pile }, _outputs, _bindings) =>
@@ -214,10 +214,10 @@ export const HandedInBallotsJoinTheirPiles = reaction(
 /** The model's placing reply becomes an offering of suggestions about the round. */
 export const ReplyPlacesCards = reaction(
   ({ asking, reply, round, categories, values, reading, lines, at }) =>
-    when(RoundReasoning.answer({ asking, reply }).responds())
+    when(Reasoning.answer({ asking, reply }).responds())
       .where(
         now(at),
-        RoundReasoning._asking({ asking }).is({ about: round }),
+        Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
         Piling._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
@@ -230,10 +230,10 @@ export const ReplyPlacesCards = reaction(
 
 export const ReplyOffersLid = reaction(
   ({ asking, reply, round, categories, values, reading, lines, at }) =>
-    when(RoundReasoning.answer({ asking, reply }).responds())
+    when(Reasoning.answer({ asking, reply }).responds())
       .where(
         now(at),
-        RoundReasoning._asking({ asking }).is({ about: round }),
+        Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
         Piling._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
@@ -246,9 +246,9 @@ export const ReplyOffersLid = reaction(
 
 export const ReplyUnusableComplains = reaction(
   ({ asking, reply, round, categories, values, reading, account }) =>
-    when(RoundReasoning.answer({ asking, reply }).responds())
+    when(Reasoning.answer({ asking, reply }).responds())
       .where(
-        RoundReasoning._asking({ asking }).is({ about: round }),
+        Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
         Piling._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
@@ -256,7 +256,7 @@ export const ReplyUnusableComplains = reaction(
         is.among(reading, ["neither"]),
         compute(computations.placingReason, { reply, categories, values }, account),
       )
-      .then(RoundInsisting.complain({ aim: round, patience: PATIENCE, offering: reply, account })),
+      .then(Insisting.complain({ aim: round, patience: PATIENCE, offering: reply, account })),
 );
 
 /** The switch is the staff member's standing consent, so every line is taken at once. */
@@ -300,18 +300,18 @@ export const TakenLidDescribesPile = reaction(({ suggestion, kind, target, value
 /** A usable reply settles whatever was being insisted on for the round. */
 export const PlacedReplySatisfiesInsistence = reaction(({ round }) =>
   when(Suggesting.offer({ subject: round }).responds())
-    .where(roundIsAWall({ round }), RoundInsisting._unsettledFor({ aim: round }))
-    .then(RoundInsisting.satisfy({ aim: round })),
+    .where(roundIsAWall({ round }), Insisting._unsettledFor({ aim: round }))
+    .then(Insisting.satisfy({ aim: round })),
 );
 
 /** While patience remains, a complaint carries the exchange back to the reasoner. */
 export const ComplaintRetriesTheAsk = reaction(
   ({ round, offering, account, value, categories, values, passage, at }) =>
-    when(RoundInsisting.complain({ aim: round, offering, account }).responds())
+    when(Insisting.complain({ aim: round, offering, account }).responds())
       .where(
         now(at),
         roundIsAWall({ round }),
-        RoundInsisting._standingFor({ aim: round }),
+        Insisting._standingFor({ aim: round }),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
         Piling._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
@@ -321,25 +321,25 @@ export const ComplaintRetriesTheAsk = reaction(
           passage,
         ),
       )
-      .then(RoundReasoning.ask({ reasoner: REASONER, about: round, passage, at })),
+      .then(Reasoning.ask({ reasoner: REASONER, about: round, passage, at })),
 );
 
 /** Once patience is spent the insistence closes; the next tick simply asks again. */
 export const SpentPatienceGivesUp = reaction(({ round }) =>
-  when(RoundInsisting.complain({ aim: round }).responds())
-    .where(roundIsAWall({ round }), RoundInsisting._spentFor({ aim: round }))
-    .then(RoundInsisting.giveUp({ aim: round })),
+  when(Insisting.complain({ aim: round }).responds())
+    .where(roundIsAWall({ round }), Insisting._spentFor({ aim: round }))
+    .then(Insisting.giveUp({ aim: round })),
 );
 
 /** A reasoner that could not be reached leaves nothing waiting silently. */
 export const FailedAskGivesUp = reaction(({ asking, round }) =>
-  when(RoundReasoning.fail({ asking }).responds())
+  when(Reasoning.fail({ asking }).responds())
     .where(
-      RoundReasoning._asking({ asking }).is({ about: round }),
+      Reasoning._asking({ asking }).is({ about: round }),
       roundIsAWall({ round }),
-      RoundInsisting._unsettledFor({ aim: round }),
+      Insisting._unsettledFor({ aim: round }),
     )
-    .then(RoundInsisting.giveUp({ aim: round })),
+    .then(Insisting.giveUp({ aim: round })),
 );
 
 /**
@@ -357,7 +357,7 @@ export const BegunModelResponseAsksMind = reaction(
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
         compute(computations.participantPassage, { value, participant }, passage),
       )
-      .then(RoundReasoning.ask({ reasoner: REASONER, about: response, passage, at })),
+      .then(Reasoning.ask({ reasoner: REASONER, about: response, passage, at })),
 );
 
 export const Read = endpoint(
@@ -622,14 +622,14 @@ export const Sort = endpoint(
         roundIsLive({ round }),
         roundHasACardInTheTray({ round }),
         noAskStandsAbout({ round }),
-        no(RoundInsisting._unsettledFor({ aim: round })),
+        no(Insisting._unsettledFor({ aim: round })),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
         Piling._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         compute(computations.placingPassage, { value, categories, values }, passage),
       )
         .then(
-          RoundReasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({
+          Reasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({
             asking,
           }),
         )
@@ -661,7 +661,7 @@ export const Sort = endpoint(
         roundIsLive({ round }),
         roundHasACardInTheTray({ round }),
         noAskStandsAbout({ round }),
-        RoundInsisting._unsettledFor({ aim: round }),
+        Insisting._unsettledFor({ aim: round }),
       )
         .then(respond({ asked: false }))
         .named("insisting"),
@@ -688,7 +688,7 @@ export const Summarize = endpoint(
         compute(computations.lidPassage, { pile, categories, values }, passage),
       )
         .then(
-          RoundReasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({
+          Reasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({
             asking,
           }),
         )

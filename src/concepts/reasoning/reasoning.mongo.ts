@@ -32,12 +32,11 @@ export class MongoReasoningConcept {
   private readonly failures: Collection<FailureDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 
-  constructor(db: Db, instance = "Reasoning") {
-    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
-    this.askings = db.collection<AskingDoc>(`${prefix}.askings`);
-    this.replies = db.collection<ReplyDoc>(`${prefix}.replies`);
-    this.failures = db.collection<FailureDoc>(`${prefix}.failures`);
-    this.counters = db.collection(`${prefix}.counters`);
+  constructor(db: Db) {
+    this.askings = db.collection<AskingDoc>("reasoning.askings");
+    this.replies = db.collection<ReplyDoc>("reasoning.replies");
+    this.failures = db.collection<FailureDoc>("reasoning.failures");
+    this.counters = db.collection("reasoning.counters");
   }
 
   async #nextSeq(name: string): Promise<number> {

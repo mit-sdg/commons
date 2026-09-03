@@ -39,7 +39,7 @@ export interface ParticipantFloor {
     answer(input: { response: string; item: string; value: string }): Awaitable<unknown>;
     submit(input: { response: string; at: Date }): Awaitable<unknown>;
   };
-  RoundReasoning: {
+  Reasoning: {
     _repliesAbout(input: { about: string }): Awaitable<Reply[]>;
   };
   RunSnapshotting: {
@@ -63,7 +63,7 @@ async function playOne(
   value: unknown,
   at: Date,
 ): Promise<boolean> {
-  const [reply] = await concepts.RoundReasoning._repliesAbout({ about: response.response });
+  const [reply] = await concepts.Reasoning._repliesAbout({ about: response.response });
   if (reply === undefined) return false;
   if (at.getTime() - new Date(response.startedAt).getTime() < delayOf(response.participant)) {
     return false;

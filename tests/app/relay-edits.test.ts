@@ -57,7 +57,7 @@ const mind: Mind = ({ passage }) => Promise.resolve(scriptedEditsReply(passage) 
 /** Serve every pending ask, including the one a stood-upon reply queues next. */
 async function serveReasoner(edge: Edge, rounds = 4) {
   for (let round = 0; round < rounds; round += 1) {
-    const served = await serveOnePass(edge.application.concepts.RoundReasoning, mind);
+    const served = await serveOnePass(edge.application.concepts.Reasoning, mind);
     if (served === 0) break;
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
@@ -279,7 +279,7 @@ describe("the relay editing loop", () => {
     expect(offering.lines.map((line) => line.kind)).toEqual(["add"]);
     expect(JSON.parse(offering.lines[0].value).title).toBe("Warm-up");
 
-    const [insistence] = await edge.application.concepts.RoundInsisting._for({ aim: relay });
+    const [insistence] = await edge.application.concepts.Insisting._for({ aim: relay });
     expect(insistence.satisfied).toBe(true);
   });
 });

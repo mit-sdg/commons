@@ -1114,12 +1114,12 @@ export type CommonsWire = {
   };
   "/live/edits/draft": {
     input: {
-      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>[0], ["about"]>]>>;
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>[0], ["about"]>]>>;
       "request": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["briefStanding"]["fn"]>[0], ["request"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_REQUEST" | "RELAY_NOT_FOUND" };
   };
@@ -1990,12 +1990,12 @@ export type CommonsWire = {
   };
   "/live/walls/sort": {
     input: {
-      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>[0], ["about"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getLinks"]>[0], ["source"]>]>]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>[0], ["about"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getLinks"]>[0], ["source"]>]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "asked": true;
-      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
     } | {
       "asked": false;
     };
@@ -2008,7 +2008,7 @@ export type CommonsWire = {
     };
     output: {
       "asked": true;
-      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
     } | {
       "asked": false;
     };
@@ -4802,11 +4802,11 @@ export type CommonsWireHttp = {
   };
   "/live/edits/draft": {
     input: {
-      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>[0], ["about"]>]>>;
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>[0], ["about"]>]>>;
       "request": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["briefStanding"]["fn"]>[0], ["request"]>>;
     };
     output: {
-      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
@@ -5628,11 +5628,11 @@ export type CommonsWireHttp = {
   };
   "/live/walls/sort": {
     input: {
-      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>[0], ["about"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getLinks"]>[0], ["source"]>]>]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>[0], ["about"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RoundLinking"]["_getLinks"]>[0], ["source"]>]>]>>;
     };
     output: {
       "asked": true;
-      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
     } | {
       "asked": false;
     };
@@ -5644,7 +5644,7 @@ export type CommonsWireHttp = {
     };
     output: {
       "asked": true;
-      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["RoundReasoning"]["ask"]>>, ["asking"]>>;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
     } | {
       "asked": false;
     };
