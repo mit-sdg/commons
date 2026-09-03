@@ -11,7 +11,8 @@ concepts:
 
 The wall shows the tray, the piles, and the lid. The spread — two far-apart
 picks as poles with every other answer placed between them — is designed but
-not built. A card's position on that line is state a later read needs, and
+not built; the word now names the dialog that reads a pile whole from the wall
+(`spread.tsx`), so the designed line needs a word of its own as well as a home. A card's position on that line is state a later read needs, and
 nothing existing owns it: Categorizing holds one home per card and no order or
 distance, and a Reasoning reply is applied by reactions only into concept
 state.

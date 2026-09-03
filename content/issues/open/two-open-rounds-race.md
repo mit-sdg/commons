@@ -21,7 +21,7 @@ TA's dashboard tapping Open together is enough.
 
 ## Unresolved decision
 
-Whether the guard belongs to a concept that can hold it — RoundLinking
+Whether the guard belongs to a concept that can hold it — Linking
 refusing a second open link under one run, or Publishing refusing a second
 open edition under one parent — or whether the engine should offer an action
 whose guard and effect are one step. The engine ask is recorded in the
