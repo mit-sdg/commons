@@ -66,14 +66,18 @@ export function ConfirmAction({
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" disabled={busy}>
+            <Button variant="outline" aria-disabled={busy || undefined}>
               Cancel
             </Button>
           </DialogClose>
+          {/* Busy is said, not enforced by the browser, so the focus stays
+              on the button through the request. */}
           <Button
             variant={destructive ? "destructive" : "default"}
-            onClick={confirm}
-            disabled={busy}
+            onClick={() => {
+              if (!busy) confirm();
+            }}
+            aria-disabled={busy || undefined}
           >
             {busy ? "Working…" : confirmLabel}
           </Button>

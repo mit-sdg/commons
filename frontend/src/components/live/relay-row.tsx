@@ -26,9 +26,10 @@ export function RoomCode({ code }: { code: string }) {
 }
 
 /**
- * One line of the Live list. Relays and questionnaires share it so the two
- * read as one list: the same state column, one column for what the row counts
- * or is joined by, and the same place for the actions.
+ * One line of the Live list, and one item of it: the shelf is a list, so a
+ * screen reader counts the rows and walks them. Relays and questionnaires
+ * share the row so the two read as one list: the same state column, one column
+ * for what the row counts or is joined by, and the same place for the actions.
  */
 export function LiveRow({
   live,
@@ -50,7 +51,7 @@ export function LiveRow({
   className?: string;
 }) {
   return (
-    <div
+    <li
       className={cn(
         "flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3",
         live && "border-primary/40",
@@ -68,6 +69,6 @@ export function LiveRow({
       {actions ? (
         <span className="flex flex-wrap items-center gap-2">{actions}</span>
       ) : null}
-    </div>
+    </li>
   );
 }

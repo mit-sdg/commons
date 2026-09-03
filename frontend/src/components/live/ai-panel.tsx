@@ -4,19 +4,24 @@ import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { refusalSentence, saidRefusal } from "@/components/live/refusals";
+import { ActButton } from "@/components/live/round-editor";
 import { RoundToken, TakesChip } from "@/components/live/round-token";
 import { Spinner } from "@/components/states";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { api, isApiError, type Output, publicErrorMessage } from "@/lib/api";
+import { toDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-type Offering = Output<"/live/edits/offerings">["offerings"][number];
+type Offered = Output<"/live/edits/offerings">;
+type Offering = Offered["offerings"][number];
 type OfferedLine = Offering["lines"][number];
 type Round = NonNullable<Output<"/live/relays/get">["relay"]>["rounds"][number];
 
 const POLL_MS = 2_000;
 const WAIT_MS = 60_000;
+
+/** What the panel says when the reasoner never got the brief. */
+const UNREACHED = "The model could not be reached.";
 
 const EXAMPLE = "add a third round: a vote on the words the room gave";
 
@@ -30,6 +35,17 @@ const VERB: Record<string, string> = {
   choices: "set choices",
   takes: "set takes",
 };
+
+/**
+ * Whether the reasoner's last failure is this brief's. The read carries the
+ * failure it recorded last; one recorded after the brief went out is the
+ * answer to it, and the panel says so rather than waiting out the minute.
+ */
+function failedSince(read: Offered, askedAt: number | null): boolean {
+  if (askedAt === null || read.failure === null) return false;
+  const at = toDate(read.failedAt)?.getTime() ?? null;
+  return at !== null && at >= askedAt;
+}
 
 function readJson(value: string): unknown {
   try {
@@ -118,6 +134,11 @@ function numbered(
         typeof lands === "number" && lands > 0 ? lands : rounds.length + adds,
     };
   });
+}
+
+/** What Accept and Refuse act on, so the rows are not one name many times. */
+function lineWords(line: OfferedLine, number: number): string {
+  return `${VERB[line.kind] ?? line.kind} ${number}`;
 }
 
 function Was({ children }: { children: React.ReactNode }) {
@@ -267,6 +288,7 @@ export function AiPanel({
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [waiting, setWaiting] = useState(false);
   const [nothing, setNothing] = useState(false);
+  const [unreached, setUnreached] = useState(false);
   const [busy, setBusy] = useState(false);
   const [took, setTook] = useState<number | null>(null);
   const [stopped, setStopped] = useState<{
@@ -278,6 +300,8 @@ export function AiPanel({
   const [unmoved, setUnmoved] = useState<Set<string>>(new Set());
   const known = useRef<Set<string>>(new Set());
   const sentAt = useRef<number | null>(null);
+  /** When the reply now waited on was asked for; a failure before it is not its. */
+  const askedAt = useRef<number | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- a round a taken line has removed is gone from the relay, and only the panel still holds it
@@ -297,11 +321,11 @@ export function AiPanel({
     return JSON.stringify(result.relay.rounds);
   }, [relay]);
 
-  const read = useCallback(async () => {
+  const read = useCallback(async (): Promise<Offered | null> => {
     const result = await api["/live/edits/offerings"]({ relay });
     if (isApiError(result)) return null;
     setOfferings(result.offerings);
-    return result.offerings;
+    return result;
   }, [relay]);
 
   useEffect(() => {
@@ -309,8 +333,13 @@ export function AiPanel({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the panel opens on what has already been offered, which only a read can say
     void read().then((offered) => {
       if (cancelled || offered === null) return;
-      known.current = new Set(offered.map((entry) => entry.offering));
-      if (pending && offered.length === 0) setWaiting(true);
+      known.current = new Set(offered.offerings.map((entry) => entry.offering));
+      if (pending && offered.offerings.length === 0) {
+        // The brief went out on the page before this one, so the wait starts
+        // where the panel does and only a failure after that is the brief's.
+        askedAt.current = Date.now();
+        setWaiting(true);
+      }
     });
     return () => {
       cancelled = true;
@@ -328,14 +357,21 @@ export function AiPanel({
       if (cancelled) return;
       if (
         offered !== null &&
-        offered.some((entry) => !known.current.has(entry.offering))
+        offered.offerings.some((entry) => !known.current.has(entry.offering))
       ) {
-        known.current = new Set(offered.map((entry) => entry.offering));
+        known.current = new Set(
+          offered.offerings.map((entry) => entry.offering),
+        );
         setWaiting(false);
         if (sentAt.current !== null) {
           setTook((Date.now() - sentAt.current) / 1000);
         }
         onChanged();
+        return;
+      }
+      if (offered !== null && failedSince(offered, askedAt.current)) {
+        setWaiting(false);
+        setUnreached(true);
         return;
       }
       if (Date.now() - started >= WAIT_MS) {
@@ -357,11 +393,14 @@ export function AiPanel({
     const brief = request.trim();
     if (brief === "") return;
     setNothing(false);
+    setUnreached(false);
     setStopped(null);
     setTook(null);
     setBusy(true);
     const offered = await read();
-    known.current = new Set((offered ?? []).map((entry) => entry.offering));
+    known.current = new Set(
+      (offered?.offerings ?? []).map((entry) => entry.offering),
+    );
     const sent = Date.now();
     const result = await api["/live/edits/draft"]({ relay, request: brief });
     setBusy(false);
@@ -370,6 +409,7 @@ export function AiPanel({
       return;
     }
     sentAt.current = sent;
+    askedAt.current = sent;
     setWaiting(true);
   }
 
@@ -462,13 +502,14 @@ export function AiPanel({
             className="min-h-16 bg-card"
           />
           <div className="flex items-center gap-2">
-            <Button
+            <ActButton
               size="sm"
-              disabled={busy || waiting || request.trim() === ""}
+              out={request.trim() === ""}
+              busy={busy || waiting}
               onClick={() => void draft()}
             >
               {waiting ? <Spinner className="size-4" /> : null} Draft
-            </Button>
+            </ActButton>
             {waiting ? <Waited /> : null}
             {!waiting && took !== null ? (
               <span className="font-mono text-muted-foreground text-xs tabular-nums">
@@ -479,6 +520,9 @@ export function AiPanel({
         </div>
 
         <div className="flex flex-col gap-2.5">
+          {unreached ? (
+            <p className="text-muted-foreground text-sm">{UNREACHED}</p>
+          ) : null}
           {nothing ? (
             <p className="text-muted-foreground text-sm">Nothing came back.</p>
           ) : null}
@@ -523,24 +567,24 @@ export function AiPanel({
                       </span>
                     ) : (
                       <span className="flex flex-none gap-1">
-                        <Button
+                        <ActButton
                           variant="ghost"
                           size="icon-sm"
-                          aria-label="Accept"
-                          disabled={busy}
+                          aria-label={`Accept ${lineWords(line, number)}`}
+                          busy={busy}
                           onClick={() => void settle(line, true)}
                         >
                           <Check />
-                        </Button>
-                        <Button
+                        </ActButton>
+                        <ActButton
                           variant="ghost"
                           size="icon-sm"
-                          aria-label="Refuse"
-                          disabled={busy}
+                          aria-label={`Refuse ${lineWords(line, number)}`}
+                          busy={busy}
                           onClick={() => void settle(line, false)}
                         >
                           <X />
-                        </Button>
+                        </ActButton>
                       </span>
                     )}
                     {line.suggestion === stopped?.line ? (
@@ -557,21 +601,21 @@ export function AiPanel({
           outstanding > 0 &&
           !offering.lines.every((line) => line.kind === "keep") ? (
             <div className="flex gap-2">
-              <Button
+              <ActButton
                 size="sm"
-                disabled={busy}
+                busy={busy}
                 onClick={() => void settleAll(offering, true)}
               >
                 Accept all
-              </Button>
-              <Button
+              </ActButton>
+              <ActButton
                 variant="outline"
                 size="sm"
-                disabled={busy}
+                busy={busy}
                 onClick={() => void settleAll(offering, false)}
               >
                 Refuse all
-              </Button>
+              </ActButton>
             </div>
           ) : null}
         </div>

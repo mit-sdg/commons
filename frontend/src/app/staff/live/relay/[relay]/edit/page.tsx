@@ -8,6 +8,7 @@ import { Link } from "@/components/link";
 import { AiPanel } from "@/components/live/ai-panel";
 import { refusalSentence } from "@/components/live/refusals";
 import {
+  ActButton,
   AddRoundCard,
   RoundEditor,
   TITLE_FIELD,
@@ -186,7 +187,8 @@ function RelaySetup({
             <Input
               value={title}
               maxLength={200}
-              disabled={busy || relay.retired}
+              disabled={relay.retired}
+              readOnly={busy}
               aria-label="Title"
               aria-invalid={title.trim() === ""}
               className={cn(TITLE_FIELD, "min-w-0 flex-1 text-2xl md:text-3xl")}
@@ -200,6 +202,8 @@ function RelaySetup({
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
+              aria-expanded={drafting}
+              aria-controls="draft-panel"
               className={drafting ? "border-primary text-primary" : undefined}
               onClick={() => setShown(!drafting)}
             >
@@ -215,12 +219,13 @@ function RelaySetup({
                 className="inline-flex"
                 title={relay.rounds.length === 0 ? NO_ROUNDS : undefined}
               >
-                <Button
-                  disabled={busy || relay.rounds.length === 0}
+                <ActButton
+                  out={relay.rounds.length === 0}
+                  busy={busy}
                   onClick={() => void launch()}
                 >
                   Launch
-                </Button>
+                </ActButton>
               </span>
             ) : (
               <Button asChild>
@@ -231,14 +236,16 @@ function RelaySetup({
         )}
       </header>
 
-      {drafting && !relay.retired ? (
-        <AiPanel
-          relay={relay.relay}
-          rounds={relay.rounds}
-          pending={link !== null && ASK.test(link)}
-          onChanged={onChanged}
-        />
-      ) : null}
+      <div id="draft-panel">
+        {drafting && !relay.retired ? (
+          <AiPanel
+            relay={relay.relay}
+            rounds={relay.rounds}
+            pending={link !== null && ASK.test(link)}
+            onChanged={onChanged}
+          />
+        ) : null}
+      </div>
 
       <div className="flex max-w-4xl flex-col gap-3">
         {relay.rounds.map((round) => (
@@ -255,9 +262,7 @@ function RelaySetup({
             onChanged={onChanged}
           />
         ))}
-        {relay.retired ? null : (
-          <AddRoundCard disabled={busy} onAdd={addRound} />
-        )}
+        {relay.retired ? null : <AddRoundCard busy={busy} onAdd={addRound} />}
       </div>
     </PageContainer>
   );

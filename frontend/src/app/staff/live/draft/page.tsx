@@ -10,6 +10,7 @@ import { titleFromBrief } from "@/components/live/copy-relay";
 import { DraftDescribe } from "@/components/live/draft-describe";
 import type { DraftLineStep } from "@/components/live/draft-step";
 import { DraftStep } from "@/components/live/draft-step";
+import { KIND_SEGMENT } from "@/components/live/quiz-meta";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -398,7 +399,7 @@ function DraftPageContent() {
                 <TabsTrigger
                   key={entry.kind}
                   value={entry.kind}
-                  className="text-foreground/70"
+                  className={KIND_SEGMENT}
                 >
                   {entry.label}
                 </TabsTrigger>

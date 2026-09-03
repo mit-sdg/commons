@@ -36,6 +36,14 @@ export const RUN_OPEN_MESSAGE = "A run is open — editing is locked.";
 /** Why a quiz cannot launch yet; the shelf and the desk say it the same way. */
 export const QUIZ_NOT_READY_MESSAGE = "No question has a marked answer.";
 
+/**
+ * The one look a chosen segment takes on the live screens — the kind selectors
+ * here, the round editor's kinds, the dashboard's Pick: a solid foreground
+ * fill, in both themes.
+ */
+export const KIND_SEGMENT =
+  "data-[state=active]:bg-foreground data-[state=active]:text-background dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-background";
+
 const FORM_LABELS: Record<string, string> = {
   quiz: "Quiz",
   survey: "Survey",

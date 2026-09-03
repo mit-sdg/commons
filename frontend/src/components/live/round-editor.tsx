@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, X } from "lucide-react";
-import { useState } from "react";
+import { ArrowDown, ArrowUp, ChevronRight, X } from "lucide-react";
+import { type ComponentProps, useState } from "react";
 import { toast } from "sonner";
 import {
   type RefusalAbout,
@@ -44,6 +44,40 @@ const KINDS: RoundKind[] = ["write", "list", "vote"];
  */
 export const TITLE_FIELD =
   "h-auto rounded-none border-transparent border-b-border bg-transparent px-0 font-display font-semibold shadow-none focus-visible:border-b-primary dark:bg-transparent";
+
+/**
+ * A round the run has reached is read, not written. Its fields stand plain and
+ * legible where a field out at half opacity reads as a page still loading.
+ */
+const LOCKED_FIELD =
+  "disabled:cursor-default disabled:opacity-100 disabled:text-foreground";
+
+/** A boxed field, locked: the box says it is out and the words stay readable. */
+const LOCKED_BOX = `${LOCKED_FIELD} disabled:border-transparent disabled:bg-muted/40`;
+
+/**
+ * An acting control. Out is out of the tab order, as a disabled button is; busy
+ * is said by aria alone, so a request in flight leaves the focus where the hand
+ * left it rather than handing it back to the top of the page.
+ */
+export function ActButton({
+  out = false,
+  busy = false,
+  onClick,
+  ...rest
+}: Omit<ComponentProps<typeof Button>, "disabled"> & {
+  out?: boolean;
+  busy?: boolean;
+}) {
+  return (
+    <Button
+      {...rest}
+      disabled={out}
+      aria-disabled={busy || undefined}
+      onClick={busy ? undefined : onClick}
+    />
+  );
+}
 
 /** What a part is called until it is named, so an empty box shows its place. */
 const PART_WORDS = [
@@ -340,7 +374,6 @@ export function RoundEditor({
     await setTakes(takes.source, firstUse(uses, next));
   }
 
-  const disabled = locked || busy;
   const repeats = draft.parts.length === 1 && draft.cap > 0;
   // A round that takes its parts or choices from another round is written
   // there, so this card only offers the side the round still holds itself.
@@ -359,62 +392,78 @@ export function RoundEditor({
           <Input
             value={draft.title}
             maxLength={200}
-            disabled={disabled}
+            disabled={locked}
+            readOnly={busy}
             aria-label={`Round ${round.number} title`}
             aria-invalid={draft.title.trim() === ""}
-            className={cn(TITLE_FIELD, "min-w-0 flex-1 text-xl md:text-xl")}
+            className={cn(
+              TITLE_FIELD,
+              LOCKED_FIELD,
+              "min-w-0 flex-1 text-xl disabled:border-b-transparent md:text-xl",
+            )}
             onChange={(event) => change({ title: event.target.value })}
             onBlur={() => leaveTitle()}
           />
-          <div className="flex flex-none gap-0.5">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Move up"
-              disabled={disabled || first}
-              onClick={() => void move(round.number - 1)}
-            >
-              <ArrowUp />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Move down"
-              disabled={disabled || last}
-              onClick={() => void move(round.number + 1)}
-            >
-              <ArrowDown />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Remove round"
-              disabled={disabled}
-              onClick={() => void remove()}
-            >
-              <X />
-            </Button>
-          </div>
+          {locked ? null : (
+            <div className="flex flex-none gap-0.5">
+              <ActButton
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Move round ${round.number} up`}
+                out={first}
+                busy={busy}
+                onClick={() => void move(round.number - 1)}
+              >
+                <ArrowUp />
+              </ActButton>
+              <ActButton
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Move round ${round.number} down`}
+                out={last}
+                busy={busy}
+                onClick={() => void move(round.number + 1)}
+              >
+                <ArrowDown />
+              </ActButton>
+              <ActButton
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Remove round ${round.number}`}
+                busy={busy}
+                onClick={() => void remove()}
+              >
+                <X />
+              </ActButton>
+            </div>
+          )}
         </div>
 
         <div
           role="group"
           aria-label={`Round ${round.number} kind`}
-          className="inline-flex w-fit gap-0.5 rounded-md border border-border p-0.5"
+          className={cn(
+            "inline-flex w-fit gap-0.5 rounded-md border p-0.5",
+            locked ? "border-transparent" : "border-border",
+          )}
         >
           {KINDS.map((entry) => (
             <button
               key={entry}
               type="button"
-              disabled={disabled}
+              disabled={locked}
+              aria-disabled={busy || undefined}
               aria-pressed={entry === kind}
               className={cn(
-                "rounded-[5px] px-2.5 py-1 text-sm capitalize disabled:opacity-50",
+                "rounded-[5px] px-2.5 py-1 text-sm capitalize disabled:cursor-default",
                 entry === kind
                   ? "bg-foreground font-medium text-background"
                   : "text-muted-foreground hover:text-foreground",
               )}
-              onClick={() => void chooseKind(entry)}
+              onClick={() => {
+                if (busy) return;
+                void chooseKind(entry);
+              }}
             >
               {entry}
             </button>
@@ -426,9 +475,10 @@ export function RoundEditor({
           <Textarea
             id={`prompt-${round.leg}`}
             value={draft.prompt}
-            disabled={disabled}
+            disabled={locked}
+            readOnly={busy}
             rows={2}
-            className="min-h-11"
+            className={cn("min-h-11", LOCKED_BOX)}
             onChange={(event) => change({ prompt: event.target.value })}
             onBlur={() => void commit(draft)}
           />
@@ -449,10 +499,11 @@ export function RoundEditor({
                       <Input
                         value={part}
                         maxLength={40}
-                        disabled={disabled}
+                        disabled={locked}
+                        readOnly={busy}
                         aria-label={`Round ${round.number} part ${index + 1}`}
                         placeholder={PART_WORDS[index] ?? ""}
-                        className="w-36 pr-8"
+                        className={cn("w-36 pr-8", LOCKED_BOX)}
                         onChange={(event) => {
                           const parts = [...draft.parts];
                           parts[index] = event.target.value;
@@ -460,36 +511,38 @@ export function RoundEditor({
                         }}
                         onBlur={() => void commit(draft)}
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label="Remove part"
-                        disabled={disabled}
-                        className="-translate-y-1/2 absolute top-1/2 right-1 opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100"
-                        onClick={() =>
-                          change(
-                            {
-                              parts: draft.parts.filter(
-                                (_, at) => at !== index,
-                              ),
-                            },
-                            true,
-                          )
-                        }
-                      >
-                        <X />
-                      </Button>
+                      {locked ? null : (
+                        <ActButton
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Remove round ${round.number} part ${index + 1}`}
+                          busy={busy}
+                          className="-translate-y-1/2 absolute top-1/2 right-1 opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100"
+                          onClick={() =>
+                            change(
+                              {
+                                parts: draft.parts.filter(
+                                  (_, at) => at !== index,
+                                ),
+                              },
+                              true,
+                            )
+                          }
+                        >
+                          <X />
+                        </ActButton>
+                      )}
                     </span>
                   ))}
-                  {draft.parts.length < PARTS_MAX && !repeats ? (
-                    <Button
+                  {!locked && draft.parts.length < PARTS_MAX && !repeats ? (
+                    <ActButton
                       variant="ghost"
                       size="sm"
-                      disabled={disabled}
+                      busy={busy}
                       onClick={() => change({ parts: [...draft.parts, ""] })}
                     >
                       + Part
-                    </Button>
+                    </ActButton>
                   ) : null}
                 </div>
                 {draft.parts.length === 1 ? (
@@ -497,14 +550,16 @@ export function RoundEditor({
                     <input
                       type="checkbox"
                       checked={repeats}
-                      disabled={disabled}
-                      className="size-4 rounded-sm border-input accent-primary"
-                      onChange={(event) =>
+                      disabled={locked}
+                      aria-disabled={busy || undefined}
+                      className="size-4 rounded-sm border-input accent-primary disabled:cursor-default"
+                      onChange={(event) => {
+                        if (busy) return;
                         change(
                           { cap: event.target.checked ? CAP_START : 0 },
                           true,
-                        )
-                      }
+                        );
+                      }}
                     />
                     Repeat up to
                     <Input
@@ -512,9 +567,10 @@ export function RoundEditor({
                       min={CAP_MIN}
                       max={CAP_MAX}
                       value={repeats ? draft.cap : CAP_START}
-                      disabled={disabled || !repeats}
-                      aria-label="Repeat up to"
-                      className="h-8 w-16"
+                      disabled={locked || !repeats}
+                      readOnly={busy}
+                      aria-label={`Round ${round.number} repeat up to`}
+                      className={cn("h-8 w-16", LOCKED_BOX)}
                       onChange={(event) =>
                         change({ cap: Number(event.target.value) })
                       }
@@ -538,9 +594,10 @@ export function RoundEditor({
                       <Input
                         value={choice}
                         maxLength={500}
-                        disabled={disabled}
+                        disabled={locked}
+                        readOnly={busy}
                         aria-label={`Round ${round.number} choice ${index + 1}`}
-                        className="w-56"
+                        className={cn("w-56", LOCKED_BOX)}
                         onChange={(event) => {
                           const choices = [...draft.choices];
                           choices[index] = event.target.value;
@@ -548,35 +605,41 @@ export function RoundEditor({
                         }}
                         onBlur={() => void commit(draft)}
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label="Remove choice"
-                        disabled={disabled}
-                        onClick={() =>
-                          change(
-                            {
-                              choices: draft.choices.filter(
-                                (_, at) => at !== index,
-                              ),
-                            },
-                            true,
-                          )
-                        }
-                      >
-                        <X />
-                      </Button>
+                      {locked ? null : (
+                        <ActButton
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Remove round ${round.number} choice ${index + 1}`}
+                          busy={busy}
+                          onClick={() =>
+                            change(
+                              {
+                                choices: draft.choices.filter(
+                                  (_, at) => at !== index,
+                                ),
+                              },
+                              true,
+                            )
+                          }
+                        >
+                          <X />
+                        </ActButton>
+                      )}
                     </span>
                   ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="self-start"
-                    disabled={disabled}
-                    onClick={() => change({ choices: [...draft.choices, ""] })}
-                  >
-                    + Choice
-                  </Button>
+                  {locked ? null : (
+                    <ActButton
+                      variant="ghost"
+                      size="sm"
+                      className="self-start"
+                      busy={busy}
+                      onClick={() =>
+                        change({ choices: [...draft.choices, ""] })
+                      }
+                    >
+                      + Choice
+                    </ActButton>
+                  )}
                 </div>
               </div>
             ) : null}
@@ -588,8 +651,9 @@ export function RoundEditor({
             <span className="text-muted-foreground">Takes from</span>
             <Select
               value={takes?.source ?? NOTHING}
-              disabled={disabled}
+              disabled={locked}
               onValueChange={(value) => {
+                if (busy) return;
                 if (value === NOTHING) {
                   void clearTakes();
                   return;
@@ -599,8 +663,9 @@ export function RoundEditor({
             >
               <SelectTrigger
                 size="sm"
-                aria-label="Takes from"
-                className="max-w-[220px]"
+                aria-label={`Round ${round.number} takes from`}
+                aria-disabled={busy || undefined}
+                className={cn("max-w-[220px]", LOCKED_BOX)}
               >
                 <SelectValue />
               </SelectTrigger>
@@ -629,15 +694,18 @@ export function RoundEditor({
                   open.some((entry) => entry.use === takes.use) ? (
                     <Select
                       value={takes.use}
-                      disabled={disabled}
-                      onValueChange={(value) =>
-                        void setTakes(takes.source, value)
-                      }
+                      disabled={locked}
+                      onValueChange={(value) => {
+                        if (busy) return;
+                        void setTakes(takes.source, value);
+                      }}
                     >
                       <SelectTrigger
                         size="sm"
-                        aria-label="Use"
+                        aria-label={`Round ${round.number} use`}
+                        aria-disabled={busy || undefined}
                         aria-describedby={`use-${round.leg}`}
+                        className={LOCKED_BOX}
                       >
                         <SelectValue />
                       </SelectTrigger>
@@ -665,14 +733,25 @@ export function RoundEditor({
           <Button
             variant="ghost"
             size="sm"
-            className="self-start"
+            aria-expanded={previewing}
+            aria-controls={`preview-${round.leg}`}
+            className={cn(
+              "self-start",
+              previewing && "bg-accent text-foreground",
+            )}
             onClick={() => setPreviewing((shown) => !shown)}
           >
             Preview
+            <ChevronRight
+              aria-hidden
+              className={cn("transition-transform", previewing && "rotate-90")}
+            />
           </Button>
-          {previewing ? (
-            <RoundPreview round={{ ...round, ...written }} />
-          ) : null}
+          <div id={`preview-${round.leg}`} hidden={!previewing}>
+            {previewing ? (
+              <RoundPreview round={{ ...round, ...written }} />
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
@@ -681,10 +760,11 @@ export function RoundEditor({
 
 /** The end of the list: a round is written here before it exists on the server. */
 export function AddRoundCard({
-  disabled,
+  busy,
   onAdd,
 }: {
-  disabled: boolean;
+  /** A request is in flight on the relay, so the card says so and waits. */
+  busy: boolean;
   onAdd: (title: string, prompt: string) => Promise<boolean>;
 }) {
   const [writing, setWriting] = useState(false);
@@ -696,9 +776,12 @@ export function AddRoundCard({
     return (
       <button
         type="button"
-        disabled={disabled}
-        onClick={() => setWriting(true)}
-        className="flex items-center gap-3 rounded-xl border border-dashed border-border px-5 py-4 text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:opacity-50"
+        aria-disabled={busy || undefined}
+        onClick={() => {
+          if (busy) return;
+          setWriting(true);
+        }}
+        className="flex items-center gap-3 rounded-xl border border-dashed border-border px-5 py-4 text-muted-foreground hover:border-primary/40 hover:text-foreground"
       >
         <span className="inline-flex size-10 items-center justify-center rounded-full border-[1.5px] border-dashed border-muted-foreground font-mono text-lg">
           +
@@ -733,9 +816,10 @@ export function AddRoundCard({
           />
         </div>
         <div className="flex gap-2">
-          <Button
+          <ActButton
             size="sm"
-            disabled={!ready || disabled}
+            out={!ready}
+            busy={busy}
             onClick={async () => {
               const added = await onAdd(title.trim(), prompt.trim());
               if (!added) return;
@@ -745,7 +829,7 @@ export function AddRoundCard({
             }}
           >
             Add
-          </Button>
+          </ActButton>
           <Button
             variant="ghost"
             size="icon-sm"

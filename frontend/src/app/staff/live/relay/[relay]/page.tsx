@@ -131,9 +131,12 @@ function RelayOverviewContent() {
                 className="inline-flex"
                 title={found.rounds.length === 0 ? NO_ROUNDS : undefined}
               >
+                {/* Busy, the button keeps its focus: it is out by aria, not
+                    by a disabled that hands the focus back to the page. */}
                 <Button
-                  disabled={busy || found.retired || found.rounds.length === 0}
-                  onClick={() => void launch()}
+                  disabled={found.retired || found.rounds.length === 0}
+                  aria-disabled={busy || undefined}
+                  onClick={busy ? undefined : () => void launch()}
                 >
                   <Radio /> Launch
                 </Button>
@@ -168,7 +171,11 @@ function RelayOverviewContent() {
           ) : (
             <div className="flex flex-col gap-3">
               {found.rounds.map((round) => (
-                <RoundCard key={round.leg} round={round} />
+                <RoundCard
+                  key={round.leg}
+                  round={round}
+                  rounds={found.rounds}
+                />
               ))}
             </div>
           )}
@@ -177,7 +184,7 @@ function RelayOverviewContent() {
         <section className="space-y-3">
           <h2 className="font-display text-xl font-semibold">Runs</h2>
           {found.runs.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Never launched.</p>
+            <EmptyState icon={Radio} title="Never launched." />
           ) : (
             <ul className="space-y-2">
               {found.runs.map((run) => (
@@ -198,7 +205,9 @@ function RelayOverviewContent() {
                       </span>
                     </span>
                     <span className="flex items-center gap-2">
-                      {run.open ? <Badge>Open</Badge> : null}
+                      {run.open ? (
+                        <Badge variant="secondary">Open</Badge>
+                      ) : null}
                       <ChevronRight className="size-4 text-muted-foreground" />
                     </span>
                   </Link>
@@ -299,8 +308,19 @@ function BeforeClass() {
   );
 }
 
-function RoundCard({ round }: { round: RelayRound }) {
+function RoundCard({
+  round,
+  rounds,
+}: {
+  round: RelayRound;
+  /** The relay's rounds, so a take can say the title of the one it reads. */
+  rounds: RelayRound[];
+}) {
   const takes = round.takes[0];
+  const source =
+    takes === undefined
+      ? null
+      : (rounds.find((entry) => entry.number === takes.sourceNumber) ?? null);
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4">
       <RoundToken number={round.number} size="lg" standing="plain" />
@@ -343,12 +363,25 @@ function RoundCard({ round }: { round: RelayRound }) {
             takes from {takes.sourceNumber}
           </span>
         ) : (
-          <TakesChip
-            from={takes.sourceNumber}
-            use={takes.use}
-            standing="plain"
-            className="self-start"
-          />
+          <span
+            className="flex min-w-0 items-center gap-2 self-start"
+            title={
+              source === null
+                ? undefined
+                : `from ${takes.sourceNumber} ${source.title}`
+            }
+          >
+            <TakesChip
+              from={takes.sourceNumber}
+              use={takes.use}
+              standing="plain"
+            />
+            {source === null ? null : (
+              <span className="hidden min-w-0 truncate text-muted-foreground text-[13px] sm:block">
+                {source.title}
+              </span>
+            )}
+          </span>
         )}
       </div>
     </div>

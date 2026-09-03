@@ -55,6 +55,15 @@ const KINDS = [
   { kind: "relay", label: "Relay" },
 ] as const;
 
+/**
+ * What an action acts on, said only where the words are read one at a time:
+ * every row offers the same Edit, Launch, and Retire, so each carries the name
+ * of its own relay or questionnaire.
+ */
+function Named({ title }: { title: string }) {
+  return <span className="sr-only"> {title}</span>;
+}
+
 function when(value: unknown): number {
   return toDate(value)?.getTime() ?? 0;
 }
@@ -206,7 +215,7 @@ function LiveListContent() {
           }
         />
       ) : (
-        <div className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2">
           {standing.map((entry) =>
             entry.kind === "relay" ? (
               <RelayEntry
@@ -228,7 +237,7 @@ function LiveListContent() {
               />
             ),
           )}
-        </div>
+        </ul>
       )}
 
       {retired.length > 0 ? (
@@ -241,7 +250,7 @@ function LiveListContent() {
             {showRetired ? "Hide retired" : `Show retired (${retired.length})`}
           </button>
           {showRetired ? (
-            <div className="mt-3 flex flex-col gap-2">
+            <ul className="mt-3 flex flex-col gap-2">
               {retired.map((entry) =>
                 entry.kind === "relay" ? (
                   <RetiredEntry
@@ -262,7 +271,7 @@ function LiveListContent() {
                   />
                 ),
               )}
-            </div>
+            </ul>
           ) : null}
         </section>
       ) : null}
@@ -327,30 +336,41 @@ function RelayEntry({
       actions={
         live ? (
           <Button size="sm" asChild>
-            <Link href={`/staff/live/run/${relay.run}`}>Run</Link>
+            <Link href={`/staff/live/run/${relay.run}`}>
+              Run
+              <Named title={relay.title} />
+            </Link>
           </Button>
         ) : (
           <>
             <Button variant="ghost" size="sm" asChild>
-              <Link href={`/staff/live/relay/${relay.relay}/edit`}>Edit</Link>
+              <Link href={`/staff/live/relay/${relay.relay}/edit`}>
+                Edit
+                <Named title={relay.title} />
+              </Link>
             </Button>
             <span
               className="inline-flex"
               title={relay.rounds.length === 0 ? NO_ROUNDS : undefined}
             >
+              {/* Busy, the button keeps its focus: it is out by aria, not by
+                  a disabled that hands the focus back to the page. */}
               <Button
                 variant="outline"
                 size="sm"
-                disabled={busy || relay.rounds.length === 0}
-                onClick={onLaunch}
+                disabled={relay.rounds.length === 0}
+                aria-disabled={busy || undefined}
+                onClick={busy ? undefined : onLaunch}
               >
                 <Radio /> Launch
+                <Named title={relay.title} />
               </Button>
             </span>
             <ConfirmAction
               trigger={
                 <Button variant="ghost" size="sm">
                   Retire
+                  <Named title={relay.title} />
                 </Button>
               }
               title={`Retire “${relay.title}”?`}
@@ -403,15 +423,22 @@ function QuestionnaireEntry({
       actions={
         live ? (
           <Button size="sm" asChild>
-            <Link href={`/staff/live/run/${entry.openRun}`}>Run</Link>
+            <Link href={`/staff/live/run/${entry.openRun}`}>
+              Run
+              <Named title={entry.title} />
+            </Link>
           </Button>
         ) : (
           <>
             <Button variant="ghost" size="sm" asChild>
-              <Link href={`/staff/live/${entry.questionnaire}/edit`}>Edit</Link>
+              <Link href={`/staff/live/${entry.questionnaire}/edit`}>
+                Edit
+                <Named title={entry.title} />
+              </Link>
             </Button>
             <RunLaunchButton
               questionnaire={entry.questionnaire}
+              name={`Launch ${entry.title}`}
               disabled={launchHint !== undefined}
               hint={launchHint}
               size="sm"
@@ -421,6 +448,7 @@ function QuestionnaireEntry({
               trigger={
                 <Button variant="ghost" size="sm">
                   Retire
+                  <Named title={entry.title} />
                 </Button>
               }
               title={`Retire “${entry.title}”?`}

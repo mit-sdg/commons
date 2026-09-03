@@ -15,6 +15,7 @@ import {
   type Disclosure,
   isDisclosure,
   isQuizForm,
+  KIND_SEGMENT,
 } from "@/components/live/quiz-meta";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -82,7 +83,7 @@ function NewLiveContent() {
           .map((entry) => ({ id: entry.questionnaire, title: entry.title }));
 
   function chooseKind(value: string) {
-    if (!isKind(value)) return;
+    if (busy || !isKind(value)) return;
     setKind(value);
     setSource(BLANK);
   }
@@ -173,8 +174,8 @@ function NewLiveContent() {
               <TabsTrigger
                 key={entry.kind}
                 value={entry.kind}
-                disabled={busy}
-                className="text-foreground/70"
+                aria-disabled={busy || undefined}
+                className={KIND_SEGMENT}
               >
                 {entry.label}
               </TabsTrigger>
@@ -189,7 +190,7 @@ function NewLiveContent() {
             value={title}
             maxLength={200}
             aria-invalid={missing}
-            disabled={busy}
+            readOnly={busy}
             placeholder="e.g. Lecture 7 check-in"
             onChange={(event) => setTitle(event.target.value)}
             onBlur={() => setTouched(true)}
@@ -203,10 +204,16 @@ function NewLiveContent() {
           <Label htmlFor="live-source">Start from</Label>
           <Select
             value={source}
-            disabled={busy}
-            onValueChange={(value) => setSource(value)}
+            onValueChange={(value) => {
+              if (busy) return;
+              setSource(value);
+            }}
           >
-            <SelectTrigger id="live-source" className="w-full">
+            <SelectTrigger
+              id="live-source"
+              aria-disabled={busy || undefined}
+              className="w-full"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -227,12 +234,16 @@ function NewLiveContent() {
             </Label>
             <Select
               value={disclosure}
-              disabled={busy}
               onValueChange={(value) => {
+                if (busy) return;
                 if (isDisclosure(value)) setDisclosure(value);
               }}
             >
-              <SelectTrigger id="live-disclosure" className="w-full">
+              <SelectTrigger
+                id="live-disclosure"
+                aria-disabled={busy || undefined}
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -247,9 +258,12 @@ function NewLiveContent() {
         ) : null}
 
         <div className="flex items-center gap-2">
+          {/* Busy, the button keeps its focus: it is out by aria, not by a
+              disabled that hands the focus back to the page. */}
           <Button
-            disabled={busy || title.trim() === ""}
-            onClick={() => void create()}
+            disabled={title.trim() === ""}
+            aria-disabled={busy || undefined}
+            onClick={busy ? undefined : () => void create()}
           >
             {busy ? "Creating…" : "Create"}
           </Button>
