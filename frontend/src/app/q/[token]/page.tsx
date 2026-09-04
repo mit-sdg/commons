@@ -844,6 +844,10 @@ function RelayPhone({
     forget();
     if (!runOpen || stored !== null) return;
     let cancelled = false;
+    // Until the begin has settled, a cancelled run lets go of the round, so
+    // the run that replaces it begins again rather than waiting on an answer
+    // nobody will read. Beginning twice reaches the same response.
+    let settled = false;
     const going = () => !cancelled && held.current === round;
     void (async () => {
       // A phone out of reach has begun nothing, and nothing it met says the
@@ -872,10 +876,12 @@ function RelayPhone({
           // and for a phone that already handed this round in. The fresh face
           // says which: the first two leave no round to answer, and the line
           // over them is the run's; a round still open leaves the hand-in.
+          settled = true;
           setRefusedRound(round);
           await refresh();
           return;
         }
+        settled = true;
         setResponse(result.response);
         writeProgress(token, slot, {
           response: result.response,
@@ -887,6 +893,7 @@ function RelayPhone({
     })();
     return () => {
       cancelled = true;
+      if (!settled && held.current === round) held.current = null;
     };
   }, [token, participant, round, runOpen, signedIn, forget, refresh, onReach]);
 
