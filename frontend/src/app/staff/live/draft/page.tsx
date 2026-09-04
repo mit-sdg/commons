@@ -339,7 +339,7 @@ function DraftPageContent() {
   const ownsLine = tip !== null && author === String(tip.rootAuthor);
 
   return (
-    <PageContainer>
+    <PageContainer width="wide">
       <PageHeader
         eyebrow={
           <Link

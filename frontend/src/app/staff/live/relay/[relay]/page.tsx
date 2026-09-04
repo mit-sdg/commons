@@ -44,14 +44,14 @@ function RelayOverviewContent() {
 
   if (loading && data === null) {
     return (
-      <PageContainer>
+      <PageContainer width="wide">
         <LoadingState />
       </PageContainer>
     );
   }
   if (error) {
     return (
-      <PageContainer>
+      <PageContainer width="wide">
         <ErrorState message={error} onRetry={refetch} />
       </PageContainer>
     );
@@ -60,7 +60,7 @@ function RelayOverviewContent() {
   const found: Relay | null = data?.relay ?? null;
   if (found === null) {
     return (
-      <PageContainer>
+      <PageContainer width="wide">
         <EmptyState
           icon={Layers}
           title="No such relay"
@@ -97,9 +97,8 @@ function RelayOverviewContent() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer width="wide">
       <PageHeader
-        className="max-w-4xl"
         eyebrow={
           <Link
             href="/staff/live"
@@ -156,7 +155,7 @@ function RelayOverviewContent() {
         }
       />
 
-      <div className="max-w-4xl space-y-8">
+      <div className="space-y-8">
         <BeforeClass />
 
         <section className="space-y-3">

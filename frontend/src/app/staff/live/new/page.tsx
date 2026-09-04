@@ -147,7 +147,7 @@ function NewLiveContent() {
   }
 
   return (
-    <PageContainer width="narrow">
+    <PageContainer width="wide">
       <PageHeader
         eyebrow={
           <Link
@@ -167,7 +167,7 @@ function NewLiveContent() {
         }
       />
 
-      <div className="space-y-6">
+      <div className="max-w-2xl space-y-6">
         <Tabs value={kind} onValueChange={chooseKind}>
           <TabsList>
             {KINDS.map((entry) => (
@@ -287,7 +287,7 @@ export default function NewLivePage() {
     <RequireCapability capability="live:host">
       <Suspense
         fallback={
-          <PageContainer width="narrow">
+          <PageContainer width="wide">
             <LoadingState />
           </PageContainer>
         }
