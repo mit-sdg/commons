@@ -633,7 +633,7 @@ function PileGrid({
         className={cn(
           "grid min-w-0 content-start gap-x-[18px] gap-y-[22px] pb-3",
           big
-            ? "grid-cols-5 gap-x-7 gap-y-[34px]"
+            ? "grid-cols-4 gap-x-8 gap-y-[34px]"
             : phone
               ? "grid-cols-2 gap-x-3 gap-y-4"
               : "grid-cols-2 @min-[34rem]:grid-cols-3 @min-[56rem]:grid-cols-4",
