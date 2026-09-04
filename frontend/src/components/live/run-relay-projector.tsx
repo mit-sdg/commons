@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PROJECTOR, ProjectorFit } from "@/components/live/projector-fit";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import { refusalSentence } from "@/components/live/refusals";
@@ -10,6 +10,7 @@ import {
   type RelayRunRound,
   type Wall as WallShape,
 } from "@/components/live/rounds";
+import { modelSilent } from "@/components/live/run-relay-board";
 import { Wall } from "@/components/live/wall";
 import { LoadingState } from "@/components/states";
 import { useQuery } from "@/hooks/use-query";
@@ -18,6 +19,9 @@ import { useAuth } from "@/lib/auth";
 
 /** The wall keeps pace with the room the same way the dashboard does. */
 const POLL_MS = 3_000;
+
+/** How many polls in a row have to go unanswered before the room is told. */
+const MISSES = 2;
 
 /**
  * The relay run on the projector: the wall of the open round, full screen,
@@ -68,9 +72,17 @@ export function RelayProjector({
       : (run.rounds.find((round) => round.leg === carrier.leg)?.number ??
         undefined);
 
+  // When the wall was last answered, which only an answer moves.
+  const [answeredAt, setAnsweredAt] = useState(() => Date.now());
   const { data: wallData, refetch: refetchWall } = useQuery(
     session && shownRound !== null
-      ? () => api["/live/walls/read"]({ round: shownRound }).then(unwrap)
+      ? () =>
+          api["/live/walls/read"]({ round: shownRound })
+            .then(unwrap)
+            .then((read) => {
+              setAnsweredAt(Date.now());
+              return read;
+            })
       : null,
     [session, shownRound, run.openRound],
   );
@@ -95,6 +107,20 @@ export function RelayProjector({
     const timer = setInterval(refetchWall, POLL_MS);
     return () => clearInterval(timer);
   }, [run.open, refetchWall]);
+
+  // A failure is only worth saying while the room would still be waiting on
+  // it, so the clock it is read against moves with the poll.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!run.open) return;
+    const timer = setInterval(() => setNow(Date.now()), POLL_MS);
+    return () => clearInterval(timer);
+  }, [run.open]);
+
+  // One poll that does not come back is a hiccup; two in a row is the room
+  // being shown a wall that has stopped moving. The clock above is what
+  // notices, so the answer that comes back clears it on its own.
+  const gone = run.open && now - answeredAt >= MISSES * POLL_MS;
 
   const url = run.token === null ? null : joinUrl(run.token);
   const code = run.code;
@@ -140,6 +166,13 @@ export function RelayProjector({
   ) : (
     <Standing>{refusalSentence("CLOSED")}</Standing>
   );
+  // Why the wall is not moving, in the words the dashboard uses. A wall that
+  // is not reaching the server at all is said before anything read off it.
+  const word = gone
+    ? "No connection."
+    : modelSilent(wall, now)
+      ? "The model is not answering."
+      : null;
 
   return (
     <div
@@ -165,6 +198,14 @@ export function RelayProjector({
         }
         className="min-h-0 flex-1 overflow-hidden"
       />
+      {word === null ? null : (
+        <span
+          role="status"
+          className="flex-none text-muted-foreground text-xl leading-none"
+        >
+          {word}
+        </span>
+      )}
     </div>
   );
 }
