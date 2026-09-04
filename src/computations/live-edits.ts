@@ -30,10 +30,11 @@ const USES_TABLE = KINDS.map(
 const CONTRACT = `You revise a relay for a live classroom tool. A relay is a short series of rounds run in one meeting; each round is one question the room answers on phones. Every round leaves named groups on the wall — piles of written answers, or the choices of a vote with their counts — and a later round can take the groups the staff member picks from an earlier round.
 Reply with exactly one JSON object and nothing else.
 
-{"kind":"relay","rounds":[{"number":1,"kind":"write","title":"...","prompt":"...","parts":[],"cap":0,"choices":[],"takes":{"from":0,"use":""}}]}
+{"kind":"relay","title":"...","rounds":[{"number":1,"kind":"write","title":"...","prompt":"...","parts":[],"cap":0,"choices":[],"takes":{"from":0,"use":""}}]}
 - Deliver the whole relay as it should read afterward, in order, including the rounds you leave unchanged. A brief that asks for nothing is answered with the relay exactly as it stands, and a brief that asks to clear the relay with "rounds":[]. A brief that asks for what these rules cannot say — a quiz with right answers, a round taking from a later one, a title or a box count past its limit — is met as far as the rules reach and no further: the impossible part is left undone, never forced through by cutting a take, inventing choices, or rewriting a round; a brief of one word or a request for many rounds is an ordinary brief, answered in full.
+- "title" at the top names the whole relay in two or three words and is 1 to ${QUESTIONING_LIMITS.title} characters, written exactly as a round's title below is — the same casing, the same voice, never numbered. The relay as it stands carries the title it goes by and whether that title is only the placeholder its brief minted: name the relay yourself while it is, and otherwise deliver the title it already has unless the brief asks for another.
 - "number" is the round's number in the relay as it stands, so a round you keep, rename, or move keeps its number wherever it lands; a round you add has "number":0. Never give two rounds the same standing number.
-- "title" names the round in two or three words and is 1 to ${QUESTIONING_LIMITS.title} characters, never numbered ("Week 1", "Q3"): the relay numbers its rounds itself. "prompt" is the one question the room reads on a phone, 1 to ${QUESTIONING_LIMITS.prompt} characters, in the staff member's own blunt voice: no greeting, no lead-in, no "please" or "reflect on", nothing before the question. A relay has no right answers: never mark a correct choice and never put an answer or an explanation in a prompt.
+- "title" names the round in two or three words and is 1 to ${QUESTIONING_LIMITS.title} characters, written as a sentence begins — one capital at the front, none on the words after, unless a word is a name ("Target audience", never "Target Audience") — and never numbered ("Week 1", "Q3"): the relay numbers its rounds itself. "prompt" is the one question the room reads on a phone, 1 to ${QUESTIONING_LIMITS.prompt} characters, in the staff member's own blunt voice: no greeting, no lead-in, no "please" or "reflect on", nothing before the question. A relay has no right answers: never mark a correct choice and never put an answer or an explanation in a prompt.
 - A round's "kind" is "write" (one written answer; "parts":[] and "choices":[]), "list" (several written answers: "parts" are up to ${QUESTIONING_LIMITS.parts} short distinct labels, one box each with "cap":0, or one label with a "cap" of 2 to ${QUESTIONING_LIMITS.cap} for one box repeated; "choices":[]), or "vote" ("choices" are 2 to ${QUESTIONING_LIMITS.choices} distinct, nonblank options the brief names or the question plainly implies; "parts":[]). A round may change kind when the brief asks; a vote that loses its choices and takes none becomes a write round, never a vote with made-up choices.
 - "takes" says what a round does with the groups picked from an earlier round: "from" is that round's number in the relay you deliver, and "use" is one of the uses open to the round's kind:
 ${USES_TABLE}
@@ -86,7 +87,9 @@ interface Line {
 
 type DraftedRound = Round & { takes: RoundTakes; number: number };
 
-type Reading = { kind: "relay"; rounds: DraftedRound[] } | { kind: "neither"; reason: string };
+type Reading =
+  | { kind: "relay"; title: string; rounds: DraftedRound[] }
+  | { kind: "neither"; reason: string };
 
 const asString = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
 
@@ -113,6 +116,69 @@ const readJson = (text: string): unknown => {
 
 const sameStrings = (left: string[], right: string[]): boolean =>
   left.length === right.length && left.every((entry, index) => entry === right[index]);
+
+/** The words a title is cut short at, so a placeholder ends on a whole phrase. */
+const TAIL = new Set([
+  "a",
+  "an",
+  "and",
+  "as",
+  "at",
+  "but",
+  "by",
+  "for",
+  "from",
+  "if",
+  "in",
+  "into",
+  "nor",
+  "of",
+  "on",
+  "or",
+  "over",
+  "so",
+  "than",
+  "that",
+  "the",
+  "then",
+  "to",
+  "when",
+  "while",
+  "with",
+  "yet",
+]);
+
+/** The words joined, the last one without the mark it ends on. */
+function phrase(words: string[]): string {
+  const kept = [...words];
+  const last = kept.length - 1;
+  if (last >= 0) kept[last] = (kept[last] ?? "").replace(/[,;:.!?\u2014\u2013-]+$/, "");
+  return kept.join(" ");
+}
+
+/** How far into the words a whole phrase reaches: the last clause break, else the last word that can end one. */
+function clause(words: string[]): string {
+  for (let index = words.length - 1; index >= 1; index--) {
+    if (/[,;:.]$/.test(words[index] ?? "")) {
+      return phrase(words.slice(0, index + 1));
+    }
+  }
+  const kept = [...words];
+  while (kept.length > 1) {
+    const last = phrase([kept[kept.length - 1] ?? ""]).toLowerCase();
+    if (last !== "" && !TAIL.has(last)) break;
+    kept.pop();
+  }
+  return phrase(kept);
+}
+
+/** The name a relay stands under before the model has named it: the brief's own opening. */
+export function mintedRelayTitle({ request }: { request: string }): string {
+  const words = request.trim().split(/\s+/).filter(Boolean);
+  const head = words.slice(0, 6);
+  const title = (words.length > 6 ? clause(head) : phrase(head)).slice(0, 60).trim();
+  return title === "" ? "New relay" : title;
+}
 
 /** The relay as it stands: one round per leg, in position order. */
 function standingRounds(legs: unknown, materials: unknown): StandingRound[] {
@@ -143,6 +209,9 @@ function standingRounds(legs: unknown, materials: unknown): StandingRound[] {
     };
   });
 }
+
+/** Where the passage sets down the relay the brief is written against. */
+const STANDS = "The relay as it stands:\n";
 
 /** What the reasoner is shown of the relay: its rounds by number, never by identity. */
 function standingFace(legs: unknown, materials: unknown) {
@@ -227,6 +296,13 @@ function parse(reply: string): Reading {
   if (record.rounds.length > ROUNDS) {
     return { kind: "neither", reason: `The relay carried more than ${ROUNDS} rounds.` };
   }
+  const given = asString(record.title);
+  let name = "";
+  if (given !== "") {
+    const read = normalizeTitle(given);
+    if (!read.ok) return { kind: "neither", reason: read.violation.message };
+    name = read.value;
+  }
   const rounds: DraftedRound[] = [];
   for (const entry of record.rounds) {
     if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
@@ -269,7 +345,7 @@ function parse(reply: string): Reading {
       takes,
     });
   }
-  return { kind: "relay", rounds };
+  return { kind: "relay", title: name, rounds };
 }
 
 export function legMaterials({ legs }: { legs: unknown }): string[] {
@@ -278,14 +354,32 @@ export function legMaterials({ legs }: { legs: unknown }): string[] {
 
 export function relayDraftPassage({
   request,
+  title,
   legs,
   materials,
 }: {
   request: string;
+  title: string;
   legs: unknown;
   materials: unknown;
 }): string {
-  return `${CONTRACT}\n\nThe relay as it stands:\n${JSON.stringify(standingFace(legs, materials))}\n\nThe brief:\n${request}`;
+  const stands = {
+    title,
+    placeholder: title.trim() === mintedRelayTitle({ request }),
+    rounds: standingFace(legs, materials),
+  };
+  return `${CONTRACT}\n\n${STANDS}${JSON.stringify(stands)}\n\nThe brief:\n${request}`;
+}
+
+/**
+ * The relay the passage sets down: the title it stood under, and whether that
+ * title was only the placeholder its brief minted. The passage writes it as one
+ * line of JSON, so the line after the mark is the whole of it.
+ */
+function passageRelay(passage: string): { title: string; placeholder: boolean } {
+  const written = passage.split(STANDS)[1]?.split("\n")[0] ?? "";
+  const stood = asRecord(readJson(written));
+  return { title: asString(stood.title), placeholder: stood.placeholder === true };
 }
 
 export function relayDraftRepairPassage({
@@ -300,8 +394,18 @@ export function relayDraftRepairPassage({
   return `${passage}\n\nYour previous reply came back unusable. The reply was:\n${offering}\n\nThe account of the problem:\n${account}\n\nDeliver a correct reply this time.`;
 }
 
-export function relayDraftReading({ reply }: { reply: string }): string {
-  return parse(reply).kind;
+/**
+ * What the reply is, read against the relay it answers: `relay`, rounds to
+ * offer; `named`, the same reply, naming a relay that still stands under the
+ * placeholder its brief minted, so the name it gives is taken without asking;
+ * `neither`, nothing that can be read.
+ */
+export function relayDraftReading({ reply, passage }: { reply: string; passage: string }): string {
+  const reading = parse(reply);
+  if (reading.kind !== "relay") return reading.kind;
+  const stood = passageRelay(passage);
+  const names = reading.title !== "" && reading.title !== stood.title;
+  return stood.placeholder && names ? "named" : "relay";
 }
 
 export function relayDraftReason({ reply }: { reply: string }): string {
@@ -357,15 +461,18 @@ const KEEP: Line = { kind: "keep", target: "", value: "" };
  * applied against the relay the earlier lines have made: takes cleared (off a
  * source that goes, or off a round that no longer takes), removes, field
  * edits, moves, adds, then the takes that remain, whose round numbers are the
- * delivered relay's. A reply that numbers
+ * delivered relay's. A name for the relay itself comes first, as a `title`
+ * line naming no round. A reply that numbers
  * no round is read by position, as a draft over an empty relay is.
  */
 export function relayEditLines({
   reply,
+  title,
   legs,
   materials,
 }: {
   reply: string;
+  title: string;
   legs: unknown;
   materials: unknown;
 }): Line[] {
@@ -373,9 +480,16 @@ export function relayEditLines({
   if (reading.kind !== "relay") return [];
   const standing = standingRounds(legs, materials);
   const numbered = reading.rounds.some((round) => round.number > 0);
-  const lines = numbered
-    ? linesByIdentity(standing, reading.rounds)
-    : linesByPosition(standing, reading.rounds);
+  const named: Line[] =
+    reading.title === "" || reading.title === title
+      ? []
+      : [{ kind: "title", target: "", value: reading.title }];
+  const lines = [
+    ...named,
+    ...(numbered
+      ? linesByIdentity(standing, reading.rounds)
+      : linesByPosition(standing, reading.rounds)),
+  ];
   return lines.length === 0 ? [KEEP] : lines;
 }
 

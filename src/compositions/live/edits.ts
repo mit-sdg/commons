@@ -36,7 +36,20 @@ const PATIENCE = 2;
  */
 export const Draft = endpoint(
   "/live/edits/draft",
-  ({ session, relay, request, user, at, said, legs, questionnaires, materials, passage, asking }) =>
+  ({
+    session,
+    relay,
+    request,
+    user,
+    at,
+    said,
+    title,
+    legs,
+    questionnaires,
+    materials,
+    passage,
+    asking,
+  }) =>
     receive({ session, relay, request }).then(
       where(
         now(at),
@@ -44,10 +57,11 @@ export const Draft = endpoint(
         mayHostLive({ user }),
         compute(computations.briefStanding, { request }, said),
         is.among(said, ["given"]),
+        Relaying._relay({ relay }).is({ title }),
         Relaying._plan({ relay }).is({ legs }),
         compute(computations.legMaterials, { legs }, questionnaires),
         Questioning._materials({ questionnaires }).is({ materials }),
-        compute(computations.relayDraftPassage, { request, legs, materials }, passage),
+        compute(computations.relayDraftPassage, { request, title, legs, materials }, passage),
       )
         .then(
           Reasoning.ask({ reasoner: REASONER, about: relay, passage, at }).responds({
@@ -82,35 +96,67 @@ export const Draft = endpoint(
  * A reply meets its reading against the relay as it stands now, not as it stood
  * when the ask went out. The readings partition every reply, so exactly one of
  * these fires per answered ask; both stand on the relay being a relay, so a
- * reply about a round's wall never matches here.
+ * reply about a round's wall never matches here. A reply that names a relay
+ * still standing under the placeholder its brief minted has that one line taken
+ * where it is offered, so the relay carries the model's name and the panel asks
+ * about the rounds alone.
  */
 export const ReplyOffersRelayEdits = reaction(
-  ({ asking, reply, relay, reading, legs, questionnaires, materials, lines, at }) =>
+  ({
+    asking,
+    reply,
+    relay,
+    passage,
+    title,
+    reading,
+    legs,
+    questionnaires,
+    materials,
+    lines,
+    at,
+    offering,
+    stood,
+    named,
+    suggestion,
+    kind,
+    target,
+  }) =>
     when(Reasoning.answer({ asking, reply }).responds())
       .where(
         now(at),
-        Reasoning._asking({ asking }).is({ about: relay }),
-        Relaying._relay({ relay }),
-        compute(computations.relayDraftReading, { reply }, reading),
-        is.among(reading, ["relay"]),
+        Reasoning._asking({ asking }).is({ about: relay, passage }),
+        Relaying._relay({ relay }).is({ title }),
+        compute(computations.relayDraftReading, { reply, passage }, reading),
+        is.among(reading, ["relay", "named"]),
         Relaying._plan({ relay }).is({ legs }),
         compute(computations.legMaterials, { legs }, questionnaires),
         Questioning._materials({ questionnaires }).is({ materials }),
-        compute(computations.relayEditLines, { reply, legs, materials }, lines),
+        compute(computations.relayEditLines, { reply, title, legs, materials }, lines),
       )
-      .then(Suggesting.offer({ subject: relay, lines, at })),
+      .then(Suggesting.offer({ subject: relay, lines, at }).responds({ offering }))
+      .then(
+        where(
+          Reasoning._asking({ asking }).is({ passage: stood }),
+          compute(computations.relayDraftReading, { reply, passage: stood }, named),
+          is.among(named, ["named"]),
+          Suggesting._pendingIn({ offering }).is({ suggestion, kind, target }),
+          is.among(kind, ["title"]),
+          no(Relaying._leg({ leg: target })),
+        ).then(Suggesting.take({ suggestion })),
+      ),
 );
 
-export const ReplyUnusableComplains = reaction(({ asking, reply, relay, reading, account }) =>
-  when(Reasoning.answer({ asking, reply }).responds())
-    .where(
-      Reasoning._asking({ asking }).is({ about: relay }),
-      Relaying._relay({ relay }),
-      compute(computations.relayDraftReading, { reply }, reading),
-      is.among(reading, ["neither"]),
-      compute(computations.relayDraftReason, { reply }, account),
-    )
-    .then(Insisting.complain({ aim: relay, patience: PATIENCE, offering: reply, account })),
+export const ReplyUnusableComplains = reaction(
+  ({ asking, reply, relay, passage, reading, account }) =>
+    when(Reasoning.answer({ asking, reply }).responds())
+      .where(
+        Reasoning._asking({ asking }).is({ about: relay, passage }),
+        Relaying._relay({ relay }),
+        compute(computations.relayDraftReading, { reply, passage }, reading),
+        is.among(reading, ["neither"]),
+        compute(computations.relayDraftReason, { reply }, account),
+      )
+      .then(Insisting.complain({ aim: relay, patience: PATIENCE, offering: reply, account })),
 );
 
 /**
@@ -386,6 +432,17 @@ export const TakenTitleRetitlesRound = reaction(({ suggestion, target, value, re
       Relaying._leg({ leg: target }).is({ relay, material }),
     )
     .then(Questioning.retitle({ questionnaire: material, title: value })),
+);
+
+/** A title line naming no round names the relay itself. */
+export const TakenTitleRetitlesRelay = reaction(({ suggestion, target, value, relay }) =>
+  when(Suggesting.take({ suggestion }).responds({ kind: "title", target, value }))
+    .where(
+      Suggesting._suggestion({ suggestion }).is({ subject: relay }),
+      Relaying._relay({ relay }),
+      no(Relaying._leg({ leg: target })),
+    )
+    .then(Relaying.retitle({ relay, title: value })),
 );
 
 export const TakenPromptRevisesRound = reaction(

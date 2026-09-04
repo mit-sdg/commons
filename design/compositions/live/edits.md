@@ -4,7 +4,7 @@ The model never edits a relay or a wall directly. Every job it does — placing 
 
 ## Drafting a relay
 
-[Live.edits.Draft](reaction:Live.edits.Draft) puts a brief before Reasoning together with the relay as it stands — its rounds with title, prompt, parts, choices, and takes, read through Relaying's plan and Questioning's materials and rendered by [relayDraftPassage](computation:relayDraftPassage) — and asks for the whole relay as it should read afterward; a blank brief — [briefStanding](computation:briefStanding) — is refused `INVALID_REQUEST` before any ask is spent. The passage lives beside the frozen questionnaire-drafting contract and never changes it. [Live.edits.ReplyOffersRelayEdits](reaction:Live.edits.ReplyOffersRelayEdits) reads a usable reply against the same standing relay through [relayEditLines](computation:relayEditLines) and offers the difference as lines about the relay. The passage shows every standing round with its number and asks the reply to keep that number on a round it keeps, renames, or moves, and to number a new round 0, so a round keeps its identity the way a refined questionnaire does: `title`, `prompt`, `parts`, and `choices` for a round whose field changed; `move` for a round that lands at another number; `remove` for a standing round the reply no longer names; `add` for a round numbered 0, carrying its takes and the number it lands at; and `takes` for a round whose takes changed, naming the source by its number in the delivered relay. The lines come in the order they apply — takes cleared off a source that goes, removes, field edits, moves, adds, the takes that remain — so each reads the relay the earlier lines made. A reply that numbers no round is read by position, which is how a draft over an empty relay reads. A reply that leaves the relay as it stands offers one `keep` line, so the panel can say nothing needs to change; taking it changes nothing. A reply that cannot be read is stood upon once, through Insisting, by [Live.edits.ReplyUnusableComplains](reaction:Live.edits.ReplyUnusableComplains), [Live.edits.ComplaintRetriesTheAsk](reaction:Live.edits.ComplaintRetriesTheAsk), [Live.edits.OfferedEditsSatisfyInsistence](reaction:Live.edits.OfferedEditsSatisfyInsistence), and [Live.edits.SpentPatienceGivesUp](reaction:Live.edits.SpentPatienceGivesUp); a reasoner that could not be reached closes the insistence through [Live.edits.FailedAskGivesUp](reaction:Live.edits.FailedAskGivesUp), and the panel reads that nothing came.
+[Live.edits.Draft](reaction:Live.edits.Draft) puts a brief before Reasoning together with the relay as it stands — its rounds with title, prompt, parts, choices, and takes, read through Relaying's plan and Questioning's materials and rendered by [relayDraftPassage](computation:relayDraftPassage), together with the title the relay goes by and whether that title is only the placeholder its brief minted — and asks for the whole relay as it should read afterward, its own name included; a blank brief — [briefStanding](computation:briefStanding) — is refused `INVALID_REQUEST` before any ask is spent. The passage lives beside the frozen questionnaire-drafting contract and never changes it. [Live.edits.ReplyOffersRelayEdits](reaction:Live.edits.ReplyOffersRelayEdits) reads a usable reply against the same standing relay through [relayEditLines](computation:relayEditLines) and offers the difference as lines about the relay. The passage shows every standing round with its number and asks the reply to keep that number on a round it keeps, renames, or moves, and to number a new round 0, so a round keeps its identity the way a refined questionnaire does: `title`, `prompt`, `parts`, and `choices` for a round whose field changed; `move` for a round that lands at another number; `remove` for a standing round the reply no longer names; `add` for a round numbered 0, carrying its takes and the number it lands at; and `takes` for a round whose takes changed, naming the source by its number in the delivered relay. The relay's own name comes first, as a `title` line naming no round: [relayDraftReading](computation:relayDraftReading) answers `named` for a reply that names a relay still standing under the placeholder its brief minted, and that one line is taken where it is offered, so the relay carries the model's name without being asked about it; a relay named by hand is asked like anything else. The lines come in the order they apply — takes cleared off a source that goes, removes, field edits, moves, adds, the takes that remain — so each reads the relay the earlier lines made. A reply that numbers no round is read by position, which is how a draft over an empty relay reads. A reply that leaves the relay as it stands offers one `keep` line, so the panel can say nothing needs to change; taking it changes nothing. A reply that cannot be read is stood upon once, through Insisting, by [Live.edits.ReplyUnusableComplains](reaction:Live.edits.ReplyUnusableComplains), [Live.edits.ComplaintRetriesTheAsk](reaction:Live.edits.ComplaintRetriesTheAsk), [Live.edits.OfferedEditsSatisfyInsistence](reaction:Live.edits.OfferedEditsSatisfyInsistence), and [Live.edits.SpentPatienceGivesUp](reaction:Live.edits.SpentPatienceGivesUp); a reasoner that could not be reached closes the insistence through [Live.edits.FailedAskGivesUp](reaction:Live.edits.FailedAskGivesUp), and the panel reads that nothing came.
 
 ## Confirming a line
 
@@ -14,6 +14,7 @@ The model never edits a relay or a wall directly. Every job it does — placing 
 - [Live.edits.TakenRemoveRemovesRound](reaction:Live.edits.TakenRemoveRemovesRound) removes the leg and retires its questionnaire; Relaying refuses while another round takes from it, and the panel shows the refusal.
 - [Live.edits.TakenMoveMovesRound](reaction:Live.edits.TakenMoveMovesRound) places the round at the line's position; Relaying refuses an order that would put a round before what it takes from.
 - [Live.edits.TakenTitleRetitlesRound](reaction:Live.edits.TakenTitleRetitlesRound), [Live.edits.TakenPromptRevisesRound](reaction:Live.edits.TakenPromptRevisesRound), [Live.edits.TakenChoicesReviseRound](reaction:Live.edits.TakenChoicesReviseRound), and [Live.edits.TakenPartsSetParts](reaction:Live.edits.TakenPartsSetParts) each change one field of the round's question and leave the rest as it stands.
+- [Live.edits.TakenTitleRetitlesRelay](reaction:Live.edits.TakenTitleRetitlesRelay) retitles the relay itself for a `title` line that names no round.
 - [Live.edits.TakenTakesDraws](reaction:Live.edits.TakenTakesDraws) sets what a round takes, naming the source by its number — Relaying replaces the draw that stood, so a round takes from one source; [Live.edits.TakenTakesUndraws](reaction:Live.edits.TakenTakesUndraws) clears it when the line says the round takes nothing.
 
 A line refused by a concept stays taken with its refusal in the log, and the panel, reading the relay back, shows what did not change.
@@ -23,9 +24,10 @@ briefStanding(request: String) : String
   Answers `given` when a brief says anything, and `blank` when it is empty or
   whitespace.
 
-relayDraftPassage(request: String, legs: Json, materials: Json) : String
+relayDraftPassage(request: String, title: String, legs: Json, materials: Json) : String
   Renders the passage that asks the model for a whole relay from a brief and
-  the relay as it stands.
+  the relay as it stands, under the title it goes by and whether the brief
+  minted it.
 
 legMaterials(legs: Json) : Strings
   Answers the materials of a relay plan's legs, in order.
@@ -34,17 +36,20 @@ relayDraftRepairPassage(passage: String, offering: String, account: String) : St
   Renders the passage that stands on a relay-drafting ask: the passage that was
   asked, with the exact reply and the account of what was wrong.
 
-relayDraftReading(reply: String) : String
-  Reads a relay-drafting reply and answers `relay` or `neither`.
+relayDraftReading(reply: String, passage: String) : String
+  Reads a relay-drafting reply against the passage it answers: `relay`,
+  `named` for one that names a relay still standing under its minted
+  placeholder, or `neither`.
 
 relayDraftReason(reply: String) : String
   Answers why a relay-drafting reply could not be read, and an empty string
   when it could.
 
-relayEditLines(reply: String, legs: Json, materials: Json) : Json
+relayEditLines(reply: String, title: String, legs: Json, materials: Json) : Json
   Answers the suggestion lines that turn the relay as it stands into the
-  drafted one: by the numbers the reply keeps, or by position when it
-  numbers no round; one `keep` line when nothing changes.
+  drafted one: the relay's own name first, then by the numbers the reply
+  keeps, or by position when it numbers no round; one `keep` line when
+  nothing changes.
 
 editRoundJson(value: String) : Json
   Reads an `add` line's value into the round it describes.

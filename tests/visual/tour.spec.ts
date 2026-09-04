@@ -197,7 +197,7 @@ for (const theme of THEMES) {
     await snap(page, "DraftRelay", STAFF);
     await desk(page);
     await page.getByRole("button", { name: "Draft", exact: true }).click();
-    await page.waitForURL(/\/staff\/live\/relay\/[0-9a-f-]{36}\/edit\?draft=/, { timeout: 20_000 });
+    await page.waitForURL(/\/staff\/live\/relay\/[0-9a-f-]{36}\/edit\?(draft|ask)=/, { timeout: 20_000 });
     await expect(page.getByText("add round").first()).toBeVisible({ timeout: 60_000 });
     await snap(page, "DraftRelayPanel", STAFF);
     await desk(page);

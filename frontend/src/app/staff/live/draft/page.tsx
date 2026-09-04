@@ -239,17 +239,8 @@ function DraftPageContent() {
         toast.error(publicErrorMessage(planned.error));
         return;
       }
-      const asked = await api["/live/edits/draft"]({
-        relay: planned.relay,
-        request,
-      });
-      if (isApiError(asked)) {
-        setDescribing(false);
-        toast.error(publicErrorMessage(asked.error));
-        return;
-      }
       router.push(
-        `/staff/live/relay/${planned.relay}/edit?draft=${asked.asking}`,
+        `/staff/live/relay/${planned.relay}/edit?ask=${encodeURIComponent(request)}`,
       );
     },
     [router],

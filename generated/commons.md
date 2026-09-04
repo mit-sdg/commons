@@ -1449,7 +1449,7 @@ Concrete types:
 - `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 86.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 82.
-- `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 22.
+- `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 23.
 - `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 367.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 41.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 33.
@@ -1457,27 +1457,27 @@ Concrete types:
 - `clarifiedPassage(request: String, question: String, answer: String) : String` — [Commons application](../design/application.md), line 433.
 - `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 421.
 - `draftingPassage(request: String) : String` — [Commons application](../design/application.md), line 425.
-- `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 81.
-- `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 84.
-- `editParts(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 78.
-- `editPosition(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 87.
-- `editPrompt(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 66.
-- `editRoundCap(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 72.
-- `editRoundChoices(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 75.
-- `editRoundJson(value: String) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 49.
-- `editRoundParts(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
-- `editRoundPosition(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 60.
-- `editRoundTakesFrom(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 52.
-- `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 56.
-- `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
-- `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 90.
+- `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 86.
+- `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 89.
+- `editParts(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 83.
+- `editPosition(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 92.
+- `editPrompt(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 71.
+- `editRoundCap(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 77.
+- `editRoundChoices(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 80.
+- `editRoundJson(value: String) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
+- `editRoundParts(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 74.
+- `editRoundPosition(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 65.
+- `editRoundTakesFrom(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 57.
+- `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 61.
+- `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 68.
+- `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 95.
 - `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 371.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 89.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 28.
 - `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 358.
 - `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 355.
 - `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 45.
-- `legMaterials(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 30.
+- `legMaterials(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
 - `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 74.
 - `lidPassage(pile: String, categories: Json, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 70.
 - `noChoices(question: String) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 53.
@@ -1508,11 +1508,11 @@ Concrete types:
 - `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 464.
 - `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 469.
 - `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 473.
-- `relayDraftPassage(request: String, legs: Json, materials: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 26.
-- `relayDraftReading(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 37.
-- `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 40.
-- `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 33.
-- `relayEditLines(reply: String, legs: Json, materials: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 44.
+- `relayDraftPassage(request: String, title: String, legs: Json, materials: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 27.
+- `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 39.
+- `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 44.
+- `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 35.
+- `relayEditLines(reply: String, title: String, legs: Json, materials: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 48.
 - `repairPassage(request: String, offering: String, account: String) : String` — [Commons application](../design/application.md), line 437.
 - `revisionPassage(request: String, form: String, material: Json) : String` — [Commons application](../design/application.md), line 429.
 - `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 390.
@@ -14561,7 +14561,7 @@ then
 
 Authored path: `Live.edits.Decline`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 96.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/decline", requestId, session, suggestion)
@@ -14576,7 +14576,7 @@ then
 
 Authored path: `Live.edits.Decline`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 96.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 101.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/decline", requestId, session, suggestion)
@@ -14592,7 +14592,7 @@ then
 
 Authored path: `Live.edits.Decline`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 96.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 101.
 
 ```reaction
 when Suggesting.decline (suggestion, result.suggestion: declined), asked by Live.edits.Decline:success
@@ -14606,7 +14606,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 97.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14623,7 +14623,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 97.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14638,7 +14638,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 97.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14654,7 +14654,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 97.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14664,10 +14664,11 @@ where
   view "(user) may host live runs" with (user)
   said is briefStanding (request)
   said is among ["given"]
+  Relaying._relay (relay) has (title)
   Relaying._plan (relay) has (legs)
   questionnaires is legMaterials (legs)
   Questioning._materials (questionnaires) has (materials)
-  passage is relayDraftPassage (legs, materials, request)
+  passage is relayDraftPassage (legs, materials, request, title)
 then
   Reasoning.ask (about: relay, at, passage, reasoner: "gemini-flash")
 ```
@@ -14676,7 +14677,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 97.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
 
 ```reaction
 when Reasoning.ask (about: relay, at, passage, reasoner: "gemini-flash", asking), asked by Live.edits.Draft:success
@@ -14719,7 +14720,7 @@ then
 
 Authored path: `Live.edits.Offerings`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 98.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/offerings", relay, requestId, session)
@@ -14734,7 +14735,7 @@ then
 
 Authored path: `Live.edits.Offerings`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 98.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/offerings", relay, requestId, session)
@@ -14756,16 +14757,35 @@ Authored path: `Live.edits.ReplyOffersRelayEdits`.
 when Reasoning.answer (asking, reply)
 where
   at is the current flow's instant
-  Reasoning._asking (asking) has (about: relay)
-  Relaying._relay (relay)
-  reading is relayDraftReading (reply)
-  reading is among ["relay"]
+  Reasoning._asking (asking) has (about: relay, passage)
+  Relaying._relay (relay) has (title)
+  reading is relayDraftReading (passage, reply)
+  reading is among ["relay", "named"]
   Relaying._plan (relay) has (legs)
   questionnaires is legMaterials (legs)
   Questioning._materials (questionnaires) has (materials)
-  lines is relayEditLines (legs, materials, reply)
+  lines is relayEditLines (legs, materials, reply, title)
 then
   Suggesting.offer (at, lines, subject: relay)
+```
+
+### Live.edits.ReplyOffersRelayEdits#2
+
+Authored path: `Live.edits.ReplyOffersRelayEdits`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
+
+```reaction
+when Suggesting.offer (at, lines, subject: relay, offering), asked by Live.edits.ReplyOffersRelayEdits
+where
+  Suggesting._pendingIn (offering) has (kind, suggestion, target)
+  kind is among ["title"]
+  no Relaying._leg (leg: target)
+  earlier, Reasoning.answer (asking, reply)
+  Reasoning._asking (asking) has (passage: stood)
+  named is relayDraftReading (passage: stood, reply)
+  named is among ["named"]
+then
+  Suggesting.take (suggestion)
 ```
 
 ### Live.edits.ReplyUnusableComplains
@@ -14776,9 +14796,9 @@ Authored path: `Live.edits.ReplyUnusableComplains`.
 ```reaction
 when Reasoning.answer (asking, reply)
 where
-  Reasoning._asking (asking) has (about: relay)
+  Reasoning._asking (asking) has (about: relay, passage)
   Relaying._relay (relay)
-  reading is relayDraftReading (reply)
+  reading is relayDraftReading (passage, reply)
   reading is among ["neither"]
   account is relayDraftReason (reply)
 then
@@ -14803,7 +14823,7 @@ then
 
 Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 99.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
@@ -14818,7 +14838,7 @@ then
 
 Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 99.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
@@ -14836,7 +14856,7 @@ then
 
 Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 99.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
 
 ```reaction
 when Suggesting.take (suggestion, result.suggestion: taken), asked by Live.edits.Take:relay
@@ -14850,7 +14870,7 @@ then
 
 Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 99.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
@@ -14869,7 +14889,7 @@ then
 
 Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 99.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
 
 ```reaction
 when Suggesting.take (suggestion, result.suggestion: taken), asked by Live.edits.Take:round
@@ -14883,7 +14903,7 @@ then
 
 Authored path: `Live.edits.Take`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 99.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
@@ -15092,7 +15112,7 @@ then
 ### Live.edits.TakenTakesDraws
 
 Authored path: `Live.edits.TakenTakesDraws`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 18.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "takes", target, value)
@@ -15111,7 +15131,7 @@ then
 ### Live.edits.TakenTakesUndraws
 
 Authored path: `Live.edits.TakenTakesUndraws`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 18.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "takes", target, value)
@@ -15124,6 +15144,21 @@ where
   Relaying._draws (leg: target) has (source)
 then
   Relaying.undraw (leg: target, source)
+```
+
+### Live.edits.TakenTitleRetitlesRelay
+
+Authored path: `Live.edits.TakenTitleRetitlesRelay`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+
+```reaction
+when Suggesting.take (suggestion, kind: "title", target, value)
+where
+  Suggesting._suggestion (suggestion) has (subject: relay)
+  Relaying._relay (relay)
+  no Relaying._leg (leg: target)
+then
+  Relaying.retitle (relay, title: value)
 ```
 
 ### Live.edits.TakenTitleRetitlesRound

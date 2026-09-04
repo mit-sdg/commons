@@ -2,10 +2,11 @@
 
 import { ArrowLeft, Layers, Sparkles } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Fragment, Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
-import { AiPanel } from "@/components/live/ai-panel";
+import { useDrafting } from "@/components/live/ai-panel";
+import { RELAY_LINES } from "@/components/live/brief-chips";
 import { refusalSentence } from "@/components/live/refusals";
 import {
   ActButton,
@@ -13,6 +14,8 @@ import {
   RoundEditor,
   TITLE_FIELD,
 } from "@/components/live/round-editor";
+import { PhoneColumn } from "@/components/live/round-preview";
+import { GOING } from "@/components/live/round-proposal";
 import { NO_ROUNDS } from "@/components/live/rounds";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -33,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 type Relay = NonNullable<Output<"/live/relays/get">["relay"]>;
 
-/** Draft with AI sends a brief on its way here and names the ask; every other link only opens the panel. */
+/** A brief on its way here names the ask it was sent as; every other link only opens the box. */
 const ASK = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 function RelaySetupContent() {
@@ -90,20 +93,44 @@ function RelaySetup({
   const router = useRouter();
   const searchParams = useSearchParams();
   const link = searchParams.get("draft");
+  const brief = searchParams.get("ask");
   const [title, setTitle] = useState(relay.title);
-  // The panel opens itself once lines are waiting, and after that only the
-  // button closes it — so a line settled to nothing does not take it away.
-  const [shown, setShown] = useState<boolean | null>(null);
+  const [asking, setAsking] = useState(link !== null || brief !== null);
+  // The brief the address carries goes out from here, so the page it was
+  // written on navigates the moment the relay is planned.
+  const [sent, setSent] = useState<number | null>(null);
+  const going = useRef(false);
+  // The round the phone shows: the card being edited, or the one tapped in the
+  // strip at the phone's top.
+  const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (brief === null || brief.trim() === "" || going.current) return;
+    going.current = true;
+    const at = Date.now();
+    void api["/live/edits/draft"]({ relay: relay.relay, request: brief }).then(
+      (result) => {
+        if (isApiError(result)) {
+          toast.error(publicErrorMessage(result.error));
+          return;
+        }
+        setSent(at);
+      },
+    );
+    router.replace(`/staff/live/relay/${relay.relay}/edit`);
+  }, [brief, relay.relay, router]);
+
+  const drafting = useDrafting({
+    relay: relay.relay,
+    rounds: relay.rounds,
+    title: relay.title,
+    pending: sent !== null || (link !== null && ASK.test(link)),
+    since: sent,
+    onChanged,
+  });
+
   const openRun = relay.runs.find((run) => run.open) ?? null;
-  const { data: offered } = useQuery(
-    () => api["/live/edits/offerings"]({ relay: relay.relay }).then(unwrap),
-    [relay],
-  );
-  const pending = (offered?.offerings[0]?.lines ?? []).filter(
-    (line) => line.standing === "pending" && line.kind !== "keep",
-  ).length;
   const { data: running } = useQuery(
     openRun === null
       ? null
@@ -116,8 +143,10 @@ function RelaySetup({
       .map((round) => round.leg),
   );
 
-  if (shown === null && (link !== null || pending > 0)) setShown(true);
-  const drafting = shown ?? false;
+  // The line opens itself once proposals stand, and after that only the button
+  // closes it — so the pair that settles them is never put away.
+  if (!asking && drafting.standing > 0) setAsking(true);
+  const open = asking && !relay.retired;
 
   async function retitle() {
     const wanted = title.trim();
@@ -202,15 +231,15 @@ function RelaySetup({
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
-              aria-expanded={drafting}
-              aria-controls="draft-panel"
-              className={drafting ? "border-primary text-primary" : undefined}
-              onClick={() => setShown(!drafting)}
+              aria-expanded={open}
+              aria-controls="brief-line"
+              className={open ? "border-primary text-primary" : undefined}
+              onClick={() => setAsking(!asking)}
             >
-              <Sparkles /> Draft with AI
-              {pending > 0 ? (
+              <Sparkles /> Ask AI
+              {drafting.standing > 0 ? (
                 <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary font-mono text-[11px] text-primary-foreground">
-                  {pending}
+                  {drafting.standing}
                 </span>
               ) : null}
             </Button>
@@ -236,33 +265,60 @@ function RelaySetup({
         )}
       </header>
 
-      <div id="draft-panel">
-        {drafting && !relay.retired ? (
-          <AiPanel
-            relay={relay.relay}
-            rounds={relay.rounds}
-            pending={link !== null && ASK.test(link)}
-            onChanged={onChanged}
-          />
-        ) : null}
-      </div>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex flex-col gap-3">
+          {open ? drafting.line : null}
+          {relay.rounds.map((round) => (
+            <Fragment key={round.leg}>
+              {drafting.adds(round.number)}
+              <div
+                className={cn(drafting.going(round.leg) && GOING)}
+                onFocusCapture={() => setSelected(round.leg)}
+              >
+                <RoundEditor
+                  round={round}
+                  rounds={relay.rounds}
+                  locked={relay.retired || reached.has(round.leg)}
+                  note={
+                    reached.has(round.leg)
+                      ? refusalSentence("RUN_OPEN", { round: round.number })
+                      : null
+                  }
+                  proposal={drafting.proposal(round.leg)}
+                  onChanged={onChanged}
+                />
+              </div>
+              {selected === round.leg ? (
+                <div className="lg:hidden">
+                  <PhoneColumn
+                    rounds={relay.rounds}
+                    selected={selected}
+                    onSelect={setSelected}
+                    variant="drawer"
+                  />
+                </div>
+              ) : null}
+            </Fragment>
+          ))}
+          {drafting.adds(relay.rounds.length + 1)}
+          {relay.rounds.length === 0 && drafting.standing === 0 ? (
+            <div className="max-w-prose space-y-2 text-muted-foreground">
+              {RELAY_LINES.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+          ) : null}
+          {relay.retired ? null : <AddRoundCard busy={busy} onAdd={addRound} />}
+        </div>
 
-      <div className="flex max-w-4xl flex-col gap-3">
-        {relay.rounds.map((round) => (
-          <RoundEditor
-            key={round.leg}
-            round={round}
+        <div className="hidden lg:block lg:sticky lg:top-[130px]">
+          <PhoneColumn
             rounds={relay.rounds}
-            locked={relay.retired || reached.has(round.leg)}
-            note={
-              reached.has(round.leg)
-                ? refusalSentence("RUN_OPEN", { round: round.number })
-                : null
-            }
-            onChanged={onChanged}
+            selected={selected}
+            onSelect={setSelected}
+            variant="column"
           />
-        ))}
-        {relay.retired ? null : <AddRoundCard busy={busy} onAdd={addRound} />}
+        </div>
       </div>
     </PageContainer>
   );

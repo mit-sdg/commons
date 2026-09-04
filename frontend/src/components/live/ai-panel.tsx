@@ -1,11 +1,16 @@
 "use client";
 
-import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { refusalSentence, saidRefusal } from "@/components/live/refusals";
 import { ActButton } from "@/components/live/round-editor";
-import { RoundToken, TakesChip } from "@/components/live/round-token";
+import {
+  changeWords,
+  ProposalRow,
+  type Proposed,
+  ProposedRound,
+  RoundChanges,
+} from "@/components/live/round-proposal";
 import { Spinner } from "@/components/states";
 import { Textarea } from "@/components/ui/textarea";
 import { api, isApiError, type Output, publicErrorMessage } from "@/lib/api";
@@ -19,27 +24,21 @@ type Round = NonNullable<Output<"/live/relays/get">["relay"]>["rounds"][number];
 
 const POLL_MS = 2_000;
 const WAIT_MS = 60_000;
+/** How long the note about what was applied stands before the box comes back. */
+const NOTE_MS = 5_000;
 
-/** What the panel says when the reasoner never got the brief. */
+/** What the line says when the reasoner never got the brief. */
 const UNREACHED = "The model could not be reached.";
 
-const EXAMPLE = "add a third round: a vote on the words the room gave";
+const EXAMPLE = "Add a last round where the room picks a winner.";
 
-const VERB: Record<string, string> = {
-  add: "add round",
-  remove: "remove round",
-  move: "move round",
-  title: "set title",
-  prompt: "set prompt",
-  parts: "set parts",
-  choices: "set choices",
-  takes: "set takes",
-};
+/** Where the line comes to rest: under the site header, which grows a course bar at lg. */
+const UNDER_HEADER = "top-[65px] lg:top-[114px]";
 
 /**
  * Whether the reasoner's last failure is this brief's. The read carries the
  * failure it recorded last; one recorded after the brief went out is the
- * answer to it, and the panel says so rather than waiting out the minute.
+ * answer to it, and the line says so rather than waiting out the minute.
  */
 function failedSince(read: Offered, askedAt: number | null): boolean {
   if (askedAt === null || read.failure === null) return false;
@@ -55,30 +54,10 @@ function readJson(value: string): unknown {
   }
 }
 
-function record(value: unknown): Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function strings(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === "string")
-    : [];
-}
-
-function partWords(parts: string[], cap: number): string {
-  if (parts.length === 0) return "";
-  if (cap > 0) return `${parts[0]}, up to ${cap}`;
-  return parts.join(" · ");
-}
-
-/** A line as the panel shows it: the round it is about, under its number. */
+/** A line as the rounds show it: the round it is about, under its number. */
 interface Shown {
   line: OfferedLine;
   round: Round | null;
-  /** The round as it stood when the line was taken, so "was" says what was. */
-  was: Round | null;
   number: number;
 }
 
@@ -88,7 +67,6 @@ interface Shown {
  * whose run is open is held back, whatever the line changes.
  */
 function refusalWords(error: string, shown: Shown): string {
-  if (shown.line.standing !== "pending") return "Taken, but nothing changed.";
   if (error === "NOT_FOUND") return saidRefusal(error, "ROUND_GONE");
   if (error !== "CONFLICT") return saidRefusal(error, null);
   return shown.round === null
@@ -97,164 +75,37 @@ function refusalWords(error: string, shown: Shown): string {
 }
 
 /**
- * The number each line's round carries, so a line names it the way every
- * other screen does: the relay as it now stands, the round as it last stood
- * for one a taken line has removed, the round a taken `add` made, and the
- * number an add still pending lands at.
+ * The number each line's round carries, so a line stands where every other
+ * screen would name it: the round the relay holds for a line about one, and
+ * the number an added round lands at for one that is not there yet.
  */
-function numbered(
-  lines: OfferedLine[],
-  rounds: Round[],
-  stood: Map<string, Round>,
-  froze: Map<string, Round>,
-): Shown[] {
+function numbered(lines: OfferedLine[], rounds: Round[]): Shown[] {
   let adds = 0;
   return lines.map((line) => {
-    const was = froze.get(line.suggestion) ?? null;
-    const round =
-      rounds.find((entry) => entry.leg === line.target) ??
-      stood.get(line.target) ??
-      null;
-    if (round !== null)
-      return { line, round, was: was ?? round, number: round.number };
-    const drafted = record(readJson(line.value));
-    const made =
-      line.standing === "taken"
-        ? (rounds.find((entry) => entry.title === drafted.title) ?? null)
-        : null;
-    if (made !== null)
-      return { line, round: made, was: was ?? made, number: made.number };
+    const round = rounds.find((entry) => entry.leg === line.target) ?? null;
+    if (round !== null) return { line, round, number: round.number };
     adds += 1;
-    const lands = drafted.position;
+    const lands = (readJson(line.value) as { position?: unknown } | null)
+      ?.position;
     return {
       line,
       round,
-      was,
       number:
         typeof lands === "number" && lands > 0 ? lands : rounds.length + adds,
     };
   });
 }
 
-/** What Accept and Refuse act on, so the rows are not one name many times. */
-function lineWords(line: OfferedLine, number: number): string {
-  return `${VERB[line.kind] ?? line.kind} ${number}`;
-}
-
-function Was({ children }: { children: React.ReactNode }) {
-  return <s className="min-w-0 text-muted-foreground">{children}</s>;
-}
-
-/** What the line proposes, with the arrow bound to the value it points at. */
-function Change({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="flex min-w-0 items-baseline gap-2">
-      <span className="flex-none text-muted-foreground">→</span>
-      <span className="min-w-0">{children}</span>
-    </span>
-  );
-}
-
-function LineBody({ line, round }: { line: OfferedLine; round: Round | null }) {
-  if (line.kind === "add") {
-    const drafted = record(readJson(line.value));
-    const kind = typeof drafted.kind === "string" ? drafted.kind : "";
-    const takes = record(drafted.takes);
-    const from = typeof takes.from === "number" ? takes.from : 0;
-    const use = typeof takes.use === "string" ? takes.use : "";
-    const cap = typeof drafted.cap === "number" ? drafted.cap : 0;
-    const boxes =
-      partWords(strings(drafted.parts), cap) ||
-      strings(drafted.choices).join(" · ");
-    return (
-      <span className="flex min-w-0 flex-col gap-1">
-        <span className="flex min-w-0 flex-wrap items-baseline gap-2">
-          <span className="min-w-0 font-medium">
-            {String(drafted.title ?? "")}
-          </span>
-          {kind === "" ? null : (
-            <span className="flex-none text-muted-foreground capitalize">
-              {kind}
-            </span>
-          )}
-          {from > 0 && use !== "" ? <TakesChip from={from} use={use} /> : null}
-        </span>
-        {drafted.prompt ? (
-          <span className="min-w-0 text-muted-foreground">
-            {String(drafted.prompt)}
-          </span>
-        ) : null}
-        {boxes === "" ? null : (
-          <span className="min-w-0 text-muted-foreground">{boxes}</span>
-        )}
-      </span>
-    );
-  }
-  if (line.kind === "remove") {
-    return <Was>{round?.title ?? ""}</Was>;
-  }
-  if (line.kind === "move") {
-    return (
-      <Change>
-        <RoundToken number={Number(line.value)} size="sm" />
-      </Change>
-    );
-  }
-  if (line.kind === "title" || line.kind === "prompt") {
-    const was = line.kind === "title" ? round?.title : round?.prompt;
-    return (
-      <>
-        {was && was !== line.value ? <Was>{was}</Was> : null}
-        <Change>{line.value}</Change>
-      </>
-    );
-  }
-  if (line.kind === "parts") {
-    const drafted = record(readJson(line.value));
-    const cap = typeof drafted.cap === "number" ? drafted.cap : 0;
-    const was = round === null ? "" : partWords(round.parts, round.cap);
-    const to = partWords(strings(drafted.parts), cap);
-    return (
-      <>
-        {was === "" || was === to ? null : <Was>{was}</Was>}
-        <Change>{to === "" ? "nothing" : to}</Change>
-      </>
-    );
-  }
-  if (line.kind === "choices") {
-    const drafted = strings(readJson(line.value));
-    const was = round === null ? "" : round.choices.join(" · ");
-    const to = drafted.join(" · ");
-    return (
-      <>
-        {was === "" || was === to ? null : <Was>{was}</Was>}
-        <Change>{to === "" ? "nothing" : to}</Change>
-      </>
-    );
-  }
-  if (line.kind === "takes") {
-    const drafted = record(readJson(line.value));
-    const use = typeof drafted.use === "string" ? drafted.use : "";
-    const from = typeof drafted.from === "number" ? drafted.from : 0;
-    if (use === "" || from === 0) {
-      return <Change>nothing</Change>;
-    }
-    return <TakesChip from={from} use={use} />;
-  }
-  return <span className="min-w-0">{line.value}</span>;
-}
-
-/** How long the wait has run, in the panel's own mono reading. */
-function Waited() {
+/** How long the wait has run, counted from the moment the brief went out. */
+function Waited({ since }: { since: number }) {
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
-    const started = Date.now();
-    const timer = setInterval(() => {
-      setSeconds(Math.floor((Date.now() - started) / 1000));
-    }, 1000);
+    const count = () => setSeconds(Math.floor((Date.now() - since) / 1000));
+    count();
+    const timer = setInterval(count, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [since]);
 
   return (
     <span
@@ -266,24 +117,58 @@ function Waited() {
   );
 }
 
+/** What a landed reply says when it left nothing to confirm. */
+function landedNote(offering: Offering | null): string | null {
+  if (offering === null) return null;
+  const lines = offering.lines.filter((line) => line.kind !== "keep");
+  if (lines.some((line) => line.standing === "pending")) return null;
+  const taken = lines.filter((line) => line.standing === "taken").length;
+  return taken === 0
+    ? null
+    : `${taken} ${taken === 1 ? "change" : "changes"} applied.`;
+}
+
+/** What the page draws of the model's proposals, and where each belongs. */
+export interface Drafting {
+  /** The brief box, or the pair that settles everything still standing. */
+  line: React.ReactNode;
+  /** What is proposed for the round at this leg, drawn across its card's top. */
+  proposal: (leg: string) => React.ReactNode;
+  /** Whether a proposal would take the round at this leg away. */
+  going: (leg: string) => boolean;
+  /**
+   * The rounds proposed to land at this number, drawn before the round standing
+   * there; the number past the last round takes every round landing past it.
+   */
+  adds: (number: number) => React.ReactNode;
+  /** How many proposals still stand, for the button that opened the brief. */
+  standing: number;
+}
+
 /**
- * The one place a staff member meets what the model proposed: a brief goes
- * out, the lines come back, and each is confirmed or dismissed by hand. A
- * line is only ever a concept action, so the panel shows the verb, what it
- * touches, and nothing else.
+ * The one place a staff member meets what the model proposed. A brief goes out,
+ * the reply comes back as lines, and each stands on the round it is about,
+ * confirmed or dismissed there. A line settled leaves the list at once, because
+ * the list is the relay.
  */
-export function AiPanel({
+export function useDrafting({
   relay,
   rounds,
+  title,
   pending = false,
+  since = null,
   onChanged,
 }: {
   relay: string;
   rounds: Round[];
-  /** A brief was already sent from the Live list, so a reply is on its way. */
+  /** The relay's own name, which the model may propose another for. */
+  title: string;
+  /** A brief was already sent from the page before this one, so a reply is on its way. */
   pending?: boolean;
+  /** When that brief went out, so the count reads the whole wait. */
+  since?: number | null;
   onChanged: () => void;
-}) {
+}): Drafting {
   const [request, setRequest] = useState("");
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [waiting, setWaiting] = useState(false);
@@ -291,28 +176,16 @@ export function AiPanel({
   const [unreached, setUnreached] = useState(false);
   const [busy, setBusy] = useState(false);
   const [took, setTook] = useState<number | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [stopped, setStopped] = useState<{
     line: string;
     error: string;
   } | null>(null);
-  const [stood, setStood] = useState<Map<string, Round>>(new Map());
-  const [froze, setFroze] = useState<Map<string, Round>>(new Map());
-  const [unmoved, setUnmoved] = useState<Set<string>>(new Set());
   const known = useRef<Set<string>>(new Set());
-  const sentAt = useRef<number | null>(null);
+  /** How many lines this settling has changed the relay by, for the note. */
+  const applied = useRef(0);
   /** When the reply now waited on was asked for; a failure before it is not its. */
-  const askedAt = useRef<number | null>(null);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- a round a taken line has removed is gone from the relay, and only the panel still holds it
-    setStood(
-      (last) =>
-        new Map([
-          ...last,
-          ...rounds.map((round) => [round.leg, round] as const),
-        ]),
-    );
-  }, [rounds]);
+  const [askedAt, setAskedAt] = useState<number | null>(null);
 
   /** The relay as the panel compares it: every round, whole, in order. */
   const readRelay = useCallback(async (): Promise<string | null> => {
@@ -330,21 +203,25 @@ export function AiPanel({
 
   useEffect(() => {
     let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the panel opens on what has already been offered, which only a read can say
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the line opens on what has already been offered, which only a read can say
     void read().then((offered) => {
       if (cancelled || offered === null) return;
       known.current = new Set(offered.offerings.map((entry) => entry.offering));
       if (pending && offered.offerings.length === 0) {
-        // The brief went out on the page before this one, so the wait starts
-        // where the panel does and only a failure after that is the brief's.
-        askedAt.current = Date.now();
+        setAskedAt(since ?? Date.now());
         setWaiting(true);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [read, pending]);
+  }, [read, pending, since]);
+
+  useEffect(() => {
+    if (note === null) return;
+    const timer = setTimeout(() => setNote(null), NOTE_MS);
+    return () => clearTimeout(timer);
+  }, [note]);
 
   useEffect(() => {
     if (!waiting) return;
@@ -363,13 +240,12 @@ export function AiPanel({
           offered.offerings.map((entry) => entry.offering),
         );
         setWaiting(false);
-        if (sentAt.current !== null) {
-          setTook((Date.now() - sentAt.current) / 1000);
-        }
+        if (askedAt !== null) setTook((Date.now() - askedAt) / 1000);
+        setNote(landedNote(offered.offerings[0] ?? null));
         onChanged();
         return;
       }
-      if (offered !== null && failedSince(offered, askedAt.current)) {
+      if (offered !== null && failedSince(offered, askedAt)) {
         setWaiting(false);
         setUnreached(true);
         return;
@@ -382,21 +258,23 @@ export function AiPanel({
       timer = setTimeout(() => void tick(), POLL_MS);
     };
 
-    timer = setTimeout(() => void tick(), POLL_MS);
+    void tick();
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [waiting, read, onChanged]);
+  }, [waiting, read, askedAt, onChanged]);
 
-  async function draft() {
+  async function send() {
     const brief = request.trim();
     if (brief === "") return;
     setNothing(false);
     setUnreached(false);
     setStopped(null);
+    setNote(null);
     setTook(null);
     setBusy(true);
+    applied.current = 0;
     const offered = await read();
     known.current = new Set(
       (offered?.offerings ?? []).map((entry) => entry.offering),
@@ -408,8 +286,8 @@ export function AiPanel({
       toast.error(publicErrorMessage(result.error));
       return;
     }
-    sentAt.current = sent;
-    askedAt.current = sent;
+    setRequest("");
+    setAskedAt(sent);
     setWaiting(true);
   }
 
@@ -425,186 +303,109 @@ export function AiPanel({
     return true;
   }
 
-  /** The round a line is about, held as it stands before the line is taken. */
-  function freeze(line: OfferedLine) {
-    const round =
-      rounds.find((entry) => entry.leg === line.target) ??
-      stood.get(line.target) ??
-      null;
-    if (round === null) return;
-    setFroze((last) => new Map(last).set(line.suggestion, round));
-  }
-
   /**
-   * A concept can refuse what a line asks while the take itself succeeds, and
-   * the relay reading back word for word is what says so.
+   * What the line says once nothing is left to settle, and nothing while a line
+   * still stands. A concept can refuse what a line asks while the take itself
+   * succeeds, and the relay reading back word for word is what says so.
    */
-  function markUnmoved(
-    line: OfferedLine,
-    before: string | null,
-    after: string,
-  ) {
-    if (before === null || before !== after) return;
-    setUnmoved((last) => new Set(last).add(line.suggestion));
+  function settledNote(offered: Offered | null): string | null {
+    const outstanding = (offered?.offerings[0]?.lines ?? []).filter(
+      (line) => line.standing === "pending" && line.kind !== "keep",
+    ).length;
+    if (outstanding > 0) return null;
+    const count = applied.current;
+    return count === 0
+      ? "Nothing changed."
+      : `${count} ${count === 1 ? "change" : "changes"} applied.`;
   }
 
   async function settle(line: OfferedLine, take: boolean) {
     setBusy(true);
     setStopped(null);
+    setNote(null);
     const before = take ? await readRelay() : null;
-    if (take) freeze(line);
     if ((await apply(line, take)) && take) {
       const after = await readRelay();
-      if (after !== null) markUnmoved(line, before, after);
+      if (after !== null && before !== null && after !== before)
+        applied.current += 1;
     }
     setBusy(false);
-    await read();
+    setNote(settledNote(await read()));
     onChanged();
   }
 
-  /** The lines still pending, in order, until one is refused. */
+  /** The lines still standing, in order, until one is refused. */
   async function settleAll(offering: Offering, take: boolean) {
     setBusy(true);
     setStopped(null);
+    setNote(null);
     let before = take ? await readRelay() : null;
     for (const line of offering.lines) {
-      if (line.standing !== "pending") continue;
-      if (take) freeze(line);
+      if (line.standing !== "pending" || line.kind === "keep") continue;
       if (!(await apply(line, take))) break;
       if (!take) continue;
       const after = await readRelay();
       if (after === null) continue;
-      markUnmoved(line, before, after);
+      if (before !== null && after !== before) applied.current += 1;
       before = after;
     }
     setBusy(false);
-    await read();
+    setNote(settledNote(await read()));
     onChanged();
   }
 
   const offering = offerings[0] ?? null;
-  const outstanding =
-    offering === null
-      ? 0
-      : offering.lines.filter((line) => line.standing === "pending").length;
-  const shown =
-    offering === null ? [] : numbered(offering.lines, rounds, stood, froze);
+  const shown = numbered(
+    (offering?.lines ?? []).filter(
+      (line) => line.standing === "pending" && line.kind !== "keep",
+    ),
+    rounds,
+  );
+  const kept =
+    offering !== null && offering.lines.every((line) => line.kind === "keep");
+  const proposedOf = (entry: Shown): Proposed => ({
+    line: entry.line,
+    refusal:
+      entry.line.suggestion === stopped?.line
+        ? refusalWords(stopped.error, entry)
+        : null,
+  });
+  const naming = shown.filter(
+    (entry) => entry.round === null && entry.line.kind !== "add",
+  );
 
-  return (
-    <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="flex flex-col gap-2.5">
-          <Textarea
-            value={request}
-            onChange={(event) => setRequest(event.target.value)}
-            placeholder={EXAMPLE}
-            rows={3}
-            className="min-h-16 bg-card"
-          />
-          <div className="flex items-center gap-2">
-            <ActButton
-              size="sm"
-              out={request.trim() === ""}
-              busy={busy || waiting}
-              onClick={() => void draft()}
-            >
-              {waiting ? <Spinner className="size-4" /> : null} Draft
-            </ActButton>
-            {waiting ? <Waited /> : null}
-            {!waiting && took !== null ? (
-              <span className="font-mono text-muted-foreground text-xs tabular-nums">
-                {took.toFixed(1)} s
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2.5">
-          {unreached ? (
-            <p className="text-muted-foreground text-sm">{UNREACHED}</p>
-          ) : null}
-          {nothing ? (
-            <p className="text-muted-foreground text-sm">Nothing came back.</p>
-          ) : null}
-          {offering !== null &&
-          offering.lines.every((line) => line.kind === "keep") ? (
-            <p className="text-muted-foreground text-sm">Nothing to change.</p>
-          ) : null}
-          {offering === null ||
-          offering.lines.every((line) => line.kind === "keep") ? null : (
-            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-              {shown.map((entry) => {
-                const { line, was, number } = entry;
-                return (
-                  <div
-                    key={line.suggestion}
-                    className={cn(
-                      "flex flex-wrap items-center gap-2.5 px-3 py-2 text-sm",
-                      line.standing !== "pending" &&
-                        !unmoved.has(line.suggestion) &&
-                        "opacity-45",
-                      line.suggestion === stopped?.line && "bg-destructive/5",
-                    )}
-                  >
-                    <span className="w-full flex-none whitespace-nowrap font-mono text-[10.5px] text-muted-foreground uppercase tracking-[0.06em] sm:w-[104px]">
-                      {VERB[line.kind] ?? line.kind}
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
-                      <RoundToken
-                        number={number}
-                        size="sm"
-                        standing={line.kind === "add" ? "next" : "plain"}
-                      />
-                      <LineBody line={line} round={was} />
-                    </span>
-                    {line.standing !== "pending" ? (
-                      <span className="flex-none text-muted-foreground text-xs">
-                        {unmoved.has(line.suggestion)
-                          ? "No change."
-                          : line.standing === "taken"
-                            ? "Accepted"
-                            : "Refused"}
-                      </span>
-                    ) : (
-                      <span className="flex flex-none gap-1">
-                        <ActButton
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={`Accept ${lineWords(line, number)}`}
-                          busy={busy}
-                          onClick={() => void settle(line, true)}
-                        >
-                          <Check />
-                        </ActButton>
-                        <ActButton
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={`Refuse ${lineWords(line, number)}`}
-                          busy={busy}
-                          onClick={() => void settle(line, false)}
-                        >
-                          <X />
-                        </ActButton>
-                      </span>
-                    )}
-                    {line.suggestion === stopped?.line ? (
-                      <p className="w-full text-destructive sm:pl-[114px]">
-                        {refusalWords(stopped.error, entry)}
-                      </p>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {offering !== null &&
-          outstanding > 0 &&
-          !offering.lines.every((line) => line.kind === "keep") ? (
+  return {
+    line: (
+      <div
+        id="brief-line"
+        className={cn(
+          "mb-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3",
+          shown.length > 0 &&
+            `sticky ${UNDER_HEADER} z-20 bg-background/95 backdrop-blur`,
+        )}
+      >
+        {shown.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {naming.map((entry) => (
+              <ProposalRow
+                key={entry.line.suggestion}
+                field={changeWords(entry.line, null).field}
+                was={title}
+                to={changeWords(entry.line, null).to}
+                words="the relay's title"
+                busy={busy}
+                refusal={proposedOf(entry).refusal}
+                onAccept={() => void settle(entry.line, true)}
+                onRefuse={() => void settle(entry.line, false)}
+              />
+            ))}
             <div className="flex gap-2">
               <ActButton
                 size="sm"
                 busy={busy}
-                onClick={() => void settleAll(offering, true)}
+                onClick={() =>
+                  offering === null ? undefined : void settleAll(offering, true)
+                }
               >
                 Accept all
               </ActButton>
@@ -612,14 +413,98 @@ export function AiPanel({
                 variant="outline"
                 size="sm"
                 busy={busy}
-                onClick={() => void settleAll(offering, false)}
+                onClick={() =>
+                  offering === null
+                    ? undefined
+                    : void settleAll(offering, false)
+                }
               >
                 Refuse all
               </ActButton>
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : note !== null ? (
+          <p className="text-muted-foreground text-sm">{note}</p>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            <Textarea
+              value={request}
+              onChange={(event) => setRequest(event.target.value)}
+              placeholder={EXAMPLE}
+              rows={2}
+              aria-label="Brief"
+              className="min-h-12 bg-card"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <ActButton
+                size="sm"
+                out={request.trim() === ""}
+                busy={busy || waiting}
+                onClick={() => void send()}
+              >
+                {waiting ? <Spinner className="size-4" /> : null} Send
+              </ActButton>
+              {waiting && askedAt !== null ? <Waited since={askedAt} /> : null}
+              {!waiting && took !== null ? (
+                <span className="font-mono text-muted-foreground text-xs tabular-nums">
+                  {took.toFixed(1)} s
+                </span>
+              ) : null}
+              {unreached ? (
+                <span className="text-muted-foreground text-sm">
+                  {UNREACHED}
+                </span>
+              ) : null}
+              {nothing ? (
+                <span className="text-muted-foreground text-sm">
+                  Nothing came back.
+                </span>
+              ) : null}
+              {kept ? (
+                <span className="text-muted-foreground text-sm">
+                  Nothing to change.
+                </span>
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    ),
+    proposal: (leg) => {
+      const round = rounds.find((entry) => entry.leg === leg) ?? null;
+      const about = shown.filter((entry) => entry.line.target === leg);
+      if (round === null || about.length === 0) return null;
+      return (
+        <RoundChanges
+          proposed={about.map(proposedOf)}
+          round={round}
+          busy={busy}
+          onSettle={(line, take) => void settle(line, take)}
+        />
+      );
+    },
+    going: (leg) =>
+      shown.some(
+        (entry) => entry.line.kind === "remove" && entry.line.target === leg,
+      ),
+    adds: (number) => {
+      const past = number > rounds.length;
+      const landing = shown.filter(
+        (entry) =>
+          entry.line.kind === "add" &&
+          (past ? entry.number >= number : entry.number === number),
+      );
+      if (landing.length === 0) return null;
+      return landing.map((entry) => (
+        <ProposedRound
+          key={entry.line.suggestion}
+          proposed={proposedOf(entry)}
+          number={entry.number}
+          busy={busy}
+          onSettle={(line, take) => void settle(line, take)}
+        />
+      ));
+    },
+    standing: shown.length,
+  };
 }
