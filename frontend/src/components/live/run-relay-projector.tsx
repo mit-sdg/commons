@@ -126,16 +126,13 @@ export function RelayProjector({
   }
 
   // The room can join for as long as the run is open, between rounds as much
-  // as during one; the wall's own token says which round closed. In the first
+  // as during one; the wall's own token says which round closed. On every
   // round, until its first pile opens, the code stands where the piles will —
-  // that is the joining moment; after that, and in every later round, it
-  // keeps the corner.
+  // that is the joining moment, and it comes round again each time; after
+  // that it keeps the corner.
   const joining = run.open && url !== null && code !== null;
   const filling =
-    !wall.open ||
-    wall.number !== 1 ||
-    wall.piles.length > 0 ||
-    choicesOf(wall).length > 0;
+    !wall.open || wall.piles.length > 0 || choicesOf(wall).length > 0;
   const room = joining ? (
     filling ? (
       <JoinCode url={url} code={code} size="corner" />
