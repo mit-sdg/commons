@@ -342,7 +342,7 @@
         "item": "x-none"
       },
       "response": {
-        "error": "ITEM_NOT_TRASHED"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -355,7 +355,7 @@
         "item": "x-none"
       },
       "response": {
-        "error": "ITEM_NOT_TRASHED"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -912,7 +912,7 @@
         "item": "x-bare"
       },
       "response": {
-        "error": "ITEM_NOT_TRASHED"
+        "error": "NOT_FOUND"
       }
     },
     {

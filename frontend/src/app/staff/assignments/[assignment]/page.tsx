@@ -171,14 +171,19 @@ function StaffAssignmentDetailPageContent({
   const { data: artifactData } = useQuery<Record<string, string>>(
     submissions.length > 0
       ? async () => {
-          const artifacts = [
-            ...new Set(
-              submissions.flatMap((submission) => submission.artifacts),
-            ),
-          ];
+          const artifacts = submissions.flatMap((submission) =>
+            submission.artifacts.map((artifact) => ({
+              artifact,
+              submitter: submission.submitter,
+            })),
+          );
           const entries = await Promise.all(
-            artifacts.map(async (artifact) => {
-              const result = await api.posts.get({ post: artifact });
+            artifacts.map(async ({ artifact, submitter }) => {
+              const result = await api.submissions.artifact({
+                assignment,
+                submitter,
+                artifact,
+              });
               return [
                 artifact,
                 "error" in result ? "" : (result.post?.rendered ?? ""),

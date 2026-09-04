@@ -1,8 +1,9 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, no, view, where, whether } from "@mit-sdg/sync-engine/language";
+import { each, former, is, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { isActiveStudent, isNotActiveStudent, mayGrade, mayNotGrade } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
+import { thePost } from "../forum/posts.ts";
 
 const { Assigning, Profiling, Submitting } = concepts;
 
@@ -12,6 +13,30 @@ export const theLatestSubmission = view(
   ({ assignment, submitter }, { latest }, _bindings) =>
     where(Submitting._getLatest({ assignment, submitter }).is({ latest })),
 ).optional();
+
+export const submissionHasArtifact = view(
+  "(assignment) by (submitter) has submission artifact (artifact)",
+  ({ assignment, submitter, artifact }, _outputs, { artifacts }) =>
+    where(
+      Submitting._getAttempts({ assignment, submitter }).is({ artifacts }),
+      is.among(artifact, artifacts),
+    ),
+).holds();
+
+export const mayReadSubmissionArtifact = view(
+  "(user) may read (artifact) submitted by (submitter) for (assignment)",
+  ({ user, artifact, submitter, assignment }, _outputs, _bindings) => [
+    where(
+      isActiveStudent({ user }),
+      submissionHasArtifact({ assignment, submitter: user, artifact }),
+    ),
+    where(
+      mayGrade({ user }),
+      isActiveStudent({ user: submitter }),
+      submissionHasArtifact({ assignment, submitter, artifact }),
+    ),
+  ],
+).holds();
 
 /** Which attempts has this learner made for this assignment? */
 export const theAttempts = former(
@@ -157,6 +182,26 @@ export const Attempts = endpoint(
         .then(respond({ error: "NOT_FOUND" }))
         .named("attempts-missing"),
     ),
+);
+
+export const Artifact = endpoint(
+  "/submissions/artifact",
+  ({ session, assignment, submitter, artifact, user }) =>
+    receive({ session, assignment, submitter, artifact }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayReadSubmissionArtifact({ user, assignment, submitter, artifact }),
+      )
+        .then(respond({ post: thePost({ post: artifact }) }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        no(mayReadSubmissionArtifact({ user, assignment, submitter, artifact })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
+  { input: { required: ["session", "assignment", "submitter", "artifact"] } },
 );
 
 export const ForAssignment = endpoint(

@@ -13,6 +13,8 @@ replies after that post is trashed or purged. Placement is a separate owner
 action, so its refusal or fault after Posting creation can leave an unplaced
 post.
 
+The [forumPost view](view:Forum.threads.forumPost) distinguishes Posting records placed in a conversation from records used by other features, such as assignment artifacts. Forum read and moderation rules use this boundary so those other records do not become public posts merely because they share Posting storage.
+
 A successful root placement triggers [Forum.threads.TrackRootUnread](reaction:Forum.threads.TrackRootUnread), which
 registers the root in Tracking under its new conversation. A successful reply
 placement triggers [Forum.threads.TrackReplyUnread](reaction:Forum.threads.TrackReplyUnread) for the same scope. Root

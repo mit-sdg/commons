@@ -45,6 +45,14 @@ every captured question, else `INCOMPLETE`. Both the form and completeness rule
 come from the run snapshot, keeping participation on exactly the version the
 room received.
 
+Anonymous answer, hand-in, and outcome requests accept only responses whose
+participant is not an account. Their `Signed` counterparts require a live
+session belonging to the response's account, so knowing another student's
+response identifier grants no control over it:
+[AnswerSigned](reaction:Live.participation.AnswerSigned),
+[SubmitSigned](reaction:Live.participation.SubmitSigned), and
+[OutcomeSigned](reaction:Live.participation.OutcomeSigned).
+
 After hand-in,
 [Live.participation.SubmittedResponseIsGraded](reaction:Live.participation.SubmittedResponseIsGraded)
 measures the response against the run's key, once; a survey has no key and the
@@ -70,10 +78,13 @@ calculation and adds no receipt state machine.
 
 ```endpoints
 Live.participation.Answer at /live/p/answer
+Live.participation.AnswerSigned at /live/p/answer-signed
 Live.participation.Arrive at /live/p/arrive
 Live.participation.Begin at /live/p/begin
 Live.participation.BeginSigned at /live/p/begin-signed
 Live.participation.Locate at /live/p/locate
 Live.participation.Outcome at /live/p/outcome
+Live.participation.OutcomeSigned at /live/p/outcome-signed
 Live.participation.Submit at /live/p/submit
+Live.participation.SubmitSigned at /live/p/submit-signed
 ```

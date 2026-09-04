@@ -24,6 +24,10 @@ describe("forum identity and lookup presentation", () => {
       content: "A tagged post",
       at: new Date("2026-07-19T12:00:00.000Z"),
     });
+    await app.concepts.Conversing.start({
+      item: post,
+      at: new Date("2026-07-19T12:00:00.000Z"),
+    });
     const { tag } = await app.concepts.Tagging.createTag({ name: "design" });
     await app.concepts.Tagging.addTag({ target: post, tag });
 

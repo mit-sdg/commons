@@ -89,14 +89,18 @@ export default function AssignmentDetailPage({
   const attempts = attemptsData?.attempts ?? [];
 
   const { data: artifactData } = useQuery<Record<string, string>>(
-    attempts.length > 0
+    attempts.length > 0 && me
       ? async () => {
           const artifacts = [
             ...new Set(attempts.flatMap((item) => item.artifacts)),
           ];
           const entries = await Promise.all(
             artifacts.map(async (artifact) => {
-              const result = await api.posts.get({ post: artifact });
+              const result = await api.submissions.artifact({
+                assignment,
+                submitter: String(me.user),
+                artifact,
+              });
               return [
                 artifact,
                 "error" in result ? "" : (result.post?.rendered ?? ""),
@@ -106,7 +110,7 @@ export default function AssignmentDetailPage({
           return Object.fromEntries(entries);
         }
       : null,
-    [attemptsData],
+    [attemptsData, assignment, me],
   );
 
   const { data: lateBalance, refetch: refetchLate } = useQuery<{
