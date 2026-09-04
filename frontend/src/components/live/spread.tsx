@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect } from "react";
 import { Answer, ModelTag } from "@/components/live/pile";
 import type { WallCard } from "@/components/live/rounds";
@@ -38,7 +38,7 @@ export function SpreadButton({
         onClick();
       }}
     >
-      {open ? "fold" : "all"}
+      {open ? "fold" : "spread"}
     </Button>
   );
 }
@@ -66,6 +66,7 @@ export function Spread({
   onRemove?: (card: WallCard) => void;
   className?: string;
 }) {
+  const reduced = useReducedMotion() ?? false;
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -76,9 +77,13 @@ export function Spread({
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1, transition: { duration: 0.3, delay: 0.15 } }}
-      exit={{ opacity: 0, transition: { duration: 0.12 } }}
+      // A reader who asked for no motion gets the columns at once.
+      initial={reduced ? false : { opacity: 0 }}
+      animate={{
+        opacity: 1,
+        transition: reduced ? { duration: 0 } : { duration: 0.3, delay: 0.15 },
+      }}
+      exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.12 } }}
       role="region"
       aria-label={`${name}, every card`}
       onClick={onClose}
@@ -118,7 +123,7 @@ export function Spread({
                 type="button"
                 variant="ghost"
                 size="icon-xs"
-                aria-label="Remove card"
+                aria-label={`Remove “${card.value}”`}
                 className="flex-none self-center text-muted-foreground"
                 onClick={(event) => {
                   event.stopPropagation();

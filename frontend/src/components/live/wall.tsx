@@ -216,10 +216,18 @@ function StagedWall({
                   edits.removeCard?.(card);
                 },
         };
-  const removable =
-    hand?.removeCard === undefined
-      ? undefined
-      : (card: WallCard) => setRemoving(card);
+  // The control that asked is where the focus goes back to; once its card is
+  // gone, the focus's own fold button, or the wall.
+  const opener = useRef<HTMLElement | null>(null);
+  const canRemove = hand?.removeCard !== undefined;
+  const askToRemove = useCallback((card: WallCard) => {
+    opener.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    setRemoving(card);
+  }, []);
+  const removable = canRemove ? askToRemove : undefined;
 
   const shelf = shelfOf(seen.cards);
   const piles = useSlots(seen.piles, seen.open);
@@ -269,8 +277,9 @@ function StagedWall({
       <LayoutGroup>
         <section
           ref={root}
+          tabIndex={-1}
           className={cn(
-            "relative flex min-h-0 flex-col gap-5 rounded-2xl border border-border bg-card",
+            "relative flex min-h-0 flex-col gap-5 rounded-2xl border border-border bg-card outline-none",
             big
               ? "gap-9 border-0 bg-transparent p-0"
               : phone
@@ -279,7 +288,10 @@ function StagedWall({
             className,
           )}
         >
-          {vote ? null : <Flights flights={flights} big={big} />}
+          {/* In focus nothing crosses the wall: a card still in the air is on its pile. */}
+          {vote || spread !== null ? null : (
+            <Flights flights={flights} big={big} />
+          )}
           {phone ? null : (
             <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
               <div className="flex min-w-0 flex-col gap-2.5">
@@ -455,7 +467,10 @@ function StagedWall({
                             cards={cardsIn(seen.cards, spreading.pile)}
                             big={big}
                             phone={phone}
-                            onClose={() => setSpread(null)}
+                            // Escape in the Remove dialog is the dialog's alone.
+                            onClose={() => {
+                              if (removing === null) setSpread(null);
+                            }}
                             onRemove={removable}
                             className={className}
                           />
@@ -466,9 +481,10 @@ function StagedWall({
                     // In focus, the pile stands alone with its cards beside it.
                     ...(spreading === null ? piles : [spreading]).map(
                       (pile) => {
-                        // A card in the air is on no face yet, and not counted.
+                        // A card in the air is on no face yet, and not counted;
+                        // in focus no card is in the air.
                         const cards = cardsIn(seen.cards, pile.pile).filter(
-                          (card) => !flying.has(card.card),
+                          (card) => spread !== null || !flying.has(card.card),
                         );
                         return (
                           <Pile
@@ -479,6 +495,7 @@ function StagedWall({
                             description={pile.description}
                             cards={cards}
                             lit={lit.has(pile.pile)}
+                            airborne={flying.size > 0}
                             picked={isPicked(pile)}
                             carriesTo={carriesTo}
                             big={big}
@@ -570,11 +587,20 @@ function StagedWall({
               />
             </form>
           ) : null}
-          {removable === undefined ? null : (
+          {!canRemove ? null : (
             <ConfirmAction
               open={removing !== null}
               onOpenChange={(open) => {
-                if (!open) setRemoving(null);
+                if (open) return;
+                setRemoving(null);
+                requestAnimationFrame(() => {
+                  const back = opener.current;
+                  if (back?.isConnected) return back.focus();
+                  const fold = root.current?.querySelector<HTMLElement>(
+                    '[aria-label^="Fold "]',
+                  );
+                  (fold ?? root.current)?.focus();
+                });
               }}
               title="Remove this card?"
               description={

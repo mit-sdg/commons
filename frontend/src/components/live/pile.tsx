@@ -174,7 +174,7 @@ export function Card({
             type="button"
             variant="ghost"
             size="icon-xs"
-            aria-label="Remove card"
+            aria-label={`Remove “${card.value}”`}
             className="ml-0.5 flex-none self-center text-muted-foreground"
             onClick={(event) => {
               event.stopPropagation();
@@ -330,6 +330,7 @@ export function Pile({
   selected = false,
   follow = false,
   lit = false,
+  airborne = false,
   landed,
   onDrop,
   onTap,
@@ -358,6 +359,8 @@ export function Pile({
   follow?: boolean;
   /** A card has just landed: the pile lights for a moment, so the room sees where it went. */
   lit?: boolean;
+  /** A card is in the air somewhere on the wall, so no pile moves under it. */
+  airborne?: boolean;
   /** When a card last landed on the shown wall, so the face shows the latest. */
   landed?: (card: string) => number;
   onDrop?: (card: string) => void;
@@ -380,10 +383,15 @@ export function Pile({
   const counted = useRef(count);
   const reduced = useReducedMotion() ?? false;
 
+  // A scroll owed by a landing waits until nothing is in the air: a flight
+  // is aimed at where the face stood when it took off.
+  const owed = useRef(false);
   useEffect(() => {
     const grew = count > counted.current;
     counted.current = count;
-    if (!follow || !grew) return;
+    if (grew) owed.current = true;
+    if (!follow || !owed.current || airborne) return;
+    owed.current = false;
     // The pile may move as its count re-sorts it; the wall follows it to
     // where it settles, once the spring has carried it there.
     const timer = setTimeout(
@@ -395,7 +403,7 @@ export function Pile({
       reduced ? 0 : FOLLOW_AFTER_MS,
     );
     return () => clearTimeout(timer);
-  }, [count, follow, reduced]);
+  }, [count, follow, reduced, airborne]);
   const face = big
     ? dense
       ? FACES.dense
