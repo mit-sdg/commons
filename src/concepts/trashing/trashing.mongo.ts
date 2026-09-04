@@ -49,4 +49,10 @@ export class MongoTrashingConcept {
     const docs = await this.trashed.find({}).toArray();
     return docs.map((doc) => ({ item: doc._id, trashedBy: doc.by, trashedAt: doc.at }));
   }
+
+  /** The same items `_getTrashed` gives, handed over as one value. */
+  async _trashedItems(_: Record<string, never>) {
+    const docs = await this.trashed.find({}, { projection: { _id: 1 } }).toArray();
+    return { items: docs.map((doc) => doc._id) };
+  }
 }

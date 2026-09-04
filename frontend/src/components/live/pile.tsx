@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import {
   AnimatePresence,
   motion,
@@ -121,6 +122,7 @@ export function Card({
   lines = oneLine ? 1 : 3,
   onDragStart,
   onDragEnd,
+  onRemove,
   className,
 }: {
   card: WallCard;
@@ -134,6 +136,8 @@ export function Card({
   lines?: 1 | 2 | 3;
   onDragStart?: (card: WallCard) => void;
   onDragEnd?: () => void;
+  /** Takes the card off the wall; only a dashboard offers it. */
+  onRemove?: () => void;
   className?: string;
 }) {
   return (
@@ -165,6 +169,21 @@ export function Card({
         className="inline-flex min-w-0 max-w-full"
       >
         <CardBody card={card} big={big} lines={lines} className={className} />
+        {onRemove === undefined ? null : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            aria-label="Remove card"
+            className="ml-0.5 flex-none self-center text-muted-foreground"
+            onClick={(event) => {
+              event.stopPropagation();
+              onRemove();
+            }}
+          >
+            <X />
+          </Button>
+        )}
       </motion.span>
     </span>
   );

@@ -8,6 +8,7 @@ import {
   useReducedMotion,
 } from "motion/react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { ConfirmAction } from "@/components/confirm-action";
 import { Flights, measure, useFlights } from "@/components/live/flights";
 import {
   Answer,
@@ -92,6 +93,8 @@ export interface WallEdits {
   renamePile?: (pile: string, name: string) => void;
   mergePile?: (pile: string, into: string) => void;
   summarize?: (pile: string) => void;
+  /** Takes a card off the wall for every screen; the hand-in behind it stays. */
+  removeCard?: (card: string) => void;
 }
 
 interface WallProps {
@@ -153,6 +156,8 @@ function StagedWall({
   const [dragging, setDragging] = useState<string | null>(null);
   // The pile in focus, if one is: the rest of the wall gives way to its cards.
   const [spread, setSpread] = useState<string | null>(null);
+  // The card a hand is about to remove, while the question is asked.
+  const [removing, setRemoving] = useState<WallCard | null>(null);
   const reduced = useReducedMotion() ?? false;
   const root = useRef<HTMLElement | null>(null);
   const { flights, flying, lit, launch } = useFlights();
@@ -202,7 +207,19 @@ function StagedWall({
                   edit(merged(pile, into));
                   edits.mergePile?.(pile, into);
                 },
+          // The card leaves now; the next snapshot has it gone.
+          removeCard:
+            edits.removeCard === undefined
+              ? undefined
+              : (card) => {
+                  edit(dropped(card));
+                  edits.removeCard?.(card);
+                },
         };
+  const removable =
+    hand?.removeCard === undefined
+      ? undefined
+      : (card: WallCard) => setRemoving(card);
 
   const shelf = shelfOf(seen.cards);
   const piles = useSlots(seen.piles, seen.open);
@@ -243,6 +260,7 @@ function StagedWall({
       onDragStart={canDrag ? (one) => setDragging(one) : undefined}
       onDragEnd={canDrag ? () => setDragging(null) : undefined}
       onDrop={editable ? (card) => hand.toTray(card) : undefined}
+      onRemove={removable}
     />
   );
 
@@ -438,6 +456,7 @@ function StagedWall({
                             big={big}
                             phone={phone}
                             onClose={() => setSpread(null)}
+                            onRemove={removable}
                             className={className}
                           />
                         )
@@ -551,6 +570,28 @@ function StagedWall({
               />
             </form>
           ) : null}
+          {removable === undefined ? null : (
+            <ConfirmAction
+              open={removing !== null}
+              onOpenChange={(open) => {
+                if (!open) setRemoving(null);
+              }}
+              title="Remove this card?"
+              description={
+                removing === null ? null : (
+                  <p>
+                    <span dir="auto">“{removing.value}”</span> leaves every
+                    screen. The hand-in stays.
+                  </p>
+                )
+              }
+              confirmLabel="Remove"
+              destructive
+              onConfirm={() => {
+                if (removing !== null) hand?.removeCard?.(removing.card);
+              }}
+            />
+          )}
         </section>
       </LayoutGroup>
     </MotionConfig>
@@ -574,6 +615,7 @@ function Shelf({
   onDragStart,
   onDragEnd,
   onDrop,
+  onRemove,
 }: {
   cards: WallCard[];
   writing: number;
@@ -584,6 +626,7 @@ function Shelf({
   onDragStart?: (card: string) => void;
   onDragEnd?: () => void;
   onDrop?: (card: string) => void;
+  onRemove?: (card: WallCard) => void;
 }) {
   const editable = onDrop !== undefined;
   return (
@@ -646,6 +689,9 @@ function Shelf({
               draggable={onDragStart !== undefined}
               onDragStart={(one) => onDragStart?.(one.card)}
               onDragEnd={onDragEnd}
+              onRemove={
+                onRemove === undefined ? undefined : () => onRemove(card)
+              }
             />
           </span>
         ))}

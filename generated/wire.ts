@@ -1292,7 +1292,7 @@ export type CommonsWire = {
       "wall": {
         "begun": number;
         "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>]>>;
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
           "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
           "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
           "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
@@ -1536,7 +1536,7 @@ export type CommonsWire = {
     } | {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "NOT_SEATED" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "ITEM_NOT_CATEGORIZED" | "NOT_SEATED" };
   };
   "/live/relays/get": {
     input: {
@@ -1700,7 +1700,7 @@ export type CommonsWire = {
     output: {
       "relay": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>>, ["item"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" | "RUN_OPEN" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "ITEM_NOT_CATEGORIZED" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" | "RUN_OPEN" };
   };
   "/live/relays/retitle": {
     input: {
@@ -1968,7 +1968,7 @@ export type CommonsWire = {
   };
   "/live/walls/open-pile": {
     input: {
-      "card": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["cardStanding"]["fn"]>[0], ["card"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>]>>;
+      "card": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["cardStanding"]["fn"]>[0], ["card"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>]>>;
       "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["name"]>>;
       "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["scope"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
@@ -2001,7 +2001,7 @@ export type CommonsWire = {
       "wall": {
         "begun": number;
         "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>]>>;
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
           "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
           "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
           "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
@@ -2028,6 +2028,17 @@ export type CommonsWire = {
       } | null;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/walls/remove-card": {
+    input: {
+      "card": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>>, ["item"]>>;
+    };
+    error: { error: AppWideError | "CARD_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "ITEM_NOT_CATEGORIZED" };
   };
   "/live/walls/rename-pile": {
     input: {
@@ -3734,7 +3745,7 @@ export type CommonsWire = {
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "ITEM_NOT_CATEGORIZED" | "NOT_FOUND" };
   };
   "/unread/count": {
     input: {
@@ -5041,7 +5052,7 @@ export type CommonsWireHttp = {
       "wall": {
         "begun": number;
         "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>]>>;
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
           "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
           "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
           "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
@@ -5268,7 +5279,7 @@ export type CommonsWireHttp = {
     } | {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/relays/get": {
     input: {
@@ -5658,7 +5669,7 @@ export type CommonsWireHttp = {
       "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>>, ["item"]>>;
       "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/walls/open-choice": {
     input: {
@@ -5672,7 +5683,7 @@ export type CommonsWireHttp = {
   };
   "/live/walls/open-pile": {
     input: {
-      "card": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["cardStanding"]["fn"]>[0], ["card"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>]>>;
+      "card": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["cardStanding"]["fn"]>[0], ["card"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>]>>;
       "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["name"]>>;
       "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["scope"]>]>>;
     };
@@ -5680,7 +5691,7 @@ export type CommonsWireHttp = {
       "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>>, ["item"]>>;
       "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/walls/pick": {
     input: {
@@ -5702,7 +5713,7 @@ export type CommonsWireHttp = {
       "wall": {
         "begun": number;
         "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>]>>;
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
           "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
           "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
           "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
@@ -5729,6 +5740,16 @@ export type CommonsWireHttp = {
       } | null;
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/walls/remove-card": {
+    input: {
+      "card": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>>, ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/walls/rename-pile": {
     input: {
@@ -7312,7 +7333,7 @@ export type CommonsWireHttp = {
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/unread/count": {
     input: {

@@ -54,6 +54,7 @@ export function Spread({
   big = false,
   phone = false,
   onClose,
+  onRemove,
   className,
 }: {
   name: string;
@@ -61,6 +62,8 @@ export function Spread({
   big?: boolean;
   phone?: boolean;
   onClose: () => void;
+  /** Takes a card off the wall; only a dashboard offers it. */
+  onRemove?: (card: WallCard) => void;
   className?: string;
 }) {
   useEffect(() => {
@@ -110,6 +113,21 @@ export function Spread({
               </span>
             )}
             {card.model ? <ModelTag big={big} /> : null}
+            {onRemove === undefined ? null : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Remove card"
+                className="flex-none self-center text-muted-foreground"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onRemove(card);
+                }}
+              >
+                <X />
+              </Button>
+            )}
           </li>
         ))}
       </ul>

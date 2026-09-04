@@ -65,8 +65,9 @@ concrete Linkable
 
 concrete Trashable
   What a person may move to trash: a forum post; a relay whose teaching life has
-  ended, which retires it; or a seated live participant the dashboard dismissed,
-  whose cards keep their mark because the seat stays.
+  ended, which retires it; a seated live participant the dashboard dismissed,
+  whose cards keep their mark because the seat stays; or a card a staff member
+  removed from a wall, whose hand-in is kept.
 
 concrete Pinnable
   What is held above the rest: a forum post pinned in its conversation, a

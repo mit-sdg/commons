@@ -140,20 +140,36 @@ function promptOf(value: unknown): string {
   return questionsOf(value)[0]?.prompt ?? "";
 }
 
-function cardsOf(values: RunValue[]): { label: string; card: string; value: string }[] {
-  return asRows<RunValue>(values).map((entry, index) => ({
-    label: `c${index + 1}`,
-    card: cardId({ response: entry.response, item: entry.item }),
-    value: entry.value.replace(/\s+/g, " ").trim(),
-  }));
+/**
+ * The cards standing on the wall: one per handed-in value, less the cards
+ * removed. Labels are numbered over the standing cards, so a removed card
+ * takes no label the model could name.
+ */
+function cardsOf(
+  values: RunValue[],
+  removed: string[],
+): { label: string; card: string; value: string }[] {
+  const gone = new Set(asRows<string>(removed));
+  return asRows<RunValue>(values)
+    .map((entry) => ({
+      card: cardId({ response: entry.response, item: entry.item }),
+      value: entry.value.replace(/\s+/g, " ").trim(),
+    }))
+    .filter((card) => !gone.has(card.card))
+    .map((card, index) => ({ label: `c${index + 1}`, ...card }));
 }
 
-function trayOf(categories: PileWithItems[], values: RunValue[]) {
+function trayOf(categories: PileWithItems[], values: RunValue[], removed: string[]) {
   const home = new Set(asRows<PileWithItems>(categories).flatMap((pile) => pile.items));
-  return cardsOf(values).filter((card) => !home.has(card.card));
+  return cardsOf(values, removed).filter((card) => !home.has(card.card));
 }
 
-function standing(value: unknown, categories: PileWithItems[], values: RunValue[]): string {
+function standing(
+  value: unknown,
+  categories: PileWithItems[],
+  values: RunValue[],
+  removed: string[],
+): string {
   const piles = asRows<PileWithItems>(categories);
   const listed =
     piles.length === 0
@@ -164,7 +180,7 @@ function standing(value: unknown, categories: PileWithItems[], values: RunValue[
               `- ${pile.name} (${pile.items.length} cards)${pile.description === "" ? "" : `: ${pile.description}`}`,
           )
           .join("\n");
-  const tray = trayOf(categories, values);
+  const tray = trayOf(categories, values, removed);
   const cards =
     tray.length === 0
       ? "No cards are waiting."
@@ -176,42 +192,50 @@ export function placingPassage({
   value,
   categories,
   values,
+  removed,
 }: {
   value: unknown;
   categories: PileWithItems[];
   values: RunValue[];
+  removed: string[];
 }): string {
-  return `${PLACING_CONTRACT}\n\n${standing(value, categories, values)}`;
+  return `${PLACING_CONTRACT}\n\n${standing(value, categories, values, removed)}`;
 }
 
 export function placingRepairPassage({
   value,
   categories,
   values,
+  removed,
   offering,
   account,
 }: {
   value: unknown;
   categories: PileWithItems[];
   values: RunValue[];
+  removed: string[];
   offering: string;
   account: string;
 }): string {
-  return `${PLACING_CONTRACT}\n\n${standing(value, categories, values)}\n\nYour previous reply came back unusable. The reply was:\n${offering}\n\nThe account of the problem:\n${account}\n\nDeliver a correct reply this time.`;
+  return `${PLACING_CONTRACT}\n\n${standing(value, categories, values, removed)}\n\nYour previous reply came back unusable. The reply was:\n${offering}\n\nThe account of the problem:\n${account}\n\nDeliver a correct reply this time.`;
 }
 
 export function lidPassage({
   pile,
   categories,
   values,
+  removed,
 }: {
   pile: string;
   categories: PileWithItems[];
   values: RunValue[];
+  removed: string[];
 }): string {
   const found = asRows<PileWithItems>(categories).find((entry) => entry.category === pile);
-  const written = new Map(cardsOf(values).map((card) => [card.card, card.value]));
-  const cards = (found?.items ?? []).map((item) => `- ${written.get(item) ?? ""}`);
+  const written = new Map(cardsOf(values, removed).map((card) => [card.card, card.value]));
+  const cards = (found?.items ?? [])
+    .filter((item) => written.has(item))
+    .map((item) => `- ${written.get(item) ?? ""}`);
   return `${LID_CONTRACT}\n\nThe pile id: ${pile}\nThe pile's name: ${found?.name ?? ""}\n\nIts cards:\n${cards.length === 0 ? "No cards." : cards.join("\n")}`;
 }
 
@@ -269,12 +293,13 @@ function readPlacements(
   record: Record<string, unknown>,
   categories: PileWithItems[],
   values: RunValue[],
+  removed: string[],
 ): Reading {
   if (!Array.isArray(record.placements)) {
     return { kind: "neither", reason: "The reply carried no placements." };
   }
-  const waiting = trayOf(categories, values).length;
-  const byLabel = new Map(cardsOf(values).map((card) => [card.label, card.card]));
+  const waiting = trayOf(categories, values, removed).length;
+  const byLabel = new Map(cardsOf(values, removed).map((card) => [card.label, card.card]));
   const held = new Set(asRows<PileWithItems>(categories).flatMap((pile) => pile.items));
   // An empty tray is answered honestly with no placements; only a waiting card
   // left unplaced is a reply to stand upon.
@@ -314,7 +339,12 @@ function readPlacements(
   return { kind: "placed", lines };
 }
 
-function read(reply: string, categories: PileWithItems[], values: RunValue[]): Reading {
+function read(
+  reply: string,
+  categories: PileWithItems[],
+  values: RunValue[],
+  removed: string[],
+): Reading {
   let parsed: unknown;
   try {
     parsed = JSON.parse(reply);
@@ -326,7 +356,7 @@ function read(reply: string, categories: PileWithItems[], values: RunValue[]): R
   }
   const record = parsed as Record<string, unknown>;
   if (record.kind === "lid") return readLid(record, categories);
-  if (record.kind === "placed") return readPlacements(record, categories, values);
+  if (record.kind === "placed") return readPlacements(record, categories, values, removed);
   return { kind: "neither", reason: "The reply named no recognizable kind." };
 }
 
@@ -334,24 +364,28 @@ export function placingReading({
   reply,
   categories,
   values,
+  removed,
 }: {
   reply: string;
   categories: PileWithItems[];
   values: RunValue[];
+  removed: string[];
 }): string {
-  return read(reply, categories, values).kind;
+  return read(reply, categories, values, removed).kind;
 }
 
 export function placingLines({
   reply,
   categories,
   values,
+  removed,
 }: {
   reply: string;
   categories: PileWithItems[];
   values: RunValue[];
+  removed: string[];
 }): SuggestionLine[] {
-  const reading = read(reply, categories, values);
+  const reading = read(reply, categories, values, removed);
   return reading.kind === "placed" ? reading.lines : [];
 }
 
@@ -359,12 +393,14 @@ export function placingReason({
   reply,
   categories,
   values,
+  removed,
 }: {
   reply: string;
   categories: PileWithItems[];
   values: RunValue[];
+  removed: string[];
 }): string {
-  const reading = read(reply, categories, values);
+  const reading = read(reply, categories, values, removed);
   return reading.kind === "neither" ? reading.reason : "";
 }
 
@@ -375,7 +411,7 @@ export function lidLines({
   reply: string;
   categories: PileWithItems[];
 }): SuggestionLine[] {
-  const reading = read(reply, categories, []);
+  const reading = read(reply, categories, [], []);
   return reading.kind === "lid" ? reading.lines : [];
 }
 

@@ -46,6 +46,7 @@ for (const [floor, make] of floors) {
       expect(await trashing._getTrashed({})).toEqual([
         { item: "draft", trashedBy: "maya", trashedAt: at },
       ]);
+      expect(await trashing._trashedItems({})).toEqual({ items: ["draft"] });
     });
 
     test("trash refuses an item already in the trash", async () => {

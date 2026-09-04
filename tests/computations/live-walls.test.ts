@@ -41,6 +41,9 @@ const values = [
 const card = (index: number) =>
   cardId({ response: values[index]!.response, item: values[index]!.item });
 
+/** Nothing removed: the wall as the room handed it in. */
+const removed: string[] = [];
+
 const categories = [
   {
     category: "pile-1",
@@ -54,11 +57,26 @@ const mind = (passage: string) => scriptedWallReply(passage) ?? "";
 
 describe("the placing passage", () => {
   test("carries the piles as they stand and only the cards still in the tray", () => {
-    const passage = placingPassage({ value: presentation, categories, values });
+    const passage = placingPassage({ value: presentation, categories, values, removed });
     expect(passage).toContain("- Examples (1 cards)");
     expect(passage).toContain("c2. slower on proofs");
     expect(passage).toContain("c3. an unsortable scribble");
     expect(passage).not.toContain("c1. more worked examples");
+  });
+
+  test("a removed card is on no list, and the labels count the standing cards", () => {
+    const passage = placingPassage({
+      value: presentation,
+      categories,
+      values,
+      removed: [card(1)],
+    });
+    expect(passage).not.toContain("slower on proofs");
+    expect(passage).toContain("c2. an unsortable scribble");
+    expect(passage).not.toContain("c3.");
+    const lid = lidPassage({ pile: "pile-1", categories, values, removed: [card(0)] });
+    expect(lid).not.toContain("more worked examples");
+    expect(lid).toContain("No cards.");
   });
 
   test("the repair passage carries the reply and the account of what was wrong", () => {
@@ -66,6 +84,7 @@ describe("the placing passage", () => {
       value: presentation,
       categories,
       values,
+      removed,
       offering: "{}",
       account: "The reply named no recognizable kind.",
     });
@@ -80,11 +99,11 @@ describe("reading a placing reply", () => {
       kind: "placed",
       placements: [{ card: "c2", pile: "Examples" }],
     });
-    expect(placingReading({ reply, categories, values })).toBe("placed");
-    expect(placingLines({ reply, categories, values })).toEqual([
+    expect(placingReading({ reply, categories, values, removed })).toBe("placed");
+    expect(placingLines({ reply, categories, values, removed })).toEqual([
       { kind: "place", target: card(1), value: "pile-1" },
     ]);
-    expect(placingReason({ reply, categories, values })).toBe("");
+    expect(placingReason({ reply, categories, values, removed })).toBe("");
   });
 
   test("a pile that is not on the list opens a new one, flag or no flag", () => {
@@ -94,8 +113,8 @@ describe("reading a placing reply", () => {
       { card: "c3", pile: "Pace" },
     ]) {
       const reply = JSON.stringify({ kind: "placed", placements: [placement] });
-      expect(placingReading({ reply, categories, values })).toBe("placed");
-      expect(placingLines({ reply, categories, values })).toEqual([
+      expect(placingReading({ reply, categories, values, removed })).toBe("placed");
+      expect(placingLines({ reply, categories, values, removed })).toEqual([
         { kind: "open", target: card(2), value: "Pace" },
       ]);
     }
@@ -106,7 +125,7 @@ describe("reading a placing reply", () => {
       kind: "placed",
       placements: [{ card: "c2", pile: "Examples", new: true }],
     });
-    expect(placingLines({ reply, categories, values })).toEqual([
+    expect(placingLines({ reply, categories, values, removed })).toEqual([
       { kind: "place", target: card(1), value: "pile-1" },
     ]);
   });
@@ -114,9 +133,9 @@ describe("reading a placing reply", () => {
   test("a card the wall already holds is a line with nothing left to do", () => {
     for (const pile of ["Examples", "Pace"]) {
       const reply = JSON.stringify({ kind: "placed", placements: [{ card: "c1", pile }] });
-      expect(placingReading({ reply, categories, values })).toBe("placed");
-      expect(placingLines({ reply, categories, values })).toEqual([]);
-      expect(placingReason({ reply, categories, values })).toBe("");
+      expect(placingReading({ reply, categories, values, removed })).toBe("placed");
+      expect(placingLines({ reply, categories, values, removed })).toEqual([]);
+      expect(placingReason({ reply, categories, values, removed })).toBe("");
     }
   });
 
@@ -128,8 +147,8 @@ describe("reading a placing reply", () => {
         { card: "c2", pile: "Examples" },
       ],
     });
-    expect(placingReading({ reply, categories, values })).toBe("placed");
-    expect(placingLines({ reply, categories, values })).toEqual([
+    expect(placingReading({ reply, categories, values, removed })).toBe("placed");
+    expect(placingLines({ reply, categories, values, removed })).toEqual([
       { kind: "place", target: card(1), value: "pile-1" },
     ]);
   });
@@ -139,8 +158,8 @@ describe("reading a placing reply", () => {
       kind: "placed",
       placements: [{ card: "c9", pile: "Examples" }],
     });
-    expect(placingReading({ reply, categories, values })).toBe("neither");
-    expect(placingReason({ reply, categories, values })).toContain("waiting in the tray");
+    expect(placingReading({ reply, categories, values, removed })).toBe("neither");
+    expect(placingReason({ reply, categories, values, removed })).toContain("waiting in the tray");
   });
 
   test("a nameless pile, a label off the wall, an empty placement, and unreadable text are all unusable", () => {
@@ -152,15 +171,15 @@ describe("reading a placing reply", () => {
       "not json at all",
       "[1,2,3]",
     ]) {
-      expect(placingReading({ reply, categories, values })).toBe("neither");
-      expect(placingReason({ reply, categories, values })).not.toBe("");
+      expect(placingReading({ reply, categories, values, removed })).toBe("neither");
+      expect(placingReason({ reply, categories, values, removed })).not.toBe("");
     }
   });
 });
 
 describe("the lid", () => {
   test("the passage names the pile and its cards", () => {
-    const passage = lidPassage({ pile: "pile-1", categories, values });
+    const passage = lidPassage({ pile: "pile-1", categories, values, removed });
     expect(passage).toContain("The pile id: pile-1");
     expect(passage).toContain("The pile's name: Examples");
     expect(passage).toContain("- more worked examples");
@@ -172,7 +191,7 @@ describe("the lid", () => {
       pile: "pile-1",
       sentence: "These answers ask for worked examples.",
     });
-    expect(placingReading({ reply, categories, values })).toBe("lid");
+    expect(placingReading({ reply, categories, values, removed })).toBe("lid");
     expect(lidLines({ reply, categories })).toEqual([
       { kind: "lid", target: "pile-1", value: "These answers ask for worked examples." },
     ]);
@@ -180,7 +199,7 @@ describe("the lid", () => {
 
   test("a summary naming no pile on this wall is unusable", () => {
     const reply = JSON.stringify({ kind: "lid", pile: "pile-9", sentence: "Anything." });
-    expect(placingReading({ reply, categories, values })).toBe("neither");
+    expect(placingReading({ reply, categories, values, removed })).toBe("neither");
     expect(lidLines({ reply, categories })).toEqual([]);
   });
 });
@@ -233,31 +252,32 @@ describe("the scripted mind", () => {
   });
 
   test("an unsortable card is placed badly once and well on the retry", () => {
-    const passage = placingPassage({ value: presentation, categories, values });
+    const passage = placingPassage({ value: presentation, categories, values, removed });
     const bad = mind(passage);
-    expect(placingReading({ reply: bad, categories, values })).toBe("neither");
+    expect(placingReading({ reply: bad, categories, values, removed })).toBe("neither");
 
     const repair = placingRepairPassage({
       value: presentation,
       categories,
       values,
+      removed,
       offering: bad,
-      account: placingReason({ reply: bad, categories, values }),
+      account: placingReason({ reply: bad, categories, values, removed }),
     });
     const good = mind(repair);
-    expect(placingReading({ reply: good, categories, values })).toBe("placed");
-    expect(placingLines({ reply: good, categories, values }).length).toBe(2);
+    expect(placingReading({ reply: good, categories, values, removed })).toBe("placed");
+    expect(placingLines({ reply: good, categories, values, removed }).length).toBe(2);
   });
 
   test("a wall with nothing unsortable is placed well the first time", () => {
     const plain = values.slice(0, 2);
-    const passage = placingPassage({ value: presentation, categories, values: plain });
+    const passage = placingPassage({ value: presentation, categories, values: plain, removed });
     const reply = mind(passage);
-    expect(placingReading({ reply, categories, values: plain })).toBe("placed");
+    expect(placingReading({ reply, categories, values: plain, removed })).toBe("placed");
   });
 
   test("it summarizes the pile it was given", () => {
-    const reply = mind(lidPassage({ pile: "pile-1", categories, values }));
+    const reply = mind(lidPassage({ pile: "pile-1", categories, values, removed }));
     expect(lidLines({ reply, categories })).toEqual([
       { kind: "lid", target: "pile-1", value: "These answers all say something about examples." },
     ]);

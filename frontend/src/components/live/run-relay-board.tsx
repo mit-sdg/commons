@@ -411,6 +411,12 @@ export function RelayRunBoard({
               goneOrClosed("PILE_GONE"),
             ).then(refetchWall);
           },
+          removeCard: (card) => {
+            void send(
+              api["/live/walls/remove-card"]({ round: shown, card }),
+              goneOrClosed("CARD_GONE"),
+            ).then(refetchWall);
+          },
           summarize: (pile) => {
             void send(
               api["/live/walls/summarize"]({ pile }),
