@@ -443,7 +443,12 @@ describe("the model participant and the wall", () => {
     };
     const before = await readWall();
     for (const card of before.cards) {
-      await post(edge, "/live/walls/open-pile", { round, name: "By hand", card: card.card }, cookie);
+      await post(
+        edge,
+        "/live/walls/open-pile",
+        { round, name: "By hand", card: card.card },
+        cookie,
+      );
     }
     await serveOnePass(edge.application.concepts.Reasoning, scriptedMind());
 
