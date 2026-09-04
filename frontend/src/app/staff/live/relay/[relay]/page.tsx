@@ -240,6 +240,7 @@ const BEFORE_CLASS_KEY = "live.before-class";
 
 /** What to do on the day, one line each, in the room's words. */
 const BEFORE_CLASS = [
+  "Sign in fresh today, here and on the room's screen. A sign-in lasts one day.",
   "Launch. Open Project on the room's screen.",
   "Read the code and the address aloud. The room joins there.",
   "Open round 1 when the phones are out.",
