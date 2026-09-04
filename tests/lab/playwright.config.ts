@@ -43,7 +43,7 @@ export default defineConfig({
         url: `${baseURL}/lab/wall`,
         reuseExistingServer: true,
         timeout: 180_000,
-        env: { BACKEND_ORIGIN: "http://127.0.0.1:4999" },
+        env: { BACKEND_ORIGIN: "http://127.0.0.1:4999", PUBLIC_ORIGIN: baseURL },
       }
     : undefined,
 });
