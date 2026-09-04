@@ -8,7 +8,7 @@ import {
 } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { WallCard } from "@/components/live/rounds";
-import { Spread } from "@/components/live/spread";
+import { SpreadButton } from "@/components/live/spread";
 import { CARD_MOVE, PILE_MOVE } from "@/components/live/wall-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -268,6 +268,8 @@ export function Pile({
   landed,
   onDrop,
   onTap,
+  onSpread,
+  spread = false,
   onRename,
   onMergeIn,
   onSummarize,
@@ -293,6 +295,10 @@ export function Pile({
   landed?: (card: string) => number;
   onDrop?: (card: string) => void;
   onTap?: () => void;
+  /** Unfolds every card of the pile in place; on a projector the face itself does it. */
+  onSpread?: () => void;
+  /** Whether this pile stands unfolded. */
+  spread?: boolean;
   onRename?: (name: string) => void;
   /** A pile dropped on this one folds into it, every card moving with it. */
   onMergeIn?: (pile: string) => void;
@@ -380,17 +386,10 @@ export function Pile({
     event.dataTransfer.effectAllowed = "move";
   };
   const picking = onTap !== undefined && naming === null;
-  const spread =
-    cards.length === 0 ? null : (
-      <Spread
-        name={name}
-        count={count}
-        description={description}
-        cards={cards}
-        big={big}
-        phone={phone}
-      />
-    );
+  const spreadable = onSpread !== undefined && cards.length > 0;
+  // What a tap on the face does: picks, once picking is on; on a projector,
+  // where nothing else is tapped, it unfolds the pile.
+  const faceTap = picking ? onTap : big && spreadable ? onSpread : undefined;
   // A name that carries its pile into another one is dragged by its name.
   const drag = {
     draggable: onMergeIn !== undefined && id !== undefined,
@@ -459,25 +458,30 @@ export function Pile({
           "shadow-[0_5px_0_-2px_var(--card),0_6px_0_-2px_var(--border)]",
         (picked || selected) &&
           "outline outline-2 outline-primary -outline-offset-2",
+        spread && "border-foreground/60",
         // A pile taking a card lights for the flight, so the room sees where
         // it went.
         arriving.size > 0 &&
           "border-primary/70 shadow-[0_0_0_3px_var(--primary)] transition-shadow duration-300",
-        picking && "cursor-pointer hover:border-foreground/40",
+        faceTap !== undefined && "cursor-pointer hover:border-foreground/40",
         className,
       )}
     >
       {picked && carriesTo !== undefined ? (
         <CarriesTo number={carriesTo} big={big} />
       ) : null}
-      {/* Tapping the pile picks it: one button over the face, under the name
-          and the controls, so nothing a hand can press is nested in another. */}
-      {picking ? (
+      {/* Tapping the pile picks it, or spreads it: one button over the face,
+          under the name and the controls, so nothing a hand can press is
+          nested in another. */}
+      {faceTap !== undefined ? (
         <button
           type="button"
-          aria-pressed={picked}
-          aria-label={`${name}, ${countWords(count)}`}
-          onClick={onTap}
+          aria-pressed={picking ? picked : undefined}
+          aria-expanded={picking ? undefined : spread}
+          aria-label={
+            picking ? `${name}, ${countWords(count)}` : `Spread ${name}`
+          }
+          onClick={faceTap}
           className="absolute inset-0 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         />
       ) : null}
@@ -540,9 +544,6 @@ export function Pile({
               value={count}
               className={cn("font-mono tabular-nums", face.count)}
             />
-            {/* Off the projector the spread stands in the row of controls below,
-              where a name has the width it needs and a thumb has its target. */}
-            {big ? spread : null}
           </span>
         </div>
         {/* The face's cards are a list, so a reader takes them one at a time
@@ -556,8 +557,8 @@ export function Pile({
             arriving.size > 0
               ? "overflow-visible"
               : "overflow-hidden [mask-image:linear-gradient(to_bottom,#000_calc(100%_-_14px),transparent)]",
-            // The mask paints the list over the pick button; while picking the face is that button.
-            picking && "pointer-events-none",
+            // The mask paints the list over the face's button; while the face is one, it wins.
+            faceTap !== undefined && "pointer-events-none",
             face.peek,
           )}
         >
@@ -619,7 +620,7 @@ export function Pile({
             )}
           </AnimatePresence>
         </div>
-        {onSummarize === undefined && (big || spread === null) ? null : (
+        {onSummarize === undefined && (big || !spreadable) ? null : (
           <div
             className={cn(
               "relative z-10 mt-auto flex flex-none items-center gap-2 pt-1",
@@ -638,7 +639,14 @@ export function Pile({
                 Summarize
               </Button>
             )}
-            {big ? null : spread}
+            {big || !spreadable ? null : (
+              <SpreadButton
+                name={name}
+                open={spread}
+                phone={phone}
+                onClick={() => onSpread?.()}
+              />
+            )}
           </div>
         )}
       </div>

@@ -1,30 +1,61 @@
 "use client";
 
-import { Maximize2 } from "lucide-react";
+import { X } from "lucide-react";
+import { motion } from "motion/react";
+import { useEffect } from "react";
 import { Answer, ModelTag } from "@/components/live/pile";
 import type { WallCard } from "@/components/live/rounds";
+import { PILE_MOVE } from "@/components/live/wall-motion";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 /**
- * Every card in a group, read whole. A pile's face shows three; this opens the
- * rest, and changes nothing — the wall behind it takes the taps that sort and
- * pick, so neither the button nor the dialog lets one through.
+ * The word that spreads a group, where a face has room for a word and not a
+ * tap: the dashboard's row of controls, a vote's tally, a phone.
  */
-export function Spread({
+export function SpreadButton({
+  name,
+  open,
+  onClick,
+  phone = false,
+}: {
+  name: string;
+  open: boolean;
+  onClick: () => void;
+  /** A phone is opened with a thumb, so the word takes a thumb's room. */
+  phone?: boolean;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size={phone ? "sm" : "xs"}
+      aria-expanded={open}
+      aria-label={`${open ? "Fold" : "Spread"} ${name}`}
+      className="text-muted-foreground max-sm:h-9 max-sm:px-3"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+    >
+      {open ? "fold" : "all"}
+    </Button>
+  );
+}
+
+/**
+ * Every card in a group, read whole, unfolded in place under the group's own
+ * row: the wall stays where it is and the rows below make room. Escape or the
+ * cross folds it back. It changes nothing on the wall.
+ */
+export function SpreadPanel({
   name,
   count,
   cards,
   description = "",
   big = false,
   phone = false,
+  onClose,
 }: {
   name: string;
   count: number;
@@ -32,75 +63,93 @@ export function Spread({
   /** The pile's lid, standing under the name as it does on the face. */
   description?: string;
   big?: boolean;
-  /** A phone is opened with a thumb, so its button takes a thumb's room. */
   phone?: boolean;
+  onClose: () => void;
 }) {
-  if (cards.length === 0) return null;
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <span
-      className="inline-flex flex-none"
-      onClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => event.stopPropagation()}
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+      transition={PILE_MOVE}
+      role="region"
+      aria-label={`${name}, every card`}
+      className={cn(
+        "col-span-full flex min-w-0 flex-col rounded-xl border border-foreground/30 bg-card",
+        big ? "gap-4 px-7 py-5" : phone ? "gap-3 px-4 py-3" : "gap-3 px-5 py-4",
+      )}
     >
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size={big || phone ? "icon-lg" : "icon-sm"}
-            aria-label={`Spread ${name}`}
-            className="text-muted-foreground max-sm:size-10"
-          >
-            <Maximize2 className={big ? "size-6" : undefined} />
-          </Button>
-        </DialogTrigger>
-        <DialogContent
-          {...(description === "" ? { "aria-describedby": undefined } : {})}
-          className="grid-rows-[auto_minmax(0,1fr)] gap-4 max-h-[85dvh] sm:max-w-xl"
+      <div className="flex items-baseline gap-3">
+        <span
+          dir="auto"
+          className={cn(
+            "min-w-0 break-words font-display font-semibold leading-[1.2]",
+            big ? "text-3xl" : "text-lg",
+          )}
         >
-          <DialogHeader>
-            <DialogTitle className="flex items-baseline gap-3 font-display text-xl">
-              <span dir="auto" className="min-w-0 break-words">
-                {name}
-              </span>
-              <span className="flex-none font-mono tabular-nums text-muted-foreground">
-                {count}
-              </span>
-            </DialogTitle>
-            {description === "" ? null : (
-              <DialogDescription className="text-foreground">
-                {description}
-              </DialogDescription>
+          {name}
+        </span>
+        <span
+          className={cn(
+            "flex-none font-mono text-muted-foreground tabular-nums",
+            big ? "text-3xl" : "text-lg",
+          )}
+        >
+          {count}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size={big ? "icon-lg" : "icon-sm"}
+          aria-label={`Fold ${name}`}
+          className="ml-auto self-center text-muted-foreground"
+          onClick={onClose}
+        >
+          <X className={big ? "size-6" : undefined} />
+        </Button>
+      </div>
+      {description === "" ? null : (
+        <p className={cn("font-display", big ? "text-2xl" : "text-base")}>
+          {description}
+        </p>
+      )}
+      <ul
+        className={cn(
+          "min-w-0 gap-x-8",
+          big
+            ? "columns-3 text-xl leading-[1.35]"
+            : phone
+              ? "columns-1 text-sm leading-[1.35]"
+              : "columns-2 text-sm leading-[1.35] md:columns-3",
+        )}
+      >
+        {cards.map((card) => (
+          <li
+            key={card.card}
+            className={cn(
+              "flex min-w-0 break-inside-avoid items-baseline gap-2 border-border border-b py-1.5",
+              big && "py-2.5",
             )}
-          </DialogHeader>
-          {/* The list fills the box and fades where it runs past it, so a
-              group longer than the box reads as one that scrolls — and the
-              box takes the keys that scroll it. */}
-          <div
-            role="group"
-            tabIndex={0}
-            aria-label={`${name}, every card`}
-            className="min-h-0 overflow-y-auto border-border border-t outline-none [mask-image:linear-gradient(to_bottom,#000_calc(100%_-_32px),transparent)] focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
-            <ul className="flex flex-col pb-10">
-              {cards.map((card) => (
-                <li
-                  key={card.card}
-                  className="flex min-w-0 items-baseline gap-2.5 border-border border-b py-2 text-sm leading-[1.35] last:border-0"
-                >
-                  <Answer value={card.value} className="flex-1" />
-                  {card.part === "" ? null : (
-                    <span className="flex-none font-mono text-muted-foreground text-xs">
-                      {card.part}
-                    </span>
-                  )}
-                  {card.model ? <ModelTag /> : null}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </span>
+            <Answer value={card.value} className="flex-1" />
+            {card.part === "" ? null : (
+              <span className="flex-none font-mono text-muted-foreground text-xs">
+                {card.part}
+              </span>
+            )}
+            {card.model ? <ModelTag big={big} /> : null}
+          </li>
+        ))}
+      </ul>
+    </motion.div>
   );
 }

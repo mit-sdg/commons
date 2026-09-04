@@ -7,7 +7,7 @@ import {
   motion,
   useReducedMotion,
 } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   Answer,
   Card,
@@ -29,7 +29,7 @@ import {
   type WallCard,
   type Wall as WallShape,
 } from "@/components/live/rounds";
-import { Spread } from "@/components/live/spread";
+import { SpreadButton, SpreadPanel } from "@/components/live/spread";
 import {
   dropped,
   merged,
@@ -149,8 +149,10 @@ function StagedWall({
   const [naming, setNaming] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
+  // The pile unfolded in place, if one is.
+  const [spread, setSpread] = useState<string | null>(null);
   const reduced = useReducedMotion() ?? false;
-  const { shown, edit, landed } = useStagedWall(wall, {
+  const { shown, settled, edit, landed } = useStagedWall(wall, {
     instant: reduced,
   });
   const seen = shown ?? wall;
@@ -187,6 +189,7 @@ function StagedWall({
 
   const shelf = shelfOf(seen.cards);
   const piles = useSlots(seen.piles, seen.open);
+  const spreading = piles.find((pile) => pile.pile === spread) ?? null;
   const context = questionOf(seen)?.context ?? [];
   const writing = seen.open ? Math.max(0, seen.begun - seen.handedIn) : 0;
   const vote = choicesOf(seen).length > 0;
@@ -272,14 +275,21 @@ function StagedWall({
                   />
                 ) : null}
                 {context.length === 0 ? null : (
-                  <div className="flex flex-col gap-1.5">
-                    {/* The groups carried in are named by the round they come
-                        from: a name that also stands on this wall below is
-                        never read as this round's own. */}
+                  // One row: the round the groups came from, then the groups,
+                  // the row cut under a fade rather than wrapping into the
+                  // prompt's room. The groups carried in are named by the
+                  // round they come from: a name that also stands on this wall
+                  // below is never read as this round's own.
+                  <div
+                    className={cn(
+                      "flex min-w-0 items-center overflow-hidden [mask-image:linear-gradient(to_right,#000_calc(100%_-_48px),transparent)]",
+                      big ? "gap-3" : "gap-2",
+                    )}
+                  >
                     {from === null ? null : (
                       <span
                         className={cn(
-                          "flex items-center gap-2 text-muted-foreground",
+                          "flex flex-none items-center gap-2 text-muted-foreground",
                           big ? "text-xl" : "text-sm",
                         )}
                       >
@@ -291,7 +301,7 @@ function StagedWall({
                         />
                       </span>
                     )}
-                    <div className={cn("flex flex-wrap gap-2", big && "gap-3")}>
+                    <>
                       {context.map((group) => {
                         const values = distinctValues(group.cards);
                         const held = values.length - CONTEXT_SHOWN;
@@ -299,10 +309,10 @@ function StagedWall({
                           <div
                             key={group.name}
                             className={cn(
-                              "flex min-w-0 flex-col gap-0.5 rounded-lg border border-border bg-card",
+                              "flex min-w-0 flex-none flex-col gap-0.5 rounded-lg border border-border bg-card",
                               big
-                                ? "max-w-[420px] px-4 py-2.5"
-                                : "max-w-[260px] px-3 py-1.5",
+                                ? "max-w-[360px] px-4 py-2"
+                                : "max-w-[240px] px-3 py-1.5",
                             )}
                           >
                             <span
@@ -332,7 +342,7 @@ function StagedWall({
                           </div>
                         );
                       })}
-                    </div>
+                    </>
                   </div>
                 )}
                 <p
@@ -393,9 +403,34 @@ function StagedWall({
                   {empty}
                 </div>
               ) : (
-                <PileGrid big={big} dense={dense} phone={phone} scroll={scroll}>
-                  <AnimatePresence initial={false}>
-                    {piles.map((pile) => (
+                <PileGrid
+                  big={big}
+                  dense={dense}
+                  phone={phone}
+                  scroll={scroll}
+                  settled={settled}
+                  spread={
+                    spreading === null
+                      ? null
+                      : {
+                          index: piles.indexOf(spreading),
+                          node: (
+                            <SpreadPanel
+                              key="spread"
+                              name={spreading.name}
+                              count={spreading.count}
+                              description={spreading.description}
+                              cards={cardsIn(seen.cards, spreading.pile)}
+                              big={big}
+                              phone={phone}
+                              onClose={() => setSpread(null)}
+                            />
+                          ),
+                        }
+                  }
+                >
+                  {[
+                    ...piles.map((pile) => (
                       <Pile
                         key={pile.pile}
                         id={pile.pile}
@@ -419,6 +454,12 @@ function StagedWall({
                             ? undefined
                             : () => hand.togglePick?.(pile.pile)
                         }
+                        onSpread={() =>
+                          setSpread((open) =>
+                            open === pile.pile ? null : pile.pile,
+                          )
+                        }
+                        spread={spread === pile.pile}
                         onRename={
                           editable && hand.renamePile !== undefined
                             ? (next) => hand.renamePile?.(pile.pile, next)
@@ -436,11 +477,18 @@ function StagedWall({
                         }
                         phone={phone}
                       />
-                    ))}
-                  </AnimatePresence>
-                  {editable ? (
-                    <NewPile big={big} phone={phone} onDrop={openPile} />
-                  ) : null}
+                    )),
+                    ...(editable
+                      ? [
+                          <NewPile
+                            key="new-pile"
+                            big={big}
+                            phone={phone}
+                            onDrop={openPile}
+                          />,
+                        ]
+                      : []),
+                  ]}
                 </PileGrid>
               )}
             </>
@@ -609,11 +657,42 @@ function useSlots<Pile extends { pile: string; count: number }>(
   return next.piles;
 }
 
+/**
+ * The panel a spread pile unfolds into: it stands under the row of the pile
+ * it belongs to, the whole width, and the rows below make room; the piles
+ * beside it stay where they are.
+ */
+interface SpreadAt {
+  /** The index of the spread pile among the cells. */
+  index: number;
+  node: React.ReactNode;
+}
+
+/** The cells with the panel spliced in after the end of its pile's row. */
+function withSpread(
+  cells: React.ReactNode[],
+  spread: SpreadAt | null,
+  columns: number,
+): React.ReactNode[] {
+  if (spread === null || spread.index < 0) return cells;
+  const rowEnd = Math.min(
+    cells.length - 1,
+    Math.floor(spread.index / columns) * columns + columns - 1,
+  );
+  return [
+    ...cells.slice(0, rowEnd + 1),
+    spread.node,
+    ...cells.slice(rowEnd + 1),
+  ];
+}
+
 function PileGrid({
   big,
   dense,
   phone,
   scroll,
+  settled,
+  spread,
   children,
 }: {
   big: boolean;
@@ -621,9 +700,15 @@ function PileGrid({
   dense: boolean;
   phone: boolean;
   scroll: boolean;
-  children: React.ReactNode;
+  /** Whether a wave is playing: while cards fly, nothing at the grid's edge hides them. */
+  settled: boolean;
+  spread: SpreadAt | null;
+  children: React.ReactNode[];
 }) {
-  const { ref, edges } = useOverflow(scroll);
+  const { ref, edges, columns } = useOverflow(scroll);
+  // A grid that scrolls clips a card flying in from the tray below it; while a
+  // wave plays and the grid holds everything, it lets the card be seen.
+  const calm = settled || edges.top || edges.bottom;
   return (
     // The cell is fixed per surface, so a face never paints past it and the
     // piles take the whole width however many there are. The dashboard takes
@@ -648,12 +733,15 @@ function PileGrid({
               ? "grid-cols-2 gap-x-3 gap-y-4"
               : "grid-cols-2 @min-[34rem]:grid-cols-3 @min-[56rem]:grid-cols-4",
           // The disc a picked pile carries hangs above the first row.
-          scroll && "min-h-0 flex-1 overflow-y-auto pt-5",
+          scroll && "min-h-0 flex-1 pt-5",
+          scroll && (calm ? "overflow-y-auto" : "overflow-visible"),
           // What the box cannot hold fades out, rather than stopping on a cut.
-          fading(edges),
+          settled && fading(edges),
         )}
       >
-        {children}
+        <AnimatePresence initial={false}>
+          {withSpread(children, spread, columns)}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -665,14 +753,25 @@ interface Edges {
   bottom: boolean;
 }
 
+/** How many columns the grid lays out, read off the grid itself. */
+function columnsOf(box: HTMLElement): number {
+  const columns = getComputedStyle(box)
+    .gridTemplateColumns.split(" ")
+    .filter((track) => track !== "").length;
+  return Math.max(1, columns);
+}
+
 function useOverflow(watch: boolean) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [edges, setEdges] = useState<Edges>({ top: false, bottom: false });
+  const [columns, setColumns] = useState(4);
 
   useEffect(() => {
     const box = ref.current;
-    if (!watch || box === null) return;
-    const read = () =>
+    if (box === null) return;
+    const read = () => {
+      setColumns(columnsOf(box));
+      if (!watch) return;
       setEdges((current) => {
         const top = box.scrollTop > 1;
         const bottom = box.scrollHeight - box.clientHeight - box.scrollTop > 1;
@@ -680,6 +779,7 @@ function useOverflow(watch: boolean) {
           ? current
           : { top, bottom };
       });
+    };
     read();
     // The box is watched with the piles inside it: neither the wall growing a
     // row nor the screen changing shape leaves the fade behind, and scrolling
@@ -694,7 +794,7 @@ function useOverflow(watch: boolean) {
     };
   });
 
-  return { ref, edges };
+  return { ref, edges, columns };
 }
 
 /**
@@ -757,6 +857,20 @@ function VoteBars({
   const most = Math.max(1, ...rows.map((row) => row.count));
   const side = big && rows.length <= 3;
   const from = sourceWall?.number ?? null;
+  // The choice unfolded in place, if one is.
+  const [spread, setSpread] = useState<string | null>(null);
+  const spreading = rows.find((row) => row.choice === spread) ?? null;
+  const panel =
+    spreading === null ? null : (
+      <SpreadPanel
+        key="spread"
+        name={spreading.choice}
+        count={spreading.count}
+        cards={spreading.cards}
+        big={big}
+        onClose={() => setSpread(null)}
+      />
+    );
 
   return (
     <div
@@ -783,16 +897,20 @@ function VoteBars({
               : onPick === undefined
                 ? undefined
                 : () => onPick(pile.pile);
-          const spread = (
-            <span className="relative z-10 inline-flex flex-none">
-              <Spread
-                name={row.choice}
-                count={row.count}
-                cards={row.cards}
-                big={big}
-              />
-            </span>
-          );
+          const word =
+            row.cards.length === 0 ? null : (
+              <span className="relative z-10 inline-flex flex-none">
+                <SpreadButton
+                  name={row.choice}
+                  open={spread === row.choice}
+                  onClick={() =>
+                    setSpread((open) =>
+                      open === row.choice ? null : row.choice,
+                    )
+                  }
+                />
+              </span>
+            );
           const count = (
             <Count
               value={row.count}
@@ -814,60 +932,63 @@ function VoteBars({
             </span>
           );
           return (
-            <VoteRow
-              key={row.choice}
-              label={`${row.choice}, ${voteWords(row.count)}`}
-              picked={picked}
-              onTap={tap}
-              className={cn(
-                // A projected card carries a hairline the back row can see.
-                big && "border-foreground/50",
-                side && "flex-1 gap-4 p-0 pb-4",
-              )}
-            >
-              {picked && carriesTo !== undefined ? (
-                <CarriesTo number={carriesTo} big={big} />
-              ) : null}
-              {side ? (
-                <>
-                  <span
-                    dir="auto"
-                    className="flex flex-1 items-center justify-center break-words px-6 py-[30px] text-center font-display font-semibold text-4xl"
-                  >
-                    {row.choice}
-                  </span>
-                  {/* The bar takes the width the row has left, so it still
-                      reads as a tally on a narrow screen. */}
-                  <span className="flex items-center gap-3 px-4">
-                    <span className="min-w-[2ch] flex-none">{count}</span>
-                    {bar}
-                    {spread}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="flex items-baseline gap-3">
+            <Fragment key={row.choice}>
+              <VoteRow
+                label={`${row.choice}, ${voteWords(row.count)}`}
+                picked={picked}
+                onTap={tap}
+                className={cn(
+                  // A projected card carries a hairline the back row can see.
+                  big && "border-foreground/50",
+                  side && "flex-1 gap-4 p-0 pb-4",
+                )}
+              >
+                {picked && carriesTo !== undefined ? (
+                  <CarriesTo number={carriesTo} big={big} />
+                ) : null}
+                {side ? (
+                  <>
                     <span
                       dir="auto"
-                      className={cn(
-                        "min-w-0 flex-1 break-words font-display font-semibold leading-[1.2]",
-                        big ? "text-3xl" : "text-lg",
-                      )}
+                      className="flex flex-1 items-center justify-center break-words px-6 py-[30px] text-center font-display font-semibold text-4xl"
                     >
                       {row.choice}
                     </span>
-                    <span className="flex flex-none items-center gap-1">
-                      {count}
-                      {spread}
+                    {/* The bar takes the width the row has left, so it still
+                      reads as a tally on a narrow screen. */}
+                    <span className="flex items-center gap-3 px-4">
+                      <span className="min-w-[2ch] flex-none">{count}</span>
+                      {bar}
+                      {word}
                     </span>
-                  </span>
-                  {bar}
-                </>
-              )}
-            </VoteRow>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex items-baseline gap-3">
+                      <span
+                        dir="auto"
+                        className={cn(
+                          "min-w-0 flex-1 break-words font-display font-semibold leading-[1.2]",
+                          big ? "text-3xl" : "text-lg",
+                        )}
+                      >
+                        {row.choice}
+                      </span>
+                      <span className="flex flex-none items-center gap-1">
+                        {count}
+                        {word}
+                      </span>
+                    </span>
+                    {bar}
+                  </>
+                )}
+              </VoteRow>
+              {!side && spread === row.choice ? panel : null}
+            </Fragment>
           );
         })}
       </div>
+      {side ? panel : null}
       {/* What each choice was made of, on the wall it came from — named by
           that round, since a choice and its cards share a name. */}
       {sourceWall === null || !side ? null : (
