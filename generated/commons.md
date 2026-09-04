@@ -1389,10 +1389,22 @@ Concrete types:
 
 _Views name reusable conditions. Multiple `where` blocks are alternatives._
 
+### (assignment) by (submitter) has submission artifact (artifact)
+
+Authored path: `Course.submissions.submissionHasArtifact`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
+
+```view
+(assignment) by (submitter) has submission artifact (artifact) — inputs (assignment, submitter, artifact); outputs (); bindings (artifacts)
+  where
+    Submitting._getAttempts (assignment, submitter) has (artifacts)
+    artifact is among artifacts
+```
+
 ### (item) is intact
 
 Authored path: `Forum.threads.intact`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 28.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 30.
 
 ```view
 (item) is intact — inputs (item); outputs (); bindings ()
@@ -1420,15 +1432,17 @@ Authored path: `Forum.threads.readableConversation`.
   where Grouping._isMember (group: list, member) has (isMember: true)
 ```
 
-### (post) is not readable
+### (post) belongs to a forum conversation
 
-Authored path: `Forum.posts.notReadable`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 18.
+Authored path: `Forum.threads.forumPost`.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 16.
 
 ```view
-(post) is not readable — inputs (post); outputs (); bindings ()
-  where Trashing._isTrashed (item: post) has (trashed: true)
-  where no Posting._getPost (post)
+(post) belongs to a forum conversation — inputs (post); outputs (); bindings (node)
+  where
+    Posting._getPost (post)
+    Conversing._getNodeByItem (item: post) has (node)
+    Conversing._getConversation (node)
 ```
 
 ### (post) is readable
@@ -1439,8 +1453,18 @@ Authored path: `Forum.posts.readable`.
 ```view
 (post) is readable — inputs (post); outputs (); bindings ()
   where
-    Posting._getPost (post)
+    view "(post) belongs to a forum conversation" with (post)
     Trashing._isTrashed (item: post) has (trashed: false)
+```
+
+### (post) is not readable
+
+Authored path: `Forum.posts.notReadable`.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 18.
+
+```view
+(post) is not readable — inputs (post); outputs (); bindings ()
+  where no view "(post) is readable" with (post)
 ```
 
 ### (question) belongs to (run)
@@ -1546,12 +1570,12 @@ the active user of (session) — inputs (session); outputs (user); bindings () �
 ### (target) is public
 
 Authored path: `Forum.threads.publicTarget`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 26.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 28.
 
 ```view
 (target) is public — inputs (target); outputs (); bindings ()
   where
-    Posting._getPost (post: target)
+    view "(post) belongs to a forum conversation" with (post: target)
     view "(item) is intact" with (item: target)
   where view "(conversation) is readable" with (conversation: target)
 ```
@@ -1819,6 +1843,22 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     Roling._hasCapability (capability: "moderate", context: "commons", user) has (allowed: false)
 ```
 
+### (user) may read (artifact) submitted by (submitter) for (assignment)
+
+Authored path: `Course.submissions.mayReadSubmissionArtifact`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
+
+```view
+(user) may read (artifact) submitted by (submitter) for (assignment) — inputs (user, artifact, submitter, assignment); outputs (); bindings ()
+  where
+    view "(user) is an active student" with (user)
+    view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter: user)
+  where
+    view "(user) may grade" with (user)
+    view "(user) is an active student" with (user: submitter)
+    view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter)
+```
+
 ### (user) may view the staff calendar
 
 ```view
@@ -1995,7 +2035,7 @@ Authored path: `Forum.posts.publicPostsBy`.
 the public posts by (author) — inputs (author); outputs (post); bindings () — answers any number of (post)
   where
     Posting._getByAuthor (author) has (post)
-    view "(item) is intact" with (item: post)
+    view "(post) is readable" with (post)
 ```
 
 ### the public posts in (conversation)
@@ -2152,7 +2192,7 @@ Former "the answers outcome of (response)" — inputs (response); bindings (run,
 ### the assigned population for (assignment)
 
 Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
 
 ```former
 Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, displayName, release, dueOverride, releaseStatus); promises exactly one record — forms:
@@ -2936,6 +2976,7 @@ Authored path: `Forum.moderation.theModerationQueue`.
 ```former
 Former "the moderation queue ()" — inputs (); bindings (target, count, node, conversation, author, content, createdAt, editedAt, rendered, flag, reporter, reason, status, flaggedAt); promises exactly one record — forms:
   each Flagging._getOpenTargets () has (count, target)
+    where view "(post) is readable" with (post: target)
     where Posting._getPost (post: target) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target) has (rendered)
     where whether Conversing._getNodeByItem (item: target) has (node)
@@ -3455,7 +3496,7 @@ Former "the staff notes on (learner)" — inputs (learner); bindings (note, auth
 ### the submissions by (submitter)
 
 Authored path: `Course.submissions.theSubmissionsBy`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 13.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
 
 ```former
 Former "the submissions by (submitter)" — inputs (submitter); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
@@ -3471,7 +3512,7 @@ Former "the submissions by (submitter)" — inputs (submitter); bindings (assign
 ### the submissions for (assignment)
 
 Authored path: `Course.submissions.theSubmissionsForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 18.
 
 ```former
 Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
@@ -3695,7 +3736,7 @@ Former "the tasks in (list) at (at)" — inputs (list, at); bindings (task, titl
 ### the thread (conversation)
 
 Authored path: `Forum.threads.theThread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 28.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 30.
 
 ```former
 Former "the thread (conversation)" — inputs (conversation); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
@@ -3749,6 +3790,7 @@ Authored path: `Forum.moderation.theTrashBin`.
 ```former
 Former "the trash bin ()" — inputs (); bindings (item, trashedBy, trashedAt); promises exactly one record — forms:
   each Trashing._getTrashed () has (item, trashedAt, trashedBy)
+    where view "(post) belongs to a forum conversation" with (post: item)
     form a record of
       item
       trashedAt
@@ -8706,11 +8748,41 @@ then
   RequestBoundary.respond (class, requestId)
 ```
 
+### Course.submissions.Artifact:hidden
+
+Authored path: `Course.submissions.Artifact`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+
+```reaction
+when RequestBoundary.request (artifact, assignment, path: "/submissions/artifact", requestId, session, submitter)
+where
+  view "the active user of (session)" with (session) has (user)
+  no view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.submissions.Artifact:success
+
+Authored path: `Course.submissions.Artifact`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+
+```reaction
+when RequestBoundary.request (artifact, assignment, path: "/submissions/artifact", requestId, session, submitter)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+then
+  RequestBoundary.respond (post: former "the post (post)" with (post: artifact), requestId)
+```
+
 ### Course.submissions.Attempts:attempts
 
 Authored path: `Course.submissions.Attempts`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 24.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -8725,7 +8797,7 @@ then
 
 Authored path: `Course.submissions.Attempts`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 24.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -8740,7 +8812,7 @@ then
 
 Authored path: `Course.submissions.Attempts`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 24.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -8755,7 +8827,7 @@ then
 
 Authored path: `Course.submissions.Attempts`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 24.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -8770,8 +8842,8 @@ then
 ### Course.submissions.ForAssignment:forbidden
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 25.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 28.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -8785,8 +8857,8 @@ then
 ### Course.submissions.ForAssignment:success
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 25.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 28.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -8800,8 +8872,8 @@ then
 ### Course.submissions.ForStudent:for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -8815,8 +8887,8 @@ then
 ### Course.submissions.ForStudent:for-student-hidden
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -8830,8 +8902,8 @@ then
 ### Course.submissions.ForStudent:for-student-missing
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -8845,8 +8917,8 @@ then
 ### Course.submissions.ForStudent:staff-for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -8862,7 +8934,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -8877,7 +8949,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -8892,7 +8964,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -8908,7 +8980,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -8924,7 +8996,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -8941,7 +9013,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -9695,7 +9767,7 @@ when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, se
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: false)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -9712,7 +9784,7 @@ when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, se
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -9728,7 +9800,7 @@ when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, se
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
   RequestBoundary.respond (post: former "the post (post)" with (post: item), requestId)
@@ -9778,6 +9850,22 @@ then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
+### Forum.moderation.IsTrashed:missing
+
+Authored path: `Forum.moderation.IsTrashed`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 11.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 45.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  no view "(post) belongs to a forum conversation" with (post: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Forum.moderation.IsTrashed:success
 
 Authored path: `Forum.moderation.IsTrashed`.
@@ -9789,6 +9877,7 @@ when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed)
 then
   RequestBoundary.respond (requestId, trashed)
@@ -9883,6 +9972,22 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Forum.moderation.PurgeItem:hidden
+
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 5.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 48.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  no view "(post) belongs to a forum conversation" with (post: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Forum.moderation.PurgeItem:success
 
 Authored path: `Forum.moderation.PurgeItem`.
@@ -9894,6 +9999,7 @@ when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
+  view "(post) belongs to a forum conversation" with (post: item)
 then
   Trashing.purge (item)
 ```
@@ -9927,6 +10033,22 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Forum.moderation.RestoreItem:hidden
+
+Authored path: `Forum.moderation.RestoreItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 49.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  no view "(post) belongs to a forum conversation" with (post: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Forum.moderation.RestoreItem:success
 
 Authored path: `Forum.moderation.RestoreItem`.
@@ -9938,6 +10060,7 @@ when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
+  view "(post) belongs to a forum conversation" with (post: item)
 then
   Trashing.restore (item)
 ```
@@ -9982,7 +10105,7 @@ when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -9999,7 +10122,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
 then
   Trashing.trash (at, by: user, item)
 ```
@@ -11628,21 +11751,7 @@ Authored path: `Forum.revisions.GetRevision`.
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
 where
-  Trashing._isTrashed (item) has (trashed: true)
-then
-  RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Forum.revisions.GetRevision:missing
-
-Authored path: `Forum.revisions.GetRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 13.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 34.
-
-```reaction
-when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
-where
-  no Posting._getPost (post: item)
+  view "(post) is not readable" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11656,8 +11765,7 @@ Authored path: `Forum.revisions.GetRevision`.
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
 where
-  Posting._getPost (post: item)
-  view "(item) is intact" with (item)
+  view "(post) is readable" with (post: item)
 then
   RequestBoundary.respond (requestId, revision: former "the revision numbered (number) of (item)" with (item, number))
 ```
@@ -11671,21 +11779,7 @@ Authored path: `Forum.revisions.LatestRevision`.
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
 where
-  Trashing._isTrashed (item) has (trashed: true)
-then
-  RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Forum.revisions.LatestRevision:missing
-
-Authored path: `Forum.revisions.LatestRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 15.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 35.
-
-```reaction
-when RequestBoundary.request (item, path: "/revisions/latest", requestId)
-where
-  no Posting._getPost (post: item)
+  view "(post) is not readable" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11699,8 +11793,7 @@ Authored path: `Forum.revisions.LatestRevision`.
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
 where
-  Posting._getPost (post: item)
-  view "(item) is intact" with (item)
+  view "(post) is readable" with (post: item)
 then
   RequestBoundary.respond (requestId, revision: former "the latest revision of (item)" with (item))
 ```
@@ -11714,21 +11807,7 @@ Authored path: `Forum.revisions.ListRevisions`.
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/list", requestId)
 where
-  Trashing._isTrashed (item) has (trashed: true)
-then
-  RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Forum.revisions.ListRevisions:missing
-
-Authored path: `Forum.revisions.ListRevisions`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 11.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 36.
-
-```reaction
-when RequestBoundary.request (item, path: "/revisions/list", requestId)
-where
-  no Posting._getPost (post: item)
+  view "(post) is not readable" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11742,8 +11821,7 @@ Authored path: `Forum.revisions.ListRevisions`.
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/list", requestId)
 where
-  Posting._getPost (post: item)
-  view "(item) is intact" with (item)
+  view "(post) is readable" with (post: item)
 then
   RequestBoundary.respond (requestId, revisions: former "the revision history of (item)" with (item))
 ```
@@ -11774,7 +11852,7 @@ when RequestBoundary.request (item, number, path: "/moderation/revisions/get", r
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   view "(item) is intact" with (item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -11791,7 +11869,7 @@ when RequestBoundary.request (item, number, path: "/moderation/revisions/get", r
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11807,7 +11885,7 @@ when RequestBoundary.request (item, number, path: "/moderation/revisions/get", r
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
   RequestBoundary.respond (requestId, revision: former "the revision numbered (number) of (item)" with (item, number))
@@ -11839,7 +11917,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/latest", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   view "(item) is intact" with (item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -11856,7 +11934,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/latest", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11872,7 +11950,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/latest", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
   RequestBoundary.respond (requestId, revision: former "the latest revision of (item)" with (item))
@@ -11904,7 +11982,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/list", requestI
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   view "(item) is intact" with (item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -11921,7 +11999,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/list", requestI
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11937,7 +12015,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/list", requestI
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
   RequestBoundary.respond (requestId, revisions: former "the revision history of (item)" with (item))
@@ -12348,7 +12426,7 @@ then
 
 Authored path: `Forum.threads.CreateThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 3.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 33.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
 
 ```reaction
 when RequestBoundary.request (content, path: "/threads/create", requestId, session)
@@ -12363,7 +12441,7 @@ then
 
 Authored path: `Forum.threads.CreateThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 3.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 33.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Forum.threads.CreateThread
@@ -12375,7 +12453,7 @@ then
 
 Authored path: `Forum.threads.CreateThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 3.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 33.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
 
 ```reaction
 when Conversing.start (at, item: post, conversation, node), asked by Forum.threads.CreateThread#2
@@ -12388,8 +12466,8 @@ then
 ### Forum.threads.ForItem:absent
 
 Authored path: `Forum.threads.ForItem`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 34.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 36.
 
 ```reaction
 when RequestBoundary.request (item, path: "/threads/forItem", requestId)
@@ -12402,8 +12480,8 @@ then
 ### Forum.threads.ForItem:found
 
 Authored path: `Forum.threads.ForItem`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 34.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 36.
 
 ```reaction
 when RequestBoundary.request (item, path: "/threads/forItem", requestId)
@@ -12417,7 +12495,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
@@ -12433,7 +12511,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
@@ -12448,7 +12526,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
@@ -12465,7 +12543,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Forum.threads.ReplyToThread:reply
@@ -12479,7 +12557,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when Conversing.reply (at, item: post, parent, node), asked by Forum.threads.ReplyToThread:reply#2
@@ -12492,7 +12570,7 @@ then
 ### Forum.threads.TrackReplyUnread
 
 Authored path: `Forum.threads.TrackReplyUnread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 18.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 20.
 
 ```reaction
 when Conversing.reply (item, node)
@@ -12505,7 +12583,7 @@ then
 ### Forum.threads.TrackRootUnread
 
 Authored path: `Forum.threads.TrackRootUnread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 16.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 18.
 
 ```reaction
 when Conversing.start (item, conversation)
@@ -16805,6 +16883,7 @@ not listed here have no explicit input contract.
 - `/students/notes/revise` — requires `session`, `note`, `body`, `visibility`, `tags`, `followUpAt`
 - `/students/notes/visible` — requires `session`
 - `/students/notes/write` — requires `session`, `learner`, `body`, `visibility`, `tags`, `followUpAt`
+- `/submissions/artifact` — requires `session`, `assignment`, `submitter`, `artifact`
 - `/submissions/attempts` — requires `assignment`, `session`, `submitter`
 - `/submissions/for-assignment` — requires `assignment`, `session`
 - `/submissions/for-student` — requires `session`, `submitter`

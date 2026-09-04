@@ -10,7 +10,7 @@ describe("the rendered application specification", () => {
     const ir = inspectAssembly(assembleCommons(mongoImplementations(await testDb()))).app;
     expect(ir.unlowered ?? []).toEqual([]);
     expect(JSON.stringify(ir).match(/"op":"compute"/g)).toHaveLength(77);
-    expect(ir.views).toHaveLength(76);
+    expect(ir.views).toHaveLength(79);
     expect(ir.formers).toHaveLength(93);
   });
 
