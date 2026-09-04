@@ -22,7 +22,8 @@ const POLL_MS = 3_000;
  * The relay run on the projector: the wall of the open round, full screen,
  * with the join code in the corner. Before the first round it is the title
  * and the code; between rounds and once the run has ended the wall stands,
- * and the word for where the room is takes the join block's place.
+ * and the word for where the room is takes the join block's place. The row
+ * the two of them stand in says "Model sorts" while the run's switch is on.
  */
 export function RelayProjector({
   run,
@@ -133,9 +134,17 @@ export function RelayProjector({
     wall.number !== 1 ||
     wall.piles.length > 0 ||
     choicesOf(wall).length > 0;
+  const sorts = run.modelSorts && run.open;
+  const room = joining ? (
+    filling ? (
+      <JoinCode url={url} code={code} size="corner" />
+    ) : null
+  ) : (
+    <Standing>{refusalSentence("CLOSED")}</Standing>
+  );
 
   return (
-    <div className="flex h-dvh flex-col gap-9 overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] py-[clamp(1.5rem,6dvh,64px)]">
+    <div className="flex h-dvh flex-col gap-[clamp(1rem,3dvh,32px)] overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] pt-[clamp(1.25rem,5.5dvh,64px)] pb-[clamp(1rem,4.5dvh,56px)]">
       <Wall
         wall={wall}
         big
@@ -150,15 +159,16 @@ export function RelayProjector({
         }
         className="min-h-0 flex-1 overflow-hidden"
       />
-      {joining ? (
-        filling ? (
-          <div className="flex flex-none justify-end">
-            <JoinCode url={url} code={code} size="corner" />
-          </div>
-        ) : null
-      ) : (
-        <Standing>{refusalSentence("CLOSED")}</Standing>
-      )}
+      {sorts || room !== null ? (
+        <div className="flex flex-none items-center gap-9">
+          {sorts ? (
+            <span className="font-display text-2xl text-muted-foreground leading-none">
+              Model sorts
+            </span>
+          ) : null}
+          {room === null ? null : <div className="ml-auto">{room}</div>}
+        </div>
+      ) : null}
     </div>
   );
 }

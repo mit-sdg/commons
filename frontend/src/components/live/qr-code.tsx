@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils";
 /** How big the block stands, from a sidebar panel to a whole projected wall. */
 const SIZES = {
   panel: { qr: "w-full max-w-70", code: "text-3xl", url: "text-sm" },
-  corner: { qr: "w-30 flex-none", code: "text-[40px]", url: "text-base" },
+  corner: {
+    qr: "w-[clamp(5rem,11dvh,7.5rem)] flex-none",
+    code: "text-[clamp(1.5rem,3.6dvh,40px)]",
+    url: "text-[clamp(0.8rem,1.6dvh,1rem)]",
+  },
   room: { qr: "w-46 flex-none", code: "text-[56px]", url: "text-xl" },
   wall: {
     qr: "w-full max-w-[min(42dvh,70vw)] rounded-2xl",
