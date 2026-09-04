@@ -1808,6 +1808,18 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_PINNED" };
   };
+  "/live/relays/unlock": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>>;
+    } | {
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ROUND_OPEN" | "TARGET_NOT_LOCKED" };
+  };
   "/live/relays/uses": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
@@ -2028,7 +2040,7 @@ export type CommonsWire = {
     } | {
       "asked": false;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TARGET_ALREADY_LOCKED" };
   };
   "/live/walls/summarize": {
     input: {
@@ -5501,6 +5513,17 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
   };
+  "/live/relays/unlock": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>>;
+    } | {
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
   "/live/relays/uses": {
     input: Record<string, never>;
     output: {
@@ -5706,7 +5729,7 @@ export type CommonsWireHttp = {
     } | {
       "asked": false;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
   };
   "/live/walls/summarize": {
     input: {

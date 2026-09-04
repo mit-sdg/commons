@@ -34,6 +34,7 @@ import { computations, concepts } from "../../concepts.ts";
 const {
   Categorizing,
   Insisting,
+  Locking,
   Pinning,
   Publishing,
   Questioning,
@@ -392,6 +393,31 @@ export const FailedAskGivesUp = reaction(({ asking, round }) =>
 );
 
 /**
+ * The lock is given back by whatever takes the ask out of Reasoning's pending
+ * set — a reply, or an honest failure — so the tick's lock lives exactly as
+ * long as the ask it was taken for.
+ */
+export const AnsweredAskUnlocksRound = reaction(({ asking, round }) =>
+  when(Reasoning.answer({ asking }).responds())
+    .where(
+      Reasoning._asking({ asking }).is({ about: round }),
+      roundIsAWall({ round }),
+      Locking._isLocked({ target: round }).is({ locked: true }),
+    )
+    .then(Locking.unlock({ target: round })),
+);
+
+export const FailedAskUnlocksRound = reaction(({ asking, round }) =>
+  when(Reasoning.fail({ asking }).responds())
+    .where(
+      Reasoning._asking({ asking }).is({ about: round }),
+      roundIsAWall({ round }),
+      Locking._isLocked({ target: round }).is({ locked: true }),
+    )
+    .then(Locking.unlock({ target: round })),
+);
+
+/**
  * A response begun under a participant that holds a seat on the round's run
  * puts the round's face before the reasoner, seeded by that identity so forty
  * invited participants do not all say the same thing.
@@ -729,84 +755,111 @@ export const MergedPileIsUnpicked = reaction(({ category }) =>
 );
 
 /**
- * The dashboard asks on its own poll while its switch says the model sorts, so
- * the endpoint decides for itself whether there is anything to ask about. An
- * insistence standing with no ask in flight does not hold the tick: a reply
- * lost on its way is neither failed nor answered, and the next usable reply
- * settles the insistence as any does.
+ * The dashboard asks on its own poll while the run's switch says the model
+ * sorts, so the endpoint decides for itself whether there is anything to ask
+ * about. Every dashboard open on the run ticks together, so the round is
+ * locked before the passage is read and the ask made: the lock is the tick's
+ * ask, held where one holder at a time is the rule, and a tick that finds it
+ * held answers that nothing was asked. An insistence
+ * standing with no ask in flight does not hold the tick: a reply lost on its
+ * way is neither failed nor answered, and the next usable reply settles the
+ * insistence as any does.
  */
 export const Sort = endpoint(
   "/live/walls/sort",
   ({ session, round, user, at, value, categories, values, passage, asking }) =>
-    receive({ session, round }).then(
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsLive({ round }),
-        roundHasACardInTheTray({ round }),
-        noAskStandsAbout({ round }),
-        noOfferingIsBeingTakenAbout({ round }),
-        no(roundHasAFreshFailure({ round, at })),
-        RunSnapshotting._snapshot({ subject: round }).is({ value }),
-        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
-        Responding._valuesForSubject({ subject: round }).is({ values }),
-        compute(computations.placingPassage, { value, categories, values }, passage),
-      )
-        .then(
-          Reasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({
-            asking,
-          }),
+    receive({ session, round })
+      .then(
+        where(
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
+          roundIsLive({ round }),
+          roundHasACardInTheTray({ round }),
+          noAskStandsAbout({ round }),
+          Locking._isLocked({ target: round }).is({ locked: false }),
+          noOfferingIsBeingTakenAbout({ round }),
+          no(roundHasAFreshFailure({ round, at })),
         )
-        .then(respond({ asked: true, asking }))
-        .named("asked"),
-      where(activeUser({ session }).is({ user }), mayHostLive({ user }), roundIsNotLive({ round }))
-        .then(respond({ asked: false }))
-        .named("closed"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsLive({ round }),
-        roundHasEveryCardInAPile({ round }),
+          .then(Locking.lock({ target: round, at }).responds())
+          .named("asked"),
       )
-        .then(respond({ asked: false }))
-        .named("nothing-to-sort"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsLive({ round }),
-        roundHasACardInTheTray({ round }),
-        anAskStandsAbout({ round }),
+      .then(
+        where(
+          RunSnapshotting._snapshot({ subject: round }).is({ value }),
+          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+          Responding._valuesForSubject({ subject: round }).is({ values }),
+          compute(computations.placingPassage, { value, categories, values }, passage),
+        ).then(
+          Reasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({ asking }),
+        ),
       )
-        .then(respond({ asked: false }))
-        .named("still-out"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsLive({ round }),
-        roundHasACardInTheTray({ round }),
-        noAskStandsAbout({ round }),
-        anOfferingIsBeingTakenAbout({ round }),
-      )
-        .then(respond({ asked: false }))
-        .named("taking"),
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsLive({ round }),
-        roundHasACardInTheTray({ round }),
-        noAskStandsAbout({ round }),
-        noOfferingIsBeingTakenAbout({ round }),
-        roundHasAFreshFailure({ round, at }),
-      )
-        .then(respond({ asked: false }))
-        .named("failing"),
-      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
+      .then(respond({ asked: true, asking })),
   { input: { required: ["session", "round"] } },
+);
+
+/** The same path, answering the ticks that ask for nothing. */
+export const SortNotAsked = endpoint("/live/walls/sort", ({ session, round, user, at }) =>
+  receive({ session, round }).then(
+    where(
+      now(at),
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsLive({ round }),
+      roundHasACardInTheTray({ round }),
+      noAskStandsAbout({ round }),
+      Locking._isLocked({ target: round }).is({ locked: true }),
+      noOfferingIsBeingTakenAbout({ round }),
+      no(roundHasAFreshFailure({ round, at })),
+    )
+      .then(respond({ asked: false }))
+      .named("locked"),
+    where(activeUser({ session }).is({ user }), mayHostLive({ user }), roundIsNotLive({ round }))
+      .then(respond({ asked: false }))
+      .named("closed"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsLive({ round }),
+      roundHasEveryCardInAPile({ round }),
+    )
+      .then(respond({ asked: false }))
+      .named("nothing-to-sort"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsLive({ round }),
+      roundHasACardInTheTray({ round }),
+      anAskStandsAbout({ round }),
+    )
+      .then(respond({ asked: false }))
+      .named("still-out"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsLive({ round }),
+      roundHasACardInTheTray({ round }),
+      noAskStandsAbout({ round }),
+      anOfferingIsBeingTakenAbout({ round }),
+    )
+      .then(respond({ asked: false }))
+      .named("taking"),
+    where(
+      now(at),
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsLive({ round }),
+      roundHasACardInTheTray({ round }),
+      noAskStandsAbout({ round }),
+      noOfferingIsBeingTakenAbout({ round }),
+      roundHasAFreshFailure({ round, at }),
+    )
+      .then(respond({ asked: false }))
+      .named("failing"),
+    where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
 );
 
 export const Summarize = endpoint(

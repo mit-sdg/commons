@@ -31,7 +31,9 @@ const round = (overrides: Record<string, unknown> = {}) => ({
 });
 
 const relay = (rounds: unknown[], title?: string) =>
-  JSON.stringify(title === undefined ? { kind: "relay", rounds } : { kind: "relay", title, rounds });
+  JSON.stringify(
+    title === undefined ? { kind: "relay", rounds } : { kind: "relay", title, rounds },
+  );
 
 /** The name the standing relay goes by, chosen by hand rather than minted. */
 const stands = "Verbs and strangers";
@@ -156,15 +158,20 @@ describe("the relay-drafting reply boundary", () => {
     expect(relayDraftReading({ reply: relay([round()], "Verbs and strangers"), passage })).toBe(
       "relay",
     );
-    expect(relayDraftReading({ reply: relay([round()], "x".repeat(201)), passage })).toBe("neither");
+    expect(relayDraftReading({ reply: relay([round()], "x".repeat(201)), passage })).toBe(
+      "neither",
+    );
   });
 
   test("a relay standing under the name its brief minted takes the model's without asking", () => {
-    const minted = asked("Add a warm-up round.", mintedRelayTitle({ request: "Add a warm-up round." }));
-    expect(mintedRelayTitle({ request: "Add a warm-up round." })).toBe("Add a warm-up round");
-    expect(relayDraftReading({ reply: relay([round()], "Verbs and strangers"), passage: minted })).toBe(
-      "named",
+    const minted = asked(
+      "Add a warm-up round.",
+      mintedRelayTitle({ request: "Add a warm-up round." }),
     );
+    expect(mintedRelayTitle({ request: "Add a warm-up round." })).toBe("Add a warm-up round");
+    expect(
+      relayDraftReading({ reply: relay([round()], "Verbs and strangers"), passage: minted }),
+    ).toBe("named");
     // A relay named by hand is asked about like anything else, and a reply that
     // gives no name of its own names nothing.
     expect(relayDraftReading({ reply: relay([round()], "Verbs and strangers"), passage })).toBe(
@@ -319,13 +326,15 @@ describe("the lines that turn the standing relay into the drafted one", () => {
     expect(relayEditLines({ reply, title: stands, legs, materials })).toEqual([
       { kind: "title", target: "", value: "Reading the stranger" },
     ]);
-    expect(
-      relayEditLines({ reply, title: "Reading the stranger", legs, materials }),
-    ).toEqual([{ kind: "keep", target: "", value: "" }]);
+    expect(relayEditLines({ reply, title: "Reading the stranger", legs, materials })).toEqual([
+      { kind: "keep", target: "", value: "" },
+    ]);
   });
 
   test("an unusable reply proposes nothing", () => {
-    expect(relayEditLines({ reply: "not JSON at all", title: stands, legs, materials })).toEqual([]);
+    expect(relayEditLines({ reply: "not JSON at all", title: stands, legs, materials })).toEqual(
+      [],
+    );
   });
 });
 

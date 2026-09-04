@@ -111,8 +111,34 @@ describe("reading a placing reply", () => {
     ]);
   });
 
-  test("a card already in a pile is not one the reply may place", () => {
-    const reply = JSON.stringify({ kind: "placed", placements: [{ card: "c1", pile: "Pace" }] });
+  test("a card the wall already holds is a line with nothing left to do", () => {
+    for (const pile of ["Examples", "Pace"]) {
+      const reply = JSON.stringify({ kind: "placed", placements: [{ card: "c1", pile }] });
+      expect(placingReading({ reply, categories, values })).toBe("placed");
+      expect(placingLines({ reply, categories, values })).toEqual([]);
+      expect(placingReason({ reply, categories, values })).toBe("");
+    }
+  });
+
+  test("the waiting cards of a reply that also names a placed one are still placed", () => {
+    const reply = JSON.stringify({
+      kind: "placed",
+      placements: [
+        { card: "c1", pile: "Examples" },
+        { card: "c2", pile: "Examples" },
+      ],
+    });
+    expect(placingReading({ reply, categories, values })).toBe("placed");
+    expect(placingLines({ reply, categories, values })).toEqual([
+      { kind: "place", target: card(1), value: "pile-1" },
+    ]);
+  });
+
+  test("a label naming no card of the wall at all is still unusable", () => {
+    const reply = JSON.stringify({
+      kind: "placed",
+      placements: [{ card: "c9", pile: "Examples" }],
+    });
     expect(placingReading({ reply, categories, values })).toBe("neither");
     expect(placingReason({ reply, categories, values })).toContain("waiting in the tray");
   });

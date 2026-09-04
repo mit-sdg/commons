@@ -51,6 +51,7 @@ interface RunRead {
   run: {
     run: string;
     open: boolean;
+    token: string;
     openRound: string | null;
     modelSorts: boolean;
     rounds: { leg: string; round: string | null }[];
@@ -72,6 +73,30 @@ const launch = async (): Promise<string> => {
 
 const openRound = async (run: string, leg: string) =>
   json(await post(edge, "/live/relays/open-round", { run, leg }, cookie));
+
+const sort = async (round: string) => json(await post(edge, "/live/walls/sort", { round }, cookie));
+
+const isLocked = (target: string) => edge.application.concepts.Locking._isLocked({ target });
+
+/** Polls a read until it settles, so a reaction's chain is not raced. */
+async function until<Value>(read: () => PromiseLike<Value>, done: (value: Value) => boolean) {
+  let value = await read();
+  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    value = await read();
+  }
+  return value;
+}
+
+/** One phone hands the open round in, so a card waits in the tray. */
+async function handIn(token: string, device: string, value: string) {
+  const face = await json(await post(edge, "/live/p/arrive", { token }));
+  const question = (face.relay as unknown as { questions: { question: string }[] }).questions[0]
+    ?.question as string;
+  const begun = await json(await post(edge, "/live/p/begin", { token, device }));
+  await post(edge, "/live/p/answer", { response: begun.response, question, value });
+  await post(edge, "/live/p/submit", { response: begun.response });
+}
 
 beforeAll(async () => {
   edge = createEdge(mongoImplementations(await testDb()));
@@ -162,5 +187,63 @@ describe("the run's Model sorts switch", () => {
     await post(edge, "/live/relays/close", { run }, cookie);
     const closed = await json(await post(edge, "/live/relays/sort-by-model", { run }, cookie));
     expect(closed.error).toBe("CONFLICT");
+  });
+});
+
+describe("a run left locked with no round open", () => {
+  test("is freed by one unlock, and opens again afterward", async () => {
+    const run = await launch();
+    await edge.application.concepts.Locking.lock({ target: run, at: new Date() });
+    const refused = await openRound(run, legs[0] as string);
+    expect(refused.error, JSON.stringify(refused)).toBe("CONFLICT");
+
+    const freed = await json(await post(edge, "/live/relays/unlock", { run }, cookie));
+    expect(freed.run).toBe(run);
+    expect(await isLocked(run)).toEqual({ locked: false });
+
+    // Unlocking a run that holds no lock changes nothing and answers the run.
+    const again = await json(await post(edge, "/live/relays/unlock", { run }, cookie));
+    expect(again.run).toBe(run);
+
+    const opened = await openRound(run, legs[0] as string);
+    expect(typeof opened.round, JSON.stringify(opened)).toBe("string");
+    const blocked = await json(await post(edge, "/live/relays/unlock", { run }, cookie));
+    expect(blocked.error).toBe("CONFLICT");
+    await post(edge, "/live/relays/close", { run }, cookie);
+  });
+});
+
+describe("dashboards ticking the sort together", () => {
+  test("send one ask, answer the rest quietly, and give the lock back with the reply", async () => {
+    const run = await launch();
+    const token = (await readRun(run)).run?.token as string;
+    const opened = await openRound(run, legs[0] as string);
+    const round = opened.round as string;
+    await handIn(token, "phone-1", "save");
+
+    const ticks = await Promise.all([sort(round), sort(round), sort(round)]);
+    const asked = ticks.filter((tick) => tick.asked === true);
+    expect(asked, JSON.stringify(ticks)).toHaveLength(1);
+    expect(await edge.application.concepts.Reasoning._pending()).toHaveLength(1);
+    expect(await isLocked(round)).toEqual({ locked: true });
+
+    // A tick that finds the lock held is a quiet no, not a conflict.
+    const later = await sort(round);
+    expect(later.asked).toBe(false);
+    expect(later.error).toBeUndefined();
+
+    const [pending] = await edge.application.concepts.Reasoning._pending();
+    await edge.application.concepts.Reasoning.answer({
+      asking: pending?.asking as string,
+      reply: JSON.stringify({ kind: "placed", placements: [{ card: "c1", pile: "Words" }] }),
+      at: new Date(),
+    });
+    expect(
+      await until(
+        () => isLocked(round),
+        (lock) => !lock.locked,
+      ),
+    ).toEqual({ locked: false });
+    await post(edge, "/live/relays/close", { run }, cookie);
   });
 });

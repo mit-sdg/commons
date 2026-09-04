@@ -17,7 +17,8 @@ concrete MailKey
 
 concrete Lockable
   A post or conversation identity that moderation may lock, or a Publishing
-  edition that is a relay run, locked while one of its rounds is open.
+  edition that is a relay run, locked while one of its rounds is open, or a
+  round, locked while a placing ask about it is out.
 
 concrete TaskSubject
   A task-list group or task identity that a task-domain notification is about and links to.
@@ -296,8 +297,9 @@ uses a Posting post as its artifact. Invitation, notification, and password-rese
 Posting owns post identities. Forum features attach their own state to a post
 without taking ownership of it. Conversing separately owns conversation
 identities; subscriptions, unread scopes, pins, role contexts, and locks can use
-a conversation. Locking also accepts a post directly, and a relay run, whose lock
-is held while a round of it is open, so its target role has three valid owners. Roling also receives the reserved application-wide context
+a conversation. Locking also accepts a post directly, and a Publishing
+edition — a relay run while a round of it is open, and a round while a placing
+ask about it is out — so its target role has three valid owners. Roling also receives the reserved application-wide context
 `commons`; because that value is a Commons constant rather than a concept-owned
 identity, it has no second type binding, and it names the deployment as a whole
 rather than any one area of it, so no capability held there belongs to the forum

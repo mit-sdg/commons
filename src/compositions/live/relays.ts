@@ -1294,6 +1294,44 @@ export const Close = endpoint(
 );
 
 /**
+ * The way back from a run left locked with no round open, which is what a
+ * crash between the lock and the publish leaves behind. The dashboard offers
+ * it as one deliberate tap and never sends it on its own: a loser of the
+ * opening race that read the run before the winner's publish landed would
+ * unlock the winner and open the race again.
+ */
+export const Unlock = endpoint(
+  "/live/relays/unlock",
+  ({ session, run, user }) =>
+    receive({ session, run }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        runHasNoOpenRound({ run }),
+        Locking._isLocked({ target: run }).is({ locked: true }),
+      )
+        .then(Locking.unlock({ target: run }).responds())
+        .then(respond({ run }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        runHasNoOpenRound({ run }),
+        Locking._isLocked({ target: run }).is({ locked: false }),
+      )
+        .then(respond({ run }))
+        .named("not-locked"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), runHasAnOpenRound({ run }))
+        .then(respond({ error: "ROUND_OPEN" }))
+        .named("round-open"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "run"] } },
+);
+
+/**
  * "Model sorts" is the run's switch, the same on every dashboard: the run
  * pinned in the reserved scope `sorting`. A staff member who flips it flips
  * it for the room; the dashboards that are open keep the cadence.

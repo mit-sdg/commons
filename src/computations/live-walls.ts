@@ -273,11 +273,13 @@ function readPlacements(
   if (!Array.isArray(record.placements)) {
     return { kind: "neither", reason: "The reply carried no placements." };
   }
-  const byLabel = new Map(trayOf(categories, values).map((card) => [card.label, card.card]));
+  const waiting = trayOf(categories, values).length;
+  const byLabel = new Map(cardsOf(values).map((card) => [card.label, card.card]));
+  const held = new Set(asRows<PileWithItems>(categories).flatMap((pile) => pile.items));
   // An empty tray is answered honestly with no placements; only a waiting card
   // left unplaced is a reply to stand upon.
   if (record.placements.length === 0) {
-    return byLabel.size === 0
+    return waiting === 0
       ? { kind: "placed", lines: [] }
       : { kind: "neither", reason: "The reply placed no cards." };
   }
@@ -299,6 +301,9 @@ function readPlacements(
     if (name === "") {
       return { kind: "neither", reason: "A placement named no pile." };
     }
+    // The wall moved under the ask: a card a pile already holds is a line with
+    // nothing left to do, not a reply to stand upon.
+    if (held.has(card)) continue;
     const existing = byName.get(name);
     lines.push(
       existing === undefined

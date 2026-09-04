@@ -39,8 +39,8 @@ import { cn } from "@/lib/utils";
 /** Fast enough that the room sees itself answer, slow enough to be polite. */
 const POLL_MS = 3_000;
 
-/** The switch is standing consent for a run, so it is kept where the run's own page finds it. */
-const SORTS_KEY = "commons-live-sorts:";
+/** What a run left locked with no round open says, above the tap that frees it. */
+const STRANDED = "No round is open, but the run is still locked.";
 
 /** The disabled Open button names the line that says why. */
 const REFUSAL_ID = "open-refusal";
@@ -96,7 +96,8 @@ export function RelayRunBoard({
     leg: string;
     under: string | null;
   } | null>(null);
-  const [modelSorts, setModelSorts] = useState(false);
+  /** When Open was refused with nothing open to show for it, which the next poll confirms. */
+  const [refusedAt, setRefusedAt] = useState<number | null>(null);
   /** The clock a fresh failure is read against, which the poll moves on. */
   const [now, setNow] = useState(() => Date.now());
   const [askedFor, setAskedFor] = useState<string | null>(null);
@@ -183,11 +184,6 @@ export function RelayRunBoard({
   const voting =
     openRound !== null && wall !== null && choicesOf(wall).length > 0;
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the switch is standing consent the browser holds, which only a read can say
-    setModelSorts(recalledSorts(run.run));
-  }, [run.run]);
-
   // The button that acted is replaced by the next move, so the focus goes to
   // the one that took its place rather than to the top of the page.
   useEffect(() => {
@@ -218,7 +214,7 @@ export function RelayRunBoard({
   }, [run.open, refetchWall]);
 
   useEffect(() => {
-    if (!modelSorts || openRound === null || voting) return;
+    if (!run.modelSorts || openRound === null || voting) return;
     let live = true;
     const sort = async () => {
       const answer = await api["/live/walls/sort"]({ round: openRound });
@@ -231,7 +227,7 @@ export function RelayRunBoard({
       live = false;
       clearInterval(timer);
     };
-  }, [modelSorts, openRound, voting]);
+  }, [run.modelSorts, openRound, voting]);
 
   const openEntry =
     run.rounds.find(
@@ -432,11 +428,15 @@ export function RelayRunBoard({
     const leg = next.leg;
     const opened = await send(
       api["/live/relays/open-round"]({ run: run.run, leg }),
-      async () => {
+      async (error) => {
         const fresh = await freshRun();
         if (fresh === null) return null;
         const asked = fresh.rounds.find((round) => round.leg === leg) ?? null;
         if (asked !== null && asked.round !== null) return AS_ASKED;
+        // A round that neither opened nor stands in the way is a run holding
+        // its lock; one more poll says whether the winner's round is coming.
+        if (error === "CONFLICT" && fresh.openRound === null)
+          setRefusedAt(Date.now());
         return refusalFor({
           run: fresh,
           relay,
@@ -446,9 +446,26 @@ export function RelayRunBoard({
       },
     );
     if (opened) {
+      setRefusedAt(null);
       focusOn.current = "close";
       refetch();
     }
+  }
+
+  async function unlockRun() {
+    const freed = await send(
+      api["/live/relays/unlock"]({ run: run.run }),
+      async () => {
+        const fresh = await freshRun();
+        const open =
+          fresh?.rounds.find((round) => round.figure.open === true) ?? null;
+        return open === null
+          ? null
+          : { word: "ROUND_OPEN", about: { round: open.number } };
+      },
+    );
+    if (freed) setRefusedAt(null);
+    refetch();
   }
 
   async function closeRound() {
@@ -479,9 +496,14 @@ export function RelayRunBoard({
     refetch();
   }
 
-  function sortsChange(on: boolean) {
-    setModelSorts(on);
-    rememberSorts(run.run, on);
+  async function sortsChange(on: boolean) {
+    await send(
+      on
+        ? api["/live/relays/sort-by-model"]({ run: run.run })
+        : api["/live/relays/sort-by-hand"]({ run: run.run }),
+      seatRefused,
+    );
+    refetch();
   }
 
   async function invite(seats: number) {
@@ -536,7 +558,7 @@ export function RelayRunBoard({
       ? 0
       : Math.max(0, run.seats.length - (openEntry.figure.handedInByModel ?? 0));
   const sorting =
-    modelSorts &&
+    run.modelSorts &&
     openRound !== null &&
     askedFor === openRound &&
     wall !== null &&
@@ -560,6 +582,12 @@ export function RelayRunBoard({
     picks: counted ? picks.length : null,
   });
   const openRefused = refusal !== null;
+  /** A run whose lock outlived its round: Open was refused and no round came. */
+  const stranded =
+    refusedAt !== null &&
+    run.open &&
+    openRound === null &&
+    now - refusedAt >= POLL_MS;
   /** Open is the run's own move only while nothing else is in hand. */
   const openPrimary = openEntry === null && !openRefused;
   /** The Close button says the round is open, so only the unseen reasons are printed. */
@@ -795,6 +823,24 @@ export function RelayRunBoard({
                         {refusalLine}
                       </p>
                     )}
+                    {stranded ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-muted-foreground text-xs">
+                          {STRANDED}
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          aria-disabled={busy}
+                          onClick={() => {
+                            if (busy) return;
+                            void move(unlockRun);
+                          }}
+                        >
+                          Unlock
+                        </Button>
+                      </div>
+                    ) : null}
                   </>
                 )}
                 {everyRoundRan ? (
@@ -812,9 +858,9 @@ export function RelayRunBoard({
                     {voting ? null : (
                       <div className="flex items-center gap-2.5">
                         <Switch
-                          on={modelSorts}
+                          on={run.modelSorts}
                           label="Model sorts"
-                          onChange={sortsChange}
+                          onChange={(on) => void sortsChange(on)}
                         />
                         {modelWord === null ? null : (
                           <span className="text-muted-foreground text-xs">
@@ -894,22 +940,6 @@ function Switch({
       {label}
     </button>
   );
-}
-
-function recalledSorts(run: string): boolean {
-  try {
-    return window.localStorage.getItem(SORTS_KEY + run) === "on";
-  } catch {
-    return false;
-  }
-}
-
-function rememberSorts(run: string, on: boolean): void {
-  try {
-    window.localStorage.setItem(SORTS_KEY + run, on ? "on" : "off");
-  } catch {
-    // A browser that refuses storage still sorts; it just starts each load off.
-  }
 }
 
 /** The wall as the screen has it: the piles this page just picked read picked. */
