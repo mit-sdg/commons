@@ -42,6 +42,7 @@ const POLL_MS = 3_000;
 /** What a run left locked with no round open says, above the tap that frees it. */
 const STRANDED = "No round is open, but the run is still locked.";
 
+
 /** The disabled Open button names the line that says why. */
 const REFUSAL_ID = "open-refusal";
 
@@ -752,10 +753,12 @@ export function RelayRunBoard({
         </div>
 
         {/* The run's moves stand before the wall on a narrow screen, so
-            closing a round is never a scroll past every pile. */}
-        <aside className="order-1 flex flex-col gap-4 lg:sticky lg:top-6 lg:order-2">
+            closing a round is never a scroll past every pile; the join card
+            follows the wall, which is what the screen is for. Below `lg` the
+            column is no box at all, so its panels sort against the wall. */}
+        <aside className="contents lg:sticky lg:top-6 lg:order-2 lg:flex lg:flex-col lg:gap-4">
           {!run.open ? (
-            <div className="flex flex-col items-start gap-3.5 rounded-xl border border-border bg-card p-5">
+            <div className="order-1 flex flex-col items-start gap-3.5 rounded-xl border border-border bg-card p-5">
               <p className="text-muted-foreground text-sm">
                 {refusalSentence("CLOSED")}
               </p>
@@ -767,7 +770,7 @@ export function RelayRunBoard({
             </div>
           ) : (
             <>
-              <div className="flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
+              <div className="order-1 flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
                 {openEntry === null ? null : (
                   <Button
                     ref={closeButton}
@@ -920,7 +923,7 @@ export function RelayRunBoard({
               </div>
 
               {run.token === null || run.code === null ? null : (
-                <div className="rounded-xl border border-border bg-card p-4">
+                <div className="order-3 rounded-xl border border-border bg-card p-4">
                   <JoinCode url={joinUrl(run.token)} code={run.code} />
                 </div>
               )}
