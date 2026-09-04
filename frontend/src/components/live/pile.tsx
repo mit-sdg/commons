@@ -516,6 +516,8 @@ export function Pile({
           className={cn(
             "flex min-h-0 flex-1 flex-col overflow-hidden text-muted-foreground leading-[1.35]",
             "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_14px),transparent)]",
+            // The mask paints the list over the pick button; while picking the face is that button.
+            picking && "pointer-events-none",
             face.peek,
           )}
         >
