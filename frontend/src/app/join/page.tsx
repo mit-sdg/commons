@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowRight, Radio } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,14 +21,12 @@ export default function JoinPage() {
     try {
       const result = await api["/live/p/locate"]({ code });
       if (isApiError(result)) {
-        setMessage("We couldn't find that code. Check all six characters.");
+        setMessage("No room has that code.");
         return;
       }
       router.push(`/q/${result.token}`);
     } catch {
-      setMessage(
-        "We couldn't reach Commons. Check your connection and try again.",
-      );
+      setMessage("No connection. Try again.");
     } finally {
       setBusy(false);
     }
@@ -38,20 +35,14 @@ export default function JoinPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
       <div className="mb-8 text-center">
-        <span className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Radio aria-hidden="true" className="size-6" />
-        </span>
         <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Join a live session
+          Join
         </h1>
-        <p className="mt-2 text-muted-foreground">
-          Enter the six-character code shown by your instructor.
-        </p>
       </div>
 
       <form className="space-y-4" onSubmit={join}>
         <div className="space-y-2">
-          <Label htmlFor="join-code">Session code</Label>
+          <Label htmlFor="join-code">Code</Label>
           <Input
             id="join-code"
             autoFocus
@@ -71,7 +62,10 @@ export default function JoinPage() {
               );
               setMessage(null);
             }}
-            className="h-14 text-center font-mono text-2xl tracking-[0.16em] uppercase"
+            // The placeholder says where the code is; it drops the field's own
+            // mono uppercase so a sentence reads as one.
+            placeholder="The code on the wall"
+            className="h-14 text-center font-mono text-2xl tracking-[0.16em] uppercase placeholder:font-sans placeholder:text-base placeholder:normal-case placeholder:tracking-normal"
           />
           <p
             id="join-error"
@@ -82,7 +76,7 @@ export default function JoinPage() {
           </p>
         </div>
         <Button className="h-11 w-full" disabled={busy || code.length !== 6}>
-          {busy ? "Joining…" : "Join"} <ArrowRight />
+          {busy ? "Joining…" : "Join"}
         </Button>
       </form>
     </div>

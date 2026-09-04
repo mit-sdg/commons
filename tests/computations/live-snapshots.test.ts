@@ -49,9 +49,33 @@ describe("live run snapshot projections", () => {
     expect(snapshotTitle({ value })).toBe("Plant check");
     expect(snapshotForm({ value })).toBe("quiz");
     expect(participantQuestions({ value })).toEqual([
-      { question: "choice", prompt: "Pick one", choices: ["Yes", "No"], position: 1 },
-      { question: "written", prompt: "Explain", choices: [], position: 2 },
-      { question: "pace", prompt: "How was the pace?", choices: ["Fast", "Slow"], position: 3 },
+      {
+        question: "choice",
+        prompt: "Pick one",
+        choices: ["Yes", "No"],
+        parts: [],
+        cap: 0,
+        context: [],
+        position: 1,
+      },
+      {
+        question: "written",
+        prompt: "Explain",
+        choices: [],
+        parts: [],
+        cap: 0,
+        context: [],
+        position: 2,
+      },
+      {
+        question: "pace",
+        prompt: "How was the pace?",
+        choices: ["Fast", "Slow"],
+        parts: [],
+        cap: 0,
+        context: [],
+        position: 3,
+      },
     ]);
   });
 
@@ -78,8 +102,8 @@ describe("live run snapshot projections", () => {
       ],
     });
     expect(questions[0]?.values).toEqual([
-      { response: "r1", participant: "p1", value: "Yes" },
-      { response: "r2", participant: "p2", value: "No" },
+      { response: "r1", participant: "p1", part: "", value: "Yes" },
+      { response: "r2", participant: "p2", part: "", value: "No" },
     ]);
     expect(questions[1]?.values).toEqual([]);
   });

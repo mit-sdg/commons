@@ -1,19 +1,26 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { ArrowLeft, Sparkles } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
+import { RELAY_LINES } from "@/components/live/brief-chips";
+import {
+  copyQuestionnaire,
+  copyRounds,
+  roundsToCopy,
+} from "@/components/live/copy-relay";
 import {
   DISCLOSURE_OPTIONS,
   type Disclosure,
   isDisclosure,
   isQuizForm,
-  type QuizForm,
+  KIND_SEGMENT,
 } from "@/components/live/quiz-meta";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
+import { LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,35 +31,123 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { api, isApiError, publicErrorMessage } from "@/lib/api";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@/hooks/use-query";
+import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
-function NewQuestionnaireContent() {
+const KINDS = [
+  { kind: "quiz", label: "Quiz" },
+  { kind: "survey", label: "Survey" },
+  { kind: "relay", label: "Relay" },
+] as const;
+
+type Kind = (typeof KINDS)[number]["kind"];
+
+function isKind(value: string | null): value is Kind {
+  return KINDS.some((entry) => entry.kind === value);
+}
+
+/** Nothing to start from: the value the Select carries for a blank one. */
+const BLANK = "blank";
+
+function NewLiveContent() {
   const router = useRouter();
+  const { session } = useAuth();
+  const searchParams = useSearchParams();
+  const asked = searchParams.get("kind");
+  const [kind, setKind] = useState<Kind>(isKind(asked) ? asked : "quiz");
   const [title, setTitle] = useState("");
-  const [form, setForm] = useState<QuizForm>("quiz");
   const [disclosure, setDisclosure] = useState<Disclosure>("score");
+  const [source, setSource] = useState(BLANK);
   const [busy, setBusy] = useState(false);
+  const [tried, setTried] = useState(false);
+  const missing = tried && title.trim() === "";
+
+  const { data: shelf } = useQuery(
+    session ? () => api["/live/quizzes/list"]({}).then(unwrap) : null,
+    [session],
+  );
+  const { data: relayList } = useQuery(
+    session ? () => api["/live/relays/list"]({}).then(unwrap) : null,
+    [session],
+  );
+
+  const sources =
+    kind === "relay"
+      ? (relayList?.relays ?? [])
+          .filter((entry) => !entry.retired)
+          .map((entry) => ({ id: entry.relay, title: entry.title }))
+      : (shelf?.questionnaires ?? [])
+          .filter((entry) => !entry.retired && entry.form === kind)
+          .map((entry) => ({ id: entry.questionnaire, title: entry.title }));
+
+  function chooseKind(value: string) {
+    if (busy || !isKind(value)) return;
+    setKind(value);
+    setSource(BLANK);
+  }
+
+  async function createQuestionnaire(trimmed: string) {
+    if (!isQuizForm(kind)) return;
+    const created = await api["/live/quizzes/create"]({
+      title: trimmed,
+      form: kind,
+      disclosure,
+    });
+    if (isApiError(created)) {
+      setBusy(false);
+      toast.error(publicErrorMessage(created.error));
+      return;
+    }
+    if (source !== BLANK) {
+      const copied = await copyQuestionnaire(created.questionnaire, source);
+      if (isApiError(copied)) {
+        setBusy(false);
+        toast.error(publicErrorMessage(copied.error));
+        return;
+      }
+    }
+    router.push(`/staff/live/${created.questionnaire}/edit`);
+  }
+
+  async function createRelay(trimmed: string) {
+    const planned = await api["/live/relays/plan"]({ title: trimmed });
+    if (isApiError(planned)) {
+      setBusy(false);
+      toast.error(publicErrorMessage(planned.error));
+      return;
+    }
+    if (source !== BLANK) {
+      const read = await api["/live/relays/get"]({ relay: source });
+      if (isApiError(read) || read.relay === null) {
+        setBusy(false);
+        toast.error(
+          publicErrorMessage(isApiError(read) ? read.error : "NOT_FOUND"),
+        );
+        return;
+      }
+      const copied = await copyRounds(planned.relay, roundsToCopy(read.relay));
+      if (isApiError(copied)) {
+        setBusy(false);
+        toast.error(publicErrorMessage(copied.error));
+        return;
+      }
+    }
+    router.push(`/staff/live/relay/${planned.relay}/edit`);
+  }
 
   async function create() {
     const trimmed = title.trim();
+    setTried(true);
     if (trimmed === "") return;
     setBusy(true);
-    const result = await api["/live/quizzes/create"]({
-      title: trimmed,
-      form,
-      disclosure,
-    });
-    if (isApiError(result)) {
-      setBusy(false);
-      toast.error(publicErrorMessage(result.error));
-      return;
-    }
-    // Straight to the desk where the questions get written.
-    router.push(`/staff/live/${result.questionnaire}`);
+    if (kind === "relay") await createRelay(trimmed);
+    else await createQuestionnaire(trimmed);
   }
 
   return (
-    <PageContainer width="narrow">
+    <PageContainer width="wide">
       <PageHeader
         eyebrow={
           <Link
@@ -62,58 +157,100 @@ function NewQuestionnaireContent() {
             <ArrowLeft className="size-3" /> Live
           </Link>
         }
-        title="New quiz or survey"
+        title="New"
+        actions={
+          <Button variant="outline" asChild>
+            <Link href={`/staff/live/draft?kind=${kind}`}>
+              <Sparkles /> Draft with AI
+            </Link>
+          </Button>
+        }
       />
 
-      <div className="space-y-6">
+      <div className="max-w-2xl space-y-6">
+        <Tabs value={kind} onValueChange={chooseKind}>
+          <TabsList>
+            {KINDS.map((entry) => (
+              <TabsTrigger
+                key={entry.kind}
+                value={entry.kind}
+                aria-disabled={busy || undefined}
+                className={KIND_SEGMENT}
+              >
+                {entry.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
+        {kind === "relay" ? (
+          <div className="space-y-2 text-muted-foreground text-sm">
+            {RELAY_LINES.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        ) : null}
+
         <div className="space-y-2">
           <Label htmlFor="live-title">Title</Label>
           <Input
             id="live-title"
             value={title}
             maxLength={200}
-            aria-invalid={title.trim() === ""}
-            disabled={busy}
+            aria-invalid={missing}
+            readOnly={busy}
             placeholder="e.g. Lecture 7 check-in"
             onChange={(event) => setTitle(event.target.value)}
           />
-          {title.trim() === "" ? (
+          {missing ? (
             <p className="text-xs text-destructive">Enter a title.</p>
           ) : null}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="live-form">Form</Label>
+          <Label htmlFor="live-source">Start from</Label>
           <Select
-            value={form}
-            disabled={busy}
+            value={source}
             onValueChange={(value) => {
-              if (isQuizForm(value)) setForm(value);
+              if (busy) return;
+              setSource(value);
             }}
           >
-            <SelectTrigger id="live-form" className="w-full">
+            <SelectTrigger
+              id="live-source"
+              aria-disabled={busy || undefined}
+              className="w-full"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="quiz">Quiz</SelectItem>
-              <SelectItem value="survey">Survey</SelectItem>
+              <SelectItem value={BLANK}>Blank</SelectItem>
+              {sources.map((entry) => (
+                <SelectItem key={entry.id} value={entry.id}>
+                  {entry.title}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
-        {form === "quiz" ? (
+        {kind === "quiz" ? (
           <div className="space-y-2">
             <Label htmlFor="live-disclosure">
               What participants see afterward
             </Label>
             <Select
               value={disclosure}
-              disabled={busy}
               onValueChange={(value) => {
+                if (busy) return;
                 if (isDisclosure(value)) setDisclosure(value);
               }}
             >
-              <SelectTrigger id="live-disclosure" className="w-full">
+              <SelectTrigger
+                id="live-disclosure"
+                aria-disabled={busy || undefined}
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -128,9 +265,11 @@ function NewQuestionnaireContent() {
         ) : null}
 
         <div className="flex items-center gap-2">
+          {/* Busy, the button keeps its focus: it is out by aria, not by a
+              disabled that hands the focus back to the page. */}
           <Button
-            disabled={busy || title.trim() === ""}
-            onClick={() => void create()}
+            aria-disabled={busy || undefined}
+            onClick={busy ? undefined : () => void create()}
           >
             {busy ? "Creating…" : "Create"}
           </Button>
@@ -143,10 +282,18 @@ function NewQuestionnaireContent() {
   );
 }
 
-export default function NewQuestionnairePage() {
+export default function NewLivePage() {
   return (
     <RequireCapability capability="live:host">
-      <NewQuestionnaireContent />
+      <Suspense
+        fallback={
+          <PageContainer width="wide">
+            <LoadingState />
+          </PageContainer>
+        }
+      >
+        <NewLiveContent />
+      </Suspense>
     </RequireCapability>
   );
 }

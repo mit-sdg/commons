@@ -9,6 +9,7 @@ const {
   Profiling,
   Publishing,
   Questioning,
+  Relaying,
   Responding,
   RunSnapshotting,
   Scoring,
@@ -148,6 +149,7 @@ export const Launch = endpoint(
           now(at),
           activeUser({ session }).is({ user }),
           mayHostLive({ user }),
+          no(Relaying._legFor({ material: questionnaire })),
           is.among(form, ["quiz"]),
           is.among(proposes, [true]),
         )
@@ -168,6 +170,7 @@ export const Launch = endpoint(
           now(at),
           activeUser({ session }).is({ user }),
           mayHostLive({ user }),
+          no(Relaying._legFor({ material: questionnaire })),
           is.among(form, ["survey"]),
         )
           .then(
@@ -182,9 +185,16 @@ export const Launch = endpoint(
           .then(Locating.ensure({ subject: run }).responds({ code }))
           .then(respond({ run, token, code }))
           .named("survey"),
-        where(is.among(form, ["quiz"]), is.among(proposes, [false]))
+        where(
+          no(Relaying._legFor({ material: questionnaire })),
+          is.among(form, ["quiz"]),
+          is.among(proposes, [false]),
+        )
           .then(respond({ error: "NOT_QUIZ_READY" }))
           .named("unready-quiz"),
+        where(Relaying._legFor({ material: questionnaire }))
+          .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+          .named("round"),
       ),
   { input: { required: ["session", "questionnaire"] } },
 );

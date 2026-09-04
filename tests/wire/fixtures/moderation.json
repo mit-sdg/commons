@@ -270,6 +270,32 @@
       }
     },
     {
+      "id": "restoreNotTrashed",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/restore",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyT1.post"
+      },
+      "response": {
+        "error": "ITEM_NOT_TRASHED"
+      }
+    },
+    {
+      "id": "purgeNotTrashed",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/purge",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$replyT1.post"
+      },
+      "response": {
+        "error": "ITEM_NOT_TRASHED"
+      }
+    },
+    {
       "id": "isTrashedFalse",
       "phase": "assert",
       "kind": "send",
@@ -333,7 +359,7 @@
       }
     },
     {
-      "id": "restoreNotTrashed",
+      "id": "restoreNoPost",
       "phase": "assert",
       "kind": "send",
       "target": "/trash/restore",
@@ -346,7 +372,7 @@
       }
     },
     {
-      "id": "purgeNotTrashed",
+      "id": "purgeNoPost",
       "phase": "assert",
       "kind": "send",
       "target": "/trash/purge",

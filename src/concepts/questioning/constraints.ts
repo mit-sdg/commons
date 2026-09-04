@@ -6,6 +6,9 @@ export const QUESTIONING_LIMITS = {
   choice: 500,
   reference: 2_000,
   explanation: 2_000,
+  parts: 12,
+  part: 40,
+  cap: 20,
 } as const;
 
 export type QuestionMaterial = {
@@ -16,6 +19,13 @@ export type QuestionMaterial = {
 };
 
 type TitleViolation = { kind: "title"; message: string };
+
+export type PartsViolation = { kind: "parts"; message: string };
+
+export type QuestionParts = {
+  parts: string[];
+  cap: number;
+};
 
 export type QuestionMaterialViolation =
   | { kind: "prompt"; message: string }
@@ -143,4 +153,46 @@ export function normalizeQuestionMaterial(input: {
   }
 
   return { ok: true, value: { prompt, choices, expected, explanation } };
+}
+
+/**
+ * Parts say how a question is answered in pieces. Empty parts with a cap of
+ * zero take one answer; nonempty parts with a cap of zero are labeled boxes;
+ * exactly one part with a cap of two or more is a repeated box. Any other
+ * pairing is not valid.
+ */
+export function normalizeParts(input: {
+  parts: unknown;
+  cap: unknown;
+}): ConstraintResult<QuestionParts, PartsViolation> {
+  const invalid: ConstraintResult<QuestionParts, PartsViolation> = {
+    ok: false,
+    violation: {
+      kind: "parts",
+      message: "Parts are up to 12 short labels, or one label repeated up to a cap of 2 to 20.",
+    },
+  };
+
+  if (!Array.isArray(input.parts) || input.parts.length > QUESTIONING_LIMITS.parts) return invalid;
+  if (
+    input.parts.some(
+      (part) =>
+        typeof part !== "string" ||
+        part.trim() === "" ||
+        part.trim().length > QUESTIONING_LIMITS.part,
+    )
+  ) {
+    return invalid;
+  }
+  const parts = (input.parts as string[]).map((part) => part.trim());
+  const comparisonParts = parts.map((part) => part.toLowerCase());
+  if (new Set(comparisonParts).size !== comparisonParts.length) return invalid;
+
+  const cap = input.cap;
+  if (typeof cap !== "number" || !Number.isInteger(cap)) return invalid;
+  if (cap === 0) return { ok: true, value: { parts, cap } };
+  if (cap >= 2 && cap <= QUESTIONING_LIMITS.cap && parts.length === 1) {
+    return { ok: true, value: { parts, cap } };
+  }
+  return invalid;
 }

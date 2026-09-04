@@ -18,7 +18,15 @@ export function isApiError(value: unknown): value is ApiError {
   );
 }
 
-export class CommonsError extends Error {}
+/** A refusal thrown past `unwrap`, carrying the boundary's category. */
+export class CommonsError extends Error {
+  constructor(
+    message: string,
+    readonly code: string | null = null,
+  ) {
+    super(message);
+  }
+}
 
 const publicErrorMessages: Record<string, string> = {
   INVALID_REQUEST: "Check the information you entered and try again.",
@@ -35,7 +43,7 @@ export function publicErrorMessage(error: string): string {
 
 export function unwrap<T>(result: T): Exclude<T, ApiError> {
   if (isApiError(result))
-    throw new CommonsError(publicErrorMessage(result.error));
+    throw new CommonsError(publicErrorMessage(result.error), result.error);
   return result as Exclude<T, ApiError>;
 }
 

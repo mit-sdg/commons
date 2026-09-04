@@ -1,0 +1,9 @@
+export class InvalidTitle extends Error {}
+export class RelayNotFound extends Error {}
+export class LegNotFound extends Error {}
+export class LegDrawnOn extends Error {}
+export class NoSuchPosition extends Error {}
+export class ForwardDraw extends Error {}
+export class NotSiblings extends Error {}
+export class UseBlank extends Error {}
+export class NoDraw extends Error {}

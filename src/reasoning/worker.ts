@@ -1,4 +1,6 @@
 import type { ReasonerConfiguration } from "./configuration.ts";
+import { scriptedEditsReply } from "./scripted-edits.ts";
+import { scriptedWallReply } from "./scripted-walls.ts";
 
 type Awaitable<Value> = Value | PromiseLike<Value>;
 
@@ -88,6 +90,8 @@ export function geminiMind(configuration: ReasonerConfiguration): Mind {
  */
 export function scriptedMind(): Mind {
   return ({ passage }) => {
+    const roundReply = scriptedWallReply(passage) ?? scriptedEditsReply(passage);
+    if (roundReply !== undefined) return Promise.resolve(roundReply);
     // Markers are read from the author's own words — the correction, the
     // clarification answer, or the request — never from the contract text or
     // prior material that precedes them: those mention every form.
@@ -180,26 +184,33 @@ function scriptedQuiz(marker: string) {
   };
 }
 
+/** How many asks go to the mind at once: a room of invited participants answers together, not in a line. */
+const ASKS_AT_ONCE = 8;
+
+async function serveOne(outbox: ReasonerOutbox, mind: Mind, ask: PendingAsking): Promise<boolean> {
+  try {
+    const reply = await mind({ reasoner: ask.reasoner, passage: ask.passage });
+    await outbox.answer({ asking: ask.asking, reply, at: new Date() });
+    return true;
+  } catch (error) {
+    console.error("reasoner: an ask failed; recording the failure.");
+    try {
+      await outbox.fail({ asking: ask.asking, account: failureAccount(error), at: new Date() });
+    } catch {
+      console.error("reasoner: could not record the failure.");
+    }
+    return false;
+  }
+}
+
 export async function serveOnePass(outbox: ReasonerOutbox, mind: Mind): Promise<number> {
   const pending = await outbox._pending({});
   let served = 0;
-  for (const ask of pending) {
-    try {
-      const reply = await mind({ reasoner: ask.reasoner, passage: ask.passage });
-      await outbox.answer({ asking: ask.asking, reply, at: new Date() });
-      served += 1;
-    } catch (error) {
-      console.error("reasoner: an ask failed; recording the failure.");
-      try {
-        await outbox.fail({
-          asking: ask.asking,
-          account: failureAccount(error),
-          at: new Date(),
-        });
-      } catch {
-        console.error("reasoner: could not record the failure.");
-      }
-    }
+  for (let from = 0; from < pending.length; from += ASKS_AT_ONCE) {
+    const outcomes = await Promise.all(
+      pending.slice(from, from + ASKS_AT_ONCE).map((ask) => serveOne(outbox, mind, ask)),
+    );
+    served += outcomes.filter(Boolean).length;
   }
   return served;
 }

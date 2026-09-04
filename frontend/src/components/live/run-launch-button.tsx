@@ -2,7 +2,7 @@
 
 import { Radio } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, useId, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api, isApiError, publicErrorMessage } from "@/lib/api";
@@ -22,20 +22,25 @@ export function RunLaunchButton({
   disabled = false,
   hint,
   label = "Launch",
+  name,
   size = "default",
   variant = "default",
 }: {
   questionnaire: string;
   disabled?: boolean;
-  /** Why the button is unavailable, shown on hover. */
+  /** Why the button is out: said on hover and read out with the button. */
   hint?: string;
   label?: string;
+  /** What the button acts on, for a reader who meets it in a list of launches. */
+  name?: string;
   /** Passed straight through, so the button looks like any other Button. */
   size?: ComponentProps<typeof Button>["size"];
   variant?: ComponentProps<typeof Button>["variant"];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const hintId = useId();
+  const said = disabled && hint !== undefined;
 
   async function launch() {
     setBusy(true);
@@ -53,16 +58,35 @@ export function RunLaunchButton({
     router.push(`/staff/live/run/${result.run}`);
   }
 
+  // Out, the button keeps its focus and its words: it is out by aria, so the
+  // reason is on hover and under the cursor of a screen reader alike, and a
+  // launch that is refused hands the focus back to the button that asked.
   return (
-    <span className="inline-flex" title={disabled ? hint : undefined}>
+    <span className="inline-flex">
       <Button
         size={size}
-        variant={variant}
-        disabled={disabled || busy}
-        onClick={() => void launch()}
+        variant={disabled ? "outline" : variant}
+        className={
+          disabled
+            ? "cursor-default text-muted-foreground hover:bg-background hover:text-muted-foreground dark:hover:bg-input/30"
+            : undefined
+        }
+        aria-disabled={disabled || busy || undefined}
+        aria-label={name}
+        title={disabled ? hint : undefined}
+        aria-describedby={said ? hintId : undefined}
+        onClick={() => {
+          if (disabled || busy) return;
+          void launch();
+        }}
       >
         <Radio /> {busy ? "Launching…" : label}
       </Button>
+      {said ? (
+        <span id={hintId} className="sr-only">
+          {hint}
+        </span>
+      ) : null}
     </span>
   );
 }

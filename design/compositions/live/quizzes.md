@@ -41,7 +41,10 @@ never leaves the sheet half-written, and a question at its edge answers
 the questionnaire has an open run, so an audience mid-run never meets a
 questionnaire that moved under them; Questioning's own refusals — an unknown
 form or disclosure, a retired questionnaire, a missing question — stay in
-force. Callers without the capability receive `FORBIDDEN`.
+force. A relay round's questionnaire is not one of these questionnaires: every
+operation here, the read included, answers `QUESTIONNAIRE_NOT_FOUND` for one,
+since a round is reached through its relay. Callers without the capability
+receive `FORBIDDEN`.
 
 [Live.quizzes.List](reaction:Live.quizzes.List) forms
 [the questionnaires](former:Live.quizzes.theQuestionnaires) — every

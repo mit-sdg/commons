@@ -68,7 +68,10 @@ export async function runMigrations(
     (await ledger.find({}, { projection: { _id: 1 } }).toArray()).map((row) => row._id),
   );
   const pending = migrations.filter((migration) => !applied.has(migration.id));
-  if (pending.length === 0) return;
+  if (pending.length === 0) {
+    log("commons: no migrations pending.");
+    return;
+  }
 
   log(`commons: applying ${pending.length} migration(s) to stored state.`);
   for (const migration of pending) {

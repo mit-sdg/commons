@@ -4,7 +4,9 @@ import { Radio } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
+import { RelayProjector } from "@/components/live/run-relay-projector";
 import { RequireCapability } from "@/components/require-capability";
+import { SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
@@ -13,12 +15,56 @@ import { useAuth } from "@/lib/auth";
 /** The wall keeps pace with the room the same way the dashboard does. */
 const POLL_MS = 3_000;
 
-/**
- * The projected join page: the title, the code, the address, and how many are
- * in. Everything else — answers, scores, controls — stays on the dashboard,
- * so this screen can face the room.
- */
+/** A relay run projects its wall; anything else projects the join page below. */
 function ProjectorContent() {
+  const { run } = useParams<{ run: string }>();
+  const { session } = useAuth();
+
+  const { data, loading, error, refused, refetch } = useQuery(
+    session ? () => api["/live/relays/run"]({ run }).then(unwrap) : null,
+    [session, run],
+  );
+
+  const relayRun = data?.run ?? null;
+  // A sign-in that ended is said once, in a corner, with the way back in; the
+  // wall stays up for the room, since it belongs to the run.
+  const ended = refused === "UNAUTHORIZED";
+
+  if (loading && data === null) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <LoadingState label="Loading…" />
+      </div>
+    );
+  }
+  if (error !== null && data === null) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center px-6">
+        <ErrorState message={error} onRetry={refetch} />
+      </div>
+    );
+  }
+  const notice = ended ? (
+    <div className="fixed top-4 left-4 z-50 max-w-sm">
+      <SignInEnded next={`/staff/live/run/${run}/project`} />
+    </div>
+  ) : null;
+  if (relayRun !== null)
+    return (
+      <>
+        {notice}
+        <RelayProjector run={relayRun} refetch={refetch} ended={ended} />
+      </>
+    );
+  return (
+    <>
+      {notice}
+      <QuizProjector />
+    </>
+  );
+}
+
+function QuizProjector() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 
@@ -83,7 +129,7 @@ function ProjectorContent() {
           </p>
           {error !== null ? (
             <p className="text-amber-700 text-sm dark:text-amber-300">
-              Connection interrupted. Showing the last update.
+              No connection.
             </p>
           ) : null}
         </>

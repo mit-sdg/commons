@@ -6,18 +6,36 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
+import { BRIEF_CHIPS, BRIEF_PLACEHOLDER } from "@/components/live/brief-chips";
+import { titleFromBrief } from "@/components/live/copy-relay";
 import { DraftDescribe } from "@/components/live/draft-describe";
 import type { DraftLineStep } from "@/components/live/draft-step";
 import { DraftStep } from "@/components/live/draft-step";
+import { KIND_SEGMENT } from "@/components/live/quiz-meta";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@/hooks/use-query";
 import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { relativeTime } from "@/lib/format";
+
+// One segment for a quiz or a survey: the brief says which, and the model
+// asks when the brief could be either. The kind reaches the describe endpoint
+// nowhere else, so two segments would only pretend to send it.
+const KINDS = [
+  { kind: "questionnaire", label: "Quiz or survey" },
+  { kind: "relay", label: "Relay" },
+] as const;
+
+type Kind = (typeof KINDS)[number]["kind"];
+
+function isKind(value: string | null): value is Kind {
+  return KINDS.some((entry) => entry.kind === value);
+}
 
 /** The brief the author is drafting against, kept across a reload. */
 const BRIEF_STORAGE_KEY = "commons-live-draft-brief";
@@ -80,6 +98,15 @@ function DraftPageContent() {
   const { me } = useAuth();
   const author = me === null ? null : String(me.user);
   const named = searchParams.get("brief");
+  // A link may still ask for a quiz or a survey by name; both are the one segment.
+  const askedKind = searchParams.get("kind");
+  const askedFor =
+    askedKind === "quiz" || askedKind === "survey"
+      ? "questionnaire"
+      : askedKind;
+  const [kind, setKind] = useState<Kind>(
+    isKind(askedFor) ? askedFor : "questionnaire",
+  );
   const [brief, setBrief] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
   const [resumed, setResumed] = useState(false);
@@ -206,6 +233,26 @@ function DraftPageContent() {
     [author],
   );
 
+  // A relay is drafted onto a relay of its own: the brief names it, the model
+  // proposes its rounds on the edit page.
+  const draftRelay = useCallback(
+    async (request: string) => {
+      setDescribing(true);
+      const planned = await api["/live/relays/plan"]({
+        title: titleFromBrief(request),
+      });
+      if (isApiError(planned)) {
+        setDescribing(false);
+        toast.error(publicErrorMessage(planned.error));
+        return;
+      }
+      router.push(
+        `/staff/live/relay/${planned.relay}/edit?ask=${encodeURIComponent(request)}`,
+      );
+    },
+    [router],
+  );
+
   const clarify = useCallback(
     async (clarification: string, answer: string) => {
       setBusy(true);
@@ -267,7 +314,7 @@ function DraftPageContent() {
           const questionnaire = step?.composed ?? step?.refines ?? null;
           if (questionnaire !== null) {
             toast.success("Draft adopted");
-            router.push(`/staff/live/${questionnaire}`);
+            router.push(`/staff/live/${questionnaire}/edit`);
             return;
           }
         }
@@ -275,9 +322,7 @@ function DraftPageContent() {
       }
 
       setAdopting(false);
-      setAdoptNote(
-        "Adopted — the questionnaire will appear under Live shortly.",
-      );
+      setAdoptNote("Adopted. It appears under Live.");
       resumePolling();
     },
     [author, brief, resumePolling, router],
@@ -301,17 +346,17 @@ function DraftPageContent() {
   const ownsLine = tip !== null && author === String(tip.rootAuthor);
 
   return (
-    <PageContainer>
+    <PageContainer width="wide">
       <PageHeader
         eyebrow={
           <Link
-            href={refining !== null ? `/staff/live/${refining}` : "/staff/live"}
+            href={
+              refining !== null ? `/staff/live/${refining}/edit` : "/staff/live"
+            }
             className="inline-flex items-center gap-1 hover:text-foreground"
           >
             <ArrowLeft className="size-3" />
-            {refining !== null
-              ? "Back to the questionnaire"
-              : "Back to quizzes and surveys"}
+            {refining !== null ? "Back to the questionnaire" : "Live"}
           </Link>
         }
         title={refining !== null ? "Refine with AI" : "Draft with AI"}
@@ -324,7 +369,7 @@ function DraftPageContent() {
                 </Button>
               }
               title="Leave this draft?"
-              description="It will leave your unfinished drafts and stay available as read-only history."
+              description="It leaves your unfinished drafts. The history stays."
               confirmLabel="Leave draft"
               destructive
               onConfirm={abandon}
@@ -337,8 +382,33 @@ function DraftPageContent() {
         <LoadingState label="Loading…" />
       ) : brief === null ? (
         <>
-          <DraftDescribe submitting={describing} onSubmit={describe} />
-          {unfinished.length > 0 ? (
+          <Tabs
+            value={kind}
+            className="mb-6"
+            onValueChange={(value) => {
+              if (isKind(value)) setKind(value);
+            }}
+          >
+            <TabsList>
+              {KINDS.map((entry) => (
+                <TabsTrigger
+                  key={entry.kind}
+                  value={entry.kind}
+                  className={KIND_SEGMENT}
+                >
+                  {entry.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          <DraftDescribe
+            submitting={describing}
+            onSubmit={kind === "relay" ? draftRelay : describe}
+            placeholder={BRIEF_PLACEHOLDER[kind]}
+            chips={BRIEF_CHIPS[kind]}
+            label="Draft"
+          />
+          {kind !== "relay" && unfinished.length > 0 ? (
             <section className="mt-10 space-y-3">
               <h2 className="font-display text-lg font-semibold">
                 Unfinished drafts
@@ -384,12 +454,11 @@ function DraftPageContent() {
         <div className="space-y-8">
           {abandoned ? (
             <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-              This draft was left unfinished. It is retained as read-only
-              history.
+              Unfinished. Read-only.
             </div>
           ) : !ownsLine ? (
             <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-              This draft belongs to another author and is read-only.
+              Another author’s draft. Read-only.
             </div>
           ) : null}
           {lineError !== null ? (

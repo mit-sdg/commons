@@ -14,8 +14,10 @@ import {
   RunScoreBoard,
   scoresOf,
 } from "@/components/live/run-board";
+import { RelayRunBoard } from "@/components/live/run-relay-board";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
+import { SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,11 +29,62 @@ import { fullTime } from "@/lib/format";
 /** Fast enough that the room sees itself answer, slow enough to be polite. */
 const POLL_MS = 3_000;
 
+/**
+ * One address serves both kinds of run. A run whose material is a relay
+ * answers here with its rounds; anything else is a questionnaire run and
+ * meets the board below.
+ */
 function RunDashboardContent() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 
-  const { data, loading, error, refetch } = useQuery(
+  const { data, loading, error, refused, refetch } = useQuery(
+    session ? () => api["/live/relays/run"]({ run }).then(unwrap) : null,
+    [session, run],
+  );
+
+  const relayRun = data?.run ?? null;
+  // A sign-in that ended is said once, in place, with the way back in; the
+  // board keeps what it shows, since the run and its walls belong to the run.
+  const ended = refused === "UNAUTHORIZED";
+
+  if (loading && data === null) {
+    return (
+      <PageContainer width="wide">
+        <LoadingState label="Loading the board…" />
+      </PageContainer>
+    );
+  }
+  if (error !== null && data === null) {
+    return (
+      <PageContainer width="wide">
+        <ErrorState message={error} onRetry={refetch} />
+      </PageContainer>
+    );
+  }
+  if (relayRun !== null)
+    return (
+      <>
+        {ended ? (
+          <PageContainer width="wide" className="pb-0">
+            <SignInEnded next={`/staff/live/run/${run}`} />
+          </PageContainer>
+        ) : null}
+        <RelayRunBoard
+          run={relayRun}
+          error={ended ? null : error}
+          refetch={refetch}
+        />
+      </>
+    );
+  return <QuizRunDashboard />;
+}
+
+function QuizRunDashboard() {
+  const { run } = useParams<{ run: string }>();
+  const { session } = useAuth();
+
+  const { data, loading, error, refused, refetch } = useQuery(
     session ? () => api["/live/runs/results"]({ run }).then(unwrap) : null,
     [session, run],
   );
@@ -39,6 +92,7 @@ function RunDashboardContent() {
   const board = data?.board ?? null;
   const scores = data === null ? null : scoresOf(data);
   const open = board?.open ?? false;
+  const ended = refused === "UNAUTHORIZED";
 
   // The board only moves while the run is open; a closed run is final, so the
   // polling stops rather than asking the same question forever.
@@ -95,6 +149,9 @@ function RunDashboardContent() {
 
   return (
     <PageContainer width="wide">
+      {ended ? (
+        <SignInEnded next={`/staff/live/run/${run}`} className="mb-6" />
+      ) : null}
       <header className="mb-8 border-b border-border pb-6">
         <Link
           href={`/staff/live/${board.questionnaire}`}
@@ -147,7 +204,7 @@ function RunDashboardContent() {
 
       {error !== null ? (
         <p className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-sm">
-          {error} Showing the last board that arrived.
+          {error} This board is stale.
         </p>
       ) : null}
 

@@ -1,5 +1,6 @@
 import type { Collection, Db } from "mongodb";
 import {
+  normalizeParts,
   normalizeQuestionMaterial,
   normalizeTitle,
   QUESTIONING_LIMITS,
@@ -10,6 +11,7 @@ import {
   InvalidChoices,
   InvalidExpected,
   InvalidExplanation,
+  InvalidParts,
   InvalidPrompt,
   InvalidReference,
   InvalidTitle,
@@ -41,6 +43,16 @@ function refuseMaterial(violation: QuestionMaterialViolation): never {
   }[violation.kind];
   throw new ErrorClass(violation.message);
 }
+
+/**
+ * The material violations `reviseQuestion` answers before it weighs a
+ * question's parts against the choices it is being given.
+ */
+const MATERIAL_BEFORE_PARTS = new Set<QuestionMaterialViolation["kind"]>([
+  "prompt",
+  "choices",
+  "duplicateChoices",
+]);
 
 function normalizedMaterial(input: {
   prompt: string;
@@ -80,8 +92,26 @@ interface QuestionDoc {
   choices: string[];
   expected: string;
   explanation: string;
+  /** Absent only on questions stored before a question could take parts. */
+  parts?: string[];
+  /** Absent only on questions stored before a question could take parts. */
+  cap?: number;
   position: number;
 }
+
+/** A question stored before parts existed takes one answer, like any other. */
+const partsOf = (doc: QuestionDoc): string[] => doc.parts ?? [];
+const capOf = (doc: QuestionDoc): number => doc.cap ?? 0;
+
+/** One question as `_material` and `_materials` hand it over. */
+const materialOf = (doc: QuestionDoc) => ({
+  prompt: doc.prompt,
+  choices: doc.choices,
+  expected: doc.expected,
+  explanation: doc.explanation,
+  parts: partsOf(doc),
+  cap: capOf(doc),
+});
 
 export class MongoQuestioningConcept {
   private readonly questionnaires: Collection<QuestionnaireDoc>;
@@ -210,6 +240,8 @@ export class MongoQuestioningConcept {
         _id: question,
         questionnaire,
         ...material,
+        parts: [],
+        cap: 0,
         position,
       });
       return { question };
@@ -239,8 +271,37 @@ export class MongoQuestioningConcept {
       throw new QuestionNotFound(`No question named ${question}`);
     }
     await this.#revisable(doc.questionnaire);
-    const material = normalizedMaterial({ prompt, choices, expected, explanation });
-    await this.questions.updateOne({ _id: question }, { $set: { ...material, position } });
+    // The material rules that come before this one still decide first; only a
+    // question whose choices are otherwise acceptable can clash with its parts.
+    const material = normalizeQuestionMaterial({ prompt, choices, expected, explanation });
+    if (!material.ok && MATERIAL_BEFORE_PARTS.has(material.violation.kind)) {
+      refuseMaterial(material.violation);
+    }
+    if (Array.isArray(choices) && choices.length > 0 && partsOf(doc).length > 0) {
+      throw new InvalidParts("A question offers choices or takes parts, not both.");
+    }
+    if (!material.ok) refuseMaterial(material.violation);
+    await this.questions.updateOne({ _id: question }, { $set: { ...material.value, position } });
+    return { question };
+  }
+
+  async setParts({ question, parts, cap }: { question: string; parts: string[]; cap: number }) {
+    const doc = await this.questions.findOne({ _id: question });
+    if (doc === null) {
+      throw new QuestionNotFound(`No question named ${question}`);
+    }
+    await this.#revisable(doc.questionnaire);
+    // Clearing parts is always allowed; only parts a question would keep can
+    // clash with the choices it offers.
+    if (Array.isArray(parts) && parts.length > 0 && doc.choices.length > 0) {
+      throw new InvalidParts("A question offers choices or takes parts, not both.");
+    }
+    const result = normalizeParts({ parts, cap });
+    if (!result.ok) throw new InvalidParts(result.violation.message);
+    await this.questions.updateOne(
+      { _id: question },
+      { $set: { parts: result.value.parts, cap: result.value.cap } },
+    );
     return { question };
   }
 
@@ -318,6 +379,8 @@ export class MongoQuestioningConcept {
       choices: doc.choices,
       expected: doc.expected,
       explanation: doc.explanation,
+      parts: partsOf(doc),
+      cap: capOf(doc),
       position: doc.position,
     }));
   }
@@ -333,6 +396,8 @@ export class MongoQuestioningConcept {
             choices: doc.choices,
             expected: doc.expected,
             explanation: doc.explanation,
+            parts: partsOf(doc),
+            cap: capOf(doc),
             position: doc.position,
           },
         ];
@@ -345,14 +410,40 @@ export class MongoQuestioningConcept {
     return [
       {
         form: doc.form,
-        material: docs.map((entry) => ({
-          prompt: entry.prompt,
-          choices: entry.choices,
-          expected: entry.expected,
-          explanation: entry.explanation,
-        })),
+        material: docs.map((entry) => materialOf(entry)),
       },
     ];
+  }
+
+  async _materials({ questionnaires }: { questionnaires: string[] }) {
+    const identities = Array.isArray(questionnaires) ? questionnaires : [];
+    if (identities.length === 0) return { materials: [] };
+    const docs = await this.questionnaires.find({ _id: { $in: identities } }).toArray();
+    const titles = new Map(docs.map((doc) => [doc._id, doc.title]));
+    const questions = await this.questions
+      .find({ questionnaire: { $in: [...titles.keys()] } })
+      .sort({ position: 1 })
+      .toArray();
+    const grouped = new Map<string, QuestionDoc[]>();
+    for (const question of questions) {
+      const entries = grouped.get(question.questionnaire);
+      if (entries === undefined) grouped.set(question.questionnaire, [question]);
+      else entries.push(question);
+    }
+    // In the given order, and an identity that names no questionnaire simply
+    // contributes no entry.
+    const materials = identities.flatMap((questionnaire) => {
+      const title = titles.get(questionnaire);
+      if (title === undefined) return [];
+      return [
+        {
+          questionnaire,
+          title,
+          questions: (grouped.get(questionnaire) ?? []).map((entry) => materialOf(entry)),
+        },
+      ];
+    });
+    return { materials };
   }
 
   async present({ questionnaire }: { questionnaire: string }) {
@@ -388,6 +479,8 @@ export class MongoQuestioningConcept {
       choices: question.choices,
       expected: question.expected,
       explanation: question.explanation,
+      parts: partsOf(question),
+      cap: capOf(question),
       position: question.position,
     }));
     const expectations = questions

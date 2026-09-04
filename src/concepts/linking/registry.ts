@@ -7,6 +7,7 @@ export const linking = registerConcept({
   class: MongoLinkingConcept,
   spec,
   floors: {
-    mongo: ({ database }: { database: Db }) => new MongoLinkingConcept(database),
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoLinkingConcept(database, instance),
   },
 });

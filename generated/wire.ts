@@ -420,9 +420,9 @@ export type CommonsWire = {
     input: Record<string, never>;
     output: {
       "categories": {
-        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getAllCategories"]>>>, ["category"]>>;
-        "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getAllCategories"]>>>, ["description"]>>;
-        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getAllCategories"]>>>, ["name"]>>;
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>>;
+        "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
       }[];
     };
     error: { error: AppWideError };
@@ -968,7 +968,7 @@ export type CommonsWire = {
     } | {
       "candidate": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Drafting"]["adopt"]>>, ["candidate"]>>;
     };
-    error: { error: AppWideError | "ALREADY_ADOPTED" | "CANDIDATE_NOT_FOUND" | "CONFLICT" | "DUPLICATE_CHOICES" | "FORBIDDEN" | "FORM_FIXED" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_TITLE" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" };
+    error: { error: AppWideError | "ALREADY_ADOPTED" | "CANDIDATE_NOT_FOUND" | "CONFLICT" | "DUPLICATE_CHOICES" | "FORBIDDEN" | "FORM_FIXED" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_TITLE" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" };
   };
   "/live/drafts/clarify": {
     input: {
@@ -1102,6 +1102,62 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "RUN_OPEN" };
   };
+  "/live/edits/decline": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "suggestion": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Suggesting"]["decline"]>[0], ["suggestion"]>>;
+    };
+    output: {
+      "suggestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["decline"]>>, ["suggestion"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "SUGGESTION_NOT_FOUND" | "SUGGESTION_SETTLED" };
+  };
+  "/live/edits/draft": {
+    input: {
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>[0], ["about"]>]>>;
+      "request": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["briefStanding"]["fn"]>[0], ["request"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_REQUEST" | "RELAY_NOT_FOUND" };
+  };
+  "/live/edits/offerings": {
+    input: {
+      "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_offeringsAbout"]>[0], ["subject"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
+      "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
+      "offerings": {
+        "lines": {
+          "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["kind"]>>;
+          "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["position"]>>;
+          "standing": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["standing"]>>;
+          "suggestion": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["suggestion"]>>;
+          "target": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["target"]>>;
+          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["value"]>>;
+        }[];
+        "offeredAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_offeringsAbout"]>>>, ["offeredAt"]>>;
+        "offering": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_offeringsAbout"]>>>, ["offering"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/edits/take": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "suggestion": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Suggesting"]["take"]>[0], ["suggestion"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestion"]>[0], ["suggestion"]>]>>;
+    };
+    output: {
+      "suggestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["take"]>>, ["suggestion"]>>;
+    } | {
+      "suggestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["take"]>>, ["suggestion"]>>;
+    };
+    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "DUPLICATE_CHOICES" | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_TITLE" | "LEG_DRAWN_ON" | "LEG_NOT_FOUND" | "NOT_SIBLINGS" | "NO_DRAW" | "NO_SUCH_POSITION" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RELAY_NOT_FOUND" | "RUN_OPEN" | "SUGGESTION_NOT_FOUND" | "SUGGESTION_SETTLED" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" | "USE_BLANK" };
+  };
   "/live/p/answer": {
     input: {
       "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["snapshotHasQuestion"]["fn"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>[0], ["item"]>]>>;
@@ -1111,7 +1167,7 @@ export type CommonsWire = {
     output: {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOT_FOUND" | "NOT_PART" | "RESPONSE_NOT_FOUND" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "BLANK_ANSWER" | "CLOSED" | "INVALID_INPUT" | "NOT_FOUND" | "NOT_PART" | "RESPONSE_NOT_FOUND" };
   };
   "/live/p/answer-signed": {
     input: {
@@ -1123,7 +1179,7 @@ export type CommonsWire = {
     output: {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOT_FOUND" | "NOT_PART" | "RESPONSE_NOT_FOUND" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "BLANK_ANSWER" | "CLOSED" | "INVALID_INPUT" | "NOT_FOUND" | "NOT_PART" | "RESPONSE_NOT_FOUND" };
   };
   "/live/p/arrive": {
     input: {
@@ -1137,19 +1193,37 @@ export type CommonsWire = {
         "run": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
         "title": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["snapshotTitle"]["fn"]>>, []>>;
       } | null;
+    } | {
+      "relay": {
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openRound": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+        "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "rounds": ({
+          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
+          "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+          "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+        })[];
+        "run": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["title"]>>;
+      } | null;
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOTHING_SHARED" };
   };
   "/live/p/begin": {
     input: {
-      "device": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
+      "device": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>]>>;
       "token": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>[0], ["token"]>>;
     };
     output: {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
+    } | {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOTHING_SHARED" | "NO_PARTICIPANT" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOTHING_SHARED" | "NOT_FOUND" | "NO_OPEN_ROUND" | "NO_PARTICIPANT" };
   };
   "/live/p/begin-signed": {
     input: {
@@ -1159,8 +1233,11 @@ export type CommonsWire = {
     output: {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
+    } | {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOTHING_SHARED" | "NO_PARTICIPANT" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOTHING_SHARED" | "NO_OPEN_ROUND" | "NO_PARTICIPANT" };
   };
   "/live/p/locate": {
     input: {
@@ -1250,6 +1327,8 @@ export type CommonsWire = {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    } | {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     };
     error: { error: AppWideError | "ALREADY_GRADED" | "ALREADY_SUBMITTED" | "CLOSED" | "INCOMPLETE" | "INVALID_INPUT" | "KEY_NOT_FOUND" | "NOT_FOUND" | "RESPONSE_NOT_FOUND" };
   };
@@ -1262,8 +1341,83 @@ export type CommonsWire = {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    } | {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     };
     error: { error: AppWideError | "ALREADY_GRADED" | "ALREADY_SUBMITTED" | "CLOSED" | "INCOMPLETE" | "INVALID_INPUT" | "KEY_NOT_FOUND" | "NOT_FOUND" | "RESPONSE_NOT_FOUND" };
+  };
+  "/live/p/wall": {
+    input: {
+      "response": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>>;
+    };
+    output: {
+      "wall": {
+        "begun": number;
+        "cards": ({
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
+          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
+          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
+          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
+        })[];
+        "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
+        "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
+        "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
+        "handedIn": number;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
+        "piles": ({
+          "count": number;
+          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
+          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>>;
+        })[];
+        "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+      } | null;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SUBMITTED" };
+  };
+  "/live/p/wall-signed": {
+    input: {
+      "response": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "wall": {
+        "begun": number;
+        "cards": ({
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
+          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
+          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
+          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
+        })[];
+        "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
+        "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
+        "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
+        "handedIn": number;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
+        "piles": ({
+          "count": number;
+          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
+          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>>;
+        })[];
+        "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+      } | null;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SUBMITTED" };
   };
   "/live/quizzes/add-question": {
     input: {
@@ -1271,7 +1425,7 @@ export type CommonsWire = {
       "expected"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["expected"]>>;
       "explanation"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["explanation"]>>;
       "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>>;
-      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -1293,7 +1447,7 @@ export type CommonsWire = {
   };
   "/live/quizzes/get": {
     input: {
-      "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -1301,7 +1455,7 @@ export type CommonsWire = {
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["createdAt"]>>;
         "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["disclosure"]>>;
         "form": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["form"]>>;
-        "questionnaire": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>>;
+        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>]>>;
         "questions": {
           "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["choices"]>>;
           "expected": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["expected"]>>;
@@ -1321,7 +1475,7 @@ export type CommonsWire = {
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "QUESTIONNAIRE_NOT_FOUND" };
   };
   "/live/quizzes/list": {
     input: {
@@ -1334,7 +1488,7 @@ export type CommonsWire = {
         "form": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["form"]>>;
         "openRun": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>> | null;
         "proposes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>>>, ["proposes"]>>;
-        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["questionnaire"]>]>>;
+        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["questionnaire"]>]>>;
         "questions": Jsonify<number>;
         "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["retired"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["title"]>>;
@@ -1351,7 +1505,7 @@ export type CommonsWire = {
     output: {
       "question": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>>;
     };
-    error: { error: AppWideError | "AT_EDGE" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_SIBLINGS" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
+    error: { error: AppWideError | "AT_EDGE" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_SIBLINGS" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
   };
   "/live/quizzes/raise-question": {
     input: {
@@ -1361,7 +1515,7 @@ export type CommonsWire = {
     output: {
       "question": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["swapQuestions"]>[0], ["question"]>>;
     };
-    error: { error: AppWideError | "AT_EDGE" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_SIBLINGS" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
+    error: { error: AppWideError | "AT_EDGE" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_SIBLINGS" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
   };
   "/live/quizzes/remove-question": {
     input: {
@@ -1371,11 +1525,11 @@ export type CommonsWire = {
     output: {
       "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["removeQuestion"]>>, ["question"]>>;
     };
-    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
+    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
   };
   "/live/quizzes/retire": {
     input: {
-      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retire"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retire"]>[0], ["questionnaire"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -1385,7 +1539,7 @@ export type CommonsWire = {
   };
   "/live/quizzes/retitle": {
     input: {
-      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["questionnaire"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>>;
     };
@@ -1406,18 +1560,373 @@ export type CommonsWire = {
     output: {
       "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>>, ["question"]>>;
     };
-    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
+    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RUN_OPEN" };
   };
   "/live/quizzes/set-disclosure": {
     input: {
       "disclosure": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setDisclosure"]>[0], ["disclosure"]>>;
-      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setDisclosure"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setDisclosure"]>[0], ["questionnaire"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "questionnaire": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["setDisclosure"]>>, ["questionnaire"]>>;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "RUN_OPEN" | "UNKNOWN_DISCLOSURE" };
+  };
+  "/live/relays/add-round": {
+    input: {
+      "cap": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>>;
+      "choices": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["choices"]>>;
+      "parts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>>;
+      "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>>;
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>[0], ["relay"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["compose"]>[0], ["title"]>>;
+    };
+    output: {
+      "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>>, ["leg"]>>;
+      "position": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>>, ["position"]>>;
+      "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>>, ["question"]>>;
+      "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>[0], ["material"]>]>>;
+    };
+    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_TITLE" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" };
+  };
+  "/live/relays/clear-takes": {
+    input: {
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["undraw"]>[0], ["leg"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "source": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["undraw"]>[0], ["source"]>>;
+    };
+    output: {
+      "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["undraw"]>>, ["leg"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "LEG_NOT_FOUND" | "NO_DRAW" | "RELAY_RETIRED" };
+  };
+  "/live/relays/close": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>[0], ["edition"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "run": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>>, ["edition"]>>;
+    } | {
+      "run": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>>, ["edition"]>>;
+    };
+    error: { error: AppWideError | "ALREADY_CLOSED" | "EDITION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "TARGET_NOT_LOCKED" };
+  };
+  "/live/relays/close-round": {
+    input: {
+      "round": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>[0], ["edition"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "round": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>>, ["edition"]>>;
+    };
+    error: { error: AppWideError | "ALREADY_CLOSED" | "EDITION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "TARGET_NOT_LOCKED" };
+  };
+  "/live/relays/dismiss": {
+    input: {
+      "participant": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>]>>;
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["target"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["user"]>>;
+    } | {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "ITEM_NOT_CATEGORIZED" | "NOT_SEATED" };
+  };
+  "/live/relays/get": {
+    input: {
+      "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "relay": {
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["createdAt"]>>;
+        "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+        "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>>>, ["trashed"]>>;
+        "rounds": {
+          "cap": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["cap"]>>;
+          "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["choices"]>>;
+          "leg": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>>;
+          "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
+          "parts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["parts"]>>;
+          "prompt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["prompt"]>>;
+          "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["question"]>>;
+          "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["material"]>]>>;
+          "takes": {
+            "source": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["source"]>]>>;
+            "sourceNumber": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>>>, ["position"]>>;
+            "use": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["use"]>>;
+          }[];
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+        }[];
+        "runs": ({
+          "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["closedAt"]>>;
+          "code": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>>>, ["code"]>> | null;
+          "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["open"]>>;
+          "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["openedAt"]>>;
+          "rounds": ({
+            "figure": {
+              "begun": number | null;
+              "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>> | null;
+              "handedIn": number | null;
+              "handedInByModel": number | null;
+              "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+              "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>> | null;
+              "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+            };
+            "round": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>>;
+          })[];
+          "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>>;
+          "token": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>>>, ["token"]>> | null;
+        })[];
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["title"]>>;
+      } | null;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/relays/invite": {
+    input: {
+      "device": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["subscribe"]>[0], ["user"]>>;
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["subscribe"]>[0], ["target"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["subscribe"]>[0], ["user"]>>;
+    };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "ALREADY_SUBSCRIBED" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_A_SEAT" | "NO_PARTICIPANT" };
+  };
+  "/live/relays/launch": {
+    input: {
+      "relay": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
+      "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "MATERIAL_ALREADY_SHARED" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" };
+  };
+  "/live/relays/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "relays": ({
+        "closedRuns": number;
+        "code": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>>>, ["code"]>> | null;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relays"]>>>, ["createdAt"]>>;
+        "figure": {
+          "begun": number | null;
+          "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>> | null;
+          "handedIn": number | null;
+          "handedInByModel": number | null;
+          "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+          "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>> | null;
+          "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+        };
+        "openRound": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+        "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relays"]>>>, ["relay"]>]>>;
+        "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>>>, ["trashed"]>>;
+        "rounds": ({
+          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
+          "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+          "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+        })[];
+        "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>> | null;
+        "runs": number;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relays"]>>>, ["title"]>>;
+      })[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/relays/move-round": {
+    input: {
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["moveLeg"]>[0], ["leg"]>]>>;
+      "position": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["moveLeg"]>[0], ["position"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["moveLeg"]>>, ["leg"]>>;
+      "position": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["moveLeg"]>>, ["position"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_INPUT" | "LEG_NOT_FOUND" | "NO_SUCH_POSITION" | "RELAY_RETIRED" };
+  };
+  "/live/relays/open-round": {
+    input: {
+      "leg": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>>;
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["lock"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "round": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["setLinks"]>[0], ["source"]>>;
+    } | {
+      "round": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["setLinks"]>[0], ["source"]>>;
+    };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "LEG_NOT_FOUND" | "MATERIAL_ALREADY_SHARED" | "NOTHING_PICKED" | "NO_PARTICIPANT" | "ROUND_DONE" | "ROUND_OPEN" | "SNAPSHOT_EXISTS" | "SOURCE_OPEN" | "TARGET_ALREADY_LOCKED" };
+  };
+  "/live/relays/plan": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["plan"]>[0], ["title"]>>;
+    };
+    output: {
+      "relay": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["plan"]>>, ["relay"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_TITLE" };
+  };
+  "/live/relays/remove-round": {
+    input: {
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["removeLeg"]>[0], ["leg"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["removeLeg"]>>, ["leg"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "LEG_DRAWN_ON" | "LEG_NOT_FOUND" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "RELAY_RETIRED" | "RUN_OPEN" };
+  };
+  "/live/relays/retire": {
+    input: {
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "relay": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>>, ["item"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "ITEM_NOT_CATEGORIZED" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" | "RUN_OPEN" };
+  };
+  "/live/relays/retitle": {
+    input: {
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["relay"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["title"]>>;
+    };
+    output: {
+      "relay": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>>, ["relay"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_TITLE" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" };
+  };
+  "/live/relays/revise-round": {
+    input: {
+      "cap": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>>;
+      "choices": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["choices"]>>;
+      "leg": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>>;
+      "parts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>>;
+      "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["prompt"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>>;
+    };
+    output: {
+      "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>>, ["question"]>>;
+    };
+    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_TITLE" | "LEG_NOT_FOUND" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RELAY_RETIRED" | "RUN_OPEN" };
+  };
+  "/live/relays/run": {
+    input: {
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscribers"]>[0], ["target"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "run": {
+        "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
+        "code": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>>>, ["code"]>> | null;
+        "modelSorts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openRound": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+        "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
+        "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["material"]>]>>;
+        "rounds": ({
+          "figure": {
+            "begun": number | null;
+            "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>> | null;
+            "handedIn": number | null;
+            "handedInByModel": number | null;
+            "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+            "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>> | null;
+            "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+          };
+          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
+          "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+          "takes": number;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+        })[];
+        "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+        "seats": {
+          "participant": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscribers"]>>>, ["user"]>]>>;
+        }[];
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["title"]>>;
+        "token": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>>>, ["token"]>> | null;
+      } | null;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/relays/set-takes": {
+    input: {
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["leg"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "source": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["source"]>>;
+      "use": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["use"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useFit"]["fn"]>[0], ["use"]>]>>;
+    };
+    output: {
+      "draw": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>>, ["draw"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_INPUT" | "INVALID_USE" | "LEG_NOT_FOUND" | "NOT_SIBLINGS" | "RELAY_RETIRED" | "USE_BLANK" };
+  };
+  "/live/relays/sort-by-hand": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "modelSorts": false;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+    } | {
+      "modelSorts": false;
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_PINNED" };
+  };
+  "/live/relays/sort-by-model": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "modelSorts": true;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+    } | {
+      "modelSorts": true;
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_PINNED" };
+  };
+  "/live/relays/unlock": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>>;
+    } | {
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ROUND_OPEN" | "TARGET_NOT_LOCKED" };
+  };
+  "/live/relays/uses": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "uses": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["carryUses"]["fn"]>>, []>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/live/runs/close": {
     input: {
@@ -1427,7 +1936,7 @@ export type CommonsWire = {
     output: {
       "run": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>>, ["edition"]>>;
     };
-    error: { error: AppWideError | "ALREADY_CLOSED" | "EDITION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" };
+    error: { error: AppWideError | "ALREADY_CLOSED" | "EDITION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "TARGET_NOT_LOCKED" };
   };
   "/live/runs/launch": {
     input: {
@@ -1443,7 +1952,7 @@ export type CommonsWire = {
       "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
       "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "KEY_EXISTS" | "MATERIAL_ALREADY_SHARED" | "NOT_QUIZ_READY" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "SNAPSHOT_EXISTS" | "UNKNOWN_DISCLOSURE" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "FORBIDDEN" | "INVALID_INPUT" | "KEY_EXISTS" | "MATERIAL_ALREADY_SHARED" | "NOT_QUIZ_READY" | "NO_PARTICIPANT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "SNAPSHOT_EXISTS" | "UNKNOWN_DISCLOSURE" };
   };
   "/live/runs/open": {
     input: {
@@ -1510,6 +2019,185 @@ export type CommonsWire = {
       } | null;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/walls/describe-pile": {
+    input: {
+      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["describeCategory"]>[0], ["description"]>>;
+      "pile": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["describeCategory"]>[0], ["category"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "pile": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["describeCategory"]>>, ["category"]>>;
+    };
+    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/walls/merge-pile": {
+    input: {
+      "into": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["mergeCategory"]>[0], ["into"]>>;
+      "pile": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["mergeCategory"]>[0], ["category"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "pile": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["mergeCategory"]>>, ["into"]>>;
+    };
+    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "CLOSED" | "DIFFERENT_SCOPES" | "FORBIDDEN" | "INVALID_INPUT" | "SAME_CATEGORY" };
+  };
+  "/live/walls/move-card": {
+    input: {
+      "card": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>>;
+      "pile": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>>, ["item"]>>;
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
+    };
+    error: { error: AppWideError | "CARD_NOT_FOUND" | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/walls/open-choice": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["name"]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["scope"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "pile": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>>, ["category"]>>;
+    };
+    error: { error: AppWideError | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/live/walls/open-pile": {
+    input: {
+      "card": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["cardStanding"]["fn"]>[0], ["card"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["name"]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["scope"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>>, ["item"]>>;
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
+    };
+    error: { error: AppWideError | "CARD_NOT_FOUND" | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/walls/pick": {
+    input: {
+      "pile": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>]>>;
+      "round": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>>>, ["scope"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["scope"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>]>>;
+    } | {
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_PINNED" | "NOT_FOUND" };
+  };
+  "/live/walls/read": {
+    input: {
+      "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesFor"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "wall": {
+        "begun": number;
+        "cards": ({
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
+          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
+          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
+          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
+        })[];
+        "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
+        "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
+        "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
+        "handedIn": number;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
+        "piles": ({
+          "count": number;
+          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
+          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>>;
+        })[];
+        "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+      } | null;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/walls/remove-card": {
+    input: {
+      "card": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>>, ["item"]>>;
+    };
+    error: { error: AppWideError | "CARD_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "ITEM_NOT_CATEGORIZED" };
+  };
+  "/live/walls/rename-pile": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["renameCategory"]>[0], ["name"]>>;
+      "pile": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["renameCategory"]>[0], ["category"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "pile": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["renameCategory"]>>, ["category"]>>;
+    };
+    error: { error: AppWideError | "CATEGORY_ALREADY_EXISTS" | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/walls/sort": {
+    input: {
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>[0], ["about"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "asked": true;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
+    } | {
+      "asked": false;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "TARGET_ALREADY_LOCKED" };
+  };
+  "/live/walls/summarize": {
+    input: {
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "asked": true;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
+    } | {
+      "asked": false;
+    };
+    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/live/walls/to-tray": {
+    input: {
+      "card": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>>, ["item"]>>;
+    };
+    error: { error: AppWideError | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_CATEGORIZED" };
+  };
+  "/live/walls/unpick": {
+    input: {
+      "pile": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>>>, ["scope"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["scope"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>]>>;
+    } | {
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>>;
+    };
+    error: { error: AppWideError | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_PINNED" | "NOT_FOUND" };
   };
   "/lms/me": {
     input: {
@@ -2595,7 +3283,7 @@ export type CommonsWire = {
     output: {
       "subscription": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["subscribe"]>>, ["subscription"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBSCRIBED" | "INVALID_INPUT" | "NOT_FOUND" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "ALREADY_SUBSCRIBED" | "INVALID_INPUT" | "NOT_FOUND" | "NO_PARTICIPANT" };
   };
   "/subscriptions/subscribers": {
     input: {
@@ -3174,7 +3862,7 @@ export type CommonsWire = {
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_TRASHED" | "ITEM_NOT_CATEGORIZED" | "NOT_FOUND" };
   };
   "/unread/count": {
     input: {
@@ -3668,9 +4356,9 @@ export type CommonsWireHttp = {
     input: Record<string, never>;
     output: {
       "categories": {
-        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getAllCategories"]>>>, ["category"]>>;
-        "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getAllCategories"]>>>, ["description"]>>;
-        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getAllCategories"]>>>, ["name"]>>;
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>>;
+        "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
       }[];
     };
     error: { error: HttpAppWideError };
@@ -4296,6 +4984,58 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
+  "/live/edits/decline": {
+    input: {
+      "suggestion": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Suggesting"]["decline"]>[0], ["suggestion"]>>;
+    };
+    output: {
+      "suggestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["decline"]>>, ["suggestion"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/edits/draft": {
+    input: {
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>[0], ["about"]>]>>;
+      "request": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["briefStanding"]["fn"]>[0], ["request"]>>;
+    };
+    output: {
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/edits/offerings": {
+    input: {
+      "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_offeringsAbout"]>[0], ["subject"]>]>>;
+    };
+    output: {
+      "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
+      "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
+      "offerings": {
+        "lines": {
+          "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["kind"]>>;
+          "position": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["position"]>>;
+          "standing": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["standing"]>>;
+          "suggestion": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["suggestion"]>>;
+          "target": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["target"]>>;
+          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestions"]>>>, ["value"]>>;
+        }[];
+        "offeredAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_offeringsAbout"]>>>, ["offeredAt"]>>;
+        "offering": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_offeringsAbout"]>>>, ["offering"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/edits/take": {
+    input: {
+      "suggestion": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Suggesting"]["take"]>[0], ["suggestion"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Suggesting"]["_suggestion"]>[0], ["suggestion"]>]>>;
+    };
+    output: {
+      "suggestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["take"]>>, ["suggestion"]>>;
+    } | {
+      "suggestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Suggesting"]["take"]>>, ["suggestion"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
   "/live/p/answer": {
     input: {
       "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["snapshotHasQuestion"]["fn"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>[0], ["item"]>]>>;
@@ -4330,15 +5070,33 @@ export type CommonsWireHttp = {
         "run": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
         "title": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["snapshotTitle"]["fn"]>>, []>>;
       } | null;
+    } | {
+      "relay": {
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openRound": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+        "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "rounds": ({
+          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
+          "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+          "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+        })[];
+        "run": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["title"]>>;
+      } | null;
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/p/begin": {
     input: {
-      "device": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
+      "device": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>]>>;
       "token": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>[0], ["token"]>>;
     };
     output: {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
+    } | {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
     };
@@ -4349,6 +5107,9 @@ export type CommonsWireHttp = {
       "token": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>[0], ["token"]>>;
     };
     output: {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
+    } | {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
     };
@@ -4441,6 +5202,8 @@ export type CommonsWireHttp = {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    } | {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
@@ -4452,6 +5215,80 @@ export type CommonsWireHttp = {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    } | {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/p/wall": {
+    input: {
+      "response": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>>;
+    };
+    output: {
+      "wall": {
+        "begun": number;
+        "cards": ({
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
+          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
+          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
+          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
+        })[];
+        "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
+        "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
+        "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
+        "handedIn": number;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
+        "piles": ({
+          "count": number;
+          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
+          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>>;
+        })[];
+        "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+      } | null;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/p/wall-signed": {
+    input: {
+      "response": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>>;
+    };
+    output: {
+      "wall": {
+        "begun": number;
+        "cards": ({
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
+          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
+          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
+          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
+        })[];
+        "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
+        "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
+        "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
+        "handedIn": number;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
+        "piles": ({
+          "count": number;
+          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
+          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>>;
+        })[];
+        "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+      } | null;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
@@ -4461,7 +5298,7 @@ export type CommonsWireHttp = {
       "expected"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["expected"]>>;
       "explanation"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["explanation"]>>;
       "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>>;
-      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>]>>;
     };
     output: {
       "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>>, ["question"]>>;
@@ -4481,14 +5318,14 @@ export type CommonsWireHttp = {
   };
   "/live/quizzes/get": {
     input: {
-      "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>>;
     };
     output: {
       "questionnaire": {
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["createdAt"]>>;
         "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["disclosure"]>>;
         "form": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["form"]>>;
-        "questionnaire": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>>;
+        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>]>>;
         "questions": {
           "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["choices"]>>;
           "expected": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["expected"]>>;
@@ -4508,7 +5345,7 @@ export type CommonsWireHttp = {
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/quizzes/list": {
     input: Record<string, never>;
@@ -4519,7 +5356,7 @@ export type CommonsWireHttp = {
         "form": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["form"]>>;
         "openRun": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>> | null;
         "proposes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>>>, ["proposes"]>>;
-        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["questionnaire"]>]>>;
+        "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_proposesAnswers"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["questionnaire"]>]>>;
         "questions": Jsonify<number>;
         "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["retired"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["title"]>>;
@@ -4557,7 +5394,7 @@ export type CommonsWireHttp = {
   };
   "/live/quizzes/retire": {
     input: {
-      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retire"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retire"]>[0], ["questionnaire"]>]>>;
     };
     output: {
       "questionnaire": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["retire"]>>, ["questionnaire"]>>;
@@ -4566,7 +5403,7 @@ export type CommonsWireHttp = {
   };
   "/live/quizzes/retitle": {
     input: {
-      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["questionnaire"]>]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>>;
     };
     output: {
@@ -4590,12 +5427,343 @@ export type CommonsWireHttp = {
   "/live/quizzes/set-disclosure": {
     input: {
       "disclosure": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setDisclosure"]>[0], ["disclosure"]>>;
-      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_hasOpenEditionFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setDisclosure"]>[0], ["questionnaire"]>]>>;
+      "questionnaire": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setDisclosure"]>[0], ["questionnaire"]>]>>;
     };
     output: {
       "questionnaire": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["setDisclosure"]>>, ["questionnaire"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/add-round": {
+    input: {
+      "cap": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>>;
+      "choices": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["choices"]>>;
+      "parts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>>;
+      "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>>;
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>[0], ["relay"]>]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["compose"]>[0], ["title"]>>;
+    };
+    output: {
+      "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>>, ["leg"]>>;
+      "position": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>>, ["position"]>>;
+      "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>>, ["question"]>>;
+      "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>[0], ["material"]>]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/clear-takes": {
+    input: {
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["undraw"]>[0], ["leg"]>]>>;
+      "source": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["undraw"]>[0], ["source"]>>;
+    };
+    output: {
+      "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["undraw"]>>, ["leg"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/close": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>[0], ["edition"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>]>>;
+    };
+    output: {
+      "run": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>>, ["edition"]>>;
+    } | {
+      "run": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>>, ["edition"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/close-round": {
+    input: {
+      "round": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>[0], ["edition"]>>;
+    };
+    output: {
+      "round": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["close"]>>, ["edition"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/dismiss": {
+    input: {
+      "participant": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>]>>;
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["target"]>>;
+    };
+    output: {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["user"]>>;
+    } | {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/get": {
+    input: {
+      "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+    };
+    output: {
+      "relay": {
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["createdAt"]>>;
+        "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+        "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>>>, ["trashed"]>>;
+        "rounds": {
+          "cap": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["cap"]>>;
+          "choices": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["choices"]>>;
+          "leg": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>>;
+          "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
+          "parts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["parts"]>>;
+          "prompt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["prompt"]>>;
+          "question": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>>>, ["question"]>>;
+          "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestions"]>[0], ["questionnaire"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["material"]>]>>;
+          "takes": {
+            "source": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["source"]>]>>;
+            "sourceNumber": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>>>, ["position"]>>;
+            "use": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_draws"]>>>, ["use"]>>;
+          }[];
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+        }[];
+        "runs": ({
+          "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["closedAt"]>>;
+          "code": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>>>, ["code"]>> | null;
+          "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["open"]>>;
+          "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["openedAt"]>>;
+          "rounds": ({
+            "figure": {
+              "begun": number | null;
+              "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>> | null;
+              "handedIn": number | null;
+              "handedInByModel": number | null;
+              "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+              "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>> | null;
+              "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+            };
+            "round": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>>;
+          })[];
+          "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>>;
+          "token": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>>>, ["token"]>> | null;
+        })[];
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["title"]>>;
+      } | null;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/relays/invite": {
+    input: {
+      "device": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["subscribe"]>[0], ["user"]>>;
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["subscribe"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["subscribe"]>[0], ["user"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/relays/launch": {
+    input: {
+      "relay": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>>;
+    };
+    output: {
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
+      "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/list": {
+    input: Record<string, never>;
+    output: {
+      "relays": ({
+        "closedRuns": number;
+        "code": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>>>, ["code"]>> | null;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relays"]>>>, ["createdAt"]>>;
+        "figure": {
+          "begun": number | null;
+          "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>> | null;
+          "handedIn": number | null;
+          "handedInByModel": number | null;
+          "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+          "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>> | null;
+          "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+        };
+        "openRound": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+        "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relays"]>>>, ["relay"]>]>>;
+        "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>>>, ["trashed"]>>;
+        "rounds": ({
+          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
+          "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+          "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+        })[];
+        "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>> | null;
+        "runs": number;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relays"]>>>, ["title"]>>;
+      })[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/relays/move-round": {
+    input: {
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["moveLeg"]>[0], ["leg"]>]>>;
+      "position": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["moveLeg"]>[0], ["position"]>>;
+    };
+    output: {
+      "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["moveLeg"]>>, ["leg"]>>;
+      "position": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["moveLeg"]>>, ["position"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/open-round": {
+    input: {
+      "leg": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>>;
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["lock"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+    };
+    output: {
+      "round": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["setLinks"]>[0], ["source"]>>;
+    } | {
+      "round": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["setLinks"]>[0], ["source"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/plan": {
+    input: {
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["plan"]>[0], ["title"]>>;
+    };
+    output: {
+      "relay": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["plan"]>>, ["relay"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/relays/remove-round": {
+    input: {
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["removeLeg"]>[0], ["leg"]>]>>;
+    };
+    output: {
+      "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["removeLeg"]>>, ["leg"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/retire": {
+    input: {
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>]>>;
+    };
+    output: {
+      "relay": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>>, ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/retitle": {
+    input: {
+      "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["relay"]>]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>[0], ["title"]>>;
+    };
+    output: {
+      "relay": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["retitle"]>>, ["relay"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/revise-round": {
+    input: {
+      "cap": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>>;
+      "choices": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["choices"]>>;
+      "leg": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>>;
+      "parts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>>;
+      "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["prompt"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>>;
+    };
+    output: {
+      "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>>, ["question"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/run": {
+    input: {
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscribers"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "run": {
+        "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
+        "code": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>>>, ["code"]>> | null;
+        "modelSorts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openRound": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+        "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
+        "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["material"]>]>>;
+        "rounds": ({
+          "figure": {
+            "begun": number | null;
+            "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>> | null;
+            "handedIn": number | null;
+            "handedInByModel": number | null;
+            "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
+            "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>> | null;
+            "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+          };
+          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
+          "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
+          "takes": number;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+        })[];
+        "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["_for"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+        "seats": {
+          "participant": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscribers"]>>>, ["user"]>]>>;
+        }[];
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["title"]>>;
+        "token": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_sharesFor"]>>>, ["token"]>> | null;
+      } | null;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/relays/set-takes": {
+    input: {
+      "leg": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["leg"]>]>>;
+      "source": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["source"]>>;
+      "use": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>[0], ["use"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["useFit"]["fn"]>[0], ["use"]>]>>;
+    };
+    output: {
+      "draw": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["draw"]>>, ["draw"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/relays/sort-by-hand": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>]>>;
+    };
+    output: {
+      "modelSorts": false;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+    } | {
+      "modelSorts": false;
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/relays/sort-by-model": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>]>>;
+    };
+    output: {
+      "modelSorts": true;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+    } | {
+      "modelSorts": true;
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/relays/unlock": {
+    input: {
+      "run": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>]>>;
+    };
+    output: {
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>>;
+    } | {
+      "run": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/relays/uses": {
+    input: Record<string, never>;
+    output: {
+      "uses": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["carryUses"]["fn"]>>, []>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
   "/live/runs/close": {
     input: {
@@ -4683,6 +5851,172 @@ export type CommonsWireHttp = {
       } | null;
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/walls/describe-pile": {
+    input: {
+      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["describeCategory"]>[0], ["description"]>>;
+      "pile": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["describeCategory"]>[0], ["category"]>]>>;
+    };
+    output: {
+      "pile": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["describeCategory"]>>, ["category"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/walls/merge-pile": {
+    input: {
+      "into": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["mergeCategory"]>[0], ["into"]>>;
+      "pile": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["mergeCategory"]>[0], ["category"]>]>>;
+    };
+    output: {
+      "pile": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["mergeCategory"]>>, ["into"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/walls/move-card": {
+    input: {
+      "card": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>>;
+      "pile": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>>, ["item"]>>;
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/walls/open-choice": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["name"]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["scope"]>]>>;
+    };
+    output: {
+      "pile": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>>, ["category"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/walls/open-pile": {
+    input: {
+      "card": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["cardStanding"]["fn"]>[0], ["card"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>]>>;
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["name"]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["ensureCategory"]>[0], ["scope"]>]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>>, ["item"]>>;
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/walls/pick": {
+    input: {
+      "pile": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>]>>;
+      "round": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>>>, ["scope"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["scope"]>]>>;
+    };
+    output: {
+      "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>]>>;
+    } | {
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/walls/read": {
+    input: {
+      "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesFor"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
+    };
+    output: {
+      "wall": {
+        "begun": number;
+        "cards": ({
+          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
+          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
+          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
+          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
+        })[];
+        "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
+        "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
+        "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
+        "handedIn": number;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
+        "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
+        "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
+        "piles": ({
+          "count": number;
+          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
+          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
+          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>>;
+        })[];
+        "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
+      } | null;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/walls/remove-card": {
+    input: {
+      "card": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>>, ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/walls/rename-pile": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["renameCategory"]>[0], ["name"]>>;
+      "pile": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["renameCategory"]>[0], ["category"]>]>>;
+    };
+    output: {
+      "pile": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["renameCategory"]>>, ["category"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/walls/sort": {
+    input: {
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>[0], ["about"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>]>>;
+    };
+    output: {
+      "asked": true;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
+    } | {
+      "asked": false;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/walls/summarize": {
+    input: {
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>>;
+    };
+    output: {
+      "asked": true;
+      "asking": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["ask"]>>, ["asking"]>>;
+    } | {
+      "asked": false;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/walls/to-tray": {
+    input: {
+      "card": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>[0], ["item"]>]>>;
+    };
+    output: {
+      "card": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>>, ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/live/walls/unpick": {
+    input: {
+      "pile": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>]>>;
+      "round": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>>>, ["scope"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["scope"]>]>>;
+    };
+    output: {
+      "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategoryDetail"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>]>>;
+    } | {
+      "pile": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/lms/me": {
     input: Record<string, never>;
@@ -6228,7 +7562,7 @@ export type CommonsWireHttp = {
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
     };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/unread/count": {
     input: {

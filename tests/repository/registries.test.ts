@@ -25,6 +25,51 @@ const typedLinks = (source: string) =>
     ),
   ].map(([, kind, name]) => ({ kind, name }));
 
+describe("a concept registered under two names", () => {
+  test("reaches a floor that reads the name and keeps its own collections", async () => {
+    const conceptSet = readFileSync(join(root, "src/concepts.ts"), "utf8");
+    const registrations = [...conceptSet.matchAll(/^  (\w+): (\w+),$/gm)].map(
+      ([, name, module]) => ({
+        name,
+        module,
+      }),
+    );
+    const byModule = new Map<string, string[]>();
+    for (const { name, module } of registrations) {
+      byModule.set(module, [...(byModule.get(module) ?? []), name]);
+    }
+    const shared = [...byModule].filter(([, names]) => names.length > 1);
+    expect(shared.length).toBeGreaterThan(0);
+
+    for (const [module, names] of shared) {
+      const registry = (await import(join(conceptsRoot, module, "registry.ts"))) as Record<
+        string,
+        { floors: { mongo: (deps: { database: unknown }, instance: string) => unknown } }
+      >;
+      const concept = registry[module];
+      expect(concept, module).toBeDefined();
+      const collectionsOf = (instance: string) => {
+        const seen: string[] = [];
+        const database = { collection: (name: string) => (seen.push(name), {}) };
+        concept!.floors.mongo({ database }, instance);
+        return seen;
+      };
+      const perName = names.map((name) => [name, collectionsOf(name)] as const);
+      for (const [name, collections] of perName) {
+        expect(collections.length, `${module} as ${name}`).toBeGreaterThan(0);
+        for (const [other, theirs] of perName) {
+          if (other === name) continue;
+          for (const collection of collections) {
+            expect(theirs, `${module}: ${name} and ${other} share ${collection}`).not.toContain(
+              collection,
+            );
+          }
+        }
+      }
+    }
+  });
+});
+
 describe("application-owned design integration", () => {
   test("every authored concept is registered through the concept-set module", () => {
     const conceptSet = readFileSync(join(root, "src/concepts.ts"), "utf8");
@@ -94,7 +139,7 @@ describe("application-owned design integration", () => {
       "Rostering.User is Authenticating.User",
       "Sessioning.User is Authenticating.User",
       "Submitting.Submitter is Authenticating.User",
-      "Subscribing.Person is Authenticating.User",
+      "Subscribing.Person is Subscriber",
       "Tracking.User is Authenticating.User",
       "Trashing.User is Authenticating.User",
       "Assigning.Sections is Rostering.Section",
@@ -107,16 +152,20 @@ describe("application-owned design integration", () => {
       "Mailing.Key is MailKey",
       "Submitting.Artifact is Posting.Post",
       "Bookmarking.Item is Posting.Post",
-      "Categorizing.Item is Posting.Post",
+      "Categorizing.Item is Categorizable",
+      "Categorizing.Scope is CategoryScope",
+      "Relaying.Author is Authenticating.User",
+      "Relaying.Material is Questioning.Questionnaire",
+      "Suggesting.Subject is LiveSubject",
       "Conversing.Item is Posting.Post",
       "Flagging.Target is Posting.Post",
       "Formatting.Target is Posting.Post",
-      "Linking.Source is Posting.Post",
-      "Linking.Target is Posting.Post",
+      "Linking.Source is Linkable",
+      "Linking.Target is Linkable",
       "Locking.Target is Lockable",
       "Notifying.Link is Posting.Post",
       "Notifying.Subject is Posting.Post",
-      "Pinning.Item is Posting.Post",
+      "Pinning.Item is Pinnable",
       "Reacting.Target is Posting.Post",
       "Resolving.Answer is Posting.Post",
       "Resolving.Question is Posting.Post",
@@ -129,10 +178,10 @@ describe("application-owned design integration", () => {
       "Tasking.Assignee is Authenticating.User",
       "Tasking.Scope is Grouping.Group",
       "Tracking.Item is Posting.Post",
-      "Trashing.Item is Posting.Post",
-      "Pinning.Scope is Conversing.Conversation",
+      "Trashing.Item is Trashable",
+      "Pinning.Scope is PinScope",
       "Roling.Context is Conversing.Conversation",
-      "Subscribing.Target is Conversing.Conversation",
+      "Subscribing.Target is Subscribable",
       "Tracking.Scope is Conversing.Conversation",
       "PasswordResetVouching.Subject is Authenticating.User",
       "AdoptLinking.Source is Drafting.Brief",
@@ -141,14 +190,14 @@ describe("application-owned design integration", () => {
       "Drafting.Origin is Questioning.Questionnaire",
       "DraftTrashing.Item is Drafting.Brief",
       "DraftTrashing.User is Authenticating.User",
-      "Insisting.Aim is Drafting.Brief",
+      "Insisting.Aim is LiveSubject",
       "Locating.Subject is Publishing.Edition",
       "Publishing.Author is Authenticating.User",
-      "Publishing.Material is Questioning.Questionnaire",
+      "Publishing.Material is LiveMaterial",
       "Questioning.Author is Authenticating.User",
       "Reasoning.Reasoner is LiveReasoner",
-      "Reasoning.Subject is Drafting.Brief",
-      "Responding.Item is Questioning.Question",
+      "Reasoning.Subject is LiveSubject",
+      "Responding.Item is LiveItem",
       "Responding.Participant is LiveParticipant",
       "Responding.Subject is Publishing.Edition",
       "Scoring.Item is Questioning.Question",

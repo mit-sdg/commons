@@ -1,5 +1,5 @@
 import type { Collection, Db } from "mongodb";
-import { AlreadySubmitted, NoParticipant, ResponseNotFound } from "./errors.ts";
+import { AlreadySubmitted, AnswerBlank, NoParticipant, ResponseNotFound } from "./errors.ts";
 
 interface ResponseDoc {
   _id: string;
@@ -76,10 +76,14 @@ export class MongoRespondingConcept {
   }
 
   async answer({ response, item, value }: { response: string; item: string; value: string }) {
+    const said = value.trim();
+    if (said === "") {
+      throw new AnswerBlank("An answer needs something in it.");
+    }
     await this.#inProgress(response);
     const existing = await this.answers.findOne({ response, item });
     if (existing !== null) {
-      await this.answers.updateOne({ _id: existing._id }, { $set: { value } });
+      await this.answers.updateOne({ _id: existing._id }, { $set: { value: said } });
       return { response };
     }
     const seq = await this.#nextSeq("answers");
@@ -87,7 +91,7 @@ export class MongoRespondingConcept {
       _id: crypto.randomUUID(),
       response,
       item,
-      value,
+      value: said,
       seq,
     });
     return { response };
@@ -164,19 +168,19 @@ export class MongoRespondingConcept {
     return [{ answers: docs.map((entry) => ({ item: entry.item, value: entry.value })) }];
   }
 
-  async _valuesForSubject({ subject }: { subject: string }) {
+  async _submittedAnswers({ subject }: { subject: string }) {
     const submitted = await this.responses
       .find({ subject, submitted: true })
       .sort({ submittedAt: 1, seq: 1 })
       .toArray();
-    const values: { response: string; participant: string; item: string; value: string }[] = [];
+    const rows: { response: string; participant: string; item: string; value: string }[] = [];
     for (const response of submitted) {
       const answers = await this.answers
         .find({ response: response._id })
         .sort({ seq: 1 })
         .toArray();
       for (const answer of answers) {
-        values.push({
+        rows.push({
           response: response._id,
           participant: response.participant,
           item: answer.item,
@@ -184,6 +188,11 @@ export class MongoRespondingConcept {
         });
       }
     }
-    return { values };
+    return rows;
+  }
+
+  /** The same answers `_submittedAnswers` gives, handed over as one value. */
+  async _valuesForSubject({ subject }: { subject: string }) {
+    return { values: await this._submittedAnswers({ subject }) };
   }
 }

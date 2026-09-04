@@ -7,11 +7,14 @@ import { notReadable, readable } from "./posts.ts";
 
 const { Categorizing, Trashing } = concepts;
 
+/** The forum is one scope of categories; a category's name is unique within it. */
+const FORUM = "forum";
+
 /** Which categories exist? */
 export const theCategories = former(
   "the categories ()",
   (_inputs, { category, name, description }) =>
-    each(Categorizing._getAllCategories({}).is({ category, name, description })).form({
+    each(Categorizing._categoriesIn({ scope: FORUM }).is({ category, name, description })).form({
       category,
       name,
       description,
@@ -46,7 +49,9 @@ export const CreateCategory = endpoint(
   ({ session, name, description, user, category }) =>
     receive({ session, name, description }).then(
       where(activeUser({ session }).is({ user }), mayAdminister({ user }))
-        .then(Categorizing.createCategory({ name, description }).responds({ category }))
+        .then(
+          Categorizing.createCategory({ scope: FORUM, name, description }).responds({ category }),
+        )
         .then(respond({ category }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotAdminister({ user }))

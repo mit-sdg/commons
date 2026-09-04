@@ -23,12 +23,12 @@ async function draftAndAdopt(page: Page, request: string) {
   await page.goto("/staff/live/draft");
   const describe = page.getByRole("textbox").first();
   await describe.fill(request);
-  await page.getByRole("button", { name: /draft it/i }).click();
+  await page.getByRole("button", { name: "Draft", exact: true }).click();
   await expect(page.getByRole("button", { name: "Adopt this draft" })).toBeVisible({
     timeout: 20_000,
   });
   await page.getByRole("button", { name: "Adopt this draft" }).click();
-  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}\/edit$/, { timeout: 20_000 });
 }
 
 test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed", async ({
@@ -59,7 +59,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   const participant = await phone.newPage();
   await signIn(participant, NOAH);
   await participant.goto("/join");
-  await participant.getByRole("textbox", { name: "Session code" }).fill(code);
+  await participant.getByRole("textbox", { name: "Code" }).fill(code);
   await participant.getByRole("button", { name: "Join" }).click();
   await participant.waitForURL(/\/q\/[0-9a-f-]{36}$/);
   await participant.getByRole("button", { name: "Join" }).click();
@@ -95,7 +95,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   await participant.getByRole("menuitem", { name: "Sign out" }).click();
   await signIn(participant, PRIYA);
   await participant.goto("/join");
-  await participant.getByRole("textbox", { name: "Session code" }).fill(code);
+  await participant.getByRole("textbox", { name: "Code" }).fill(code);
   await participant.getByRole("button", { name: "Join" }).click();
   await participant.waitForURL(/\/q\/[0-9a-f-]{36}$/);
   await expect(participant.getByRole("button", { name: "Join" })).toBeVisible();
@@ -123,7 +123,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   const late = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const latecomer = await late.newPage();
   await latecomer.goto("/join");
-  await latecomer.getByRole("textbox", { name: "Session code" }).fill(code);
+  await latecomer.getByRole("textbox", { name: "Code" }).fill(code);
   await latecomer.getByRole("button", { name: "Join" }).click();
   await expect(latecomer.getByText("This quiz has been closed")).toBeVisible({ timeout: 15_000 });
 
@@ -138,7 +138,7 @@ test("an ambiguous request comes back as a question and resumes from the answer"
   await page.goto("/staff/live/draft");
   const describe = page.getByRole("textbox").first();
   await describe.fill("Something ambiguous about gardening");
-  await page.getByRole("button", { name: /draft it/i }).click();
+  await page.getByRole("button", { name: "Draft", exact: true }).click();
 
   // The reasoner asks rather than guessing; answering resumes the draft.
   const answerBox = page.getByLabel("Answer the clarifying question");
@@ -187,7 +187,9 @@ test("a questionnaire is refined with the reasoner and applied back in place", a
 
   // The adopted line is spent: the drafting page opens on a fresh description.
   await page.goto("/staff/live/draft");
-  await expect(page.getByRole("button", { name: "Draft it" })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "Draft", exact: true })).toBeVisible({
+    timeout: 20_000,
+  });
 });
 
 test("an empty quiz can adopt its first AI-generated questions", async ({ page }) => {
@@ -195,7 +197,7 @@ test("an empty quiz can adopt its first AI-generated questions", async ({ page }
   await page.goto("/staff/live/new");
   await page.getByRole("textbox", { name: "Title" }).fill("Empty quiz");
   await page.getByRole("button", { name: "Create" }).click();
-  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}\/edit$/, { timeout: 20_000 });
 
   await page.getByRole("button", { name: "Refine with AI" }).click();
   await page.getByLabel("Request a change to this draft").fill("Add two questions about plants");
@@ -204,7 +206,7 @@ test("an empty quiz can adopt its first AI-generated questions", async ({ page }
     timeout: 20_000,
   });
   await page.getByRole("button", { name: "Adopt this draft" }).click();
-  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+  await page.waitForURL(/\/staff\/live\/[0-9a-f-]{36}\/edit$/, { timeout: 20_000 });
   await expect(page.getByRole("heading", { name: /Questions \(2\)/ })).toBeVisible();
 });
 

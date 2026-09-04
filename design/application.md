@@ -16,7 +16,9 @@ concrete MailKey
   A stable deduplication key supplied by an application workflow.
 
 concrete Lockable
-  A post or conversation identity that moderation may lock.
+  A post or conversation identity that moderation may lock, or a Publishing
+  edition that is a relay run, locked while one of its rounds is open, or a
+  round, locked while a placing ask about it is out.
 
 concrete TaskSubject
   A task-list group or task identity that a task-domain notification is about and links to.
@@ -31,7 +33,61 @@ concrete LiveReasoner
   which model answers it.
 
 concrete LiveRunSnapshot
-  The complete structured presentation captured for one published live run.
+  The complete structured presentation captured for one published live run, or
+  for one round of a relay run.
+
+concrete LiveMaterial
+  What a live edition releases: a Questioning questionnaire for a quiz, survey,
+  or round, or a Relaying relay for a relay run.
+
+concrete LiveItem
+  What one live answer addresses: a Questioning question, or one part of it,
+  written `question#n` for the part or repetition n counting from one.
+
+concrete LiveSubject
+  What a live ask, insistence, or offering is about: a Drafting brief (a
+  questionnaire being drafted), a Publishing edition (a round being sorted), a
+  Responding response (a model participant answering), or a Relaying relay (a
+  relay being drafted). The reactions that read a reply tell them apart by
+  which concept answers for the subject.
+
+concrete Subscriber
+  Who follows something: a Commons user following a forum conversation, or a
+  live participant the dashboard seated in a relay run.
+
+concrete Subscribable
+  What is followed: a forum conversation, or a Publishing edition that is a
+  relay run, whose every round reaches the seated.
+
+concrete Linkable
+  What links or is linked to: a forum post, or a Publishing edition — a round's
+  edition links to the run it opened in.
+
+concrete Trashable
+  What a person may move to trash: a forum post; a relay whose teaching life has
+  ended, which retires it; a seated live participant the dashboard dismissed,
+  whose cards keep their mark because the seat stays; or a card a staff member
+  removed from a wall, whose hand-in is kept.
+
+concrete Pinnable
+  What is held above the rest: a forum post pinned in its conversation, a
+  pile a staff member picked to carry into the next round, or a relay run the
+  model sorts.
+
+concrete PinScope
+  Where pins stand: a forum conversation; a Publishing edition that is a
+  round, whose pinned piles are the ones picked; or the reserved constant
+  `sorting`, in which a pinned run is one the model sorts.
+
+concrete CategoryScope
+  Where a category's name is unique: the forum, under the reserved scope `forum`,
+  or a Publishing edition that is a round, whose categories are the piles on its
+  wall.
+
+concrete Categorizable
+  What is sorted into a category: a forum post, or a card on a round's wall —
+  the wall's identity for one handed-in answer, minted from its response and
+  item so the card names neither.
 ```
 
 ## Instances
@@ -62,7 +118,8 @@ instantiate Bookmarking with
   Item is Posting.Post
 
 instantiate Categorizing with
-  Item is Posting.Post
+  Scope is CategoryScope
+  Item is Categorizable
 
 instantiate Conversing with
   Item is Posting.Post
@@ -93,7 +150,7 @@ instantiate Grouping with
   Person is Authenticating.User
 
 instantiate Insisting with
-  Aim is Drafting.Brief
+  Aim is LiveSubject
 
 instantiate Inviting with
   User is Authenticating.User
@@ -102,8 +159,8 @@ instantiate Itemizing with
   Item is Assigning.Assignment
 
 instantiate Linking with
-  Source is Posting.Post
-  Target is Posting.Post
+  Source is Linkable
+  Target is Linkable
 
 instantiate Linking as AdoptLinking with
   Source is Drafting.Brief
@@ -133,8 +190,8 @@ instantiate Noting with
   Learner is Authenticating.User
 
 instantiate Pinning with
-  Item is Posting.Post
-  Scope is Conversing.Conversation
+  Item is Pinnable
+  Scope is PinScope
 
 instantiate Posting with
   Author is Authenticating.User
@@ -144,7 +201,7 @@ instantiate Profiling with
 
 instantiate Publishing with
   Author is Authenticating.User
-  Material is Questioning.Questionnaire
+  Material is LiveMaterial
 
 instantiate Questioning with
   Author is Authenticating.User
@@ -155,12 +212,16 @@ instantiate Reacting with
 
 instantiate Reasoning with
   Reasoner is LiveReasoner
-  Subject is Drafting.Brief
+  Subject is LiveSubject
+
+instantiate Relaying with
+  Author is Authenticating.User
+  Material is Questioning.Questionnaire
 
 instantiate Responding with
   Subject is Publishing.Edition
   Participant is LiveParticipant
-  Item is Questioning.Question
+  Item is LiveItem
 
 instantiate Resolving with
   User is Authenticating.User
@@ -192,14 +253,17 @@ instantiate Sessioning with
 instantiate Sharing with
   Subject is Publishing.Edition
 
+instantiate Suggesting with
+  Subject is LiveSubject
+
 instantiate Submitting with
   Submitter is Authenticating.User
   Assignment is Assigning.Assignment
   Artifact is Posting.Post
 
 instantiate Subscribing with
-  Person is Authenticating.User
-  Target is Conversing.Conversation
+  Person is Subscriber
+  Target is Subscribable
 
 instantiate Tagging with
   Target is Posting.Post
@@ -215,7 +279,7 @@ instantiate Tracking with
 
 instantiate Trashing with
   User is Authenticating.User
-  Item is Posting.Post
+  Item is Trashable
 
 instantiate Vouching as PasswordResetVouching with
   Subject is Authenticating.User
@@ -234,8 +298,9 @@ uses a Posting post as its artifact. Invitation, notification, and password-rese
 Posting owns post identities. Forum features attach their own state to a post
 without taking ownership of it. Conversing separately owns conversation
 identities; subscriptions, unread scopes, pins, role contexts, and locks can use
-a conversation. Locking also accepts a post directly, so its target role has two
-valid owners. Roling also receives the reserved application-wide context
+a conversation. Locking also accepts a post directly, and a Publishing
+edition — a relay run while a round of it is open, and a round while a placing
+ask about it is out — so its target role has three valid owners. Roling also receives the reserved application-wide context
 `commons`; because that value is a Commons constant rather than a concept-owned
 identity, it has no second type binding, and it names the deployment as a whole
 rather than any one area of it, so no capability held there belongs to the forum
@@ -276,6 +341,8 @@ comes back unusable, and `LiveReasoner` names the mind the floor's worker
 serves. Adopting a candidate is what turns drafted material into an ordinary
 editable questionnaire; nothing else crosses from the drafting line into the
 live domain.
+
+A relay is a Relaying relay whose legs' materials are one-question questionnaires of the survey form, so `LiveMaterial` has two owners the way `Lockable` does: Publishing releases a questionnaire as a quiz, survey, or round, and a relay as the run those rounds belong to. Linking ties each round's edition to its run, the picked piles of a closed round are Pinning pins in the round's scope, read back in the order they were taken, and Seating holds the run's model seats: a `LiveParticipant` the dashboard invited follows the run, and every round that opens reaches it. `LiveItem` widens Responding's item: a question with parts is answered one part at a time, each part its own item. Piles are Categorizing categories whose scope is the round's edition, holding `LiveCard` identities the wall computations mint; the forum's categories stand in the `forum` scope beside them. Reasoning, Insisting, and Suggesting share `LiveSubject`; every reaction that reads a reply or a complaint binds the concept that answers for its subject, so a reply about a brief never reaches a wall's reactions and a reply about a round never reaches drafting's. The forum's one Categorizing scope is the reserved constant `forum`, a Commons decision like `commons`.
 
 DraftTrashing marks an author deliberately leaving an unfinished draft line.
 The drafting composition applies it to the canonical root brief and uses the

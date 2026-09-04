@@ -70,4 +70,9 @@ _isTrashed (item: String) : one (trashed: Boolean)
 _getTrashed () : many (item: String, trashedBy: String, trashedAt: Date)
   answers every trashed item in trash order with who trashed it and when
   answers no rows when none match
+
+_trashedItems () : one (items: Seq)
+  answers every trashed item as one value: an ordered sequence of item
+  identities in trash order
+  answers an empty sequence when nothing is in the trash
 ```

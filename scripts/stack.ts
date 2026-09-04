@@ -28,7 +28,7 @@ async function relay(stream: ReadableStream<Uint8Array>, prefix: string) {
 const pause = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function waitForEdge(origin: string, exited: () => number | undefined) {
-  const deadline = Date.now() + 20_000;
+  const deadline = Date.now() + 90_000;
   while (Date.now() < deadline) {
     const code = exited();
     if (code !== undefined) throw new Error(`commons: edge exited before readiness (code ${code})`);
@@ -42,7 +42,7 @@ async function waitForEdge(origin: string, exited: () => number | undefined) {
     } catch {}
     await pause(100);
   }
-  throw new Error(`commons: edge readiness timed out after 20 seconds (${origin})`);
+  throw new Error(`commons: edge readiness timed out after 90 seconds (${origin})`);
 }
 
 function spawnPiped(

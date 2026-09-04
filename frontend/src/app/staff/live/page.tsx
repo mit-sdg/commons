@@ -1,17 +1,30 @@
 "use client";
 
-import { Archive, ClipboardList, Pencil, Plus, Sparkles } from "lucide-react";
+import { ChevronDown, Radio, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
-import { FormBadge, QUIZ_NOT_READY_MESSAGE } from "@/components/live/quiz-meta";
+import {
+  FormBadge,
+  QUIZ_NOT_READY_MESSAGE,
+  RETIRE_NOTE,
+} from "@/components/live/quiz-meta";
+import { LiveRow, RoomCode } from "@/components/live/relay-row";
+import { Figure, RoundStrip } from "@/components/live/round-token";
+import { NO_ROUNDS, standingOf } from "@/components/live/rounds";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
-import { PageContainer, PageHeader } from "@/components/page";
+import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useQuery } from "@/hooks/use-query";
 import {
   api,
@@ -21,155 +34,246 @@ import {
   unwrap,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fullTime, relativeTime } from "@/lib/format";
+import { toDate } from "@/lib/format";
 
+type Relay = Output<"/live/relays/list">["relays"][number];
 type Shelved = Output<"/live/quizzes/list">["questionnaires"][number];
-type OpenRun = Output<"/live/runs/open">["runs"][number];
 
-function LiveShelfContent() {
+type Entry =
+  | { kind: "relay"; at: number; retired: boolean; relay: Relay }
+  | {
+      kind: "questionnaire";
+      at: number;
+      retired: boolean;
+      questionnaire: Shelved;
+    };
+
+/** The three things New makes, in the order the menu offers them. */
+const KINDS = [
+  { kind: "quiz", label: "Quiz" },
+  { kind: "survey", label: "Survey" },
+  { kind: "relay", label: "Relay" },
+] as const;
+
+/**
+ * What an action acts on, said only where the words are read one at a time:
+ * every row offers the same Edit, Launch, and Retire, so each carries the name
+ * of its own relay or questionnaire.
+ */
+function Named({ title }: { title: string }) {
+  return <span className="sr-only"> {title}</span>;
+}
+
+function when(value: unknown): number {
+  return toDate(value)?.getTime() ?? 0;
+}
+
+function LiveListContent() {
   const { session } = useAuth();
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
   const [showRetired, setShowRetired] = useState(false);
 
   const {
     data: shelf,
-    loading,
-    error,
-    refetch,
+    loading: loadingShelf,
+    error: shelfError,
+    refetch: refetchShelf,
   } = useQuery(
     session ? () => api["/live/quizzes/list"]({}).then(unwrap) : null,
     [session],
   );
-  const { data: live, refetch: refetchLive } = useQuery(
-    session ? () => api["/live/runs/open"]({}).then(unwrap) : null,
+  const {
+    data: relayList,
+    loading: loadingRelays,
+    error: relayError,
+    refetch: refetchRelays,
+  } = useQuery(
+    session ? () => api["/live/relays/list"]({}).then(unwrap) : null,
     [session],
   );
 
   const questionnaires = shelf?.questionnaires ?? [];
-  const standing = questionnaires.filter((entry) => !entry.retired);
-  const retired = questionnaires.filter((entry) => entry.retired);
-  const openRuns = live?.runs ?? [];
+  const relays = relayList?.relays ?? [];
 
-  async function retire(questionnaire: string) {
+  const entries: Entry[] = [
+    ...relays.map(
+      (relay): Entry => ({
+        kind: "relay",
+        at: when(relay.createdAt),
+        retired: relay.retired,
+        relay,
+      }),
+    ),
+    ...questionnaires.map(
+      (questionnaire): Entry => ({
+        kind: "questionnaire",
+        at: when(questionnaire.createdAt),
+        retired: questionnaire.retired,
+        questionnaire,
+      }),
+    ),
+  ].sort((left, right) => right.at - left.at);
+
+  const standing = entries.filter((entry) => !entry.retired);
+  const retired = entries.filter((entry) => entry.retired);
+  // The state column stands only while a run is open somewhere on the shelf;
+  // with nothing live the rows start at their titles.
+  const anyLive = standing.some((entry) =>
+    entry.kind === "relay"
+      ? entry.relay.run !== null
+      : entry.questionnaire.openRun !== null,
+  );
+
+  function refetch() {
+    refetchShelf();
+    refetchRelays();
+  }
+
+  async function launch(relay: string) {
+    setBusy(true);
+    const result = await api["/live/relays/launch"]({ relay });
+    if (isApiError(result)) {
+      setBusy(false);
+      toast.error(publicErrorMessage(result.error));
+      return;
+    }
+    router.push(`/staff/live/run/${result.run}`);
+  }
+
+  async function retireRelay(relay: string) {
+    const result = await api["/live/relays/retire"]({ relay });
+    if (isApiError(result)) {
+      toast.error(publicErrorMessage(result.error));
+      return;
+    }
+    refetch();
+  }
+
+  async function retireQuestionnaire(questionnaire: string) {
     const result = await api["/live/quizzes/retire"]({ questionnaire });
     if (isApiError(result)) {
       toast.error(publicErrorMessage(result.error));
       return;
     }
-    toast.success("Retired");
     refetch();
-    refetchLive();
   }
 
+  const loading =
+    (loadingShelf && shelf === null) || (loadingRelays && relayList === null);
+  const error = shelfError ?? relayError;
+
   return (
-    <PageContainer>
-      <PageHeader
-        eyebrow="Live"
-        title="Quizzes and surveys"
-        actions={
-          <>
-            <Button variant="outline" asChild>
-              <Link href="/staff/live/draft">
-                <Sparkles /> Draft with AI
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href="/staff/live/new">
-                <Plus /> New quiz or survey
-              </Link>
-            </Button>
-          </>
-        }
-      />
+    <PageContainer width="wide">
+      <header className="mb-5 flex items-end justify-between gap-6">
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+          Live
+        </h1>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/staff/live/draft">
+              <Sparkles /> Draft with AI
+            </Link>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-foreground text-background hover:bg-foreground/90">
+                New <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {KINDS.map((entry) => (
+                <DropdownMenuItem key={entry.kind} asChild>
+                  <Link href={`/staff/live/new?kind=${entry.kind}`}>
+                    {entry.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
 
-      {openRuns.length > 0 ? (
-        <section className="mb-8 rounded-xl border border-primary/40 bg-primary/5 p-4">
-          <p className="eyebrow mb-3 flex items-center gap-2 text-primary">
-            <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
-            Live now
-          </p>
-          <ul className="space-y-2">
-            {openRuns.map((run: OpenRun) => (
-              <li
-                key={run.run}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-card px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{run.title}</p>
-                  <p className="text-muted-foreground text-xs">
-                    Opened {relativeTime(run.openedAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FormBadge form={run.form} />
-                  <Button size="sm" asChild>
-                    <Link href={`/staff/live/run/${run.run}`}>
-                      Open dashboard
-                    </Link>
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {loading && shelf === null ? (
-        <LoadingState label="Loading quizzes and surveys…" />
-      ) : error ? (
+      {loading ? (
+        <LoadingState />
+      ) : error !== null ? (
         <ErrorState message={error} onRetry={refetch} />
-      ) : questionnaires.length === 0 ? (
+      ) : standing.length === 0 ? (
         <EmptyState
-          icon={ClipboardList}
-          title="No quizzes or surveys yet"
+          icon={Radio}
+          title="Nothing yet"
           action={
-            <Button size="sm" asChild>
-              <Link href="/staff/live/new">
-                <Plus /> New quiz or survey
-              </Link>
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {KINDS.map((entry) => (
+                <Button key={entry.kind} size="sm" variant="outline" asChild>
+                  <Link href={`/staff/live/new?kind=${entry.kind}`}>
+                    New {entry.label.toLowerCase()}
+                  </Link>
+                </Button>
+              ))}
+            </div>
           }
         />
       ) : (
-        <div className="space-y-2">
-          {standing.map((entry) => (
-            <ShelfRow
-              key={entry.questionnaire}
-              entry={entry}
-              onRetire={() => retire(entry.questionnaire)}
-            />
-          ))}
-          {standing.length === 0 ? (
-            <EmptyState
-              icon={Archive}
-              title="Everything is retired"
-              action={
-                <Button size="sm" asChild>
-                  <Link href="/staff/live/new">
-                    <Plus /> New quiz or survey
-                  </Link>
-                </Button>
-              }
-            />
-          ) : null}
-        </div>
+        <ul className="flex flex-col gap-2">
+          {standing.map((entry) =>
+            entry.kind === "relay" ? (
+              <RelayEntry
+                key={entry.relay.relay}
+                relay={entry.relay}
+                stateColumn={anyLive}
+                busy={busy}
+                onLaunch={() => void launch(entry.relay.relay)}
+                onRetire={() => retireRelay(entry.relay.relay)}
+              />
+            ) : (
+              <QuestionnaireEntry
+                key={entry.questionnaire.questionnaire}
+                entry={entry.questionnaire}
+                stateColumn={anyLive}
+                onRetire={() =>
+                  retireQuestionnaire(entry.questionnaire.questionnaire)
+                }
+              />
+            ),
+          )}
+        </ul>
       )}
 
       {retired.length > 0 ? (
-        <section className="mt-8">
+        <section className="mt-6">
           <button
             type="button"
             onClick={() => setShowRetired((shown) => !shown)}
-            className="flex items-center gap-2 text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
+            className="text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
           >
-            <Archive className="size-4" />
-            {showRetired ? "Hide" : "Show"} retired ({retired.length})
+            {showRetired
+              ? `Hide retired (${retired.length})`
+              : `Show retired (${retired.length})`}
           </button>
           {showRetired ? (
-            <div className="mt-3 space-y-2 opacity-60">
-              {retired.map((entry) => (
-                <ShelfRow key={entry.questionnaire} entry={entry} />
-              ))}
-            </div>
+            <ul className="mt-3 flex flex-col gap-2">
+              {retired.map((entry) =>
+                entry.kind === "relay" ? (
+                  <RetiredEntry
+                    key={entry.relay.relay}
+                    href={`/staff/live/relay/${entry.relay.relay}`}
+                    title={entry.relay.title}
+                    form="relay"
+                    rounds={entry.relay.rounds}
+                    stateColumn={anyLive}
+                  />
+                ) : (
+                  <RetiredEntry
+                    key={entry.questionnaire.questionnaire}
+                    href={`/staff/live/${entry.questionnaire.questionnaire}`}
+                    title={entry.questionnaire.title}
+                    form={entry.questionnaire.form}
+                    stateColumn={anyLive}
+                  />
+                ),
+              )}
+            </ul>
           ) : null}
         </section>
       ) : null}
@@ -177,15 +281,137 @@ function LiveShelfContent() {
   );
 }
 
-function ShelfRow({
+function RelayEntry({
+  relay,
+  stateColumn,
+  busy,
+  onLaunch,
+  onRetire,
+}: {
+  relay: Relay;
+  stateColumn: boolean;
+  busy: boolean;
+  onLaunch: () => void;
+  onRetire: () => Promise<void>;
+}) {
+  const live = relay.run !== null;
+  const { begun, handedIn } = relay.figure;
+
+  // A live row carries both: the figure of the round that is open, and the
+  // code the room is still joined by under it.
+  const aside = !live ? undefined : (
+    <span className="flex flex-col gap-1">
+      {relay.openRound !== null && handedIn !== null && begun !== null ? (
+        // The figure is read whole, with the noun it counts, as the wall's is.
+        <span role="status">
+          <Figure size="sm" value={handedIn} of={begun} />
+          <span className="sr-only">handed in</span>
+        </span>
+      ) : null}
+      {relay.code === null ? null : <RoomCode code={relay.code} />}
+    </span>
+  );
+
+  return (
+    <LiveRow
+      live={live}
+      stateColumn={stateColumn}
+      title={
+        <>
+          <Link
+            href={`/staff/live/relay/${relay.relay}`}
+            className="min-w-0 break-words hover:text-primary"
+          >
+            {relay.title}
+          </Link>
+          <FormBadge form="relay" />
+        </>
+      }
+      middle={
+        relay.rounds.length === 0 ? null : (
+          <RoundStrip
+            rounds={relay.rounds.map((round) => ({
+              number: round.number,
+              title: round.title,
+              standing: live ? standingOf(round) : "plain",
+            }))}
+          />
+        )
+      }
+      aside={aside}
+      actions={
+        live ? (
+          <>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/staff/live/relay/${relay.relay}/edit`}>
+                Edit
+                <Named title={relay.title} />
+              </Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link href={`/staff/live/run/${relay.run}`}>
+                Run
+                <Named title={relay.title} />
+              </Link>
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/staff/live/relay/${relay.relay}/edit`}>
+                Edit
+                <Named title={relay.title} />
+              </Link>
+            </Button>
+            <span
+              className="inline-flex"
+              title={relay.rounds.length === 0 ? NO_ROUNDS : undefined}
+            >
+              {/* Busy, the button keeps its focus: it is out by aria, not by
+                  a disabled that hands the focus back to the page. */}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={relay.rounds.length === 0}
+                aria-disabled={busy || undefined}
+                onClick={busy ? undefined : onLaunch}
+              >
+                <Radio /> Launch
+                <Named title={relay.title} />
+              </Button>
+            </span>
+            <ConfirmAction
+              trigger={
+                <Button variant="ghost" size="sm">
+                  Retire
+                  <Named title={relay.title} />
+                </Button>
+              }
+              title={`Retire “${relay.title}”?`}
+              description={RETIRE_NOTE}
+              confirmLabel="Retire"
+              destructive
+              onConfirm={onRetire}
+            />
+          </>
+        )
+      }
+    />
+  );
+}
+
+function QuestionnaireEntry({
   entry,
+  stateColumn,
   onRetire,
 }: {
   entry: Shelved;
-  onRetire?: () => Promise<void>;
+  stateColumn: boolean;
+  onRetire: () => Promise<void>;
 }) {
-  // The same two conditions the detail page states, read off the shelf entry so
-  // the row never offers a launch the sheet would refuse.
+  const live = entry.openRun !== null;
+  // The two conditions the desk states, read off the entry so the row never
+  // offers a launch the sheet would refuse.
   const launchHint =
     entry.questions === 0
       ? "Add a question first."
@@ -194,75 +420,110 @@ function ShelfRow({
         : undefined;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-center">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
+    <LiveRow
+      live={live}
+      stateColumn={stateColumn}
+      title={
+        <>
           <Link
             href={`/staff/live/${entry.questionnaire}`}
-            className="min-w-0 break-words font-medium hover:text-primary"
+            className="min-w-0 break-words hover:text-primary"
           >
             {entry.title}
           </Link>
           <FormBadge form={entry.form} />
-          {entry.retired ? <Badge variant="outline">Retired</Badge> : null}
-          {entry.openRun !== null ? (
-            <Badge variant="secondary">Run open</Badge>
-          ) : null}
-        </div>
-        <p className="mt-1 whitespace-nowrap text-muted-foreground text-xs">
-          Created {fullTime(entry.createdAt)}
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/staff/live/${entry.questionnaire}`}>
-            <Pencil /> {entry.retired ? "View" : "Edit"}
-          </Link>
-        </Button>
-
-        {entry.openRun !== null ? (
+        </>
+      }
+      actions={
+        live ? (
           <Button size="sm" asChild>
-            <Link href={`/staff/live/run/${entry.openRun}`}>View run</Link>
+            <Link href={`/staff/live/run/${entry.openRun}`}>
+              Run
+              <Named title={entry.title} />
+            </Link>
           </Button>
-        ) : entry.retired ? null : (
-          <RunLaunchButton
-            questionnaire={entry.questionnaire}
-            disabled={launchHint !== undefined}
-            hint={launchHint}
-            size="sm"
-            variant="outline"
-          />
-        )}
-
-        {onRetire && entry.openRun === null ? (
-          <ConfirmAction
-            trigger={
-              <Button variant="ghost" size="sm">
-                <Archive /> Retire
-              </Button>
-            }
-            title={`Retire “${entry.title}”?`}
-            description="It can no longer be edited or launched. Past runs and their answers are retained."
-            confirmLabel="Retire"
-            destructive
-            onConfirm={onRetire}
-          />
-        ) : null}
-      </div>
-
-      {/* The hint must be readable on a phone, where there is no hover. */}
-      {launchHint !== undefined && entry.openRun === null && !entry.retired ? (
-        <p className="w-full text-muted-foreground text-xs">{launchHint}</p>
-      ) : null}
-    </div>
+        ) : (
+          <>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/staff/live/${entry.questionnaire}/edit`}>
+                Edit
+                <Named title={entry.title} />
+              </Link>
+            </Button>
+            <RunLaunchButton
+              questionnaire={entry.questionnaire}
+              name={`Launch ${entry.title}`}
+              disabled={launchHint !== undefined}
+              hint={launchHint}
+              size="sm"
+              variant="outline"
+            />
+            <ConfirmAction
+              trigger={
+                <Button variant="ghost" size="sm">
+                  Retire
+                  <Named title={entry.title} />
+                </Button>
+              }
+              title={`Retire “${entry.title}”?`}
+              description={RETIRE_NOTE}
+              confirmLabel="Retire"
+              destructive
+              onConfirm={onRetire}
+            />
+          </>
+        )
+      }
+    />
   );
 }
 
-export default function LiveShelfPage() {
+function RetiredEntry({
+  href,
+  title,
+  form,
+  rounds = [],
+  stateColumn,
+}: {
+  href: string;
+  title: string;
+  form: string;
+  /** A retired relay keeps its rounds, which is what the row is folded away with. */
+  rounds?: { number: number; title: string }[];
+  stateColumn: boolean;
+}) {
+  return (
+    <LiveRow
+      live={false}
+      stateColumn={stateColumn}
+      className="opacity-80"
+      middle={
+        rounds.length === 0 ? null : (
+          <RoundStrip
+            rounds={rounds.map((round) => ({
+              number: round.number,
+              title: round.title,
+              standing: "plain" as const,
+            }))}
+          />
+        )
+      }
+      title={
+        <>
+          <Link href={href} className="min-w-0 break-words hover:text-primary">
+            {title}
+          </Link>
+          <FormBadge form={form} />
+        </>
+      }
+    />
+  );
+}
+
+export default function LiveListPage() {
   return (
     <RequireCapability capability="live:host">
-      <LiveShelfContent />
+      <LiveListContent />
     </RequireCapability>
   );
 }

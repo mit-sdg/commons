@@ -111,4 +111,8 @@ _failureOf (asking: String) : optional (account: String, failedAt: Date)
 _repliesAbout (about: String) : many (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)
   answers every answered asking about the subject, newest first
   answers no rows when none match
+
+_lastFailureAbout (about: String) : optional (asking: String, account: String, failedAt: Date)
+  answers the newest failure among the askings about the subject
+  answers no row when none of them failed
 ```

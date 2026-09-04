@@ -22,14 +22,17 @@ replace the complete workload.
 Supply these runtime variables through the platform's secret and configuration
 facilities:
 
-| Variable                  | Requirement                                                                                |
-| ------------------------- | ------------------------------------------------------------------------------------------ |
-| `MONGODB_URI`             | Required scoped MongoDB connection, including a database name and any required TLS options |
-| `PUBLIC_ORIGIN`           | Required exact browser origin, without a trailing slash                                    |
-| `INVITATION_SECRET`       | Required stable secret of at least 32 characters; startup refuses a shorter one            |
-| `VOUCHER_SECRET`          | Required stable secret of at least 32 characters, distinct from `INVITATION_SECRET`        |
-| `ADMIN_SETUP_SECRET_HASH` | Optional one-time initial-administrator verifier; remove it after setup                    |
-| `SMTP_*`                  | Optional existing SMTP configuration described below                                       |
+| Variable                  | Requirement                                                                                                                 |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `MONGODB_URI`             | Required scoped MongoDB connection, including a database name and any required TLS options                                  |
+| `PUBLIC_ORIGIN`           | Required exact browser origin: `https://` and the host the room's phones reach, no trailing slash                           |
+| `INVITATION_SECRET`       | Required stable secret of at least 32 characters; startup refuses a shorter one                                             |
+| `VOUCHER_SECRET`          | Required stable secret of at least 32 characters, distinct from `INVITATION_SECRET`                                         |
+| `ADMIN_SETUP_SECRET_HASH` | Optional one-time initial-administrator verifier; remove it after setup                                                     |
+| `GEMINI_API_KEY`          | Required for the reasoner: sorting piles, summaries, drafting, and model seats in live runs. Without it the reasoner is off |
+| `GEMINI_MODEL`            | Optional model name; `gemini-3.7-flash` when unset                                                                          |
+| `REASONER`                | Optional; `gemini` is the default with a key. `scripted` is refused in production                                           |
+| `SMTP_*`                  | Optional existing SMTP configuration described below                                                                        |
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values
@@ -41,6 +44,18 @@ filesystem; MongoDB data, credential rotation, and backups remain platform
 responsibilities. Route public traffic only to the declared application port.
 The backend loopback port is internal and must not be published.
 
+## Migrations on first start
+
+Startup runs the pending migrations under `src/migrations/` against the
+database before the edge accepts traffic, and records each one it applied.
+This release carries two that rewrite stored rows: the forum's categories
+take a `forum` scope, and drafting-brief links move out of the shared
+Linking store into AdoptLinking's own. Both are forward-only. Take a backup
+before the first start of this release. A rollback to the previous build
+writes rows in the old shape that a later redeploy does not revisit, because
+the migrations are already recorded as applied; restore the backup instead
+of rolling forward over such rows.
+
 The public health endpoint checks backend readiness on every request, and backend
 readiness includes a MongoDB operation:
 
@@ -51,6 +66,21 @@ curl --fail https://commons.example.edu/health
 A `200` response with `{"status":"ok"}` confirms the frontend, backend, and
 MongoDB path are ready. An unreachable backend or failed MongoDB check returns
 `503` with a generic response.
+
+## When a start fails
+
+The supervisor prints both processes' output to its own standard output,
+prefixed `[edge]` and `[web]`, so the platform's log for the workload holds
+the reason. Startup refuses, with a one-line message, on: a missing
+`MONGODB_URI`; conflicting `MONGODB_URI` and `MONGODB_URL`; a missing
+`PUBLIC_ORIGIN` or one with a trailing slash; an `INVITATION_SECRET` or
+`VOUCHER_SECRET` under 32 characters, or the two equal; and
+`REASONER=scripted` in production. A start that reaches the migrations and
+stops there names the migration; restore the backup before starting again. A
+running stack whose `/health` answers `503` has a frontend up and a backend or
+MongoDB down: read the `[edge]` lines. Terminate TLS at the reverse proxy and
+forward to the declared application port; every other combination fails the
+session check at the end of this guide.
 
 ## Register the initial administrator
 
@@ -100,6 +130,25 @@ setup path at the reverse proxy.
 This creates the initial forum administrator. Establishing that account as a
 course owner and linking it to a roster seat still requires the existing course
 configuration operations; the browser does not perform course setup.
+
+## Grant live hosting
+
+Every live screen — the shelf, the relay editor, the run dashboard, and the
+projector — requires the `live:host` capability, and every live endpoint
+enforces it. It is held through a role, and a role is deployment-wide: a holder
+can host any live run and read any wall in this Commons. Give it to the people
+who run the room and to nobody else: the course owner and each TA, never a
+student.
+
+An administrator grants it from the admin console at `/admin`. Under **Create
+a role**, name a role such as `lecturer` and tick `live:host` (a role may carry
+other capabilities beside it). Under **Assign a role**, name each account by
+username or email address and assign the role. An account holds one role at a
+time, so a TA who already holds a grading role needs one role that carries both
+capabilities. The administrator's own account reaches every live screen through
+`administer` without a grant. The same two steps are available over the API as
+`/api/roles/define` and `/api/roles/assign`, each requiring a signed-in
+administrator.
 
 ### Verify the deployment
 

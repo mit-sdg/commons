@@ -43,6 +43,11 @@ export function AuthForm({
 
   const isRegister = mode === "register";
   const invitation = invitationProp ?? searchParams.get("invitation") ?? "";
+  // A screen whose sign-in ended sends the person here with its own address,
+  // so signing in returns them to it. Only a path on this site is followed.
+  const asked = searchParams.get("next") ?? "";
+  const returnTo =
+    asked.startsWith("/") && !asked.startsWith("//") ? asked : "/";
 
   /**
    * The link carries the invitation; the temporary password is typed from the
@@ -105,7 +110,7 @@ export function AuthForm({
         await login(username.trim(), password);
         toast.success("Signed in.");
       }
-      router.push("/");
+      router.push(returnTo);
     } catch (err) {
       toast.error(
         err instanceof CommonsError

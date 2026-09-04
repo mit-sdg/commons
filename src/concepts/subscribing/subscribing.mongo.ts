@@ -12,6 +12,7 @@ interface SubscriptionDoc {
 export class MongoSubscribingConcept {
   private readonly subscriptions: Collection<SubscriptionDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private index: Promise<string> | undefined;
 
   constructor(db: Db) {
     this.subscriptions = db.collection<SubscriptionDoc>("subscribing.subscriptions");
@@ -66,6 +67,8 @@ export class MongoSubscribingConcept {
   }
 
   async _isSubscribed({ user, target }: { user: string; target: string }) {
+    // The wall asks this once a card, so the pair is indexed rather than scanned.
+    await (this.index ??= this.subscriptions.createIndex({ user: 1, target: 1 }));
     const doc = await this.subscriptions.findOne({ user, target });
     return { subscribed: doc !== null };
   }

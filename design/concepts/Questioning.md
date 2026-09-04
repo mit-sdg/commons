@@ -12,7 +12,12 @@ Professor Lee composes a five-question quiz about photosynthesis. She adds each
 question with its choices and the answer she expects, notices a typo in the
 third prompt, and revises that one question without touching the others. One
 question offers no choices and takes a written answer; the answer she records
-beside it is a reference the questionnaire keeps, not a proposal. She
+beside it is a reference the questionnaire keeps, not a proposal. For a
+warm-up she sets a question's parts — three labeled boxes, one, two, three —
+so that each box takes an answer of its own; another asks for up to six of
+one kind of thing, a repeated box with a cap. Giving choices to a question
+that keeps parts is refused: a question offers choices or takes parts, never
+both. She
 removes a question that duplicates the fourth and the rest keep their order.
 Months later she retires the quiz; it stays readable, but revising a question
 of a retired questionnaire is refused.
@@ -46,6 +51,8 @@ a set of Questions with
   a choices     Seq
   an expected    String
   an explanation String
+  a parts       Seq
+  a cap         Number
   a position    Number
 
 Rule: a workable form is a calculation over the input alone: a form is workable when it is `quiz` or `survey`.
@@ -58,8 +65,12 @@ Rule: choices are valid when there are at most 50, each is a nonblank String no 
 Rule: an empty expected or explanation carries none, the way an omitted field does.
 Rule: when a question offers choices, a nonempty expected answer is valid only when it equals one of the trimmed choices exactly. When a question offers none, its expected answer is a reference and is valid when it is no longer than 2000 characters.
 Rule: only a question that offers choices proposes its expected answer; the expected answer of a written-answer question is a reference the questionnaire keeps.
+Rule: parts say how a question is answered in pieces. Empty parts with a cap of zero take one answer, the ordinary case. Nonempty parts with a cap of zero are labeled boxes: one answer per part, in order. Exactly one part with a cap of two or more is a repeated box: up to cap answers of that one kind. Any other pairing is not valid.
+Rule: parts are valid when there are at most 12, each is a nonblank String no longer than 40 characters after trimming, and no two are duplicates after trimming and lower-casing them; a cap is valid when it is zero or between 2 and 20.
+Rule: a question offers choices or takes parts, never both; a new question takes no parts.
+Rule: each piece of a question is an item of its own: a question without parts is answered under its own identity, and a question with parts is answered under `question#n` for the part or repetition n, counting from one.
 Rule: a retired questionnaire keeps its questions and accepts no further change.
-Rule: presenting serializes one coherent authored version without changing Questioning's state; it neither publishes the questionnaire nor freezes it against later revision. Its form and disclosure are the presentation's own values, and its proposes and expectations are projections of those same ordered questions: proposes is true exactly when at least one choice question carries a nonempty expected answer, and expectations contains `{ item, expected, explanation }` for exactly those questions, never written-answer references.
+Rule: presenting serializes one coherent authored version without changing Questioning's state; it neither publishes the questionnaire nor freezes it against later revision. Its form and disclosure are the presentation's own values, and its proposes and expectations are projections of those same ordered questions: proposes is true exactly when at least one choice question carries a nonempty expected answer, and expectations contains `{ item, expected, explanation }` for exactly those questions, never written-answer references. Each presented question carries its parts and cap.
 Rule: Questioning does not decide who may compose, put a questionnaire before an audience, or measure anyone against an expected answer; whether a questionnaire may still be revised while an audience is meeting it is a question the surrounding design answers.
 ```
 
@@ -145,7 +156,7 @@ addQuestion (questionnaire: Questionnaire, prompt: String, choices: Seq, expecte
     refuse INVALID_EXPLANATION "An explanation may be at most 2000 characters long."
 
 reviseQuestion (question: Question, prompt: String, choices: Seq, expected: String, explanation: String, position: Number) : return (question: Question)
-  where question exists, its questionnaire not in retired, prompt is valid, choices are valid and distinct, the expected answer or reference is valid, and explanation is valid
+  where question exists, its questionnaire not in retired, prompt is valid, choices are valid and distinct, choices are empty or the question takes no parts, the expected answer or reference is valid, and explanation is valid
   then
     set question's prompt, choices, expected, and explanation from their normalized inputs, and position from the input
     return question
@@ -164,6 +175,9 @@ reviseQuestion (question: Question, prompt: String, choices: Seq, expected: Stri
   where choices contain duplicates after trimming and lower-casing
   then
     refuse DUPLICATE_CHOICES "Choices must be distinct, ignoring case and surrounding space."
+  where choices are offered and the question takes parts
+  then
+    refuse INVALID_PARTS "A question offers choices or takes parts, not both."
   where choices are offered and a nonempty expected answer does not equal one of them exactly
   then
     refuse INVALID_EXPECTED "The expected answer must exactly match an offered choice."
@@ -173,6 +187,21 @@ reviseQuestion (question: Question, prompt: String, choices: Seq, expected: Stri
   where explanation exceeds 2000 characters
   then
     refuse INVALID_EXPLANATION "An explanation may be at most 2000 characters long."
+
+setParts (question: Question, parts: Seq, cap: Number) : return (question: Question)
+  where question exists, its questionnaire not in retired, parts and cap are valid together, and parts are empty or the question offers no choices
+  then
+    set question's parts to the normalized parts and its cap to cap
+    return question
+  where question does not exist
+  then
+    refuse QUESTION_NOT_FOUND "There is no such question."
+  where question's questionnaire in retired
+  then
+    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+  where parts are nonempty and the question offers choices, or parts and cap are not valid together
+  then
+    refuse INVALID_PARTS "Parts are up to 12 short labels, or one label repeated up to a cap of 2 to 20, and never beside choices."
 
 swapQuestions (question: Question, other: Question) : return (question: Question, other: Question)
   where question and other exist, share a questionnaire, and it is not in retired
@@ -204,7 +233,7 @@ removeQuestion (question: Question) : return (question: Question, questionnaire:
 present (questionnaire: Questionnaire) : return (presentation: Value, form: String, disclosure: String, proposes: Boolean, expectations: Seq)
   where questionnaire exists and questionnaire not in retired
   then
-    serialize the questionnaire's title, form, disclosure, and ordered questions as one presentation value; each question is `{ item, prompt, choices, expected, explanation, position }`
+    serialize the questionnaire's title, form, disclosure, and ordered questions as one presentation value; each question is `{ item, prompt, choices, expected, explanation, parts, cap, position }`
     project form, disclosure, proposes, and expectations from that same presentation
     return presentation, form, disclosure, proposes, expectations
   where questionnaire does not exist
@@ -237,18 +266,18 @@ _getQuestionnaire (questionnaire: String) : optional (author: String, title: Str
 _getQuestionnaires () : many (questionnaire: String, author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)
   answers every questionnaire, newest first
 
-_getQuestions (questionnaire: String) : many (question: String, prompt: String, choices: Seq, expected: String, explanation: String, position: Number)
+_getQuestions (questionnaire: String) : many (question: String, prompt: String, choices: Seq, expected: String, explanation: String, parts: Seq, cap: Number, position: Number)
   answers the questionnaire's questions in position order
   answers no rows when none match
 
-_getQuestion (question: String) : optional (questionnaire: String, prompt: String, choices: Seq, expected: String, explanation: String, position: Number)
+_getQuestion (question: String) : optional (questionnaire: String, prompt: String, choices: Seq, expected: String, explanation: String, parts: Seq, cap: Number, position: Number)
   answers the complete Question
   answers no row when the Question does not exist
 
 _material (questionnaire: String) : optional (form: String, material: Seq)
   answers the questionnaire's form and its questions back as one value: an
-  ordered sequence of `{ prompt, choices, expected, explanation }` entries in
-  position order
+  ordered sequence of `{ prompt, choices, expected, explanation, parts, cap }`
+  entries in position order
   answers one row with an empty sequence when the questionnaire has no questions
   answers no row when the Questionnaire does not exist
 
@@ -263,6 +292,13 @@ _expectedAnswers (questionnaire: String) : optional (expectations: Seq)
   choices offered and expected non-empty — in position order
   answers one row with an empty sequence when the questionnaire proposes none
   answers no row when the Questionnaire does not exist
+
+_materials (questionnaires: Seq) : one (materials: Seq)
+  answers several questionnaires back as one value: for each identity in the
+  given sequence, in that order, `{ questionnaire, title, questions }` with the
+  questions as `_material` answers them, or no entry for an identity that
+  names no questionnaire
+  answers an empty sequence when the given sequence is empty
 
 _references (questionnaire: String) : many (question: String, prompt: String, expected: String, explanation: String, position: Number)
   answers the written-answer questions that keep a reference — no choices

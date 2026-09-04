@@ -14,6 +14,7 @@ const PUBLIC_PATHS = new Set([
   "/live/p/locate",
   "/live/p/outcome",
   "/live/p/submit",
+  "/live/p/wall",
   "/auth/accept-invitation",
   "/auth/invitation",
   "/auth/request-password-reset",
@@ -30,11 +31,25 @@ function sessionFrom(request: Request): string | undefined {
   return sessions.length === 1 && sessions[0] !== "" ? sessions[0] : undefined;
 }
 
-async function requestInputIsSafe(request: Request): Promise<boolean> {
+/**
+ * How much request text Commons reads before deciding anything about it. The
+ * edge buffers a body to inspect it, and that happens before any session is
+ * checked, so the bound is what keeps an unauthenticated caller from choosing
+ * how much memory a request costs.
+ */
+const MAX_BODY_CHARS = 1_000_000;
+
+type InputVerdict = "ok" | "too-large" | "unsafe";
+
+async function inspectRequestInput(request: Request): Promise<InputVerdict> {
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > MAX_BODY_CHARS) return "too-large";
   try {
-    return hasSafeKeys(await request.clone().json());
+    const text = await request.clone().text();
+    if (text.length > MAX_BODY_CHARS) return "too-large";
+    return hasSafeKeys(JSON.parse(text)) ? "ok" : "unsafe";
   } catch {
-    return false;
+    return "unsafe";
   }
 }
 
@@ -70,15 +85,18 @@ export function createEdge(
       }
     }
     const logicalPath = path.startsWith("/api/") ? path.slice(4) : undefined;
-    if (
-      request.method === "POST" &&
-      logicalPath !== undefined &&
-      !(await requestInputIsSafe(request))
-    ) {
-      return Response.json(
-        { error: "INVALID_REQUEST" },
-        { status: 400, headers: { "Cache-Control": "private, no-store" } },
-      );
+    if (request.method === "POST" && logicalPath !== undefined) {
+      const verdict = await inspectRequestInput(request);
+      if (verdict === "too-large")
+        return Response.json(
+          { error: "REQUEST_TOO_LARGE" },
+          { status: 413, headers: { "Cache-Control": "private, no-store" } },
+        );
+      if (verdict === "unsafe")
+        return Response.json(
+          { error: "INVALID_REQUEST" },
+          { status: 400, headers: { "Cache-Control": "private, no-store" } },
+        );
     }
     if (
       request.method === "POST" &&

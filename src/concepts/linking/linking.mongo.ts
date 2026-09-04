@@ -10,9 +10,10 @@ export class MongoLinkingConcept {
   private readonly links: Collection<LinkDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 
-  constructor(db: Db) {
-    this.links = db.collection<LinkDoc>("linking.links");
-    this.counters = db.collection("linking.counters");
+  constructor(db: Db, instance = "Linking") {
+    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
+    this.links = db.collection<LinkDoc>(`${prefix}.links`);
+    this.counters = db.collection(`${prefix}.counters`);
   }
 
   async #nextSeq(): Promise<number> {

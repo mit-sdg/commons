@@ -17,14 +17,29 @@ import {
   questionIsNotOfRun,
   responseIsNotWhole,
   responseIsWhole,
+  runHasNoOpenRound,
+  runIsAQuestionnaireRun,
+  runIsARelayRun,
+  namesNoAccount,
   runIsClosed,
   runIsOpen,
+  theOpenRoundOf,
 } from "./policy.ts";
+import { theRelayFace } from "./relays.ts";
+import { theWall } from "./walls.ts";
 import { concepts } from "../../concepts.ts";
 import { computations } from "../../concepts.ts";
 
-const { Authenticating, Locating, Publishing, Responding, RunSnapshotting, Scoring, Sharing } =
-  concepts;
+const {
+  Authenticating,
+  Locating,
+  Publishing,
+  Relaying,
+  Responding,
+  RunSnapshotting,
+  Scoring,
+  Sharing,
+} = concepts;
 
 const anonymousResponse = view(
   "(response) belongs to an anonymous participant",
@@ -137,12 +152,20 @@ export const SubmittedResponseIsGraded = reaction(({ response, run, key, answers
     .then(Scoring.grade({ key, submission: response, answers })),
 );
 
+/** The token opens onto a questionnaire run or a relay run; the join page reads which. */
 export const Arrive = endpoint(
   "/live/p/arrive",
   ({ token, run }) =>
     receive({ token })
       .then(Sharing.open({ token }).responds({ subject: run }))
-      .then(respond({ face: theParticipantFace({ run }) })),
+      .then(
+        where(runIsAQuestionnaireRun({ run }))
+          .then(respond({ face: theParticipantFace({ run }) }))
+          .named("questionnaire"),
+        where(runIsARelayRun({ run }))
+          .then(respond({ relay: theRelayFace({ run }) }))
+          .named("relay"),
+      ),
   { input: { required: ["token"] } },
 );
 
@@ -156,16 +179,52 @@ export const Locate = endpoint(
   { input: { required: ["code"] } },
 );
 
+/** A round's edition: its material is a relay's leg, so every box is handed in. */
+const runIsARound = view("(run) is a round of a relay", ({ run }, _outputs, { questionnaire }) =>
+  where(
+    Publishing._edition({ edition: run }).is({ material: questionnaire }),
+    Relaying._legFor({ material: questionnaire }),
+  ),
+).holds();
+
 export const Begin = endpoint(
   "/live/p/begin",
-  ({ token, device, run, at, response }) =>
+  ({ token, device, run, round, at, response }) =>
     receive({ token, device })
       .then(Sharing.open({ token }).responds({ subject: run }))
       .then(
-        where(now(at), runIsOpen({ run }))
+        where(
+          now(at),
+          namesNoAccount({ identifier: device }),
+          runIsOpen({ run }),
+          runIsAQuestionnaireRun({ run }),
+        )
           .then(Responding.begin({ participant: device, subject: run, at }).responds({ response }))
           .then(respond({ response, participant: device }))
           .named("open"),
+        where(
+          now(at),
+          namesNoAccount({ identifier: device }),
+          runIsOpen({ run }),
+          runIsARelayRun({ run }),
+          theOpenRoundOf({ run }).is({ round }),
+        )
+          .then(
+            Responding.begin({ participant: device, subject: round, at }).responds({ response }),
+          )
+          .then(respond({ response, participant: device }))
+          .named("round"),
+        where(
+          namesNoAccount({ identifier: device }),
+          runIsOpen({ run }),
+          runIsARelayRun({ run }),
+          runHasNoOpenRound({ run }),
+        )
+          .then(respond({ error: "NO_OPEN_ROUND" }))
+          .named("no-open-round"),
+        where(runIsOpen({ run }), no(namesNoAccount({ identifier: device })))
+          .then(respond({ error: "NOT_FOUND" }))
+          .named("named-account"),
         where(runIsClosed({ run }))
           .then(respond({ error: "CLOSED" }))
           .named("closed"),
@@ -175,14 +234,32 @@ export const Begin = endpoint(
 
 export const BeginSigned = endpoint(
   "/live/p/begin-signed",
-  ({ token, session, run, user, at, response }) =>
+  ({ token, session, run, round, user, at, response }) =>
     receive({ token, session })
       .then(Sharing.open({ token }).responds({ subject: run }))
       .then(
-        where(now(at), runIsOpen({ run }), activeUser({ session }).is({ user }))
+        where(
+          now(at),
+          runIsOpen({ run }),
+          runIsAQuestionnaireRun({ run }),
+          activeUser({ session }).is({ user }),
+        )
           .then(Responding.begin({ participant: user, subject: run, at }).responds({ response }))
           .then(respond({ response, participant: user }))
           .named("open"),
+        where(
+          now(at),
+          runIsOpen({ run }),
+          runIsARelayRun({ run }),
+          theOpenRoundOf({ run }).is({ round }),
+          activeUser({ session }).is({ user }),
+        )
+          .then(Responding.begin({ participant: user, subject: round, at }).responds({ response }))
+          .then(respond({ response, participant: user }))
+          .named("round"),
+        where(runIsOpen({ run }), runIsARelayRun({ run }), runHasNoOpenRound({ run }))
+          .then(respond({ error: "NO_OPEN_ROUND" }))
+          .named("no-open-round"),
         where(runIsClosed({ run }))
           .then(respond({ error: "CLOSED" }))
           .named("closed"),
@@ -244,10 +321,31 @@ const submitReaction =
         RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
         compute(computations.snapshotForm, { value: presentation }, form),
         is.among(form, ["survey"]),
+        no(runIsARound({ run })),
       )
         .then(Responding.submit({ response, at }).responds({ response: submitted }))
         .then(respond({ response: submitted }))
         .named("survey"),
+      where(
+        now(at),
+        ownsResponse(signed, response, session),
+        Responding._response({ response }).is({ subject: run }),
+        runIsOpen({ run }),
+        runIsARound({ run }),
+        responseIsWhole({ response }),
+      )
+        .then(Responding.submit({ response, at }).responds({ response: submitted }))
+        .then(respond({ response: submitted }))
+        .named("round-whole"),
+      where(
+        ownsResponse(signed, response, session),
+        Responding._response({ response }).is({ subject: run }),
+        runIsOpen({ run }),
+        runIsARound({ run }),
+        responseIsNotWhole({ response }),
+      )
+        .then(respond({ error: "INCOMPLETE" }))
+        .named("round-incomplete"),
       where(
         now(at),
         ownsResponse(signed, response, session),
@@ -338,5 +436,34 @@ export const Outcome = endpoint("/live/p/outcome", outcomeReaction(false), {
   input: { required: ["response"] },
 });
 export const OutcomeSigned = endpoint("/live/p/outcome-signed", outcomeReaction(true), {
+  input: { required: ["session", "response"] },
+});
+
+/** Where you landed, shown once you have handed in, with your own cards marked. */
+const wallReaction =
+  (signed: boolean): Parameters<typeof endpoint>[1] =>
+  ({ session, response, round }) =>
+    receive(signed ? { session, response } : { response }).then(
+      where(
+        ownsResponse(signed, response, session),
+        Responding._response({ response }).is({ subject: round, submitted: true }),
+      )
+        .then(respond({ wall: theWall({ round, viewer: response }) }))
+        .named("submitted"),
+      where(
+        ownsResponse(signed, response, session),
+        Responding._response({ response }).is({ submitted: false }),
+      )
+        .then(respond({ error: "NOT_SUBMITTED" }))
+        .named("in-progress"),
+      where(Responding._response({ response }), no(ownsResponse(signed, response, session)))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-owner"),
+    );
+
+export const Wall = endpoint("/live/p/wall", wallReaction(false), {
+  input: { required: ["response"] },
+});
+export const WallSigned = endpoint("/live/p/wall-signed", wallReaction(true), {
   input: { required: ["session", "response"] },
 });

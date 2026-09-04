@@ -171,11 +171,21 @@ describe("the live quiz loop", () => {
       .questions;
     expect(questions).toHaveLength(2);
 
+    // A blank box is no answer: it is refused, and the quiz is still incomplete.
+    const blank = await post(edge, "/live/p/answer", {
+      response,
+      question: questions[0].question,
+      value: "   ",
+    });
+    expect(blank.status).toBe(400);
+    const empty = await post(edge, "/live/p/submit", { response });
+    expect(empty.status).toBe(409);
+
     // A quiz cannot be handed in incomplete.
     await post(edge, "/live/p/answer", {
       response,
       question: questions[0].question,
-      value: "Carbon dioxide",
+      value: " Carbon dioxide ",
     });
     const early = await post(edge, "/live/p/submit", { response });
     expect(early.status).toBe(409);
@@ -351,6 +361,8 @@ describe("the live quiz loop", () => {
           choices: string[];
           expected: string;
           explanation: string;
+          parts: string[];
+          cap: number;
           position: number;
         }[];
       };
@@ -367,10 +379,13 @@ describe("the live quiz loop", () => {
 
       const arrived = await json(await post(edge, "/live/p/arrive", { token: launch.token }));
       expect((arrived.face as { questions: unknown[] }).questions).toEqual(
-        presentation.questions.map(({ item, prompt, choices, position }) => ({
+        presentation.questions.map(({ item, prompt, choices, parts, cap, position }) => ({
           question: item,
           prompt,
+          parts,
+          cap,
           choices,
+          context: [],
           position,
         })),
       );

@@ -58,6 +58,10 @@ for (const [floor, make] of floors) {
         { account: "The reasoner could not be reached.", failedAt: later },
       ]);
       expect(await reasoning._replyOf({ asking })).toEqual([]);
+      expect(await reasoning._lastFailureAbout({ about: "brief-2" })).toEqual([
+        { asking, account: "The reasoner could not be reached.", failedAt: later },
+      ]);
+      expect(await reasoning._lastFailureAbout({ about: "brief-none" })).toEqual([]);
     });
 
     test("an asking settles exactly once", async () => {

@@ -47,6 +47,7 @@ a set of Answers with
 
 Rule: a participant identity is present when it is a nonblank string — an empty or whitespace identity names no one.
 Rule: at most one response exists per subject and participant, so beginning again rejoins the response in progress.
+Rule: a value is trimmed first, and an answer is present when what remains is nonblank — an empty or whitespace value says nothing.
 Rule: an answer is keyed by its response and item: answering the same item again replaces the value in place.
 Rule: a response's answers keep the order in which its items were first answered.
 Rule: whether the subject is open to participation, whether an item belongs to the subject, and whether a response may be handed in are questions the surrounding design answers; Responding guards only what its own state answers, imposes no completeness rule, and owns nothing that happens after hand-in.
@@ -72,9 +73,9 @@ begin (participant: Participant, subject: Subject, at: Date) : return (response:
     refuse NO_PARTICIPANT "A response needs someone to belong to."
 
 answer (response: Response, item: Item, value: String) : return (response: Response)
-  where response in inProgress
+  where response in inProgress and value is present
   then
-    set the answer of response for item to value
+    set the answer of response for item to the trimmed value
     return response
   where response does not exist
   then
@@ -82,6 +83,9 @@ answer (response: Response, item: Item, value: String) : return (response: Respo
   where response in submitted
   then
     refuse ALREADY_SUBMITTED "This was already handed in."
+  where value is blank
+  then
+    refuse BLANK_ANSWER "An answer needs something in it."
 
 submit (response: Response, at: Date) : return (response: Response)
   where response in inProgress
@@ -126,6 +130,12 @@ _collectedAnswers (response: String) : optional (answers: Seq)
   answers the same answers as one value: an ordered sequence of `{ item, value }`
   pairs in first-answer order
   answers no row when the Response does not exist
+
+_submittedAnswers (subject: String) : many (response: String, participant: String, item: String, value: String)
+  answers one row per answer of the subject's submitted responses, ordered
+  first by hand-in and then by the answer's first-save order — the same
+  answers _valuesForSubject gives as one value
+  answers no rows when the subject has no submitted values
 
 _valuesForSubject (subject: String) : one (values: Seq)
   answers all submitted values as one sequence of `{ response, participant,

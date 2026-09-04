@@ -8,7 +8,7 @@ import { forumPost, publicTarget } from "./threads.ts";
 
 const { Conversing, Flagging, Formatting, Locking, Posting, Trashing } = concepts;
 
-/** Which items are in the trash? */
+/** Which forum posts are in the trash? Trashing holds other kinds too, and they are not the forum's. */
 export const theTrashBin = former("the trash bin ()", (_inputs, { item, trashedBy, trashedAt }) =>
   each(Trashing._getTrashed({}).is({ item, trashedBy, trashedAt }))
     .where(forumPost({ post: item }))
