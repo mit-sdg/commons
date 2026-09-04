@@ -468,6 +468,7 @@ export function RelayRunBoard({
           run: fresh,
           relay,
           leg,
+          piles: counted ? inHand.piles.length : null,
           picks: counted ? picks.length : null,
         });
       },
@@ -606,6 +607,7 @@ export function RelayRunBoard({
     run,
     relay,
     leg: next?.leg ?? null,
+    piles: counted ? inHand.piles.length : null,
     picks: counted ? picks.length : null,
   });
   const openRefused = refusal !== null;
@@ -1054,15 +1056,18 @@ function drawerOf(
 }
 
 /** Why a round does not open, in the words the open-round refusals stand for. */
-function refusalFor({
+export function refusalFor({
   run,
   relay,
   leg,
+  piles,
   picks,
 }: {
   run: RelayRun;
   relay: Relay | null;
   leg: string | null;
+  /** How many piles stand on the wall the round takes from, once it is read. */
+  piles: number | null;
   picks: number | null;
 }): Refusal | null {
   if (!run.open) return { word: "CLOSED", about: {} };
@@ -1080,6 +1085,9 @@ function refusalFor({
     return { word: "ROUND_DONE", about: { round: round.number } };
   if (source !== null && source.round === null)
     return { word: "SOURCE_UNRUN", about: { round: source.number } };
+  // Nothing to pick and nothing picked are two different moves: sort first,
+  // or tap a pile.
+  if (take !== null && piles === 0) return { word: "NO_PILES", about: {} };
   if (take !== null && picks === 0)
     return { word: "NOTHING_PICKED", about: {} };
   return null;

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { modelSilent, tokenName } from "./run-relay-board";
+import type { Relay, RelayRun } from "@/components/live/rounds";
+import { modelSilent, refusalFor, tokenName } from "./run-relay-board";
 
 const at = (failedAt: string | null, failure: string | null = "gemini") => ({
   failure,
@@ -35,5 +36,47 @@ describe("what a round in the strip is called", () => {
 
   test("leaves out a title a round does not have", () => {
     expect(tokenName({ number: 3, title: "  " }, "next")).toBe("Round 3, next");
+  });
+});
+
+const RUN = {
+  open: true,
+  rounds: [
+    {
+      leg: "l1",
+      number: 1,
+      title: "Three verbs",
+      round: "r1",
+      figure: { open: false },
+    },
+    { leg: "l2", number: 2, title: "The stranger", round: null, figure: {} },
+  ],
+} as unknown as RelayRun;
+
+const RELAY = {
+  rounds: [
+    { leg: "l1", takes: [] },
+    { leg: "l2", takes: [{ source: "l1", use: "context" }] },
+  ],
+} as unknown as Relay;
+
+const why = (piles: number | null, picks: number | null) =>
+  refusalFor({ run: RUN, relay: RELAY, leg: "l2", piles, picks })?.word ?? null;
+
+describe("why a round that takes from an earlier one does not open", () => {
+  test("says to sort when the wall it takes from holds no pile", () => {
+    expect(why(0, 0)).toBe("NO_PILES");
+  });
+
+  test("says to pick once piles stand and none is picked", () => {
+    expect(why(3, 0)).toBe("NOTHING_PICKED");
+  });
+
+  test("says nothing once a pile is picked", () => {
+    expect(why(3, 2)).toBeNull();
+  });
+
+  test("says nothing while the wall has not been read", () => {
+    expect(why(null, null)).toBeNull();
   });
 });
