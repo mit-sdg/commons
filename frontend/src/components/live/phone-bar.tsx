@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -22,9 +22,28 @@ export function HandInBar({
 }) {
   const noteId = useId();
   const out = busy || refusal !== null;
+  /** A thumb has no hover, so the tap is what asks for the reason. */
+  const [asked, setAsked] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a filled box is the one thing that takes the line away, and the bar only sees it as the refusal going
+    if (refusal === null) setAsked(false);
+  }, [refusal]);
 
   return (
     <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur">
+      {refusal === null ? null : (
+        <p
+          id={noteId}
+          className={
+            asked
+              ? "mx-auto mb-2 max-w-xl text-muted-foreground text-sm"
+              : "sr-only"
+          }
+        >
+          {refusal}
+        </p>
+      )}
       <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
         <span
           role="status"
@@ -36,7 +55,7 @@ export function HandInBar({
         </span>
         {/* Out, the button keeps its place under the thumb and in the tab
             order: a disabled control drops the focus it holds and says
-            nothing. The reason is on hover and read out with the button. */}
+            nothing. The reason is read out with it, and shown on the tap. */}
         <Button
           // A thumb-sized target: the default h-9 falls under the 44px floor.
           className={cn(
@@ -48,18 +67,16 @@ export function HandInBar({
           aria-describedby={refusal === null ? undefined : noteId}
           title={refusal ?? undefined}
           onClick={() => {
-            if (out) return;
+            if (out) {
+              setAsked(true);
+              return;
+            }
             onHandIn();
           }}
         >
           Hand in
         </Button>
       </div>
-      {refusal === null ? null : (
-        <span id={noteId} className="sr-only">
-          {refusal}
-        </span>
-      )}
     </div>
   );
 }
