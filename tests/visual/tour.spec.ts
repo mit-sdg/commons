@@ -184,8 +184,12 @@ for (const theme of THEMES) {
     await desk(page);
     await page.goto(`/staff/live/relay/${planned.relay}/edit`);
     await expect(page.getByRole("textbox", { name: "Title" }).nth(2)).toHaveValue("The stranger");
-    await page.getByRole("button", { name: "Preview" }).nth(1).click();
-    await expect(page.getByText(/^① \w+ · \d+$/).first()).toBeVisible();
+    await page.getByRole("button", { name: "Round 2, The stranger" }).click();
+    await expect(page.getByRole("button", { name: "Round 2, The stranger" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.getByText("Three verbs a bookmark needs.").first()).toBeVisible();
     await snap(page, "RelayEditor", STAFF);
 
     // Drafting a relay with the model: the brief, and the lines it offers back.
@@ -200,7 +204,7 @@ for (const theme of THEMES) {
     await page.waitForURL(/\/staff\/live\/relay\/[0-9a-f-]{36}\/edit\?(draft|ask)=/, {
       timeout: 20_000,
     });
-    await expect(page.getByText("add round").first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("button", { name: "Accept all" })).toBeVisible({ timeout: 60_000 });
     await snap(page, "DraftRelayPanel", STAFF);
     await desk(page);
 
