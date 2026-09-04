@@ -355,11 +355,11 @@ for (const theme of THEMES) {
     await snap(page, "RunEarlierWall", STAFF);
     await desk(page);
     await page.getByRole("button", { name: "Spread Pace", exact: true }).click();
-    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Pace, every card" })).toBeVisible();
     await page.waitForTimeout(800);
     await snap(page, "Spread", STAFF, false);
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("dialog")).toBeHidden();
+    await expect(page.getByRole("region", { name: "Pace, every card" })).toBeHidden();
 
     // The room answers round two, and it closes.
     for (let seat = 0; seat < PHONES; seat += 1) {
