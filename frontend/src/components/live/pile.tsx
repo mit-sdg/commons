@@ -420,12 +420,18 @@ export function Pile({
             event.dataTransfer.effectAllowed = "move";
           },
   };
+  // The name and the count stand above the face's button only when a hand
+  // has something to do with them there: rename, or drag the pile by its name.
+  // Otherwise a tap on either is a tap on the face.
+  const handled = onRename !== undefined || drag.draggable;
+  const aboveFace = handled ? "relative z-10" : "pointer-events-none";
   // A name wraps between its words over two lines and is cut with a sign; it
   // never breaks inside the one word the room reads the pile by, and it takes
   // the width the count leaves rather than giving first. The cell holds two
   // name lines and the face's lines whole, so a line is never cut in half.
   const nameClass = cn(
-    "relative z-10 line-clamp-2 min-w-0 flex-1 break-normal font-display font-semibold leading-[1.15]",
+    "line-clamp-2 min-w-0 flex-1 break-normal font-display font-semibold leading-[1.15]",
+    aboveFace,
     face.name,
     onMergeIn !== undefined && "cursor-grab active:cursor-grabbing",
   );
@@ -557,7 +563,7 @@ export function Pile({
           </motion.span>
           <motion.span
             variants={BIRTH.part}
-            className="relative z-10 flex flex-none items-center gap-1"
+            className={cn("flex flex-none items-center gap-1", aboveFace)}
           >
             <Count
               value={count}
