@@ -20,6 +20,7 @@ import {
   runHasNoOpenRound,
   runIsAQuestionnaireRun,
   runIsARelayRun,
+  namesNoAccount,
   runIsClosed,
   runIsOpen,
   theOpenRoundOf,
@@ -60,11 +61,6 @@ const signedResponse = view(
 
 const ownsResponse = (signed: boolean, response: symbol, session: symbol) =>
   signed ? signedResponse({ response, session }) : anonymousResponse({ response });
-
-export const deviceNamesNoAccount = view(
-  "(device) names no account",
-  ({ device }, _outputs, _bindings) => where(no(Authenticating._getById({ user: device }))),
-).holds();
 
 /**
  * What a participant meets on arrival: the run, whether it is open, and its
@@ -199,7 +195,7 @@ export const Begin = endpoint(
       .then(
         where(
           now(at),
-          deviceNamesNoAccount({ device }),
+          namesNoAccount({ identifier: device }),
           runIsOpen({ run }),
           runIsAQuestionnaireRun({ run }),
         )
@@ -208,7 +204,7 @@ export const Begin = endpoint(
           .named("open"),
         where(
           now(at),
-          deviceNamesNoAccount({ device }),
+          namesNoAccount({ identifier: device }),
           runIsOpen({ run }),
           runIsARelayRun({ run }),
           theOpenRoundOf({ run }).is({ round }),
@@ -219,14 +215,14 @@ export const Begin = endpoint(
           .then(respond({ response, participant: device }))
           .named("round"),
         where(
-          deviceNamesNoAccount({ device }),
+          namesNoAccount({ identifier: device }),
           runIsOpen({ run }),
           runIsARelayRun({ run }),
           runHasNoOpenRound({ run }),
         )
           .then(respond({ error: "NO_OPEN_ROUND" }))
           .named("no-open-round"),
-        where(runIsOpen({ run }), no(deviceNamesNoAccount({ device })))
+        where(runIsOpen({ run }), no(namesNoAccount({ identifier: device })))
           .then(respond({ error: "NOT_FOUND" }))
           .named("named-account"),
         where(runIsClosed({ run }))

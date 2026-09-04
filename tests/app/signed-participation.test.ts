@@ -44,6 +44,7 @@ async function register(edge: Edge, username: string): Promise<Account> {
 
 let edge: Edge;
 let host: Account;
+let runId: string;
 let token: string;
 let round: string;
 let question: string;
@@ -71,6 +72,7 @@ beforeAll(async () => {
     ),
   );
   const launched = await json(await post(edge, "/live/relays/launch", { relay }, host.cookie));
+  runId = launched.run as string;
   token = launched.token as string;
   round = (
     await json(
@@ -245,5 +247,50 @@ describe("a signed student in a quiz run", () => {
     ]);
 
     expect((await post(edge, "/live/p/submit-signed", { response }, dana.cookie)).status).toBe(200);
+  });
+});
+
+describe("a model seat is an identifier the host made up", () => {
+  test("it refuses to seat an account, so no card is marked as the model's", async () => {
+    const student = await register(edge, "student");
+    const seated = await post(
+      edge,
+      "/live/relays/invite",
+      { run: runId, device: student.user },
+      host.cookie,
+    );
+    expect(seated.status).toBe(400);
+    expect(
+      await edge.application.concepts.Subscribing._isSubscribed({
+        user: student.user,
+        target: runId,
+      }),
+    ).toMatchObject({ subscribed: false });
+
+    const model = await json(
+      await post(edge, "/live/relays/invite", { run: runId, device: "model-1" }, host.cookie),
+    );
+    expect(model.participant).toBe("model-1");
+  });
+});
+
+describe("the edge reads a bounded amount before it decides anything", () => {
+  test("an oversized body is refused without a session and without parsing", async () => {
+    const huge = "x".repeat(1_000_001);
+    const response = await post(edge, "/live/p/arrive", { token: huge });
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ error: "REQUEST_TOO_LARGE" });
+  });
+
+  test("a body nested past the stated depth is refused", async () => {
+    let nested: unknown = "leaf";
+    for (let level = 0; level < 200; level += 1) nested = { nested };
+    const response = await post(edge, "/live/p/arrive", { token: nested });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_REQUEST" });
+  });
+
+  test("an ordinary body still passes", async () => {
+    expect((await post(edge, "/live/p/arrive", { token })).status).toBe(200);
   });
 });

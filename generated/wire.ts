@@ -1697,7 +1697,7 @@ export type CommonsWire = {
     output: {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["subscribe"]>[0], ["user"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "ALREADY_SUBSCRIBED" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "NO_PARTICIPANT" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "ALREADY_SUBSCRIBED" | "CLOSED" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_A_SEAT" | "NO_PARTICIPANT" };
   };
   "/live/relays/launch": {
     input: {

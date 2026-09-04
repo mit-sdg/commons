@@ -2,8 +2,25 @@ import { compute, count, is, no, view, where } from "@mit-sdg/sync-engine/langua
 import { computations, concepts } from "../../concepts.ts";
 import { ADMINISTER, COMMONS } from "../access/capabilities.ts";
 
-const { Drafting, Publishing, Questioning, Responding, Roling, RunSnapshotting, Scoring } =
-  concepts;
+const {
+  Authenticating,
+  Drafting,
+  Publishing,
+  Questioning,
+  Responding,
+  Roling,
+  RunSnapshotting,
+  Scoring,
+} = concepts;
+
+/**
+ * A participant identifier the caller chose, not an account Commons knows.
+ * Both the anonymous join and a model seat take one, and neither may name a
+ * person: a caller who could would open a response in that person's name.
+ */
+export const namesNoAccount = view("(identifier) names no account", ({ identifier }) =>
+  where(no(Authenticating._getById({ user: identifier }))),
+).holds();
 
 /** How many questions the questionnaire holds; contiguity makes it the last position. */
 export const theQuestionCount = view(

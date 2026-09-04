@@ -184,6 +184,7 @@ export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategor
     SOURCE_OPEN: "CONFLICT",
     NOTHING_PICKED: "CONFLICT",
     NO_OPEN_ROUND: "CONFLICT",
+    NOT_A_SEAT: "INVALID_REQUEST",
     NOT_A_RELAY: "INVALID_REQUEST",
     NOT_ASKED: "CONFLICT",
     NOT_SEATED: "NOT_FOUND",

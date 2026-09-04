@@ -37,11 +37,10 @@ the same under the caller's account when a session rides the request; the join
 page calls whichever matches its login state. Responding holds one response
 per participant and run, so a reloaded phone finds its answers standing, and a
 participant who already handed in is refused rather than counted twice. The
-anonymous endpoint takes only a device that names no account, decided by the
-[deviceNamesNoAccount view](view:Live.participation.deviceNamesNoAccount): a
-caller cannot name a student and learn from the reply whether that student has
-begun, is still answering, or has handed in, and cannot open a response in
-their name. A closed run answers `CLOSED` before anything begins. In a relay run both
+anonymous endpoint takes only a device that names no account: a caller cannot
+name a student and learn from the reply whether that student has begun, is
+still answering, or has handed in, and cannot open a response in their name.
+The same rule decides which identifiers may take a model's seat. A closed run answers `CLOSED` before anything begins. In a relay run both
 endpoints begin the response to the round that is open, so a phone holds one
 response per round under the same token, and a run with no round open answers
 `NO_OPEN_ROUND`.
@@ -70,6 +69,20 @@ response identifier grants no control over it and no reading of it:
 [SubmitSigned](reaction:Live.participation.SubmitSigned), and
 [OutcomeSigned](reaction:Live.participation.OutcomeSigned). The wall read below
 carries the same rule.
+
+The rule generalizes, and every participant endpoint added here is held to it:
+a request that acts on a response, or that shows the holder anything about
+themselves, decides ownership first. A read that identifies nobody may stay
+open; the moment a read marks whose work is whose, an identifier alone is not
+enough to make it answer.
+
+What an anonymous participant holds is the response identifier itself, and that
+is deliberate: a phone with no account has nothing else to prove it is the same
+phone. So an anonymous response is only as private as its identifier, which
+Commons issues at random and keeps on the device. The boundary that follows is
+the one drawn above — an anonymous request reaches only responses that belong
+to no account, so a capability that leaks costs its own holder and no one with
+a login.
 
 After hand-in,
 [Live.participation.SubmittedResponseIsGraded](reaction:Live.participation.SubmittedResponseIsGraded)

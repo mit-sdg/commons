@@ -22,6 +22,7 @@ import {
   legTakesNothing,
   mayHostLive,
   mayNotHostLive,
+  namesNoAccount,
   participantIsSeated,
   questionnaireHasAnOpenRun,
   questionnaireHasNoOpenRun,
@@ -1413,11 +1414,20 @@ export const Invite = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
+        namesNoAccount({ identifier: device }),
         runIsOpen({ run }),
       )
         .then(Subscribing.subscribe({ user: device, target: run, at }).responds())
         .then(respond({ participant: device }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        runIsOpen({ run }),
+        no(namesNoAccount({ identifier: device })),
+      )
+        .then(respond({ error: "NOT_A_SEAT" }))
+        .named("named-account"),
       where(activeUser({ session }).is({ user }), mayHostLive({ user }), runIsClosed({ run }))
         .then(respond({ error: "CLOSED" }))
         .named("closed"),
