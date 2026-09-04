@@ -23,7 +23,7 @@ async function draftAndAdopt(page: Page, request: string) {
   await page.goto("/staff/live/draft");
   const describe = page.getByRole("textbox").first();
   await describe.fill(request);
-  await page.getByRole("button", { name: /draft it/i }).click();
+  await page.getByRole("button", { name: "Draft", exact: true }).click();
   await expect(page.getByRole("button", { name: "Adopt this draft" })).toBeVisible({
     timeout: 20_000,
   });
@@ -138,7 +138,7 @@ test("an ambiguous request comes back as a question and resumes from the answer"
   await page.goto("/staff/live/draft");
   const describe = page.getByRole("textbox").first();
   await describe.fill("Something ambiguous about gardening");
-  await page.getByRole("button", { name: /draft it/i }).click();
+  await page.getByRole("button", { name: "Draft", exact: true }).click();
 
   // The reasoner asks rather than guessing; answering resumes the draft.
   const answerBox = page.getByLabel("Answer the clarifying question");
@@ -187,7 +187,7 @@ test("a questionnaire is refined with the reasoner and applied back in place", a
 
   // The adopted line is spent: the drafting page opens on a fresh description.
   await page.goto("/staff/live/draft");
-  await expect(page.getByRole("button", { name: "Draft it" })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "Draft", exact: true })).toBeVisible({ timeout: 20_000 });
 });
 
 test("an empty quiz can adopt its first AI-generated questions", async ({ page }) => {
