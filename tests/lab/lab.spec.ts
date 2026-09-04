@@ -80,3 +80,20 @@ test("the dashboard trickle", async ({ page }) => {
 test("the phone at the wave", async ({ page }) => {
   await film(page, "phone-wave", "/lab/wall?surface=phone&t=12500&play", 32_500);
 });
+
+// A vote over five choices as the projector receives it: ballots arrive
+// already in their piles, so the bars grow with no tray in between.
+test("the projector's vote", async ({ page }) => {
+  await film(
+    page,
+    "projector-vote",
+    "/lab/wall?trace=vote-5&surface=projector&t=2500&play",
+    16_000,
+  );
+});
+
+// A list round with three parts through the sorting wave on the dashboard:
+// each card carries its part's label into its pile.
+test("the dashboard's list round", async ({ page }) => {
+  await film(page, "dashboard-list", "/lab/wall?trace=list&surface=dashboard&t=12500&play", 32_000);
+});

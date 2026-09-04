@@ -11,6 +11,9 @@ import {
 } from "react";
 import { frameAt, polled, type Trace, trickled } from "@/components/lab/replay";
 import recorded from "@/components/lab/trace-50.json";
+import list from "@/components/lab/trace-list.json";
+import voteThree from "@/components/lab/trace-vote-3.json";
+import voteFive from "@/components/lab/trace-vote-5.json";
 import { JoinCode } from "@/components/live/qr-code";
 import type { Wall as WallShape } from "@/components/live/rounds";
 import { Wall } from "@/components/live/wall";
@@ -39,7 +42,20 @@ const JOIN_URL = "https://commons.example/q/lab";
 /** How long the clock runs on past the last poll, so the last wave lands. */
 const TAIL_MS = 15_000;
 
-const TRACE = recorded as unknown as Trace<WallShape>;
+/**
+ * The built-in traces: the recorded fifty-seat write round, and the same run
+ * with its kind changed — a vote over three choices, one over five, and a list
+ * round with three parts — so a vote wall and a list round can be judged
+ * without a server.
+ */
+const TRACES = {
+  write: recorded,
+  "vote-3": voteThree,
+  "vote-5": voteFive,
+  list,
+} as unknown as Record<TraceName, Trace<WallShape>>;
+type TraceName = "write" | "vote-3" | "vote-5" | "list";
+const TRACE_NAMES: TraceName[] = ["write", "vote-3", "vote-5", "list"];
 
 function oneOf<Value extends string | number>(
   choices: readonly Value[],
@@ -53,7 +69,11 @@ function oneOf<Value extends string | number>(
 
 export function WallLab() {
   const params = useSearchParams();
-  const [trace, setTrace] = useState(TRACE);
+  const [traceName, setTraceName] = useState<TraceName>(() =>
+    oneOf(TRACE_NAMES, params.get("trace"), "write"),
+  );
+  const [loaded, setLoaded] = useState<Trace<WallShape> | null>(null);
+  const trace = loaded ?? TRACES[traceName];
   const [surface, setSurface] = useState<Surface>(() =>
     oneOf(SURFACES, params.get("surface"), "projector"),
   );
@@ -123,7 +143,7 @@ export function WallLab() {
     void file.text().then((text) => {
       const parsed = JSON.parse(text) as Trace<WallShape>;
       if (!Array.isArray(parsed.snaps)) return;
-      setTrace(parsed);
+      setLoaded(parsed);
       seek(0);
       setPlaying(false);
     });
@@ -133,6 +153,16 @@ export function WallLab() {
     <div className="flex h-dvh flex-col bg-background">
       <div className="flex flex-none flex-wrap items-center gap-x-4 gap-y-2 border-border border-b px-4 py-2 text-sm">
         <span className="font-display font-semibold">Wall lab</span>
+        <Choice
+          label="Trace"
+          value={traceName}
+          choices={TRACE_NAMES}
+          onChange={(value) => {
+            setLoaded(null);
+            setTraceName(value);
+            seek(0);
+          }}
+        />
         <Choice
           label="Surface"
           value={surface}
