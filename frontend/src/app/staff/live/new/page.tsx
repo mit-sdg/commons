@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
+import { RELAY_LINES } from "@/components/live/brief-chips";
 import {
   copyQuestionnaire,
   copyRounds,
@@ -60,9 +61,8 @@ function NewLiveContent() {
   const [disclosure, setDisclosure] = useState<Disclosure>("score");
   const [source, setSource] = useState(BLANK);
   const [busy, setBusy] = useState(false);
-  // A form nobody has touched says nothing about the title it is missing.
-  const [touched, setTouched] = useState(false);
-  const missing = touched && title.trim() === "";
+  const [tried, setTried] = useState(false);
+  const missing = tried && title.trim() === "";
 
   const { data: shelf } = useQuery(
     session ? () => api["/live/quizzes/list"]({}).then(unwrap) : null,
@@ -139,7 +139,7 @@ function NewLiveContent() {
 
   async function create() {
     const trimmed = title.trim();
-    setTouched(true);
+    setTried(true);
     if (trimmed === "") return;
     setBusy(true);
     if (kind === "relay") await createRelay(trimmed);
@@ -183,6 +183,14 @@ function NewLiveContent() {
           </TabsList>
         </Tabs>
 
+        {kind === "relay" ? (
+          <div className="space-y-2 text-muted-foreground text-sm">
+            {RELAY_LINES.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        ) : null}
+
         <div className="space-y-2">
           <Label htmlFor="live-title">Title</Label>
           <Input
@@ -193,7 +201,6 @@ function NewLiveContent() {
             readOnly={busy}
             placeholder="e.g. Lecture 7 check-in"
             onChange={(event) => setTitle(event.target.value)}
-            onBlur={() => setTouched(true)}
           />
           {missing ? (
             <p className="text-xs text-destructive">Enter a title.</p>
@@ -261,7 +268,6 @@ function NewLiveContent() {
           {/* Busy, the button keeps its focus: it is out by aria, not by a
               disabled that hands the focus back to the page. */}
           <Button
-            disabled={title.trim() === ""}
             aria-disabled={busy || undefined}
             onClick={busy ? undefined : () => void create()}
           >

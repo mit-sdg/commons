@@ -42,7 +42,7 @@ export function RoundToken({
       role={title === undefined ? "img" : undefined}
       aria-label={title === undefined ? `Round ${number}` : undefined}
       className={cn(
-        "inline-flex items-center whitespace-nowrap leading-none",
+        "inline-flex min-w-0 items-center whitespace-nowrap leading-none",
         TOKEN[size],
         standing === "next" && "text-muted-foreground",
         className,

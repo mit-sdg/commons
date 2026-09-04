@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
+import { BRIEF_CHIPS, BRIEF_PLACEHOLDER } from "@/components/live/brief-chips";
 import { titleFromBrief } from "@/components/live/copy-relay";
 import { DraftDescribe } from "@/components/live/draft-describe";
 import type { DraftLineStep } from "@/components/live/draft-step";
@@ -33,10 +34,6 @@ type Kind = (typeof KINDS)[number]["kind"];
 function isKind(value: string | null): value is Kind {
   return KINDS.some((entry) => entry.kind === value);
 }
-
-/** The grain of a relay brief: the rounds, and what the later one is handed. */
-const RELAY_EXAMPLE =
-  "two rounds: one word for what a shopping cart does, then a vote on the words the room gave";
 
 /** The brief the author is drafting against, kept across a reload. */
 const BRIEF_STORAGE_KEY = "commons-live-draft-brief";
@@ -406,17 +403,13 @@ function DraftPageContent() {
               ))}
             </TabsList>
           </Tabs>
-          {kind === "relay" ? (
-            <DraftDescribe
-              submitting={describing}
-              onSubmit={draftRelay}
-              title="Describe the relay you want"
-              placeholder={RELAY_EXAMPLE}
-              label="Draft"
-            />
-          ) : (
-            <DraftDescribe submitting={describing} onSubmit={describe} />
-          )}
+          <DraftDescribe
+            submitting={describing}
+            onSubmit={kind === "relay" ? draftRelay : describe}
+            placeholder={BRIEF_PLACEHOLDER[kind]}
+            chips={BRIEF_CHIPS[kind]}
+            label={kind === "relay" ? "Draft" : "Draft it"}
+          />
           {kind !== "relay" && unfinished.length > 0 ? (
             <section className="mt-10 space-y-3">
               <h2 className="font-display text-lg font-semibold">
