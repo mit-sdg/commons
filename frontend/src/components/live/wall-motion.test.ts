@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import {
+  ARRIVAL_GAP_MS,
   adopt,
   apply,
   diff,
   dropped,
   LANDING_GAP_MS,
+  MAX_LAG_MS,
   type Move,
   merged,
   placed,
   schedule,
-  WAVE_MS,
 } from "./wall-motion";
 
 const wall = (cards: [string, string | null][], piles: string[]) => ({
@@ -148,30 +149,64 @@ describe("when a snapshot's moves play", () => {
     { kind: "close", pile: "p2" },
   ];
 
-  test("piles open at once, landings follow a gap apart, and leaving and closing wait for the last landing", () => {
+  test("landings go one at a time, a pile opens with its first card, and leaving and closing wait for the last landing", () => {
     expect(schedule(moves)).toEqual([
-      { move: { kind: "open", pile: "p3" }, at: 0 },
+      { move: { kind: "open", pile: "p3" }, at: ARRIVAL_GAP_MS },
       { move: { kind: "arrive", card: "d" }, at: 0 },
-      { move: { kind: "place", card: "a", pile: "p3" }, at: LANDING_GAP_MS },
-      { move: { kind: "return", card: "c" }, at: 2 * LANDING_GAP_MS },
-      { move: { kind: "leave", card: "e" }, at: 2 * LANDING_GAP_MS },
-      { move: { kind: "close", pile: "p2" }, at: 2 * LANDING_GAP_MS },
+      { move: { kind: "place", card: "a", pile: "p3" }, at: ARRIVAL_GAP_MS },
+      {
+        move: { kind: "return", card: "c" },
+        at: ARRIVAL_GAP_MS + LANDING_GAP_MS,
+      },
+      {
+        move: { kind: "leave", card: "e" },
+        at: ARRIVAL_GAP_MS + LANDING_GAP_MS,
+      },
+      {
+        move: { kind: "close", pile: "p2" },
+        at: ARRIVAL_GAP_MS + LANDING_GAP_MS,
+      },
     ]);
   });
 
-  test("a room's worth of cards lands inside the window, evenly spread", () => {
-    const burst: Move[] = Array.from({ length: 60 }, (_, index) => ({
+  test("a pile no card lands in opens at once", () => {
+    expect(schedule([{ kind: "open", pile: "p9" }])).toEqual([
+      { move: { kind: "open", pile: "p9" }, at: 0 },
+    ]);
+  });
+
+  test("the cards leaving the tray go newest first, the way the shelf shows them", () => {
+    const timed = schedule([
+      { kind: "place", card: "old", pile: "p1" },
+      { kind: "place", card: "new", pile: "p2" },
+    ]);
+    expect(timed.filter((entry) => entry.move.kind === "place")).toEqual([
+      { move: { kind: "place", card: "new", pile: "p2" }, at: 0 },
+      { move: { kind: "place", card: "old", pile: "p1" }, at: LANDING_GAP_MS },
+    ]);
+  });
+
+  test("a room's worth of cards keeps the pace until the pace would trail too far, then squeezes to the lag", () => {
+    const twenty: Move[] = Array.from({ length: 20 }, (_, index) => ({
       kind: "place",
       card: `c${index}`,
       pile: "p1",
     }));
-    const timed = schedule(burst);
-    const times = timed.map((entry) => entry.at);
-    expect(Math.max(...times)).toBeLessThanOrEqual(WAVE_MS);
-    expect(Math.max(...times)).toBeCloseTo(WAVE_MS, 5);
+    expect(schedule(twenty).map((entry) => entry.at)).toEqual(
+      twenty.map((_, index) => index * LANDING_GAP_MS),
+    );
+    const sixty: Move[] = Array.from({ length: 60 }, (_, index) => ({
+      kind: "place",
+      card: `c${index}`,
+      pile: "p1",
+    }));
+    const times = schedule(sixty).map((entry) => entry.at);
+    expect(Math.max(...times)).toBe(MAX_LAG_MS);
     expect(new Set(times).size).toBe(60);
     for (let index = 1; index < times.length; index += 1) {
-      expect(times[index] - times[index - 1]).toBeCloseTo(WAVE_MS / 59, 5);
+      expect(times[index] - times[index - 1]).toBeGreaterThanOrEqual(
+        Math.floor(MAX_LAG_MS / 59),
+      );
     }
   });
 

@@ -57,7 +57,7 @@ describe("the slots the piles stand in", () => {
   });
 });
 
-describe("the places on the shelf", () => {
+describe("the cards on the shelf", () => {
   const wall = [
     card("a", null),
     card("b", "p1"),
@@ -65,28 +65,7 @@ describe("the places on the shelf", () => {
     card("d", null),
   ];
 
-  test("between waves it is the tray, oldest first", () => {
-    expect(shelfOf(wall, null).map((place) => place.card.card)).toEqual([
-      "a",
-      "c",
-      "d",
-    ]);
-    expect(shelfOf(wall, null).every((place) => !place.flown)).toBe(true);
-  });
-
-  test("a card that has flown keeps its place, and the wave's late arrivals follow", () => {
-    const places = shelfOf(wall, ["a", "b", "c"]);
-    expect(places.map((place) => [place.card.card, place.flown])).toEqual([
-      ["a", false],
-      ["b", true],
-      ["c", false],
-      ["d", false],
-    ]);
-  });
-
-  test("a card that has left the wall leaves no place behind", () => {
-    expect(
-      shelfOf(wall, ["a", "gone"]).map((place) => place.card.card),
-    ).toEqual(["a", "c", "d"]);
+  test("it is the tray, oldest first", () => {
+    expect(shelfOf(wall).map((one) => one.card)).toEqual(["a", "c", "d"]);
   });
 });

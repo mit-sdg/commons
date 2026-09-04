@@ -52,6 +52,14 @@ const FACES = {
     count: "text-3xl xl:text-4xl 2xl:text-[42px]",
     peek: "gap-1.5 text-lg xl:text-xl 2xl:text-[23px]",
   },
+  // A projector with a third row of piles: every pile stays on the screen,
+  // a little smaller, rather than the wall scrolling under the room.
+  dense: {
+    box: "h-[160px] rounded-xl px-5 pt-3.5 pb-3.5",
+    name: "text-2xl 2xl:text-[28px]",
+    count: "text-3xl 2xl:text-[32px]",
+    peek: "gap-1 text-lg 2xl:text-xl",
+  },
 };
 
 export function ModelTag({ big = false }: { big?: boolean }) {
@@ -86,6 +94,7 @@ export function Card({
   draggable = false,
   still = false,
   oneLine = false,
+  lines = oneLine ? 1 : 3,
   onDragStart,
   onDragEnd,
   className,
@@ -97,6 +106,8 @@ export function Card({
   still?: boolean;
   /** A card in a row one card tall is cut after its first line. */
   oneLine?: boolean;
+  /** How many lines of the answer the card shows before it is cut. */
+  lines?: 1 | 2 | 3;
   onDragStart?: (card: WallCard) => void;
   onDragEnd?: () => void;
   className?: string;
@@ -123,8 +134,9 @@ export function Card({
         layout={still ? false : "position"}
         layoutId={still ? undefined : card.card}
         transition={CARD_MOVE}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
+        // A new card is set down: it comes in a little large and settles flat.
+        initial={{ opacity: 0, y: 10, scale: 1.04 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, transition: { duration: 0.18 } }}
         className={cn(
           "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg border border-border bg-card shadow-[0_1px_0_var(--border)] leading-[1.3]",
@@ -136,7 +148,13 @@ export function Card({
       >
         <Answer
           value={card.value}
-          className={oneLine ? "line-clamp-1" : "line-clamp-3"}
+          className={
+            lines === 1
+              ? "line-clamp-1"
+              : lines === 2
+                ? "line-clamp-2"
+                : "line-clamp-3"
+          }
         />
         {card.model ? <ModelTag big={big} /> : null}
         {card.mine ? <YouTag /> : null}
@@ -243,6 +261,7 @@ export function Pile({
   picked = false,
   carriesTo,
   big = false,
+  dense = false,
   phone = false,
   selected = false,
   follow = false,
@@ -264,6 +283,8 @@ export function Pile({
   /** The number of the round the pile carries into, shown on a picked pile. */
   carriesTo?: number;
   big?: boolean;
+  /** A projector wall of three rows: the cell is smaller so every pile stays on screen. */
+  dense?: boolean;
   phone?: boolean;
   selected?: boolean;
   /** A pile in a scrolling wall comes into view as a card lands in it. */
@@ -332,7 +353,13 @@ export function Pile({
     [],
   );
 
-  const face = big ? FACES.big : phone ? FACES.phone : FACES.wide;
+  const face = big
+    ? dense
+      ? FACES.dense
+      : FACES.big
+    : phone
+      ? FACES.phone
+      : FACES.wide;
   const depth = count >= 8 ? "deep" : count >= 3 ? "thin" : "flat";
   // A pile the model has summed up shows one card under the sentence: the lid
   // is what the pile says, and the cell holds one or the other, not both.
@@ -432,6 +459,10 @@ export function Pile({
           "shadow-[0_5px_0_-2px_var(--card),0_6px_0_-2px_var(--border)]",
         (picked || selected) &&
           "outline outline-2 outline-primary -outline-offset-2",
+        // A pile taking a card lights for the flight, so the room sees where
+        // it went.
+        arriving.size > 0 &&
+          "border-primary/70 shadow-[0_0_0_3px_var(--primary)] transition-shadow duration-300",
         picking && "cursor-pointer hover:border-foreground/40",
         className,
       )}

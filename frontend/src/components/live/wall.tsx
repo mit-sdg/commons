@@ -45,35 +45,9 @@ const SHELF_SHOWN = 18;
 /** How many of a context group's words a chip carries before the rest are a count. */
 const CONTEXT_SHOWN = 3;
 
-/** One place on the shelf: the card, and whether it has already flown to a pile. */
-export interface ShelfCard {
-  card: WallCard;
-  flown: boolean;
-}
-
-/**
- * The shelf's places, oldest first. Between waves it is the tray itself. While
- * a wave plays it is the tray as the wave found it, in that order, so a card
- * that has flown keeps its place until the wave ends; cards that arrived
- * mid-wave stand after them, and a card that has left the wall is gone.
- */
-export function shelfOf(
-  cards: WallCard[],
-  holding: string[] | null,
-): ShelfCard[] {
-  const tray = cards.filter((card) => card.pile === null);
-  if (holding === null) return tray.map((card) => ({ card, flown: false }));
-  const byId = new Map(cards.map((card) => [card.card, card]));
-  const held = new Set(holding);
-  return [
-    ...holding.flatMap((id) => {
-      const card = byId.get(id);
-      return card === undefined ? [] : [{ card, flown: card.pile !== null }];
-    }),
-    ...tray
-      .filter((card) => !held.has(card.card))
-      .map((card) => ({ card, flown: false })),
-  ];
+/** The shelf's cards, oldest first: the tray as the shown wall has it. */
+export function shelfOf(cards: WallCard[]): WallCard[] {
+  return cards.filter((card) => card.pile === null);
 }
 
 /**
@@ -129,6 +103,13 @@ interface WallProps {
   sourceWall?: WallShape | null;
   /** The piles scroll under the question rather than run off the screen. */
   scroll?: boolean;
+  /**
+   * Where the shelf of unsorted cards stands: under the question, or in a
+   * bottom row beside `foot` — the join code, on a projector — so the piles
+   * take the middle of the screen whole.
+   */
+  shelfAt?: "top" | "bottom";
+  foot?: React.ReactNode;
   /** What stands where the piles will, while a wall that no hand sorts has none. */
   empty?: React.ReactNode;
   edits?: WallEdits;
@@ -157,6 +138,8 @@ function StagedWall({
   carriesTo,
   sourceWall,
   scroll = false,
+  shelfAt = "top",
+  foot,
   empty,
   edits,
   className,
@@ -165,7 +148,7 @@ function StagedWall({
   const [name, setName] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
   const reduced = useReducedMotion() ?? false;
-  const { shown, holding, edit, landed } = useStagedWall(wall, {
+  const { shown, edit, landed } = useStagedWall(wall, {
     instant: reduced,
   });
   const seen = shown ?? wall;
@@ -200,7 +183,7 @@ function StagedWall({
                 },
         };
 
-  const shelf = shelfOf(seen.cards, holding);
+  const shelf = shelfOf(seen.cards);
   const piles = useSlots(seen.piles, seen.open);
   const context = questionOf(seen)?.context ?? [];
   const writing = seen.open ? Math.max(0, seen.begun - seen.handedIn) : 0;
@@ -213,6 +196,8 @@ function StagedWall({
   // has closed and nothing is unsorted the piles take the wall. The phone
   // counts the tray on its own page instead.
   const shelfShown = !phone && (shelf.length > 0 || writing > 0 || seen.open);
+  // A projector with a third row of piles keeps every pile on screen, smaller.
+  const dense = big && piles.length > 8;
 
   function openPile(card: string) {
     setNaming(card);
@@ -225,6 +210,19 @@ function StagedWall({
     if (trimmed !== "") hand.openPile(naming, trimmed);
     setNaming(null);
   }
+
+  const shelfRow = (
+    <Shelf
+      cards={shelf}
+      writing={writing}
+      big={big}
+      bottom={shelfAt === "bottom"}
+      dragging={dragging}
+      onDragStart={canDrag ? (one) => setDragging(one) : undefined}
+      onDragEnd={canDrag ? () => setDragging(null) : undefined}
+      onDrop={editable ? (card) => hand.toTray(card) : undefined}
+    />
+  );
 
   return (
     <MotionConfig reducedMotion="user">
@@ -381,17 +379,7 @@ function StagedWall({
             />
           ) : (
             <>
-              {shelfShown ? (
-                <Shelf
-                  cards={shelf}
-                  writing={writing}
-                  big={big}
-                  dragging={dragging}
-                  onDragStart={canDrag ? (one) => setDragging(one) : undefined}
-                  onDragEnd={canDrag ? () => setDragging(null) : undefined}
-                  onDrop={editable ? (card) => hand.toTray(card) : undefined}
-                />
-              ) : null}
+              {shelfShown && shelfAt === "top" ? shelfRow : null}
               {piles.length === 0 && !editable && empty !== undefined ? (
                 <div
                   className={cn(
@@ -402,7 +390,7 @@ function StagedWall({
                   {empty}
                 </div>
               ) : (
-                <PileGrid big={big} phone={phone} scroll={scroll}>
+                <PileGrid big={big} dense={dense} phone={phone} scroll={scroll}>
                   <AnimatePresence initial={false}>
                     {piles.map((pile) => (
                       <Pile
@@ -415,6 +403,7 @@ function StagedWall({
                         picked={isPicked(pile)}
                         carriesTo={carriesTo}
                         big={big}
+                        dense={dense}
                         follow={scroll}
                         landed={landed}
                         onDrop={
@@ -454,6 +443,18 @@ function StagedWall({
             </>
           )}
 
+          {/* The bottom row: the shelf, when it stands there, with the foot
+              at its right; the foot alone once nothing is unsorted. */}
+          {shelfAt === "bottom" &&
+          (foot !== undefined || (!vote && shelfShown)) ? (
+            <div className="grid flex-none grid-cols-[minmax(0,1fr)_auto] items-center gap-9">
+              {!vote && shelfShown ? shelfRow : <span />}
+              {foot === undefined ? null : (
+                <div className="flex-none">{foot}</div>
+              )}
+            </div>
+          ) : null}
+
           {naming !== null ? (
             <form
               onSubmit={(event) => {
@@ -481,26 +482,28 @@ function StagedWall({
 }
 
 /**
- * The shelf: one row under the question, one card tall. The count of
- * everything unsorted at the left, the newest cards at the right with the
- * oldest clipped under the fade, and one chip for the answers still being
- * written. A card dropped on the shelf goes back to the tray.
- *
- * A card that has flown to a pile leaves an invisible chip of itself, so the
- * places do not move while the wave plays; when it ends the row compacts once.
+ * The shelf: one row, one card tall — two lines tall on a projector, where an
+ * answer is read from the back of the room. The count of everything unsorted
+ * at the left, the newest cards at the right with the oldest clipped under
+ * the fade, and one chip for the answers still being written. A card dropped
+ * on the shelf goes back to the tray. A card that flies to a pile leaves the
+ * row at once, and the row closes over its place as the card goes.
  */
 function Shelf({
   cards,
   writing,
   big,
+  bottom = false,
   dragging,
   onDragStart,
   onDragEnd,
   onDrop,
 }: {
-  cards: ShelfCard[];
+  cards: WallCard[];
   writing: number;
   big: boolean;
+  /** The shelf stands in the bottom row, so its rule is above it. */
+  bottom?: boolean;
   dragging: string | null;
   onDragStart?: (card: string) => void;
   onDragEnd?: () => void;
@@ -520,8 +523,9 @@ function Shelf({
           : undefined
       }
       className={cn(
-        "grid flex-none grid-cols-[auto_minmax(0,1fr)_auto] items-center border-border border-b",
-        big ? "h-[78px] gap-7 px-1.5" : "h-[52px] gap-4 pr-1 pl-0.5",
+        "grid flex-none grid-cols-[auto_minmax(0,1fr)_auto] items-center border-border",
+        bottom ? "border-t" : "border-b",
+        big ? "h-[112px] gap-7 px-1.5" : "h-[52px] gap-4 pr-1 pl-0.5",
       )}
     >
       <span
@@ -549,26 +553,24 @@ function Shelf({
             : "gap-2 [mask-image:linear-gradient(to_right,transparent,#000_72px)]",
         )}
       >
-        {cards.slice(-SHELF_SHOWN).map(({ card, flown }) => (
-          // A card that has flown stands on as itself, unseen: the same box in
-          // the same place, so the row does not close over it until the wave
-          // ends. It flies by its own identity, which the unseen one drops.
+        {cards.slice(-SHELF_SHOWN).map((card) => (
+          // The card itself lays out and flies by its identity, so the row
+          // closes over a card that leaves as its neighbours slide.
           <span
             key={card.card}
             className={cn(
               "flex flex-none",
-              big ? "max-w-[26rem]" : "max-w-[18rem]",
+              big ? "max-w-[30rem]" : "max-w-[18rem]",
             )}
           >
             <Card
               card={card}
               big={big}
-              oneLine
-              still={flown || dragging === card.card}
-              draggable={!flown && onDragStart !== undefined}
+              lines={big ? 2 : 1}
+              still={dragging === card.card}
+              draggable={onDragStart !== undefined}
               onDragStart={(one) => onDragStart?.(one.card)}
               onDragEnd={onDragEnd}
-              className={flown ? "invisible" : undefined}
             />
           </span>
         ))}
@@ -606,11 +608,14 @@ function useSlots<Pile extends { pile: string; count: number }>(
 
 function PileGrid({
   big,
+  dense,
   phone,
   scroll,
   children,
 }: {
   big: boolean;
+  /** Three rows on a projector: tighter rows, so every pile stays on screen. */
+  dense: boolean;
   phone: boolean;
   scroll: boolean;
   children: React.ReactNode;
@@ -633,7 +638,9 @@ function PileGrid({
         className={cn(
           "grid min-w-0 content-start gap-x-[18px] gap-y-[22px] pb-3",
           big
-            ? "grid-cols-4 gap-x-8 gap-y-[34px]"
+            ? dense
+              ? "grid-cols-4 gap-x-8 gap-y-6"
+              : "grid-cols-4 gap-x-8 gap-y-[34px]"
             : phone
               ? "grid-cols-2 gap-x-3 gap-y-4"
               : "grid-cols-2 @min-[34rem]:grid-cols-3 @min-[56rem]:grid-cols-4",

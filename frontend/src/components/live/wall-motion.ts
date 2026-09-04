@@ -197,9 +197,15 @@ export const PILE_MOVE = {
   mass: 1,
 } as const;
 
-/** The window a snapshot's landings are spread over, and how far apart they are at most. */
-export const WAVE_MS = 900;
-export const LANDING_GAP_MS = 40;
+/**
+ * How far apart cards land when the wall keeps pace: a card leaving the tray
+ * for a pile, and a card arriving on the tray. A room can follow one card at
+ * a time at this pace; a wave is never faster than this unless it has to be.
+ */
+export const LANDING_GAP_MS = 240;
+export const ARRIVAL_GAP_MS = 120;
+/** How far the shown wall may trail the server before its wave hurries. */
+export const MAX_LAG_MS = 6_000;
 
 export interface Timed {
   move: Move;
@@ -208,55 +214,61 @@ export interface Timed {
 }
 
 /**
- * When each of a snapshot's moves plays, from the wave's start. Piles open at
- * once, empty, so every landing has its slot from the first frame; landings
- * are spread over the window at most a gap apart, the gap shrinking so the
- * window never grows however many cards came; what leaves or closes goes
- * after the last landing.
+ * When each of a snapshot's moves plays, from the wave's start. Landings go
+ * one at a time, a gap apart — arrivals first, then the cards leaving the
+ * tray, newest first, since the newest are the cards the shelf shows and the
+ * room should see each one go — at the same pace whether the snapshot
+ * brought two cards or forty; a
+ * wave that would trail the server by more than the lag allows is squeezed to
+ * fit it. A pile opens with the first card that lands in it, so the room sees
+ * the pile form around a card; a pile no card lands in opens at once. What
+ * leaves or closes goes after the last landing.
  */
 export function schedule(moves: Move[]): Timed[] {
-  const opens = moves.filter((move) => move.kind === "open");
-  const landings = moves.filter(
-    (move) =>
-      move.kind === "arrive" || move.kind === "place" || move.kind === "return",
-  );
+  const landings = [
+    ...moves.filter((move) => move.kind === "arrive"),
+    ...moves.filter((move) => move.kind === "place").reverse(),
+    ...moves.filter((move) => move.kind === "return"),
+  ];
   const afterwards = moves.filter(
     (move) => move.kind === "leave" || move.kind === "close",
   );
-  const gap =
-    landings.length <= 1
-      ? 0
-      : Math.min(LANDING_GAP_MS, WAVE_MS / (landings.length - 1));
-  const last = landings.length === 0 ? 0 : (landings.length - 1) * gap;
+  const gaps = landings.map((move) =>
+    move.kind === "arrive" ? ARRIVAL_GAP_MS : LANDING_GAP_MS,
+  );
+  const span = gaps.slice(0, -1).reduce((sum, gap) => sum + gap, 0);
+  const squeeze = span > MAX_LAG_MS ? MAX_LAG_MS / span : 1;
+  const times: number[] = [];
+  let at = 0;
+  landings.forEach((_, index) => {
+    times.push(Math.round(at));
+    at += (gaps[index] ?? 0) * squeeze;
+  });
+  const last = times[times.length - 1] ?? 0;
+  const firstLanding = new Map<string, number>();
+  landings.forEach((move, index) => {
+    if (move.kind !== "place" || firstLanding.has(move.pile)) return;
+    firstLanding.set(move.pile, times[index] ?? 0);
+  });
+  const opens = moves.flatMap((move) =>
+    move.kind === "open"
+      ? [{ move, at: firstLanding.get(move.pile) ?? 0 }]
+      : [],
+  );
   return [
-    ...opens.map((move) => ({ move, at: 0 })),
-    ...landings.map((move, index) => ({ move, at: index * gap })),
+    ...opens,
+    ...landings.map((move, index) => ({ move, at: times[index] ?? 0 })),
     ...afterwards.map((move) => ({ move, at: last })),
   ];
-}
-
-/** The wall with each pile's count as it was when the wave began. */
-function withCounts<Wall extends Staged>(
-  wall: Wall,
-  counts: Map<string, number>,
-): Wall {
-  return {
-    ...wall,
-    piles: wall.piles.map((pile) => ({
-      ...pile,
-      count: counts.get(pile.pile) ?? pile.count,
-    })),
-  };
 }
 
 /**
  * The wall to draw. `wall` is the latest snapshot; `shown` trails it by one
  * wave: a snapshot's moves are scheduled from the moment it arrives and each
- * plays at its time, so every card is seen to land inside the window. While
- * a wave plays, `holding` is the tray as it stood when the wave began, so the
- * shelf keeps every slot a card is flying from, and the piles keep the counts
- * they had, so the counts tick once, after the last landing. A snapshot that
- * arrives mid-wave reschedules what is left from the wall as shown. `edit`
+ * plays at its time, so every card is seen to land, one at a time. A card
+ * that leaves the tray leaves it at once, so the tray closes over its place
+ * as the card flies, and a pile's count ticks as each card lands. A snapshot
+ * that arrives mid-wave reschedules what is left from the wall as shown. `edit`
  * changes the shown wall at once — a hand move already seen by the person who
  * made it — and the snapshot that follows finds nothing left to play for it.
  * With `instant`, or before the first snapshot, the shown wall is the target.
@@ -267,8 +279,6 @@ export function useStagedWall<Wall extends Staged>(
 ): {
   shown: Wall | null;
   settled: boolean;
-  /** The tray's cards, in order, as the playing wave found them; null when settled. */
-  holding: string[] | null;
   /** Changes the shown wall at once; `card` names the card the hand just placed. */
   edit: (change: (wall: Wall) => Wall, card?: string) => void;
   /** When each card last landed on the shown wall, later landings higher. */
@@ -276,13 +286,10 @@ export function useStagedWall<Wall extends Staged>(
 } {
   const [shown, setShown] = useState<Wall | null>(wall);
   const [settled, setSettled] = useState(true);
-  const [holding, setHolding] = useState<string[] | null>(null);
   const target = useRef<Wall | null>(wall);
   // The shown wall as the timers last left it, read when the next one fires.
   const current = useRef<Wall | null>(wall);
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
-  // The counts the piles keep while a wave plays; null between waves.
-  const counts = useRef<Map<string, number> | null>(null);
   // The order cards landed in, so a pile's face shows what arrived last.
   const landings = useRef(new Map<string, number>());
   const stamp = useCallback((card: string) => {
@@ -302,8 +309,6 @@ export function useStagedWall<Wall extends Staged>(
   /** `from` is the wall the wave has played, which by default is the shown one. */
   const finish = useCallback(
     (next: Wall, from: Wall | null = current.current) => {
-      counts.current = null;
-      setHolding(null);
       setSettled(true);
       show(from === null ? next : adopt(from, next));
     },
@@ -315,8 +320,6 @@ export function useStagedWall<Wall extends Staged>(
   const start = useCallback(() => {
     const next = target.current;
     if (next === null) {
-      counts.current = null;
-      setHolding(null);
       setSettled(true);
       show(null);
       return;
@@ -330,14 +333,6 @@ export function useStagedWall<Wall extends Staged>(
     if (moves.length === 0) {
       finish(next);
       return;
-    }
-    if (counts.current === null) {
-      counts.current = new Map(
-        was.piles.map((pile) => [pile.pile, pile.count]),
-      );
-      setHolding(
-        was.cards.filter((card) => card.pile === null).map((card) => card.card),
-      );
     }
     setSettled(false);
     const timed = schedule(moves);
@@ -362,11 +357,7 @@ export function useStagedWall<Wall extends Staged>(
         if (at === lastTime) {
           finish(goal, played);
         } else {
-          show(
-            counts.current === null
-              ? played
-              : withCounts(played, counts.current),
-          );
+          show(played);
         }
       }, at);
       timers.current.add(timer);
@@ -387,8 +378,6 @@ export function useStagedWall<Wall extends Staged>(
 
   const edit = useCallback(
     (change: (wall: Wall) => Wall, card?: string) => {
-      // The hand's change is seen whole, counts included, for the rest of the wave.
-      counts.current = null;
       const standing = current.current;
       if (standing !== null) show(change(standing));
       if (target.current !== null) target.current = change(target.current);
@@ -405,7 +394,6 @@ export function useStagedWall<Wall extends Staged>(
   return {
     shown: instant ? wall : shown,
     settled: instant ? true : settled,
-    holding: instant ? null : holding,
     edit,
     landed,
   };
