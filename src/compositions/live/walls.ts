@@ -383,11 +383,25 @@ export const TakenLidDescribesPile = reaction(({ suggestion, kind, target, value
     .then(Categorizing.describeCategory({ category: target, description: value })),
 );
 
-/** A usable reply settles whatever was being insisted on for the round. */
-export const PlacedReplySatisfiesInsistence = reaction(({ round }) =>
-  when(Suggesting.offer({ subject: round }).responds())
-    .where(roundIsAWall({ round }), Insisting._unsettledFor({ aim: round }))
-    .then(Insisting.satisfy({ aim: round })),
+/**
+ * A usable reply settles whatever was being insisted on for the round, whether
+ * or not it has a line to offer: a reply that places nothing new is not stood
+ * upon.
+ */
+export const PlacedReplySatisfiesInsistence = reaction(
+  ({ asking, reply, round, categories, values, removed, reading }) =>
+    when(Reasoning.answer({ asking, reply }).responds())
+      .where(
+        Reasoning._asking({ asking }).is({ about: round }),
+        roundIsAWall({ round }),
+        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+        Responding._valuesForSubject({ subject: round }).is({ values }),
+        Trashing._trashedItems({}).is({ items: removed }),
+        compute(computations.placingReading, { reply, categories, values, removed }, reading),
+        is.among(reading, ["placed", "nothing", "lid"]),
+        Insisting._unsettledFor({ aim: round }),
+      )
+      .then(Insisting.satisfy({ aim: round })),
 );
 
 /** While patience remains, a complaint carries the exchange back to the reasoner. */

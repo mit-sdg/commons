@@ -133,10 +133,19 @@ describe("reading a placing reply", () => {
   test("a card the wall already holds is a line with nothing left to do", () => {
     for (const pile of ["Examples", "Pace"]) {
       const reply = JSON.stringify({ kind: "placed", placements: [{ card: "c1", pile }] });
-      expect(placingReading({ reply, categories, values, removed })).toBe("placed");
+      // A reply made only of such lines is usable and offers nothing.
+      expect(placingReading({ reply, categories, values, removed })).toBe("nothing");
       expect(placingLines({ reply, categories, values, removed })).toEqual([]);
       expect(placingReason({ reply, categories, values, removed })).toBe("");
     }
+  });
+
+  test("an empty tray answered with no placements is nothing to place, not a reply to stand upon", () => {
+    const reply = JSON.stringify({ kind: "placed", placements: [] });
+    const held = categories.map((pile) => ({ ...pile, items: [...pile.items] }));
+    held[0]!.items.push(card(1), card(2));
+    expect(placingReading({ reply, categories: held, values, removed })).toBe("nothing");
+    expect(placingReading({ reply, categories, values, removed })).toBe("neither");
   });
 
   test("the waiting cards of a reply that also names a placed one are still placed", () => {

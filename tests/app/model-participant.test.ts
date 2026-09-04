@@ -394,6 +394,71 @@ describe("the model participant and the wall", () => {
     ).toBe(409);
   }, 90_000);
 
+  test("a reply that places nothing new settles the insistence and is not stood upon", async () => {
+    const planned = await json(
+      await post(edge, "/live/relays/plan", { title: "Nothing new" }, cookie),
+    );
+    const relay = planned.relay as string;
+    const added = await json(
+      await post(
+        edge,
+        "/live/relays/add-round",
+        { relay, title: "One word", prompt: "One word.", parts: [], cap: 0, choices: [] },
+        cookie,
+      ),
+    );
+    const launched = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
+    const opened = await json(
+      await post(edge, "/live/relays/open-round", { run: launched.run, leg: added.leg }, cookie),
+    );
+    const round = opened.round as string;
+    const token = launched.token as string;
+    const face = await json(await post(edge, "/live/p/arrive", { token }));
+    const question = (face.relay as { questions: { question: string }[] }).questions[0]!.question;
+    for (const [device, value] of [
+      ["p-1", "an unsortable scribble"],
+      ["p-2", "save"],
+    ] as const) {
+      const begun = await json(await post(edge, "/live/p/begin", { token, device }));
+      await post(edge, "/live/p/answer", { response: begun.response, question, value });
+      await post(edge, "/live/p/submit", { response: begun.response });
+    }
+
+    // The tick asks; the first reply is unusable, so an insistence opens and
+    // the repair ask goes out over the same two cards.
+    const first = await json(await post(edge, "/live/walls/sort", { round }, cookie));
+    expect(first.asked).toBe(true);
+    await serveOnePass(edge.application.concepts.Reasoning, scriptedMind());
+    const insisting = await until(
+      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: round }),
+      (rows) => rows.length > 0,
+    );
+    expect(insisting.length).toBe(1);
+
+    // The wall moves under the ask: a hand sorts both cards before the repair
+    // reply lands, so every line of that reply names a card a pile holds.
+    const readWall = async () => {
+      const body = await json(await post(edge, "/live/walls/read", { round }, cookie));
+      return body.wall as unknown as Wall;
+    };
+    const before = await readWall();
+    for (const card of before.cards) {
+      await post(edge, "/live/walls/open-pile", { round, name: "By hand", card: card.card }, cookie);
+    }
+    await serveOnePass(edge.application.concepts.Reasoning, scriptedMind());
+
+    // Nothing was offered, nothing is stood upon, and no insistence stands.
+    const settled = await until(
+      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: round }),
+      (rows) => rows.length === 0,
+    );
+    expect(settled).toEqual([]);
+    expect(await edge.application.concepts.Reasoning._pending()).toEqual([]);
+    const after = await readWall();
+    expect(after.cards.every((card) => card.pile !== null)).toBe(true);
+    expect(after.piles.map((pile) => pile.name)).toEqual(["By hand"]);
+  });
+
   test("a reply lost on its way costs one tick, not the round: the next tick asks again", async () => {
     const planned = await json(
       await post(edge, "/live/relays/plan", { title: "Lost reply" }, cookie),

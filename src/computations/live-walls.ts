@@ -42,6 +42,7 @@ interface Answer {
 
 type Reading =
   | { kind: "placed"; lines: SuggestionLine[] }
+  | { kind: "nothing" }
   | { kind: "lid"; lines: SuggestionLine[] }
   | { kind: "neither"; reason: string };
 
@@ -305,7 +306,7 @@ function readPlacements(
   // left unplaced is a reply to stand upon.
   if (record.placements.length === 0) {
     return waiting === 0
-      ? { kind: "placed", lines: [] }
+      ? { kind: "nothing" }
       : { kind: "neither", reason: "The reply placed no cards." };
   }
   const byName = new Map(
@@ -336,7 +337,8 @@ function readPlacements(
         : { kind: "place", target: card, value: existing },
     );
   }
-  return { kind: "placed", lines };
+  // A reply made only of such lines is usable and offers nothing.
+  return lines.length === 0 ? { kind: "nothing" } : { kind: "placed", lines };
 }
 
 function read(
