@@ -262,7 +262,7 @@ function RelaySetup({
   return (
     <PageContainer width="wide">
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:max-w-xl">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           <Link
             href={`/staff/live/relay/${relay.relay}`}
             className="eyebrow inline-flex items-center gap-1 hover:text-foreground"
