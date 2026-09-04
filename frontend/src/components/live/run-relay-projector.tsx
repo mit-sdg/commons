@@ -22,8 +22,9 @@ const POLL_MS = 3_000;
  * The relay run on the projector: the wall of the open round, full screen,
  * with the join code in the corner. Before the first round it is the title
  * and the code; between rounds and once the run has ended the wall stands,
- * and the word for where the room is takes the join block's place. The row
- * the two of them stand in says "Model sorts" while the run's switch is on.
+ * and the word for where the room is takes the join block's place. The shelf
+ * of unsorted cards stands in the bottom row beside the code, so the piles
+ * take the middle of the screen whole.
  */
 export function RelayProjector({
   run,
@@ -134,7 +135,6 @@ export function RelayProjector({
     wall.number !== 1 ||
     wall.piles.length > 0 ||
     choicesOf(wall).length > 0;
-  const sorts = run.modelSorts && run.open;
   const room = joining ? (
     filling ? (
       <JoinCode url={url} code={code} size="corner" />
@@ -152,6 +152,8 @@ export function RelayProjector({
         carriesTo={carriesTo}
         sourceWall={sourceWall}
         scroll
+        shelfAt="bottom"
+        foot={room ?? undefined}
         empty={
           joining && !filling ? (
             <JoinCode url={url} code={code} size="room" />
@@ -159,16 +161,6 @@ export function RelayProjector({
         }
         className="min-h-0 flex-1 overflow-hidden"
       />
-      {sorts || room !== null ? (
-        <div className="flex flex-none items-center gap-9">
-          {sorts ? (
-            <span className="font-display text-2xl text-muted-foreground leading-none">
-              Model sorts
-            </span>
-          ) : null}
-          {room === null ? null : <div className="ml-auto">{room}</div>}
-        </div>
-      ) : null}
     </div>
   );
 }
