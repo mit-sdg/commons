@@ -168,14 +168,15 @@ export function Card({
         exit={{ opacity: 0, transition: { duration: 0.18 } }}
         className="inline-flex min-w-0 max-w-full"
       >
-        <CardBody card={card} big={big} lines={lines} className={className} />
+        {/* The control stands before the answer, so a card the row cuts under
+            its fade loses the control before it loses its words. */}
         {onRemove === undefined ? null : (
           <Button
             type="button"
             variant="ghost"
             size="icon-xs"
             aria-label={`Remove “${card.value}”`}
-            className="ml-0.5 flex-none self-center text-muted-foreground"
+            className="mr-0.5 flex-none self-center text-muted-foreground"
             onClick={(event) => {
               event.stopPropagation();
               onRemove();
@@ -184,6 +185,7 @@ export function Card({
             <X />
           </Button>
         )}
+        <CardBody card={card} big={big} lines={lines} className={className} />
       </motion.span>
     </span>
   );
@@ -382,6 +384,26 @@ export function Pile({
   const box = useRef<HTMLDivElement | null>(null);
   const counted = useRef(count);
   const reduced = useReducedMotion() ?? false;
+  const nameBox = useRef<HTMLElement | null>(null);
+  const [nameLines, setNameLines] = useState(1);
+
+  // The cell is one fixed height, so a name that takes a second line takes it
+  // from the face: how many lines is the name standing on?
+  useEffect(() => {
+    const box = nameBox.current;
+    if (box === null) return;
+    const read = () => {
+      const line = Number.parseFloat(getComputedStyle(box).lineHeight);
+      if (!Number.isFinite(line) || line <= 0) return;
+      setNameLines(
+        Math.max(1, Math.round(box.getBoundingClientRect().height / line)),
+      );
+    };
+    read();
+    const watcher = new ResizeObserver(read);
+    watcher.observe(box);
+    return () => watcher.disconnect();
+  });
 
   // A scroll owed by a landing waits until nothing is in the air: a flight
   // is aimed at where the face stood when it took off.
@@ -418,7 +440,12 @@ export function Pile({
   // line the columns beside it read.
   const peek = spread
     ? []
-    : faceCards(cards, phone, landed, description === "" ? PEEK : 1);
+    : faceCards(
+        cards,
+        phone,
+        landed,
+        description === "" ? Math.max(1, PEEK - (nameLines - 1)) : 1,
+      );
   const takesDrop = onDrop !== undefined || onMergeIn !== undefined;
   // On a wall a hand sorts, a card on the face is dragged off it: back to the
   // tray, onto another pile, or onto the new pile, with the same payload a
@@ -473,6 +500,10 @@ export function Pile({
   return (
     <motion.div
       ref={box}
+      // The cell is one thing to a reader: its name and how many cards it
+      // holds, since the count on its own is a number beside a word.
+      role="group"
+      aria-label={`${name}, ${countWords(count)}`}
       // A pile crossing another passes over it when it holds more cards.
       style={flying ? { zIndex: 10 + count } : undefined}
       layout="position"
@@ -557,11 +588,21 @@ export function Pile({
           >
             {naming === null ? (
               onRename === undefined ? (
-                <span dir="auto" className={nameClass} {...drag}>
+                <span
+                  ref={(node) => {
+                    nameBox.current = node;
+                  }}
+                  dir="auto"
+                  className={nameClass}
+                  {...drag}
+                >
                   {name}
                 </span>
               ) : (
                 <button
+                  ref={(node) => {
+                    nameBox.current = node;
+                  }}
                   type="button"
                   dir="auto"
                   aria-label={`Rename ${name}`}
@@ -590,6 +631,7 @@ export function Pile({
           </motion.span>
           <motion.span
             variants={BIRTH.part}
+            aria-hidden
             className={cn("flex flex-none items-center gap-1", aboveFace)}
           >
             <Count
@@ -722,14 +764,29 @@ export function CarriesTo({
   );
 }
 
-/** The dashed place a card is dropped to open a new pile. */
+/**
+ * The dashed place a card is dropped to open a new pile. While the name is
+ * being typed the cell holds the card it was dropped with, so the pile being
+ * named is the one on the screen; Escape gives the card back to the shelf.
+ */
 export function NewPile({
   onDrop,
+  naming = null,
+  name = "",
+  onName,
+  onCommit,
+  onCancel,
   big = false,
   phone = false,
   className,
 }: {
   onDrop: (card: string) => void;
+  /** The card dropped here, while its pile is being named. */
+  naming?: WallCard | null;
+  name?: string;
+  onName?: (name: string) => void;
+  onCommit?: () => void;
+  onCancel?: () => void;
   big?: boolean;
   phone?: boolean;
   className?: string;
@@ -743,7 +800,8 @@ export function NewPile({
         if (card !== "") onDrop(card);
       }}
       className={cn(
-        "flex items-center justify-center rounded-lg border border-input border-dashed text-muted-foreground",
+        "flex flex-col items-center justify-center gap-3 rounded-lg border border-input border-dashed text-muted-foreground",
+        naming === null ? "px-3" : "px-3.5",
         big
           ? "h-[196px] rounded-xl text-xl xl:h-[216px] 2xl:h-[256px] 2xl:text-2xl"
           : phone
@@ -752,7 +810,34 @@ export function NewPile({
         className,
       )}
     >
-      new pile
+      {naming === null ? (
+        "new pile"
+      ) : (
+        <>
+          <CardBody card={naming} lines={2} className="max-w-full" />
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              onCommit?.();
+            }}
+            className="w-full"
+          >
+            <input
+              // biome-ignore lint/a11y/noAutofocus: the name is being typed the moment it appears.
+              autoFocus
+              value={name}
+              onChange={(event) => onName?.(event.target.value)}
+              onBlur={() => onCommit?.()}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") onCancel?.();
+              }}
+              placeholder="Name the pile"
+              aria-label="Name the pile"
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            />
+          </form>
+        </>
+      )}
     </div>
   );
 }
