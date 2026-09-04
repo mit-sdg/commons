@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { PROJECTOR, ProjectorFit } from "@/components/live/projector-fit";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import { refusalSentence } from "@/components/live/refusals";
 import {
@@ -144,7 +145,10 @@ export function RelayProjector({
   );
 
   return (
-    <div className="flex h-dvh flex-col gap-[clamp(1rem,3dvh,32px)] overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] pt-[clamp(1.25rem,5.5dvh,64px)] pb-[clamp(1rem,4.5dvh,56px)]">
+    <div
+      className={`${PROJECTOR} flex h-dvh flex-col gap-[clamp(0.75rem,2.5dvh,32px)] overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] pt-[clamp(1rem,4.5dvh,60px)] pb-[clamp(0.75rem,3.5dvh,48px)]`}
+    >
+      <ProjectorFit />
       <Wall
         wall={wall}
         big
