@@ -26,6 +26,7 @@
     "dev": "bun scripts/stack-mongo.ts",
     "e2e": "playwright test",
     "tour": "playwright test --config tests/visual/playwright.config.ts",
+    "lab": "playwright test --config tests/lab/playwright.config.ts",
     "start": "bun scripts/stack-mongo.ts",
     "stack": "bun scripts/stack.ts",
     "stack:mongo": "bun scripts/stack-mongo.ts"
