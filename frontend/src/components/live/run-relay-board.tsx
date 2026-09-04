@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Layers, Presentation, Sparkles } from "lucide-react";
+import { ArrowLeft, Presentation, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
@@ -755,7 +755,7 @@ export function RelayRunBoard({
               </p>
               <Button variant="outline" size="sm" asChild>
                 <Link href={`/staff/live/relay/${run.relay}`}>
-                  <Layers /> Relay
+                  <ArrowLeft /> Back to the relay
                 </Link>
               </Button>
             </div>

@@ -478,14 +478,24 @@ export function useDrafting({
     );
 
   return {
+    // Closed, the handle stands alone at the head of the list, no wider than
+    // its word; open, the box grows around it.
     line: (
-      <div className="mb-3 flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+      <div
+        className={cn(
+          "mb-3 flex flex-col gap-3",
+          open && "rounded-xl border border-primary/30 bg-primary/5 px-4 py-3",
+        )}
+      >
         <Button
-          variant="outline"
+          variant={open ? "outline" : "ghost"}
           size="sm"
           aria-expanded={open}
           aria-controls="brief-line"
-          className={cn("w-fit", open && "border-primary text-primary")}
+          className={cn(
+            "w-fit",
+            open ? "border-primary text-primary" : "text-muted-foreground",
+          )}
           onClick={() => onOpen(!open)}
         >
           <Sparkles /> Ask AI
