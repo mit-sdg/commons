@@ -30,7 +30,7 @@ import {
   type WallCard,
   type Wall as WallShape,
 } from "@/components/live/rounds";
-import { SpreadButton, SpreadPanel } from "@/components/live/spread";
+import { Spread, SpreadButton, SpreadPanel } from "@/components/live/spread";
 import {
   dropped,
   type Move,
@@ -151,7 +151,7 @@ function StagedWall({
   const [naming, setNaming] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
-  // The pile unfolded in place, if one is.
+  // The pile in focus, if one is: the rest of the wall gives way to its cards.
   const [spread, setSpread] = useState<string | null>(null);
   const reduced = useReducedMotion() ?? false;
   const root = useRef<HTMLElement | null>(null);
@@ -429,81 +429,81 @@ function StagedWall({
                   scroll={scroll}
                   spread={
                     spreading === null
-                      ? null
-                      : {
-                          index: piles.indexOf(spreading),
-                          node: (
-                            <SpreadPanel
-                              key="spread"
-                              name={spreading.name}
-                              count={spreading.count}
-                              description={spreading.description}
-                              cards={cardsIn(seen.cards, spreading.pile)}
-                              big={big}
-                              phone={phone}
-                              onClose={() => setSpread(null)}
-                            />
-                          ),
-                        }
+                      ? undefined
+                      : (className) => (
+                          <Spread
+                            key="spread"
+                            name={spreading.name}
+                            cards={cardsIn(seen.cards, spreading.pile)}
+                            big={big}
+                            phone={phone}
+                            onClose={() => setSpread(null)}
+                            className={className}
+                          />
+                        )
                   }
                 >
                   {[
-                    ...piles.map((pile) => {
-                      // A card in the air is on no face yet, and not counted.
-                      const cards = cardsIn(seen.cards, pile.pile).filter(
-                        (card) => !flying.has(card.card),
-                      );
-                      return (
-                        <Pile
-                          key={pile.pile}
-                          id={pile.pile}
-                          name={pile.name}
-                          count={cards.length}
-                          description={pile.description}
-                          cards={cards}
-                          lit={lit.has(pile.pile)}
-                          picked={isPicked(pile)}
-                          carriesTo={carriesTo}
-                          big={big}
-                          dense={dense}
-                          follow={scroll}
-                          landed={landed}
-                          onDrop={
-                            editable
-                              ? (card) => hand.moveCard(card, pile.pile)
-                              : undefined
-                          }
-                          onTap={
-                            hand?.togglePick === undefined
-                              ? undefined
-                              : () => hand.togglePick?.(pile.pile)
-                          }
-                          onSpread={() =>
-                            setSpread((open) =>
-                              open === pile.pile ? null : pile.pile,
-                            )
-                          }
-                          spread={spread === pile.pile}
-                          onRename={
-                            editable && hand.renamePile !== undefined
-                              ? (next) => hand.renamePile?.(pile.pile, next)
-                              : undefined
-                          }
-                          onMergeIn={
-                            editable && hand.mergePile !== undefined
-                              ? (folded) => hand.mergePile?.(folded, pile.pile)
-                              : undefined
-                          }
-                          onSummarize={
-                            hand?.summarize === undefined
-                              ? undefined
-                              : () => hand.summarize?.(pile.pile)
-                          }
-                          phone={phone}
-                        />
-                      );
-                    }),
-                    ...(editable
+                    // In focus, the pile stands alone with its cards beside it.
+                    ...(spreading === null ? piles : [spreading]).map(
+                      (pile) => {
+                        // A card in the air is on no face yet, and not counted.
+                        const cards = cardsIn(seen.cards, pile.pile).filter(
+                          (card) => !flying.has(card.card),
+                        );
+                        return (
+                          <Pile
+                            key={pile.pile}
+                            id={pile.pile}
+                            name={pile.name}
+                            count={cards.length}
+                            description={pile.description}
+                            cards={cards}
+                            lit={lit.has(pile.pile)}
+                            picked={isPicked(pile)}
+                            carriesTo={carriesTo}
+                            big={big}
+                            dense={dense}
+                            follow={scroll}
+                            landed={landed}
+                            onDrop={
+                              editable
+                                ? (card) => hand.moveCard(card, pile.pile)
+                                : undefined
+                            }
+                            onTap={
+                              hand?.togglePick === undefined
+                                ? undefined
+                                : () => hand.togglePick?.(pile.pile)
+                            }
+                            onSpread={() =>
+                              setSpread((open) =>
+                                open === pile.pile ? null : pile.pile,
+                              )
+                            }
+                            spread={spread === pile.pile}
+                            onRename={
+                              editable && hand.renamePile !== undefined
+                                ? (next) => hand.renamePile?.(pile.pile, next)
+                                : undefined
+                            }
+                            onMergeIn={
+                              editable && hand.mergePile !== undefined
+                                ? (folded) =>
+                                    hand.mergePile?.(folded, pile.pile)
+                                : undefined
+                            }
+                            onSummarize={
+                              hand?.summarize === undefined
+                                ? undefined
+                                : () => hand.summarize?.(pile.pile)
+                            }
+                            phone={phone}
+                          />
+                        );
+                      },
+                    ),
+                    ...(editable && spreading === null
                       ? [
                           <NewPile
                             key="new-pile"
@@ -681,35 +681,6 @@ function useSlots<Pile extends { pile: string; count: number }>(
   return next.piles;
 }
 
-/**
- * The panel a spread pile unfolds into: it stands under the row of the pile
- * it belongs to, the whole width, and the rows below make room; the piles
- * beside it stay where they are.
- */
-interface SpreadAt {
-  /** The index of the spread pile among the cells. */
-  index: number;
-  node: React.ReactNode;
-}
-
-/** The cells with the panel spliced in after the end of its pile's row. */
-function withSpread(
-  cells: React.ReactNode[],
-  spread: SpreadAt | null,
-  columns: number,
-): React.ReactNode[] {
-  if (spread === null || spread.index < 0) return cells;
-  const rowEnd = Math.min(
-    cells.length - 1,
-    Math.floor(spread.index / columns) * columns + columns - 1,
-  );
-  return [
-    ...cells.slice(0, rowEnd + 1),
-    spread.node,
-    ...cells.slice(rowEnd + 1),
-  ];
-}
-
 function PileGrid({
   big,
   dense,
@@ -723,7 +694,11 @@ function PileGrid({
   dense: boolean;
   phone: boolean;
   scroll: boolean;
-  spread: SpreadAt | null;
+  /**
+   * The cards of the pile in focus, drawn beside it when the grid has the
+   * columns and under it when it has two. The pile itself is the first cell.
+   */
+  spread?: (className: string) => React.ReactNode;
   children: React.ReactNode[];
 }) {
   const { ref, edges, columns } = useOverflow(scroll);
@@ -757,7 +732,10 @@ function PileGrid({
         )}
       >
         <AnimatePresence initial={false}>
-          {withSpread(children, spread, columns)}
+          {children}
+          {spread === undefined
+            ? null
+            : spread(columns > 2 ? "col-[2/-1]" : "col-span-full")}
         </AnimatePresence>
       </div>
     </div>

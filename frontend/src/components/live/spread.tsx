@@ -44,9 +44,82 @@ export function SpreadButton({
 }
 
 /**
- * Every card in a group, read whole, unfolded in place under the group's own
- * row: the wall stays where it is and the rows below make room. Escape or the
- * cross folds it back. It changes nothing on the wall.
+ * A pile in focus: the rest of the wall gives way and every card in the pile
+ * is read whole, in columns beside the pile's own face, which stays as the
+ * header. A tap or Escape brings the wall back. It changes nothing on the wall.
+ */
+export function Spread({
+  name,
+  cards,
+  big = false,
+  phone = false,
+  onClose,
+  className,
+}: {
+  name: string;
+  cards: WallCard[];
+  big?: boolean;
+  phone?: boolean;
+  onClose: () => void;
+  className?: string;
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1, transition: { duration: 0.3, delay: 0.15 } }}
+      exit={{ opacity: 0, transition: { duration: 0.12 } }}
+      role="region"
+      aria-label={`${name}, every card`}
+      onClick={onClose}
+      className={cn(
+        "flex min-w-0 cursor-pointer flex-col",
+        big ? "px-2" : phone ? "px-1" : "px-1.5",
+        className,
+      )}
+    >
+      <ul
+        className={cn(
+          "min-w-0 gap-x-8",
+          big
+            ? "columns-3 text-xl leading-[1.35]"
+            : phone
+              ? "columns-1 text-sm leading-[1.35]"
+              : "columns-2 text-sm leading-[1.35]",
+        )}
+      >
+        {cards.map((card) => (
+          <li
+            key={card.card}
+            className={cn(
+              "flex min-w-0 break-inside-avoid items-baseline gap-2 border-border border-b py-1.5",
+              big && "py-2.5",
+            )}
+          >
+            <Answer value={card.value} className="flex-1" />
+            {card.part === "" ? null : (
+              <span className="flex-none font-mono text-muted-foreground text-xs">
+                {card.part}
+              </span>
+            )}
+            {card.model ? <ModelTag big={big} /> : null}
+          </li>
+        ))}
+      </ul>
+    </motion.div>
+  );
+}
+
+/**
+ * Every card of a vote's choice, read whole, unfolded under the choice's own
+ * row: the rows below make room. Escape or the cross folds it back.
  */
 export function SpreadPanel({
   name,
