@@ -10,24 +10,19 @@ export const RELAY_LINES = [
 
 /** What the brief box takes, by what is being drafted. */
 export const BRIEF_PLACEHOLDER = {
-  quiz: "Describe the quiz you want, or just what you want to check the class has understood. The model writes the questions, and you can change anything after.",
-  survey:
-    "Describe the survey you want, or just what you want to find out from the class. The model writes the questions, and you can change anything after.",
+  questionnaire:
+    "Describe the quiz or survey you want — what you want to check the class has understood, or what you want to find out from it. Say which. The model writes the questions, and you can change anything after.",
   relay:
     "Describe the rounds you want, or just the experience you want the class to have. The model drafts the rounds, and you can change anything after.",
 } as const;
 
 /** Briefs that draft well, offered under the box in the author's own words. */
 export const BRIEF_CHIPS = {
-  quiz: [
-    "Five questions on photosynthesis for an intro biology lecture, one right answer each",
-    "Check that the class can tell a concept from a feature",
-    "Ten questions on last week's reading, the hardest last",
-  ],
-  survey: [
-    "Ask how the problem sets are going and what took the longest",
-    "Find out what the class already knows about databases before I teach it",
-    "Ask which project topics people want to work on",
+  questionnaire: [
+    "A five-question quiz on photosynthesis for an intro biology lecture, one right answer each",
+    "A quiz to check that the class can tell a concept from a feature",
+    "A survey asking how the problem sets are going and what took the longest",
+    "A survey to find out what the class already knows about databases before I teach it",
   ],
   relay: [
     "Help the class find out what they have in common, starting from the app they'd delete first",

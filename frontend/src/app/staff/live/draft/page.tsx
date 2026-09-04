@@ -23,9 +23,11 @@ import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { relativeTime } from "@/lib/format";
 
+// One segment for a quiz or a survey: the brief says which, and the model
+// asks when the brief could be either. The kind reaches the describe endpoint
+// nowhere else, so two segments would only pretend to send it.
 const KINDS = [
-  { kind: "quiz", label: "Quiz" },
-  { kind: "survey", label: "Survey" },
+  { kind: "questionnaire", label: "Quiz or survey" },
   { kind: "relay", label: "Relay" },
 ] as const;
 
@@ -96,9 +98,14 @@ function DraftPageContent() {
   const { me } = useAuth();
   const author = me === null ? null : String(me.user);
   const named = searchParams.get("brief");
+  // A link may still ask for a quiz or a survey by name; both are the one segment.
   const askedKind = searchParams.get("kind");
+  const askedFor =
+    askedKind === "quiz" || askedKind === "survey"
+      ? "questionnaire"
+      : askedKind;
   const [kind, setKind] = useState<Kind>(
-    isKind(askedKind) ? askedKind : "quiz",
+    isKind(askedFor) ? askedFor : "questionnaire",
   );
   const [brief, setBrief] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
