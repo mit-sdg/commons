@@ -6,9 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * The wall as the room sees it lags the wall as the server holds it, on
  * purpose: a snapshot arrives every few seconds with many cards moved at
  * once, and the screen plays those moves one at a time so each card is seen
- * to land. Only the end state matters. A snapshot that arrives while moves
- * are still playing replaces the target, so the queue never replays history
- * it has already been overtaken on.
+ * to land, on one belt that outlives snapshots: a snapshot that arrives while
+ * moves are still playing adds its moves to the end and leaves the cadence
+ * alone. Only the end state matters.
  */
 
 interface StagedCard {
@@ -203,85 +203,107 @@ export const PILE_MOVE = {
  */
 export const LANDING_GAP_MS = 320;
 export const ARRIVAL_GAP_MS = 120;
-/** How far the shown wall may trail the server before its wave hurries. */
+/** How long a pile stands empty after it opens, before its first card lands. */
+export const BIRTH_GAP_MS = 600;
+/** How far the shown wall may trail the server before its moves hurry. */
 export const MAX_LAG_MS = 9_000;
-/** How long before its first card a pile opens, so the card is seen to fly into it. */
-export const OPEN_AHEAD_MS = 200;
+/** How long a card is in the air between the tray and a pile's face. */
+export const FLIGHT_MS = 900;
+
+/** How long the wall waits after each kind of move before the next one plays. */
+export const GAP_MS: Record<Move["kind"], number> = {
+  open: BIRTH_GAP_MS,
+  arrive: ARRIVAL_GAP_MS,
+  place: LANDING_GAP_MS,
+  return: LANDING_GAP_MS,
+  leave: 0,
+  close: 0,
+};
+
+/**
+ * A snapshot's moves in the order they join the belt: arrivals first; then
+ * the cards leaving the tray, newest first, since the newest are the cards the
+ * shelf shows and the room should see each one go, each pile opening just
+ * before the first card that lands in it; a pile no card lands in opens
+ * first; returns after; what leaves or closes goes last.
+ */
+export function ordered(moves: Move[]): Move[] {
+  const opens = new Map(
+    moves.flatMap((move) => (move.kind === "open" ? [[move.pile, move]] : [])),
+  );
+  const places = moves.filter((move) => move.kind === "place").reverse();
+  const landings: Move[] = [];
+  for (const move of places) {
+    if (move.kind !== "place") continue;
+    const open = opens.get(move.pile);
+    if (open !== undefined) {
+      landings.push(open);
+      opens.delete(move.pile);
+    }
+    landings.push(move);
+  }
+  return [
+    ...opens.values(),
+    ...moves.filter((move) => move.kind === "arrive"),
+    ...landings,
+    ...moves.filter((move) => move.kind === "return"),
+    ...moves.filter((move) => move.kind === "leave"),
+    ...moves.filter((move) => move.kind === "close"),
+  ];
+}
+
+/** How long the moves on the belt would take at full pace. */
+export function span(belt: Move[]): number {
+  return belt.reduce((sum, move) => sum + GAP_MS[move.kind], 0);
+}
+
+/**
+ * The gap after the belt's first move. The belt keeps the full pace until
+ * what is on it would trail the server by more than the lag allows; then
+ * every gap shrinks by the same share, and grows back as the belt drains.
+ */
+export function gapAfter(belt: Move[]): number {
+  const head = belt[0];
+  if (head === undefined) return 0;
+  const whole = span(belt);
+  const squeeze = whole > MAX_LAG_MS ? MAX_LAG_MS / whole : 1;
+  return Math.round(GAP_MS[head.kind] * squeeze);
+}
 
 export interface Timed {
   move: Move;
-  /** Milliseconds from the wave's start. */
+  /** Milliseconds from the belt's start. */
   at: number;
 }
 
-/**
- * When each of a snapshot's moves plays, from the wave's start. Landings go
- * one at a time, a gap apart — arrivals first, then the cards leaving the
- * tray, newest first, since the newest are the cards the shelf shows and the
- * room should see each one go — at the same pace whether the snapshot
- * brought two cards or forty; a
- * wave that would trail the server by more than the lag allows is squeezed to
- * fit it. A pile opens a beat before the first card that lands in it, so the
- * room sees the card fly into a pile that is there to take it; a pile no card
- * lands in opens at once. What leaves or closes goes after the last landing.
- */
-export function schedule(moves: Move[]): Timed[] {
-  const landings = [
-    ...moves.filter((move) => move.kind === "arrive"),
-    ...moves.filter((move) => move.kind === "place").reverse(),
-    ...moves.filter((move) => move.kind === "return"),
-  ];
-  const afterwards = moves.filter(
-    (move) => move.kind === "leave" || move.kind === "close",
-  );
-  const gaps = landings.map((move) =>
-    move.kind === "arrive" ? ARRIVAL_GAP_MS : LANDING_GAP_MS,
-  );
-  const span = gaps.slice(0, -1).reduce((sum, gap) => sum + gap, 0);
-  const squeeze = span > MAX_LAG_MS ? MAX_LAG_MS / span : 1;
-  const times: number[] = [];
+/** When each move on a belt plays if nothing more joins it. */
+export function timeline(belt: Move[]): Timed[] {
+  const timed: Timed[] = [];
   let at = 0;
-  landings.forEach((_, index) => {
-    times.push(Math.round(at));
-    at += (gaps[index] ?? 0) * squeeze;
+  belt.forEach((move, index) => {
+    timed.push({ move, at });
+    at += gapAfter(belt.slice(index));
   });
-  const last = times[times.length - 1] ?? 0;
-  const firstLanding = new Map<string, number>();
-  landings.forEach((move, index) => {
-    if (move.kind !== "place" || firstLanding.has(move.pile)) return;
-    firstLanding.set(move.pile, times[index] ?? 0);
-  });
-  const opens = moves.flatMap((move) => {
-    if (move.kind !== "open") return [];
-    const first = firstLanding.get(move.pile);
-    return [
-      {
-        move,
-        at: first === undefined ? 0 : Math.max(0, first - OPEN_AHEAD_MS),
-      },
-    ];
-  });
-  return [
-    ...opens,
-    ...landings.map((move, index) => ({ move, at: times[index] ?? 0 })),
-    ...afterwards.map((move) => ({ move, at: last })),
-  ];
+  return timed;
 }
 
 /**
- * The wall to draw. `wall` is the latest snapshot; `shown` trails it by one
- * wave: a snapshot's moves are scheduled from the moment it arrives and each
- * plays at its time, so every card is seen to land, one at a time. A card
- * that leaves the tray leaves it at once, so the tray closes over its place
- * as the card flies, and a pile's count ticks as each card lands. A snapshot
- * that arrives mid-wave reschedules what is left from the wall as shown. `edit`
- * changes the shown wall at once — a hand move already seen by the person who
- * made it — and the snapshot that follows finds nothing left to play for it.
- * With `instant`, or before the first snapshot, the shown wall is the target.
+ * The wall to draw. `wall` is the latest snapshot; `shown` trails it by the
+ * moves still on the belt. The belt is one queue that outlives snapshots: a
+ * snapshot appends the moves that take the wall the belt will reach to the
+ * wall the server holds, and never resets the clock, so mid-wave a poll
+ * neither restarts the cadence nor lands two cards at once. `onMove` is told
+ * each move the instant before it is shown. `edit` changes the shown wall at
+ * once — a hand move already seen by the person who made it — and the
+ * snapshot that follows finds nothing left to play for it. With `instant`,
+ * or before the first snapshot, the shown wall is the target.
  */
 export function useStagedWall<Wall extends Staged>(
   wall: Wall | null,
-  { instant = false }: { instant?: boolean } = {},
+  {
+    instant = false,
+    onMove,
+  }: { instant?: boolean; onMove?: (move: Move, shown: Wall) => void } = {},
 ): {
   shown: Wall | null;
   settled: boolean;
@@ -293,9 +315,16 @@ export function useStagedWall<Wall extends Staged>(
   const [shown, setShown] = useState<Wall | null>(wall);
   const [settled, setSettled] = useState(true);
   const target = useRef<Wall | null>(wall);
-  // The shown wall as the timers last left it, read when the next one fires.
+  // The wall the belt reaches once everything on it has played.
+  const reached = useRef<Wall | null>(wall);
+  // The shown wall as the belt last left it, read when the next move plays.
   const current = useRef<Wall | null>(wall);
-  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const belt = useRef<Move[]>([]);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const told = useRef(onMove);
+  useEffect(() => {
+    told.current = onMove;
+  });
   // The order cards landed in, so a pile's face shows what arrived last.
   const landings = useRef(new Map<string, number>());
   const stamp = useCallback((card: string) => {
@@ -307,86 +336,75 @@ export function useStagedWall<Wall extends Staged>(
     setShown(next);
   }, []);
 
-  const clear = useCallback(() => {
-    for (const timer of timers.current) clearTimeout(timer);
-    timers.current.clear();
-  }, []);
+  const finish = useCallback(() => {
+    timer.current = null;
+    const goal = target.current;
+    const standing = current.current;
+    setSettled(true);
+    show(goal === null || standing === null ? goal : adopt(standing, goal));
+  }, [show]);
 
-  /** `from` is the wall the wave has played, which by default is the shown one. */
-  const finish = useCallback(
-    (next: Wall, from: Wall | null = current.current) => {
-      setSettled(true);
-      show(from === null ? next : adopt(from, next));
+  // One move plays, then the belt waits its gap before the next; the belt
+  // stops only when it is empty.
+  const pump = useCallback(
+    function pump() {
+      timer.current = null;
+      const move = belt.current.shift();
+      const goal = target.current;
+      const standing = current.current;
+      if (move === undefined || goal === null || standing === null) {
+        finish();
+        return;
+      }
+      told.current?.(move, standing);
+      const played = apply(standing, goal, move);
+      if (move.kind === "arrive" || move.kind === "place") stamp(move.card);
+      show(played);
+      if (belt.current.length === 0) {
+        finish();
+        return;
+      }
+      timer.current = setTimeout(pump, gapAfter([move, ...belt.current]));
     },
-    [show],
+    [finish, show, stamp],
   );
 
   // Every move is played off the clock, so the snapshot that arrives never
   // changes the wall in the render that took it.
-  const start = useCallback(() => {
-    const next = target.current;
-    if (next === null) {
-      setSettled(true);
-      show(null);
+  useEffect(() => {
+    target.current = wall;
+    const from = reached.current;
+    reached.current = wall;
+    if (wall === null || from === null || instant) {
+      belt.current = [];
+      if (timer.current !== null) clearTimeout(timer.current);
+      timer.current = setTimeout(finish, 0);
       return;
     }
-    const was = current.current;
-    if (was === null || instant) {
-      finish(next);
-      return;
-    }
-    const moves = diff(was, next);
+    const moves = ordered(diff(from, wall));
     if (moves.length === 0) {
-      finish(next);
+      if (timer.current === null) timer.current = setTimeout(finish, 0);
       return;
     }
     setSettled(false);
-    const timed = schedule(moves);
-    const times = [...new Set(timed.map((entry) => entry.at))].sort(
-      (a, b) => a - b,
-    );
-    const lastTime = times[times.length - 1];
-    for (const at of times) {
-      const due = timed
-        .filter((entry) => entry.at === at)
-        .map((entry) => entry.move);
-      const timer = setTimeout(() => {
-        timers.current.delete(timer);
-        const goal = target.current;
-        const standing = current.current;
-        if (goal === null || standing === null) return;
-        let played = standing;
-        for (const move of due) {
-          played = apply(played, goal, move);
-          if (move.kind === "arrive" || move.kind === "place") stamp(move.card);
-        }
-        if (at === lastTime) {
-          finish(goal, played);
-        } else {
-          show(played);
-        }
-      }, at);
-      timers.current.add(timer);
-    }
-  }, [instant, finish, show, stamp]);
+    belt.current.push(...moves);
+    if (timer.current === null) timer.current = setTimeout(pump, 0);
+  }, [wall, instant, finish, pump]);
 
-  useEffect(() => {
-    target.current = wall;
-    clear();
-    const timer = setTimeout(() => {
-      timers.current.delete(timer);
-      start();
-    }, 0);
-    timers.current.add(timer);
-  }, [wall, clear, start]);
-
-  useEffect(() => clear, [clear]);
+  useEffect(
+    () => () => {
+      if (timer.current !== null) clearTimeout(timer.current);
+      timer.current = null;
+    },
+    [],
+  );
 
   const edit = useCallback(
     (change: (wall: Wall) => Wall, card?: string) => {
       const standing = current.current;
       if (standing !== null) show(change(standing));
       if (target.current !== null) target.current = change(target.current);
+      if (reached.current !== null) reached.current = change(reached.current);
       if (card !== undefined) stamp(card);
     },
     [show, stamp],

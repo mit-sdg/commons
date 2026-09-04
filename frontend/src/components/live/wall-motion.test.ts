@@ -3,15 +3,17 @@ import {
   ARRIVAL_GAP_MS,
   adopt,
   apply,
+  BIRTH_GAP_MS,
   diff,
   dropped,
+  gapAfter,
   LANDING_GAP_MS,
   MAX_LAG_MS,
   type Move,
   merged,
-  OPEN_AHEAD_MS,
+  ordered,
   placed,
-  schedule,
+  timeline,
 } from "./wall-motion";
 
 const wall = (cards: [string, string | null][], piles: string[]) => ({
@@ -140,94 +142,85 @@ describe("the wall when nothing is left to move", () => {
   });
 });
 
-describe("when a snapshot's moves play", () => {
+describe("the order a snapshot's moves join the belt", () => {
   const moves: Move[] = [
     { kind: "open", pile: "p3" },
+    { kind: "open", pile: "p9" },
     { kind: "arrive", card: "d" },
     { kind: "place", card: "a", pile: "p3" },
-    { kind: "return", card: "c" },
+    { kind: "place", card: "b", pile: "p1" },
+    { kind: "place", card: "c", pile: "p3" },
+    { kind: "return", card: "r" },
     { kind: "leave", card: "e" },
     { kind: "close", pile: "p2" },
   ];
 
-  test("landings go one at a time, a pile opens a beat before its first card, and leaving and closing wait for the last landing", () => {
-    expect(schedule(moves)).toEqual([
-      {
-        move: { kind: "open", pile: "p3" },
-        at: Math.max(0, ARRIVAL_GAP_MS - OPEN_AHEAD_MS),
-      },
-      { move: { kind: "arrive", card: "d" }, at: 0 },
-      { move: { kind: "place", card: "a", pile: "p3" }, at: ARRIVAL_GAP_MS },
-      {
-        move: { kind: "return", card: "c" },
-        at: ARRIVAL_GAP_MS + LANDING_GAP_MS,
-      },
-      {
-        move: { kind: "leave", card: "e" },
-        at: ARRIVAL_GAP_MS + LANDING_GAP_MS,
-      },
-      {
-        move: { kind: "close", pile: "p2" },
-        at: ARRIVAL_GAP_MS + LANDING_GAP_MS,
-      },
+  test("arrivals first, then the tray's cards newest first, each pile opening just before its first card, and leaving and closing last", () => {
+    expect(ordered(moves)).toEqual<Move[]>([
+      { kind: "open", pile: "p9" },
+      { kind: "arrive", card: "d" },
+      { kind: "open", pile: "p3" },
+      { kind: "place", card: "c", pile: "p3" },
+      { kind: "place", card: "b", pile: "p1" },
+      { kind: "place", card: "a", pile: "p3" },
+      { kind: "return", card: "r" },
+      { kind: "leave", card: "e" },
+      { kind: "close", pile: "p2" },
     ]);
   });
 
-  test("a pile no card lands in opens at once", () => {
-    expect(schedule([{ kind: "open", pile: "p9" }])).toEqual([
-      { move: { kind: "open", pile: "p9" }, at: 0 },
-    ]);
+  test("nothing from nothing", () => {
+    expect(ordered([])).toEqual([]);
   });
+});
 
-  test("the cards leaving the tray go newest first, the way the shelf shows them", () => {
-    const timed = schedule([
-      { kind: "place", card: "old", pile: "p1" },
-      { kind: "place", card: "new", pile: "p2" },
-    ]);
-    expect(timed.filter((entry) => entry.move.kind === "place")).toEqual([
-      { move: { kind: "place", card: "new", pile: "p2" }, at: 0 },
-      { move: { kind: "place", card: "old", pile: "p1" }, at: LANDING_GAP_MS },
-    ]);
-  });
-
-  test("a room's worth of cards keeps the pace until the pace would trail too far, then squeezes to the lag", () => {
-    const twenty: Move[] = Array.from({ length: 20 }, (_, index) => ({
+describe("the belt's pace", () => {
+  const places = (count: number): Move[] =>
+    Array.from({ length: count }, (_, index) => ({
       kind: "place",
       card: `c${index}`,
       pile: "p1",
     }));
-    expect(schedule(twenty).map((entry) => entry.at)).toEqual(
-      twenty.map((_, index) => index * LANDING_GAP_MS),
+
+  test("each kind of move waits its own gap, and a pile stands empty for a beat", () => {
+    expect(gapAfter([{ kind: "arrive", card: "d" }, ...places(1)])).toBe(
+      ARRIVAL_GAP_MS,
     );
-    const sixty: Move[] = Array.from({ length: 60 }, (_, index) => ({
-      kind: "place",
-      card: `c${index}`,
-      pile: "p1",
-    }));
-    const times = schedule(sixty).map((entry) => entry.at);
-    expect(Math.max(...times)).toBe(MAX_LAG_MS);
+    expect(gapAfter(places(2))).toBe(LANDING_GAP_MS);
+    expect(gapAfter([{ kind: "open", pile: "p1" }, ...places(1)])).toBe(
+      BIRTH_GAP_MS,
+    );
+    expect(gapAfter([{ kind: "leave", card: "e" }])).toBe(0);
+    expect(gapAfter([])).toBe(0);
+  });
+
+  test("a room's worth of cards keeps the pace until the belt would trail too far, then every gap shrinks by the same share", () => {
+    expect(timeline(places(20)).map((entry) => entry.at)).toEqual(
+      places(20).map((_, index) => index * LANDING_GAP_MS),
+    );
+    const sixty = places(60);
+    expect(gapAfter(sixty)).toBe(
+      Math.round(LANDING_GAP_MS * (MAX_LAG_MS / (60 * LANDING_GAP_MS))),
+    );
+    const times = timeline(sixty).map((entry) => entry.at);
     expect(new Set(times).size).toBe(60);
     for (let index = 1; index < times.length; index += 1) {
-      expect(times[index] - times[index - 1]).toBeGreaterThanOrEqual(
-        Math.floor(MAX_LAG_MS / 59),
-      );
+      const gap = times[index] - times[index - 1];
+      expect(gap).toBeGreaterThan(0);
+      expect(gap).toBeLessThanOrEqual(LANDING_GAP_MS);
     }
   });
 
-  test("a few cards keep the full gap, and one card lands at once", () => {
-    const three = schedule([
-      { kind: "place", card: "a", pile: "p1" },
-      { kind: "place", card: "b", pile: "p1" },
-      { kind: "place", card: "c", pile: "p1" },
+  test("the gap grows back as the belt drains", () => {
+    const sixty = places(60);
+    expect(gapAfter(sixty)).toBeLessThan(gapAfter(sixty.slice(40)));
+    expect(gapAfter(sixty.slice(40))).toBe(LANDING_GAP_MS);
+  });
+
+  test("one card lands at once", () => {
+    expect(timeline(places(1))).toEqual([
+      { move: { kind: "place", card: "c0", pile: "p1" }, at: 0 },
     ]);
-    expect(three.map((entry) => entry.at)).toEqual([
-      0,
-      LANDING_GAP_MS,
-      2 * LANDING_GAP_MS,
-    ]);
-    expect(schedule([{ kind: "place", card: "a", pile: "p1" }])).toEqual([
-      { move: { kind: "place", card: "a", pile: "p1" }, at: 0 },
-    ]);
-    expect(schedule([])).toEqual([]);
+    expect(timeline([])).toEqual([]);
   });
 });
