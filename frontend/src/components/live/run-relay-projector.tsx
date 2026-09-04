@@ -146,6 +146,9 @@ export function RelayProjector({
       className={`${PROJECTOR} flex h-dvh flex-col gap-[clamp(0.75rem,2.5dvh,32px)] overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] pt-[clamp(1rem,4.5dvh,60px)] pb-[clamp(0.75rem,3.5dvh,48px)]`}
     >
       <ProjectorFit />
+      {/* The wall names itself the way the dashboard and the phone do; on the
+          projector the run's own eyebrow is where the room reads it. */}
+      <h1 className="sr-only">{run.title}</h1>
       <Wall
         wall={wall}
         big
