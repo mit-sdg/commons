@@ -748,7 +748,8 @@ export function RelayRunBoard({
         </div>
       </header>
 
-      {error !== null ? (
+      {/* Adrift, the figure's own line says it; the banner is for a refusal. */}
+      {error !== null && !adrift ? (
         <p className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-sm">
           {error} This wall is stale.
         </p>
