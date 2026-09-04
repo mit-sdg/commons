@@ -42,11 +42,17 @@ import {
 } from "@/components/live/wall-motion";
 import { cn } from "@/lib/utils";
 
-/** How many unsorted cards stand on the shelf; the rest are clipped under its fade. */
+/** The most unsorted cards a shelf lays out; the row keeps what fits of them. */
 const SHELF_SHOWN = 18;
+
+/** How wide the shelf's fade runs at least, before the cut card asks for more. */
+const SHELF_FADE = { big: 120, small: 72 };
 
 /** How many of a context group's words a chip carries before the rest are a count. */
 const CONTEXT_SHOWN = 3;
+
+/** How tall the wall's bottom row stands, which is the line the foot sits on. */
+const FOOT_ROW = { big: "h-[112px]", small: "h-[52px]" };
 
 /** The shelf's cards, oldest first: the tray as the shown wall has it. */
 export function shelfOf(cards: WallCard[]): WallCard[] {
@@ -233,6 +239,8 @@ function StagedWall({
   const piles = useSlots(seen.piles, seen.open);
   const spreading = piles.find((pile) => pile.pile === spread) ?? null;
   const context = questionOf(seen)?.context ?? [];
+  // How many carried groups stand whole, and whether the row is still cut.
+  const { ref: strip, fit: whole, over: cut } = useStrip(context.length);
   const writing = seen.open ? Math.max(0, seen.begun - seen.handedIn) : 0;
   const vote = choicesOf(seen).length > 0;
   /** The round this wall's carried groups and choices came out of. */
@@ -294,7 +302,9 @@ function StagedWall({
           )}
           {phone ? null : (
             <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
-              <div className="flex min-w-0 flex-col gap-2.5">
+              {/* The words take the width the figure leaves, so the strip's
+                  box does not move as its own chips do. */}
+              <div className="flex min-w-0 flex-col gap-2.5 sm:flex-1">
                 {eyebrow === undefined ? null : (
                   <span
                     className={cn(
@@ -324,14 +334,18 @@ function StagedWall({
                   />
                 ) : null}
                 {context.length === 0 ? null : (
-                  // One row: the round the groups came from, then the groups,
-                  // the row cut under a fade rather than wrapping into the
-                  // prompt's room. The groups carried in are named by the
-                  // round they come from: a name that also stands on this wall
-                  // below is never read as this round's own.
+                  // One row: the round the groups came from, then every group
+                  // that fits whole, then a count of the ones it held back,
+                  // rather than wrapping into the prompt's room. The groups
+                  // carried in are named by the round they come from: a name
+                  // that also stands on this wall below is never read as this
+                  // round's own.
                   <div
+                    ref={strip}
                     className={cn(
-                      "flex min-w-0 items-center overflow-hidden [mask-image:linear-gradient(to_right,#000_calc(100%_-_48px),transparent)]",
+                      "flex min-w-0 items-center overflow-hidden",
+                      cut &&
+                        "[mask-image:linear-gradient(to_right,#000_calc(100%_-_48px),transparent)]",
                       big ? "gap-3" : "gap-2",
                     )}
                   >
@@ -351,12 +365,13 @@ function StagedWall({
                       </span>
                     )}
                     <>
-                      {context.map((group) => {
+                      {context.slice(0, whole).map((group) => {
                         const values = distinctValues(group.cards);
                         const held = values.length - CONTEXT_SHOWN;
                         return (
                           <div
                             key={group.name}
+                            data-group
                             className={cn(
                               "flex min-w-0 flex-none flex-col gap-0.5 rounded-lg border border-border bg-card",
                               big
@@ -391,6 +406,17 @@ function StagedWall({
                           </div>
                         );
                       })}
+                      {context.length - whole <= 0 ? null : (
+                        <div
+                          data-more
+                          className={cn(
+                            "flex flex-none items-center rounded-lg border border-border bg-card text-muted-foreground",
+                            big ? "px-4 py-2 text-lg" : "px-3 py-1.5 text-xs",
+                          )}
+                        >
+                          and {context.length - whole} more
+                        </div>
+                      )}
                     </>
                   </div>
                 )}
@@ -465,6 +491,7 @@ function StagedWall({
                             key="spread"
                             name={spreading.name}
                             cards={cardsIn(seen.cards, spreading.pile)}
+                            description={spreading.description}
                             big={big}
                             phone={phone}
                             // Escape in the Remove dialog is the dialog's alone.
@@ -546,6 +573,14 @@ function StagedWall({
                             big={big}
                             phone={phone}
                             onDrop={openPile}
+                            naming={
+                              seen.cards.find((one) => one.card === naming) ??
+                              null
+                            }
+                            name={name}
+                            onName={setName}
+                            onCommit={commitPile}
+                            onCancel={() => setNaming(null)}
                           />,
                         ]
                       : []),
@@ -556,10 +591,22 @@ function StagedWall({
           )}
 
           {/* The bottom row: the shelf, when it stands there, with the foot
-              at its right; the foot alone once nothing is unsorted. */}
+              at its right; the foot alone once nothing is unsorted. A vote has
+              no tray and so no count, and keeps the row and its rule, so the
+              foot stands on the same line whatever the round. */}
           {shelfAt === "bottom" &&
           (foot !== undefined || (!vote && shelfShown)) ? (
-            <div className="grid flex-none grid-cols-[minmax(0,1fr)_auto] items-center gap-9">
+            <div
+              className={cn(
+                "grid flex-none grid-cols-[minmax(0,1fr)_auto] items-center gap-9",
+                !vote && shelfShown
+                  ? undefined
+                  : cn(
+                      "border-border border-t",
+                      big ? FOOT_ROW.big : FOOT_ROW.small,
+                    ),
+              )}
+            >
               {!vote && shelfShown ? shelfRow : <span />}
               {foot === undefined ? null : (
                 <div className="flex-none">{foot}</div>
@@ -567,26 +614,6 @@ function StagedWall({
             </div>
           ) : null}
 
-          {naming !== null ? (
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                commitPile();
-              }}
-              className="flex items-center gap-2"
-            >
-              <input
-                // biome-ignore lint/a11y/noAutofocus: the name is being typed the moment it appears.
-                autoFocus
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                onBlur={commitPile}
-                placeholder="Name the pile"
-                aria-label="Name the pile"
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              />
-            </form>
-          ) : null}
           {!canRemove ? null : (
             <ConfirmAction
               open={removing !== null}
@@ -627,8 +654,8 @@ function StagedWall({
 /**
  * The shelf: one row, one card tall — two lines tall on a projector, where an
  * answer is read from the back of the room. The count of everything unsorted
- * at the left, the newest cards at the right with the oldest clipped under
- * the fade, and one chip for the answers still being written. A card dropped
+ * at the left with one chip beside it for the answers still being written,
+ * and the newest cards at the right with the oldest clipped under the fade. A card dropped
  * on the shelf goes back to the tray. A card that flies to a pile leaves the
  * row at once, and the row closes over its place as the card goes.
  */
@@ -655,6 +682,8 @@ function Shelf({
   onRemove?: (card: WallCard) => void;
 }) {
   const editable = onDrop !== undefined;
+  // How many cards the row stands, and how wide the fade over the cut one runs.
+  const { ref: row, shown, fade } = useShelfRoom(cards.length, big);
   return (
     <div
       onDragOver={editable ? (event) => event.preventDefault() : undefined}
@@ -668,11 +697,15 @@ function Shelf({
           : undefined
       }
       className={cn(
-        "grid flex-none grid-cols-[auto_minmax(0,1fr)_auto] items-center border-border",
+        "grid flex-none grid-cols-[auto_minmax(0,1fr)] items-center border-border",
         bottom ? "border-t" : "border-b",
-        big ? "h-[112px] gap-7 px-1.5" : "h-[52px] gap-4 pr-1 pl-0.5",
+        big
+          ? `${FOOT_ROW.big} gap-7 px-1.5`
+          : `${FOOT_ROW.small} gap-4 pr-1 pl-0.5`,
       )}
     >
+      {/* The count and the answers still on their way are one thing, at the
+          row's left: what the room is still waiting for. */}
       <span
         className={cn(
           "flex items-baseline gap-2 whitespace-nowrap text-muted-foreground",
@@ -687,19 +720,36 @@ function Shelf({
           )}
         />{" "}
         unsorted
+        {writing === 0 ? null : (
+          <span
+            className={cn(
+              "self-center whitespace-nowrap rounded-full border border-input border-dashed font-mono text-muted-foreground",
+              big ? "px-[18px] py-2 text-xl" : "px-2.5 py-1 text-xs",
+            )}
+          >
+            {writing} writing
+          </span>
+        )}
       </span>
       {/* The row fills from the right, so the newest card is always in the
           same place and what the row cannot hold falls off its left edge. */}
       <div
+        ref={row}
         data-shelf
+        style={
+          fade === null
+            ? undefined
+            : {
+                maskImage: `linear-gradient(to right, transparent, #000 ${fade}px)`,
+                WebkitMaskImage: `linear-gradient(to right, transparent, #000 ${fade}px)`,
+              }
+        }
         className={cn(
           "flex min-w-0 items-center justify-end overflow-hidden",
-          big
-            ? "gap-3 [mask-image:linear-gradient(to_right,transparent,#000_120px)]"
-            : "gap-2 [mask-image:linear-gradient(to_right,transparent,#000_72px)]",
+          big ? "gap-3" : "gap-2",
         )}
       >
-        {cards.slice(-SHELF_SHOWN).map((card) => (
+        {cards.slice(-shown).map((card) => (
           <span
             key={card.card}
             className={cn(
@@ -722,17 +772,6 @@ function Shelf({
           </span>
         ))}
       </div>
-      {/* The answers on their way are one chip, not a row of empty boxes. */}
-      {writing === 0 ? null : (
-        <span
-          className={cn(
-            "whitespace-nowrap rounded-full border border-input border-dashed font-mono text-muted-foreground",
-            big ? "px-[18px] py-2 text-xl" : "px-2.5 py-1 text-xs",
-          )}
-        >
-          {writing} writing
-        </span>
-      )}
     </div>
   );
 }
@@ -812,6 +851,121 @@ function PileGrid({
       </div>
     </div>
   );
+}
+
+/**
+ * What the shelf's row has room for: every card that stands whole from the
+ * right, and one more falling under a fade run wide enough to cover it, so a
+ * card the row cuts is never read at full strength. `fade` is nothing while
+ * the row holds every card it was given.
+ */
+function useShelfRoom(
+  count: number,
+  big: boolean,
+): {
+  ref: React.RefObject<HTMLDivElement | null>;
+  shown: number;
+  fade: number | null;
+} {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [room, setRoom] = useState<{ shown: number; fade: number | null }>({
+    shown: SHELF_SHOWN,
+    fade: null,
+  });
+
+  useEffect(() => {
+    const row = ref.current;
+    if (row === null) return;
+    const read = () => {
+      const here = row.getBoundingClientRect();
+      const cards = [...row.querySelectorAll<HTMLElement>("[data-card]")];
+      let whole = 0;
+      for (let index = cards.length - 1; index >= 0; index -= 1) {
+        const card = cards[index]?.getBoundingClientRect();
+        if (card === undefined || card.left - here.left < -0.5) break;
+        whole += 1;
+      }
+      const cut = cards[cards.length - 1 - whole]?.getBoundingClientRect();
+      const shown = Math.max(1, Math.min(SHELF_SHOWN, count, whole + 1));
+      const fade =
+        cut === undefined || whole >= count
+          ? null
+          : Math.max(
+              big ? SHELF_FADE.big : SHELF_FADE.small,
+              Math.round(cut.right - here.left),
+            );
+      setRoom((current) =>
+        current.shown === shown && current.fade === fade
+          ? current
+          : { shown, fade },
+      );
+    };
+    read();
+    const watcher = new ResizeObserver(read);
+    watcher.observe(row);
+    for (const card of row.children) watcher.observe(card);
+    return () => watcher.disconnect();
+  });
+
+  return { ref, shown: room.shown, fade: room.fade };
+}
+
+/** The room the strip keeps for the chip that counts the groups it held back. */
+const MORE_ROOM = 200;
+
+/**
+ * How many carried groups the strip shows whole. The chips are laid out at
+ * their own widths once, and the row then keeps every one that fits beside
+ * the count of the rest; `over` is whether what it shows still holds past its
+ * box, which is the one case the fade is for.
+ */
+function useStrip(count: number): {
+  ref: React.RefObject<HTMLDivElement | null>;
+  fit: number;
+  over: boolean;
+} {
+  const ref = useRef<HTMLDivElement | null>(null);
+  // Where each chip ends, from the row's left, measured while all of them
+  // stand; a chip's own width does not change with the row's.
+  const edges = useRef<number[]>([]);
+  const room = useRef(MORE_ROOM);
+  const [fit, setFit] = useState(count);
+  const [over, setOver] = useState(false);
+
+  useEffect(() => {
+    const box = ref.current;
+    if (box === null) return;
+    const read = () => {
+      const here = box.getBoundingClientRect();
+      const chips = [...box.querySelectorAll<HTMLElement>("[data-group]")];
+      if (chips.length === count) {
+        edges.current = chips.map(
+          (chip) => chip.getBoundingClientRect().right - here.left,
+        );
+      }
+      const more = box.querySelector<HTMLElement>("[data-more]");
+      if (more !== null) room.current = more.getBoundingClientRect().width + 16;
+      const ends = edges.current;
+      let next = count;
+      if (ends.length === count && (ends[count - 1] ?? 0) > here.width) {
+        next = 1;
+        for (let kept = count - 1; kept >= 1; kept -= 1) {
+          if ((ends[kept - 1] ?? 0) + room.current <= here.width) {
+            next = kept;
+            break;
+          }
+        }
+      }
+      setFit(next);
+      setOver(box.scrollWidth - box.clientWidth > 1);
+    };
+    read();
+    const watcher = new ResizeObserver(read);
+    watcher.observe(box);
+    return () => watcher.disconnect();
+  });
+
+  return { ref, fit, over };
 }
 
 /** Which edges a box holds more past, watched as the wall fills it. */
