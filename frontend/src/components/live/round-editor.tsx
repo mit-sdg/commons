@@ -54,6 +54,9 @@ const LOCKED_FIELD =
 /** A boxed field, locked: the box says it is out and the words stay readable. */
 const LOCKED_BOX = `${LOCKED_FIELD} disabled:border-transparent disabled:bg-muted/40`;
 
+/** The kind a run has fixed, read as the prompt beside it is: a muted box. */
+const LOCKED_PILL = "bg-muted/40 font-medium text-foreground";
+
 /**
  * An acting control. Out is out of the tab order, as a disabled button is; busy
  * is said by aria alone, so a request in flight leaves the focus where the hand
@@ -457,9 +460,11 @@ export function RoundEditor({
               aria-disabled={busy || undefined}
               aria-pressed={entry === kind}
               className={cn(
-                "rounded-[5px] px-2.5 py-1 text-sm capitalize disabled:cursor-default",
+                "rounded-[5px] px-2.5 py-1 text-sm capitalize disabled:pointer-events-none disabled:cursor-default",
                 entry === kind
-                  ? "bg-foreground font-medium text-background"
+                  ? locked
+                    ? LOCKED_PILL
+                    : "bg-foreground font-medium text-background"
                   : "text-muted-foreground hover:text-foreground",
               )}
               onClick={() => {
