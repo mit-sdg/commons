@@ -51,6 +51,7 @@ export function SpreadButton({
 export function Spread({
   name,
   cards,
+  description = "",
   big = false,
   phone = false,
   onClose,
@@ -59,6 +60,8 @@ export function Spread({
 }: {
   name: string;
   cards: WallCard[];
+  /** The pile's lid, which the face has room for one line of and this has all of. */
+  description?: string;
   big?: boolean;
   phone?: boolean;
   onClose: () => void;
@@ -93,6 +96,16 @@ export function Spread({
         className,
       )}
     >
+      {description === "" ? null : (
+        <p
+          className={cn(
+            "font-display text-foreground",
+            big ? "mb-4 text-2xl" : "mb-3 text-base",
+          )}
+        >
+          {description}
+        </p>
+      )}
       <ul
         className={cn(
           "min-w-0 gap-x-8",
