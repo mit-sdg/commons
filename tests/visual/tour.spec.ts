@@ -184,11 +184,7 @@ for (const theme of THEMES) {
     await desk(page);
     await page.goto(`/staff/live/relay/${planned.relay}/edit`);
     await expect(page.getByRole("textbox", { name: "Title" }).nth(2)).toHaveValue("The stranger");
-    await page.getByRole("button", { name: "Round 2, The stranger" }).click();
-    await expect(page.getByRole("button", { name: "Round 2, The stranger" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    await page.getByRole("textbox", { name: "Title" }).nth(2).click();
     await expect(page.getByText("Three verbs a bookmark needs.").first()).toBeVisible();
     await snap(page, "RelayEditor", STAFF);
 

@@ -37,6 +37,13 @@ const FIELD: Record<string, string> = {
  */
 export const GOING = "[&>div>*:not(:first-child)]:opacity-45";
 
+/** The mark every standing proposal carries, wherever on the page it stands. */
+const MARK = "data-proposed";
+
+/** What a proposal is marked with, and how the first of them on a page is found. */
+export const PROPOSED = { [MARK]: "" };
+export const FIRST_PROPOSED = `[${MARK}]`;
+
 /** One line as the panel and the cards address it, with what a concept refused. */
 export interface Proposed {
   line: OfferedLine;
@@ -268,7 +275,10 @@ export function RoundChanges({
 }) {
   if (proposed.length === 0) return null;
   return (
-    <div className="mb-1 divide-y divide-primary/20 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1">
+    <div
+      {...PROPOSED}
+      className="mb-1 divide-y divide-primary/20 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1"
+    >
       {proposed.map(({ line, refusal }) => {
         const { field, was, to } = changeWords(line, round);
         return (
@@ -306,7 +316,10 @@ export function ProposedRound({
   const round = addedRound(line.value);
   const boxes = partWords(round.parts, round.cap) || round.choices.join(" · ");
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-dashed border-primary/50 bg-primary/5 px-5 py-4">
+    <div
+      {...PROPOSED}
+      className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-dashed border-primary/50 bg-primary/5 px-5 py-4"
+    >
       <RoundToken number={number} size="lg" standing="next" />
       <div className="flex min-w-0 flex-col gap-2">
         <div className="flex items-start gap-2">

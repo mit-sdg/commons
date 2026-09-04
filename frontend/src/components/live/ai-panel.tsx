@@ -1,17 +1,21 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { refusalSentence, saidRefusal } from "@/components/live/refusals";
 import { ActButton } from "@/components/live/round-editor";
 import {
   changeWords,
+  FIRST_PROPOSED,
+  PROPOSED,
   ProposalRow,
   type Proposed,
   ProposedRound,
   RoundChanges,
 } from "@/components/live/round-proposal";
 import { Spinner } from "@/components/states";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { api, isApiError, type Output, publicErrorMessage } from "@/lib/api";
 import { toDate } from "@/lib/format";
@@ -32,8 +36,8 @@ const UNREACHED = "The model could not be reached.";
 
 const EXAMPLE = "Add a last round where the room picks a winner.";
 
-/** Where the line comes to rest: under the site header, which grows a course bar at lg. */
-const UNDER_HEADER = "top-[65px] lg:top-[114px]";
+/** The light a reply that has just landed leaves on the first proposal it made. */
+const LANDED = "proposal-landed";
 
 /**
  * Whether the reasoner's last failure is this brief's. The read carries the
@@ -130,8 +134,10 @@ function landedNote(offering: Offering | null): string | null {
 
 /** What the page draws of the model's proposals, and where each belongs. */
 export interface Drafting {
-  /** The brief box, or the pair that settles everything still standing. */
+  /** The handle that opens the brief, and under it the box or the naming rows. */
   line: React.ReactNode;
+  /** How much stands and the pair that settles all of it, for the foot of the list. */
+  bar: React.ReactNode;
   /** What is proposed for the round at this leg, drawn across its card's top. */
   proposal: (leg: string) => React.ReactNode;
   /** Whether a proposal would take the round at this leg away. */
@@ -141,7 +147,7 @@ export interface Drafting {
    * there; the number past the last round takes every round landing past it.
    */
   adds: (number: number) => React.ReactNode;
-  /** How many proposals still stand, for the button that opened the brief. */
+  /** How many proposals still stand, on which the line opens itself. */
   standing: number;
 }
 
@@ -155,6 +161,8 @@ export function useDrafting({
   relay,
   rounds,
   title,
+  open,
+  onOpen,
   pending = false,
   since = null,
   onChanged,
@@ -163,6 +171,9 @@ export function useDrafting({
   rounds: Round[];
   /** The relay's own name, which the model may propose another for. */
   title: string;
+  /** Whether the line stands open under its handle. */
+  open: boolean;
+  onOpen: (open: boolean) => void;
   /** A brief was already sent from the page before this one, so a reply is on its way. */
   pending?: boolean;
   /** When that brief went out, so the count reads the whole wait. */
@@ -182,6 +193,8 @@ export function useDrafting({
     error: string;
   } | null>(null);
   const known = useRef<Set<string>>(new Set());
+  /** The reply just landed, which the first proposal it made is shown for. */
+  const [landed, setLanded] = useState<string | null>(null);
   /** How many lines this settling has changed the relay by, for the note. */
   const applied = useRef(0);
   /** When the reply now waited on was asked for; a failure before it is not its. */
@@ -241,6 +254,7 @@ export function useDrafting({
         );
         setWaiting(false);
         if (askedAt !== null) setTook((Date.now() - askedAt) / 1000);
+        setLanded(offered.offerings[0]?.offering ?? null);
         setNote(landedNote(offered.offerings[0] ?? null));
         onChanged();
         return;
@@ -264,6 +278,26 @@ export function useDrafting({
       clearTimeout(timer);
     };
   }, [waiting, read, askedAt, onChanged]);
+
+  // Every proposal is drawn by the page, around its own round, so where the
+  // first one stands is read back from the page rather than held here.
+  useEffect(() => {
+    if (landed === null) return;
+    const first = document.querySelector<HTMLElement>(FIRST_PROPOSED);
+    if (first === null) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    first.scrollIntoView({
+      block: "center",
+      behavior: still ? "auto" : "smooth",
+    });
+    first.classList.add(LANDED);
+    const done = () => first.classList.remove(LANDED);
+    first.addEventListener("animationend", done, { once: true });
+    return () => {
+      first.removeEventListener("animationend", done);
+      done();
+    };
+  }, [landed]);
 
   async function send() {
     const brief = request.trim();
@@ -374,102 +408,118 @@ export function useDrafting({
     (entry) => entry.round === null && entry.line.kind !== "add",
   );
 
+  const body =
+    shown.length > 0 ? (
+      naming.length === 0 ? null : (
+        <div
+          {...PROPOSED}
+          className="flex flex-col gap-2 rounded-lg"
+          id="brief-line"
+        >
+          {naming.map((entry) => (
+            <ProposalRow
+              key={entry.line.suggestion}
+              field={changeWords(entry.line, null).field}
+              was={title}
+              to={changeWords(entry.line, null).to}
+              words="the relay's title"
+              busy={busy}
+              refusal={proposedOf(entry).refusal}
+              onAccept={() => void settle(entry.line, true)}
+              onRefuse={() => void settle(entry.line, false)}
+            />
+          ))}
+        </div>
+      )
+    ) : note !== null ? (
+      <p className="text-muted-foreground text-sm" id="brief-line">
+        {note}
+      </p>
+    ) : (
+      <div className="flex flex-col gap-2.5" id="brief-line">
+        <Textarea
+          value={request}
+          onChange={(event) => setRequest(event.target.value)}
+          placeholder={EXAMPLE}
+          rows={2}
+          aria-label="Brief"
+          className="min-h-12 bg-card"
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <ActButton
+            size="sm"
+            out={request.trim() === ""}
+            busy={busy || waiting}
+            onClick={() => void send()}
+          >
+            {waiting ? <Spinner className="size-4" /> : null} Send
+          </ActButton>
+          {waiting && askedAt !== null ? <Waited since={askedAt} /> : null}
+          {!waiting && took !== null ? (
+            <span className="font-mono text-muted-foreground text-xs tabular-nums">
+              {took.toFixed(1)} s
+            </span>
+          ) : null}
+          {unreached ? (
+            <span className="text-muted-foreground text-sm">{UNREACHED}</span>
+          ) : null}
+          {nothing ? (
+            <span className="text-muted-foreground text-sm">
+              Nothing came back.
+            </span>
+          ) : null}
+          {kept ? (
+            <span className="text-muted-foreground text-sm">
+              Nothing to change.
+            </span>
+          ) : null}
+        </div>
+      </div>
+    );
+
   return {
     line: (
-      <div
-        id="brief-line"
-        className={cn(
-          "mb-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3",
-          shown.length > 0 &&
-            `sticky ${UNDER_HEADER} z-20 bg-background/95 backdrop-blur`,
-        )}
-      >
-        {shown.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            {naming.map((entry) => (
-              <ProposalRow
-                key={entry.line.suggestion}
-                field={changeWords(entry.line, null).field}
-                was={title}
-                to={changeWords(entry.line, null).to}
-                words="the relay's title"
-                busy={busy}
-                refusal={proposedOf(entry).refusal}
-                onAccept={() => void settle(entry.line, true)}
-                onRefuse={() => void settle(entry.line, false)}
-              />
-            ))}
-            <div className="flex gap-2">
-              <ActButton
-                size="sm"
-                busy={busy}
-                onClick={() =>
-                  offering === null ? undefined : void settleAll(offering, true)
-                }
-              >
-                Accept all
-              </ActButton>
-              <ActButton
-                variant="outline"
-                size="sm"
-                busy={busy}
-                onClick={() =>
-                  offering === null
-                    ? undefined
-                    : void settleAll(offering, false)
-                }
-              >
-                Refuse all
-              </ActButton>
-            </div>
-          </div>
-        ) : note !== null ? (
-          <p className="text-muted-foreground text-sm">{note}</p>
-        ) : (
-          <div className="flex flex-col gap-2.5">
-            <Textarea
-              value={request}
-              onChange={(event) => setRequest(event.target.value)}
-              placeholder={EXAMPLE}
-              rows={2}
-              aria-label="Brief"
-              className="min-h-12 bg-card"
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              <ActButton
-                size="sm"
-                out={request.trim() === ""}
-                busy={busy || waiting}
-                onClick={() => void send()}
-              >
-                {waiting ? <Spinner className="size-4" /> : null} Send
-              </ActButton>
-              {waiting && askedAt !== null ? <Waited since={askedAt} /> : null}
-              {!waiting && took !== null ? (
-                <span className="font-mono text-muted-foreground text-xs tabular-nums">
-                  {took.toFixed(1)} s
-                </span>
-              ) : null}
-              {unreached ? (
-                <span className="text-muted-foreground text-sm">
-                  {UNREACHED}
-                </span>
-              ) : null}
-              {nothing ? (
-                <span className="text-muted-foreground text-sm">
-                  Nothing came back.
-                </span>
-              ) : null}
-              {kept ? (
-                <span className="text-muted-foreground text-sm">
-                  Nothing to change.
-                </span>
-              ) : null}
-            </div>
-          </div>
-        )}
+      <div className="mb-3 flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+        <Button
+          variant="outline"
+          size="sm"
+          aria-expanded={open}
+          aria-controls="brief-line"
+          className={cn("w-fit", open && "border-primary text-primary")}
+          onClick={() => onOpen(!open)}
+        >
+          <Sparkles /> Ask AI
+        </Button>
+        {open ? body : null}
       </div>
     ),
+    bar:
+      shown.length === 0 ? null : (
+        <div className="sticky bottom-4 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-background/95 px-4 py-3 backdrop-blur">
+          <span className="mr-1 font-medium text-sm">
+            {shown.length} {shown.length === 1 ? "proposal" : "proposals"}
+          </span>
+          <ActButton
+            size="sm"
+            busy={busy}
+            onClick={() =>
+              offering === null ? undefined : void settleAll(offering, true)
+            }
+          >
+            Accept all
+          </ActButton>
+          <ActButton
+            variant="outline"
+            size="sm"
+            busy={busy}
+            onClick={() =>
+              offering === null ? undefined : void settleAll(offering, false)
+            }
+          >
+            Refuse all
+          </ActButton>
+        </div>
+      ),
     proposal: (leg) => {
       const round = rounds.find((entry) => entry.leg === leg) ?? null;
       const about = shown.filter((entry) => entry.line.target === leg);

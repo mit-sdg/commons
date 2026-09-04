@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Layers, Sparkles } from "lucide-react";
+import { ArrowLeft, Layers } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Fragment, Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -38,6 +38,30 @@ type Relay = NonNullable<Output<"/live/relays/get">["relay"]>;
 
 /** A brief on its way here names the ask it was sent as; every other link only opens the box. */
 const ASK = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** Where a reader reads: a line a third of the way down the screen. */
+const READING = 1 / 3;
+
+/** The round card that line falls in, or the one nearest it. */
+function nearestCard(cards: Map<string, HTMLElement>): string | null {
+  const line = window.innerHeight * READING;
+  let nearest: string | null = null;
+  let gap = Number.POSITIVE_INFINITY;
+  for (const [leg, node] of cards) {
+    const box = node.getBoundingClientRect();
+    const away =
+      box.top > line
+        ? box.top - line
+        : box.bottom < line
+          ? line - box.bottom
+          : 0;
+    if (away < gap) {
+      gap = away;
+      nearest = leg;
+    }
+  }
+  return nearest;
+}
 
 function RelaySetupContent() {
   const { relay } = useParams<{ relay: string }>();
@@ -105,14 +129,36 @@ function RelaySetup({
   }
   const title = typed ?? relay.title;
   const [asking, setAsking] = useState(link !== null || brief !== null);
+  const open = asking && !relay.retired;
   // The brief the address carries goes out from here, so the page it was
   // written on navigates the moment the relay is planned.
   const [sent, setSent] = useState<number | null>(null);
   const going = useRef(false);
-  // The round the phone shows: the card being edited, or the one tapped in the
-  // strip at the phone's top.
+  // The round the phone shows: the card being edited, or the one the reader has
+  // scrolled to.
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const cards = useRef(new Map<string, HTMLElement>());
+  const column = useRef<HTMLDivElement>(null);
+
+  // Scrolling is the reader's own way of saying which round they are on, and
+  // only the column shows a phone for it: below lg the column is not laid out,
+  // and a tap opens the drawer under the card itself.
+  useEffect(() => {
+    const follow = () => {
+      if (column.current === null || column.current.offsetParent === null)
+        return;
+      const leg = nearestCard(cards.current);
+      if (leg !== null) setSelected(leg);
+    };
+    follow();
+    window.addEventListener("scroll", follow, { passive: true });
+    window.addEventListener("resize", follow);
+    return () => {
+      window.removeEventListener("scroll", follow);
+      window.removeEventListener("resize", follow);
+    };
+  }, []);
 
   useEffect(() => {
     if (brief === null || brief.trim() === "" || going.current) return;
@@ -134,6 +180,8 @@ function RelaySetup({
     relay: relay.relay,
     rounds: relay.rounds,
     title: relay.title,
+    open,
+    onOpen: setAsking,
     pending: sent !== null || (link !== null && ASK.test(link)),
     since: sent,
     onChanged,
@@ -152,10 +200,9 @@ function RelaySetup({
       .map((round) => round.leg),
   );
 
-  // The line opens itself once proposals stand, and after that only the button
-  // closes it — so the pair that settles them is never put away.
+  // The line opens itself once proposals stand, and after that only its handle
+  // closes it — so what the model named is never put away unread.
   if (!asking && drafting.standing > 0) setAsking(true);
-  const open = asking && !relay.retired;
 
   async function retitle() {
     if (typed === null) return;
@@ -239,20 +286,6 @@ function RelaySetup({
         </div>
         {relay.retired ? null : (
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              aria-expanded={open}
-              aria-controls="brief-line"
-              className={open ? "border-primary text-primary" : undefined}
-              onClick={() => setAsking(!asking)}
-            >
-              <Sparkles /> Ask AI
-              {drafting.standing > 0 ? (
-                <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary font-mono text-[11px] text-primary-foreground">
-                  {drafting.standing}
-                </span>
-              ) : null}
-            </Button>
             {openRun === null ? (
               <span
                 className="inline-flex"
@@ -277,11 +310,15 @@ function RelaySetup({
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-3">
-          {open ? drafting.line : null}
+          {relay.retired ? null : drafting.line}
           {relay.rounds.map((round) => (
             <Fragment key={round.leg}>
               {drafting.adds(round.number)}
               <div
+                ref={(node) => {
+                  if (node === null) cards.current.delete(round.leg);
+                  else cards.current.set(round.leg, node);
+                }}
                 className={cn(drafting.going(round.leg) && GOING)}
                 onFocusCapture={() => setSelected(round.leg)}
               >
@@ -303,7 +340,6 @@ function RelaySetup({
                   <PhoneColumn
                     rounds={relay.rounds}
                     selected={selected}
-                    onSelect={setSelected}
                     variant="drawer"
                   />
                 </div>
@@ -319,13 +355,13 @@ function RelaySetup({
             </div>
           ) : null}
           {relay.retired ? null : <AddRoundCard busy={busy} onAdd={addRound} />}
+          {relay.retired ? null : drafting.bar}
         </div>
 
-        <div className="hidden lg:block lg:sticky lg:top-[130px]">
+        <div ref={column} className="hidden lg:block lg:sticky lg:top-[130px]">
           <PhoneColumn
             rounds={relay.rounds}
             selected={selected}
-            onSelect={setSelected}
             variant="column"
           />
         </div>

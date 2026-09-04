@@ -416,6 +416,26 @@
     }
   }
 
+  .proposal-landed {
+    animation: proposal-landed 1.2s ease-out;
+  }
+
+  @keyframes proposal-landed {
+    0% {
+      box-shadow:
+        0 0 0 2px color-mix(in oklch, var(--primary) 62%, transparent),
+        0 0 0 9px color-mix(in oklch, var(--primary) 18%, transparent);
+    }
+    60% {
+      box-shadow:
+        0 0 0 2px color-mix(in oklch, var(--primary) 34%, transparent),
+        0 0 0 6px color-mix(in oklch, var(--primary) 9%, transparent);
+    }
+    100% {
+      box-shadow: none;
+    }
+  }
+
   @media (min-width: 40rem) {
     .thread-children {
       --thread-tree-gutter: 1.75rem;

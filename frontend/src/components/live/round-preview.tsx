@@ -14,9 +14,6 @@ import { cn } from "@/lib/utils";
  */
 export const UNNAMED_PILES = ["a pile you pick", "another", "another"];
 
-/** Every round sits in the same pill of the strip, tapped or not. */
-const STRIP_TOKEN = "flex min-w-0 rounded-full px-1 py-0.5";
-
 /** The round a column shows: the one selected, or the first when none is. */
 export function shownRound(
   rounds: RelayRound[],
@@ -69,33 +66,25 @@ export function previewQuestion(
   };
 }
 
-/** The round a token stands for, said in full where the disc alone is drawn. */
-function tokenName(round: RelayRound): string {
-  return [`Round ${round.number}`, round.title.trim()]
-    .filter((part) => part !== "")
-    .join(", ");
-}
-
 /**
- * The phone beside the rounds: the round selected as a class will meet it, and
- * a strip that walks the sequence. `column` stands beside the round cards on a
- * wide screen; `drawer` folds the same phone under one card on a narrow one.
+ * The phone beside the rounds: one round, as a class will meet it. `column`
+ * stands beside the round cards on a wide screen and follows the round the
+ * reader is on; `drawer` folds the same phone under one card on a narrow one.
  */
 export function PhoneColumn({
   rounds,
   selected,
-  onSelect,
   variant,
 }: {
   rounds: RelayRound[];
   /** The round shown, by leg; the first round stands when none is selected. */
   selected: string | null;
-  onSelect: (leg: string) => void;
   variant: "column" | "drawer";
 }) {
   const round = shownRound(rounds, selected);
   if (round === null) return null;
   const source = sourceOf(round, rounds);
+  const named = round.title.trim();
 
   return (
     <div
@@ -104,31 +93,15 @@ export function PhoneColumn({
         variant === "column" && "max-w-[360px]",
       )}
     >
-      {variant === "column" ? (
-        <div
-          role="group"
-          aria-label="Rounds"
-          className="-mx-1 flex flex-wrap items-center gap-1"
-        >
-          {rounds.map((entry) => (
-            <button
-              key={entry.leg}
-              type="button"
-              aria-label={tokenName(entry)}
-              aria-pressed={entry.leg === round.leg}
-              onClick={() => onSelect(entry.leg)}
-              className={cn(
-                STRIP_TOKEN,
-                entry.leg === round.leg && "ring-1 ring-primary/60",
-              )}
-            >
-              <RoundToken number={entry.number} standing="plain" size="md" />
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       <div className="flex flex-col gap-3 rounded-xl border border-border p-3">
+        {variant === "column" ? (
+          <RoundToken
+            number={round.number}
+            title={named === "" ? undefined : named}
+            standing="plain"
+            size="sm"
+          />
+        ) : null}
         {source === null ? null : (
           <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-muted-foreground text-xs">
             <span>from</span>
