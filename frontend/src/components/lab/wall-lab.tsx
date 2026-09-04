@@ -1,7 +1,14 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { frameAt, polled, type Trace, trickled } from "@/components/lab/replay";
 import recorded from "@/components/lab/trace-50.json";
 import { JoinCode } from "@/components/live/qr-code";
@@ -78,6 +85,12 @@ export function WallLab() {
   // between; only what plays from there is motion.
   const [jump, setJump] = useState(0);
   const clock = useRef(t);
+  // The join code reads the browser's address, so the stage is drawn only there.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     if (!playing) return;
@@ -218,7 +231,7 @@ export function WallLab() {
           surface === "projector" ? "overflow-hidden" : "overflow-y-auto",
         )}
       >
-        {frame === null ? null : (
+        {frame === null || !mounted ? null : (
           <Stage surface={surface} wall={frame.wall} jump={jump} />
         )}
       </div>

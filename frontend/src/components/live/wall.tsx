@@ -7,7 +7,8 @@ import {
   motion,
   useReducedMotion,
 } from "motion/react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Flights, measure, useFlights } from "@/components/live/flights";
 import {
   Answer,
   Card,
@@ -32,6 +33,7 @@ import {
 import { SpreadButton, SpreadPanel } from "@/components/live/spread";
 import {
   dropped,
+  type Move,
   merged,
   PILE_MOVE,
   placed,
@@ -152,8 +154,23 @@ function StagedWall({
   // The pile unfolded in place, if one is.
   const [spread, setSpread] = useState<string | null>(null);
   const reduced = useReducedMotion() ?? false;
-  const { shown, settled, edit, landed } = useStagedWall(wall, {
+  const root = useRef<HTMLElement | null>(null);
+  const { flights, flying, lit, launch } = useFlights();
+  // A card leaving the tray for a pile is measured where it stands the instant
+  // before the move shows, and flies in the layer over the wall.
+  const onMove = useCallback(
+    (move: Move, standing: WallShape) => {
+      if (move.kind !== "place" || root.current === null) return;
+      const card = standing.cards.find((one) => one.card === move.card);
+      if (card === undefined) return;
+      const boxes = measure(root.current, move.card, move.pile);
+      if (boxes !== null) launch({ card, pile: move.pile, ...boxes });
+    },
+    [launch],
+  );
+  const { shown, edit, landed } = useStagedWall(wall, {
     instant: reduced,
+    onMove,
   });
   const seen = shown ?? wall;
 
@@ -233,8 +250,9 @@ function StagedWall({
     <MotionConfig reducedMotion="user">
       <LayoutGroup>
         <section
+          ref={root}
           className={cn(
-            "flex min-h-0 flex-col gap-5 rounded-2xl border border-border bg-card",
+            "relative flex min-h-0 flex-col gap-5 rounded-2xl border border-border bg-card",
             big
               ? "gap-9 border-0 bg-transparent p-0"
               : phone
@@ -243,6 +261,7 @@ function StagedWall({
             className,
           )}
         >
+          {vote ? null : <Flights flights={flights} big={big} />}
           {phone ? null : (
             <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
               <div className="flex min-w-0 flex-col gap-2.5">
@@ -408,7 +427,6 @@ function StagedWall({
                   dense={dense}
                   phone={phone}
                   scroll={scroll}
-                  settled={settled}
                   spread={
                     spreading === null
                       ? null
@@ -430,54 +448,61 @@ function StagedWall({
                   }
                 >
                   {[
-                    ...piles.map((pile) => (
-                      <Pile
-                        key={pile.pile}
-                        id={pile.pile}
-                        name={pile.name}
-                        count={pile.count}
-                        description={pile.description}
-                        cards={cardsIn(seen.cards, pile.pile)}
-                        picked={isPicked(pile)}
-                        carriesTo={carriesTo}
-                        big={big}
-                        dense={dense}
-                        follow={scroll}
-                        landed={landed}
-                        onDrop={
-                          editable
-                            ? (card) => hand.moveCard(card, pile.pile)
-                            : undefined
-                        }
-                        onTap={
-                          hand?.togglePick === undefined
-                            ? undefined
-                            : () => hand.togglePick?.(pile.pile)
-                        }
-                        onSpread={() =>
-                          setSpread((open) =>
-                            open === pile.pile ? null : pile.pile,
-                          )
-                        }
-                        spread={spread === pile.pile}
-                        onRename={
-                          editable && hand.renamePile !== undefined
-                            ? (next) => hand.renamePile?.(pile.pile, next)
-                            : undefined
-                        }
-                        onMergeIn={
-                          editable && hand.mergePile !== undefined
-                            ? (folded) => hand.mergePile?.(folded, pile.pile)
-                            : undefined
-                        }
-                        onSummarize={
-                          hand?.summarize === undefined
-                            ? undefined
-                            : () => hand.summarize?.(pile.pile)
-                        }
-                        phone={phone}
-                      />
-                    )),
+                    ...piles.map((pile) => {
+                      // A card in the air is on no face yet, and not counted.
+                      const cards = cardsIn(seen.cards, pile.pile).filter(
+                        (card) => !flying.has(card.card),
+                      );
+                      return (
+                        <Pile
+                          key={pile.pile}
+                          id={pile.pile}
+                          name={pile.name}
+                          count={cards.length}
+                          description={pile.description}
+                          cards={cards}
+                          lit={lit.has(pile.pile)}
+                          picked={isPicked(pile)}
+                          carriesTo={carriesTo}
+                          big={big}
+                          dense={dense}
+                          follow={scroll}
+                          landed={landed}
+                          onDrop={
+                            editable
+                              ? (card) => hand.moveCard(card, pile.pile)
+                              : undefined
+                          }
+                          onTap={
+                            hand?.togglePick === undefined
+                              ? undefined
+                              : () => hand.togglePick?.(pile.pile)
+                          }
+                          onSpread={() =>
+                            setSpread((open) =>
+                              open === pile.pile ? null : pile.pile,
+                            )
+                          }
+                          spread={spread === pile.pile}
+                          onRename={
+                            editable && hand.renamePile !== undefined
+                              ? (next) => hand.renamePile?.(pile.pile, next)
+                              : undefined
+                          }
+                          onMergeIn={
+                            editable && hand.mergePile !== undefined
+                              ? (folded) => hand.mergePile?.(folded, pile.pile)
+                              : undefined
+                          }
+                          onSummarize={
+                            hand?.summarize === undefined
+                              ? undefined
+                              : () => hand.summarize?.(pile.pile)
+                          }
+                          phone={phone}
+                        />
+                      );
+                    }),
                     ...(editable
                       ? [
                           <NewPile
@@ -597,6 +622,7 @@ function Shelf({
       {/* The row fills from the right, so the newest card is always in the
           same place and what the row cannot hold falls off its left edge. */}
       <div
+        data-shelf
         className={cn(
           "flex min-w-0 items-center justify-end overflow-hidden",
           big
@@ -605,8 +631,6 @@ function Shelf({
         )}
       >
         {cards.slice(-SHELF_SHOWN).map((card) => (
-          // The card itself lays out and flies by its identity, so the row
-          // closes over a card that leaves as its neighbours slide.
           <span
             key={card.card}
             className={cn(
@@ -691,7 +715,6 @@ function PileGrid({
   dense,
   phone,
   scroll,
-  settled,
   spread,
   children,
 }: {
@@ -700,15 +723,10 @@ function PileGrid({
   dense: boolean;
   phone: boolean;
   scroll: boolean;
-  /** Whether a wave is playing: while cards fly, nothing at the grid's edge hides them. */
-  settled: boolean;
   spread: SpreadAt | null;
   children: React.ReactNode[];
 }) {
   const { ref, edges, columns } = useOverflow(scroll);
-  // A grid that scrolls clips a card flying in from the tray below it; while a
-  // wave plays and the grid holds everything, it lets the card be seen.
-  const calm = settled || edges.top || edges.bottom;
   return (
     // The cell is fixed per surface, so a face never paints past it and the
     // piles take the whole width however many there are. The dashboard takes
@@ -733,10 +751,9 @@ function PileGrid({
               ? "grid-cols-2 gap-x-3 gap-y-4"
               : "grid-cols-2 @min-[34rem]:grid-cols-3 @min-[56rem]:grid-cols-4",
           // The disc a picked pile carries hangs above the first row.
-          scroll && "min-h-0 flex-1 pt-5",
-          scroll && (calm ? "overflow-y-auto" : "overflow-visible"),
+          scroll && "min-h-0 flex-1 overflow-y-auto pt-5",
           // What the box cannot hold fades out, rather than stopping on a cut.
-          settled && fading(edges),
+          fading(edges),
         )}
       >
         <AnimatePresence initial={false}>
