@@ -459,6 +459,54 @@ describe("HTTP authorization and privacy", () => {
     });
   });
 
+  test("submission artifacts are visible only to their student and graders", async () => {
+    const assignment = "private-assignment";
+    await call(
+      "/assignments/submit",
+      { assignment, content: "PRIVATE FINAL ANSWER: 42" },
+      learner.cookie,
+    );
+    const attempts = await call(
+      "/submissions/attempts",
+      { assignment, submitter: learner.user },
+      learner.cookie,
+    );
+    const artifact = (attempts.body.attempts as { artifacts: string[] }[])[0].artifacts[0];
+    const thread = await call("/threads/create", { content: "A forum post" }, learner.cookie);
+
+    expect((await call("/posts/byAuthor", { author: learner.user }, outsider.cookie)).body).toEqual(
+      {
+        posts: [{ post: thread.body.post }],
+      },
+    );
+    expect((await call("/posts/get", { post: thread.body.post }, outsider.cookie)).status).toBe(
+      200,
+    );
+    for (const [path, body] of [
+      ["/posts/get", { post: artifact }],
+      ["/revisions/latest", { item: artifact }],
+    ] as const)
+      expect(await call(path, body, outsider.cookie)).toMatchObject({
+        status: 404,
+        body: { error: "NOT_FOUND" },
+      });
+    expect(await call("/trash/trash", { item: artifact }, limitedStaff.cookie)).toMatchObject({
+      status: 404,
+      body: { error: "NOT_FOUND" },
+    });
+
+    const artifactInput = { assignment, submitter: learner.user, artifact };
+    expect(await call("/submissions/artifact", artifactInput, outsider.cookie)).toMatchObject({
+      status: 404,
+      body: { error: "NOT_FOUND" },
+    });
+    for (const reader of [learner, admin])
+      expect(await call("/submissions/artifact", artifactInput, reader.cookie)).toMatchObject({
+        status: 200,
+        body: { post: expect.objectContaining({ content: "PRIVATE FINAL ANSWER: 42" }) },
+      });
+  });
+
   test("a learner receives 404 for staff-only and unknown notes while student-records staff may read the staff-only note", async () => {
     const written = await call(
       "/students/notes/write",

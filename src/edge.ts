@@ -3,6 +3,7 @@ import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
 import type { CommonsImplementations } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
 import { commonsHttpPolicy } from "./assembly/http-policy.ts";
+import { hasSafeKeys } from "./assembly/security.ts";
 import { configuredPublicOrigin } from "./deployment.ts";
 
 const PUBLIC_PATHS = new Set([
@@ -28,6 +29,14 @@ function sessionFrom(request: Request): string | undefined {
     .filter((part) => part.startsWith("__Host-commons-session="))
     .map((part) => part.slice("__Host-commons-session=".length));
   return sessions.length === 1 && sessions[0] !== "" ? sessions[0] : undefined;
+}
+
+async function requestInputIsSafe(request: Request): Promise<boolean> {
+  try {
+    return hasSafeKeys(await request.clone().json());
+  } catch {
+    return false;
+  }
 }
 
 export function createEdge(
@@ -62,6 +71,16 @@ export function createEdge(
       }
     }
     const logicalPath = path.startsWith("/api/") ? path.slice(4) : undefined;
+    if (
+      request.method === "POST" &&
+      logicalPath !== undefined &&
+      !(await requestInputIsSafe(request))
+    ) {
+      return Response.json(
+        { error: "INVALID_REQUEST" },
+        { status: 400, headers: { "Cache-Control": "private, no-store" } },
+      );
+    }
     if (
       request.method === "POST" &&
       logicalPath !== undefined &&

@@ -502,6 +502,22 @@ describe("the live quiz loop", () => {
     );
     expect(typeof begun.response).toBe("string");
     expect(begun.participant).not.toBe("");
+    expect(
+      (
+        await post(
+          edge,
+          "/live/p/answer-signed",
+          { response: begun.response, question, value: "42" },
+          cookie,
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (await post(edge, "/live/p/submit-signed", { response: begun.response }, cookie)).status,
+    ).toBe(200);
+    expect(
+      (await post(edge, "/live/p/outcome-signed", { response: begun.response }, cookie)).status,
+    ).toBe(200);
     const board = await json(await post(edge, "/live/runs/results", { run: launch.run }, cookie));
     expect((board.board as { started: number }).started).toBe(1);
     await post(edge, "/live/runs/close", { run: launch.run }, cookie);

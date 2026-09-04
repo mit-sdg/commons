@@ -36,8 +36,12 @@ rejoins — an anonymous response under the device identifier, and
 the same under the caller's account when a session rides the request; the join
 page calls whichever matches its login state. Responding holds one response
 per participant and run, so a reloaded phone finds its answers standing, and a
-participant who already handed in is refused rather than counted twice. A
-closed run answers `CLOSED` before anything begins. In a relay run both
+participant who already handed in is refused rather than counted twice. The
+anonymous endpoint takes only a device that names no account, decided by the
+[deviceNamesNoAccount view](view:Live.participation.deviceNamesNoAccount): a
+caller cannot name a student and learn from the reply whether that student has
+begun, is still answering, or has handed in, and cannot open a response in
+their name. A closed run answers `CLOSED` before anything begins. In a relay run both
 endpoints begin the response to the round that is open, so a phone holds one
 response per round under the same token, and a run with no round open answers
 `NO_OPEN_ROUND`.
@@ -58,6 +62,15 @@ every captured question, else `INCOMPLETE`. Both the form and completeness rule
 come from the run snapshot, keeping participation on exactly the version the
 room received.
 
+Anonymous answer, hand-in, outcome, and wall requests accept only responses
+whose participant is not an account. Their `Signed` counterparts require a live
+session belonging to the response's account, so knowing another student's
+response identifier grants no control over it and no reading of it:
+[AnswerSigned](reaction:Live.participation.AnswerSigned),
+[SubmitSigned](reaction:Live.participation.SubmitSigned), and
+[OutcomeSigned](reaction:Live.participation.OutcomeSigned). The wall read below
+carries the same rule.
+
 After hand-in,
 [Live.participation.SubmittedResponseIsGraded](reaction:Live.participation.SubmittedResponseIsGraded)
 measures the response against the run's key, once; a survey has no key and the
@@ -76,10 +89,13 @@ a written answer with a standard is read against that reference, and an answer
 without a standard is marked ungraded. Only the first kind is ever described
 as right or wrong. The score arrives blank until grading lands, which
 is why the screen polls. A response not yet handed in answers `NOT_SUBMITTED`. After handing in to a
-round, [Live.participation.Wall](reaction:Live.participation.Wall) reads the
-wall of that round, which the wall page owns, with the holder's own cards
+round, [Live.participation.Wall](reaction:Live.participation.Wall) and
+[Live.participation.WallSigned](reaction:Live.participation.WallSigned) read
+the wall of that round, which the wall page owns, with the holder's own cards
 marked, and nothing else identified — where you landed, shown only once
 you have handed in; a response still in progress answers `NOT_SUBMITTED`.
+Because the mark says which cards are the holder's, the wall read carries the
+same ownership rule as the rest: a borrowed identifier answers `NOT_FOUND`.
 The two revealing levels derive their ordered rows from the same immutable run
 value with [answerReceipt](computation:answerReceipt) and
 [explanationReceipt](computation:explanationReceipt); joining is a pure
@@ -87,11 +103,15 @@ calculation and adds no receipt state machine.
 
 ```endpoints
 Live.participation.Answer at /live/p/answer
+Live.participation.AnswerSigned at /live/p/answer-signed
 Live.participation.Arrive at /live/p/arrive
 Live.participation.Begin at /live/p/begin
 Live.participation.BeginSigned at /live/p/begin-signed
 Live.participation.Locate at /live/p/locate
 Live.participation.Outcome at /live/p/outcome
+Live.participation.OutcomeSigned at /live/p/outcome-signed
 Live.participation.Submit at /live/p/submit
+Live.participation.SubmitSigned at /live/p/submit-signed
 Live.participation.Wall at /live/p/wall
+Live.participation.WallSigned at /live/p/wall-signed
 ```

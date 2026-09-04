@@ -1,9 +1,9 @@
 # Moderation
 
-A caller holding `moderate` moves an existing post into trash through
+A caller holding `moderate` moves an existing forum-conversation post into trash through
 [Forum.moderation.TrashItem](reaction:Forum.moderation.TrashItem). [Forum.moderation.RestoreItem](reaction:Forum.moderation.RestoreItem) restores a
 trashed identity without recreating attached state. [Forum.moderation.PurgeItem](reaction:Forum.moderation.PurgeItem)
-removes the trash record permanently and thereby triggers Forum-wide cleanup.
+removes the trash record permanently and thereby triggers Forum-wide cleanup. These routes reject unplaced Posting records, including assignment submission artifacts.
 Trash and restore retain Posting and attached state; purge cleanup is
 cross-concept and can be only partially complete if a later effect faults.
 

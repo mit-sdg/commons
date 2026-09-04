@@ -18,6 +18,15 @@ const { Conversing, Formatting, Locking, Posting, Tracking, Trashing } = concept
 export const intact = view("(item) is intact", ({ item }, _outputs, _bindings) =>
   where(Trashing._isTrashed({ item }).is({ trashed: false })),
 ).holds();
+export const forumPost = view(
+  "(post) belongs to a forum conversation",
+  ({ post }, _outputs, { node }) =>
+    where(
+      Posting._getPost({ post }),
+      Conversing._getNodeByItem({ item: post }).is({ node }),
+      Conversing._getConversation({ node }),
+    ),
+).holds();
 export const readableConversation = view(
   "(conversation) is readable",
   ({ conversation }, _outputs, { node, item }) =>
@@ -29,7 +38,7 @@ export const readableConversation = view(
     ),
 ).holds();
 export const publicTarget = view("(target) is public", ({ target }, _outputs, _bindings) => [
-  where(Posting._getPost({ post: target }), intact({ item: target })),
+  where(forumPost({ post: target }), intact({ item: target })),
   where(readableConversation({ conversation: target })),
 ]).holds();
 /** What is this conversation's thread? */

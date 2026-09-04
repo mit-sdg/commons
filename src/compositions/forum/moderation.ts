@@ -4,19 +4,15 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 import { notReadable, readable, thePost } from "./posts.ts";
-import { publicTarget } from "./threads.ts";
+import { forumPost, publicTarget } from "./threads.ts";
 
 const { Conversing, Flagging, Formatting, Locking, Posting, Trashing } = concepts;
 
-/** Which posts are in the trash? Trashing holds other kinds too, and they are not the forum's. */
+/** Which forum posts are in the trash? Trashing holds other kinds too, and they are not the forum's. */
 export const theTrashBin = former("the trash bin ()", (_inputs, { item, trashedBy, trashedAt }) =>
   each(Trashing._getTrashed({}).is({ item, trashedBy, trashedAt }))
-    .where(Posting._getPost({ post: item }))
-    .form({
-      item,
-      trashedBy,
-      trashedAt,
-    }),
+    .where(forumPost({ post: item }))
+    .form({ item, trashedBy, trashedAt }),
 );
 
 /** Which targets are locked? */
@@ -69,6 +65,7 @@ export const theModerationQueue = former(
   ) =>
     each(Flagging._getOpenTargets({}).is({ target, count }))
       .where(
+        readable({ post: target }),
         Posting._getPost({ post: target }).is({ author, content, createdAt, editedAt }),
         Formatting._getRendered({ target }).is({ rendered }),
         whether(Conversing._getNodeByItem({ item: target }).is({ node })),
@@ -100,7 +97,7 @@ export const TrashItem = endpoint("/trash/trash", ({ session, item, user, at }) 
       now(at),
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      Posting._getPost({ post: item }),
+      forumPost({ post: item }),
     )
       .then(Trashing.trash({ item, by: user, at }))
       .then(respond({ item }))
@@ -111,7 +108,7 @@ export const TrashItem = endpoint("/trash/trash", ({ session, item, user, at }) 
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      no(Posting._getPost({ post: item })),
+      no(forumPost({ post: item })),
     )
       .then(respond({ error: "NOT_FOUND" }))
       .named("missing"),
@@ -120,11 +117,7 @@ export const TrashItem = endpoint("/trash/trash", ({ session, item, user, at }) 
 
 export const RestoreItem = endpoint("/trash/restore", ({ session, item, user }) =>
   receive({ session, item }).then(
-    where(
-      activeUser({ session }).is({ user }),
-      mayModerate({ user }),
-      Posting._getPost({ post: item }),
-    )
+    where(activeUser({ session }).is({ user }), mayModerate({ user }), forumPost({ post: item }))
       .then(Trashing.restore({ item }))
       .then(respond({ item }))
       .named("success"),
@@ -134,20 +127,16 @@ export const RestoreItem = endpoint("/trash/restore", ({ session, item, user }) 
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      no(Posting._getPost({ post: item })),
+      no(forumPost({ post: item })),
     )
       .then(respond({ error: "NOT_FOUND" }))
-      .named("missing"),
+      .named("hidden"),
   ),
 );
 
 export const PurgeItem = endpoint("/trash/purge", ({ session, item, user }) =>
   receive({ session, item }).then(
-    where(
-      activeUser({ session }).is({ user }),
-      mayModerate({ user }),
-      Posting._getPost({ post: item }),
-    )
+    where(activeUser({ session }).is({ user }), mayModerate({ user }), forumPost({ post: item }))
       .then(Trashing.purge({ item }))
       .then(respond({ item }))
       .named("success"),
@@ -157,10 +146,10 @@ export const PurgeItem = endpoint("/trash/purge", ({ session, item, user }) =>
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      no(Posting._getPost({ post: item })),
+      no(forumPost({ post: item })),
     )
       .then(respond({ error: "NOT_FOUND" }))
-      .named("missing"),
+      .named("hidden"),
   ),
 );
 
@@ -180,6 +169,7 @@ export const IsTrashed = endpoint("/trash/isTrashed", ({ session, item, trashed,
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
+      forumPost({ post: item }),
       Trashing._isTrashed({ item }).is({ trashed }),
     )
       .then(respond({ trashed }))
@@ -187,6 +177,13 @@ export const IsTrashed = endpoint("/trash/isTrashed", ({ session, item, trashed,
     where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayModerate({ user }),
+      no(forumPost({ post: item })),
+    )
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("missing"),
   ),
 );
 
@@ -195,7 +192,7 @@ export const GetTrashedPost = endpoint("/moderation/posts/get", ({ session, item
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      Posting._getPost({ post: item }),
+      forumPost({ post: item }),
       Trashing._isTrashed({ item }).is({ trashed: true }),
     )
       .then(respond({ post: thePost({ post: item }) }))
@@ -206,14 +203,14 @@ export const GetTrashedPost = endpoint("/moderation/posts/get", ({ session, item
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      no(Posting._getPost({ post: item })),
+      no(forumPost({ post: item })),
     )
       .then(respond({ error: "NOT_FOUND" }))
       .named("missing"),
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      Posting._getPost({ post: item }),
+      forumPost({ post: item }),
       Trashing._isTrashed({ item }).is({ trashed: false }),
     )
       .then(respond({ error: "NOT_FOUND" }))

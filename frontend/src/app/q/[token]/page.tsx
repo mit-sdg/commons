@@ -158,7 +158,7 @@ function writeProgress(
  * not on the server and never will be; an unreachable one is only not there
  * yet, so the screen keeps it and the hand-in sends it again.
  */
-function useAnswerSender(response: string | null) {
+function useAnswerSender(response: string | null, signed: boolean) {
   const sent = useRef<Record<string, string>>({});
   const pending = useRef<Record<string, Promise<Landing>>>({});
 
@@ -175,11 +175,9 @@ function useAnswerSender(response: string | null) {
       const write = prior.then(async (): Promise<Landing> => {
         if (sent.current[question] === value) return "saved";
         try {
-          const result = await api["/live/p/answer"]({
-            response,
-            question,
-            value,
-          });
+          const result = signed
+            ? await api["/live/p/answer-signed"]({ response, question, value })
+            : await api["/live/p/answer"]({ response, question, value });
           if (!isApiError(result)) {
             sent.current[question] = value;
             return "saved";
@@ -192,7 +190,7 @@ function useAnswerSender(response: string | null) {
       pending.current[question] = write;
       return write;
     },
-    [response],
+    [response, signed],
   );
 
   return { persistAnswer, forget };
@@ -217,7 +215,7 @@ export default function ParticipantPage() {
   const [busy, setBusy] = useState(false);
   /** A hand-in that landed while this phone watched: the receipt is said once. */
   const [justHandedIn, setJustHandedIn] = useState(false);
-  const { persistAnswer, forget } = useAnswerSender(response);
+  const { persistAnswer, forget } = useAnswerSender(response, me !== null);
   const submissionUncertain = useRef(false);
   const reconciledResponse = useRef<string | null>(null);
   const signedParticipant = me === null ? null : String(me.user);
@@ -321,7 +319,9 @@ export default function ParticipantPage() {
     };
     const poll = async () => {
       try {
-        const result = await api["/live/p/outcome"]({ response });
+        const result = me
+          ? await api["/live/p/outcome-signed"]({ response })
+          : await api["/live/p/outcome"]({ response });
         if (cancelled) return;
         if (outOfReach(result)) {
           setOutcomeError(NO_CONNECTION);
@@ -349,7 +349,7 @@ export default function ParticipantPage() {
     void poll();
     handle.timer = setInterval(() => void poll(), OUTCOME_POLL_MS);
     return stop;
-  }, [submitted, response, outcomeRetry]);
+  }, [submitted, response, outcomeRetry, me]);
 
   const begin = useCallback(async () => {
     if (participant === null) return;
@@ -455,14 +455,16 @@ export default function ParticipantPage() {
   const recoverSubmission = useCallback(async (): Promise<boolean> => {
     if (response === null) return false;
     try {
-      const result = await api["/live/p/outcome"]({ response });
+      const result = me
+        ? await api["/live/p/outcome-signed"]({ response })
+        : await api["/live/p/outcome"]({ response });
       if (isApiError(result) || result.received !== true) return false;
       rememberSubmitted(result);
       return true;
     } catch {
       return false;
     }
-  }, [response, rememberSubmitted]);
+  }, [response, rememberSubmitted, me]);
 
   useEffect(() => {
     if (
@@ -495,7 +497,9 @@ export default function ParticipantPage() {
           return;
         }
       }
-      const result = await api["/live/p/submit"]({ response });
+      const result = me
+        ? await api["/live/p/submit-signed"]({ response })
+        : await api["/live/p/submit"]({ response });
       // A hand-in out of reach may still have landed, with only its answer
       // lost on the way back, so the outcome is asked before the line stands.
       if (outOfReach(result)) {
@@ -527,6 +531,7 @@ export default function ParticipantPage() {
     persistAnswer,
     recoverSubmission,
     rememberSubmitted,
+    me,
   ]);
 
   const isQuiz = face?.form === "quiz";
@@ -817,7 +822,7 @@ function RelayPhone({
   /** The response the missed line has already asked the wall about, asked once. */
   const asked = useRef<string | null>(null);
   const receipt = useRef<HTMLHeadingElement>(null);
-  const { persistAnswer, forget } = useAnswerSender(response);
+  const { persistAnswer, forget } = useAnswerSender(response, signedIn);
 
   // The receipt takes the focus the hand-in button held, so nothing is dropped
   // to the page; the Shell's polite region says the same word once.
@@ -950,7 +955,9 @@ function RelayPhone({
     };
     const read = async () => {
       try {
-        const result = await api["/live/p/wall"]({ response });
+        const result = signedIn
+          ? await api["/live/p/wall-signed"]({ response })
+          : await api["/live/p/wall"]({ response });
         if (cancelled || isApiError(result) || result.wall === null) return;
         setWall(result.wall);
         // A closed run's wall is finished once it lands; a read that never
@@ -966,7 +973,7 @@ function RelayPhone({
       cancelled = true;
       stop();
     };
-  }, [submitted, response, runOpen]);
+  }, [submitted, response, runOpen, signedIn]);
 
   const remember = useCallback(
     (next: Record<string, string>, handedIn: boolean) => {
@@ -1039,7 +1046,9 @@ function RelayPhone({
     async (error: string | null) => {
       if (response === null) return;
       try {
-        const standing = await api["/live/p/wall"]({ response });
+        const standing = signedIn
+          ? await api["/live/p/wall-signed"]({ response })
+          : await api["/live/p/wall"]({ response });
         if (!isApiError(standing) && standing.wall !== null) {
           if (error !== null) toast.error(refusalSentence("ALREADY_SUBMITTED"));
           onReach(true);
@@ -1070,7 +1079,7 @@ function RelayPhone({
             ),
       );
     },
-    [response, answers, whole, remember, refresh, onReach],
+    [response, answers, whole, remember, refresh, onReach, signedIn],
   );
 
   const handIn = useCallback(async () => {
@@ -1098,7 +1107,9 @@ function RelayPhone({
           return;
         }
       }
-      const result = await api["/live/p/submit"]({ response });
+      const result = signedIn
+        ? await api["/live/p/submit-signed"]({ response })
+        : await api["/live/p/submit"]({ response });
       if (isApiError(result)) {
         await settle(result.error);
         return;
@@ -1112,7 +1123,16 @@ function RelayPhone({
     } finally {
       setBusy(false);
     }
-  }, [response, answers, whole, persistAnswer, remember, settle, onReach]);
+  }, [
+    response,
+    answers,
+    whole,
+    persistAnswer,
+    remember,
+    settle,
+    onReach,
+    signedIn,
+  ]);
 
   const openRound = relay.rounds.find(
     (candidate) => candidate.round !== null && candidate.open === true,
@@ -1145,7 +1165,9 @@ function RelayPhone({
     let cancelled = false;
     void (async () => {
       try {
-        const standing = await api["/live/p/wall"]({ response });
+        const standing = signedIn
+          ? await api["/live/p/wall-signed"]({ response })
+          : await api["/live/p/wall"]({ response });
         if (cancelled || isApiError(standing) || standing.wall === null) return;
         setSubmitted(true);
         setWall(standing.wall);
@@ -1157,7 +1179,7 @@ function RelayPhone({
     return () => {
       cancelled = true;
     };
-  }, [missed, response, answers, remember]);
+  }, [missed, response, answers, remember, signedIn]);
 
   // Where you landed, on a screen one hand holds: this phone's own cards
   // first, then the piles, each wearing this phone's card on its face. The

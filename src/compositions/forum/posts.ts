@@ -3,7 +3,7 @@ import { each, former, no, reaction, view, when, where, now } from "@mit-sdg/syn
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayEditPost, mayNotEditPost } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
-import { intact } from "./threads.ts";
+import { forumPost } from "./threads.ts";
 
 const {
   Bookmarking,
@@ -19,16 +19,15 @@ const {
 } = concepts;
 
 export const readable = view("(post) is readable", ({ post }, _outputs, _bindings) =>
-  where(Posting._getPost({ post }), Trashing._isTrashed({ item: post }).is({ trashed: false })),
+  where(forumPost({ post }), Trashing._isTrashed({ item: post }).is({ trashed: false })),
 ).holds();
-export const notReadable = view("(post) is not readable", ({ post }, _outputs, _bindings) => [
-  where(Trashing._isTrashed({ item: post }).is({ trashed: true })),
-  where(no(Posting._getPost({ post }))),
-]).holds();
+export const notReadable = view("(post) is not readable", ({ post }, _outputs, _bindings) =>
+  where(no(readable({ post }))),
+).holds();
 export const publicPostsBy = view(
   "the public posts by (author)",
   ({ author }, { post }, _bindings) =>
-    where(Posting._getByAuthor({ author }).is({ post }), intact({ item: post })),
+    where(Posting._getByAuthor({ author }).is({ post }), readable({ post })),
 ).many();
 /** What is this post? */
 export const thePost = former(

@@ -14,13 +14,13 @@ rendered HTML and links, while revision and mention rules independently append
 history and notify newly mentioned users. Posting's edit remains committed if a
 follow-up fails.
 
-The [readable view](view:Forum.posts.readable) recognizes posts with retained Posting state and no trash marker;
+The [readable view](view:Forum.posts.readable) recognizes posts that belong to a forum conversation, retain Posting state, and have no trash marker;
 its complement is [notReadable](view:Forum.posts.notReadable).
 [Forum.posts.GetPost](reaction:Forum.posts.GetPost) uses that decision to form
-[one post with its rendered content](former:Forum.posts.thePost), reporting a missing or trashed post as `NOT_FOUND`.
+[one post with its rendered content](former:Forum.posts.thePost), reporting a missing, trashed, or non-forum post as `NOT_FOUND`. Assignment artifacts use their owner-or-grader read instead.
 The [publicPostsBy view](view:Forum.posts.publicPostsBy) selects an author's readable posts, and
 [Forum.posts.PostsByAuthor](reaction:Forum.posts.PostsByAuthor) returns
-[those current post identities](former:Forum.posts.thePublicPostsOf) without requiring a session.
+[those current forum post identities](former:Forum.posts.thePublicPostsOf) without requiring a session in the composition.
 
 [Forum.posts.DeletePost](reaction:Forum.posts.DeletePost) permits only the author of a live post whose
 conversation node has no replies. A parent returns `POST_HAS_REPLIES`. When the author requests deletion of an

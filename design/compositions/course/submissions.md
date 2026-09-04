@@ -9,6 +9,8 @@ with their permanent numbers. Staff with `grade` can make the
 same reads for another active student. Other callers and inactive targets are
 hidden as `NOT_FOUND`.
 
+The [submissionHasArtifact view](view:Course.submissions.submissionHasArtifact) verifies that an artifact belongs to one student's attempt on one assignment. The [mayReadSubmissionArtifact view](view:Course.submissions.mayReadSubmissionArtifact) admits an active student for their own artifact or a caller holding `grade` for the named student. [Course.submissions.Artifact](reaction:Course.submissions.Artifact) uses both decisions to return the rendered artifact or `NOT_FOUND`; forum post reads never expose submission artifacts.
+
 [Course.submissions.ForStudent](reaction:Course.submissions.ForStudent) forms
 [attempts across assignments](former:Course.submissions.theSubmissionsBy) for that student or a caller holding `grade`.
 [Course.submissions.ForAssignment](reaction:Course.submissions.ForAssignment) requires `grade` and places two current lists side by side:
@@ -22,6 +24,7 @@ artifact.
 
 ```endpoints
 Course.submissions.Attempts at /submissions/attempts
+Course.submissions.Artifact at /submissions/artifact
 Course.submissions.ForAssignment at /submissions/for-assignment
 Course.submissions.ForStudent at /submissions/for-student
 Course.submissions.Latest at /submissions/latest

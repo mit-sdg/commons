@@ -3,7 +3,8 @@ import { each, former, no, reaction, when, where } from "@mit-sdg/sync-engine/la
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts.ts";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
-import { intact } from "./threads.ts";
+import { notReadable, readable } from "./posts.ts";
+import { forumPost, intact } from "./threads.ts";
 
 const { Posting, Revising, Trashing } = concepts;
 
@@ -60,15 +61,12 @@ export const ListRevisions = endpoint(
   "/revisions/list",
   ({ item }) =>
     receive({ item }).then(
-      where(Posting._getPost({ post: item }), intact({ item }))
+      where(readable({ post: item }))
         .then(respond({ revisions: theRevisionHistoryOf({ item }) }))
         .named("success"),
-      where(Trashing._isTrashed({ item }).is({ trashed: true }))
+      where(notReadable({ post: item }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
-      where(no(Posting._getPost({ post: item })))
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("missing"),
     ),
   { input: { required: ["item"] } },
 );
@@ -77,15 +75,12 @@ export const GetRevision = endpoint(
   "/revisions/get",
   ({ item, number }) =>
     receive({ item, number }).then(
-      where(Posting._getPost({ post: item }), intact({ item }))
+      where(readable({ post: item }))
         .then(respond({ revision: theRevisionNumberedOf({ number, item }) }))
         .named("success"),
-      where(Trashing._isTrashed({ item }).is({ trashed: true }))
+      where(notReadable({ post: item }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
-      where(no(Posting._getPost({ post: item })))
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("missing"),
     ),
   { input: { required: ["item", "number"] } },
 );
@@ -94,15 +89,12 @@ export const LatestRevision = endpoint(
   "/revisions/latest",
   ({ item }) =>
     receive({ item }).then(
-      where(Posting._getPost({ post: item }), intact({ item }))
+      where(readable({ post: item }))
         .then(respond({ revision: theLatestRevisionOf({ item }) }))
         .named("success"),
-      where(Trashing._isTrashed({ item }).is({ trashed: true }))
+      where(notReadable({ post: item }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
-      where(no(Posting._getPost({ post: item })))
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("missing"),
     ),
   { input: { required: ["item"] } },
 );
@@ -114,7 +106,7 @@ export const ModeratorListRevisions = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        Posting._getPost({ post: item }),
+        forumPost({ post: item }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
         .then(respond({ revisions: theRevisionHistoryOf({ item }) }))
@@ -125,14 +117,14 @@ export const ModeratorListRevisions = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        no(Posting._getPost({ post: item })),
+        no(forumPost({ post: item })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("missing"),
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        Posting._getPost({ post: item }),
+        forumPost({ post: item }),
         intact({ item }),
       )
         .then(respond({ error: "NOT_FOUND" }))
@@ -146,7 +138,7 @@ export const ModeratorGetRevision = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        Posting._getPost({ post: item }),
+        forumPost({ post: item }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
         .then(respond({ revision: theRevisionNumberedOf({ number, item }) }))
@@ -157,14 +149,14 @@ export const ModeratorGetRevision = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        no(Posting._getPost({ post: item })),
+        no(forumPost({ post: item })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("missing"),
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        Posting._getPost({ post: item }),
+        forumPost({ post: item }),
         intact({ item }),
       )
         .then(respond({ error: "NOT_FOUND" }))
@@ -178,7 +170,7 @@ export const ModeratorLatestRevision = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        Posting._getPost({ post: item }),
+        forumPost({ post: item }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
         .then(respond({ revision: theLatestRevisionOf({ item }) }))
@@ -189,14 +181,14 @@ export const ModeratorLatestRevision = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        no(Posting._getPost({ post: item })),
+        no(forumPost({ post: item })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("missing"),
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        Posting._getPost({ post: item }),
+        forumPost({ post: item }),
         intact({ item }),
       )
         .then(respond({ error: "NOT_FOUND" }))

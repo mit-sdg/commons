@@ -1537,6 +1537,18 @@ Concrete types:
 
 _Views name reusable conditions. Multiple `where` blocks are alternatives._
 
+### (assignment) by (submitter) has submission artifact (artifact)
+
+Authored path: `Course.submissions.submissionHasArtifact`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
+
+```view
+(assignment) by (submitter) has submission artifact (artifact) — inputs (assignment, submitter, artifact); outputs (); bindings (artifacts)
+  where
+    Submitting._getAttempts (assignment, submitter) has (artifacts)
+    artifact is among artifacts
+```
+
 ### (card) stands on its wall
 
 ```view
@@ -1592,7 +1604,7 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
 ### (item) is intact
 
 Authored path: `Forum.threads.intact`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 28.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 30.
 
 ```view
 (item) is intact — inputs (item); outputs (); bindings ()
@@ -1611,6 +1623,16 @@ Authored path: `Forum.threads.readableConversation`.
     no Conversing._parentOf (node)
     Posting._getPost (post: item)
     view "(item) is intact" with (item)
+```
+
+### (device) names no account
+
+Authored path: `Live.participation.deviceNamesNoAccount`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 41.
+
+```view
+(device) names no account — inputs (device); outputs (); bindings ()
+  where no Authenticating._getById (user: device)
 ```
 
 ### the round of (leg) in (run)
@@ -1737,15 +1759,17 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
   where Categorizing._getCategoryDetail (category: pile) has (scope: round)
 ```
 
-### (post) is not readable
+### (post) belongs to a forum conversation
 
-Authored path: `Forum.posts.notReadable`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 18.
+Authored path: `Forum.threads.forumPost`.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 16.
 
 ```view
-(post) is not readable — inputs (post); outputs (); bindings ()
-  where Trashing._isTrashed (item: post) has (trashed: true)
-  where no Posting._getPost (post)
+(post) belongs to a forum conversation — inputs (post); outputs (); bindings (node)
+  where
+    Posting._getPost (post)
+    Conversing._getNodeByItem (item: post) has (node)
+    Conversing._getConversation (node)
 ```
 
 ### (post) is readable
@@ -1756,8 +1780,18 @@ Authored path: `Forum.posts.readable`.
 ```view
 (post) is readable — inputs (post); outputs (); bindings ()
   where
-    Posting._getPost (post)
+    view "(post) belongs to a forum conversation" with (post)
     Trashing._isTrashed (item: post) has (trashed: false)
+```
+
+### (post) is not readable
+
+Authored path: `Forum.posts.notReadable`.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 18.
+
+```view
+(post) is not readable — inputs (post); outputs (); bindings ()
+  where no view "(post) is readable" with (post)
 ```
 
 ### (question) belongs to (run)
@@ -1832,6 +1866,34 @@ Authored path: `Forum.posts.readable`.
     Responding._collectedAnswers (response) has (answers)
     whole is snapshotIsWhole (answers, value: presentation)
     whole is among [true]
+```
+
+### (response) belongs to an anonymous participant
+
+```view
+(response) belongs to an anonymous participant — inputs (response); outputs (); bindings (participant)
+  where
+    Responding._response (response) has (participant)
+    no Authenticating._getById (user: participant)
+```
+
+### the active user of (session)
+
+Authored path: `Access.session.activeUser`.
+- Covered by [Session boundary](../design/compositions/access/session.md), line 13.
+
+```view
+the active user of (session) — inputs (session); outputs (user); bindings () — answers at most one (user)
+  where Sessioning._getUser (session) has (user)
+```
+
+### (response) belongs to the active (session)
+
+```view
+(response) belongs to the active (session) — inputs (response, session); outputs (); bindings (participant)
+  where
+    view "the active user of (session)" with (session) has (user: participant)
+    Responding._response (response) has (participant)
 ```
 
 ### (response) leaves a question unanswered
@@ -1996,12 +2058,12 @@ the open round of (run) — inputs (run); outputs (round); bindings () — answe
 ### (target) is public
 
 Authored path: `Forum.threads.publicTarget`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 26.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 28.
 
 ```view
 (target) is public — inputs (target); outputs (); bindings ()
   where
-    Posting._getPost (post: target)
+    view "(post) belongs to a forum conversation" with (post: target)
     view "(item) is intact" with (item: target)
   where view "(conversation) is readable" with (conversation: target)
 ```
@@ -2269,6 +2331,22 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     Roling._hasCapability (capability: "moderate", context: "commons", user) has (allowed: false)
 ```
 
+### (user) may read (artifact) submitted by (submitter) for (assignment)
+
+Authored path: `Course.submissions.mayReadSubmissionArtifact`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
+
+```view
+(user) may read (artifact) submitted by (submitter) for (assignment) — inputs (user, artifact, submitter, assignment); outputs (); bindings ()
+  where
+    view "(user) is an active student" with (user)
+    view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter: user)
+  where
+    view "(user) may grade" with (user)
+    view "(user) is an active student" with (user: submitter)
+    view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter)
+```
+
 ### (user) may view the staff calendar
 
 ```view
@@ -2346,16 +2424,6 @@ Authored path: `Access.roles.theAccountForAddress`.
 ```view
 the account for (address) — inputs (address); outputs (user); bindings () — answers at most one (user)
   where Authenticating._getByEmail (email: address) has (user)
-```
-
-### the active user of (session)
-
-Authored path: `Access.session.activeUser`.
-- Covered by [Session boundary](../design/compositions/access/session.md), line 13.
-
-```view
-the active user of (session) — inputs (session); outputs (user); bindings () — answers at most one (user)
-  where Sessioning._getUser (session) has (user)
 ```
 
 ### the archived user named (username)
@@ -2499,7 +2567,7 @@ Authored path: `Forum.posts.publicPostsBy`.
 the public posts by (author) — inputs (author); outputs (post); bindings () — answers any number of (post)
   where
     Posting._getByAuthor (author) has (post)
-    view "(item) is intact" with (item: post)
+    view "(post) is readable" with (post)
 ```
 
 ### the public posts in (conversation)
@@ -2649,7 +2717,7 @@ _the authored explanation; this section records the generated shape._
 ### the answers outcome of (response)
 
 Authored path: `Live.participation.theAnswersOutcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 68.
+- Covered by [Participation](../design/compositions/live/participation.md), line 81.
 
 ```former
 Former "the answers outcome of (response)" — inputs (response); bindings (run, key, presentation, disclosure, score, outOf, answers, receipt); promises at most one record — forms:
@@ -2670,7 +2738,7 @@ Former "the answers outcome of (response)" — inputs (response); bindings (run,
 ### the assigned population for (assignment)
 
 Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
 
 ```former
 Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, displayName, release, dueOverride, releaseStatus); promises exactly one record — forms:
@@ -3049,7 +3117,7 @@ Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, sectio
 ### the explained outcome of (response)
 
 Authored path: `Live.participation.theExplanationsOutcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 69.
+- Covered by [Participation](../design/compositions/live/participation.md), line 82.
 
 ```former
 Former "the explained outcome of (response)" — inputs (response); bindings (run, key, presentation, disclosure, score, outOf, answers, receipt); promises at most one record — forms:
@@ -3503,6 +3571,7 @@ Authored path: `Forum.moderation.theModerationQueue`.
 ```former
 Former "the moderation queue ()" — inputs (); bindings (target, count, node, conversation, author, content, createdAt, editedAt, rendered, flag, reporter, reason, status, flaggedAt); promises exactly one record — forms:
   each Flagging._getOpenTargets () has (count, target)
+    where view "(post) is readable" with (post: target)
     where Posting._getPost (post: target) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target) has (rendered)
     where whether Conversing._getNodeByItem (item: target) has (node)
@@ -4155,7 +4224,7 @@ Former "the run (run)" — inputs (run); bindings (relay, title, open, openedAt,
 ### the score outcome of (response)
 
 Authored path: `Live.participation.theScoreOutcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 67.
+- Covered by [Participation](../design/compositions/live/participation.md), line 80.
 
 ```former
 Former "the score outcome of (response)" — inputs (response); bindings (run, key, disclosure, score, outOf); promises at most one record — forms:
@@ -4289,7 +4358,7 @@ Former "the staff notes on (learner)" — inputs (learner); bindings (note, auth
 ### the submissions by (submitter)
 
 Authored path: `Course.submissions.theSubmissionsBy`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 13.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
 
 ```former
 Former "the submissions by (submitter)" — inputs (submitter); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
@@ -4305,7 +4374,7 @@ Former "the submissions by (submitter)" — inputs (submitter); bindings (assign
 ### the submissions for (assignment)
 
 Authored path: `Course.submissions.theSubmissionsForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 18.
 
 ```former
 Former "the submissions for (assignment)" — inputs (assignment); bindings (submitter, submitterName, submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
@@ -4529,7 +4598,7 @@ Former "the tasks in (list) at (at)" — inputs (list, at); bindings (task, titl
 ### the thread (conversation)
 
 Authored path: `Forum.threads.theThread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 28.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 30.
 
 ```former
 Former "the thread (conversation)" — inputs (conversation); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
@@ -4583,7 +4652,7 @@ Authored path: `Forum.moderation.theTrashBin`.
 ```former
 Former "the trash bin ()" — inputs (); bindings (item, trashedBy, trashedAt); promises exactly one record — forms:
   each Trashing._getTrashed () has (item, trashedAt, trashedBy)
-    where Posting._getPost (post: item)
+    where view "(post) belongs to a forum conversation" with (post: item)
     form a record of
       item
       trashedAt
@@ -9591,11 +9660,41 @@ then
   RequestBoundary.respond (class, requestId)
 ```
 
+### Course.submissions.Artifact:hidden
+
+Authored path: `Course.submissions.Artifact`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+
+```reaction
+when RequestBoundary.request (artifact, assignment, path: "/submissions/artifact", requestId, session, submitter)
+where
+  view "the active user of (session)" with (session) has (user)
+  no view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.submissions.Artifact:success
+
+Authored path: `Course.submissions.Artifact`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+
+```reaction
+when RequestBoundary.request (artifact, assignment, path: "/submissions/artifact", requestId, session, submitter)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+then
+  RequestBoundary.respond (post: former "the post (post)" with (post: artifact), requestId)
+```
+
 ### Course.submissions.Attempts:attempts
 
 Authored path: `Course.submissions.Attempts`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 24.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -9610,7 +9709,7 @@ then
 
 Authored path: `Course.submissions.Attempts`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 24.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -9625,7 +9724,7 @@ then
 
 Authored path: `Course.submissions.Attempts`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 24.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -9640,7 +9739,7 @@ then
 
 Authored path: `Course.submissions.Attempts`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 24.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -9655,8 +9754,8 @@ then
 ### Course.submissions.ForAssignment:forbidden
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 25.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 28.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -9670,8 +9769,8 @@ then
 ### Course.submissions.ForAssignment:success
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 25.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 28.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -9685,8 +9784,8 @@ then
 ### Course.submissions.ForStudent:for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -9700,8 +9799,8 @@ then
 ### Course.submissions.ForStudent:for-student-hidden
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -9715,8 +9814,8 @@ then
 ### Course.submissions.ForStudent:for-student-missing
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -9730,8 +9829,8 @@ then
 ### Course.submissions.ForStudent:staff-for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 12.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 26.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 29.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -9747,7 +9846,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -9762,7 +9861,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -9777,7 +9876,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -9793,7 +9892,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -9809,7 +9908,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -9826,7 +9925,7 @@ then
 
 Authored path: `Course.submissions.Latest`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 27.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -10580,7 +10679,7 @@ when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, se
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: false)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -10597,7 +10696,7 @@ when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, se
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10613,7 +10712,7 @@ when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, se
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
   RequestBoundary.respond (post: former "the post (post)" with (post: item), requestId)
@@ -10663,6 +10762,22 @@ then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
+### Forum.moderation.IsTrashed:missing
+
+Authored path: `Forum.moderation.IsTrashed`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 11.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 45.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  no view "(post) belongs to a forum conversation" with (post: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Forum.moderation.IsTrashed:success
 
 Authored path: `Forum.moderation.IsTrashed`.
@@ -10674,6 +10789,7 @@ when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed)
 then
   RequestBoundary.respond (requestId, trashed)
@@ -10768,7 +10884,7 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Forum.moderation.PurgeItem:missing
+### Forum.moderation.PurgeItem:hidden
 
 Authored path: `Forum.moderation.PurgeItem`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 5.
@@ -10779,7 +10895,7 @@ when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10795,7 +10911,7 @@ when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
 then
   Trashing.purge (item)
 ```
@@ -10829,7 +10945,7 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Forum.moderation.RestoreItem:missing
+### Forum.moderation.RestoreItem:hidden
 
 Authored path: `Forum.moderation.RestoreItem`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
@@ -10840,7 +10956,7 @@ when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10856,7 +10972,7 @@ when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
 then
   Trashing.restore (item)
 ```
@@ -10901,7 +11017,7 @@ when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10918,7 +11034,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
 then
   Trashing.trash (at, by: user, item)
 ```
@@ -12547,21 +12663,7 @@ Authored path: `Forum.revisions.GetRevision`.
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
 where
-  Trashing._isTrashed (item) has (trashed: true)
-then
-  RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Forum.revisions.GetRevision:missing
-
-Authored path: `Forum.revisions.GetRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 13.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 34.
-
-```reaction
-when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
-where
-  no Posting._getPost (post: item)
+  view "(post) is not readable" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12575,8 +12677,7 @@ Authored path: `Forum.revisions.GetRevision`.
 ```reaction
 when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
 where
-  Posting._getPost (post: item)
-  view "(item) is intact" with (item)
+  view "(post) is readable" with (post: item)
 then
   RequestBoundary.respond (requestId, revision: former "the revision numbered (number) of (item)" with (item, number))
 ```
@@ -12590,21 +12691,7 @@ Authored path: `Forum.revisions.LatestRevision`.
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
 where
-  Trashing._isTrashed (item) has (trashed: true)
-then
-  RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Forum.revisions.LatestRevision:missing
-
-Authored path: `Forum.revisions.LatestRevision`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 15.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 35.
-
-```reaction
-when RequestBoundary.request (item, path: "/revisions/latest", requestId)
-where
-  no Posting._getPost (post: item)
+  view "(post) is not readable" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12618,8 +12705,7 @@ Authored path: `Forum.revisions.LatestRevision`.
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/latest", requestId)
 where
-  Posting._getPost (post: item)
-  view "(item) is intact" with (item)
+  view "(post) is readable" with (post: item)
 then
   RequestBoundary.respond (requestId, revision: former "the latest revision of (item)" with (item))
 ```
@@ -12633,21 +12719,7 @@ Authored path: `Forum.revisions.ListRevisions`.
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/list", requestId)
 where
-  Trashing._isTrashed (item) has (trashed: true)
-then
-  RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Forum.revisions.ListRevisions:missing
-
-Authored path: `Forum.revisions.ListRevisions`.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 11.
-- Covered by [Revision history](../design/compositions/forum/revisions.md), line 36.
-
-```reaction
-when RequestBoundary.request (item, path: "/revisions/list", requestId)
-where
-  no Posting._getPost (post: item)
+  view "(post) is not readable" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12661,8 +12733,7 @@ Authored path: `Forum.revisions.ListRevisions`.
 ```reaction
 when RequestBoundary.request (item, path: "/revisions/list", requestId)
 where
-  Posting._getPost (post: item)
-  view "(item) is intact" with (item)
+  view "(post) is readable" with (post: item)
 then
   RequestBoundary.respond (requestId, revisions: former "the revision history of (item)" with (item))
 ```
@@ -12693,7 +12764,7 @@ when RequestBoundary.request (item, number, path: "/moderation/revisions/get", r
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   view "(item) is intact" with (item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -12710,7 +12781,7 @@ when RequestBoundary.request (item, number, path: "/moderation/revisions/get", r
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12726,7 +12797,7 @@ when RequestBoundary.request (item, number, path: "/moderation/revisions/get", r
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
   RequestBoundary.respond (requestId, revision: former "the revision numbered (number) of (item)" with (item, number))
@@ -12758,7 +12829,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/latest", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   view "(item) is intact" with (item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -12775,7 +12846,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/latest", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12791,7 +12862,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/latest", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
   RequestBoundary.respond (requestId, revision: former "the latest revision of (item)" with (item))
@@ -12823,7 +12894,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/list", requestI
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   view "(item) is intact" with (item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -12840,7 +12911,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/list", requestI
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no Posting._getPost (post: item)
+  no view "(post) belongs to a forum conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12856,7 +12927,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/list", requestI
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  Posting._getPost (post: item)
+  view "(post) belongs to a forum conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
   RequestBoundary.respond (requestId, revisions: former "the revision history of (item)" with (item))
@@ -13267,7 +13338,7 @@ then
 
 Authored path: `Forum.threads.CreateThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 3.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 33.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
 
 ```reaction
 when RequestBoundary.request (content, path: "/threads/create", requestId, session)
@@ -13282,7 +13353,7 @@ then
 
 Authored path: `Forum.threads.CreateThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 3.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 33.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Forum.threads.CreateThread
@@ -13294,7 +13365,7 @@ then
 
 Authored path: `Forum.threads.CreateThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 3.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 33.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
 
 ```reaction
 when Conversing.start (at, item: post, conversation, node), asked by Forum.threads.CreateThread#2
@@ -13307,8 +13378,8 @@ then
 ### Forum.threads.ForItem:absent
 
 Authored path: `Forum.threads.ForItem`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 34.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 36.
 
 ```reaction
 when RequestBoundary.request (item, path: "/threads/forItem", requestId)
@@ -13321,8 +13392,8 @@ then
 ### Forum.threads.ForItem:found
 
 Authored path: `Forum.threads.ForItem`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 34.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 36.
 
 ```reaction
 when RequestBoundary.request (item, path: "/threads/forItem", requestId)
@@ -13336,7 +13407,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
@@ -13352,7 +13423,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
@@ -13367,7 +13438,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
@@ -13384,7 +13455,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Forum.threads.ReplyToThread:reply
@@ -13398,7 +13469,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
 
 ```reaction
 when Conversing.reply (at, item: post, parent, node), asked by Forum.threads.ReplyToThread:reply#2
@@ -13411,7 +13482,7 @@ then
 ### Forum.threads.TrackReplyUnread
 
 Authored path: `Forum.threads.TrackReplyUnread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 18.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 20.
 
 ```reaction
 when Conversing.reply (item, node)
@@ -13424,7 +13495,7 @@ then
 ### Forum.threads.TrackRootUnread
 
 Authored path: `Forum.threads.TrackRootUnread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 16.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 18.
 
 ```reaction
 when Conversing.start (item, conversation)
@@ -15201,27 +15272,44 @@ then
 ### Live.participation.Answer:closed
 
 Authored path: `Live.participation.Answer`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 45.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is closed" with (run)
 then
   RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
-### Live.participation.Answer:not-part
+### Live.participation.Answer:not-owner
 
 Authored path: `Live.participation.Answer`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 45.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
 where
+  Responding._response (response)
+  no view "(response) belongs to an anonymous participant" with (response)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.Answer:not-part
+
+Authored path: `Live.participation.Answer`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 105.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
+where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   view "(question) is not part of (run)" with (question, run)
@@ -15232,12 +15320,13 @@ then
 ### Live.participation.Answer:success
 
 Authored path: `Live.participation.Answer`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 45.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   view "(question) belongs to (run)" with (question, run)
@@ -15248,8 +15337,8 @@ then
 ### Live.participation.Answer:success#2
 
 Authored path: `Live.participation.Answer`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 45.
-- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 105.
 
 ```reaction
 when Responding.answer (item: question, response, value, result.response: answered), asked by Live.participation.Answer:success
@@ -15259,11 +15348,90 @@ then
   RequestBoundary.respond (requestId, response: answered)
 ```
 
+### Live.participation.AnswerSigned:closed
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 69.
+- Covered by [Participation](../design/compositions/live/participation.md), line 106.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is closed" with (run)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.participation.AnswerSigned:not-owner
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 69.
+- Covered by [Participation](../design/compositions/live/participation.md), line 106.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+where
+  Responding._response (response)
+  no view "(response) belongs to the active (session)" with (response, session)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.AnswerSigned:not-part
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 69.
+- Covered by [Participation](../design/compositions/live/participation.md), line 106.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  view "(question) is not part of (run)" with (question, run)
+then
+  RequestBoundary.respond (error: "NOT_PART", requestId)
+```
+
+### Live.participation.AnswerSigned:success
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 69.
+- Covered by [Participation](../design/compositions/live/participation.md), line 106.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  view "(question) belongs to (run)" with (question, run)
+then
+  Responding.answer (item: question, response, value)
+```
+
+### Live.participation.AnswerSigned:success#2
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 69.
+- Covered by [Participation](../design/compositions/live/participation.md), line 106.
+
+```reaction
+when Responding.answer (item: question, response, value, result.response: answered), asked by Live.participation.AnswerSigned:success
+where
+  earlier, RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+then
+  RequestBoundary.respond (requestId, response: answered)
+```
+
 ### Live.participation.Arrive
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 90.
+- Covered by [Participation](../design/compositions/live/participation.md), line 107.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/arrive", requestId, token)
@@ -15275,7 +15443,7 @@ then
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 90.
+- Covered by [Participation](../design/compositions/live/participation.md), line 107.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Arrive
@@ -15290,7 +15458,7 @@ then
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 90.
+- Covered by [Participation](../design/compositions/live/participation.md), line 107.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Arrive
@@ -15305,7 +15473,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 108.
 
 ```reaction
 when RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
@@ -15317,7 +15485,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 108.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -15328,11 +15496,27 @@ then
   RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
+### Live.participation.Begin:named-account#2
+
+Authored path: `Live.participation.Begin`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 33.
+- Covered by [Participation](../design/compositions/live/participation.md), line 108.
+
+```reaction
+when Sharing.open (token, subject: run), asked by Live.participation.Begin
+where
+  view "(run) is open to participation" with (run)
+  earlier, RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
+  no view "(device) names no account" with (device)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### Live.participation.Begin:no-open-round#2
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 108.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -15341,6 +15525,7 @@ where
   view "(run) is a relay run" with (run)
   view "(run) has no round open" with (run)
   earlier, RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
+  view "(device) names no account" with (device)
 then
   RequestBoundary.respond (error: "NO_OPEN_ROUND", requestId)
 ```
@@ -15349,7 +15534,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 108.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -15358,6 +15543,7 @@ where
   view "(run) is open to participation" with (run)
   view "(run) is a questionnaire run" with (run)
   earlier, RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
+  view "(device) names no account" with (device)
 then
   Responding.begin (at, participant: device, subject: run)
 ```
@@ -15366,7 +15552,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 108.
 
 ```reaction
 when Responding.begin (at, participant: device, subject: run, response), asked by Live.participation.Begin:open#2
@@ -15380,7 +15566,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 108.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -15390,6 +15576,7 @@ where
   view "(run) is a relay run" with (run)
   view "the open round of (run)" with (run) has (round)
   earlier, RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
+  view "(device) names no account" with (device)
 then
   Responding.begin (at, participant: device, subject: round)
 ```
@@ -15398,7 +15585,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 33.
-- Covered by [Participation](../design/compositions/live/participation.md), line 91.
+- Covered by [Participation](../design/compositions/live/participation.md), line 108.
 
 ```reaction
 when Responding.begin (at, participant: device, subject: round, response), asked by Live.participation.Begin:round#2
@@ -15412,7 +15599,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 109.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/begin-signed", requestId, session, token)
@@ -15424,7 +15611,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 109.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -15439,7 +15626,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 109.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -15456,7 +15643,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 109.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -15474,7 +15661,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 109.
 
 ```reaction
 when Responding.begin (at, participant: user, subject: run, response), asked by Live.participation.BeginSigned:open#2
@@ -15488,7 +15675,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 109.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -15507,7 +15694,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 35.
-- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 109.
 
 ```reaction
 when Responding.begin (at, participant: user, subject: round, response), asked by Live.participation.BeginSigned:round#2
@@ -15521,7 +15708,7 @@ then
 
 Authored path: `Live.participation.Locate`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 10.
-- Covered by [Participation](../design/compositions/live/participation.md), line 93.
+- Covered by [Participation](../design/compositions/live/participation.md), line 110.
 
 ```reaction
 when RequestBoundary.request (code, path: "/live/p/locate", requestId)
@@ -15533,7 +15720,7 @@ then
 
 Authored path: `Live.participation.Locate`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 10.
-- Covered by [Participation](../design/compositions/live/participation.md), line 93.
+- Covered by [Participation](../design/compositions/live/participation.md), line 110.
 
 ```reaction
 when Locating.locate (code, subject: run), asked by Live.participation.Locate
@@ -15547,12 +15734,13 @@ then
 ### Live.participation.Outcome:answers
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 64.
-- Covered by [Participation](../design/compositions/live/participation.md), line 94.
+- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 111.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run, submitted: true)
   Scoring._keyFor (subject: run) has (disclosure: "answers")
 then
@@ -15562,12 +15750,13 @@ then
 ### Live.participation.Outcome:explanations
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 64.
-- Covered by [Participation](../design/compositions/live/participation.md), line 94.
+- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 111.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run, submitted: true)
   Scoring._keyFor (subject: run) has (disclosure: "explanations")
 then
@@ -15577,26 +15766,43 @@ then
 ### Live.participation.Outcome:in-progress
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 64.
-- Covered by [Participation](../design/compositions/live/participation.md), line 94.
+- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 111.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (submitted: false)
 then
   RequestBoundary.respond (error: "NOT_SUBMITTED", requestId)
 ```
 
-### Live.participation.Outcome:score
+### Live.participation.Outcome:not-owner
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 64.
-- Covered by [Participation](../design/compositions/live/participation.md), line 94.
+- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 111.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  Responding._response (response)
+  no view "(response) belongs to an anonymous participant" with (response)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.Outcome:score
+
+Authored path: `Live.participation.Outcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 111.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
+where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run, submitted: true)
   Scoring._keyFor (subject: run) has (disclosure: "score")
 then
@@ -15606,12 +15812,107 @@ then
 ### Live.participation.Outcome:survey
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 64.
-- Covered by [Participation](../design/compositions/live/participation.md), line 94.
+- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 111.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
+  Responding._response (response) has (subject: run, submitted: true)
+  no Scoring._keyFor (subject: run)
+then
+  RequestBoundary.respond (received: true, requestId)
+```
+
+### Live.participation.OutcomeSigned:answers
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 71.
+- Covered by [Participation](../design/compositions/live/participation.md), line 112.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run, submitted: true)
+  Scoring._keyFor (subject: run) has (disclosure: "answers")
+then
+  RequestBoundary.respond (outcome: former "the answers outcome of (response)" with (response), received: true, requestId)
+```
+
+### Live.participation.OutcomeSigned:explanations
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 71.
+- Covered by [Participation](../design/compositions/live/participation.md), line 112.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run, submitted: true)
+  Scoring._keyFor (subject: run) has (disclosure: "explanations")
+then
+  RequestBoundary.respond (outcome: former "the explained outcome of (response)" with (response), received: true, requestId)
+```
+
+### Live.participation.OutcomeSigned:in-progress
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 71.
+- Covered by [Participation](../design/compositions/live/participation.md), line 112.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (submitted: false)
+then
+  RequestBoundary.respond (error: "NOT_SUBMITTED", requestId)
+```
+
+### Live.participation.OutcomeSigned:not-owner
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 71.
+- Covered by [Participation](../design/compositions/live/participation.md), line 112.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  Responding._response (response)
+  no view "(response) belongs to the active (session)" with (response, session)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.OutcomeSigned:score
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 71.
+- Covered by [Participation](../design/compositions/live/participation.md), line 112.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run, submitted: true)
+  Scoring._keyFor (subject: run) has (disclosure: "score")
+then
+  RequestBoundary.respond (outcome: former "the score outcome of (response)" with (response), received: true, requestId)
+```
+
+### Live.participation.OutcomeSigned:survey
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 71.
+- Covered by [Participation](../design/compositions/live/participation.md), line 112.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
   Responding._response (response) has (subject: run, submitted: true)
   no Scoring._keyFor (subject: run)
 then
@@ -15621,27 +15922,44 @@ then
 ### Live.participation.Submit:closed
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
-- Covered by [Participation](../design/compositions/live/participation.md), line 95.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is closed" with (run)
 then
   RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
-### Live.participation.Submit:quiz-incomplete
+### Live.participation.Submit:not-owner
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
-- Covered by [Participation](../design/compositions/live/participation.md), line 95.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
+  Responding._response (response)
+  no view "(response) belongs to an anonymous participant" with (response)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.Submit:quiz-incomplete
+
+Authored path: `Live.participation.Submit`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit", requestId, response)
+where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   RunSnapshotting._snapshot (subject: run) has (value: presentation)
@@ -15655,13 +15973,14 @@ then
 ### Live.participation.Submit:quiz-whole
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
-- Covered by [Participation](../design/compositions/live/participation.md), line 95.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
   at is the current flow's instant
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   RunSnapshotting._snapshot (subject: run) has (value: presentation)
@@ -15675,8 +15994,8 @@ then
 ### Live.participation.Submit:quiz-whole#2
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
-- Covered by [Participation](../design/compositions/live/participation.md), line 95.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
 
 ```reaction
 when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:quiz-whole
@@ -15689,12 +16008,13 @@ then
 ### Live.participation.Submit:round-incomplete
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
-- Covered by [Participation](../design/compositions/live/participation.md), line 95.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   view "(run) is a round of a relay" with (run)
@@ -15706,13 +16026,14 @@ then
 ### Live.participation.Submit:round-whole
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
-- Covered by [Participation](../design/compositions/live/participation.md), line 95.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
   at is the current flow's instant
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   view "(run) is a round of a relay" with (run)
@@ -15724,8 +16045,8 @@ then
 ### Live.participation.Submit:round-whole#2
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
-- Covered by [Participation](../design/compositions/live/participation.md), line 95.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
 
 ```reaction
 when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:round-whole
@@ -15738,13 +16059,14 @@ then
 ### Live.participation.Submit:survey
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
-- Covered by [Participation](../design/compositions/live/participation.md), line 95.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
   at is the current flow's instant
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   RunSnapshotting._snapshot (subject: run) has (value: presentation)
@@ -15758,8 +16080,8 @@ then
 ### Live.participation.Submit:survey#2
 
 Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
-- Covered by [Participation](../design/compositions/live/participation.md), line 95.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 113.
 
 ```reaction
 when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:survey
@@ -15769,10 +16091,182 @@ then
   RequestBoundary.respond (requestId, response: submitted)
 ```
 
+### Live.participation.SubmitSigned:closed
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is closed" with (run)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.participation.SubmitSigned:not-owner
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  Responding._response (response)
+  no view "(response) belongs to the active (session)" with (response, session)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.SubmitSigned:quiz-incomplete
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  RunSnapshotting._snapshot (subject: run) has (value: presentation)
+  form is snapshotForm (value: presentation)
+  form is among ["quiz"]
+  view "(response) leaves a question unanswered" with (response)
+then
+  RequestBoundary.respond (error: "INCOMPLETE", requestId)
+```
+
+### Live.participation.SubmitSigned:quiz-whole
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  at is the current flow's instant
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  RunSnapshotting._snapshot (subject: run) has (value: presentation)
+  form is snapshotForm (value: presentation)
+  form is among ["quiz"]
+  view "(response) answers every question" with (response)
+then
+  Responding.submit (at, response)
+```
+
+### Live.participation.SubmitSigned:quiz-whole#2
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when Responding.submit (at, response, result.response: submitted), asked by Live.participation.SubmitSigned:quiz-whole
+where
+  earlier, RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+then
+  RequestBoundary.respond (requestId, response: submitted)
+```
+
+### Live.participation.SubmitSigned:round-incomplete
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  view "(run) is a round of a relay" with (run)
+  view "(response) leaves a question unanswered" with (response)
+then
+  RequestBoundary.respond (error: "INCOMPLETE", requestId)
+```
+
+### Live.participation.SubmitSigned:round-whole
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  at is the current flow's instant
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  view "(run) is a round of a relay" with (run)
+  view "(response) answers every question" with (response)
+then
+  Responding.submit (at, response)
+```
+
+### Live.participation.SubmitSigned:round-whole#2
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when Responding.submit (at, response, result.response: submitted), asked by Live.participation.SubmitSigned:round-whole
+where
+  earlier, RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+then
+  RequestBoundary.respond (requestId, response: submitted)
+```
+
+### Live.participation.SubmitSigned:survey
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  at is the current flow's instant
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  RunSnapshotting._snapshot (subject: run) has (value: presentation)
+  form is snapshotForm (value: presentation)
+  form is among ["survey"]
+  no view "(run) is a round of a relay" with (run)
+then
+  Responding.submit (at, response)
+```
+
+### Live.participation.SubmitSigned:survey#2
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 70.
+- Covered by [Participation](../design/compositions/live/participation.md), line 114.
+
+```reaction
+when Responding.submit (at, response, result.response: submitted), asked by Live.participation.SubmitSigned:survey
+where
+  earlier, RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+then
+  RequestBoundary.respond (requestId, response: submitted)
+```
+
 ### Live.participation.SubmittedResponseIsGraded
 
 Authored path: `Live.participation.SubmittedResponseIsGraded`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 62.
+- Covered by [Participation](../design/compositions/live/participation.md), line 75.
 
 ```reaction
 when Responding.submit (response)
@@ -15787,26 +16281,88 @@ then
 ### Live.participation.Wall:in-progress
 
 Authored path: `Live.participation.Wall`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 79.
-- Covered by [Participation](../design/compositions/live/participation.md), line 96.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/wall", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (submitted: false)
 then
   RequestBoundary.respond (error: "NOT_SUBMITTED", requestId)
 ```
 
-### Live.participation.Wall:submitted
+### Live.participation.Wall:not-owner
 
 Authored path: `Live.participation.Wall`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 79.
-- Covered by [Participation](../design/compositions/live/participation.md), line 96.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/wall", requestId, response)
 where
+  Responding._response (response)
+  no view "(response) belongs to an anonymous participant" with (response)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.Wall:submitted
+
+Authored path: `Live.participation.Wall`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 92.
+- Covered by [Participation](../design/compositions/live/participation.md), line 115.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/wall", requestId, response)
+where
+  view "(response) belongs to an anonymous participant" with (response)
+  Responding._response (response) has (subject: round, submitted: true)
+then
+  RequestBoundary.respond (requestId, wall: former "the wall of (round) as (viewer) sees it" with (round, viewer: response))
+```
+
+### Live.participation.WallSigned:in-progress
+
+Authored path: `Live.participation.WallSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 93.
+- Covered by [Participation](../design/compositions/live/participation.md), line 116.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/wall-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (submitted: false)
+then
+  RequestBoundary.respond (error: "NOT_SUBMITTED", requestId)
+```
+
+### Live.participation.WallSigned:not-owner
+
+Authored path: `Live.participation.WallSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 93.
+- Covered by [Participation](../design/compositions/live/participation.md), line 116.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/wall-signed", requestId, response, session)
+where
+  Responding._response (response)
+  no view "(response) belongs to the active (session)" with (response, session)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.WallSigned:submitted
+
+Authored path: `Live.participation.WallSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 93.
+- Covered by [Participation](../design/compositions/live/participation.md), line 116.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/wall-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
   Responding._response (response) has (subject: round, submitted: true)
 then
   RequestBoundary.respond (requestId, wall: former "the wall of (round) as (viewer) sees it" with (round, viewer: response))
@@ -21668,13 +22224,17 @@ not listed here have no explicit input contract.
 - `/live/edits/offerings` — requires `session`, `relay`
 - `/live/edits/take` — requires `session`, `suggestion`
 - `/live/p/answer` — requires `response`, `question`, `value`
+- `/live/p/answer-signed` — requires `session`, `response`, `question`, `value`
 - `/live/p/arrive` — requires `token`
 - `/live/p/begin` — requires `token`, `device`
 - `/live/p/begin-signed` — requires `token`, `session`
 - `/live/p/locate` — requires `code`
 - `/live/p/outcome` — requires `response`
+- `/live/p/outcome-signed` — requires `session`, `response`
 - `/live/p/submit` — requires `response`
+- `/live/p/submit-signed` — requires `session`, `response`
 - `/live/p/wall` — requires `response`
+- `/live/p/wall-signed` — requires `session`, `response`
 - `/live/quizzes/add-question` — requires `session`, `questionnaire`, `prompt`; fills `choices` with [] when absent; fills `expected` with "" when absent; fills `explanation` with "" when absent
 - `/live/quizzes/create` — requires `session`, `form`; fills `disclosure` with "score" when absent; fills `title` with "Untitled" when absent
 - `/live/quizzes/get` — requires `questionnaire`, `session`
@@ -21797,6 +22357,7 @@ not listed here have no explicit input contract.
 - `/students/notes/revise` — requires `session`, `note`, `body`, `visibility`, `tags`, `followUpAt`
 - `/students/notes/visible` — requires `session`
 - `/students/notes/write` — requires `session`, `learner`, `body`, `visibility`, `tags`, `followUpAt`
+- `/submissions/artifact` — requires `session`, `assignment`, `submitter`, `artifact`
 - `/submissions/attempts` — requires `assignment`, `session`, `submitter`
 - `/submissions/for-assignment` — requires `assignment`, `session`
 - `/submissions/for-student` — requires `session`, `submitter`
