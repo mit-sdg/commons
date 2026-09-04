@@ -94,7 +94,16 @@ function RelaySetup({
   const searchParams = useSearchParams();
   const link = searchParams.get("draft");
   const brief = searchParams.get("ask");
-  const [title, setTitle] = useState(relay.title);
+  // The title as it is being typed, and the saved title it was typed over: a
+  // name the model gives the relay while the page stands is shown, not typed
+  // back over by the field's blur.
+  const [typed, setTyped] = useState<string | null>(null);
+  const [saved, setSaved] = useState(relay.title);
+  if (saved !== relay.title) {
+    setSaved(relay.title);
+    setTyped(null);
+  }
+  const title = typed ?? relay.title;
   const [asking, setAsking] = useState(link !== null || brief !== null);
   // The brief the address carries goes out from here, so the page it was
   // written on navigates the moment the relay is planned.
@@ -149,13 +158,13 @@ function RelaySetup({
   const open = asking && !relay.retired;
 
   async function retitle() {
-    const wanted = title.trim();
+    if (typed === null) return;
+    const wanted = typed.trim();
     // A title cleared and left behind is not a title: the saved one comes back.
-    if (wanted === "") {
-      setTitle(relay.title);
+    if (wanted === "" || wanted === relay.title) {
+      setTyped(null);
       return;
     }
-    if (wanted === relay.title) return;
     setBusy(true);
     const result = await api["/live/relays/retitle"]({
       relay: relay.relay,
@@ -163,6 +172,7 @@ function RelaySetup({
     });
     setBusy(false);
     if (isApiError(result)) {
+      setTyped(null);
       toast.error(publicErrorMessage(result.error));
       return;
     }
@@ -221,7 +231,7 @@ function RelaySetup({
               aria-label="Title"
               aria-invalid={title.trim() === ""}
               className={cn(TITLE_FIELD, "min-w-0 flex-1 text-2xl md:text-3xl")}
-              onChange={(event) => setTitle(event.target.value)}
+              onChange={(event) => setTyped(event.target.value)}
               onBlur={() => void retitle()}
             />
             {relay.retired ? <Badge variant="outline">Retired</Badge> : null}
