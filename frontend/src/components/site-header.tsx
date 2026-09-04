@@ -106,6 +106,7 @@ export function SiteHeader() {
   // chrome between the phone and the questions. The projected join page stands
   // alone the same way — a wall shows the room only the invitation.
   if (pathname === "/join" || pathname.startsWith("/q/")) return null;
+  if (pathname.startsWith("/lab/")) return null;
   if (pathname.startsWith("/staff/live/run/") && pathname.endsWith("/project"))
     return null;
 
