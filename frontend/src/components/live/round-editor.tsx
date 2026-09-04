@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChevronRight, X } from "lucide-react";
+import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { type ComponentProps, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -8,7 +8,6 @@ import {
   type RefusalWord,
   saidRefusal,
 } from "@/components/live/refusals";
-import { RoundPreview } from "@/components/live/round-preview";
 import { RoundToken } from "@/components/live/round-token";
 import {
   firstUse,
@@ -236,7 +235,6 @@ export function RoundEditor({
   const [seen, setSeen] = useState<Draft>(saved);
   const [busy, setBusy] = useState(false);
   const [chosenKind, setChosenKind] = useState<RoundKind | null>(null);
-  const [previewing, setPreviewing] = useState(false);
   const uses = useCarryUses();
 
   // The round can change under the card — a drafting line taken, another tab —
@@ -732,31 +730,6 @@ export function RoundEditor({
             )}
           </div>
         ) : null}
-
-        <div className="flex flex-col gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-expanded={previewing}
-            aria-controls={`preview-${round.leg}`}
-            className={cn(
-              "self-start",
-              previewing && "bg-accent text-foreground",
-            )}
-            onClick={() => setPreviewing((shown) => !shown)}
-          >
-            Preview
-            <ChevronRight
-              aria-hidden
-              className={cn("transition-transform", previewing && "rotate-90")}
-            />
-          </Button>
-          <div id={`preview-${round.leg}`} hidden={!previewing}>
-            {previewing ? (
-              <RoundPreview round={{ ...round, ...written }} />
-            ) : null}
-          </div>
-        </div>
       </div>
     </div>
   );

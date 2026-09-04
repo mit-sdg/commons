@@ -131,12 +131,12 @@ export function QuestionCard({
               context.length === 1 ? "grid-cols-1" : "grid-cols-2",
             )}
           >
-            {context.map((group) => {
+            {context.map((group, index) => {
               const values = distinctValues(group.cards);
               const held = Math.max(0, values.length - WORDS_SHOWN);
               return (
                 <div
-                  key={group.name}
+                  key={`${group.name}-${index}`}
                   className="min-w-0 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5"
                 >
                   <p className="truncate font-medium text-xs" dir="auto">
@@ -168,9 +168,9 @@ export function QuestionCard({
 
       {question.choices.length > 0 ? (
         <div className="flex flex-col gap-2">
-          {question.choices.map((choice) => (
+          {question.choices.map((choice, index) => (
             <Choice
-              key={choice}
+              key={`${choice}-${index}`}
               choice={choice}
               picked={answers[chosen] === choice}
               onPick={() => onAnswer(chosen, choice)}
