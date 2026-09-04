@@ -22,11 +22,18 @@ import {
   type Wall as WallShape,
 } from "@/components/live/rounds";
 import { Wall } from "@/components/live/wall";
+import { SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { type ApiError, api, isApiError, type Output } from "@/lib/api";
+import {
+  type ApiError,
+  api,
+  isApiError,
+  type Output,
+  publicErrorMessage,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -93,8 +100,21 @@ function outOfReach(result: unknown): boolean {
   return isApiError(result) && OUT_OF_REACH.has(result.error);
 }
 
-/** Where a written answer landed: on the server, refused, or nowhere. */
-type Landing = "saved" | "refused" | "unreachable";
+/**
+ * Where a written answer landed: on the server, refused, nowhere, or refused
+ * because the phone's sign-in no longer stands.
+ */
+type Landing = "saved" | "refused" | "unreachable" | "unsigned";
+
+/** A signed call refused for its sign-in, which is the phone's to renew. */
+function unsigned(signed: boolean, result: unknown): boolean {
+  return signed && isApiError(result) && result.error === "UNAUTHORIZED";
+}
+
+/** What a phone says when begin is refused with a word other than handed in. */
+function beginRefusal(error: string): string {
+  return error === "NOT_FOUND" ? "Couldn't join." : publicErrorMessage(error);
+}
 
 /** A device identifier that survives reloads; secure-context APIs may be absent on lecture-hall LANs. */
 function deviceId(): string {
@@ -182,6 +202,7 @@ function useAnswerSender(response: string | null, signed: boolean) {
             sent.current[question] = value;
             return "saved";
           }
+          if (unsigned(signed, result)) return "unsigned";
           return outOfReach(result) ? "unreachable" : "refused";
         } catch {
           return "unreachable";
@@ -215,8 +236,27 @@ export default function ParticipantPage() {
   const [busy, setBusy] = useState(false);
   /** A hand-in that landed while this phone watched: the receipt is said once. */
   const [justHandedIn, setJustHandedIn] = useState(false);
+  /** The phone's sign-in ended under it: said once, with the way back in. */
+  const [ended, setEnded] = useState(false);
   const { persistAnswer, forget } = useAnswerSender(response, me !== null);
   const submissionUncertain = useRef(false);
+
+  // A signed call refused as unsigned is met once: the phone asks whether its
+  // sign-in still stands and says so if it does not. The identity it holds
+  // stays, so nothing falls back to an anonymous phone in the meantime; what
+  // was typed stays on the screen, and what was handed in belongs to the run.
+  const onEnded = useCallback(async () => {
+    try {
+      const probe = await api.auth.me();
+      if (!("error" in probe)) return;
+    } catch {
+      return;
+    }
+    setEnded(true);
+  }, []);
+  const notice = ended ? (
+    <SignInEnded next={`/q/${token}`} className="mb-4" />
+  ) : null;
   const reconciledResponse = useRef<string | null>(null);
   const signedParticipant = me === null ? null : String(me.user);
   const progressBelongsToViewer =
@@ -328,6 +368,11 @@ export default function ParticipantPage() {
           return;
         }
         if (isApiError(result)) {
+          if (unsigned(me !== null, result)) {
+            stop();
+            void onEnded();
+            return;
+          }
           setOutcomeError("Result did not load. Try again.");
           return;
         }
@@ -349,7 +394,7 @@ export default function ParticipantPage() {
     void poll();
     handle.timer = setInterval(() => void poll(), OUTCOME_POLL_MS);
     return stop;
-  }, [submitted, response, outcomeRetry, me]);
+  }, [submitted, response, outcomeRetry, me, onEnded]);
 
   const begin = useCallback(async () => {
     if (participant === null) return;
@@ -364,6 +409,16 @@ export default function ParticipantPage() {
         return;
       }
       if (isApiError(result)) {
+        if (unsigned(me !== null, result)) {
+          void onEnded();
+          return;
+        }
+        // Only the handed-in word says handed in; it comes back as a conflict
+        // against a questionnaire still open. Anything else says what it is.
+        if (result.error !== "CONFLICT") {
+          toast.error(beginRefusal(result.error));
+          return;
+        }
         const current = await loadFace();
         if (current?.open) setAlreadyIn(true);
         return;
@@ -379,7 +434,7 @@ export default function ParticipantPage() {
     } finally {
       setBusy(false);
     }
-  }, [me, token, participant, answers, loadFace]);
+  }, [me, token, participant, answers, loadFace, onEnded]);
 
   // Typing counts at once — the hand-in button must not stay dead under a
   // finger while a written answer sits uncommitted — but the network only
@@ -411,6 +466,12 @@ export default function ParticipantPage() {
       });
       void persistAnswer(question, value).then((landing) => {
         if (landing === "saved") return;
+        // A sign-in that ended keeps the value on the phone: it is not
+        // refused, only unsigned, and the hand-in sends it again after.
+        if (landing === "unsigned") {
+          void onEnded();
+          return;
+        }
         // Out of reach the answer is not refused, only not sent: it stays on
         // the phone, and the hand-in sends it again.
         if (landing === "unreachable") {
@@ -428,7 +489,7 @@ export default function ParticipantPage() {
         toast.error("That answer didn't save. Try again.");
       });
     },
-    [response, participant, answers, token, persistAnswer],
+    [response, participant, answers, token, persistAnswer, onEnded],
   );
 
   const rememberSubmitted = useCallback(
@@ -488,6 +549,10 @@ export default function ParticipantPage() {
         const trimmed = value.trim();
         if (trimmed === "") continue;
         const landing = await persistAnswer(question, trimmed);
+        if (landing === "unsigned") {
+          void onEnded();
+          return;
+        }
         if (landing === "unreachable") {
           setFaceError(ANSWERS_KEPT);
           return;
@@ -506,6 +571,10 @@ export default function ParticipantPage() {
         submissionUncertain.current = true;
         if (await recoverSubmission()) return;
         setFaceError(ANSWERS_KEPT);
+        return;
+      }
+      if (unsigned(me !== null, result)) {
+        void onEnded();
         return;
       }
       if (isApiError(result)) {
@@ -532,6 +601,7 @@ export default function ParticipantPage() {
     recoverSubmission,
     rememberSubmitted,
     me,
+    onEnded,
   ]);
 
   const isQuiz = face?.form === "quiz";
@@ -571,6 +641,8 @@ export default function ParticipantPage() {
         participant={participant}
         signedIn={me !== null}
         offline={faceError !== null}
+        ended={ended}
+        onEnded={onEnded}
         onReach={reached}
         refresh={loadFace}
       />
@@ -594,7 +666,11 @@ export default function ParticipantPage() {
 
   if (submitted) {
     return (
-      <Shell title={face.title} said={justHandedIn ? "Handed in" : ""}>
+      <Shell
+        title={face.title}
+        said={justHandedIn ? "Handed in" : ""}
+        notice={notice}
+      >
         <OutcomeView
           outcome={outcome}
           isQuiz={isQuiz}
@@ -626,7 +702,7 @@ export default function ParticipantPage() {
 
   if (response === null) {
     return (
-      <Shell title={face.title}>
+      <Shell title={face.title} notice={notice}>
         <div className="flex min-h-[55dvh] flex-col items-center justify-center gap-4 py-10">
           <p className="text-center text-muted-foreground">
             {face.questions.length} question
@@ -658,7 +734,7 @@ export default function ParticipantPage() {
   }
 
   return (
-    <Shell title={face.title}>
+    <Shell title={face.title} notice={notice}>
       <div className="flex flex-col gap-4 pb-28">
         {faceError !== null ? (
           <div
@@ -703,11 +779,14 @@ export default function ParticipantPage() {
 function Shell({
   title,
   said = "",
+  notice = null,
   children,
 }: {
   title?: string;
   /** What just happened on this phone, said once, whatever the screen shows. */
   said?: string;
+  /** A line that stands over every screen while it holds, under the title. */
+  notice?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -731,6 +810,7 @@ function Shell({
           {title}
         </h1>
       )}
+      {notice}
       {children}
     </div>
   );
@@ -792,6 +872,8 @@ function RelayPhone({
   participant,
   signedIn,
   offline,
+  ended,
+  onEnded,
   onReach,
   refresh,
 }: {
@@ -801,6 +883,10 @@ function RelayPhone({
   signedIn: boolean;
   /** Nothing this phone sends is getting through: the screen keeps what it has. */
   offline: boolean;
+  /** The phone's sign-in ended: said once over the screen, which keeps what it has. */
+  ended: boolean;
+  /** A signed call was refused as unsigned; the page asks whether that stands. */
+  onEnded: () => Promise<void>;
   /** Whether a request got through, said to the one flag both screens read. */
   onReach: (reached: boolean) => void;
   refresh: () => Promise<Face | null>;
@@ -811,8 +897,12 @@ function RelayPhone({
   const [response, setResponse] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-  /** The round whose begin was refused, kept only while that round stands. */
+  /** The round whose begin was refused as handed in, kept only while that round stands. */
   const [refusedRound, setRefusedRound] = useState<string | null>(null);
+  /** The word begin was refused with, when it was not the handed-in word. */
+  const [stopped, setStopped] = useState<string | null>(null);
+  /** Bumped by Retry so the round is begun again. */
+  const [attempt, setAttempt] = useState(0);
   /** What the last refusal was, said in one line over the answer form. */
   const [refusal, setRefusal] = useState<string | null>(null);
   const [wall, setWall] = useState<WallShape | null>(null);
@@ -842,12 +932,13 @@ function RelayPhone({
     setAnswers(stored?.answers ?? {});
     setSubmitted(stored?.submitted ?? false);
     setRefusedRound(null);
+    setStopped(null);
     setRefusal(null);
     setWall(null);
     setJustHandedIn(false);
 
     forget();
-    if (!runOpen || stored !== null) return;
+    if (!runOpen || stored !== null || ended) return;
     let cancelled = false;
     // Until the begin has settled, a cancelled run lets go of the round, so
     // the run that replaces it begins again rather than waiting on an answer
@@ -877,11 +968,20 @@ function RelayPhone({
         }
         onReach(true);
         if (isApiError(result)) {
-          // Begin is refused for a closed run, for a run with no round open,
-          // and for a phone that already handed this round in. The fresh face
-          // says which: the first two leave no round to answer, and the line
-          // over them is the run's; a round still open leaves the hand-in.
           settled = true;
+          if (unsigned(signedIn, result)) {
+            void onEnded();
+            return;
+          }
+          // Only the handed-in word says handed in, and it comes back as a
+          // conflict, as do a closed run and a run with no round open; the
+          // fresh face says which: the first two leave no round to answer,
+          // and the line over them is the run's; a round still open leaves
+          // the hand-in. Any other word says what it is, with Retry.
+          if (result.error !== "CONFLICT") {
+            setStopped(result.error);
+            return;
+          }
           setRefusedRound(round);
           await refresh();
           return;
@@ -900,7 +1000,19 @@ function RelayPhone({
       cancelled = true;
       if (!settled && held.current === round) held.current = null;
     };
-  }, [token, participant, round, runOpen, signedIn, forget, refresh, onReach]);
+  }, [
+    token,
+    participant,
+    round,
+    runOpen,
+    signedIn,
+    ended,
+    attempt,
+    forget,
+    refresh,
+    onReach,
+    onEnded,
+  ]);
 
   // A closed run opens no round, so a phone that reloads into one has nothing
   // to begin: it reads the last round it handed in off the device and keeps
@@ -945,7 +1057,7 @@ function RelayPhone({
   // for one that never handed in. A closed run's wall is finished: it is read
   // once and stays on the screen.
   useEffect(() => {
-    if (!submitted || response === null) return;
+    if (!submitted || response === null || ended) return;
     let cancelled = false;
     // The handle exists before the first read runs, so a finished wall can
     // stop the ticking that carried it.
@@ -958,7 +1070,13 @@ function RelayPhone({
         const result = signedIn
           ? await api["/live/p/wall-signed"]({ response })
           : await api["/live/p/wall"]({ response });
-        if (cancelled || isApiError(result) || result.wall === null) return;
+        if (cancelled) return;
+        if (unsigned(signedIn, result)) {
+          stop();
+          void onEnded();
+          return;
+        }
+        if (isApiError(result) || result.wall === null) return;
         setWall(result.wall);
         // A closed run's wall is finished once it lands; a read that never
         // landed leaves the tick running, so a drop costs one cadence.
@@ -973,7 +1091,7 @@ function RelayPhone({
       cancelled = true;
       stop();
     };
-  }, [submitted, response, runOpen, signedIn]);
+  }, [submitted, response, runOpen, signedIn, ended, onEnded]);
 
   const remember = useCallback(
     (next: Record<string, string>, handedIn: boolean) => {
@@ -1014,6 +1132,12 @@ function RelayPhone({
           onReach(false);
           return;
         }
+        // A sign-in that ended keeps the value too: it is not refused, only
+        // unsigned, and the hand-in sends it again after.
+        if (landing === "unsigned") {
+          void onEnded();
+          return;
+        }
         // A refused answer must not stand on the screen as one that landed.
         const back = { ...next, [item]: before };
         setAnswers(back);
@@ -1025,7 +1149,7 @@ function RelayPhone({
         setRefusal("That answer didn't save. Try again.");
       });
     },
-    [answers, remember, persistAnswer, refresh, onReach],
+    [answers, remember, persistAnswer, refresh, onReach, onEnded],
   );
 
   /** Every box the round captured, answered: what a hand-in is taken on. */
@@ -1049,6 +1173,10 @@ function RelayPhone({
         const standing = signedIn
           ? await api["/live/p/wall-signed"]({ response })
           : await api["/live/p/wall"]({ response });
+        if (unsigned(signedIn, standing)) {
+          void onEnded();
+          return;
+        }
         if (!isApiError(standing) && standing.wall !== null) {
           if (error !== null) toast.error(refusalSentence("ALREADY_SUBMITTED"));
           onReach(true);
@@ -1079,7 +1207,7 @@ function RelayPhone({
             ),
       );
     },
-    [response, answers, whole, remember, refresh, onReach, signedIn],
+    [response, answers, whole, remember, refresh, onReach, onEnded, signedIn],
   );
 
   const handIn = useCallback(async () => {
@@ -1102,6 +1230,10 @@ function RelayPhone({
           onReach(false);
           return;
         }
+        if (landing === "unsigned") {
+          void onEnded();
+          return;
+        }
         if (landing === "refused") {
           await settle(null);
           return;
@@ -1110,6 +1242,10 @@ function RelayPhone({
       const result = signedIn
         ? await api["/live/p/submit-signed"]({ response })
         : await api["/live/p/submit"]({ response });
+      if (unsigned(signedIn, result)) {
+        void onEnded();
+        return;
+      }
       if (isApiError(result)) {
         await settle(result.error);
         return;
@@ -1131,6 +1267,7 @@ function RelayPhone({
     remember,
     settle,
     onReach,
+    onEnded,
     signedIn,
   ]);
 
@@ -1143,7 +1280,10 @@ function RelayPhone({
   // already handed in. Refused against a round still open, it says: you are in.
   const handedIn =
     submitted || (refusedRound !== null && refusedRound === round);
-  const answering = !handedIn && runOpen && round !== null && response !== null;
+  // A phone whose sign-in ended keeps its answers on the screen and sends
+  // nothing until it is signed in again.
+  const answering =
+    !handedIn && runOpen && round !== null && response !== null && !ended;
   // Out of reach the screen keeps the round it has and says so in one line: a
   // phone with answers on it is told they stay there.
   const connection = offline
@@ -1168,7 +1308,12 @@ function RelayPhone({
         const standing = signedIn
           ? await api["/live/p/wall-signed"]({ response })
           : await api["/live/p/wall"]({ response });
-        if (cancelled || isApiError(standing) || standing.wall === null) return;
+        if (cancelled) return;
+        if (unsigned(signedIn, standing)) {
+          void onEnded();
+          return;
+        }
+        if (isApiError(standing) || standing.wall === null) return;
         setSubmitted(true);
         setWall(standing.wall);
         remember(answers, true);
@@ -1179,7 +1324,7 @@ function RelayPhone({
     return () => {
       cancelled = true;
     };
-  }, [missed, response, answers, remember, signedIn]);
+  }, [missed, response, answers, remember, signedIn, onEnded]);
 
   // Where you landed, on a screen one hand holds: this phone's own cards
   // first, then the piles, each wearing this phone's card on its face. The
@@ -1235,7 +1380,9 @@ function RelayPhone({
           )}
         </header>
 
-        {connection === null ? null : (
+        {ended ? (
+          <SignInEnded next={`/q/${token}`} />
+        ) : connection === null ? null : (
           <div
             role="alert"
             className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm"
@@ -1312,6 +1459,24 @@ function RelayPhone({
           </Line>
         ) : !runOpen || round === null ? (
           <Line>{waitingLine(relay)}</Line>
+        ) : stopped !== null ? (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm"
+          >
+            <span>{beginRefusal(stopped)}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Retry joining the round"
+              onClick={() => {
+                held.current = null;
+                setAttempt((standing) => standing + 1);
+              }}
+            >
+              Retry
+            </Button>
+          </div>
         ) : response === null ? (
           <LoadingState label="Opening…" />
         ) : (
