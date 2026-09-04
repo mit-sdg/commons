@@ -185,9 +185,8 @@ export function adopt<Wall extends Staged>(shown: Wall, target: Wall): Wall {
 /** How a card moves when it is placed, and how a pile settles when one opens. */
 export const CARD_MOVE = {
   type: "spring",
-  stiffness: 300,
-  damping: 28,
-  mass: 0.8,
+  duration: 0.85,
+  bounce: 0.18,
 } as const;
 
 export const PILE_MOVE = {
@@ -202,10 +201,12 @@ export const PILE_MOVE = {
  * for a pile, and a card arriving on the tray. A room can follow one card at
  * a time at this pace; a wave is never faster than this unless it has to be.
  */
-export const LANDING_GAP_MS = 240;
+export const LANDING_GAP_MS = 320;
 export const ARRIVAL_GAP_MS = 120;
 /** How far the shown wall may trail the server before its wave hurries. */
-export const MAX_LAG_MS = 6_000;
+export const MAX_LAG_MS = 9_000;
+/** How long before its first card a pile opens, so the card is seen to fly into it. */
+export const OPEN_AHEAD_MS = 200;
 
 export interface Timed {
   move: Move;
@@ -220,9 +221,9 @@ export interface Timed {
  * room should see each one go — at the same pace whether the snapshot
  * brought two cards or forty; a
  * wave that would trail the server by more than the lag allows is squeezed to
- * fit it. A pile opens with the first card that lands in it, so the room sees
- * the pile form around a card; a pile no card lands in opens at once. What
- * leaves or closes goes after the last landing.
+ * fit it. A pile opens a beat before the first card that lands in it, so the
+ * room sees the card fly into a pile that is there to take it; a pile no card
+ * lands in opens at once. What leaves or closes goes after the last landing.
  */
 export function schedule(moves: Move[]): Timed[] {
   const landings = [
@@ -250,11 +251,16 @@ export function schedule(moves: Move[]): Timed[] {
     if (move.kind !== "place" || firstLanding.has(move.pile)) return;
     firstLanding.set(move.pile, times[index] ?? 0);
   });
-  const opens = moves.flatMap((move) =>
-    move.kind === "open"
-      ? [{ move, at: firstLanding.get(move.pile) ?? 0 }]
-      : [],
-  );
+  const opens = moves.flatMap((move) => {
+    if (move.kind !== "open") return [];
+    const first = firstLanding.get(move.pile);
+    return [
+      {
+        move,
+        at: first === undefined ? 0 : Math.max(0, first - OPEN_AHEAD_MS),
+      },
+    ];
+  });
   return [
     ...opens,
     ...landings.map((move, index) => ({ move, at: times[index] ?? 0 })),

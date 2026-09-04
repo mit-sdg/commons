@@ -23,7 +23,7 @@ const PEEK = 3;
 const FOLLOW_AFTER_MS = 450;
 
 /** How long a card crossing the wall keeps its card face: the card's spring. */
-const FLIGHT_MS = 600;
+const FLIGHT_MS = 1_000;
 
 /** What stands on a card whose answer is nothing but spaces. */
 const BLANK = "—";
@@ -48,15 +48,15 @@ const FACES = {
   },
   big: {
     box: "h-[196px] rounded-xl px-5 pt-4 pb-4 xl:h-[216px] 2xl:h-[256px] 2xl:px-6 2xl:pt-[22px] 2xl:pb-5",
-    name: "text-2xl xl:text-3xl 2xl:text-[38px]",
-    count: "text-3xl xl:text-4xl 2xl:text-[42px]",
+    name: "text-2xl xl:text-[28px] 2xl:text-[32px]",
+    count: "text-3xl xl:text-4xl 2xl:text-[40px]",
     peek: "gap-1.5 text-lg xl:text-xl 2xl:text-[23px]",
   },
   // A projector with a third row of piles: every pile stays on the screen,
   // a little smaller, rather than the wall scrolling under the room.
   dense: {
     box: "h-[160px] rounded-xl px-5 pt-3.5 pb-3.5",
-    name: "text-2xl 2xl:text-[28px]",
+    name: "text-[22px] 2xl:text-2xl",
     count: "text-3xl 2xl:text-[32px]",
     peek: "gap-1 text-lg 2xl:text-xl",
   },
@@ -483,8 +483,15 @@ export function Pile({
       ) : null}
       {/* The cell's column: everything the face holds, clipped inside the
           cell, so a name of any length and a lid of any length leave the
-          piles beside this one exactly where they stand. */}
-      <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
+          piles beside this one exactly where they stand. While a card is
+          crossing the wall into this pile nothing clips, so the card is seen
+          the whole way. */}
+      <div
+        className={cn(
+          "flex h-full min-h-0 flex-col gap-2",
+          arriving.size > 0 ? "overflow-visible" : "overflow-hidden",
+        )}
+      >
         {description !== "" ? (
           <p
             className={cn(
@@ -545,8 +552,10 @@ export function Pile({
         <div
           role="list"
           className={cn(
-            "flex min-h-0 flex-1 flex-col overflow-hidden text-muted-foreground leading-[1.35]",
-            "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_14px),transparent)]",
+            "flex min-h-0 flex-1 flex-col text-muted-foreground leading-[1.35]",
+            arriving.size > 0
+              ? "overflow-visible"
+              : "overflow-hidden [mask-image:linear-gradient(to_bottom,#000_calc(100%_-_14px),transparent)]",
             // The mask paints the list over the pick button; while picking the face is that button.
             picking && "pointer-events-none",
             face.peek,
@@ -600,7 +609,7 @@ export function Pile({
                     canDragCards &&
                       "relative z-10 cursor-grab active:cursor-grabbing",
                     arriving.has(card.card) &&
-                      "relative z-20 rounded-lg border border-border bg-card px-3 py-[7px] text-foreground shadow-md",
+                      "relative z-20 rounded-lg border border-border bg-card px-3 py-[7px] text-foreground shadow-lg",
                   )}
                 >
                   <Answer value={card.value} className="line-clamp-1" />

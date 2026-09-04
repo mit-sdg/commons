@@ -9,6 +9,7 @@ import {
   MAX_LAG_MS,
   type Move,
   merged,
+  OPEN_AHEAD_MS,
   placed,
   schedule,
 } from "./wall-motion";
@@ -149,9 +150,12 @@ describe("when a snapshot's moves play", () => {
     { kind: "close", pile: "p2" },
   ];
 
-  test("landings go one at a time, a pile opens with its first card, and leaving and closing wait for the last landing", () => {
+  test("landings go one at a time, a pile opens a beat before its first card, and leaving and closing wait for the last landing", () => {
     expect(schedule(moves)).toEqual([
-      { move: { kind: "open", pile: "p3" }, at: ARRIVAL_GAP_MS },
+      {
+        move: { kind: "open", pile: "p3" },
+        at: Math.max(0, ARRIVAL_GAP_MS - OPEN_AHEAD_MS),
+      },
       { move: { kind: "arrive", card: "d" }, at: 0 },
       { move: { kind: "place", card: "a", pile: "p3" }, at: ARRIVAL_GAP_MS },
       {
