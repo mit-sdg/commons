@@ -25,7 +25,7 @@ facilities:
 | Variable                  | Requirement                                                                                                                 |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `MONGODB_URI`             | Required scoped MongoDB connection, including a database name and any required TLS options                                  |
-| `PUBLIC_ORIGIN`           | Required exact browser origin, without a trailing slash                                                                     |
+| `PUBLIC_ORIGIN`           | Required exact browser origin: `https://` and the host the room's phones reach, no trailing slash |
 | `INVITATION_SECRET`       | Required stable secret of at least 32 characters; startup refuses a shorter one                                             |
 | `VOUCHER_SECRET`          | Required stable secret of at least 32 characters, distinct from `INVITATION_SECRET`                                         |
 | `ADMIN_SETUP_SECRET_HASH` | Optional one-time initial-administrator verifier; remove it after setup                                                     |
@@ -66,6 +66,21 @@ curl --fail https://commons.example.edu/health
 A `200` response with `{"status":"ok"}` confirms the frontend, backend, and
 MongoDB path are ready. An unreachable backend or failed MongoDB check returns
 `503` with a generic response.
+
+## When a start fails
+
+The supervisor prints both processes' output to its own standard output,
+prefixed `[edge]` and `[web]`, so the platform's log for the workload holds
+the reason. Startup refuses, with a one-line message, on: a missing
+`MONGODB_URI`; conflicting `MONGODB_URI` and `MONGODB_URL`; a missing
+`PUBLIC_ORIGIN` or one with a trailing slash; an `INVITATION_SECRET` or
+`VOUCHER_SECRET` under 32 characters, or the two equal; and
+`REASONER=scripted` in production. A start that reaches the migrations and
+stops there names the migration; restore the backup before starting again. A
+running stack whose `/health` answers `503` has a frontend up and a backend or
+MongoDB down: read the `[edge]` lines. Terminate TLS at the reverse proxy and
+forward to the declared application port; every other combination fails the
+session check at the end of this guide.
 
 ## Register the initial administrator
 

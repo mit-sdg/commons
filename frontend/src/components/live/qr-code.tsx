@@ -42,7 +42,10 @@ export function JoinCode({
   const svg = useMemo(() => renderSVG(url, { ecc: "M", border: 2 }), [url]);
   const entry = joinEntryUrl();
   const shape = wall ? "wall" : size;
-  const localOnly = shape === "panel" && isLoopback(entry);
+  // A loopback address reaches no phone: every screen that prints it says so,
+  // the projector included, since the room reads the projector.
+  const localOnly = isLoopback(entry);
+  const configured = (process.env.NEXT_PUBLIC_PARTICIPANT_ORIGIN ?? "") !== "";
   const spec = SIZES[shape];
   const beside = shape === "corner" || shape === "room";
   return (
@@ -86,8 +89,15 @@ export function JoinCode({
           {entry}
         </span>
         {localOnly ? (
-          <span className="max-w-md text-amber-700 text-xs dark:text-amber-300">
-            This address works on this device only. Set PUBLIC_ORIGIN.
+          <span
+            className={cn(
+              "max-w-md text-amber-700 dark:text-amber-300",
+              shape === "wall" ? "text-base" : "text-xs",
+            )}
+          >
+            {configured
+              ? "PUBLIC_ORIGIN is this machine's own address. Set it to one the room can reach."
+              : "This address works on this device only. Set PUBLIC_ORIGIN."}
           </span>
         ) : null}
       </figcaption>
