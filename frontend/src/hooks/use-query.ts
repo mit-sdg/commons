@@ -6,6 +6,8 @@ import { CommonsError, isApiError, publicErrorMessage } from "@/lib/api";
 export interface QueryState<T> {
   data: T | null;
   error: string | null;
+  /** The boundary's category behind `error`, when the request was refused. */
+  refused: string | null;
   loading: boolean;
   refetch: () => void;
 }
@@ -16,6 +18,7 @@ export function useQuery<T>(
 ): QueryState<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refused, setRefused] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(loader !== null);
   const [nonce, setNonce] = useState(0);
   const reqId = useRef(0);
@@ -41,11 +44,13 @@ export function useQuery<T>(
     // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching hook, loading/error set before async call
     setLoading(true);
     setError(null);
+    setRefused(null);
     loader()
       .then((result) => {
         if (id !== reqId.current) return;
         if (isApiError(result)) {
           setError(publicErrorMessage(result.error));
+          setRefused(result.error);
         } else {
           setData(result as T);
         }
@@ -57,6 +62,7 @@ export function useQuery<T>(
             ? e.message
             : publicErrorMessage("INTERNAL_ERROR"),
         );
+        setRefused(e instanceof CommonsError ? e.code : null);
       })
       .finally(() => {
         if (id !== reqId.current) return;
@@ -77,6 +83,7 @@ export function useQuery<T>(
   return {
     data: effectiveData,
     error: effectiveError,
+    refused: loader ? refused : null,
     loading: effectiveLoading,
     refetch,
   };

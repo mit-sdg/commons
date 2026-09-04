@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import { RelayProjector } from "@/components/live/run-relay-projector";
 import { RequireCapability } from "@/components/require-capability";
+import { SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
@@ -19,12 +20,15 @@ function ProjectorContent() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 
-  const { data, loading, error, refetch } = useQuery(
+  const { data, loading, error, refused, refetch } = useQuery(
     session ? () => api["/live/relays/run"]({ run }).then(unwrap) : null,
     [session, run],
   );
 
   const relayRun = data?.run ?? null;
+  // A sign-in that ended is said once, in a corner, with the way back in; the
+  // wall stays up for the room, since it belongs to the run.
+  const ended = refused === "UNAUTHORIZED";
 
   if (loading && data === null) {
     return (
@@ -40,9 +44,24 @@ function ProjectorContent() {
       </div>
     );
   }
+  const notice = ended ? (
+    <div className="fixed top-4 left-4 z-50 max-w-sm">
+      <SignInEnded next={`/staff/live/run/${run}/project`} />
+    </div>
+  ) : null;
   if (relayRun !== null)
-    return <RelayProjector run={relayRun} refetch={refetch} />;
-  return <QuizProjector />;
+    return (
+      <>
+        {notice}
+        <RelayProjector run={relayRun} refetch={refetch} ended={ended} />
+      </>
+    );
+  return (
+    <>
+      {notice}
+      <QuizProjector />
+    </>
+  );
 }
 
 function QuizProjector() {

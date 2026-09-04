@@ -34,9 +34,12 @@ const MISSES = 2;
 export function RelayProjector({
   run,
   refetch,
+  ended = false,
 }: {
   run: RelayRun;
   refetch: () => void;
+  /** The page's sign-in ended: it says so once; the wall says nothing else. */
+  ended?: boolean;
 }) {
   const { session } = useAuth();
 
@@ -168,11 +171,13 @@ export function RelayProjector({
   );
   // Why the wall is not moving, in the words the dashboard uses. A wall that
   // is not reaching the server at all is said before anything read off it.
-  const word = gone
-    ? "No connection."
-    : modelSilent(wall, now)
-      ? "The model is not answering."
-      : null;
+  const word = ended
+    ? null
+    : gone
+      ? "No connection."
+      : modelSilent(wall, now)
+        ? "The model is not answering."
+        : null;
 
   return (
     <div

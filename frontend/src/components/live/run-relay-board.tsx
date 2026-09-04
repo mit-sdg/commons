@@ -348,6 +348,12 @@ export function RelayRunBoard({
   async function send(request: Promise<unknown>, read: Reader) {
     const result = await request;
     if (!isApiError(result)) return true;
+    // A sign-in that ended is said once by the page, with the way back in;
+    // the poll learns it on the next read, so it is asked for now.
+    if (result.error === "UNAUTHORIZED") {
+      refetch();
+      return false;
+    }
     const reading = await read(result.error);
     // A move that did not take leaves the screen ahead of the server, whether
     // it was refused or the edge dropped it: a Close that landed late still
