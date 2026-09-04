@@ -148,6 +148,14 @@ function RelaySetup({
     const follow = () => {
       if (column.current === null || column.current.offsetParent === null)
         return;
+      // A round holding the focus is the reader saying which round they are on;
+      // the scroll a click into it causes must not take the column off it.
+      const held = document.activeElement;
+      if (
+        held !== null &&
+        [...cards.current.values()].some((node) => node.contains(held))
+      )
+        return;
       const leg = nearestCard(cards.current);
       if (leg !== null) setSelected(leg);
     };
