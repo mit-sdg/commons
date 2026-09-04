@@ -421,6 +421,26 @@ export function RelayRunBoard({
           },
           togglePick:
             takesShown && run.open && inHand !== null ? pick.tap : undefined,
+          /**
+           * A choice nobody chose has no pile to pin: the empty pile of that
+           * name is opened first, and the tap then carries what it opened.
+           */
+          pickChoice:
+            takesShown && run.open && inHand !== null
+              ? (name) => {
+                  const opening = api["/live/walls/open-choice"]({
+                    round: shown,
+                    name,
+                  });
+                  void send(opening, goneOrClosed("PILE_GONE")).then(
+                    async (sent) => {
+                      if (!sent) return;
+                      const opened = await opening;
+                      if (!isApiError(opened)) pick.tap(opened.pile);
+                    },
+                  );
+                }
+              : undefined,
         };
 
   async function openNext() {

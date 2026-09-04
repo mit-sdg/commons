@@ -59,7 +59,7 @@ async function until<Value>(read: () => Promise<Value>, done: (value: Value) => 
 
 interface Wall {
   cards: { card: string; value: string; pile: string | null }[];
-  piles: { pile: string; name: string; count: number }[];
+  piles: { pile: string; name: string; count: number; picked: string | null }[];
   questions: {
     question: string;
     prompt: string;
@@ -321,5 +321,115 @@ describe("what a round carries from an earlier one", () => {
       (value) => value !== null && value.questions.length > 0,
     );
     expect(runoffWall?.questions[0].context).toEqual([{ name: "keeping", cards: [] }]);
+  });
+
+  test("a choice nobody chose is opened as an empty pile and carries as an empty group", async () => {
+    const planned = await json(await post(edge, "/live/relays/plan", { title: "Empty" }, cookie));
+    const relay = planned.relay as string;
+    const poll = (
+      await json(
+        await post(
+          edge,
+          "/live/relays/add-round",
+          {
+            relay,
+            title: "Poll",
+            prompt: "Which?",
+            parts: [],
+            cap: 0,
+            choices: ["yes", "no", "maybe"],
+          },
+          cookie,
+        ),
+      )
+    ).leg as string;
+    const after = (
+      await json(
+        await post(
+          edge,
+          "/live/relays/add-round",
+          { relay, title: "After", prompt: "Why?", parts: [], cap: 0, choices: [] },
+          cookie,
+        ),
+      )
+    ).leg as string;
+    await post(
+      edge,
+      "/live/relays/set-takes",
+      { leg: after, source: poll, use: "context" },
+      cookie,
+    );
+
+    const launched = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
+    const run = launched.run as string;
+    const token = launched.token as string;
+    const opened = await json(
+      await post(edge, "/live/relays/open-round", { run, leg: poll }, cookie),
+    );
+    const round = opened.round as string;
+    await until(
+      async () =>
+        (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall | null,
+      (value) => value !== null && value.questions.length > 0,
+    );
+    await handIn(edge, token, ["yes"]);
+    const wall = await until(
+      async () =>
+        (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall,
+      (value) => value.piles.length === 1,
+    );
+    // Only the choice that was chosen has a pile; the other two have none.
+    expect(wall.piles.map((pile) => pile.name)).toEqual(["yes"]);
+    await post(edge, "/live/relays/close-round", { round }, cookie);
+
+    // A name the round never offered is no pile of this wall.
+    const stranger = await json(
+      await post(edge, "/live/walls/open-choice", { round, name: "perhaps" }, cookie),
+    );
+    expect(stranger.error).toBe("NOT_FOUND");
+
+    // Naming an unchosen choice opens its empty pile; naming it again reaches
+    // the same pile rather than making another.
+    const empty = await json(
+      await post(edge, "/live/walls/open-choice", { round, name: "maybe" }, cookie),
+    );
+    const again = await json(
+      await post(edge, "/live/walls/open-choice", { round, name: "maybe" }, cookie),
+    );
+    expect(again.pile).toBe(empty.pile);
+    // Naming a choice that already has ballots reaches that pile too.
+    const chosen = wall.piles.find((pile) => pile.name === "yes")?.pile;
+    const reached = await json(
+      await post(edge, "/live/walls/open-choice", { round, name: "yes" }, cookie),
+    );
+    expect(reached.pile).toBe(chosen);
+
+    await post(edge, "/live/walls/pick", { round, pile: chosen }, cookie);
+    await post(edge, "/live/walls/pick", { round, pile: empty.pile }, cookie);
+    const picked = (await json(await post(edge, "/live/walls/read", { round }, cookie)))
+      .wall as Wall;
+    expect(
+      picked.piles
+        .map((pile) => [pile.name, pile.count, pile.picked !== null] as const)
+        .sort((left, right) => left[0].localeCompare(right[0])),
+    ).toEqual([
+      ["maybe", 0, true],
+      ["yes", 1, true],
+    ]);
+
+    // The empty group carries into the round that takes this one as context.
+    const asked = await json(
+      await post(edge, "/live/relays/open-round", { run, leg: after }, cookie),
+    );
+    const afterWall = await until(
+      async () =>
+        (await json(await post(edge, "/live/walls/read", { round: asked.round }, cookie)))
+          .wall as Wall | null,
+      (value) => value !== null && value.questions.length > 0,
+    );
+    expect(afterWall?.questions[0].context).toEqual([
+      { name: "yes", cards: [] },
+      { name: "maybe", cards: [] },
+    ]);
   });
 });

@@ -8,7 +8,7 @@ Each round's question is an ordinary questionnaire of the survey form holding ex
 
 ## Kinds and uses
 
-A round is one of three kinds, read off its question: **write** (one box), **list** (parts: labeled boxes, or one box repeated up to a cap), or **vote** (choices). Every round leaves named groups with counts on its wall — piles for a write or list round, and for a vote round the choices with their tallies, since the wall page files each ballot under a pile of its choice's name. Which groups carry forward is the staff member's pick on the dashboard, made after the source round closes; nothing about the pick is authored. What a round does with the picked groups is its take's use, and the use is open only to some kinds:
+A round is one of three kinds, read off its question: **write** (one box), **list** (parts: labeled boxes, or one box repeated up to a cap), or **vote** (choices). Every round leaves named groups with counts on its wall — piles for a write or list round, and for a vote round the choices with their tallies, since the wall page files each ballot under a pile of its choice's name, and a choice nobody chose becomes an empty pile the moment the pick names it. Which groups carry forward is the staff member's pick on the dashboard, made after the source round closes; nothing about the pick is authored. What a round does with the picked groups is its take's use, and the use is open only to some kinds:
 
 | Use       | Kinds             | What it does when the round opens                                  |
 | --------- | ----------------- | ------------------------------------------------------------------ |

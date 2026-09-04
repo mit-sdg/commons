@@ -85,6 +85,8 @@ export interface WallEdits {
   openPile: (card: string, name: string) => void;
   /** Tapping a pile toggles whether it carries into the next round. */
   togglePick?: (pile: string) => void;
+  /** Tapping a choice nobody chose opens its empty pile and carries that. */
+  pickChoice?: (choice: string) => void;
   renamePile?: (pile: string, name: string) => void;
   mergePile?: (pile: string, into: string) => void;
   summarize?: (pile: string) => void;
@@ -374,6 +376,7 @@ function StagedWall({
               sourceWall={sourceWall ?? null}
               carriesTo={carriesTo}
               onPick={hand?.togglePick}
+              onPickChoice={hand?.pickChoice}
               big={big}
               scroll={scroll}
             />
@@ -712,13 +715,15 @@ function fading(edges: Edges): string | false {
 /**
  * A vote round: every choice with its count and a bar, in the order the
  * question offers them, and a choice nobody chose at nothing. Each row is the
- * ballot pile of that name, so it is picked and carried like any other pile.
+ * ballot pile of that name, so it is picked and carried like any other pile;
+ * a choice nobody chose has no pile yet, and tapping it opens one.
  */
 function VoteBars({
   wall,
   sourceWall,
   carriesTo,
   onPick,
+  onPickChoice,
   big,
   scroll,
 }: {
@@ -726,6 +731,8 @@ function VoteBars({
   sourceWall: WallShape | null;
   carriesTo?: number;
   onPick?: (pile: string) => void;
+  /** A row with no pile yet: the choice is named rather than a pile. */
+  onPickChoice?: (choice: string) => void;
   big: boolean;
   scroll: boolean;
 }) {
@@ -769,9 +776,13 @@ function VoteBars({
           const picked = row.pile !== null && isPicked(row.pile);
           const pile = row.pile;
           const tap =
-            onPick === undefined || pile === null
-              ? undefined
-              : () => onPick(pile.pile);
+            pile === null
+              ? onPickChoice === undefined
+                ? undefined
+                : () => onPickChoice(row.choice)
+              : onPick === undefined
+                ? undefined
+                : () => onPick(pile.pile);
           const spread = (
             <span className="relative z-10 inline-flex flex-none">
               <Spread

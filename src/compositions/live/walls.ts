@@ -144,6 +144,20 @@ const pileHoldsACard = view("(pile) holds a card", ({ pile }, _outputs, _binding
   where(Categorizing._getItems({ category: pile })),
 ).holds();
 
+/**
+ * A name the round's captured question offered as a choice, whether or not
+ * anyone chose it, which is what lets an unchosen choice be picked.
+ */
+const nameIsAChoiceOf = view(
+  "(name) is a choice of (round)",
+  ({ name, round }, _outputs, { presentation, kind }) =>
+    where(
+      RunSnapshotting._snapshot({ subject: round }).is({ value: presentation }),
+      compute(computations.answerKind, { value: presentation, answer: name }, kind),
+      is.among(kind, ["choice"]),
+    ),
+).holds();
+
 /** Which pile of the round carries forward, when this one does: a pinned pile. */
 const thePickOn = former("the pick of (pile) on (round)", ({ round, pile }, _bindings) =>
   where(Pinning._isPinned({ item: pile, scope: round }).is({ pinned: true })).form({
@@ -489,6 +503,51 @@ export const OpenPile = endpoint(
         .named("forbidden"),
     ),
   { input: { required: ["session", "round", "name", "card"] } },
+);
+
+/**
+ * A choice nobody chose leaves no ballot and so no pile to pick. Naming the
+ * choice opens the empty pile of that name, which is then picked like any
+ * other; a name that already stands on this wall reaches it rather than making
+ * another, and a name the round never offered is no pile of this wall.
+ */
+export const OpenChoice = endpoint(
+  "/live/walls/open-choice",
+  ({ session, round, name, user, category }) =>
+    receive({ session, round, name }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        nameIsAChoiceOf({ name, round }),
+      )
+        .then(
+          Categorizing.ensureCategory({ scope: round, name, description: "" }).responds({
+            category,
+          }),
+        )
+        .then(respond({ pile: category }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsOfAClosedRun({ round }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        no(nameIsAChoiceOf({ name, round })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("no-such-choice"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "round", "name"] } },
 );
 
 export const MoveCard = endpoint(
