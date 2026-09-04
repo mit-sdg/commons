@@ -187,7 +187,9 @@ test("a questionnaire is refined with the reasoner and applied back in place", a
 
   // The adopted line is spent: the drafting page opens on a fresh description.
   await page.goto("/staff/live/draft");
-  await expect(page.getByRole("button", { name: "Draft", exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "Draft", exact: true })).toBeVisible({
+    timeout: 20_000,
+  });
 });
 
 test("an empty quiz can adopt its first AI-generated questions", async ({ page }) => {
