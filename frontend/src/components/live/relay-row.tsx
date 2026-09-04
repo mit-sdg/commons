@@ -18,10 +18,17 @@ export function StateWord({ live }: { live: boolean }) {
   );
 }
 
-/** The room code a live run is joined by, in the column the figure holds. */
+/**
+ * The room code a live run is joined by, in the column the figure holds. It is
+ * read with its word, since a row of letters says nothing on its own; on a
+ * phone the row gives the room the figure and drops the code.
+ */
 export function RoomCode({ code }: { code: string }) {
   return (
-    <span className="font-mono text-muted-foreground text-[13px]">{code}</span>
+    <span className="hidden font-mono text-muted-foreground text-[13px] sm:inline">
+      <span className="sr-only">Join code </span>
+      {code}
+    </span>
   );
 }
 
@@ -65,7 +72,9 @@ export function LiveRow({
         {title}
       </span>
       {middle}
-      <span className="hidden min-w-[90px] sm:block">{aside}</span>
+      {/* The figure is the one thing the row counts by, so it holds every
+          width; the code beside it is what goes when the room runs short. */}
+      <span className="min-w-[90px]">{aside}</span>
       {actions ? (
         <span className="flex flex-wrap items-center gap-2">{actions}</span>
       ) : null}

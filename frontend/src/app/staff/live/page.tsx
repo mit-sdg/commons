@@ -300,7 +300,11 @@ function RelayEntry({
   const aside = !live ? undefined : (
     <span className="flex flex-col gap-1">
       {relay.openRound !== null && handedIn !== null && begun !== null ? (
-        <Figure size="sm" value={handedIn} of={begun} />
+        // The figure is read whole, with the noun it counts, as the wall's is.
+        <span role="status">
+          <Figure size="sm" value={handedIn} of={begun} />
+          <span className="sr-only">handed in</span>
+        </span>
       ) : null}
       {relay.code === null ? null : <RoomCode code={relay.code} />}
     </span>
@@ -335,12 +339,20 @@ function RelayEntry({
       aside={aside}
       actions={
         live ? (
-          <Button size="sm" asChild>
-            <Link href={`/staff/live/run/${relay.run}`}>
-              Run
-              <Named title={relay.title} />
-            </Link>
-          </Button>
+          <>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/staff/live/relay/${relay.relay}/edit`}>
+                Edit
+                <Named title={relay.title} />
+              </Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link href={`/staff/live/run/${relay.run}`}>
+                Run
+                <Named title={relay.title} />
+              </Link>
+            </Button>
+          </>
         ) : (
           <>
             <Button variant="ghost" size="sm" asChild>
