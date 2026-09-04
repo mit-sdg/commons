@@ -872,7 +872,7 @@ function VoteBars({
       className={cn(
         "flex flex-col gap-6",
         // The disc a picked choice carries hangs above its card.
-        scroll && "min-h-0 overflow-y-auto pt-5 pb-3",
+        scroll && "min-h-0 flex-1 overflow-y-auto pt-5 pb-3",
       )}
     >
       <div
