@@ -171,6 +171,11 @@ export function PickControl({
           }}
           className="h-8 w-9 rounded-md border border-input bg-card text-center font-mono text-xs [appearance:textfield] disabled:cursor-default disabled:text-muted-foreground [&::-webkit-inner-spin-button]:appearance-none"
         />
+        {/* The number counts piles, so the word it counts stands beside it;
+            the box says it to a reader on its own. */}
+        <span aria-hidden="true" className="text-muted-foreground text-xs">
+          piles
+        </span>
       </span>
     </div>
   );
