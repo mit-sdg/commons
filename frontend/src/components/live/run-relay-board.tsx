@@ -263,6 +263,8 @@ export function RelayRunBoard({
   } | null>(null);
   /** A pick still in flight, whose taps stand until the wall they wrote arrives. */
   const picking = useRef(false);
+  /** The set asked for while a pick was in flight, sent when it lands. */
+  const queuedPick = useRef<string[] | null>(null);
 
   useEffect(() => {
     if (picking.current) return;
@@ -305,34 +307,51 @@ export function RelayRunBoard({
   function applyPick(piles: string[]) {
     if (shown === null) return;
     const round = shown;
-    const before = picks;
     setTapped({ round, piles });
+    // One sequence at a time: a change made while one is in flight waits,
+    // and is sent against the set that sequence leaves, not the one it began
+    // from — two sequences over one wall would unpick each other's piles.
+    if (picking.current) {
+      queuedPick.current = piles;
+      return;
+    }
     picking.current = true;
-    void (async () => {
-      for (const pile of before) {
-        if (piles.includes(pile)) continue;
-        if (
-          !(await send(
-            api["/live/walls/unpick"]({ round, pile }),
-            goneOrClosed("PILE_GONE"),
-          ))
-        )
-          break;
-      }
-      for (const pile of piles) {
-        if (before.includes(pile)) continue;
-        if (
-          !(await send(
-            api["/live/walls/pick"]({ round, pile }),
-            goneOrClosed("PILE_GONE"),
-          ))
-        )
-          break;
-      }
-    })().then(() => {
-      picking.current = false;
-      refetchWall();
-    });
+    void sequencePick(round, picks, piles);
+  }
+
+  async function sequencePick(
+    round: string,
+    before: string[],
+    piles: string[],
+  ) {
+    for (const pile of before) {
+      if (piles.includes(pile)) continue;
+      if (
+        !(await send(
+          api["/live/walls/unpick"]({ round, pile }),
+          goneOrClosed("PILE_GONE"),
+        ))
+      )
+        break;
+    }
+    for (const pile of piles) {
+      if (before.includes(pile)) continue;
+      if (
+        !(await send(
+          api["/live/walls/pick"]({ round, pile }),
+          goneOrClosed("PILE_GONE"),
+        ))
+      )
+        break;
+    }
+    const next = queuedPick.current;
+    queuedPick.current = null;
+    if (next !== null) {
+      await sequencePick(round, piles, next);
+      return;
+    }
+    picking.current = false;
+    refetchWall();
   }
 
   const pick = usePick({
