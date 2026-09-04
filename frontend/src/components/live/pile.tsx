@@ -5,6 +5,7 @@ import {
   motion,
   useAnimate,
   useReducedMotion,
+  type Variants,
 } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { WallCard } from "@/components/live/rounds";
@@ -24,6 +25,31 @@ const FOLLOW_AFTER_MS = 450;
 
 /** What stands on a card whose answer is nothing but spaces. */
 const BLANK = "—";
+
+/**
+ * A pile opening, in three beats: the empty cell's outline, then the name it
+ * was opened under, then the count, standing at nothing. The three are over
+ * before the pile's first card is in the air, so the card lands on a pile that
+ * is already still.
+ */
+const BIRTH: { cell: Variants; part: Variants } = {
+  cell: {
+    hidden: { opacity: 0 },
+    born: {
+      opacity: 1,
+      transition: {
+        duration: 0.18,
+        ease: "easeOut",
+        delayChildren: 0.2,
+        staggerChildren: 0.2,
+      },
+    },
+  },
+  part: {
+    hidden: { opacity: 0 },
+    born: { opacity: 1, transition: { duration: 0.18, ease: "easeOut" } },
+  },
+};
 
 /**
  * How a pile's face is sized on each surface. The box is a fixed cell — the
@@ -414,8 +440,9 @@ export function Pile({
       style={flying ? { zIndex: 10 + count } : undefined}
       layout="position"
       transition={PILE_MOVE}
-      initial={{ opacity: 0, scale: 0.94 }}
-      animate={{ opacity: 1, scale: 1 }}
+      variants={BIRTH.cell}
+      initial="hidden"
+      animate="born"
       exit={{ opacity: 0, scale: 0.94 }}
       onLayoutAnimationStart={() => setFlying(true)}
       onLayoutAnimationComplete={() => setFlying(false)}
@@ -486,44 +513,53 @@ export function Pile({
           </p>
         ) : null}
         <div className="flex flex-none items-baseline justify-between gap-2.5">
-          {naming === null ? (
-            onRename === undefined ? (
-              <span dir="auto" className={nameClass} {...drag}>
-                {name}
-              </span>
+          {/* The name is the second beat of a birth, and the count the third. */}
+          <motion.span
+            variants={BIRTH.part}
+            className="flex min-w-0 flex-1 items-baseline"
+          >
+            {naming === null ? (
+              onRename === undefined ? (
+                <span dir="auto" className={nameClass} {...drag}>
+                  {name}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  dir="auto"
+                  aria-label={`Rename ${name}`}
+                  onClick={() => setNaming(name)}
+                  className={cn(nameClass, "text-left")}
+                  {...drag}
+                >
+                  {name}
+                </button>
+              )
             ) : (
-              <button
-                type="button"
-                dir="auto"
-                aria-label={`Rename ${name}`}
-                onClick={() => setNaming(name)}
-                className={cn(nameClass, "text-left")}
-                {...drag}
-              >
-                {name}
-              </button>
-            )
-          ) : (
-            <input
-              // biome-ignore lint/a11y/noAutofocus: the name is being typed the moment it appears.
-              autoFocus
-              value={naming}
-              aria-label="Name the pile"
-              onChange={(event) => setNaming(event.target.value)}
-              onBlur={commitName}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") commitName();
-                if (event.key === "Escape") setNaming(null);
-              }}
-              className="h-7 min-w-0 flex-1 rounded-md border border-primary bg-card px-2 font-display font-semibold text-base outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            />
-          )}
-          <span className="relative z-10 flex flex-none items-center gap-1">
+              <input
+                // biome-ignore lint/a11y/noAutofocus: the name is being typed the moment it appears.
+                autoFocus
+                value={naming}
+                aria-label="Name the pile"
+                onChange={(event) => setNaming(event.target.value)}
+                onBlur={commitName}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") commitName();
+                  if (event.key === "Escape") setNaming(null);
+                }}
+                className="h-7 min-w-0 flex-1 rounded-md border border-primary bg-card px-2 font-display font-semibold text-base outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              />
+            )}
+          </motion.span>
+          <motion.span
+            variants={BIRTH.part}
+            className="relative z-10 flex flex-none items-center gap-1"
+          >
             <Count
               value={count}
               className={cn("font-mono tabular-nums", face.count)}
             />
-          </span>
+          </motion.span>
         </div>
         {/* The face's cards are a list, so a reader takes them one at a time
             under the pile's name and count rather than as one run of words.
