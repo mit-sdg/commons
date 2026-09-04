@@ -1177,15 +1177,17 @@ function RelayPhone({
   return (
     <Shell said={justHandedIn ? "Handed in" : ""}>
       <div className={cn("flex flex-col gap-5", answering && "pb-28")}>
-        <header className="flex items-center justify-between gap-4">
+        {/* The name of what you are in is the phone's own line: a round with
+            a long title of its own never takes it away. */}
+        <header className="flex flex-col gap-2">
           <h1
-            className="min-w-0 truncate font-display text-[22px] font-semibold tracking-tight"
+            className="line-clamp-2 font-display text-[22px] font-semibold tracking-tight"
             dir="auto"
           >
             {relay.title}
           </h1>
           {openRound === undefined ? (
-            <span className="inline-flex flex-none items-center gap-1.5">
+            <span className="flex flex-wrap items-center gap-1.5">
               {relay.rounds.map((candidate) => (
                 <RoundToken
                   key={candidate.number}
@@ -1202,7 +1204,7 @@ function RelayPhone({
             </span>
           ) : (
             <RoundToken
-              className="flex-none"
+              className="min-w-0"
               number={openRound.number}
               title={openRound.title}
               standing="open"
