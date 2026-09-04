@@ -5,7 +5,11 @@ import {
   type RoundQuestion,
 } from "@/components/live/phone-question";
 import { RoundToken } from "@/components/live/round-token";
-import type { RelayRound } from "@/components/live/rounds";
+import {
+  kindOf,
+  type RelayRound,
+  type RoundKind,
+} from "@/components/live/rounds";
 import { cn } from "@/lib/utils";
 
 /**
@@ -13,6 +17,21 @@ import { cn } from "@/lib/utils";
  * sorted in class, so before it they have no names, only a count and a shape.
  */
 export const UNNAMED_PILES = ["a pile you pick", "another", "another"];
+
+/** What a vote is still missing when nothing says what is voted on. */
+export const NO_CHOICES = "Add choices, or take an earlier round's piles.";
+
+/**
+ * A vote with nothing to vote on. The kind is the one the card holds, since a
+ * round that has neither choices nor a take has written its kind down nowhere.
+ */
+export function bareVote(round: RelayRound, kind?: RoundKind): boolean {
+  return (
+    (kind ?? kindOf(round)) === "vote" &&
+    round.choices.length === 0 &&
+    round.takes[0]?.use !== "choices"
+  );
+}
 
 /** The round a column shows: the one selected, or the first when none is. */
 export function shownRound(
@@ -74,11 +93,14 @@ export function previewQuestion(
 export function PhoneColumn({
   rounds,
   selected,
+  kinds = {},
   variant,
 }: {
   rounds: RelayRound[];
   /** The round shown, by leg; the first round stands when none is selected. */
   selected: string | null;
+  /** The kind each card holds, by leg, where a card holds one. */
+  kinds?: Record<string, RoundKind>;
   variant: "column" | "drawer";
 }) {
   const round = shownRound(rounds, selected);
@@ -114,13 +136,23 @@ export function PhoneColumn({
             <span>· {source.prompt}</span>
           </p>
         )}
-        <QuestionCard
-          key={round.leg}
-          question={previewQuestion(round, rounds)}
-          answers={{}}
-          onAnswer={() => undefined}
-          onDraft={() => undefined}
-        />
+        {bareVote(round, kinds[round.leg]) ? (
+          <p className="rounded-2xl border border-border border-dashed bg-card p-5 text-muted-foreground text-sm">
+            {NO_CHOICES}
+          </p>
+        ) : (
+          // The phone here is a picture of one: nothing in it is answered,
+          // reached by a tab, or read out to anyone walking the page.
+          <div inert aria-hidden="true">
+            <QuestionCard
+              key={round.leg}
+              question={previewQuestion(round, rounds)}
+              answers={{}}
+              onAnswer={() => undefined}
+              onDraft={() => undefined}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

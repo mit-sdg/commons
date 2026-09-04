@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, X } from "lucide-react";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   type RefusalAbout,
@@ -215,6 +215,7 @@ export function RoundEditor({
   locked,
   note = null,
   proposal = null,
+  onKind,
   onChanged,
 }: {
   round: RelayRound;
@@ -225,6 +226,8 @@ export function RoundEditor({
   note?: string | null;
   /** What the AI proposes for this round, drawn across the card's top. */
   proposal?: React.ReactNode;
+  /** The kind the card holds, told to the page that shows the phone for it. */
+  onKind?: (leg: string, kind: RoundKind) => void;
   onChanged: () => void;
 }) {
   const saved: Draft = {
@@ -267,6 +270,12 @@ export function RoundEditor({
     (takes === null || takes.use === "context");
   const kind: RoundKind = (bare ? chosenKind : null) ?? held;
   const open = usesFor(uses, kind);
+
+  // A bare round is the kind that was pressed for it, which no field of it has
+  // written down; the page hears the kind from the card that holds it.
+  useEffect(() => {
+    onKind?.(round.leg, kind);
+  }, [onKind, round.leg, kind]);
 
   async function commit(next: Draft) {
     const wanted = cleaned(next);

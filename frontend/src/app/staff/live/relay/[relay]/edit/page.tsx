@@ -2,7 +2,14 @@
 
 import { ArrowLeft, Layers } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Fragment, Suspense, useEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
 import { useDrafting } from "@/components/live/ai-panel";
@@ -14,9 +21,13 @@ import {
   RoundEditor,
   TITLE_FIELD,
 } from "@/components/live/round-editor";
-import { PhoneColumn } from "@/components/live/round-preview";
+import {
+  bareVote,
+  NO_CHOICES,
+  PhoneColumn,
+} from "@/components/live/round-preview";
 import { GOING } from "@/components/live/round-proposal";
-import { NO_ROUNDS } from "@/components/live/rounds";
+import { NO_ROUNDS, type RoundKind } from "@/components/live/rounds";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -137,6 +148,13 @@ function RelaySetup({
   // The round the phone shows: the card being edited, or the one the reader has
   // scrolled to.
   const [selected, setSelected] = useState<string | null>(null);
+  // The kind each card holds. A round pressed to a kind it has written nothing
+  // for yet says so nowhere else, so the card tells the page and the page tells
+  // the phone and the Launch.
+  const [kinds, setKinds] = useState<Record<string, RoundKind>>({});
+  const noteKind = useCallback((leg: string, kind: RoundKind) => {
+    setKinds((held) => (held[leg] === kind ? held : { ...held, [leg]: kind }));
+  }, []);
   const [busy, setBusy] = useState(false);
   const cards = useRef(new Map<string, HTMLElement>());
   const column = useRef<HTMLDivElement>(null);
@@ -194,6 +212,15 @@ function RelaySetup({
     since: sent,
     onChanged,
   });
+
+  // Why the relay cannot launch yet, said on the button that would launch it.
+  const bare = relay.rounds.find((round) => bareVote(round, kinds[round.leg]));
+  const notYet =
+    relay.rounds.length === 0
+      ? NO_ROUNDS
+      : bare === undefined
+        ? undefined
+        : NO_CHOICES;
 
   const openRun = relay.runs.find((run) => run.open) ?? null;
   const { data: running } = useQuery(
@@ -295,12 +322,9 @@ function RelaySetup({
         {relay.retired ? null : (
           <div className="flex flex-wrap items-center gap-2">
             {openRun === null ? (
-              <span
-                className="inline-flex"
-                title={relay.rounds.length === 0 ? NO_ROUNDS : undefined}
-              >
+              <span className="inline-flex" title={notYet}>
                 <ActButton
-                  out={relay.rounds.length === 0}
+                  out={notYet !== undefined}
                   busy={busy}
                   onClick={() => void launch()}
                 >
@@ -340,6 +364,7 @@ function RelaySetup({
                       : null
                   }
                   proposal={drafting.proposal(round.leg)}
+                  onKind={noteKind}
                   onChanged={onChanged}
                 />
               </div>
@@ -348,6 +373,7 @@ function RelaySetup({
                   <PhoneColumn
                     rounds={relay.rounds}
                     selected={selected}
+                    kinds={kinds}
                     variant="drawer"
                   />
                 </div>
@@ -370,6 +396,7 @@ function RelaySetup({
           <PhoneColumn
             rounds={relay.rounds}
             selected={selected}
+            kinds={kinds}
             variant="column"
           />
         </div>
