@@ -299,13 +299,13 @@ export function useStagedWall<Wall extends Staged>(
     timers.current.clear();
   }, []);
 
+  /** `from` is the wall the wave has played, which by default is the shown one. */
   const finish = useCallback(
-    (next: Wall) => {
+    (next: Wall, from: Wall | null = current.current) => {
       counts.current = null;
       setHolding(null);
       setSettled(true);
-      const was = current.current;
-      show(was === null ? next : adopt(was, next));
+      show(from === null ? next : adopt(from, next));
     },
     [show],
   );
@@ -360,7 +360,7 @@ export function useStagedWall<Wall extends Staged>(
           if (move.kind === "arrive" || move.kind === "place") stamp(move.card);
         }
         if (at === lastTime) {
-          finish(played);
+          finish(goal, played);
         } else {
           show(
             counts.current === null

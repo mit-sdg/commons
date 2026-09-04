@@ -28,31 +28,29 @@ const FLIGHT_MS = 600;
 /** What stands on a card whose answer is nothing but spaces. */
 const BLANK = "—";
 
-/** How a pile's face is sized on each surface; a full projector packs its piles. */
+/**
+ * How a pile's face is sized on each surface. The box is a fixed cell — the
+ * name line, the count, three face lines and the controls row — and nothing
+ * inside it is ever taller, so a face never paints past it.
+ */
 const FACES = {
   wide: {
-    box: "min-h-[112px] px-4 pt-3.5 pb-3",
-    name: "text-lg sm:text-xl",
-    count: "text-lg sm:text-2xl",
-    peek: "gap-[3px] text-sm",
+    box: "h-[196px] px-4 pt-3.5 pb-3",
+    name: "text-xl sm:text-[22px]",
+    count: "text-xl sm:text-2xl",
+    peek: "gap-1 text-sm",
   },
   phone: {
-    box: "min-h-24 px-3.5 pt-3 pb-2.5",
+    box: "h-[188px] px-3.5 pt-3 pb-2.5",
     name: "text-lg",
-    count: "text-lg",
+    count: "text-xl",
     peek: "gap-1 text-sm",
   },
   big: {
-    box: "min-h-[150px] rounded-xl px-[22px] pt-5 pb-[18px]",
-    name: "text-2xl xl:text-3xl",
-    count: "text-4xl",
-    peek: "gap-1.5 text-xl",
-  },
-  packed: {
-    box: "min-h-[104px] rounded-xl px-4 pt-4 pb-3.5",
-    name: "text-xl",
-    count: "text-3xl",
-    peek: "gap-1 text-base",
+    box: "h-[196px] rounded-xl px-5 pt-4 pb-4 xl:h-[216px] 2xl:h-[256px] 2xl:px-6 2xl:pt-[22px] 2xl:pb-5",
+    name: "text-2xl xl:text-3xl 2xl:text-[38px]",
+    count: "text-3xl xl:text-4xl 2xl:text-[42px]",
+    peek: "gap-1.5 text-lg xl:text-xl 2xl:text-[23px]",
   },
 };
 
@@ -87,6 +85,7 @@ export function Card({
   big = false,
   draggable = false,
   still = false,
+  oneLine = false,
   onDragStart,
   onDragEnd,
   className,
@@ -96,6 +95,8 @@ export function Card({
   draggable?: boolean;
   /** A card being dragged is not moved by a layout of the wall under it. */
   still?: boolean;
+  /** A card in a row one card tall is cut after its first line. */
+  oneLine?: boolean;
   onDragStart?: (card: WallCard) => void;
   onDragEnd?: () => void;
   className?: string;
@@ -133,7 +134,10 @@ export function Card({
         )}
         title={titleOf(card)}
       >
-        <Answer value={card.value} className="line-clamp-3" />
+        <Answer
+          value={card.value}
+          className={oneLine ? "line-clamp-1" : "line-clamp-3"}
+        />
         {card.model ? <ModelTag big={big} /> : null}
         {card.mine ? <YouTag /> : null}
       </motion.span>
@@ -170,19 +174,6 @@ function titleOf(card: WallCard): string | undefined {
   return card.part === "" ? card.value : `${card.part} · ${card.value}`;
 }
 
-/** A faint card for an answer still being written. */
-export function GhostCard({ big = false }: { big?: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "inline-block rounded-lg border border-input border-dashed",
-        big ? "h-[50px] w-[110px]" : "h-[34px] w-[76px]",
-      )}
-    />
-  );
-}
-
 /** A count that pulses as it ticks, and stands still the first time it is read. */
 export function Count({
   value,
@@ -216,12 +207,13 @@ export function Count({
  * The three cards a stack shows on its face: the holder's own first, then the
  * cards that landed last, so a room watching a pile fill sees them arrive.
  * `landed` ranks a card by when it last landed on the shown wall; without it
- * the wall's own order stands in.
+ * the wall's own order stands in. `most` is how many lines the cell leaves.
  */
 export function faceCards(
   cards: WallCard[],
   own: boolean,
   landed: (card: string) => number = () => 0,
+  most: number = PEEK,
 ): WallCard[] {
   const mine = own ? cards.filter((card) => card.mine) : [];
   const rest = own ? cards.filter((card) => !card.mine) : cards;
@@ -229,7 +221,7 @@ export function faceCards(
     .map((card, index) => ({ card, rank: landed(card.card), index }))
     .sort((left, right) => right.rank - left.rank || right.index - left.index)
     .map((entry) => entry.card);
-  return [...mine, ...byLanding].slice(0, PEEK);
+  return [...mine, ...byLanding].slice(0, most);
 }
 
 /** A pile's count, as a screen reader reads it beside the name. */
@@ -251,7 +243,6 @@ export function Pile({
   picked = false,
   carriesTo,
   big = false,
-  packed = false,
   phone = false,
   selected = false,
   follow = false,
@@ -273,8 +264,6 @@ export function Pile({
   /** The number of the round the pile carries into, shown on a picked pile. */
   carriesTo?: number;
   big?: boolean;
-  /** A projector wall with more piles than two rows draws them smaller. */
-  packed?: boolean;
   phone?: boolean;
   selected?: boolean;
   /** A pile in a scrolling wall comes into view as a card lands in it. */
@@ -343,15 +332,11 @@ export function Pile({
     [],
   );
 
-  const face = big
-    ? packed
-      ? FACES.packed
-      : FACES.big
-    : phone
-      ? FACES.phone
-      : FACES.wide;
+  const face = big ? FACES.big : phone ? FACES.phone : FACES.wide;
   const depth = count >= 8 ? "deep" : count >= 3 ? "thin" : "flat";
-  const peek = faceCards(cards, phone, landed);
+  // A pile the model has summed up shows one card under the sentence: the lid
+  // is what the pile says, and the cell holds one or the other, not both.
+  const peek = faceCards(cards, phone, landed, description === "" ? PEEK : 1);
   // Only the card that just landed flies in as a card; the lines already on
   // the face just make room. A landing is newer than any this pile has flown.
   const flownRank = useRef(0);
@@ -393,7 +378,8 @@ export function Pile({
   };
   // A name wraps between its words over two lines and is cut with a sign; it
   // never breaks inside the one word the room reads the pile by, and it takes
-  // the width the count leaves rather than giving first.
+  // the width the count leaves rather than giving first. The cell holds two
+  // name lines and the face's lines whole, so a line is never cut in half.
   const nameClass = cn(
     "relative z-10 line-clamp-2 min-w-0 flex-1 break-normal font-display font-semibold leading-[1.15]",
     face.name,
@@ -435,7 +421,7 @@ export function Pile({
           : undefined
       }
       className={cn(
-        "relative flex flex-col gap-2 rounded-lg border border-border bg-card text-left",
+        "relative rounded-lg border border-border bg-card text-left",
         face.box,
         // A projector is read from the back of the room, where the hairline
         // that holds a card together on a laptop has gone.
@@ -464,147 +450,156 @@ export function Pile({
           className="absolute inset-0 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         />
       ) : null}
-      {description !== "" ? (
-        <p
-          className={cn(
-            "font-display text-foreground leading-[1.3]",
-            big ? (packed ? "text-xl" : "text-2xl") : "text-base",
-          )}
-        >
-          {description}
-        </p>
-      ) : null}
-      <div className="flex items-baseline justify-between gap-2.5">
-        {naming === null ? (
-          onRename === undefined ? (
-            <span dir="auto" className={nameClass} {...drag}>
-              {name}
-            </span>
-          ) : (
-            <button
-              type="button"
-              dir="auto"
-              aria-label={`Rename ${name}`}
-              onClick={() => setNaming(name)}
-              className={cn(nameClass, "text-left")}
-              {...drag}
-            >
-              {name}
-            </button>
-          )
-        ) : (
-          <input
-            // biome-ignore lint/a11y/noAutofocus: the name is being typed the moment it appears.
-            autoFocus
-            value={naming}
-            aria-label="Name the pile"
-            onChange={(event) => setNaming(event.target.value)}
-            onBlur={commitName}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") commitName();
-              if (event.key === "Escape") setNaming(null);
-            }}
-            className="h-7 min-w-0 flex-1 rounded-md border border-primary bg-card px-2 font-display font-semibold text-base outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-          />
-        )}
-        <span className="relative z-10 flex flex-none items-center gap-1">
-          <Count
-            value={count}
-            className={cn("font-mono tabular-nums", face.count)}
-          />
-          {/* Off the projector the spread stands in the row of controls below,
-              where a name has the width it needs and a thumb has its target. */}
-          {big ? spread : null}
-        </span>
-      </div>
-      {/* The face's cards are a list, so a reader takes them one at a time
-          under the pile's name and count rather than as one run of words. */}
-      <div
-        role="list"
-        className={cn(
-          "flex flex-col text-muted-foreground leading-[1.35]",
-          face.peek,
-        )}
-      >
-        <AnimatePresence initial={false}>
-          {peek.map((card) =>
-            card.mine ? (
-              <span
-                key={card.card}
-                role="listitem"
-                className="flex min-w-0 max-w-full"
-              >
-                <Card
-                  card={card}
-                  draggable={canDragCards}
-                  className={cn(
-                    "max-w-full self-start px-2 py-[3px] text-sm",
-                    canDragCards && "relative z-10",
-                  )}
-                />
+      {/* The cell's column: everything the face holds, clipped inside the
+          cell, so a name of any length and a lid of any length leave the
+          piles beside this one exactly where they stand. */}
+      <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
+        {description !== "" ? (
+          <p
+            className={cn(
+              "line-clamp-1 flex-none font-display text-foreground leading-[1.3]",
+              big ? "text-xl 2xl:text-2xl" : "text-base",
+            )}
+          >
+            {description}
+          </p>
+        ) : null}
+        <div className="flex flex-none items-baseline justify-between gap-2.5">
+          {naming === null ? (
+            onRename === undefined ? (
+              <span dir="auto" className={nameClass} {...drag}>
+                {name}
               </span>
             ) : (
-              <motion.span
-                key={card.card}
-                role="listitem"
-                draggable={canDragCards}
-                // Motion keeps `onDragStart` for its own gesture, so the card
-                // lays out its payload on the way down instead.
-                onDragStartCapture={
-                  canDragCards
-                    ? (event: React.DragEvent) => takeCard(event, card.card)
-                    : undefined
-                }
-                layout="position"
-                layoutId={card.card}
-                transition={CARD_MOVE}
-                exit={{ opacity: 0 }}
-                onLayoutAnimationStart={() => {
-                  const rank = landed?.(card.card) ?? 0;
-                  if (rank > flownRank.current) {
-                    flownRank.current = rank;
-                    takeOff(card.card);
-                  }
-                }}
-                onLayoutAnimationComplete={() => landing(card.card, false)}
-                title={titleOf(card)}
-                className={cn(
-                  "flex min-w-0 items-center gap-1.5",
-                  canDragCards &&
-                    "relative z-10 cursor-grab active:cursor-grabbing",
-                  arriving.has(card.card) &&
-                    "relative z-20 rounded-lg border border-border bg-card px-3 py-[7px] text-foreground shadow-md",
-                )}
+              <button
+                type="button"
+                dir="auto"
+                aria-label={`Rename ${name}`}
+                onClick={() => setNaming(name)}
+                className={cn(nameClass, "text-left")}
+                {...drag}
               >
-                <Answer value={card.value} className="line-clamp-1" />
-                {card.model ? <ModelTag big={big} /> : null}
-              </motion.span>
-            ),
+                {name}
+              </button>
+            )
+          ) : (
+            <input
+              // biome-ignore lint/a11y/noAutofocus: the name is being typed the moment it appears.
+              autoFocus
+              value={naming}
+              aria-label="Name the pile"
+              onChange={(event) => setNaming(event.target.value)}
+              onBlur={commitName}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") commitName();
+                if (event.key === "Escape") setNaming(null);
+              }}
+              className="h-7 min-w-0 flex-1 rounded-md border border-primary bg-card px-2 font-display font-semibold text-base outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            />
           )}
-        </AnimatePresence>
-      </div>
-      {onSummarize === undefined && (big || spread === null) ? null : (
+          <span className="relative z-10 flex flex-none items-center gap-1">
+            <Count
+              value={count}
+              className={cn("font-mono tabular-nums", face.count)}
+            />
+            {/* Off the projector the spread stands in the row of controls below,
+              where a name has the width it needs and a thumb has its target. */}
+            {big ? spread : null}
+          </span>
+        </div>
+        {/* The face's cards are a list, so a reader takes them one at a time
+            under the pile's name and count rather than as one run of words.
+            The list holds the room the cell has left, and a card the room cuts
+            fades out the way the rest of the wall says there is more. */}
         <div
+          role="list"
           className={cn(
-            "relative z-10 mt-1 flex items-center gap-2",
-            onSummarize === undefined ? "justify-end" : "justify-between",
+            "flex min-h-0 flex-1 flex-col overflow-hidden text-muted-foreground leading-[1.35]",
+            "[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_14px),transparent)]",
+            face.peek,
           )}
         >
-          {onSummarize === undefined ? null : (
-            <Button
-              type="button"
-              variant="outline"
-              size={phone ? "sm" : "xs"}
-              className="max-sm:h-9 max-sm:px-3"
-              aria-label={`Summarize ${name}`}
-              onClick={onSummarize}
-            >
-              Summarize
-            </Button>
-          )}
-          {big ? null : spread}
+          <AnimatePresence initial={false}>
+            {peek.map((card) =>
+              card.mine ? (
+                <span
+                  key={card.card}
+                  role="listitem"
+                  className="flex min-w-0 max-w-full"
+                >
+                  <Card
+                    card={card}
+                    draggable={canDragCards}
+                    oneLine
+                    className={cn(
+                      "max-w-full self-start px-2 py-[3px] text-sm",
+                      canDragCards && "relative z-10",
+                    )}
+                  />
+                </span>
+              ) : (
+                <motion.span
+                  key={card.card}
+                  role="listitem"
+                  draggable={canDragCards}
+                  // Motion keeps `onDragStart` for its own gesture, so the card
+                  // lays out its payload on the way down instead.
+                  onDragStartCapture={
+                    canDragCards
+                      ? (event: React.DragEvent) => takeCard(event, card.card)
+                      : undefined
+                  }
+                  layout="position"
+                  layoutId={card.card}
+                  transition={CARD_MOVE}
+                  exit={{ opacity: 0 }}
+                  onLayoutAnimationStart={() => {
+                    const rank = landed?.(card.card) ?? 0;
+                    if (rank > flownRank.current) {
+                      flownRank.current = rank;
+                      takeOff(card.card);
+                    }
+                  }}
+                  onLayoutAnimationComplete={() => landing(card.card, false)}
+                  title={titleOf(card)}
+                  className={cn(
+                    "flex min-w-0 items-center gap-1.5",
+                    canDragCards &&
+                      "relative z-10 cursor-grab active:cursor-grabbing",
+                    arriving.has(card.card) &&
+                      "relative z-20 rounded-lg border border-border bg-card px-3 py-[7px] text-foreground shadow-md",
+                  )}
+                >
+                  <Answer value={card.value} className="line-clamp-1" />
+                  {card.model ? <ModelTag big={big} /> : null}
+                </motion.span>
+              ),
+            )}
+          </AnimatePresence>
         </div>
-      )}
+        {onSummarize === undefined && (big || spread === null) ? null : (
+          <div
+            className={cn(
+              "relative z-10 mt-auto flex flex-none items-center gap-2 pt-1",
+              onSummarize === undefined ? "justify-end" : "justify-between",
+            )}
+          >
+            {onSummarize === undefined ? null : (
+              <Button
+                type="button"
+                variant="outline"
+                size={phone ? "sm" : "xs"}
+                className="max-sm:h-9 max-sm:px-3"
+                aria-label={`Summarize ${name}`}
+                onClick={onSummarize}
+              >
+                Summarize
+              </Button>
+            )}
+            {big ? null : spread}
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -637,10 +632,12 @@ export function CarriesTo({
 export function NewPile({
   onDrop,
   big = false,
+  phone = false,
   className,
 }: {
   onDrop: (card: string) => void;
   big?: boolean;
+  phone?: boolean;
   className?: string;
 }) {
   return (
@@ -653,7 +650,11 @@ export function NewPile({
       }}
       className={cn(
         "flex items-center justify-center rounded-lg border border-input border-dashed text-muted-foreground",
-        big ? "min-h-[150px] text-xl" : "min-h-[112px] text-sm",
+        big
+          ? "h-[196px] rounded-xl text-xl xl:h-[216px] 2xl:h-[256px] 2xl:text-2xl"
+          : phone
+            ? "h-[188px] text-sm"
+            : "h-[196px] text-sm",
         className,
       )}
     >

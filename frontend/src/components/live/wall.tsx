@@ -14,7 +14,6 @@ import {
   CarriesTo,
   Count,
   faceCards,
-  GhostCard,
   NewPile,
   Pile,
 } from "@/components/live/pile";
@@ -27,7 +26,6 @@ import {
   pilesByCount,
   promptOf,
   questionOf,
-  trayOf,
   type WallCard,
   type Wall as WallShape,
 } from "@/components/live/rounds";
@@ -41,53 +39,70 @@ import {
 } from "@/components/live/wall-motion";
 import { cn } from "@/lib/utils";
 
-/** How many faint cards stand at the top of the tray for answers still being written. */
-const GHOSTS_SHOWN = 3;
-
-/** How many unsorted cards the tray lists, newest first, before the rest fall off its bottom. */
-const TRAY_SHOWN = 16;
+/** How many unsorted cards stand on the shelf; the rest are clipped under its fade. */
+const SHELF_SHOWN = 18;
 
 /** How many of a context group's words a chip carries before the rest are a count. */
 const CONTEXT_SHOWN = 3;
 
-/** The gap beside a projected pile, the rows it lays out in, and the columns it may take. */
-const PROJECTED_GAP = 28;
-const PROJECTED_ROWS = 3;
-const PROJECTED_COLUMNS = 8;
-
-/** The least a pile stands on the projector: across, down, and packed down. */
-const PROJECTED_LEAST = 190;
-const PROJECTED_ROW = 150;
-const PROJECTED_PACKED = 104;
-
-/**
- * How the projector lays piles out: the columns that hold them in three rows,
- * each pile an even share of the wall but never narrower than it can be read,
- * so a narrow projector takes fewer columns and more rows. Two rows or more
- * share the height between them; one row stands tall and leaves the rest.
- */
-function projected(count: number) {
-  const columns = Math.min(
-    PROJECTED_COLUMNS,
-    Math.max(3, Math.ceil(count / PROJECTED_ROWS)),
-  );
-  const rows = Math.ceil(count / columns);
-  const share = `calc((100cqw - ${(columns - 1) * PROJECTED_GAP}px) / ${columns})`;
-  const packed = rows > 2;
-  return {
-    packed,
-    fill: rows > 1,
-    columns: `repeat(auto-fill, minmax(min(100%, max(${PROJECTED_LEAST}px, ${share})), 1fr))`,
-    // Rows take their content's height above a floor, so a face with a lid
-    // and three cards never runs past its box; a wall with more rows than fit
-    // scrolls.
-    rows: `minmax(${rows > 1 ? (packed ? PROJECTED_PACKED : PROJECTED_ROW) : PROJECTED_LEAST}px, max-content)`,
-  };
+/** One place on the shelf: the card, and whether it has already flown to a pile. */
+export interface ShelfCard {
+  card: WallCard;
+  flown: boolean;
 }
 
-/** The newest cards first, as many as the tray lists; the count above says the rest. */
-function newest(cards: WallCard[], shown: number): WallCard[] {
-  return cards.slice(-shown).reverse();
+/**
+ * The shelf's places, oldest first. Between waves it is the tray itself. While
+ * a wave plays it is the tray as the wave found it, in that order, so a card
+ * that has flown keeps its place until the wave ends; cards that arrived
+ * mid-wave stand after them, and a card that has left the wall is gone.
+ */
+export function shelfOf(
+  cards: WallCard[],
+  holding: string[] | null,
+): ShelfCard[] {
+  const tray = cards.filter((card) => card.pile === null);
+  if (holding === null) return tray.map((card) => ({ card, flown: false }));
+  const byId = new Map(cards.map((card) => [card.card, card]));
+  const held = new Set(holding);
+  return [
+    ...holding.flatMap((id) => {
+      const card = byId.get(id);
+      return card === undefined ? [] : [{ card, flown: card.pile !== null }];
+    }),
+    ...tray
+      .filter((card) => !held.has(card.card))
+      .map((card) => ({ card, flown: false })),
+  ];
+}
+
+/**
+ * The slots the piles stand in. A pile takes the next free slot when it opens
+ * and gives it up when it closes, and keeps it for the life of the round, so
+ * a card never lands on a face that is moving. A closed round re-sorts by
+ * count, once, which is the wall the room reads for the pick.
+ */
+export function slotted<Pile extends { pile: string; count: number }>(
+  piles: Pile[],
+  slots: string[],
+  open: boolean,
+): { slots: string[]; piles: Pile[] } {
+  const present = new Set(piles.map((pile) => pile.pile));
+  const kept = slots.filter((pile) => present.has(pile));
+  const known = new Set(kept);
+  const next = [
+    ...kept,
+    ...piles.filter((pile) => !known.has(pile.pile)).map((pile) => pile.pile),
+  ];
+  if (!open) return { slots: next, piles: pilesByCount(piles) };
+  const byId = new Map(piles.map((pile) => [pile.pile, pile]));
+  return {
+    slots: next,
+    piles: next.flatMap((id) => {
+      const pile = byId.get(id);
+      return pile === undefined ? [] : [pile];
+    }),
+  };
 }
 
 export interface WallEdits {
@@ -121,9 +136,10 @@ interface WallProps {
 }
 
 /**
- * The wall: the question, the figure, the tray of unsorted cards, and the
- * piles as stacks. One component serves the dashboard, the projector, and the
- * phone after hand-in; only its size and what it lets a hand do differ.
+ * The wall: the question, the figure, the shelf of unsorted cards, and the
+ * piles as stacks in fixed slots. One component serves the dashboard, the
+ * projector, and the phone after hand-in; only the size of a cell and what it
+ * lets a hand do differ.
  *
  * Each round's wall is staged on its own, so opening a round or turning back
  * to an earlier one paints at once instead of replaying its sorting.
@@ -149,7 +165,7 @@ function StagedWall({
   const [name, setName] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
   const reduced = useReducedMotion() ?? false;
-  const { shown, settled, edit, landed } = useStagedWall(wall, {
+  const { shown, holding, edit, landed } = useStagedWall(wall, {
     instant: reduced,
   });
   const seen = shown ?? wall;
@@ -184,8 +200,8 @@ function StagedWall({
                 },
         };
 
-  const unsorted = trayOf(seen.cards);
-  const piles = useSettledOrder(seen.piles, settled);
+  const shelf = shelfOf(seen.cards, holding);
+  const piles = useSlots(seen.piles, seen.open);
   const context = questionOf(seen)?.context ?? [];
   const writing = seen.open ? Math.max(0, seen.begun - seen.handedIn) : 0;
   const vote = choicesOf(seen).length > 0;
@@ -193,12 +209,10 @@ function StagedWall({
   const from = sourceWall?.number ?? null;
   const editable = hand !== undefined;
   const canDrag = hand !== undefined;
-  const grid = projected(piles.length);
-  const tray = newest(unsorted, TRAY_SHOWN);
-  // The tray keeps its column while a round is open; once the round has
-  // closed and nothing is unsorted the piles take the whole width. The phone
+  // The shelf stands under the question while a round is open; once the round
+  // has closed and nothing is unsorted the piles take the wall. The phone
   // counts the tray on its own page instead.
-  const trayShown = !phone && (unsorted.length > 0 || writing > 0 || seen.open);
+  const shelfShown = !phone && (shelf.length > 0 || writing > 0 || seen.open);
 
   function openPile(card: string) {
     setNaming(card);
@@ -367,88 +381,76 @@ function StagedWall({
             />
           ) : (
             <>
-              <div
-                className={cn(
-                  "grid gap-6",
-                  trayShown &&
-                    (big
-                      ? "sm:grid-cols-[minmax(15rem,1fr)_minmax(0,3.4fr)]"
-                      : "sm:grid-cols-[minmax(13.5rem,1fr)_minmax(0,2.4fr)]"),
-                  big && "gap-10",
-                  // On the projector the two columns share the height the wall
-                  // has left, and each clips inside it.
-                  scroll && "min-h-0 flex-1 grid-rows-[minmax(0,1fr)]",
-                )}
-              >
-                {trayShown ? (
-                  <Tray
-                    cards={tray}
-                    count={unsorted.length}
-                    writing={writing}
-                    big={big}
-                    scroll={scroll}
-                    dragging={dragging}
-                    onDragStart={
-                      canDrag ? (one) => setDragging(one) : undefined
-                    }
-                    onDragEnd={canDrag ? () => setDragging(null) : undefined}
-                    onDrop={editable ? (card) => hand.toTray(card) : undefined}
-                  />
-                ) : null}
-                {piles.length === 0 && !editable && empty !== undefined ? (
-                  <div className="flex min-h-0 items-center justify-center">
-                    {empty}
-                  </div>
-                ) : (
-                  <PileGrid big={big} phone={phone} grid={grid} scroll={scroll}>
-                    <AnimatePresence initial={false}>
-                      {piles.map((pile) => (
-                        <Pile
-                          key={pile.pile}
-                          id={pile.pile}
-                          name={pile.name}
-                          count={pile.count}
-                          description={pile.description}
-                          cards={cardsIn(seen.cards, pile.pile)}
-                          picked={isPicked(pile)}
-                          carriesTo={carriesTo}
-                          big={big}
-                          packed={grid.packed}
-                          follow={scroll}
-                          landed={landed}
-                          onDrop={
-                            editable
-                              ? (card) => hand.moveCard(card, pile.pile)
-                              : undefined
-                          }
-                          onTap={
-                            hand?.togglePick === undefined
-                              ? undefined
-                              : () => hand.togglePick?.(pile.pile)
-                          }
-                          onRename={
-                            editable && hand.renamePile !== undefined
-                              ? (next) => hand.renamePile?.(pile.pile, next)
-                              : undefined
-                          }
-                          onMergeIn={
-                            editable && hand.mergePile !== undefined
-                              ? (folded) => hand.mergePile?.(folded, pile.pile)
-                              : undefined
-                          }
-                          onSummarize={
-                            hand?.summarize === undefined
-                              ? undefined
-                              : () => hand.summarize?.(pile.pile)
-                          }
-                          phone={phone}
-                        />
-                      ))}
-                    </AnimatePresence>
-                    {editable ? <NewPile big={big} onDrop={openPile} /> : null}
-                  </PileGrid>
-                )}
-              </div>
+              {shelfShown ? (
+                <Shelf
+                  cards={shelf}
+                  writing={writing}
+                  big={big}
+                  dragging={dragging}
+                  onDragStart={canDrag ? (one) => setDragging(one) : undefined}
+                  onDragEnd={canDrag ? () => setDragging(null) : undefined}
+                  onDrop={editable ? (card) => hand.toTray(card) : undefined}
+                />
+              ) : null}
+              {piles.length === 0 && !editable && empty !== undefined ? (
+                <div
+                  className={cn(
+                    "flex min-h-0 items-center justify-center",
+                    scroll && "flex-1",
+                  )}
+                >
+                  {empty}
+                </div>
+              ) : (
+                <PileGrid big={big} phone={phone} scroll={scroll}>
+                  <AnimatePresence initial={false}>
+                    {piles.map((pile) => (
+                      <Pile
+                        key={pile.pile}
+                        id={pile.pile}
+                        name={pile.name}
+                        count={pile.count}
+                        description={pile.description}
+                        cards={cardsIn(seen.cards, pile.pile)}
+                        picked={isPicked(pile)}
+                        carriesTo={carriesTo}
+                        big={big}
+                        follow={scroll}
+                        landed={landed}
+                        onDrop={
+                          editable
+                            ? (card) => hand.moveCard(card, pile.pile)
+                            : undefined
+                        }
+                        onTap={
+                          hand?.togglePick === undefined
+                            ? undefined
+                            : () => hand.togglePick?.(pile.pile)
+                        }
+                        onRename={
+                          editable && hand.renamePile !== undefined
+                            ? (next) => hand.renamePile?.(pile.pile, next)
+                            : undefined
+                        }
+                        onMergeIn={
+                          editable && hand.mergePile !== undefined
+                            ? (folded) => hand.mergePile?.(folded, pile.pile)
+                            : undefined
+                        }
+                        onSummarize={
+                          hand?.summarize === undefined
+                            ? undefined
+                            : () => hand.summarize?.(pile.pile)
+                        }
+                        phone={phone}
+                      />
+                    ))}
+                  </AnimatePresence>
+                  {editable ? (
+                    <NewPile big={big} phone={phone} onDrop={openPile} />
+                  ) : null}
+                </PileGrid>
+              )}
             </>
           )}
 
@@ -479,38 +481,34 @@ function StagedWall({
 }
 
 /**
- * The tray as a column: the count of everything unsorted, the answers still
- * being written as faint cards, then the newest card at the top and the
- * oldest falling off the bottom under a fade. A card placed from here travels
- * across into its pile.
+ * The shelf: one row under the question, one card tall. The count of
+ * everything unsorted at the left, the newest cards at the right with the
+ * oldest clipped under the fade, and one chip for the answers still being
+ * written. A card dropped on the shelf goes back to the tray.
+ *
+ * A card that has flown to a pile leaves an invisible chip of itself, so the
+ * places do not move while the wave plays; when it ends the row compacts once.
  */
-function Tray({
+function Shelf({
   cards,
-  count,
   writing,
   big,
-  scroll,
   dragging,
   onDragStart,
   onDragEnd,
   onDrop,
 }: {
-  cards: WallCard[];
-  count: number;
+  cards: ShelfCard[];
   writing: number;
   big: boolean;
-  scroll: boolean;
   dragging: string | null;
   onDragStart?: (card: string) => void;
   onDragEnd?: () => void;
   onDrop?: (card: string) => void;
 }) {
-  const { ref, edges } = useOverflow(true);
   const editable = onDrop !== undefined;
   return (
-    <motion.div
-      layout
-      transition={PILE_MOVE}
+    <div
       onDragOver={editable ? (event) => event.preventDefault() : undefined}
       onDrop={
         editable
@@ -522,160 +520,125 @@ function Tray({
           : undefined
       }
       className={cn(
-        "flex flex-col rounded-lg border border-input border-dashed",
-        // The column never falls below its head and the ghosts under it,
-        // however little height a narrow screen leaves it.
-        big
-          ? "min-h-44 gap-3 rounded-xl border-foreground/50 p-[18px]"
-          : "min-h-28 gap-2 p-3",
-        // The column holds as much as the piles beside it, not more.
-        scroll
-          ? "self-stretch"
-          : big
-            ? "max-h-[640px]"
-            : "max-h-60 sm:max-h-[560px]",
+        "grid flex-none grid-cols-[auto_minmax(0,1fr)_auto] items-center border-border border-b",
+        big ? "h-[78px] gap-7 px-1.5" : "h-[52px] gap-4 pr-1 pl-0.5",
       )}
     >
-      <div
+      <span
         className={cn(
-          "flex flex-none items-baseline justify-between gap-3 px-0.5 text-muted-foreground",
-          big ? "text-xl" : "text-sm",
+          "flex items-baseline gap-2 whitespace-nowrap text-muted-foreground",
+          big ? "gap-3 text-xl" : "text-sm",
         )}
       >
-        Tray
         <Count
-          value={count}
+          value={cards.length}
           className={cn(
             "font-mono text-foreground tabular-nums",
-            big ? "text-3xl" : "text-lg",
+            big ? "text-[38px]" : "text-[22px]",
           )}
-        />
-      </div>
+        />{" "}
+        unsorted
+      </span>
+      {/* The row fills from the right, so the newest card is always in the
+          same place and what the row cannot hold falls off its left edge. */}
       <div
-        ref={ref}
         className={cn(
-          // What the column cannot hold falls off its bottom under the fade,
-          // rather than painting past the column onto the wall.
-          "flex min-h-0 flex-col items-start overflow-hidden",
-          big ? "gap-3" : "gap-2",
-          fading(edges),
+          "flex min-w-0 items-center justify-end overflow-hidden",
+          big
+            ? "gap-3 [mask-image:linear-gradient(to_right,transparent,#000_120px)]"
+            : "gap-2 [mask-image:linear-gradient(to_right,transparent,#000_72px)]",
         )}
       >
-        {/* The faint cards are answers on their way, not blanks; they stand
-            where those answers will land. */}
-        {writing === 0 ? null : (
+        {cards.slice(-SHELF_SHOWN).map(({ card, flown }) => (
+          // A card that has flown stands on as itself, unseen: the same box in
+          // the same place, so the row does not close over it until the wave
+          // ends. It flies by its own identity, which the unseen one drops.
           <span
+            key={card.card}
             className={cn(
-              "flex flex-none flex-wrap items-center gap-2 pb-1 font-mono text-muted-foreground",
-              big ? "gap-2.5 text-xl" : "text-xs",
+              "flex flex-none",
+              big ? "max-w-[26rem]" : "max-w-[18rem]",
             )}
           >
-            {Array.from(
-              { length: Math.min(writing, GHOSTS_SHOWN) },
-              (_, index) => (
-                <GhostCard key={index} big={big} />
-              ),
-            )}
-            still writing
-          </span>
-        )}
-        <AnimatePresence initial={false}>
-          {cards.map((card) => (
             <Card
-              key={card.card}
               card={card}
               big={big}
-              draggable={onDragStart !== undefined}
-              still={dragging === card.card}
+              oneLine
+              still={flown || dragging === card.card}
+              draggable={!flown && onDragStart !== undefined}
               onDragStart={(one) => onDragStart?.(one.card)}
               onDragEnd={onDragEnd}
-              className="max-w-full"
+              className={flown ? "invisible" : undefined}
             />
-          ))}
-        </AnimatePresence>
+          </span>
+        ))}
       </div>
-    </motion.div>
+      {/* The answers on their way are one chip, not a row of empty boxes. */}
+      {writing === 0 ? null : (
+        <span
+          className={cn(
+            "whitespace-nowrap rounded-full border border-input border-dashed font-mono text-muted-foreground",
+            big ? "px-[18px] py-2 text-xl" : "px-2.5 py-1 text-xs",
+          )}
+        >
+          {writing} writing
+        </span>
+      )}
+    </div>
   );
 }
 
-/**
- * The piles by count, re-sorted only when the wall has nothing left to play:
- * a pile that moves while cards are still landing crosses the others for no
- * reason the room can follow. A pile that opens mid-play takes the end; one
- * that closes leaves.
- */
-function useSettledOrder<Pile extends { pile: string; count: number }>(
+/** The piles in their slots, the slots carried from the last render. */
+function useSlots<Pile extends { pile: string; count: number }>(
   piles: Pile[],
-  settled: boolean,
+  open: boolean,
 ): Pile[] {
-  const [order, setOrder] = useState<string[]>([]);
-  let next: string[];
-  if (settled) {
-    next = pilesByCount(piles).map((pile) => pile.pile);
-  } else {
-    const present = new Set(piles.map((pile) => pile.pile));
-    const kept = order.filter((pile) => present.has(pile));
-    const known = new Set(kept);
-    next = [
-      ...kept,
-      ...piles.filter((pile) => !known.has(pile.pile)).map((pile) => pile.pile),
-    ];
-  }
-  // The order is state carried from the last render, brought up to date here.
+  const [slots, setSlots] = useState<string[]>([]);
+  const next = slotted(piles, slots, open);
   if (
-    next.length !== order.length ||
-    next.some((id, index) => id !== order[index])
+    next.slots.length !== slots.length ||
+    next.slots.some((id, index) => id !== slots[index])
   ) {
-    setOrder(next);
+    setSlots(next.slots);
   }
-  const byId = new Map(piles.map((pile) => [pile.pile, pile]));
-  return next.flatMap((id) => {
-    const pile = byId.get(id);
-    return pile === undefined ? [] : [pile];
-  });
+  return next.piles;
 }
 
 function PileGrid({
   big,
   phone,
-  grid,
   scroll,
   children,
 }: {
   big: boolean;
   phone: boolean;
-  /** How the projector lays its piles out, read against the wall's own width. */
-  grid: ReturnType<typeof projected>;
   scroll: boolean;
   children: React.ReactNode;
 }) {
   const { ref, edges } = useOverflow(scroll);
   return (
-    // The projector's piles take their share of the column's width, which
-    // the column has to be asked for.
+    // The cell is fixed per surface, so a face never paints past it and the
+    // piles take the whole width however many there are. The dashboard takes
+    // its fourth column from the width the wall itself has, which is a column
+    // of the page, not the screen.
     <div
-      style={big ? { containerType: "inline-size" } : undefined}
-      className={cn("flex min-w-0 flex-col", scroll && "min-h-0")}
+      className={cn(
+        "flex min-w-0 flex-col",
+        scroll && "min-h-0 flex-1",
+        !big && !phone && "@container",
+      )}
     >
       <div
         ref={ref}
-        style={
-          big
-            ? { gridTemplateColumns: grid.columns, gridAutoRows: grid.rows }
-            : undefined
-        }
         className={cn(
-          "grid gap-x-[18px] gap-y-[22px] pb-3",
+          "grid min-w-0 content-start gap-x-[18px] gap-y-[22px] pb-3",
           big
-            ? "gap-x-7 gap-y-[34px]"
+            ? "grid-cols-5 gap-x-7 gap-y-[34px]"
             : phone
               ? "grid-cols-2 gap-x-3 gap-y-4"
-              : "grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] content-start",
-          // Rows that share the wall take the height they are given; a lone row
-          // of piles stands at the top of it.
-          big && !grid.fill && "content-start",
+              : "grid-cols-2 @min-[34rem]:grid-cols-3 @min-[56rem]:grid-cols-4",
           // The disc a picked pile carries hangs above the first row.
-          scroll && "min-h-0 overflow-y-auto pt-5",
+          scroll && "min-h-0 flex-1 overflow-y-auto pt-5",
           // What the box cannot hold fades out, rather than stopping on a cut.
           fading(edges),
         )}

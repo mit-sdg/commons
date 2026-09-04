@@ -569,7 +569,7 @@ export function RelayRunBoard({
       : refusalSentence(refusal.word, refusal.about);
 
   return (
-    <PageContainer width="wide">
+    <PageContainer width="wide" className="max-w-[1520px]">
       <header className="mb-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex min-w-0 flex-col gap-2.5">
           <Link
