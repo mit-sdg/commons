@@ -1111,7 +1111,19 @@ export type CommonsWire = {
     output: {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOT_PART" | "RESPONSE_NOT_FOUND" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOT_FOUND" | "NOT_PART" | "RESPONSE_NOT_FOUND" };
+  };
+  "/live/p/answer-signed": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["snapshotHasQuestion"]["fn"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>[0], ["item"]>]>>;
+      "response": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>[0], ["response"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "value": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>[0], ["value"]>>;
+    };
+    output: {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>>, ["response"]>>;
+    };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOT_FOUND" | "NOT_PART" | "RESPONSE_NOT_FOUND" };
   };
   "/live/p/arrive": {
     input: {
@@ -1192,7 +1204,43 @@ export type CommonsWire = {
     } | {
       "received": true;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SUBMITTED" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SUBMITTED" };
+  };
+  "/live/p/outcome-signed": {
+    input: {
+      "response": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "outcome": {
+        "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_keyFor"]>>>, ["disclosure"]>>;
+        "outOf": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["outOf"]>> | null;
+        "receipt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["answerReceipt"]["fn"]>>, []>>;
+        "response": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_collectedAnswers"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>[0], ["submission"]>]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["score"]>> | null;
+      } | null;
+      "received": true;
+    } | {
+      "outcome": {
+        "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_keyFor"]>>>, ["disclosure"]>>;
+        "outOf": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["outOf"]>> | null;
+        "receipt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["explanationReceipt"]["fn"]>>, []>>;
+        "response": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_collectedAnswers"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>[0], ["submission"]>]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["score"]>> | null;
+      } | null;
+      "received": true;
+    } | {
+      "outcome": {
+        "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_keyFor"]>>>, ["disclosure"]>>;
+        "outOf": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["outOf"]>> | null;
+        "response": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>[0], ["submission"]>]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["score"]>> | null;
+      } | null;
+      "received": true;
+    } | {
+      "received": true;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SUBMITTED" };
   };
   "/live/p/submit": {
     input: {
@@ -1203,7 +1251,19 @@ export type CommonsWire = {
     } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_GRADED" | "ALREADY_SUBMITTED" | "CLOSED" | "INCOMPLETE" | "INVALID_INPUT" | "KEY_NOT_FOUND" | "RESPONSE_NOT_FOUND" };
+    error: { error: AppWideError | "ALREADY_GRADED" | "ALREADY_SUBMITTED" | "CLOSED" | "INCOMPLETE" | "INVALID_INPUT" | "KEY_NOT_FOUND" | "NOT_FOUND" | "RESPONSE_NOT_FOUND" };
+  };
+  "/live/p/submit-signed": {
+    input: {
+      "response": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>[0], ["response"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    } | {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    };
+    error: { error: AppWideError | "ALREADY_GRADED" | "ALREADY_SUBMITTED" | "CLOSED" | "INCOMPLETE" | "INVALID_INPUT" | "KEY_NOT_FOUND" | "NOT_FOUND" | "RESPONSE_NOT_FOUND" };
   };
   "/live/quizzes/add-question": {
     input: {
@@ -4229,6 +4289,17 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
+  "/live/p/answer-signed": {
+    input: {
+      "question": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["snapshotHasQuestion"]["fn"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>[0], ["item"]>]>>;
+      "response": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>[0], ["response"]>]>>;
+      "value": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>[0], ["value"]>>;
+    };
+    output: {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>>, ["response"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
   "/live/p/arrive": {
     input: {
       "token": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>[0], ["token"]>>;
@@ -4307,9 +4378,55 @@ export type CommonsWireHttp = {
     } | {
       "received": true;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/p/outcome-signed": {
+    input: {
+      "response": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>>;
+    };
+    output: {
+      "outcome": {
+        "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_keyFor"]>>>, ["disclosure"]>>;
+        "outOf": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["outOf"]>> | null;
+        "receipt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["answerReceipt"]["fn"]>>, []>>;
+        "response": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_collectedAnswers"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>[0], ["submission"]>]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["score"]>> | null;
+      } | null;
+      "received": true;
+    } | {
+      "outcome": {
+        "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_keyFor"]>>>, ["disclosure"]>>;
+        "outOf": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["outOf"]>> | null;
+        "receipt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["explanationReceipt"]["fn"]>>, []>>;
+        "response": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_collectedAnswers"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>[0], ["submission"]>]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["score"]>> | null;
+      } | null;
+      "received": true;
+    } | {
+      "outcome": {
+        "disclosure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_keyFor"]>>>, ["disclosure"]>>;
+        "outOf": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["outOf"]>> | null;
+        "response": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>[0], ["submission"]>]>>;
+        "score": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Scoring"]["_resultFor"]>>>, ["score"]>> | null;
+      } | null;
+      "received": true;
+    } | {
+      "received": true;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/p/submit": {
+    input: {
+      "response": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>[0], ["response"]>]>>;
+    };
+    output: {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    } | {
+      "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/live/p/submit-signed": {
     input: {
       "response": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>[0], ["response"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>[0], ["response"]>]>>;
     };

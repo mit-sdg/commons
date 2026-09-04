@@ -199,7 +199,9 @@ export default function ParticipantPage() {
     };
     const poll = async () => {
       try {
-        const result = await api["/live/p/outcome"]({ response });
+        const result = me
+          ? await api["/live/p/outcome-signed"]({ response })
+          : await api["/live/p/outcome"]({ response });
         if (cancelled) return;
         if (isApiError(result)) {
           setOutcomeError("Your result couldn't be loaded. Try again.");
@@ -225,7 +227,7 @@ export default function ParticipantPage() {
     void poll();
     handle.timer = setInterval(() => void poll(), OUTCOME_POLL_MS);
     return stop;
-  }, [submitted, response, outcomeRetry]);
+  }, [submitted, response, outcomeRetry, me]);
 
   const begin = useCallback(async () => {
     if (participant === null) return;
@@ -276,11 +278,9 @@ export default function ParticipantPage() {
       const write = prior.then(async () => {
         if (sent.current[question] === value) return true;
         try {
-          const result = await api["/live/p/answer"]({
-            response,
-            question,
-            value,
-          });
+          const result = me
+            ? await api["/live/p/answer-signed"]({ response, question, value })
+            : await api["/live/p/answer"]({ response, question, value });
           if (!isApiError(result)) {
             sent.current[question] = value;
             return true;
@@ -295,7 +295,7 @@ export default function ParticipantPage() {
       pending.current[question] = write;
       return write;
     },
-    [response],
+    [response, me],
   );
 
   const answer = useCallback(
@@ -336,14 +336,16 @@ export default function ParticipantPage() {
   const recoverSubmission = useCallback(async (): Promise<boolean> => {
     if (response === null) return false;
     try {
-      const result = await api["/live/p/outcome"]({ response });
+      const result = me
+        ? await api["/live/p/outcome-signed"]({ response })
+        : await api["/live/p/outcome"]({ response });
       if (isApiError(result) || result.received !== true) return false;
       rememberSubmitted(result);
       return true;
     } catch {
       return false;
     }
-  }, [response, rememberSubmitted]);
+  }, [response, rememberSubmitted, me]);
 
   useEffect(() => {
     if (
@@ -369,7 +371,9 @@ export default function ParticipantPage() {
         const saved = await persistAnswer(question, trimmed);
         if (!saved) return;
       }
-      const result = await api["/live/p/submit"]({ response });
+      const result = me
+        ? await api["/live/p/submit-signed"]({ response })
+        : await api["/live/p/submit"]({ response });
       if (isApiError(result)) {
         submissionUncertain.current = true;
         if (await recoverSubmission()) return;
@@ -395,6 +399,7 @@ export default function ParticipantPage() {
     persistAnswer,
     recoverSubmission,
     rememberSubmitted,
+    me,
   ]);
 
   const isQuiz = face?.form === "quiz";

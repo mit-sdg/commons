@@ -5,6 +5,7 @@ import {
   no,
   now,
   reaction,
+  view,
   when,
   where,
   whether,
@@ -22,7 +23,29 @@ import {
 import { concepts } from "../../concepts.ts";
 import { computations } from "../../concepts.ts";
 
-const { Locating, Publishing, Responding, RunSnapshotting, Scoring, Sharing } = concepts;
+const { Authenticating, Locating, Publishing, Responding, RunSnapshotting, Scoring, Sharing } =
+  concepts;
+
+const anonymousResponse = view(
+  "(response) belongs to an anonymous participant",
+  ({ response }, _outputs, { participant }) =>
+    where(
+      Responding._response({ response }).is({ participant }),
+      no(Authenticating._getById({ user: participant })),
+    ),
+).holds();
+
+const signedResponse = view(
+  "(response) belongs to the active (session)",
+  ({ response, session }, _outputs, { participant }) =>
+    where(
+      activeUser({ session }).is({ user: participant }),
+      Responding._response({ response }).is({ participant }),
+    ),
+).holds();
+
+const ownsResponse = (signed: boolean, response: symbol, session: symbol) =>
+  signed ? signedResponse({ response, session }) : anonymousResponse({ response });
 
 /**
  * What a participant meets on arrival: the run, whether it is open, and its
@@ -167,11 +190,12 @@ export const BeginSigned = endpoint(
   { input: { required: ["token", "session"] } },
 );
 
-export const Answer = endpoint(
-  "/live/p/answer",
-  ({ response, question, value, run, answered }) =>
-    receive({ response, question, value }).then(
+const answerReaction =
+  (signed: boolean): Parameters<typeof endpoint>[1] =>
+  ({ session, response, question, value, run, answered }) =>
+    receive(signed ? { session, response, question, value } : { response, question, value }).then(
       where(
+        ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         questionBelongsToRun({ question, run }),
@@ -182,25 +206,39 @@ export const Answer = endpoint(
         .then(respond({ response: answered }))
         .named("success"),
       where(
+        ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         questionIsNotOfRun({ question, run }),
       )
         .then(respond({ error: "NOT_PART" }))
         .named("not-part"),
-      where(Responding._response({ response }).is({ subject: run }), runIsClosed({ run }))
+      where(
+        ownsResponse(signed, response, session),
+        Responding._response({ response }).is({ subject: run }),
+        runIsClosed({ run }),
+      )
         .then(respond({ error: "CLOSED" }))
         .named("closed"),
-    ),
-  { input: { required: ["response", "question", "value"] } },
-);
+      where(Responding._response({ response }), no(ownsResponse(signed, response, session)))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-owner"),
+    );
 
-export const Submit = endpoint(
-  "/live/p/submit",
-  ({ response, run, presentation, form, at, submitted }) =>
-    receive({ response }).then(
+export const Answer = endpoint("/live/p/answer", answerReaction(false), {
+  input: { required: ["response", "question", "value"] },
+});
+export const AnswerSigned = endpoint("/live/p/answer-signed", answerReaction(true), {
+  input: { required: ["session", "response", "question", "value"] },
+});
+
+const submitReaction =
+  (signed: boolean): Parameters<typeof endpoint>[1] =>
+  ({ session, response, run, presentation, form, at, submitted }) =>
+    receive(signed ? { session, response } : { response }).then(
       where(
         now(at),
+        ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
@@ -212,6 +250,7 @@ export const Submit = endpoint(
         .named("survey"),
       where(
         now(at),
+        ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
@@ -223,6 +262,7 @@ export const Submit = endpoint(
         .then(respond({ response: submitted }))
         .named("quiz-whole"),
       where(
+        ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
@@ -232,44 +272,71 @@ export const Submit = endpoint(
       )
         .then(respond({ error: "INCOMPLETE" }))
         .named("quiz-incomplete"),
-      where(Responding._response({ response }).is({ subject: run }), runIsClosed({ run }))
+      where(
+        ownsResponse(signed, response, session),
+        Responding._response({ response }).is({ subject: run }),
+        runIsClosed({ run }),
+      )
         .then(respond({ error: "CLOSED" }))
         .named("closed"),
-    ),
-  { input: { required: ["response"] } },
-);
+      where(Responding._response({ response }), no(ownsResponse(signed, response, session)))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-owner"),
+    );
 
-export const Outcome = endpoint(
-  "/live/p/outcome",
-  ({ response, run }) =>
-    receive({ response }).then(
+export const Submit = endpoint("/live/p/submit", submitReaction(false), {
+  input: { required: ["response"] },
+});
+export const SubmitSigned = endpoint("/live/p/submit-signed", submitReaction(true), {
+  input: { required: ["session", "response"] },
+});
+
+const outcomeReaction =
+  (signed: boolean): Parameters<typeof endpoint>[1] =>
+  ({ session, response, run }) =>
+    receive(signed ? { session, response } : { response }).then(
       where(
+        ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run, submitted: true }),
         no(Scoring._keyFor({ subject: run })),
       )
         .then(respond({ received: true }))
         .named("survey"),
       where(
+        ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run, submitted: true }),
         Scoring._keyFor({ subject: run }).is({ disclosure: "score" }),
       )
         .then(respond({ received: true, outcome: theScoreOutcome({ response }) }))
         .named("score"),
       where(
+        ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run, submitted: true }),
         Scoring._keyFor({ subject: run }).is({ disclosure: "answers" }),
       )
         .then(respond({ received: true, outcome: theAnswersOutcome({ response }) }))
         .named("answers"),
       where(
+        ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run, submitted: true }),
         Scoring._keyFor({ subject: run }).is({ disclosure: "explanations" }),
       )
         .then(respond({ received: true, outcome: theExplanationsOutcome({ response }) }))
         .named("explanations"),
-      where(Responding._response({ response }).is({ submitted: false }))
+      where(
+        ownsResponse(signed, response, session),
+        Responding._response({ response }).is({ submitted: false }),
+      )
         .then(respond({ error: "NOT_SUBMITTED" }))
         .named("in-progress"),
-    ),
-  { input: { required: ["response"] } },
-);
+      where(Responding._response({ response }), no(ownsResponse(signed, response, session)))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-owner"),
+    );
+
+export const Outcome = endpoint("/live/p/outcome", outcomeReaction(false), {
+  input: { required: ["response"] },
+});
+export const OutcomeSigned = endpoint("/live/p/outcome-signed", outcomeReaction(true), {
+  input: { required: ["session", "response"] },
+});

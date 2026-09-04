@@ -1489,6 +1489,34 @@ Authored path: `Forum.posts.readable`.
     whole is among [true]
 ```
 
+### (response) belongs to an anonymous participant
+
+```view
+(response) belongs to an anonymous participant — inputs (response); outputs (); bindings (participant)
+  where
+    Responding._response (response) has (participant)
+    no Authenticating._getById (user: participant)
+```
+
+### the active user of (session)
+
+Authored path: `Access.session.activeUser`.
+- Covered by [Session boundary](../design/compositions/access/session.md), line 13.
+
+```view
+the active user of (session) — inputs (session); outputs (user); bindings () — answers at most one (user)
+  where Sessioning._getUser (session) has (user)
+```
+
+### (response) belongs to the active (session)
+
+```view
+(response) belongs to the active (session) — inputs (response, session); outputs (); bindings (participant)
+  where
+    view "the active user of (session)" with (session) has (user: participant)
+    Responding._response (response) has (participant)
+```
+
 ### (response) leaves a question unanswered
 
 ```view
@@ -1833,16 +1861,6 @@ the account for (address) — inputs (address); outputs (user); bindings () — 
   where Authenticating._getByEmail (email: address) has (user)
 ```
 
-### the active user of (session)
-
-Authored path: `Access.session.activeUser`.
-- Covered by [Session boundary](../design/compositions/access/session.md), line 13.
-
-```view
-the active user of (session) — inputs (session); outputs (user); bindings () — answers at most one (user)
-  where Sessioning._getUser (session) has (user)
-```
-
 ### the archived user named (username)
 
 Authored path: `Access.auth.theArchivedUserNamed`.
@@ -2113,7 +2131,7 @@ _the authored explanation; this section records the generated shape._
 ### the answers outcome of (response)
 
 Authored path: `Live.participation.theAnswersOutcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 55.
+- Covered by [Participation](../design/compositions/live/participation.md), line 63.
 
 ```former
 Former "the answers outcome of (response)" — inputs (response); bindings (run, key, presentation, disclosure, score, outOf, answers, receipt); promises at most one record — forms:
@@ -2513,7 +2531,7 @@ Former "the dropped roster ()" — inputs (); bindings (user, seat, kind, sectio
 ### the explained outcome of (response)
 
 Authored path: `Live.participation.theExplanationsOutcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 56.
+- Covered by [Participation](../design/compositions/live/participation.md), line 64.
 
 ```former
 Former "the explained outcome of (response)" — inputs (response); bindings (run, key, presentation, disclosure, score, outOf, answers, receipt); promises at most one record — forms:
@@ -3303,7 +3321,7 @@ Former "the roster ()" — inputs (); bindings (user, seat, kind, section, email
 ### the score outcome of (response)
 
 Authored path: `Live.participation.theScoreOutcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 54.
+- Covered by [Participation](../design/compositions/live/participation.md), line 62.
 
 ```former
 Former "the score outcome of (response)" — inputs (response); bindings (run, key, disclosure, score, outOf); promises at most one record — forms:
@@ -13621,26 +13639,43 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 37.
-- Covered by [Participation](../design/compositions/live/participation.md), line 72.
+- Covered by [Participation](../design/compositions/live/participation.md), line 80.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is closed" with (run)
 then
   RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
-### Live.participation.Answer:not-part
+### Live.participation.Answer:not-owner
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 37.
-- Covered by [Participation](../design/compositions/live/participation.md), line 72.
+- Covered by [Participation](../design/compositions/live/participation.md), line 80.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
 where
+  Responding._response (response)
+  no view "(response) belongs to an anonymous participant" with (response)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.Answer:not-part
+
+Authored path: `Live.participation.Answer`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 37.
+- Covered by [Participation](../design/compositions/live/participation.md), line 80.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
+where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   view "(question) is not part of (run)" with (question, run)
@@ -13652,11 +13687,12 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 37.
-- Covered by [Participation](../design/compositions/live/participation.md), line 72.
+- Covered by [Participation](../design/compositions/live/participation.md), line 80.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   view "(question) belongs to (run)" with (question, run)
@@ -13668,7 +13704,7 @@ then
 
 Authored path: `Live.participation.Answer`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 37.
-- Covered by [Participation](../design/compositions/live/participation.md), line 72.
+- Covered by [Participation](../design/compositions/live/participation.md), line 80.
 
 ```reaction
 when Responding.answer (item: question, response, value, result.response: answered), asked by Live.participation.Answer:success
@@ -13678,11 +13714,90 @@ then
   RequestBoundary.respond (requestId, response: answered)
 ```
 
+### Live.participation.AnswerSigned:closed
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 81.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is closed" with (run)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.participation.AnswerSigned:not-owner
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 81.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+where
+  Responding._response (response)
+  no view "(response) belongs to the active (session)" with (response, session)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.AnswerSigned:not-part
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 81.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  view "(question) is not part of (run)" with (question, run)
+then
+  RequestBoundary.respond (error: "NOT_PART", requestId)
+```
+
+### Live.participation.AnswerSigned:success
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 81.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  view "(question) belongs to (run)" with (question, run)
+then
+  Responding.answer (item: question, response, value)
+```
+
+### Live.participation.AnswerSigned:success#2
+
+Authored path: `Live.participation.AnswerSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 52.
+- Covered by [Participation](../design/compositions/live/participation.md), line 81.
+
+```reaction
+when Responding.answer (item: question, response, value, result.response: answered), asked by Live.participation.AnswerSigned:success
+where
+  earlier, RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
+then
+  RequestBoundary.respond (requestId, response: answered)
+```
+
 ### Live.participation.Arrive
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 73.
+- Covered by [Participation](../design/compositions/live/participation.md), line 82.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/arrive", requestId, token)
@@ -13694,7 +13809,7 @@ then
 
 Authored path: `Live.participation.Arrive`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 17.
-- Covered by [Participation](../design/compositions/live/participation.md), line 73.
+- Covered by [Participation](../design/compositions/live/participation.md), line 82.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Arrive
@@ -13708,7 +13823,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 28.
-- Covered by [Participation](../design/compositions/live/participation.md), line 74.
+- Covered by [Participation](../design/compositions/live/participation.md), line 83.
 
 ```reaction
 when RequestBoundary.request (device, path: "/live/p/begin", requestId, token)
@@ -13720,7 +13835,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 28.
-- Covered by [Participation](../design/compositions/live/participation.md), line 74.
+- Covered by [Participation](../design/compositions/live/participation.md), line 83.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -13735,7 +13850,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 28.
-- Covered by [Participation](../design/compositions/live/participation.md), line 74.
+- Covered by [Participation](../design/compositions/live/participation.md), line 83.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.Begin
@@ -13751,7 +13866,7 @@ then
 
 Authored path: `Live.participation.Begin`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 28.
-- Covered by [Participation](../design/compositions/live/participation.md), line 74.
+- Covered by [Participation](../design/compositions/live/participation.md), line 83.
 
 ```reaction
 when Responding.begin (at, participant: device, subject: run, response), asked by Live.participation.Begin:open#2
@@ -13765,7 +13880,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 30.
-- Covered by [Participation](../design/compositions/live/participation.md), line 75.
+- Covered by [Participation](../design/compositions/live/participation.md), line 84.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/begin-signed", requestId, session, token)
@@ -13777,7 +13892,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 30.
-- Covered by [Participation](../design/compositions/live/participation.md), line 75.
+- Covered by [Participation](../design/compositions/live/participation.md), line 84.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -13792,7 +13907,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 30.
-- Covered by [Participation](../design/compositions/live/participation.md), line 75.
+- Covered by [Participation](../design/compositions/live/participation.md), line 84.
 
 ```reaction
 when Sharing.open (token, subject: run), asked by Live.participation.BeginSigned
@@ -13809,7 +13924,7 @@ then
 
 Authored path: `Live.participation.BeginSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 30.
-- Covered by [Participation](../design/compositions/live/participation.md), line 75.
+- Covered by [Participation](../design/compositions/live/participation.md), line 84.
 
 ```reaction
 when Responding.begin (at, participant: user, subject: run, response), asked by Live.participation.BeginSigned:open#2
@@ -13823,7 +13938,7 @@ then
 
 Authored path: `Live.participation.Locate`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 10.
-- Covered by [Participation](../design/compositions/live/participation.md), line 76.
+- Covered by [Participation](../design/compositions/live/participation.md), line 85.
 
 ```reaction
 when RequestBoundary.request (code, path: "/live/p/locate", requestId)
@@ -13835,7 +13950,7 @@ then
 
 Authored path: `Live.participation.Locate`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 10.
-- Covered by [Participation](../design/compositions/live/participation.md), line 76.
+- Covered by [Participation](../design/compositions/live/participation.md), line 85.
 
 ```reaction
 when Locating.locate (code, subject: run), asked by Live.participation.Locate
@@ -13849,12 +13964,13 @@ then
 ### Live.participation.Outcome:answers
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
-- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run, submitted: true)
   Scoring._keyFor (subject: run) has (disclosure: "answers")
 then
@@ -13864,12 +13980,13 @@ then
 ### Live.participation.Outcome:explanations
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
-- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run, submitted: true)
   Scoring._keyFor (subject: run) has (disclosure: "explanations")
 then
@@ -13879,26 +13996,43 @@ then
 ### Live.participation.Outcome:in-progress
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
-- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (submitted: false)
 then
   RequestBoundary.respond (error: "NOT_SUBMITTED", requestId)
 ```
 
-### Live.participation.Outcome:score
+### Live.participation.Outcome:not-owner
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
-- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  Responding._response (response)
+  no view "(response) belongs to an anonymous participant" with (response)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.Outcome:score
+
+Authored path: `Live.participation.Outcome`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 86.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
+where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run, submitted: true)
   Scoring._keyFor (subject: run) has (disclosure: "score")
 then
@@ -13908,12 +14042,107 @@ then
 ### Live.participation.Outcome:survey
 
 Authored path: `Live.participation.Outcome`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 51.
-- Covered by [Participation](../design/compositions/live/participation.md), line 77.
+- Covered by [Participation](../design/compositions/live/participation.md), line 59.
+- Covered by [Participation](../design/compositions/live/participation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
+  Responding._response (response) has (subject: run, submitted: true)
+  no Scoring._keyFor (subject: run)
+then
+  RequestBoundary.respond (received: true, requestId)
+```
+
+### Live.participation.OutcomeSigned:answers
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
+- Covered by [Participation](../design/compositions/live/participation.md), line 87.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run, submitted: true)
+  Scoring._keyFor (subject: run) has (disclosure: "answers")
+then
+  RequestBoundary.respond (outcome: former "the answers outcome of (response)" with (response), received: true, requestId)
+```
+
+### Live.participation.OutcomeSigned:explanations
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
+- Covered by [Participation](../design/compositions/live/participation.md), line 87.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run, submitted: true)
+  Scoring._keyFor (subject: run) has (disclosure: "explanations")
+then
+  RequestBoundary.respond (outcome: former "the explained outcome of (response)" with (response), received: true, requestId)
+```
+
+### Live.participation.OutcomeSigned:in-progress
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
+- Covered by [Participation](../design/compositions/live/participation.md), line 87.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (submitted: false)
+then
+  RequestBoundary.respond (error: "NOT_SUBMITTED", requestId)
+```
+
+### Live.participation.OutcomeSigned:not-owner
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
+- Covered by [Participation](../design/compositions/live/participation.md), line 87.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  Responding._response (response)
+  no view "(response) belongs to the active (session)" with (response, session)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.OutcomeSigned:score
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
+- Covered by [Participation](../design/compositions/live/participation.md), line 87.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run, submitted: true)
+  Scoring._keyFor (subject: run) has (disclosure: "score")
+then
+  RequestBoundary.respond (outcome: former "the score outcome of (response)" with (response), received: true, requestId)
+```
+
+### Live.participation.OutcomeSigned:survey
+
+Authored path: `Live.participation.OutcomeSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 54.
+- Covered by [Participation](../design/compositions/live/participation.md), line 87.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
   Responding._response (response) has (subject: run, submitted: true)
   no Scoring._keyFor (subject: run)
 then
@@ -13924,26 +14153,43 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 42.
-- Covered by [Participation](../design/compositions/live/participation.md), line 78.
+- Covered by [Participation](../design/compositions/live/participation.md), line 88.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is closed" with (run)
 then
   RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
-### Live.participation.Submit:quiz-incomplete
+### Live.participation.Submit:not-owner
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 42.
-- Covered by [Participation](../design/compositions/live/participation.md), line 78.
+- Covered by [Participation](../design/compositions/live/participation.md), line 88.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
+  Responding._response (response)
+  no view "(response) belongs to an anonymous participant" with (response)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.Submit:quiz-incomplete
+
+Authored path: `Live.participation.Submit`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 42.
+- Covered by [Participation](../design/compositions/live/participation.md), line 88.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit", requestId, response)
+where
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   RunSnapshotting._snapshot (subject: run) has (value: presentation)
@@ -13958,12 +14204,13 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 42.
-- Covered by [Participation](../design/compositions/live/participation.md), line 78.
+- Covered by [Participation](../design/compositions/live/participation.md), line 88.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
   at is the current flow's instant
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   RunSnapshotting._snapshot (subject: run) has (value: presentation)
@@ -13978,7 +14225,7 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 42.
-- Covered by [Participation](../design/compositions/live/participation.md), line 78.
+- Covered by [Participation](../design/compositions/live/participation.md), line 88.
 
 ```reaction
 when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:quiz-whole
@@ -13992,12 +14239,13 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 42.
-- Covered by [Participation](../design/compositions/live/participation.md), line 78.
+- Covered by [Participation](../design/compositions/live/participation.md), line 88.
 
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
   at is the current flow's instant
+  view "(response) belongs to an anonymous participant" with (response)
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   RunSnapshotting._snapshot (subject: run) has (value: presentation)
@@ -14011,7 +14259,7 @@ then
 
 Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 42.
-- Covered by [Participation](../design/compositions/live/participation.md), line 78.
+- Covered by [Participation](../design/compositions/live/participation.md), line 88.
 
 ```reaction
 when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:survey
@@ -14021,10 +14269,130 @@ then
   RequestBoundary.respond (requestId, response: submitted)
 ```
 
+### Live.participation.SubmitSigned:closed
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 53.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is closed" with (run)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.participation.SubmitSigned:not-owner
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 53.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  Responding._response (response)
+  no view "(response) belongs to the active (session)" with (response, session)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.participation.SubmitSigned:quiz-incomplete
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 53.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  RunSnapshotting._snapshot (subject: run) has (value: presentation)
+  form is snapshotForm (value: presentation)
+  form is among ["quiz"]
+  view "(response) leaves a question unanswered" with (response)
+then
+  RequestBoundary.respond (error: "INCOMPLETE", requestId)
+```
+
+### Live.participation.SubmitSigned:quiz-whole
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 53.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  at is the current flow's instant
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  RunSnapshotting._snapshot (subject: run) has (value: presentation)
+  form is snapshotForm (value: presentation)
+  form is among ["quiz"]
+  view "(response) answers every question" with (response)
+then
+  Responding.submit (at, response)
+```
+
+### Live.participation.SubmitSigned:quiz-whole#2
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 53.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+
+```reaction
+when Responding.submit (at, response, result.response: submitted), asked by Live.participation.SubmitSigned:quiz-whole
+where
+  earlier, RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+then
+  RequestBoundary.respond (requestId, response: submitted)
+```
+
+### Live.participation.SubmitSigned:survey
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 53.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+
+```reaction
+when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+where
+  at is the current flow's instant
+  view "(response) belongs to the active (session)" with (response, session)
+  Responding._response (response) has (subject: run)
+  view "(run) is open to participation" with (run)
+  RunSnapshotting._snapshot (subject: run) has (value: presentation)
+  form is snapshotForm (value: presentation)
+  form is among ["survey"]
+then
+  Responding.submit (at, response)
+```
+
+### Live.participation.SubmitSigned:survey#2
+
+Authored path: `Live.participation.SubmitSigned`.
+- Covered by [Participation](../design/compositions/live/participation.md), line 53.
+- Covered by [Participation](../design/compositions/live/participation.md), line 89.
+
+```reaction
+when Responding.submit (at, response, result.response: submitted), asked by Live.participation.SubmitSigned:survey
+where
+  earlier, RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
+then
+  RequestBoundary.respond (requestId, response: submitted)
+```
+
 ### Live.participation.SubmittedResponseIsGraded
 
 Authored path: `Live.participation.SubmittedResponseIsGraded`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 49.
+- Covered by [Participation](../design/compositions/live/participation.md), line 57.
 
 ```reaction
 when Responding.submit (response)
@@ -16341,12 +16709,15 @@ not listed here have no explicit input contract.
 - `/live/drafts/provenance` — requires `session`, `questionnaire`
 - `/live/drafts/refine` — requires `session`, `questionnaire`
 - `/live/p/answer` — requires `response`, `question`, `value`
+- `/live/p/answer-signed` — requires `session`, `response`, `question`, `value`
 - `/live/p/arrive` — requires `token`
 - `/live/p/begin` — requires `token`, `device`
 - `/live/p/begin-signed` — requires `token`, `session`
 - `/live/p/locate` — requires `code`
 - `/live/p/outcome` — requires `response`
+- `/live/p/outcome-signed` — requires `session`, `response`
 - `/live/p/submit` — requires `response`
+- `/live/p/submit-signed` — requires `session`, `response`
 - `/live/quizzes/add-question` — requires `session`, `questionnaire`, `prompt`; fills `choices` with [] when absent; fills `expected` with "" when absent; fills `explanation` with "" when absent
 - `/live/quizzes/create` — requires `session`, `form`; fills `disclosure` with "score" when absent; fills `title` with "Untitled" when absent
 - `/live/quizzes/get` — requires `questionnaire`, `session`
