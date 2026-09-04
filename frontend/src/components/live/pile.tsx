@@ -387,7 +387,11 @@ export function Pile({
   const depth = count >= 8 ? "deep" : count >= 3 ? "thin" : "flat";
   // A pile the model has summed up shows one card under the sentence: the lid
   // is what the pile says, and the cell holds one or the other, not both.
-  const peek = faceCards(cards, phone, landed, description === "" ? PEEK : 1);
+  // In focus the pile is the header of its own cards, so the face reads no
+  // line the columns beside it read.
+  const peek = spread
+    ? []
+    : faceCards(cards, phone, landed, description === "" ? PEEK : 1);
   const takesDrop = onDrop !== undefined || onMergeIn !== undefined;
   // On a wall a hand sorts, a card on the face is dragged off it: back to the
   // tray, onto another pile, or onto the new pile, with the same payload a
