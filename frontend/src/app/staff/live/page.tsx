@@ -247,7 +247,9 @@ function LiveListContent() {
             onClick={() => setShowRetired((shown) => !shown)}
             className="text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
           >
-            {showRetired ? "Hide retired" : `Show retired (${retired.length})`}
+            {showRetired
+              ? `Hide retired (${retired.length})`
+              : `Show retired (${retired.length})`}
           </button>
           {showRetired ? (
             <ul className="mt-3 flex flex-col gap-2">
