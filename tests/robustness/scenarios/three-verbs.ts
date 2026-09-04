@@ -1,8 +1,8 @@
 /**
  * The exemplar scenario: Three verbs, then a stranger, end to end. Two model
- * participants, the model sorting, three picks, round two, the run closed,
- * the wall read back. A screenshot at each state, and every refusal, delay
- * over three seconds, and surprise logged as a finding.
+ * participants, the model sorting, the pick taken to three piles, round two,
+ * the run closed, the wall read back. A screenshot at each state, and every
+ * refusal, delay over three seconds, and surprise logged as a finding.
  *
  *   bun tests/robustness/scenarios/three-verbs.ts [arm-name]
  */
@@ -21,7 +21,6 @@ import {
   signIn,
   sleep,
   snap,
-  sortUntilPlaced,
   until,
 } from "../drive.ts";
 
@@ -30,11 +29,36 @@ const STAFF = [1440, 390] as const;
 const WALL = [1920] as const;
 const SCRIPTED = 30;
 const MODELS = 2;
+/** How many piles round two takes: the Top number the pick control is set to. */
+const PICKED = 3;
 const WORDS = ["add", "save", "keep", "see", "open", "visit", "delete", "remove", "forget"];
 
 const log = new Log(ARM, outDir(ARM));
 const host = await signIn();
 const web = await pages(host, log);
+
+/**
+ * Watches the wall until the model has every card in a pile. One round holds
+ * one sort lock, so only one ticker asks for a sort: the dashboard's own
+ * "Model sorts" switch. A second asker meets a 409 CONFLICT that the board
+ * swallows by design, which would read on the page as a broken finding.
+ */
+async function everyCardPlaced(round: string, expected: number, tries = 45) {
+  const read = await until(
+    () => readWall(host, round),
+    (value) =>
+      (value.wall?.cards.length ?? 0) >= expected &&
+      (value.wall?.cards ?? []).every((card) => card.pile !== null),
+    tries,
+    2000,
+  );
+  const wall = read.wall;
+  const settled =
+    wall !== null &&
+    wall.cards.length >= expected &&
+    wall.cards.every((card) => card.pile !== null);
+  return { wall, settled };
+}
 
 try {
   // The relay, copied from the deck, launched; every screen before a round opens.
@@ -136,16 +160,16 @@ try {
     30000,
   );
 
-  // The model sorts. The switch on the dashboard drives the ticks; the driver
-  // also ticks so the outcome does not hang on the page's poll.
+  // The model sorts. The switch on the dashboard is the one ticker; the
+  // driver only watches the wall, so the round's sort lock is never contested.
   await dashboard.getByRole("switch", { name: "Model sorts" }).click();
   const sorted = await log.timed(
     "the model sorts every card",
-    () => sortUntilPlaced(host, one.round, (SCRIPTED + 1 + MODELS) * 3, 40),
+    () => everyCardPlaced(one.round, (SCRIPTED + 1 + MODELS) * 3),
     45000,
   );
   log.note(
-    `sorted: ${sorted.settled}, ticks ${sorted.ticks}, asks ${sorted.asks}, piles ${JSON.stringify(
+    `sorted: ${sorted.settled}, piles ${JSON.stringify(
       sorted.wall?.piles.map((pile) => [pile.name, pile.count]),
     )}`,
   );
@@ -163,7 +187,7 @@ try {
   await snap(projector, log, "ProjectorSorted", WALL, false);
   await snap(phone, log, "PhoneSorted", [390]);
 
-  // Close round one; pick three piles; open round two.
+  // Close round one; take the pick to three piles; open round two.
   await dashboard.setViewportSize({ width: 1440, height: 900 });
   await log.timed("close round one", async () => {
     await dashboard.getByRole("button", { name: /^Close.*Three verbs/ }).click();
@@ -174,25 +198,54 @@ try {
   await sleep(3000);
   await snap(dashboard, log, "DashboardClosedRound", STAFF);
   await snap(phone, log, "PhoneWaiting", [390]);
-  const names = (sorted.wall?.piles ?? [])
+  // A closed round starts in Top, with the four fullest piles already picked
+  // and maintained, so the Open button says "4 piles" before anything is
+  // touched. Three piles is asked for by the Top number: a tap on a pile
+  // would take the pick into By hand and toggle that pile *out* of the four.
+  const closedWall = (await readWall(host, one.round)).wall;
+  const names = (closedWall?.piles ?? [])
     .slice()
     .sort((left, right) => right.count - left.count)
-    .slice(0, 3)
-    .map((pile) => pile.name);
-  let picked = 0;
-  for (const name of names) {
-    await dashboard.setViewportSize({ width: 1440, height: 900 });
-    await log.timed(`pick ${name}`, async () => {
-      await dashboard
-        .getByRole("button", {
-          name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`),
-        })
-        .first()
-        .click();
-      picked += 1;
-      await dashboard
-        .getByRole("button", { name: new RegExp(`^Open.*The stranger.*${picked} pile`) })
-        .waitFor({ timeout: 20000 });
+    .slice(0, PICKED)
+    .map((pile) => pile.name)
+    .sort();
+  await log.timed(
+    "the fresh pick is the top four",
+    () =>
+      dashboard
+        .getByRole("button", { name: /^Open.*The stranger.*4 piles/ })
+        .waitFor({ timeout: 20000 }),
+    8000,
+  );
+  await dashboard.getByRole("spinbutton", { name: "Top piles" }).fill(String(PICKED));
+  await log.timed(
+    `Top ${PICKED} picks the ${PICKED} fullest piles`,
+    () =>
+      dashboard
+        .getByRole("button", { name: new RegExp(`^Open.*The stranger.*${PICKED} piles`) })
+        .waitFor({ timeout: 20000 }),
+    8000,
+  );
+  const pickedNames = await until(
+    async () =>
+      ((await readWall(host, one.round)).wall?.piles ?? [])
+        .filter((pile) => pile.picked !== null)
+        .map((pile) => pile.name)
+        .sort(),
+    (found) => found.length === PICKED,
+    12,
+  );
+  log.note(`Top ${PICKED} picked ${JSON.stringify(pickedNames)} of ${JSON.stringify(names)}`);
+  if (pickedNames.join("|") !== names.join("|")) {
+    log.finding({
+      kind: "broken",
+      title: `Top ${PICKED} did not pick the ${PICKED} fullest piles`,
+      steps: `Close round one; set the Top number to ${PICKED}; read the wall's picked piles`,
+      evidence: JSON.stringify({
+        picked: pickedNames,
+        fullest: names,
+        piles: closedWall?.piles.map((pile) => [pile.name, pile.count]),
+      }),
     });
   }
   await sleep(1500);
@@ -205,13 +258,18 @@ try {
     await openFace(host, token, one.round);
   });
   const two = await openFace(host, token, one.round);
-  log.note(`round two choices ${JSON.stringify(two.question.choices)}`);
-  if (two.question.choices.slice().sort().join("|") !== names.slice().sort().join("|")) {
+  // The stranger takes round one as context, so the picked piles stand above
+  // its prompt as groups; a context round writes, and carries no choices.
+  const context = ((two.question as { context?: { name: string }[] }).context ?? [])
+    .map((group) => group.name)
+    .sort();
+  log.note(`round two context ${JSON.stringify(context)}`);
+  if (context.join("|") !== pickedNames.join("|")) {
     log.finding({
       kind: "broken",
-      title: "round two's choices are not the picked piles",
-      steps: `Pick ${names.join(", ")}; open The stranger; read the face`,
-      evidence: JSON.stringify(two.question),
+      title: "round two's context is not the picked piles",
+      steps: `Pick ${pickedNames.join(", ")} with Top ${PICKED}; open The stranger; read the face`,
+      evidence: JSON.stringify({ context, picked: pickedNames, question: two.question }),
     });
   }
   await sleep(3000);
@@ -219,14 +277,16 @@ try {
   await snap(projector, log, "ProjectorRoundTwo", WALL, false);
   await snap(dashboard, log, "DashboardRoundTwo", STAFF);
 
-  // The room votes; the real phone taps a choice and hands in.
+  // The room names the stranger; the real phone writes its own and hands in.
   await log.timed(
-    `${SCRIPTED} scripted phones vote`,
-    () => phones(token, SCRIPTED, two.question, (seat) => names[seat % names.length] as string),
+    `${SCRIPTED} scripted phones answer round two`,
+    () =>
+      phones(token, SCRIPTED, two.question, (seat) =>
+        seat % 2 === 0 ? "a bookmark" : "a reading list",
+      ),
     15000,
   );
-  const choice = names[0] as string;
-  await phone.getByText(choice, { exact: true }).first().click();
+  await phone.getByRole("textbox").first().fill("a bookmark");
   await phone.getByRole("button", { name: "Hand in" }).click();
   await sleep(4000);
   await snap(phone, log, "PhoneAfterVote", [390]);
@@ -236,10 +296,10 @@ try {
   // Close the run through the dialog; the wall reads back.
   await dashboard.setViewportSize({ width: 1440, height: 900 });
   await log.timed("close the run", async () => {
-    await dashboard.getByRole("button", { name: "Close", exact: true }).click();
+    await dashboard.getByRole("button", { name: "Close run", exact: true }).click();
     await dashboard
       .getByRole("dialog")
-      .getByRole("button", { name: "Close", exact: true })
+      .getByRole("button", { name: "Close run", exact: true })
       .first()
       .click();
     await until(
@@ -261,11 +321,11 @@ try {
   );
   if (
     counted !== expected ||
-    (wall?.piles ?? []).filter((pile) => pile.picked !== null).length !== 3
+    (wall?.piles ?? []).filter((pile) => pile.picked !== null).length !== PICKED
   ) {
     log.finding({
       kind: "broken",
-      title: "the closed wall does not read back every card in a pile with three picked",
+      title: `the closed wall does not read back every card in a pile with ${PICKED} picked`,
       steps: "Run Three verbs end to end; close the run; read /live/walls/read for round one",
       evidence: JSON.stringify({ counted, expected, piles: wall?.piles }),
     });

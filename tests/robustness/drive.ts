@@ -561,6 +561,12 @@ export function watch(page: Page, log: Log, name: string) {
       log.note(`${name}: 401 from ${path}`);
       return;
     }
+    // A phone reads its wall only for a response that is in; one that missed
+    // the round asks once and is refused, by design, and says so itself.
+    if (response.status() === 409 && name.startsWith("phone") && /\/p\/wall/.test(path)) {
+      log.note(`${name}: 409 from ${path} (the wall answers only a response that is in)`);
+      return;
+    }
     if (response.status() >= 400 && response.status() < 500) {
       const body = await response.text().catch(() => "");
       let sent = "";

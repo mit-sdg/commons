@@ -34,7 +34,6 @@ import {
   signIn,
   sleep,
   snap,
-  sortUntilPlaced,
   until,
   WEB,
 } from "../drive.ts";
@@ -63,6 +62,29 @@ interface SheetFace {
 const log = new Log(ARM, outDir(ARM));
 const host = await signIn();
 const web = await pages(host, log);
+
+/**
+ * Watches the wall until the model has every card in a pile. One round holds
+ * one sort lock, so only one ticker asks for a sort: the dashboard's own
+ * "Model sorts" switch. A second asker meets a 409 CONFLICT that the board
+ * swallows by design, which would read on the page as a broken finding.
+ */
+async function everyCardPlaced(round: string, expected: number, tries = 45) {
+  const read = await until(
+    () => readWall(host, round),
+    (value) =>
+      (value.wall?.cards.length ?? 0) >= expected &&
+      (value.wall?.cards ?? []).every((card) => card.pile !== null),
+    tries,
+    2000,
+  );
+  const wall = read.wall;
+  const settled =
+    wall !== null &&
+    wall.cards.length >= expected &&
+    wall.cards.every((card) => card.pile !== null);
+  return { wall, settled };
+}
 
 /** What a page says right now, so a screen's own words go into the log. */
 const words = async (page: Page): Promise<string> =>
@@ -119,11 +141,11 @@ try {
   );
   const sorted = await log.timed(
     "the model places every card",
-    () => sortUntilPlaced(host, one.round, SCRIPTED * PARTS, 40),
+    () => everyCardPlaced(one.round, SCRIPTED * PARTS),
     60000,
   );
   log.note(
-    `sorted: ${sorted.settled}, ticks ${sorted.ticks}, piles ${JSON.stringify(
+    `sorted: ${sorted.settled}, piles ${JSON.stringify(
       sorted.wall?.piles.map((pile) => [pile.name, pile.count]),
     )}`,
   );
@@ -158,8 +180,10 @@ try {
     });
   }
 
-  // Then the screen. The overview offers Retire only when no run is open, so
-  // what the staff member meets is the absence of the control, not a sentence.
+  // Then the screen. Retiring a relay whose run is open is refused (RUN_OPEN),
+  // and the overview says so by not offering the control at all: it carries
+  // Retire only while no run is open. The absence is the design, so the
+  // finding here is the opposite — a Retire offered that the edge would refuse.
   const overview = await web.staff(`/staff/live/relay/${relay.relay}`);
   await overview.getByRole("heading", { name: RELAY_TITLE }).waitFor({ timeout: 20000 });
   await sleep(1200);
@@ -171,35 +195,30 @@ try {
     await overview.getByRole("dialog").getByRole("button", { name: "Retire", exact: true }).click();
     const said = await toastText(overview);
     log.note(`the overview's Retire with the run open said: ${said}`);
-    if (said !== "This round is in the run. It stays as it is.") {
-      log.finding({
-        kind: "unclear",
-        title: `the refused Retire says "${said}", not the RUN_OPEN sentence`,
-        steps: "With a run open, open the relay's overview, click Retire, confirm",
-        evidence: `said "${said}"; the sentence is "This round is in the run. It stays as it is."`,
-        screenshot: "OverviewRunOpen@1440.png",
-      });
-    }
-  } else {
     log.finding({
-      kind: "unclear",
-      title: "the relay's overview offers no Retire while a run is open, and says nothing about it",
-      steps: "Launch a relay, open round one, open /staff/live/relay/<id>",
-      evidence: `the header offers ${
-        (await seen(overview, "Edit")) ? "Edit and " : ""
-      }Run and no Retire; nothing on the page names retiring. Page reads: ${headerWhileOpen.slice(0, 300)}`,
+      kind: "broken",
+      title: "the relay's overview offers Retire while its run is open, which the edge refuses",
+      steps: "With a run open, open the relay's overview, click Retire, confirm",
+      evidence: `the overview offers Retire although /live/relays/retire answers CONFLICT for RUN_OPEN; the screen said "${said}"`,
       screenshot: "OverviewRunOpen@1440.png",
     });
+  } else {
+    log.note(
+      `the overview offers ${
+        (await seen(overview, "Edit")) ? "Edit and " : ""
+      }Run and no Retire while the run is open, which is the design: RUN_OPEN is refused, so the control is not there to press`,
+    );
   }
   await snap(overview, log, "OverviewRunOpen", STAFF);
 
   // The shelf while the run stands: this relay's row offers Run, not Retire.
   const shelf = await web.staff("/staff/live");
-  await shelf.getByRole("link", { name: RELAY_TITLE }).waitFor({ timeout: 20000 });
+  await shelf.getByRole("link", { name: RELAY_TITLE, exact: true }).waitFor({ timeout: 20000 });
   await sleep(1000);
   const liveRow = shelf
-    .getByRole("link", { name: RELAY_TITLE })
-    .locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]');
+    .getByRole("link", { name: RELAY_TITLE, exact: true })
+    // A shelf row is one list item (relay-row.tsx), not a div.
+    .locator("xpath=ancestor::li[1]");
   const liveRowWords = (await liveRow.innerText().catch(() => "")).replace(/\s+/g, " ").trim();
   log.note(`the shelf's row while the run is open reads "${liveRowWords}"`);
   await snap(shelf, log, "ShelfRunOpen", STAFF);
@@ -311,7 +330,13 @@ try {
     async () => {
       await runRow.click();
       await overview.waitForURL(`**/staff/live/run/${run}`, { timeout: 20000 });
-      await overview.getByText("Closed", { exact: true }).waitFor({ timeout: 20000 });
+      // A closed relay board says so in its own words — the moves panel
+      // becomes "No more rounds." with the way back to the relay. The
+      // "Closed" badge belongs to a questionnaire run's header, not this one.
+      await overview
+        .getByRole("link", { name: "Back to the relay" })
+        .first()
+        .waitFor({ timeout: 20000 });
     },
     10000,
   );
@@ -376,7 +401,7 @@ try {
   await shelf.goto(`${WEB}/staff/live`);
   await shelf.getByRole("button", { name: /^Show retired/ }).waitFor({ timeout: 20000 });
   await sleep(1000);
-  const standing = shelf.getByRole("link", { name: RELAY_TITLE });
+  const standing = shelf.getByRole("link", { name: RELAY_TITLE, exact: true });
   if (await standing.isVisible().catch(() => false)) {
     log.finding({
       kind: "broken",
@@ -399,8 +424,12 @@ try {
   await snap(shelf, log, "ShelfRetired", STAFF);
 
   // The editor route for a retired relay.
+  // The editor route is asked what it does with a retired relay. A retired
+  // relay's editor keeps its title box — out, with a Retired badge beside it
+  // — and drops Add a round, Launch and the drafting bar, so the title box is
+  // what says the page has loaded; the controls are what is read after.
   const editor = await web.staff(`/staff/live/relay/${relay.relay}/edit`);
-  await editor.getByRole("button", { name: "Add a round" }).waitFor({ timeout: 20000 });
+  await editor.getByRole("textbox", { name: "Title" }).first().waitFor({ timeout: 20000 });
   await sleep(1200);
   const editorWords = await words(editor);
   const titleBox = editor.getByRole("textbox", { name: "Title" }).first();
@@ -432,6 +461,12 @@ try {
       )}); Launch said "${said}"`,
       screenshot: "EditorRetired@1440.png",
     });
+  } else {
+    log.note(
+      `the retired relay's editor is out: no Add a round, no Launch, the title box disabled, and the Retired badge shown (${editorWords.includes(
+        "Retired",
+      )})`,
+    );
   }
 
   // Retiring twice, and retiring a relay that is not there.
@@ -615,7 +650,7 @@ try {
   await shelf.goto(`${WEB}/staff/live`);
   await shelf.getByRole("button", { name: /^Show retired/ }).waitFor({ timeout: 20000 });
   await sleep(1000);
-  const surveyRow = shelf.getByRole("link", { name: SURVEY_TITLE });
+  const surveyRow = shelf.getByRole("link", { name: SURVEY_TITLE, exact: true });
   if (await surveyRow.isVisible().catch(() => false)) {
     log.finding({
       kind: "broken",
@@ -629,7 +664,7 @@ try {
     "both retired things fold out of the shelf",
     async () => {
       await surveyRow.waitFor({ timeout: 15000 });
-      await shelf.getByRole("link", { name: RELAY_TITLE }).waitFor({ timeout: 15000 });
+      await shelf.getByRole("link", { name: RELAY_TITLE, exact: true }).waitFor({ timeout: 15000 });
     },
     6000,
   );

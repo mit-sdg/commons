@@ -26,7 +26,6 @@ import {
   signIn,
   sleep,
   snap,
-  sortUntilPlaced,
   until,
 } from "../drive.ts";
 
@@ -37,6 +36,8 @@ const SCRIPTED = 20;
 const PARTS = 3;
 const SEATS = 40;
 const TOP = 2;
+/** What a newly closed round picks before anyone touches it (pick-control.tsx). */
+const FRESH_TOP = 4;
 const WORDS = ["add", "save", "keep", "see", "open", "visit", "delete", "remove", "forget"];
 
 /** The button that opens the second round, whichever laptop is asked. */
@@ -102,7 +103,9 @@ async function seatsShown(page: Page): Promise<number | null> {
      })()`,
     )
     .catch(() => null)) as string | null;
-  return said === null ? null : Number(said);
+  // The row reads "40 seated", so the number is the figure the words count.
+  const figure = said === null ? null : /(\d+)\s*seated/.exec(said);
+  return figure === null ? null : Number(figure[1]);
 }
 
 /** Types a number into one dashboard's Top control. */
@@ -126,6 +129,29 @@ async function untilSeats(page: Page, want: number, ms: number): Promise<number 
 const log = new Log(ARM, outDir(ARM));
 const host = await signIn();
 const web = await pages(host, log);
+
+/**
+ * Watches the wall until the model has every card in a pile. One round holds
+ * one sort lock, so only one ticker asks for a sort: laptop A's own "Model
+ * sorts" switch. A second asker meets a 409 CONFLICT that the board swallows
+ * by design, which would read on the page as a broken finding.
+ */
+async function everyCardPlaced(round: string, expected: number, tries = 45) {
+  const read = await until(
+    () => readWall(host, round),
+    (value) =>
+      (value.wall?.cards.length ?? 0) >= expected &&
+      (value.wall?.cards ?? []).every((card) => card.pile !== null),
+    tries,
+    2000,
+  );
+  const wall = read.wall;
+  const settled =
+    wall !== null &&
+    wall.cards.length >= expected &&
+    wall.cards.every((card) => card.pile !== null);
+  return { wall, settled };
+}
 
 try {
   // The relay, copied from the deck, launched; two laptops, a projector, a phone.
@@ -178,11 +204,11 @@ try {
   await laptopA.getByRole("switch", { name: "Model sorts" }).click();
   const sorted = await log.timed(
     "the model places every card",
-    () => sortUntilPlaced(host, one.round, SCRIPTED * PARTS, 40),
+    () => everyCardPlaced(one.round, SCRIPTED * PARTS),
     60000,
   );
   log.note(
-    `sorted: ${sorted.settled}, ticks ${sorted.ticks}, asks ${sorted.asks}, piles ${JSON.stringify(
+    `sorted: ${sorted.settled}, piles ${JSON.stringify(
       sorted.wall?.piles.map((pile) => [pile.name, pile.count]),
     )}`,
   );
@@ -211,30 +237,62 @@ try {
     8000,
   );
 
-  // The default pick: the top four piles, or every pile when there are fewer.
+  // A closed round starts both laptops in Top, with the four fullest piles
+  // already picked and maintained. Top and All are maintained modes: every
+  // time the wall moves under one, the whole set is sent again. The design
+  // does not have two of them fight — a set a page did not send is another
+  // hand's, and that page follows it into By hand — so what is read here is
+  // which laptop keeps its maintained mode and which one follows.
   const closedWall = (await readWall(host, one.round)).wall;
   const pileCount = closedWall?.piles.length ?? 0;
+  const fresh = Math.min(FRESH_TOP, pileCount);
   const topWanted = Math.min(TOP, pileCount);
-  log.note(`round one closed with ${pileCount} piles; Top ${TOP} stands for ${topWanted}`);
+  const fullest = (closedWall?.piles ?? [])
+    .slice()
+    .sort((left, right) => right.count - left.count)
+    .slice(0, topWanted)
+    .map((pile) => pile.name)
+    .sort();
+  log.note(
+    `round one closed with ${pileCount} piles; the fresh pick is Top ${FRESH_TOP} (${fresh} here) and Top ${TOP} stands for ${JSON.stringify(fullest)}`,
+  );
   if (pileCount <= TOP) {
     log.note(
       `Top ${TOP} and All name the same ${pileCount} piles on this wall, so neither control can pick against the other`,
     );
   }
+  const freshA = await untilPiles(laptopA, fresh, 15000);
+  const freshB = await untilPiles(laptopB, fresh, 15000);
+  log.note(`the fresh pick reads ${freshA} piles on A and ${freshB} on B, of ${fresh}`);
+  if (freshA !== fresh || freshB !== fresh) {
+    log.finding({
+      kind: "broken",
+      title: `a newly closed round does not start both dashboards on Top ${FRESH_TOP} (A says ${freshA}, B says ${freshB}, of ${fresh})`,
+      steps:
+        "Open round one from A, close it from B, read both Open buttons without touching the pick",
+      evidence: JSON.stringify({ freshA, freshB, fresh, pileCount }),
+    });
+  }
+
+  // Both laptops are asked for the same two piles, which is the one case two
+  // maintained controls agree on: whichever follows into By hand is left
+  // holding the set it would have sent anyway.
   await setTop(laptopA, TOP);
   await setTop(laptopB, TOP);
   const saidA = await untilPiles(laptopA, topWanted, 15000);
   const saidB = await untilPiles(laptopB, topWanted, 15000);
-  const pickedTop = await until(pickedNow, (names) => names.length === topWanted, 12);
+  const pickedTop = await until(pickedNow, (names) => names.join("|") === fullest.join("|"), 12);
+  const modeTopA = await pickMode(laptopA);
+  const modeTopB = await pickMode(laptopB);
   log.note(
-    `Open says ${saidA} piles on A and ${saidB} on B; the server picks ${JSON.stringify(pickedTop)}`,
+    `Top ${TOP} on both: Open says ${saidA} piles on A and ${saidB} on B, the controls show ${modeTopA} and ${modeTopB}, and the server picks ${JSON.stringify(pickedTop)}`,
   );
-  if (saidA !== topWanted || saidB !== topWanted || pickedTop.length !== topWanted) {
+  if (pickedTop.join("|") !== fullest.join("|")) {
     log.finding({
       kind: "broken",
-      title: `the two dashboards do not read the same default pick (A says ${saidA}, B says ${saidB}, the server picks ${pickedTop.length} of ${topWanted})`,
-      steps: "Open round one from A, close it from B, leave both pick controls on Top 4",
-      evidence: JSON.stringify({ saidA, saidB, pickedTop, pileCount }),
+      title: `Top ${TOP} on both dashboards does not converge on the ${topWanted} fullest piles`,
+      steps: `Open round one from A, close it from B, set the Top number to ${TOP} on both; read the wall's picked piles`,
+      evidence: JSON.stringify({ picked: pickedTop, fullest, saidA, saidB, modeTopA, modeTopB }),
     });
   }
   await sleep(2000);
@@ -242,30 +300,26 @@ try {
   if (pickedAgain.join("|") !== pickedTop.join("|")) {
     log.finding({
       kind: "broken",
-      title: "the picked set moved on the server while both dashboards sat on Top 4",
-      steps:
-        "Two dashboards on one run, both on Top 4; read /live/walls/pick twice, two seconds apart",
+      title: `the picked set moved on the server while both dashboards sat on Top ${TOP}`,
+      steps: `Two dashboards on one run, both on Top ${TOP}; read /live/walls/read twice, two seconds apart`,
       evidence: JSON.stringify({ first: pickedTop, then: pickedAgain }),
     });
   }
-  await snap(laptopA, log, "DashboardATopFour", STAFF);
-  await snap(laptopB, log, "DashboardBTopFour", STAFF);
+  await snap(laptopA, log, "DashboardATopTwo", STAFF);
+  await snap(laptopB, log, "DashboardBTopTwo", STAFF);
 
-  // A takes the pick to All. B's own control is still on Top 4, and both are
-  // maintained, so this is where two dashboards can fight over one picked set.
+  // A takes the pick to All while B sits on Top 2. One of the two has to give
+  // way, and the design says it is the page whose sent set was overwritten:
+  // it follows into By hand rather than fighting over the wall. What each
+  // laptop ends on is recorded; only a set that will not settle, or a page
+  // that shows a mode it did not choose and goes on sending, is a finding.
+  const chosenA = "All";
+  const chosenB = `Top ${TOP}`;
   await laptopA.setViewportSize({ width: 1440, height: 900 });
   await laptopA.getByRole("button", { name: "All", exact: true }).click();
   const allOnA = await untilPiles(laptopA, pileCount, 10000);
   const allOnB = await untilPiles(laptopB, pileCount, 10000);
   log.note(`after All: A says ${allOnA} piles, B says ${allOnB}, of ${pileCount}`);
-  if (allOnA !== pileCount) {
-    log.finding({
-      kind: "broken",
-      title: `All did not take laptop A's Open button to every pile (${allOnA} of ${pileCount})`,
-      steps: "On a closed round one with two dashboards open, tap All on A; read A's Open button",
-      evidence: JSON.stringify({ allOnA, pileCount }),
-    });
-  }
   const trail: number[] = [];
   const seen: string[] = [];
   for (let read = 0; read < 12; read += 1) {
@@ -275,34 +329,47 @@ try {
     await sleep(1500);
   }
   const flips = trail.filter((count, index) => index > 0 && count !== trail[index - 1]).length;
-  const fought = flips > 1;
-  log.note(`the server's picked count over eighteen seconds: ${JSON.stringify(trail)}`);
+  // Two dashboards handing one set over take a move each, so a set that
+  // changes once or twice is the hand-over; one that keeps changing is a fight.
+  const fought = flips > 2;
+  const settledLate = trail.slice(-4).every((count) => count === trail[trail.length - 1]);
   const modeA = await pickMode(laptopA);
   const modeB = await pickMode(laptopB);
   log.note(
-    `A's control shows ${modeA} and B's shows ${modeB}; the picked set flipped ${flips} times under them`,
+    `the server's picked count over eighteen seconds: ${JSON.stringify(trail)}; it flipped ${flips} times`,
   );
+  log.note(
+    `A chose ${chosenA} and shows ${modeA}; B chose ${chosenB} and shows ${modeB}; the wall ends on ${trail[trail.length - 1]} of ${pileCount} piles`,
+  );
+  if (modeA === "By hand" || modeB === "By hand") {
+    log.note(
+      "a laptop showing By hand it did not choose is the design's follow: the set it sent was overwritten by the other hand, so it stopped maintaining instead of fighting",
+    );
+  }
   if (fought) {
     log.finding({
       kind: "broken",
       title: `two dashboards fight over one picked set: it flipped ${flips} times in eighteen seconds`,
-      steps:
-        "Open two dashboards on one run; close round one; tap All on A while B's control is still on Top 4; read the wall every 1.5s",
+      steps: `Open two dashboards on one run; close round one; tap All on A while B's control is still on Top ${TOP}; read the wall every 1.5s`,
       evidence: JSON.stringify({ trail, sets: seen, modeA, modeB, pileCount }),
     });
-  } else if (allOnB !== pileCount) {
+  } else if ((modeA === "By hand" || modeB === "By hand") && !settledLate) {
     log.finding({
-      kind: "unclear",
-      title: `laptop B's Open button says ${allOnB} piles after A picked all ${pileCount}`,
-      steps: "Tap All on A; wait two polls; read B's Open button",
-      evidence: JSON.stringify({ allOnA, allOnB, pileCount, modeA, modeB }),
-      screenshot: "DashboardBAll@1440.png",
+      kind: "broken",
+      title: "a dashboard shows a mode it did not choose and goes on sending the set",
+      steps: `Tap All on A while B is on Top ${TOP}; watch both pick controls and the wall for eighteen seconds`,
+      evidence: JSON.stringify({ modeA, chosenA, modeB, chosenB, trail, sets: seen }),
     });
   }
   await snap(laptopA, log, "DashboardAAll", STAFF);
   await snap(laptopB, log, "DashboardBAll", STAFF);
 
-  // A reloads: the mode is what the browser holds, so All comes back with it.
+  // A reloads. The mode is kept per tab in sessionStorage, against this run
+  // and this round, and a reload keeps a tab's session — so what comes back
+  // is the mode the page was last left holding, whether A chose it or
+  // followed the other hand into it, not the mode A first tapped.
+  const modeBefore = modeA;
+  const pilesBefore = await openPiles(laptopA);
   await log.timed(
     "reload laptop A",
     async () => {
@@ -312,23 +379,26 @@ try {
     12000,
   );
   const modeReloaded = await pickMode(laptopA);
-  const pilesReloaded = await untilPiles(laptopA, pileCount, 12000);
-  log.note(`after the reload A shows ${modeReloaded} and ${pilesReloaded} piles`);
-  if (modeReloaded !== "All") {
+  const wantedPiles = modeBefore === "All" ? pileCount : (pilesBefore ?? 0);
+  const pilesReloaded = await untilPiles(laptopA, wantedPiles, 12000);
+  log.note(
+    `A was left on ${modeBefore} with ${pilesBefore} piles; after the reload it shows ${modeReloaded} and ${pilesReloaded}`,
+  );
+  if (modeReloaded !== modeBefore) {
     log.finding({
       kind: "broken",
-      title: `laptop A came back on ${modeReloaded}, not All, after a reload`,
-      steps: "Tap All on A; reload the page; read the pick control",
-      evidence: JSON.stringify({ modeReloaded, pilesReloaded, pileCount }),
+      title: `laptop A came back on ${modeReloaded}, not the ${modeBefore} it was left on, after a reload`,
+      steps: "Leave A on a mode; reload the page; read the pick control",
+      evidence: JSON.stringify({ modeBefore, modeReloaded, pilesBefore, pilesReloaded, pileCount }),
       screenshot: "DashboardAReloaded@1440.png",
     });
   }
-  if (pilesReloaded !== pileCount && !fought) {
+  if (pilesReloaded !== wantedPiles && !fought) {
     log.finding({
       kind: "broken",
-      title: `laptop A's Open button says ${pilesReloaded} piles after the reload, not ${pileCount}`,
-      steps: "Tap All on A; reload the page; read the Open button",
-      evidence: JSON.stringify({ modeReloaded, pilesReloaded, pileCount }),
+      title: `laptop A's Open button says ${pilesReloaded} piles after the reload, not ${wantedPiles}`,
+      steps: "Reload A; read the Open button against the set it was left holding",
+      evidence: JSON.stringify({ modeBefore, modeReloaded, pilesBefore, pilesReloaded, pileCount }),
     });
   }
   await snap(laptopA, log, "DashboardAReloaded", STAFF);
@@ -518,21 +588,29 @@ try {
   await snap(projector, log, "ProjectorClosed", WALL, false);
   await snap(phone, log, "PhoneClosed", [390]);
 
+  // A closed relay board says so in its own words: the moves panel becomes
+  // "No more rounds." with the way back to the relay. The "Closed" badge is a
+  // questionnaire run's, not this board's, so that is what is read for here.
   for (const [name, page] of [
     ["A", laptopA],
     ["B", laptopB],
   ] as const) {
     const says = await page
-      .getByText("Closed", { exact: true })
+      .getByRole("link", { name: "Back to the relay" })
       .first()
       .isVisible()
       .catch(() => false);
     if (!says) {
       log.finding({
         kind: "unclear",
-        title: `laptop ${name} does not say the run is closed after A closed it`,
+        title: `laptop ${name} does not say the run is over after A closed it`,
         steps:
           "Close the run from A through the dialog; wait four seconds; look at both dashboards",
+        evidence: `the closed board should read "No more rounds." with a way back to the relay; page reads ${(
+          (await page.evaluate("document.querySelector('main')?.innerText ?? ''")) as string
+        )
+          .replace(/\s+/g, " ")
+          .slice(0, 200)}`,
         screenshot: `Dashboard${name}Closed@1440.png`,
       });
     }
