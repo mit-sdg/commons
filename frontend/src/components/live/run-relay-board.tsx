@@ -42,6 +42,11 @@ const POLL_MS = 3_000;
 /** What a run left locked with no round open says, above the tap that frees it. */
 const STRANDED = "No round is open, but the run is still locked.";
 
+/** What a wall that has stopped answering says: the phone's word, on the staff screen. */
+const NO_CONNECTION = "No connection.";
+
+/** One poll may drop; two in a row is the server, not the network's hiccup. */
+const ADRIFT = 2;
 
 /** The disabled Open button names the line that says why. */
 const REFUSAL_ID = "open-refusal";
@@ -107,6 +112,9 @@ export function RelayRunBoard({
   const [busy, setBusy] = useState(false);
   /** The button the focus goes to once the move it was on has landed. */
   const focusOn = useRef<"open" | "close" | null>(null);
+  /** Polls that went unanswered one after another, which an answer sets back. */
+  const misses = useRef(0);
+  const [adrift, setAdrift] = useState(false);
   const openButton = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
 
@@ -199,6 +207,21 @@ export function RelayRunBoard({
     const timer = setInterval(refetch, POLL_MS);
     return () => clearInterval(timer);
   }, [run.open, refetch]);
+
+  // A frozen figure reads like a quiet room, so the wall says when it has
+  // stopped hearing: the poll's failures are counted, and an answered poll —
+  // which is a run this screen has not seen before — clears the count.
+  useEffect(() => {
+    if (error === null) return;
+    misses.current += 1;
+    if (misses.current >= ADRIFT) setAdrift(true);
+  }, [error]);
+
+  useEffect(() => {
+    misses.current = 0;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- an answered poll is the one thing that takes the line away
+    setAdrift(false);
+  }, [run]);
 
   // A failure is only worth saying while the room would still be waiting on
   // it, so the clock it is read against moves with the poll.
@@ -733,6 +756,15 @@ export function RelayRunBoard({
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="order-2 flex min-w-0 flex-col gap-3 lg:order-1">
+          {/* Beside the figure, which is the number that has stopped moving. */}
+          {adrift ? (
+            <p
+              role="status"
+              className="text-muted-foreground text-sm sm:text-end"
+            >
+              {NO_CONNECTION}
+            </p>
+          ) : null}
           {shownWall === null ? (
             wallError !== null ? (
               <ErrorState message={wallError} onRetry={refetchWall} />
