@@ -399,7 +399,7 @@ function DraftPageContent() {
             onSubmit={kind === "relay" ? draftRelay : describe}
             placeholder={BRIEF_PLACEHOLDER[kind]}
             chips={BRIEF_CHIPS[kind]}
-            label={kind === "relay" ? "Draft" : "Draft it"}
+            label="Draft"
           />
           {kind !== "relay" && unfinished.length > 0 ? (
             <section className="mt-10 space-y-3">

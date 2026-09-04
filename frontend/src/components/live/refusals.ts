@@ -24,7 +24,9 @@ export type RefusalWord =
   | "INCOMPLETE"
   | "PILE_GONE"
   | "CARD_GONE"
-  | "ROUND_GONE";
+  | "ROUND_GONE"
+  | "ROUNDS_RUN"
+  | "NO_PILES";
 
 /** What the sentence names: the round the refusal is about, when it has one. */
 export interface RefusalAbout {
@@ -74,6 +76,8 @@ const SENTENCES: Record<RefusalWord, (about: RefusalAbout) => string> = {
   PILE_GONE: () => "That pile is gone.",
   CARD_GONE: () => "That card is gone.",
   ROUND_GONE: () => "That round is gone.",
+  ROUNDS_RUN: () => "Every round has run.",
+  NO_PILES: () => "Sort the cards into piles first.",
 };
 
 export function refusalSentence(

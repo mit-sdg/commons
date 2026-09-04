@@ -167,7 +167,7 @@ function RelayOverviewContent() {
             </span>
           </h2>
           {found.rounds.length === 0 ? (
-            <EmptyState icon={Layers} title="No rounds yet" />
+            <EmptyState icon={Layers} title="No rounds yet." />
           ) : (
             <div className="flex flex-col gap-3">
               {found.rounds.map((round) => (
@@ -206,7 +206,7 @@ function RelayOverviewContent() {
                     </span>
                     <span className="flex items-center gap-2">
                       {run.open ? (
-                        <Badge variant="secondary">Open</Badge>
+                        <Badge variant="secondary">Live</Badge>
                       ) : null}
                       <ChevronRight className="size-4 text-muted-foreground" />
                     </span>
@@ -243,7 +243,7 @@ const BEFORE_CLASS_KEY = "live.before-class";
 const BEFORE_CLASS = [
   "Launch. Open Project on the room's screen.",
   "Read the code and the address aloud. The room joins there.",
-  "Open round 1 when the phones are out. The count starts with the round.",
+  "Open round 1 when the phones are out.",
   "Turn on Model sorts, or drag cards into piles.",
   "Close the round. Tap the piles to pick, then open the next round.",
   "Close the run when the room is done. The walls stay.",

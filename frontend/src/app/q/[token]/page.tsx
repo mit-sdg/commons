@@ -748,7 +748,7 @@ function waitingLine(relay: Relay): string {
     relay.rounds.length > 0 &&
     relay.rounds.every((round) => round.round !== null)
   )
-    return "Every round has run.";
+    return refusalSentence("ROUNDS_RUN");
   return refusalSentence("NO_OPEN_ROUND");
 }
 

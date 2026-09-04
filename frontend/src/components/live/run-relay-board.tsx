@@ -871,7 +871,7 @@ export function RelayRunBoard({
                 )}
                 {everyRoundRan ? (
                   <p className="text-muted-foreground text-xs">
-                    Every round has run.
+                    {refusalSentence("ROUNDS_RUN")}
                   </p>
                 ) : null}
 
@@ -1064,18 +1064,19 @@ function refusalFor({
 }): Refusal | null {
   if (!run.open) return { word: "CLOSED", about: {} };
   const open = run.rounds.find((round) => round.figure.open === true) ?? null;
-  if (open !== null)
-    return { word: "ROUND_OPEN", about: { round: open.number } };
   const round =
     leg === null ? null : (run.rounds.find((one) => one.leg === leg) ?? null);
+  const { take, source } = takeOf(run, relay, round);
+  // The open round is the one this round takes from: the sentence says why.
+  if (open !== null && source !== null && source.leg === open.leg)
+    return { word: "SOURCE_OPEN", about: { round: source.number } };
+  if (open !== null)
+    return { word: "ROUND_OPEN", about: { round: open.number } };
   if (round === null) return null;
   if (round.round !== null)
     return { word: "ROUND_DONE", about: { round: round.number } };
-  const { take, source } = takeOf(run, relay, round);
   if (source !== null && source.round === null)
     return { word: "SOURCE_UNRUN", about: { round: source.number } };
-  if (source !== null && source.figure.open === true)
-    return { word: "SOURCE_OPEN", about: { round: source.number } };
   if (take !== null && picks === 0)
     return { word: "NOTHING_PICKED", about: {} };
   return null;

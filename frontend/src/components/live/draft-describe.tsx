@@ -19,7 +19,7 @@ export function DraftDescribe({
   onSubmit,
   placeholder,
   chips = [],
-  label = "Draft it",
+  label = "Draft",
 }: {
   submitting: boolean;
   onSubmit: (request: string) => void;
