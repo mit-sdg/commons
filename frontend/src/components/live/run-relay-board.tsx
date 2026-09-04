@@ -744,7 +744,7 @@ export function RelayRunBoard({
           ) : (
             <Wall
               wall={shownWall}
-              named={shown !== openRound}
+              named={run.open && shown !== openRound}
               carriesTo={carriesTo}
               sourceWall={sourceWall}
               edits={run.open ? edits : undefined}
