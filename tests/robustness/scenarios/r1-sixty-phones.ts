@@ -102,6 +102,7 @@ async function everyCardPlaced(round: string, expected: number, tries = 60) {
 try {
   const relay = await log.timed("copy the deck relay", () => copyDeck(host, "three-verbs"));
   const { run, token } = await log.timed("launch", () => launch(host, relay.relay));
+  log.note(`run ${run}`);
   const dashboard = await web.staff(`/staff/live/run/${run}`);
   dashboard.on("framenavigated", (frame) => {
     if (frame === dashboard.mainFrame()) log.note(`the dashboard navigated to ${frame.url()}`);

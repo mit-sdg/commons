@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
-import { RELAY_LINES } from "@/components/live/brief-chips";
+import { KIND_LINES } from "@/components/live/brief-chips";
 import {
+  copyDocuments,
   copyQuestionnaire,
   copyRounds,
   roundsToCopy,
@@ -133,6 +134,12 @@ function NewLiveContent() {
         toast.error(publicErrorMessage(copied.error));
         return;
       }
+      const carried = await copyDocuments(planned.relay, source);
+      if (isApiError(carried)) {
+        setBusy(false);
+        toast.error(publicErrorMessage(carried.error));
+        return;
+      }
     }
     router.push(`/staff/live/relay/${planned.relay}/edit`);
   }
@@ -183,13 +190,11 @@ function NewLiveContent() {
           </TabsList>
         </Tabs>
 
-        {kind === "relay" ? (
-          <div className="space-y-2 text-muted-foreground text-sm">
-            {RELAY_LINES.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
-        ) : null}
+        <div className="space-y-2 text-muted-foreground text-sm">
+          {KIND_LINES[kind].map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
 
         <div className="space-y-2">
           <Label htmlFor="live-title">Title</Label>

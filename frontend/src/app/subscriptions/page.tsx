@@ -2,6 +2,7 @@
 
 import { Bell, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import { Fact } from "@/components/facts";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireAuth } from "@/components/require-auth";
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { relativeTime, shortId, titleFromContent } from "@/lib/format";
+import { shortId, titleFromContent } from "@/lib/format";
 import { loadFeed } from "@/lib/loaders";
 import type { ConversationSummary, Subscription } from "@/lib/models";
 
@@ -72,9 +73,9 @@ function Following() {
                   >
                     {title}
                   </Link>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <MessageSquare className="size-3.5" />
-                    Followed {relativeTime(sub.subscribedAt)}
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs">
+                    <MessageSquare className="size-3.5 text-muted-foreground" />
+                    <Fact.When verb="Followed" at={sub.subscribedAt} />
                   </p>
                 </div>
                 <Button

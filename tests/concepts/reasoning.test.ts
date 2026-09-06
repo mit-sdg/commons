@@ -124,5 +124,45 @@ for (const [floor, make] of floors) {
         },
       ]);
     });
+
+    test("the newest reply about a subject is the one read back, and an ask still out is none", async () => {
+      const reasoning = await make();
+      // An ask that is still out is no reply, and neither is nothing at all.
+      await reasoning.ask({ reasoner: "flash", about: "brief-10", passage: "waiting", at });
+      expect(await reasoning._lastReplyAbout({ about: "brief-10" })).toEqual([]);
+      expect(await reasoning._lastReplyAbout({ about: "brief-nowhere" })).toEqual([]);
+
+      const one = await reasoning.ask({ reasoner: "flash", about: "brief-10", passage: "p1", at });
+      await reasoning.answer({ asking: one.asking, reply: "first reply", at });
+      const two = await reasoning.ask({ reasoner: "flash", about: "brief-10", passage: "p2", at });
+      await reasoning.answer({ asking: two.asking, reply: "second reply", at: later });
+      const other = await reasoning.ask({
+        reasoner: "pro",
+        about: "brief-11",
+        passage: "elsewhere",
+        at,
+      });
+      await reasoning.answer({ asking: other.asking, reply: "off-topic", at: later });
+
+      expect(await reasoning._lastReplyAbout({ about: "brief-10" })).toEqual([
+        {
+          asking: two.asking,
+          reasoner: "flash",
+          passage: "p2",
+          reply: "second reply",
+          answeredAt: later,
+        },
+      ]);
+      // The other subject's reply is its own, newer though it is.
+      expect(await reasoning._lastReplyAbout({ about: "brief-11" })).toEqual([
+        {
+          asking: other.asking,
+          reasoner: "pro",
+          passage: "elsewhere",
+          reply: "off-topic",
+          answeredAt: later,
+        },
+      ]);
+    });
   });
 }

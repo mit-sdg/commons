@@ -13,10 +13,15 @@ const log = new Log(ARM, outDir(ARM));
 const host = await signIn();
 const web = await pages(host, log);
 
-const counts = (text: string) =>
-  [...text.matchAll(/(Examples|Pace|Questions|Odd one out|Stray)\s*\n?\s*(\d+)/g)].map(
-    (found) => [found[1], Number(found[2])] as const,
-  );
+const escaped = (name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Each pile's drawn count, read as "<name>\n<count>" from the wall's text. */
+const counts = (text: string, names: string[]) =>
+  names.length === 0
+    ? []
+    : [
+        ...text.matchAll(new RegExp(`(${names.map(escaped).join("|")})\\s*\\n?\\s*(\\d+)`, "g")),
+      ].map((found) => [found[1], Number(found[2])] as const);
 
 try {
   const standing = await readRun(host, RUN);
@@ -24,6 +29,7 @@ try {
   if (one?.round == null) throw new Error("round one never ran in this run");
   const wall = (await readWall(host, one.round)).wall;
   const truth = (wall?.piles ?? []).reduce((sum, pile) => sum + pile.count, 0);
+  const names = (wall?.piles ?? []).map((pile) => pile.name);
   log.note(`round one holds ${truth} cards on the server`);
 
   const dashboard = await web.staff(`/staff/live/run/${RUN}`);
@@ -38,7 +44,7 @@ try {
     const text = (await dashboard.evaluate(
       "document.querySelector('main')?.innerText ?? ''",
     )) as string;
-    drawn = counts(text).reduce((sum, [, count]) => sum + count, 0);
+    drawn = counts(text, names).reduce((sum, [, count]) => sum + count, 0);
     log.note(
       `${((Date.now() - from) / 1000).toFixed(1)}s after the tap: ${drawn} of ${truth} drawn`,
     );

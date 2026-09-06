@@ -116,20 +116,35 @@ export function dueLabel(endsAt: unknown): string {
   return `due ${day}`;
 }
 
+/** The facts of a task row's one dim line, each of its own kind. */
+export interface TaskRowDetail {
+  /** What the row is about: the task's title, or nothing for a membership row. */
+  title: string | null;
+  /** Where it lives: the list's title. */
+  list: string | null;
+  /** When it is due, as the endpoint gave it, or null when it has no deadline. */
+  due: unknown;
+}
+
 /**
- * The single dim line beneath a task row's sentence: what the row is about,
- * where it lives, and when it is due. Null where presentation was withheld —
- * the row says so in its own words instead, rather than going blank.
+ * The facts of the single dim line beneath a task row's sentence: what the
+ * row is about, where it lives, and when it is due, one fact each and each
+ * of its own kind, so the line renders every fact in its own form. Null
+ * where presentation was withheld — the row says so in its own words
+ * instead, rather than going blank.
  */
-export function taskRowDetail(row: TaskInboxNotification): string | null {
+export function taskRowDetail(
+  row: TaskInboxNotification,
+): TaskRowDetail | null {
   if (!hasTaskPresentation(row)) return null;
-  const listTitle = row.listTitle == null ? null : String(row.listTitle);
-  if (isMembershipKind(String(row.kind))) return listTitle;
-  const parts = [String(row.task.title)];
-  if (listTitle) parts.push(listTitle);
-  const due = dueLabel(row.task.endsAt);
-  if (due) parts.push(due);
-  return parts.join(" \u00b7 ");
+  const list = row.listTitle == null ? null : String(row.listTitle);
+  if (isMembershipKind(String(row.kind)))
+    return list === null ? null : { title: null, list, due: null };
+  return {
+    title: String(row.task.title),
+    list,
+    due: toDate(row.task.endsAt) === null ? null : row.task.endsAt,
+  };
 }
 
 /** Which inbox a merged row came from, and therefore which endpoints act on it. */

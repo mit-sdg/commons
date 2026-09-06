@@ -61,7 +61,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   await participant.goto("/join");
   await participant.getByRole("textbox", { name: "Code" }).fill(code);
   await participant.getByRole("button", { name: "Join" }).click();
-  await participant.waitForURL(/\/q\/[0-9a-f-]{36}$/);
+  await participant.waitForURL(/\/q\/[0-9a-f-]{36}(\?by=code)?$/);
   await participant.getByRole("button", { name: "Join" }).click();
 
   // The face conceals the answers; the participant supplies their own.
@@ -97,7 +97,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   await participant.goto("/join");
   await participant.getByRole("textbox", { name: "Code" }).fill(code);
   await participant.getByRole("button", { name: "Join" }).click();
-  await participant.waitForURL(/\/q\/[0-9a-f-]{36}$/);
+  await participant.waitForURL(/\/q\/[0-9a-f-]{36}(\?by=code)?$/);
   await expect(participant.getByRole("button", { name: "Join" })).toBeVisible();
   await expect(participant.getByText("Your score")).toBeHidden();
   await participant.getByRole("button", { name: "Join" }).click();
@@ -116,7 +116,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   await page.getByRole("button", { name: "Close run" }).first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("dialog").getByRole("button", { name: "Close run" }).click();
-  await expect(page.getByText("Closed", { exact: true }).first()).toBeVisible({
+  await expect(page.getByText("closed", { exact: true }).first()).toBeVisible({
     timeout: 20_000,
   });
 

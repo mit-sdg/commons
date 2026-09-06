@@ -89,6 +89,17 @@ async function pickMode(page: Page): Promise<string> {
   return "none";
 }
 
+/** Waits for a dashboard's pick control to show a mode; answers what it shows. */
+async function untilMode(page: Page, want: string, ms: number): Promise<string> {
+  const by = Date.now() + ms;
+  let said = await pickMode(page);
+  while (said !== want && Date.now() < by) {
+    await sleep(500);
+    said = await pickMode(page);
+  }
+  return said;
+}
+
 /** The seat count the model row prints on a dashboard. */
 async function seatsShown(page: Page): Promise<number | null> {
   const said = (await page
@@ -378,7 +389,9 @@ try {
     },
     12000,
   );
-  const modeReloaded = await pickMode(laptopA);
+  // The control reads its mode back from the tab's storage once it mounts,
+  // so the read waits for what the page held, up to a few polls.
+  const modeReloaded = await untilMode(laptopA, modeBefore, 6000);
   const wantedPiles = modeBefore === "All" ? pileCount : (pilesBefore ?? 0);
   const pilesReloaded = await untilPiles(laptopA, wantedPiles, 12000);
   log.note(

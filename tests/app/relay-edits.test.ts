@@ -99,6 +99,8 @@ interface Round {
   cap: number;
   choices: string[];
   takes: { source: string; sourceNumber: number; use: string }[];
+  piles: { pile: string; name: string; description: string }[];
+  notes: string;
 }
 
 const offerings = async (edge: Edge, cookie: string, relay: string): Promise<Offering[]> => {
@@ -147,6 +149,48 @@ describe("the relay editing loop", () => {
 
   afterAll(stopTestDb);
 
+  test("taking a notes edit replaces duplicate standing notes and a blank clears them", async () => {
+    const relay = await plan(edge, cookie, "Notes regression");
+    const added = await json(
+      await post(
+        edge,
+        "/live/relays/add-round",
+        {
+          relay,
+          title: "One",
+          prompt: "Why?",
+          parts: [],
+          cap: 0,
+          choices: [],
+        },
+        cookie,
+      ),
+    );
+    const leg = added.leg as string;
+    const { Guiding, Suggesting } = edge.application.concepts;
+    // Legacy racing writers could leave several entries for this single note.
+    for (const body of ["First", "Second"]) {
+      await Guiding.give({ subject: leg, use: "sorting", title: "", body });
+    }
+    const read = async () => Guiding._guidanceFor({ subject: leg, use: "sorting" });
+    for (const value of ["One replacement", ""]) {
+      const { offering } = await Suggesting.offer({
+        subject: relay,
+        lines: [{ kind: "notes", target: leg, value }],
+        at: new Date(),
+      });
+      const [line] = await Suggesting._pendingIn({ offering });
+      const taken = await json(
+        await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie),
+      );
+      expect(taken.error).toBeUndefined();
+      const notes = await until(read, (rows) =>
+        value === "" ? rows.length === 0 : rows.length === 1 && rows[0].body === value,
+      );
+      expect(notes.map((note) => note.body)).toEqual(value === "" ? [] : [value]);
+    }
+  });
+
   test("a drafted relay is offered as lines, and taking each one builds the rounds", async () => {
     const relay = await plan(edge, cookie, "Verbs and strangers");
 
@@ -166,6 +210,8 @@ describe("the relay editing loop", () => {
       parts: ["one", "two", "three"],
       cap: 0,
       choices: [],
+      piles: [],
+      notes: "",
       takes: { from: 0, use: "" },
       position: 1,
     });
@@ -282,4 +328,59 @@ describe("the relay editing loop", () => {
     const [insistence] = await edge.application.concepts.Insisting._for({ aim: relay });
     expect(insistence.satisfied).toBe(true);
   });
+
+  test("a drafted round arrives with its standing piles and its note, and a redraft revises them", async () => {
+    const relay = await plan(edge, cookie, "What went wrong");
+    const offering = await draft(edge, cookie, relay, "One round: what went wrong.", 0);
+    expect(offering.lines.map((line) => line.kind)).toEqual(["add"]);
+    expect(JSON.parse(offering.lines[0].value)).toMatchObject({
+      piles: [
+        { name: "Pace", sentence: "It was too slow to use." },
+        { name: "Crashes", sentence: "It stopped working outright." },
+      ],
+      notes: "Group by what went wrong, not by which app it happened in.",
+    });
+    await post(edge, "/live/edits/take", { suggestion: offering.lines[0].suggestion }, cookie);
+    const built = await until(
+      () => rounds(edge, cookie, relay),
+      (all) => all.length === 1 && all[0].piles.length === 2 && all[0].notes !== "",
+    );
+    expect(built[0].piles.map((pile) => [pile.name, pile.description])).toEqual([
+      ["Pace", "It was too slow to use."],
+      ["Crashes", "It stopped working outright."],
+    ]);
+    expect(built[0].notes).toBe("Group by what went wrong, not by which app it happened in.");
+    // The follow-on lines are about the round, not the relay: the panel sees one offering.
+    expect((await offerings(edge, cookie, relay)).length).toBe(1);
+
+    // Piles and the note changed by hand are read back into the next draft, and
+    // a draft that changes them is offered as pile, unpile, and notes lines.
+    await post(
+      edge,
+      "/live/rounds/rename-pile",
+      { pile: built[0].piles[1].pile, name: "Freezes" },
+      cookie,
+    );
+    await post(
+      edge,
+      "/live/rounds/set-notes",
+      { leg: built[0].leg, body: "Keep it short." },
+      cookie,
+    );
+    const again = await draft(edge, cookie, relay, "Draft again: what went wrong.", 1);
+    expect(again.lines.map((line) => [line.kind, line.value])).toEqual([
+      ["pile", JSON.stringify({ name: "Crashes", sentence: "It stopped working outright." })],
+      ["unpile", "Freezes"],
+      ["notes", "Group by what went wrong, not by which app it happened in."],
+    ]);
+    for (const line of again.lines) {
+      await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie);
+    }
+    const revised = await until(
+      () => rounds(edge, cookie, relay),
+      (all) => all[0].piles.map((pile) => pile.name).join() === "Pace,Crashes",
+    );
+    expect(revised[0].piles.map((pile) => pile.name)).toEqual(["Pace", "Crashes"]);
+    expect(revised[0].notes).toBe("Group by what went wrong, not by which app it happened in.");
+  }, 60_000);
 });

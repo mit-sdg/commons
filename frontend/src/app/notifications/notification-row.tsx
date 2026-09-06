@@ -18,10 +18,11 @@ import {
 } from "lucide-react";
 import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { Fragment, useState } from "react";
+import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
-import { count, excerpt, relativeTime } from "@/lib/format";
+import { count, excerpt } from "@/lib/format";
 import type { InboxNotification, TaskInboxNotification } from "@/lib/models";
 import {
   hasTaskPresentation,
@@ -218,9 +219,22 @@ function TaskNotificationBody({
       <div className="min-w-0 flex-1">
         <p className={headlineClass(unread)}>{taskActionText(kind)}</p>
         {hasTaskPresentation(row) ? (
-          <p className="mt-0.5 truncate text-xs text-muted-foreground/80">
-            {detail}
-          </p>
+          <Facts className="mt-0.5 flex-nowrap overflow-hidden text-xs text-muted-foreground">
+            {detail?.title ? (
+              <span className="truncate">{detail.title}</span>
+            ) : null}
+            {detail?.list ? (
+              <Fact.Where className="truncate">{detail.list}</Fact.Where>
+            ) : null}
+            {detail?.due ? (
+              <Fact.Due
+                at={detail.due}
+                verb="due"
+                precision="day"
+                className="whitespace-nowrap"
+              />
+            ) : null}
+          </Facts>
         ) : (
           <p className="mt-0.5 truncate text-xs italic text-muted-foreground/80">
             {withheldTaskNote(kind)}
@@ -232,15 +246,16 @@ function TaskNotificationBody({
 }
 
 /**
- * Row actions stay out of the way until they are wanted: revealed on hover,
- * revealed by keyboard focus, and always present where there is no pointer to
- * hover with.
+ * Row actions keep their own place beside the row's time at all times, so
+ * nothing they do covers it: invisible and inert until they are wanted,
+ * revealed on hover, revealed by keyboard focus, and always shown and live
+ * where there is no pointer to hover with.
  */
 const ROW_ACTIONS = cn(
-  "absolute inset-y-0 right-0 flex items-center gap-0.5 opacity-0 transition-opacity",
+  "flex items-center gap-0.5 opacity-0 transition-opacity",
   "pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto",
   "group-hover:opacity-100 group-focus-within:opacity-100",
-  "pointer-coarse:static pointer-coarse:pointer-events-auto pointer-coarse:opacity-100",
+  "pointer-coarse:pointer-events-auto pointer-coarse:opacity-100",
 );
 
 export interface EntryProps {
@@ -315,15 +330,11 @@ export function NotificationEntry({
         </div>
         {children}
       </div>
-      <div className="relative flex shrink-0 items-center gap-0.5 pt-0.5">
-        <span
-          className={cn(
-            "whitespace-nowrap text-right text-xs text-muted-foreground transition-opacity",
-            "group-hover:opacity-0 group-focus-within:opacity-0 pointer-coarse:opacity-100",
-          )}
-        >
-          {relativeTime(entry.createdAt)}
-        </span>
+      <div className="flex shrink-0 items-center gap-0.5 pt-0.5">
+        <Fact.When
+          at={entry.createdAt}
+          className="whitespace-nowrap text-right text-xs"
+        />
         <div className={ROW_ACTIONS}>
           {flagged ? (
             <Button
@@ -393,7 +404,14 @@ export function NotificationGroupEntry({
 
   const summary = count(group.entries.length, "update");
   const label =
-    group.unread > 0 ? `${summary} · ${group.unread} unread` : summary;
+    group.unread > 0 ? (
+      <Facts as="span" className="inline-flex">
+        <Fact.Count>{summary}</Fact.Count>
+        <Fact.Count>{group.unread} unread</Fact.Count>
+      </Facts>
+    ) : (
+      <Fact.Count>{summary}</Fact.Count>
+    );
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">

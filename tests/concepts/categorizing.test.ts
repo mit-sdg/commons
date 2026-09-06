@@ -14,6 +14,75 @@ const forum = "forum";
 
 for (const [floor, make] of floors) {
   describe(`Categorizing ${floor}`, () => {
+    test("concurrent filing shares one category and cleanup cannot erase successful assignments", async () => {
+      const categorizing = await make();
+      const results = await Promise.all(
+        Array.from({ length: 50 }, (_, index) =>
+          categorizing.file({ scope: forum, name: "Shared", item: `response-${index}` }),
+        ),
+      );
+      expect(new Set(results.map(({ category }) => category)).size).toBe(1);
+      const category = results[0]!.category;
+      expect(await categorizing.deleteEmptyCategory({ category })).toEqual({
+        category,
+        deleted: false,
+      });
+      expect(await categorizing._getItems({ category })).toHaveLength(50);
+    });
+
+    test("empty-only cleanup and assignment serialize in either order", async () => {
+      const categorizing = await make();
+      const { category } = await categorizing.createCategory({
+        scope: forum,
+        name: "First",
+        description: "",
+      });
+      const [assigned, kept] = await Promise.all([
+        categorizing.assign({ item: "kept", category }),
+        categorizing.deleteEmptyCategory({ category }),
+      ]);
+      expect(assigned).toEqual({ item: "kept" });
+      expect(kept.deleted).toBe(false);
+      expect(await categorizing._getItems({ category })).toEqual([{ item: "kept" }]);
+      const { category: empty } = await categorizing.createCategory({
+        scope: forum,
+        name: "Second",
+        description: "",
+      });
+      const [removed, refused] = await Promise.allSettled([
+        categorizing.deleteEmptyCategory({ category: empty }),
+        categorizing.assign({ item: "late", category: empty }),
+      ]);
+      expect(removed).toEqual({ status: "fulfilled", value: { category: empty, deleted: true } });
+      expect(refused.status).toBe("rejected");
+      expect(await categorizing._getCategory({ item: "late" })).toEqual([]);
+      // A refused write releases the queue for subsequent actions.
+      expect(await categorizing.deleteEmptyCategory({ category: empty })).toEqual({
+        category: empty,
+        deleted: false,
+      });
+    });
+
+    test("cleanup cannot erase items arriving through a merge", async () => {
+      const categorizing = await make();
+      const { category } = await categorizing.file({
+        scope: forum,
+        name: "Donor",
+        item: "response",
+      });
+      const { category: into } = await categorizing.createCategory({
+        scope: forum,
+        name: "Target",
+        description: "",
+      });
+      const [, kept] = await Promise.all([
+        categorizing.mergeCategory({ category, into }),
+        categorizing.deleteEmptyCategory({ category: into }),
+      ]);
+      expect(kept.deleted).toBe(false);
+      expect(await categorizing._getItems({ category: into })).toEqual([{ item: "response" }]);
+    });
+
     test("createCategory creates a named category in its scope", async () => {
       const categorizing = await make();
       const { category } = await categorizing.createCategory({
@@ -288,6 +357,35 @@ for (const [floor, make] of floors) {
       expect(await categorizing._categoriesWithItems({ scope: "no-such" })).toEqual({
         categories: [],
       });
+    });
+
+    test("several scopes read back as one sequence, in the order given", async () => {
+      const categorizing = await make();
+      const { category: labs } = await categorizing.createCategory({
+        scope: "leg-2",
+        name: "Labs",
+        description: "Hands-on work.",
+      });
+      const { category: homework } = await categorizing.createCategory({
+        scope: "leg-1",
+        name: "Homework",
+        description: "",
+      });
+      const { category: exams } = await categorizing.createCategory({
+        scope: "leg-1",
+        name: "Exams",
+        description: "",
+      });
+      expect(
+        await categorizing._categoriesInScopes({ scopes: ["leg-1", "leg-3", "leg-2"] }),
+      ).toEqual({
+        categories: [
+          { scope: "leg-1", category: homework, name: "Homework", description: "" },
+          { scope: "leg-1", category: exams, name: "Exams", description: "" },
+          { scope: "leg-2", category: labs, name: "Labs", description: "Hands-on work." },
+        ],
+      });
+      expect(await categorizing._categoriesInScopes({ scopes: [] })).toEqual({ categories: [] });
     });
 
     test("a second instance keeps its categories in its own store", async () => {

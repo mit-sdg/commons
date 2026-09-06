@@ -96,8 +96,8 @@ export function JoinCode({
             )}
           >
             {configured
-              ? "PUBLIC_ORIGIN is this machine's own address. Set it to one the room can reach."
-              : "This address works on this device only. Set PUBLIC_ORIGIN."}
+              ? "PARTICIPANT_ORIGIN is this machine's own address. Set it to one the room can reach."
+              : "This address works on this device only. Set PARTICIPANT_ORIGIN."}
           </span>
         ) : null}
       </figcaption>

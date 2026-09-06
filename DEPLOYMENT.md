@@ -4,6 +4,11 @@ Commons is deployed via [`platform.yaml`](platform.yaml) connected to a managed
 MongoDB instance. The platform deployment runs exactly one Commons backend
 process alongside the Next.js frontend.
 
+Guiding, Pinning, Publishing, and Categorizing serialize mutations within their single concept
+instance. Do not run a second backend or other application writers against
+the same database. These queues order concurrent actions; they do not provide
+multi-document crash recovery or distributed transactions.
+
 ## Deploy on the platform
 
 [`platform.yaml`](platform.yaml) is the complete application-owned deployment
@@ -48,13 +53,31 @@ The backend loopback port is internal and must not be published.
 
 Startup runs the pending migrations under `src/migrations/` against the
 database before the edge accepts traffic, and records each one it applied.
-This release carries two that rewrite stored rows: the forum's categories
-take a `forum` scope, and drafting-brief links move out of the shared
-Linking store into AdoptLinking's own. Both are forward-only. Take a backup
-before the first start of this release. A rollback to the previous build
-writes rows in the old shape that a later redeploy does not revisit, because
-the migrations are already recorded as applied; restore the backup instead
-of rolling forward over such rows.
+Earlier migrations give forum categories a scope and move drafting-brief links
+into AdoptLinking's own store. This release also preserves existing activities'
+background-document selections and moves each response's answers into its
+response document, with a unique identity per subject and participant. The
+answer move prevents a delayed save from changing an already submitted response.
+
+Stop the old workload and all other writers before taking a database backup
+and starting this release. Keep the backup until the deployment is verified.
+Do not overlap old and new backends during a rolling update: the old backend
+writes to the separate answer collection, and those writes are invisible to
+the new backend after migration.
+
+If response identities collide or stored answers are ambiguous, startup stops
+and lists the affected response IDs without choosing a winner. Review the
+reported records and their downstream references before repairing them, then
+restart; do not delete the migration ledger to bypass the check.
+
+These migrations are forward-only. Rolling back application code alone does
+not roll back stored data. To return to the previous build, stop all writers
+and restore its pre-upgrade database backup as well. Preserve a backup of the
+current database first if new work has been recorded, because restoring the
+older backup excludes that work. The retained legacy answer collection is
+recovery evidence, not a rollback copy: new saves no longer update it. A later
+redeploy also does not recopy migrated responses or revisit migrations already
+recorded as applied.
 
 The public health endpoint checks backend readiness on every request, and backend
 readiness includes a MongoDB operation:
@@ -76,8 +99,9 @@ the reason. Startup refuses, with a one-line message, on: a missing
 `PUBLIC_ORIGIN` or one with a trailing slash; an `INVITATION_SECRET` or
 `VOUCHER_SECRET` under 32 characters, or the two equal; and
 `REASONER=scripted` in production. A start that reaches the migrations and
-stops there names the migration; restore the backup before starting again. A
-running stack whose `/health` answers `503` has a frontend up and a backend or
+stops there names the migration and its reason; follow that diagnostic and the
+migration guidance above before restarting or restoring a backup. A running
+stack whose `/health` answers `503` has a frontend up and a backend or
 MongoDB down: read the `[edge]` lines. Terminate TLS at the reverse proxy and
 forward to the declared application port; every other combination fails the
 session check at the end of this guide.

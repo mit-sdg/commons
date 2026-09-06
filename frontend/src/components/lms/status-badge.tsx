@@ -27,24 +27,36 @@ const STATUS_STYLES: Record<string, string> = {
   OPEN: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800",
   RESOLVED:
     "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
+  ABANDONED:
+    "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
   ASSIGNED:
     "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
+  OVERDUE:
+    "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
 };
 
 export function StatusBadge({
   status,
+  label,
   className,
 }: {
   status: string;
+  /** What the badge says when the status word alone would not be read right. */
+  label?: string;
   className?: string;
 }) {
   const style = STATUS_STYLES[status] ?? "bg-muted text-muted-foreground";
   return (
     <Badge
       variant="outline"
-      className={cn("text-xs font-medium capitalize", style, className)}
+      className={cn(
+        "text-xs font-medium",
+        label === undefined && "capitalize",
+        style,
+        className,
+      )}
     >
-      {status.toLowerCase()}
+      {label ?? status.toLowerCase()}
     </Badge>
   );
 }

@@ -2,6 +2,7 @@
 
 import { BookOpen, Plus } from "lucide-react";
 import { useState } from "react";
+import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import { AssignmentForm } from "@/components/lms/assignment-form";
 import { StatusBadge } from "@/components/lms/status-badge";
@@ -17,7 +18,6 @@ import {
 } from "@/components/ui/dialog";
 import { useQuery } from "@/hooks/use-query";
 import { useAuth } from "@/lib/auth";
-import { fullTime } from "@/lib/format";
 import { loadSections, loadStaffAssignments } from "@/lib/lms";
 
 const KIND_LABELS: Record<string, string> = {
@@ -126,21 +126,21 @@ function StaffAssignmentsPageContent() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{a.title}</p>
-                  <span className="text-xs text-muted-foreground capitalize">
-                    {KIND_LABELS[a.kind] ?? a.kind}
-                  </span>
+                  <Fact.Kind>{KIND_LABELS[a.kind] ?? a.kind}</Fact.Kind>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Due: {fullTime(a.dueAt)} | Audience:{" "}
-                  {a.audience === "EVERYONE"
-                    ? "Everyone"
-                    : a.targets
-                        .map(
-                          (target) =>
-                            sectionNames.get(target) ?? "Unknown section",
-                        )
-                        .join(", ")}
-                </p>
+                <Facts className="text-xs text-muted-foreground mt-1">
+                  <Fact.Due verb="Due" at={a.dueAt} />
+                  <Fact.Where preposition="for">
+                    {a.audience === "EVERYONE"
+                      ? "Everyone"
+                      : a.targets
+                          .map(
+                            (target) =>
+                              sectionNames.get(target) ?? "Unknown section",
+                          )
+                          .join(", ")}
+                  </Fact.Where>
+                </Facts>
               </div>
               <StatusBadge status={a.status} />
             </Link>

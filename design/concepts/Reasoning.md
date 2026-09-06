@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Bring a mind to bear where only judgment will do: put a passage before a
-reasoner and keep what it replies — with every ask standing visibly from the
-moment it is made until it is answered or has honestly failed.
+Put a passage before a reasoner and keep what it replies, with every ask standing visibly from the moment it is made until it is answered or has failed.
+
+Prevents: a reply taken without a record of what was asked; an ask that waits forever on an answer that is not coming; an answered ask answered again.
 
 ## Principle
 
@@ -111,6 +111,10 @@ _failureOf (asking: String) : optional (account: String, failedAt: Date)
 _repliesAbout (about: String) : many (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)
   answers every answered asking about the subject, newest first
   answers no rows when none match
+
+_lastReplyAbout (about: String) : optional (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)
+  answers the newest reply among the askings about the subject, with the passage it answered
+  answers no row when none of them was answered
 
 _lastFailureAbout (about: String) : optional (asking: String, account: String, failedAt: Date)
   answers the newest failure among the askings about the subject

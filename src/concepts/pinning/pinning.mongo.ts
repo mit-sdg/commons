@@ -14,6 +14,19 @@ export class MongoPinningConcept {
   private readonly pins: Collection<PinDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 
+  // One Pinning instance serves the supported single-process Mongo floor.
+  // Keep the membership check and insertion together with unpin and clear.
+  private writing: Promise<void> = Promise.resolve();
+
+  #write<Result>(action: () => Promise<Result>): Promise<Result> {
+    const result = this.writing.then(action);
+    this.writing = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }
+
   constructor(db: Db) {
     this.pins = db.collection<PinDoc>("pinning.pins");
     this.counters = db.collection("pinning.counters");
@@ -39,37 +52,43 @@ export class MongoPinningConcept {
     priority: number;
     at: Date;
   }) {
-    const existing = await this.pins.findOne({ item, scope });
-    if (existing !== null) {
-      throw new ItemAlreadyPinned(`${item} ${scope}`);
-    }
-    const pin = crypto.randomUUID();
-    const seq = await this.#nextSeq();
-    await this.pins.insertOne({ _id: pin, item, scope, priority, pinnedAt: at, seq });
-    return { pin };
+    return this.#write(async () => {
+      const existing = await this.pins.findOne({ item, scope });
+      if (existing !== null) {
+        throw new ItemAlreadyPinned(`${item} ${scope}`);
+      }
+      const pin = crypto.randomUUID();
+      const seq = await this.#nextSeq();
+      await this.pins.insertOne({ _id: pin, item, scope, priority, pinnedAt: at, seq });
+      return { pin };
+    });
   }
 
   async unpin({ item, scope }: { item: string; scope: string }) {
-    const doc = await this.pins.findOne({ item, scope });
-    if (doc === null) {
-      throw new ItemNotPinned(`${item} ${scope}`);
-    }
-    await this.pins.deleteOne({ _id: doc._id });
-    return { pin: doc._id };
+    return this.#write(async () => {
+      // Older racing pin calls could store duplicates. Unpin removes the
+      // membership completely, even when it was represented more than once.
+      await this.pins.deleteMany({ item, scope });
+      return { item };
+    });
   }
 
   async setPriority({ item, scope, priority }: { item: string; scope: string; priority: number }) {
-    const doc = await this.pins.findOne({ item, scope });
-    if (doc === null) {
-      throw new ItemNotPinned(`${item} ${scope}`);
-    }
-    await this.pins.updateOne({ _id: doc._id }, { $set: { priority } });
-    return { pin: doc._id };
+    return this.#write(async () => {
+      const doc = await this.pins.findOne({ item, scope });
+      if (doc === null) {
+        throw new ItemNotPinned(`${item} ${scope}`);
+      }
+      await this.pins.updateOne({ _id: doc._id }, { $set: { priority } });
+      return { pin: doc._id };
+    });
   }
 
   async clearItem({ item }: { item: string }) {
-    await this.pins.deleteMany({ item });
-    return { item };
+    return this.#write(async () => {
+      await this.pins.deleteMany({ item });
+      return { item };
+    });
   }
 
   async _getPinned({ scope }: { scope: string }) {

@@ -1,9 +1,9 @@
 /**
  * The floor's participant worker: it plays the phone for every response begun
- * under a participant that holds a seat on the round's run. Once the reasoner's
- * reply stands and the participant's own delay has passed, it answers each box
- * through Responding and hands in, so the model's cards land in the tray like
- * anyone else's.
+ * under a participant that holds a seat on the run, or on the round's run. Once
+ * the reasoner's reply stands and the participant's own delay has passed, it
+ * answers each box through Responding and hands in, so the model's hand-in
+ * lands like anyone else's.
  */
 
 import { participantAnswers } from "../computations/live-walls.ts";
@@ -101,9 +101,8 @@ export async function serveParticipantsOnce(
   const editions = await concepts.Publishing._openEditions({});
   let handedIn = 0;
   for (const { edition } of editions) {
-    // A round's edition is linked to its run; a quiz or survey run is linked to nothing.
     const [link] = await concepts.Linking._getLinks({ source: edition });
-    if (link === undefined) continue;
+    const run = link?.target ?? edition;
     const [snapshot] = await concepts.RunSnapshotting._snapshot({ subject: edition });
     if (snapshot === undefined) continue;
     const responses = await concepts.Responding._responsesFor({ subject: edition });
@@ -111,7 +110,7 @@ export async function serveParticipantsOnce(
       if (response.submitted) continue;
       const { subscribed } = await concepts.Subscribing._isSubscribed({
         user: response.participant,
-        target: link.target,
+        target: run,
       });
       if (!subscribed) continue;
       try {

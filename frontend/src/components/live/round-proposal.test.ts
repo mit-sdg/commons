@@ -14,6 +14,11 @@ const round = {
   cap: 0,
   choices: [],
   takes: [{ source: "leg-1", sourceNumber: 1, use: "context" }],
+  piles: [
+    { pile: "pile-1", name: "Pace", description: "It was too slow." },
+    { pile: "pile-2", name: "Sound", description: "" },
+  ],
+  notes: "They will say the pace and the sound.",
 };
 
 describe("what a proposal says it would change", () => {
@@ -46,7 +51,7 @@ describe("what a proposal says it would change", () => {
         { kind: "choices", value: JSON.stringify(["yes", "no"]) },
         round,
       ),
-    ).toEqual({ field: "Choices", was: "", to: "yes · no" });
+    ).toEqual({ field: "Choices", was: [], to: ["yes", "no"] });
     expect(
       changeWords(
         { kind: "takes", value: JSON.stringify({ from: 1, use: "parts" }) },
@@ -59,6 +64,60 @@ describe("what a proposal says it would change", () => {
         round,
       ),
     ).toEqual({ field: "Takes from", was: "1 as context", to: "nothing" });
+  });
+
+  test("a pile reads as one added, or as one the round already stands", () => {
+    expect(
+      changeWords(
+        {
+          kind: "pile",
+          value: JSON.stringify({ name: "Ending", sentence: "It stopped." }),
+        },
+        round,
+      ),
+    ).toEqual({ field: "Add pile", was: "", to: "Ending: It stopped." });
+    expect(
+      changeWords(
+        {
+          kind: "pile",
+          value: JSON.stringify({ name: "Pace", sentence: "It dragged." }),
+        },
+        round,
+      ),
+    ).toEqual({
+      field: "Describe pile",
+      was: "Pace: It was too slow.",
+      to: "Pace: It dragged.",
+    });
+    expect(
+      changeWords(
+        { kind: "pile", value: JSON.stringify({ name: "Sound" }) },
+        round,
+      ),
+    ).toEqual({ field: "Describe pile", was: "Sound", to: "Sound" });
+  });
+
+  test("an unpile names the pile it takes off the round", () => {
+    expect(changeWords({ kind: "unpile", value: "Pace" }, round)).toEqual({
+      field: "Remove pile",
+      was: "Pace",
+      to: "",
+    });
+  });
+
+  test("notes read as what stands and what is proposed, and blank clears them", () => {
+    expect(
+      changeWords({ kind: "notes", value: "Group by tempo." }, round),
+    ).toEqual({
+      field: "Notes",
+      was: "They will say the pace and the sound.",
+      to: "Group by tempo.",
+    });
+    expect(changeWords({ kind: "notes", value: "" }, round)).toEqual({
+      field: "Notes",
+      was: "They will say the pace and the sound.",
+      to: "",
+    });
   });
 
   test("a removal names the round it would take away, and a move its number", () => {
@@ -94,6 +153,8 @@ describe("the round an add line carries", () => {
           parts: [],
           cap: 0,
           choices: [],
+          piles: [],
+          notes: "",
           takes: { from: 2, use: "choices" },
           position: 3,
         }),
@@ -105,10 +166,31 @@ describe("the round an add line carries", () => {
       parts: [],
       cap: 0,
       choices: [],
+      piles: [],
+      notes: "",
       from: 2,
       use: "choices",
       position: 3,
     });
+  });
+
+  test("the piles and the note it carries come with it", () => {
+    const drafted = addedRound(
+      JSON.stringify({
+        title: "The stranger",
+        piles: [
+          { name: "Pace", sentence: "It was too slow." },
+          { sentence: "A pile with no name is no pile." },
+          { name: "Sound" },
+        ],
+        notes: "Group by tempo.",
+      }),
+    );
+    expect(drafted.piles).toEqual([
+      { name: "Pace", sentence: "It was too slow." },
+      { name: "Sound", sentence: "" },
+    ]);
+    expect(drafted.notes).toBe("Group by tempo.");
   });
 
   test("an unreadable value reads as an empty round", () => {
@@ -120,7 +202,7 @@ describe("the round an add line carries", () => {
 describe("the words boxes and takes go by", () => {
   test("one label repeated reads as a cap, and several as a row", () => {
     expect(partWords(["verb"], 3)).toBe("verb, up to 3");
-    expect(partWords(["one", "two"], 0)).toBe("one · two");
+    expect(partWords(["one", "two"], 0)).toBe("one, two");
     expect(partWords([], 0)).toBe("");
   });
 

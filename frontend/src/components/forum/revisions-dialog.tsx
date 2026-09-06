@@ -2,6 +2,7 @@
 
 import { History } from "lucide-react";
 import { useState } from "react";
+import { Fact } from "@/components/facts";
 import { LoadingState } from "@/components/states";
 import {
   Dialog,
@@ -14,7 +15,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
-import { fullTime, relativeTime } from "@/lib/format";
+import { dateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function RevisionsDialog({
@@ -104,9 +105,11 @@ function RevisionsBody({
                       </span>
                     ) : null}
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {relativeTime(rev.savedAt)}
-                  </span>
+                  <Fact.When
+                    at={rev.savedAt}
+                    form="absolute"
+                    className="text-xs"
+                  />
                 </button>
               </li>
             );
@@ -119,7 +122,7 @@ function RevisionsBody({
         ) : null}
         {latest.data?.revision[0] ? (
           <p className="mt-3 text-xs text-muted-foreground">
-            Last edited {fullTime(latest.data.revision[0].savedAt)}.
+            Last edited {dateTime(latest.data.revision[0].savedAt)}.
           </p>
         ) : null}
       </div>

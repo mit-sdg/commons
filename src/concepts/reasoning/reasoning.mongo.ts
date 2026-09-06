@@ -146,6 +146,27 @@ export class MongoReasoningConcept {
     return doc === null ? [] : [{ account: doc.account, failedAt: doc.failedAt }];
   }
 
+  async _lastReplyAbout({ about }: { about: string }) {
+    const askings = await this.askings.find({ about }).toArray();
+    if (askings.length === 0) return [];
+    const byId = new Map(askings.map((doc) => [doc._id, doc]));
+    const doc = await this.replies.findOne(
+      { asking: { $in: [...byId.keys()] } },
+      { sort: { seq: -1 } },
+    );
+    if (doc === null) return [];
+    const asking = byId.get(doc.asking);
+    return [
+      {
+        asking: doc.asking,
+        reasoner: asking?.reasoner ?? "",
+        passage: asking?.passage ?? "",
+        reply: doc.reply,
+        answeredAt: doc.answeredAt,
+      },
+    ];
+  }
+
   async _lastFailureAbout({ about }: { about: string }) {
     const askings = await this.askings.find({ about }, { projection: { _id: 1 } }).toArray();
     if (askings.length === 0) return [];

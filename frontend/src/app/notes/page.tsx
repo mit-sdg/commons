@@ -2,6 +2,7 @@
 
 import { CheckCircle, StickyNote } from "lucide-react";
 import { toast } from "sonner";
+import { Fact } from "@/components/facts";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fullTime, relativeTime } from "@/lib/format";
 import { loadRosterMe, loadVisibleNotes } from "@/lib/lms";
 
 export default function NotesPage() {
@@ -92,16 +92,13 @@ export default function NotesPage() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
-                    {note.status === "OPEN" ? (
-                      <span className="flex size-2 rounded-full bg-orange-500" />
-                    ) : (
-                      <span className="flex size-2 rounded-full bg-green-500" />
-                    )}
-                    {note.status === "OPEN" ? "Note" : "Resolved"}
+                    <Fact.Status status={note.status} />
                   </CardTitle>
-                  <span className="text-xs text-muted-foreground">
-                    {fullTime(note.createdAt)}
-                  </span>
+                  <Fact.When
+                    at={note.createdAt}
+                    form="absolute"
+                    className="text-xs"
+                  />
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -116,8 +113,8 @@ export default function NotesPage() {
                   </div>
                 )}
                 {note.followUpAt && (
-                  <p className="text-xs text-muted-foreground">
-                    Follow-up by: {fullTime(note.followUpAt)}
+                  <p className="text-xs">
+                    <Fact.Due at={note.followUpAt} verb="Follow up" />
                   </p>
                 )}
                 {!note.acknowledgedAt && (
@@ -131,8 +128,8 @@ export default function NotesPage() {
                   </Button>
                 )}
                 {note.acknowledgedAt && (
-                  <p className="text-xs text-muted-foreground">
-                    Acknowledged {relativeTime(note.acknowledgedAt)}
+                  <p className="text-xs">
+                    <Fact.When verb="Acknowledged" at={note.acknowledgedAt} />
                   </p>
                 )}
               </CardContent>

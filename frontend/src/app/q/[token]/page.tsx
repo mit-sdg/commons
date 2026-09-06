@@ -1,32 +1,41 @@
 "use client";
 
 import { CheckCircle2, CircleSlash } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
+import { Fact, Facts } from "@/components/facts";
 import { HandInBar } from "@/components/live/phone-bar";
+import { identityLine, trayLine } from "@/components/live/phone-lines";
 import {
   answeredOf,
   Choice,
   itemCountOf,
   QuestionCard as RoundQuestionCard,
+  WrittenBox,
   wholeOf,
 } from "@/components/live/phone-question";
 import { Card as AnswerCard } from "@/components/live/pile";
 import { refusalSentence, saidRefusal } from "@/components/live/refusals";
-import { Figure, RoundToken } from "@/components/live/round-token";
+import { RoundStrip, RoundToken } from "@/components/live/round-token";
 import {
   choicesOf,
   standingOf,
   trayOf,
   type Wall as WallShape,
 } from "@/components/live/rounds";
-import { Wall } from "@/components/live/wall";
-import { SignInEnded } from "@/components/sign-in-ended";
+import { roomFigures, Wall } from "@/components/live/wall";
+import { SIGN_IN_ENDED, SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   type ApiError,
   api,
@@ -217,8 +226,48 @@ function useAnswerSender(response: string | null, signed: boolean) {
   return { persistAnswer, forget };
 }
 
+/**
+ * How this device reached the token. The join page says so in the address, and
+ * the answer is kept against the token, so a reload still knows it. A device
+ * that opened the link or scanned the code says nothing and is anonymous.
+ */
+function useArrivedBy(token: string): string | null {
+  const asked = useSearchParams().get("by");
+  const [arrival, setArrival] = useState<string | null>(null);
+
+  useEffect(() => {
+    const key = `commons-live-by-${token}`;
+    let kept = asked;
+    try {
+      if (asked === null) kept = window.sessionStorage.getItem(key);
+      else window.sessionStorage.setItem(key, asked);
+    } catch {
+      // A browser that refuses storage reads the address alone.
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the device's own storage is read once it is there to read
+    setArrival(kept);
+  }, [asked, token]);
+
+  return arrival;
+}
+
 export default function ParticipantPage() {
+  return (
+    <Suspense
+      fallback={
+        <Shell>
+          <LoadingState label="Opening…" />
+        </Shell>
+      }
+    >
+      <ParticipantContent />
+    </Suspense>
+  );
+}
+
+function ParticipantContent() {
   const { token } = useParams<{ token: string }>();
+  const arrivedBy = useArrivedBy(token);
   const { me, loading: authLoading, logout } = useAuth();
   const [face, setFace] = useState<Face | null>(null);
   const [relay, setRelay] = useState<Relay | null>(null);
@@ -639,6 +688,7 @@ export default function ParticipantPage() {
         token={token}
         relay={relay}
         participant={participant}
+        holder={identityLine(me?.profile.displayName ?? null, arrivedBy)}
         signedIn={me !== null}
         offline={faceError !== null}
         ended={ended}
@@ -704,22 +754,20 @@ export default function ParticipantPage() {
     return (
       <Shell title={face.title} notice={notice}>
         <div className="flex min-h-[55dvh] flex-col items-center justify-center gap-4 py-10">
-          <p className="text-center text-muted-foreground">
-            {face.questions.length} question
-            {face.questions.length === 1 ? "" : "s"} ·{" "}
-            {isQuiz ? "quiz" : "survey"}
-          </p>
-          {me !== null ? (
-            <div className="text-center text-sm">
-              <p>
-                Joining as{" "}
-                <span className="font-medium">{me.profile.displayName}</span>
-              </p>
+          <Facts className="justify-center text-muted-foreground">
+            <Fact.Kind>{isQuiz ? "Quiz" : "Survey"}</Fact.Kind>
+            <Fact.Count n={face.questions.length} noun="question" />
+          </Facts>
+          <div className="flex flex-col items-center text-center">
+            <p className="text-muted-foreground text-sm" dir="auto">
+              {identityLine(me?.profile.displayName ?? null, arrivedBy)}
+            </p>
+            {me !== null ? (
               <Button variant="link" size="sm" onClick={() => void logout()}>
                 Not you? Sign out
               </Button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
           <Button
             size="lg"
             className="h-11"
@@ -870,6 +918,7 @@ function RelayPhone({
   token,
   relay,
   participant,
+  holder,
   signedIn,
   offline,
   ended,
@@ -880,6 +929,8 @@ function RelayPhone({
   token: string;
   relay: Relay;
   participant: string;
+  /** Who is holding the phone: the name it signed in under, or how it arrived. */
+  holder: string;
   signedIn: boolean;
   /** Nothing this phone sends is getting through: the screen keeps what it has. */
   offline: boolean;
@@ -1121,6 +1172,8 @@ function RelayPhone({
       setAnswers(next);
       remember(next, false);
       setRefusal(null);
+      // Unsigned, the value stays on the phone; signing in sends it again.
+      if (ended) return;
       void persistAnswer(item, value).then(async (landing) => {
         if (landing === "saved") {
           onReach(true);
@@ -1149,7 +1202,7 @@ function RelayPhone({
         setRefusal("That answer didn't save. Try again.");
       });
     },
-    [answers, remember, persistAnswer, refresh, onReach, onEnded],
+    [answers, remember, persistAnswer, refresh, onReach, onEnded, ended],
   );
 
   /** Every box the round captured, answered: what a hand-in is taken on. */
@@ -1280,10 +1333,10 @@ function RelayPhone({
   // already handed in. Refused against a round still open, it says: you are in.
   const handedIn =
     submitted || (refusedRound !== null && refusedRound === round);
-  // A phone whose sign-in ended keeps its answers on the screen and sends
-  // nothing until it is signed in again.
-  const answering =
-    !handedIn && runOpen && round !== null && response !== null && !ended;
+  // A phone whose sign-in ended keeps its answers and its footer on the
+  // screen; the hand-in bar says why it is out, and nothing is sent until it
+  // is signed in again.
+  const answering = !handedIn && runOpen && round !== null && response !== null;
   // Out of reach the screen keeps the round it has and says so in one line: a
   // phone with answers on it is told they stay there.
   const connection = offline
@@ -1328,16 +1381,22 @@ function RelayPhone({
 
   // Where you landed, on a screen one hand holds: this phone's own cards
   // first, then the piles, each wearing this phone's card on its face. The
-  // rest of the tray is a count — a room writes more cards than a phone can
-  // read. A vote wall carries bars, not cards, and holds no tray to count.
+  // tray is a count — a room writes more cards than a phone can read. A vote
+  // wall carries bars, not cards, and holds no tray to count.
   const landed = useMemo(() => {
     if (wall === null) return null;
     const mine = wall.cards.filter((card) => card.mine);
-    if (choicesOf(wall).length > 0) return { wall, mine, inTray: 0 };
+    const room = roomFigures(wall);
+    if (choicesOf(wall).length > 0) return { wall, mine, room, tray: null };
+    const unplaced = trayOf(wall.cards);
     return {
       wall: { ...wall, cards: wall.cards.filter((card) => card.pile !== null) },
       mine,
-      inTray: trayOf(wall.cards).filter((card) => !card.mine).length,
+      room,
+      tray: trayLine(
+        unplaced.length,
+        unplaced.some((card) => card.mine),
+      ),
     };
   }, [wall]);
 
@@ -1354,21 +1413,28 @@ function RelayPhone({
             {relay.title}
           </h1>
           {openRound === undefined ? (
-            <span className="flex flex-wrap items-center gap-1.5">
-              {relay.rounds.map((candidate) => (
-                <RoundToken
-                  key={candidate.number}
-                  number={candidate.number}
-                  title={
-                    candidate.number === nextRound?.number
-                      ? candidate.title
-                      : undefined
-                  }
-                  standing={standingOf(candidate)}
-                  size="sm"
-                />
-              ))}
-            </span>
+            // Numbers alone, then the round to come named apart from them. A
+            // title set among the discs read as one run of digits with a
+            // sentence caught in the middle; on its own line it cost the top
+            // of the screen, which the open round needs.
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+              <RoundStrip
+                className="flex-wrap"
+                rounds={relay.rounds.map((candidate) => ({
+                  number: candidate.number,
+                  title: candidate.title,
+                  standing: standingOf(candidate),
+                }))}
+              />
+              {relay.open && nextRound !== undefined ? (
+                <span className="min-w-0 truncate border-border border-l pl-2.5 text-muted-foreground text-sm">
+                  Up next:{" "}
+                  <span className="text-foreground" dir="auto">
+                    {nextRound.title}
+                  </span>
+                </span>
+              ) : null}
+            </div>
           ) : (
             <RoundToken
               className="min-w-0"
@@ -1378,6 +1444,9 @@ function RelayPhone({
               size="sm"
             />
           )}
+          <p className="truncate text-muted-foreground text-sm" dir="auto">
+            {holder}
+          </p>
         </header>
 
         {ended ? (
@@ -1432,20 +1501,14 @@ function RelayPhone({
             </div>
             {landed === null ? null : (
               <>
-                {/* The figure counts the room, not this phone, so it says so. */}
-                <p className="flex items-baseline gap-2 text-muted-foreground text-sm">
-                  <Figure
-                    className="min-w-0"
-                    value={landed.wall.handedIn}
-                    of={landed.wall.begun}
-                    size="sm"
-                  />
-                  handed in
-                </p>
-                {landed.inTray === 0 ? null : (
-                  <p className="text-muted-foreground text-sm">
-                    {landed.inTray} more in the tray
-                  </p>
+                {/* The figures count the room, not this phone. */}
+                <Facts className="text-sm">
+                  <Fact.Count>{landed.room.joined} joined</Fact.Count>
+                  <Fact.Count>{landed.room.writing} writing</Fact.Count>
+                  <Fact.Count>{landed.room.handedIn} handed in</Fact.Count>
+                </Facts>
+                {landed.tray === null ? null : (
+                  <p className="text-muted-foreground text-sm">{landed.tray}</p>
                 )}
                 <Wall wall={landed.wall} phone carriesTo={nextRound?.number} />
               </>
@@ -1504,7 +1567,9 @@ function RelayPhone({
           answered={answeredOf(questions, answers)}
           of={itemCountOf(questions)}
           busy={busy}
-          refusal={whole ? null : refusalSentence("INCOMPLETE")}
+          refusal={
+            ended ? SIGN_IN_ENDED : whole ? null : refusalSentence("INCOMPLETE")
+          }
           onHandIn={() => void handIn()}
         />
       ) : null}
@@ -1552,24 +1617,13 @@ function QuestionCard({
             ))}
           </div>
         ) : (
-          // The field stays uncontrolled — typing drafts, blur commits — so
-          // nothing has to be synced from props into state during render. Every
-          // blur commits: the draft it would compare against is the same state
-          // typing just wrote, and the sender knows what it has already sent.
-          <Input
-            className="h-11"
-            dir="auto"
+          <WrittenBox
             // The prompt above is the box's name; the placeholder is not one.
-            aria-labelledby={promptId}
-            defaultValue={value}
+            labelledBy={promptId}
+            value={value}
             placeholder="Your answer"
-            onChange={(event) => onDraft(event.currentTarget.value)}
-            onBlur={(event) => {
-              const next = event.currentTarget.value.trim();
-              if (next === "") return;
-              event.currentTarget.value = next;
-              onAnswer(next);
-            }}
+            onAnswer={onAnswer}
+            onDraft={onDraft}
           />
         )}
       </CardContent>

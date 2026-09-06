@@ -3,15 +3,27 @@ import type { NextConfig } from "next";
 import { allowedDevOriginsFromPublicOrigin } from "./deployment-config.ts";
 
 const BACKEND_ORIGIN = process.env.BACKEND_ORIGIN ?? "http://localhost:4000";
-const ALLOWED_DEV_ORIGINS = allowedDevOriginsFromPublicOrigin(process.env.PUBLIC_ORIGIN);
+// The laptop's own loopback names stay allowed when the dev server listens on
+// every interface for the room's phones.
+const ALLOWED_DEV_ORIGINS = allowedDevOriginsFromPublicOrigin(
+  process.env.PUBLIC_ORIGIN,
+  process.env.PARTICIPANT_ORIGIN,
+  "http://127.0.0.1",
+  "http://localhost",
+);
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ALLOWED_DEV_ORIGINS,
   // The participant destination is public configuration, embedded for the
-  // client that draws QR codes. Production already requires PUBLIC_ORIGIN.
+  // client that draws QR codes. Production already requires PUBLIC_ORIGIN; a
+  // laptop serving a room over plain http keeps the edge on loopback and
+  // names the address phones reach as PARTICIPANT_ORIGIN.
   env: {
-    NEXT_PUBLIC_PARTICIPANT_ORIGIN: process.env.PUBLIC_ORIGIN ?? "",
+    NEXT_PUBLIC_PARTICIPANT_ORIGIN:
+      process.env.PARTICIPANT_ORIGIN ?? process.env.PUBLIC_ORIGIN ?? "",
   },
+  // The development indicator sits on every phone and covers its counter.
+  devIndicators: false,
   output: "standalone",
   outputFileTracingRoot: join(__dirname, ".."),
   experimental: {

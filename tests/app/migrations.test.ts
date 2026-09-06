@@ -260,8 +260,28 @@ describe("migrating a database written before this release", () => {
         .findOne({ _id: "links" }),
     ).toEqual({
       _id: "links",
-      value: 7,
+      value: 9,
     });
+  });
+
+  test("an interrupted AdoptLinking copy advances the counter on retry", async () => {
+    const database = await testDb();
+    await database.collection<{ _id: string }>("drafting.briefs").insertOne({ _id: "brief" });
+    const row = { _id: "brief", targets: ["questionnaire"], seq: 17 };
+    // A crash after insertion, before updating the counter/deleting the source.
+    await database
+      .collection<{ _id: string; targets: string[]; seq: number }>("linking.links")
+      .insertOne(row);
+    await database
+      .collection<{ _id: string; targets: string[]; seq: number }>("adoptLinking.links")
+      .insertOne(row);
+    await adoptLinkingStore.up(database);
+    expect(
+      await database
+        .collection<{ _id: string; value: number }>("adoptLinking.counters")
+        .findOne({ _id: "links" }),
+    ).toMatchObject({ value: 17 });
+    expect(await database.collection("linking.links").countDocuments()).toBe(0);
   });
 
   test("every migration is idempotent, because the ledger is an optimisation rather than a guarantee", async () => {

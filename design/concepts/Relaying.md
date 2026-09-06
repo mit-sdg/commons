@@ -8,7 +8,7 @@ Prevents: a leg drawing on a leg that comes after it; the order of legs changed 
 
 ## Principle
 
-Dana _plans_ a relay of three legs and _adds_ each: name it, vote on three of the names, explain your vote. She makes the second leg _draw_ its choices from the first leg's piles, and the third draw its prompt from whichever choice wins. She tries to _move_ the third leg above the second and is refused, because it would come before what it draws on. She tries to make the first leg draw on the third and is refused for the same reason. She thinks better of the vote's use and _undraws_ it, then draws it again with the use she wants. When she tries to _remove_ the first leg she is refused, because the second still draws on it. In class each leg opens when she says so; what the second leg carries from the first is decided at that moment, not when she planned it. Next term she _retitles_ the relay and runs it on a different concept without touching a draw.
+Dana _plans_ a relay of three legs and _adds_ each: name it, vote on three of the names, explain your vote. She makes the second leg _draw_ its choices from the first leg's piles, and the third draw its prompt from whichever choice wins. She tries to _move_ the third leg above the second and is refused, because it would come before what it draws on. She tries to make the first leg draw on the third and is refused for the same reason. She thinks better of the vote's use and _undraws_ it, then draws it again with the use she wants. She _sets_ the second leg's kind to "vote" before she has written its choices, so the plan remembers what the leg is to be. When she tries to _remove_ the first leg she is refused, because the second still draws on it. In class each leg opens when she says so; what the second leg carries from the first is decided at that moment, not when she planned it. Next term she _retitles_ the relay and runs it on a different concept without touching a draw.
 
 ## Types
 
@@ -32,6 +32,7 @@ a set of Legs with
   a relay     Relay
   a material  Material
   a position  Number
+  a kind      String
 
 a set of Draws with
   a leg     Leg
@@ -43,6 +44,7 @@ Rule: legs belong to their relay and stand in position order, contiguous from on
 Rule: a draw's source stands earlier in the same relay than its leg, so a draw never points forward.
 Rule: a leg has at most one draw; drawing again sets its source and use, so a leg draws on one leg at a time.
 Rule: a use is a nonblank string; what a use means — what the source produced and how much of it is carried — is the surrounding design's to say.
+Rule: a kind is the word its planner gave the leg, empty until one is given; what a kind means is the surrounding design's to say.
 Rule: moving a leg is refused when the order it would make has any draw pointing forward.
 Rule: a leg is removed only while nothing draws on it; its own draws go with it.
 Rule: Relaying does not know what a material is, open a leg to anyone, or carry anything from one leg to the next; those are arranged outside the concept.
@@ -75,11 +77,23 @@ retitle (relay: Relay, title: String) : return (relay: Relay)
 addLeg (relay: Relay, material: Material) : return (leg: Leg, position: Number)
   where relay exists
   then
-    add a new leg with relay, material, and the position after the relay's last leg
+    add a new leg with relay, material, an empty kind, and the position after the relay's last leg
     return leg, position
   where relay does not exist
   then
     refuse RELAY_NOT_FOUND "There is no such relay."
+
+setKind (leg: Leg, kind: String) : return (leg: Leg)
+  where leg exists and kind is nonblank
+  then
+    set leg's kind to kind
+    return leg
+  where leg does not exist
+  then
+    refuse LEG_NOT_FOUND "There is no such leg."
+  where kind is blank
+  then
+    refuse KIND_BLANK "A kind needs a word."
 
 removeLeg (leg: Leg) : return (leg: Leg, relay: Relay, material: Material)
   where leg exists and no draw has source leg
@@ -147,11 +161,11 @@ _relay (relay: String) : optional (author: String, title: String, createdAt: Dat
 _relays () : many (relay: String, author: String, title: String, createdAt: Date)
   answers every relay, newest first
 
-_legs (relay: String) : many (leg: String, material: String, position: Number)
+_legs (relay: String) : many (leg: String, material: String, position: Number, kind: String)
   answers the relay's legs in position order
   answers no rows when none match
 
-_leg (leg: String) : optional (relay: String, material: String, position: Number)
+_leg (leg: String) : optional (relay: String, material: String, position: Number, kind: String)
   answers the complete Leg
   answers no row when the Leg does not exist
 
@@ -169,7 +183,7 @@ _drawsOn (source: String) : many (draw: String, leg: String, use: String)
 
 _plan (relay: String) : optional (legs: Seq)
   answers the relay's legs back as one value: an ordered sequence of
-  `{ leg, material, position, draws }` entries in position order, each draws
+  `{ leg, material, position, kind, draws }` entries in position order, each draws
   entry `{ source, use }` in the order the draws were made
   answers one row with an empty sequence when the relay has no legs
   answers no row when the Relay does not exist

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Fact } from "@/components/facts";
 import { BookmarkButton } from "@/components/forum/bookmark-button";
 import { Composer } from "@/components/forum/composer";
 import { FlagDialog } from "@/components/forum/flag-dialog";
@@ -32,7 +33,6 @@ import { UserName } from "@/components/user-name";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { relativeTime } from "@/lib/format";
 import type { ThreadNode } from "@/lib/models";
 import { cn } from "@/lib/utils";
 
@@ -166,23 +166,15 @@ export function PostCard({
       <header className="mb-3 flex items-start gap-3">
         <UserAvatar user={author} />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm">
             <UserName user={author} />
-            <span className="text-muted-foreground">·</span>
-            <time className="text-muted-foreground" title={postId}>
-              {relativeTime(node.post.createdAt)}
-            </time>
+            <Fact.When at={node.post.createdAt} />
             {highlightUnread ? (
               <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-primary">
                 New
               </span>
             ) : null}
-            {edited ? (
-              <>
-                <span className="text-muted-foreground">·</span>
-                <RevisionsDialog item={postId} />
-              </>
-            ) : null}
+            {edited ? <RevisionsDialog item={postId} /> : null}
           </div>
         </div>
         {isAccepted ? (

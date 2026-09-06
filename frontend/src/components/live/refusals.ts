@@ -13,6 +13,7 @@ export type RefusalWord =
   | "ROUND_DONE"
   | "SOURCE_OPEN"
   | "SOURCE_UNRUN"
+  | "SOURCE_UNSAMPLED"
   | "NOTHING_PICKED"
   | "CLOSED"
   | "ROUND_CLOSED"
@@ -23,16 +24,20 @@ export type RefusalWord =
   | "NO_OPEN_ROUND"
   | "INCOMPLETE"
   | "PILE_GONE"
+  | "NAME_TAKEN"
   | "CARD_GONE"
   | "ROUND_GONE"
   | "ROUNDS_RUN"
-  | "NO_PILES";
+  | "NO_PILES"
+  | "NO_CHOICES";
 
 /** What the sentence names: the round the refusal is about, when it has one. */
 export interface RefusalAbout {
   round?: number;
   /** The round this one takes from, when the sentence is about that side. */
   source?: number;
+  /** The name the sentence is about, when a name is what was refused. */
+  name?: string;
 }
 
 const SENTENCES: Record<RefusalWord, (about: RefusalAbout) => string> = {
@@ -52,8 +57,12 @@ const SENTENCES: Record<RefusalWord, (about: RefusalAbout) => string> = {
     round === undefined
       ? "Open the round it takes from first."
       : `Run round ${round} first. This one takes from it.`,
+  SOURCE_UNSAMPLED: ({ round }) =>
+    round === undefined
+      ? "Sample the round it takes from first."
+      : `Sample round ${round} first. This one takes from it.`,
   NOTHING_PICKED: () => "Pick at least one pile.",
-  CLOSED: () => "No more rounds.",
+  CLOSED: () => "The run is closed.",
   ROUND_CLOSED: ({ round }) =>
     round === undefined ? "The round is closed." : `Round ${round} is closed.`,
   RUN_OPEN: ({ round }) =>
@@ -74,10 +83,13 @@ const SENTENCES: Record<RefusalWord, (about: RefusalAbout) => string> = {
   NO_OPEN_ROUND: () => "No round is open.",
   INCOMPLETE: () => "Answer every box first.",
   PILE_GONE: () => "That pile is gone.",
+  NAME_TAKEN: ({ name }) =>
+    name === undefined ? "That name is taken." : `“${name}” is taken.`,
   CARD_GONE: () => "That card is gone.",
   ROUND_GONE: () => "That round is gone.",
   ROUNDS_RUN: () => "Every round has run.",
   NO_PILES: () => "Sort the cards into piles first.",
+  NO_CHOICES: () => "Add choices, or take an earlier round's piles.",
 };
 
 export function refusalSentence(

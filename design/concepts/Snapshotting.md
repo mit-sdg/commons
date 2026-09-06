@@ -5,6 +5,8 @@
 Preserve the exact value released for a subject, once, so later work on its
 source cannot rewrite what that subject already represents.
 
+Prevents: a subject's released value rewritten by later edits to its source; a second capture quietly replacing the first.
+
 ## Principle
 
 Professor Lee launches a reviewed quiz. Its run captures the complete

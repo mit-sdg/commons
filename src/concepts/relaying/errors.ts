@@ -7,3 +7,4 @@ export class ForwardDraw extends Error {}
 export class NotSiblings extends Error {}
 export class UseBlank extends Error {}
 export class NoDraw extends Error {}
+export class KindBlank extends Error {}

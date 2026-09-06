@@ -43,6 +43,104 @@ export function fullTime(value: unknown): string {
   });
 }
 
+/** The year a moment falls in, in the class's zone. */
+function yearOf(date: Date, timeZone: string): string {
+  return date.toLocaleString(undefined, { year: "numeric", timeZone });
+}
+
+/** "Sep 5" this year, "Sep 5, 2019" in another, in the class's zone. */
+function dayOf(date: Date, timeZone: string): string {
+  const year = yearOf(date, timeZone) !== yearOf(new Date(), timeZone);
+  return date.toLocaleDateString(undefined, {
+    ...(year ? { year: "numeric" } : {}),
+    month: "short",
+    day: "numeric",
+    timeZone,
+  });
+}
+
+/** "1:16 PM", or "1:16 PM EDT" with the zone named. */
+function clockOf(date: Date, timeZone: string, zone: boolean): string {
+  return date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    ...(zone ? { timeZoneName: "short" } : {}),
+    timeZone,
+  });
+}
+
+/**
+ * "Sep 5, 1:16 PM": an absolute moment for a fact that is a record or a
+ * hover, in the class's zone. The year appears only when it is not this
+ * year, and the zone is never named — the due forms name it, because there
+ * the zone is what the reader checks. The day and the clock are joined by
+ * hand so every locale's joiner reads the same.
+ */
+export function dateTime(value: unknown): string {
+  const date = toDate(value);
+  if (!date) return "";
+  const timeZone = courseTimezone();
+  return `${dayOf(date, timeZone)}, ${clockOf(date, timeZone, false)}`;
+}
+
+/**
+ * "Sep 10, 1:16 PM EDT": a due or scheduled moment, the class's zone named
+ * because the reader plans against it. The year appears only when it is
+ * not this year. `day` gives the day alone, for a line too small for the
+ * hour.
+ */
+export function dueTime(
+  value: unknown,
+  precision: "minute" | "day" = "minute",
+): string {
+  const date = toDate(value);
+  if (!date) return "";
+  const timeZone = courseTimezone();
+  const day = dayOf(date, timeZone);
+  return precision === "day" ? day : `${day}, ${clockOf(date, timeZone, true)}`;
+}
+
+/**
+ * "Sep 5, 12:24 PM – 2:10 PM", or "Sep 5, 12:24 PM – Sep 6, 9:00 AM" when
+ * the end falls on another day: a span of time as one fact, an en dash
+ * between its ends. Without an end it is still running and reads
+ * "since Sep 5, 12:24 PM".
+ */
+export function rangeTime(from: unknown, to: unknown): string {
+  const start = toDate(from);
+  if (!start) return "";
+  const end = toDate(to);
+  if (!end) return `since ${dateTime(start)}`;
+  const timeZone = courseTimezone();
+  const tail =
+    dayOf(start, timeZone) === dayOf(end, timeZone)
+      ? clockOf(end, timeZone, false)
+      : dateTime(end);
+  return `${dateTime(start)} – ${tail}`;
+}
+
+/** "Sep 4": the day alone, in the class's zone as the fuller times are. */
+export function shortDate(value: unknown): string {
+  const date = toDate(value);
+  if (!date) return "";
+  return dayOf(date, courseTimezone());
+}
+
+/**
+ * What a relay's runs come to in one line: "Ran 3 times, last on Sep 4",
+ * counting the runs that closed and dating the last of them. Before the first
+ * run closes there is nothing to say and the line is empty.
+ */
+export function ranSentence(runs: readonly { closedAt?: unknown }[]): string {
+  const closed = runs
+    .map((run) => toDate(run.closedAt))
+    .filter((date): date is Date => date !== null);
+  if (closed.length === 0) return "";
+  const last = closed.reduce((a, b) => (a.getTime() >= b.getTime() ? a : b));
+  const times = closed.length === 1 ? "once" : `${closed.length} times`;
+  return `Ran ${times}, last on ${shortDate(last)}`;
+}
+
 export function toZonedInput(
   value: unknown,
   timeZone = courseTimezone(),

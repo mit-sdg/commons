@@ -2,17 +2,18 @@
 
 import { ArrowLeft, BookOpen, Clock, GraduationCap, User } from "lucide-react";
 import { use } from "react";
+import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { StudentNotes } from "@/components/lms/student-notes";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
+import { Tag } from "@/components/tag";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { relativeTime } from "@/lib/format";
 import {
   loadGradesForStudent,
   loadLateDayBalance,
@@ -143,7 +144,7 @@ function StudentDetailPageContent({
         {seat ? (
           <p className="mt-1 text-sm text-muted-foreground">{seat.email}</p>
         ) : null}
-        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
           <Link
             href={`/u/${user}`}
             className="flex items-center gap-1 hover:text-foreground"
@@ -152,9 +153,7 @@ function StudentDetailPageContent({
           </Link>
           {seat && (
             <>
-              <span>·</span>
-              <StatusBadge status={seat.kind} />
-              <span>·</span>
+              <Tag>{seat.kind}</Tag>
               <StatusBadge status={seat.status} />
             </>
           )}
@@ -184,14 +183,19 @@ function StudentDetailPageContent({
                       className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted/50"
                     >
                       <div>
-                        <span className="font-medium">
-                          {assignmentTitles?.[s.assignment] ??
-                            s.assignment.slice(0, 8)}{" "}
-                          · Attempt #{s.number}
+                        <span className="flex flex-wrap items-baseline gap-x-3 font-medium">
+                          <span>
+                            {assignmentTitles?.[s.assignment] ??
+                              s.assignment.slice(0, 8)}
+                          </span>
+                          <span className="text-muted-foreground">
+                            Attempt #{s.number}
+                          </span>
                         </span>
-                        <span className="ml-2 block text-xs text-muted-foreground sm:inline">
-                          {relativeTime(s.submittedAt)} · Open evidence
-                        </span>
+                        <Facts className="text-muted-foreground text-xs">
+                          <Fact.When at={s.submittedAt} />
+                          <span>Open evidence</span>
+                        </Facts>
                       </div>
                       <StatusBadge status={s.status} />
                     </Link>

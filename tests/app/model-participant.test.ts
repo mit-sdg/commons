@@ -79,6 +79,8 @@ interface Wall {
   open: boolean;
   begun: number;
   handedIn: number;
+  begunByModel: number;
+  handedInByModel: number;
   cards: {
     card: string;
     value: string;
@@ -141,7 +143,7 @@ describe("the model participant and the wall", () => {
     expect(typeof round).toBe("string");
 
     const invited = await json(
-      await post(edge, "/live/relays/invite", { run, device: "seat-1" }, cookie),
+      await post(edge, "/live/runs/invite", { run, device: "seat-1" }, cookie),
     );
     expect(invited.participant).toBe("seat-1");
     const [seated] = await until(
@@ -178,6 +180,9 @@ describe("the model participant and the wall", () => {
     expect(handedIn.title).toBe("What would help");
     expect(handedIn.open).toBe(true);
     expect(handedIn.begun).toBe(1);
+    // The one response is the seat's, so the room's figure is nought.
+    expect(handedIn.begunByModel).toBe(1);
+    expect(handedIn.handedInByModel).toBe(1);
     expect(handedIn.cards.length).toBe(2);
     expect(handedIn.cards.map((card) => card.part)).toEqual(["First", "Second"]);
     expect(handedIn.cards.every((card) => card.model)).toBe(true);
@@ -335,7 +340,7 @@ describe("the model participant and the wall", () => {
 
     // A seat taken before any round opens waits for the first.
     const first = await json(
-      await post(edge, "/live/relays/invite", { run, device: "seat-a" }, cookie),
+      await post(edge, "/live/runs/invite", { run, device: "seat-a" }, cookie),
     );
     expect(first.participant).toBe("seat-a");
     expect((await readRun()).seats.length).toBe(1);
@@ -344,8 +349,8 @@ describe("the model participant and the wall", () => {
       await post(edge, "/live/relays/open-round", { run, leg: legs[0] }, cookie),
     );
     const roundOne = opened.round as string;
-    await post(edge, "/live/relays/invite", { run, device: "seat-b" }, cookie);
-    await post(edge, "/live/relays/invite", { run, device: "seat-c" }, cookie);
+    await post(edge, "/live/runs/invite", { run, device: "seat-b" }, cookie);
+    await post(edge, "/live/runs/invite", { run, device: "seat-c" }, cookie);
     expect((await readRun()).seats.length).toBe(3);
     expect(await playRound(roundOne, 3)).toBe(3);
     const afterOne = await readRun();
@@ -361,7 +366,7 @@ describe("the model participant and the wall", () => {
     expect((await readRun()).seats.length).toBe(3);
 
     // A dismissed seat is reached by no later round; dismissing every seat empties the run.
-    await post(edge, "/live/relays/dismiss", { run, participant: "seat-b" }, cookie);
+    await post(edge, "/live/runs/dismiss", { run, participant: "seat-b" }, cookie);
     expect((await readRun()).seats.length).toBe(2);
     await post(edge, "/live/relays/close-round", { round: roundTwo }, cookie);
     const third = await json(
@@ -374,24 +379,24 @@ describe("the model participant and the wall", () => {
     // Dismissing every seat is one request per seat, as inviting is; the dismissed keep their cards.
     for (const seat of (await readRun()).seats) {
       expect(
-        (await post(edge, "/live/relays/dismiss", { run, participant: seat.participant }, cookie))
+        (await post(edge, "/live/runs/dismiss", { run, participant: seat.participant }, cookie))
           .status,
       ).toBe(200);
     }
     expect((await readRun()).seats.length).toBe(0);
     expect(
-      (await post(edge, "/live/relays/dismiss", { run, participant: "seat-b" }, cookie)).status,
+      (await post(edge, "/live/runs/dismiss", { run, participant: "seat-b" }, cookie)).status,
     ).toBe(200);
     expect(
-      (await json(await post(edge, "/live/relays/dismiss", { run, participant: "nobody" }, cookie)))
+      (await json(await post(edge, "/live/runs/dismiss", { run, participant: "nobody" }, cookie)))
         .error,
     ).toBe("NOT_FOUND");
 
     // A closed run seats nobody.
     await post(edge, "/live/relays/close", { run }, cookie);
-    expect(
-      (await post(edge, "/live/relays/invite", { run, device: "seat-d" }, cookie)).status,
-    ).toBe(409);
+    expect((await post(edge, "/live/runs/invite", { run, device: "seat-d" }, cookie)).status).toBe(
+      409,
+    );
   }, 90_000);
 
   test("a reply that places nothing new settles the insistence and is not stood upon", async () => {

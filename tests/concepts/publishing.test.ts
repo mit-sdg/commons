@@ -49,6 +49,44 @@ for (const [floor, make] of floors) {
       ]);
     });
 
+    test("concurrent publishers create only one live edition", async () => {
+      const publishing = await make();
+      const results = await Promise.allSettled(
+        Array.from({ length: 12 }, () =>
+          publishing.publish({ author: "lee", material: "quiz-1", at: opened }),
+        ),
+      );
+      expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+      for (const result of results) {
+        if (result.status === "rejected")
+          expect(result.reason).toBeInstanceOf(refusalErrors.MaterialAlreadyShared);
+      }
+      expect(await publishing._editionsFor({ material: "quiz-1" })).toHaveLength(1);
+    });
+
+    test("concurrent closes succeed once and retain that closing time", async () => {
+      const publishing = await make();
+      const { edition } = await publishing.publish({
+        author: "lee",
+        material: "quiz-1",
+        at: opened,
+      });
+      const times = Array.from({ length: 12 }, (_, index) => new Date(closed.getTime() + index));
+      const results = await Promise.allSettled(
+        times.map((at) => publishing.close({ edition, at })),
+      );
+      expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+      for (const result of results) {
+        if (result.status === "rejected")
+          expect(result.reason).toBeInstanceOf(refusalErrors.AlreadyClosed);
+      }
+      const winner = results.findIndex((result) => result.status === "fulfilled");
+      expect((await publishing._edition({ edition }))[0].closedAt).toEqual(times[winner]);
+      // Refusals must not poison later publication.
+      await publishing.publish({ author: "lee", material: "quiz-1", at: closed });
+      expect(await publishing._openEditions()).toHaveLength(1);
+    });
+
     test("close records the closing time and frees the material for a later edition", async () => {
       const publishing = await make();
       const first = await publishing.publish({ author: "lee", material: "quiz-1", at: opened });

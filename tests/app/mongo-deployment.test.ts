@@ -1,11 +1,34 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { cpSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { createServer } from "node:net";
-import { afterEach, describe, expect, test } from "vite-plus/test";
+import { tmpdir } from "node:os";
+import { basename, join } from "node:path";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "vite-plus/test";
 import { MongoClient } from "mongodb";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { constructConceptFloor } from "../../src/assembly/concept-floor.ts";
 
-const root = `${import.meta.dirname}/../..`;
+const checkout = join(import.meta.dirname, "../..");
+let root: string;
+
+beforeAll(() => {
+  // A different port does not isolate Next's on-disk cache or dev-server
+  // lock. Exercise the real scripts in a disposable checkout, without .env.
+  root = mkdtempSync(join(tmpdir(), "commons-deployment-"));
+  for (const entry of ["src", "scripts", "design", "generated", "package.json", "tsconfig.json"])
+    cpSync(join(checkout, entry), join(root, entry), { recursive: true });
+  cpSync(join(checkout, "frontend"), join(root, "frontend"), {
+    recursive: true,
+    filter: (path) =>
+      !["node_modules", ".next"].includes(basename(path)) && !basename(path).startsWith(".env"),
+  });
+  for (const entry of ["node_modules", "frontend/node_modules"])
+    symlinkSync(join(checkout, entry), join(root, entry), "dir");
+});
+
+afterAll(() => {
+  if (root !== undefined) rmSync(root, { recursive: true, force: true });
+});
 interface RunningChild {
   child: ChildProcessWithoutNullStreams;
   exited: Promise<number>;

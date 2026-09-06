@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { afterAll, describe, expect, test, vi } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/responding/errors.ts";
 import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoRespondingConcept } from "../../src/concepts/responding/responding.mongo.ts";
@@ -15,6 +15,120 @@ for (const [floor, make] of floors) {
   describe(`Responding ${floor}`, () => {
     const at = new Date("2026-03-03T09:00:00Z");
     const later = new Date("2026-03-03T09:30:00Z");
+
+    test("simultaneous reconnects rejoin one response", async () => {
+      const responding = await make();
+      const begun = await Promise.all(
+        Array.from({ length: 12 }, () =>
+          responding.begin({ participant: "phone", subject: "round", at }),
+        ),
+      );
+      expect(new Set(begun.map((entry) => entry.response)).size).toBe(1);
+      expect(await responding._responsesFor({ subject: "round" })).toHaveLength(1);
+    });
+
+    test("simultaneous hand-ins accept exactly one submission", async () => {
+      const responding = await make();
+      const { response } = await responding.begin({ participant: "phone", subject: "round", at });
+      await responding.answer({ response, item: "question", value: "A frustration" });
+      const submissions = await Promise.allSettled(
+        Array.from({ length: 12 }, () => responding.submit({ response, at: later })),
+      );
+      expect(submissions.filter((entry) => entry.status === "fulfilled")).toHaveLength(1);
+      for (const entry of submissions) {
+        if (entry.status === "rejected")
+          expect(entry.reason).toBeInstanceOf(refusalErrors.AlreadySubmitted);
+      }
+    });
+
+    test("simultaneous saves keep one answer for an item", async () => {
+      const responding = await make();
+      const { response } = await responding.begin({ participant: "phone", subject: "round", at });
+      await Promise.all(
+        Array.from({ length: 12 }, (_, index) =>
+          responding.answer({
+            response,
+            item: "question",
+            value: `Revision ${index}`,
+          }),
+        ),
+      );
+      expect(await responding._answers({ response })).toHaveLength(1);
+    });
+
+    test("an answer delayed until after hand-in cannot rewrite the fixed response", async () => {
+      const db = await testDb();
+      const responses = db.collection("responding.responses");
+      const answers = db.collection("responding.answers");
+      const collection = db.collection.bind(db);
+      vi.spyOn(db, "collection").mockImplementation((name, options) => {
+        if (name === "responding.responses") return responses;
+        if (name === "responding.answers") return answers;
+        return collection(name, options);
+      });
+      const responding = new MongoRespondingConcept(db);
+      const { response } = await responding.begin({ participant: "phone", subject: "round", at });
+      await responding.answer({ response, item: "question", value: "Original" });
+      let release!: () => void;
+      let entered!: () => void;
+      const delayed = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const dispatched = new Promise<void>((resolve) => {
+        entered = resolve;
+      });
+      const updateResponse = responses.updateOne.bind(responses);
+      const updateAnswer = answers.updateOne.bind(answers);
+      // Delay only the save's database write. This also reproduces the old
+      // separate-answer-store race, after it already read InProgress.
+      vi.spyOn(responses, "updateOne").mockImplementation(async (...args) => {
+        if (Array.isArray(args[1])) {
+          entered();
+          await delayed;
+        }
+        return updateResponse(...args);
+      });
+      vi.spyOn(answers, "updateOne").mockImplementation(async (...args) => {
+        entered();
+        await delayed;
+        return updateAnswer(...args);
+      });
+      const saving = responding.answer({ response, item: "question", value: "Late revision" });
+      await dispatched;
+      await responding.submit({ response, at: later });
+      expect(await responding._answers({ response })).toEqual([
+        { item: "question", value: "Original" },
+      ]);
+      const refused = expect(saving).rejects.toBeInstanceOf(refusalErrors.AlreadySubmitted);
+      release();
+      await refused;
+      expect(await responding._answers({ response })).toEqual([
+        { item: "question", value: "Original" },
+      ]);
+    });
+
+    test("concurrent different answers retain each item once and values beginning with dollar signs", async () => {
+      const responding = await make();
+      const { response } = await responding.begin({ participant: "phone", subject: "round", at });
+      await Promise.all(
+        Array.from({ length: 12 }, (_, index) =>
+          responding.answer({
+            response,
+            item: `$question-${index}`,
+            value: `$value-${index}`,
+          }),
+        ),
+      );
+      const before = await responding._answers({ response });
+      expect(before).toHaveLength(12);
+      expect(new Set(before.map((answer) => answer.item)).size).toBe(12);
+      for (const answer of before)
+        expect(answer.value).toBe(answer.item.replace("question", "value"));
+      await responding.answer({ response, item: before[0].item, value: "$revised" });
+      const after = await responding._answers({ response });
+      expect(after.map((answer) => answer.item)).toEqual(before.map((answer) => answer.item));
+      expect(after[0].value).toBe("$revised");
+    });
 
     test("begin records the subject, participant, and start, unsubmitted", async () => {
       const responding = await make();

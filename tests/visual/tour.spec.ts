@@ -162,6 +162,16 @@ for (const theme of THEMES) {
       source: first.leg,
       use: "choices",
     });
+    // The background the drafter reads: one document on the class, one on the relay.
+    await call(page, "/live/drafts/give-document", {
+      title: "Course outline",
+      body: "Week 1 to 4: what a bookmark is for. Week 5 to 8: what a stranger sees. Short answers, plain words, no jargon.",
+    });
+    await call(page, "/live/drafts/give-document", {
+      relay: planned.relay,
+      title: "Verbs handout",
+      body: "The three verbs are chosen for what they do, not for how they sound. Keep them concrete.",
+    });
 
     // The shelf, and what New offers.
     await page.goto("/staff/live");
@@ -187,6 +197,18 @@ for (const theme of THEMES) {
     await page.getByRole("textbox", { name: "Title" }).nth(2).click();
     await expect(page.getByText("Three verbs a bookmark needs.").first()).toBeVisible();
     await snap(page, "RelayEditor", STAFF);
+    await desk(page);
+    await expect(page.getByRole("heading", { name: "Background" })).toBeVisible();
+    await expect(page.getByText("Verbs handout")).toBeVisible();
+    await page.getByRole("button", { name: "Add document" }).click();
+    await expect(page.getByRole("textbox", { name: "Name" })).toBeVisible();
+    await snap(page, "RelayEditorBackground", [1440, 390]);
+    await desk(page);
+
+    // The class's own background, under Live.
+    await page.goto("/staff/live/background");
+    await expect(page.getByText("Course outline").first()).toBeVisible();
+    await snap(page, "ClassBackground", STAFF);
 
     // Drafting a relay with the model: the brief, and the lines it offers back.
     await desk(page);
@@ -223,6 +245,15 @@ for (const theme of THEMES) {
 
     // The run before any round opens, on all three screens.
     await snap(page, "RunBefore", STAFF);
+
+    // The shelf while the relay is live: the one row state the tour never saw,
+    // and the one a teacher is looking at in class. Its buttons differ from
+    // every other state's, so they are photographed here or nowhere.
+    await page.goto("/staff/live");
+    await expect(page.getByRole("link", { name: `Dashboard ${TITLE}` })).toBeVisible();
+    await snap(page, "ShelfLive", STAFF);
+    await desk(page);
+    await page.goto(`/staff/live/run/${run}`);
 
     const projector = await browser.newPage();
     await projector.emulateMedia({ reducedMotion: "reduce" });
@@ -442,7 +473,7 @@ for (const theme of THEMES) {
     await page.goto(`/staff/live/relay/${planned.relay}`);
     await page.getByRole("button", { name: "Retire" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Retire", exact: true }).click();
-    await expect(page.getByText("Retired", { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("retired", { exact: true })).toBeVisible({ timeout: 20_000 });
     await page.goto("/staff/live");
     await page.getByRole("button", { name: /^Show retired/ }).click();
     await expect(page.getByRole("link", { name: TITLE }).first()).toBeVisible();

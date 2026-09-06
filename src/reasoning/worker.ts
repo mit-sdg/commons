@@ -215,10 +215,26 @@ export async function serveOnePass(outbox: ReasonerOutbox, mind: Mind): Promise<
   return served;
 }
 
+/**
+ * With no reasoner configured, every ask fails the moment it is read, so a
+ * wall says the model is not answering rather than waiting on a reply that
+ * never comes, and the lock the ask holds is released.
+ */
+export function disabledMind(): Mind {
+  return async () => {
+    throw new Error("The reasoner is disabled.");
+  };
+}
+
+export function mindFor(configuration: ReasonerConfiguration | undefined): Mind {
+  if (configuration === undefined) return disabledMind();
+  return configuration.mode === "scripted" ? scriptedMind() : geminiMind(configuration);
+}
+
 export function startReasonerWorker(
   outbox: ReasonerOutbox,
-  configuration: ReasonerConfiguration,
-  mind: Mind = configuration.mode === "scripted" ? scriptedMind() : geminiMind(configuration),
+  configuration: ReasonerConfiguration | undefined,
+  mind: Mind = mindFor(configuration),
   intervalMs = 500,
 ) {
   let stopped = false;

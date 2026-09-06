@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Let someone stand on a request that came back unusable — saying what was wrong
-rather than accepting it, and stopping honestly once patience runs out — so a
-bad answer is neither taken nor chased forever.
+Let someone stand on a request that came back unusable, saying what was wrong rather than accepting it, and stop once the patience they gave themselves is spent.
+
+Prevents: an unusable answer accepted for want of a second try; a request chased past the number of tries its asker allowed; two people standing on the same request at once without knowing it.
 
 ## Principle
 
@@ -41,10 +41,9 @@ a Satisfied set of Insistences
 an Exhausted set of Insistences
 
 Rule: at most one unsettled insistence exists per aim, which is what makes addressing by aim unambiguous.
-Rule: patience counts complaints, so an aim is attempted at most patience times; the exhausting transition belongs to complain, and boundedness is guard-held.
-Rule: remaining is the patience less the complaints recorded, computed at reading rather than stored.
-Rule: insisting begins with the first complaint — there is nothing to stand on until something came back wrong — and a later complaint about the same aim joins the insistence already open, carrying its patience without changing it.
-Rule: _standingFor and _spentFor are the two halves of the bound as standing questions — exactly one of them answers for an aim being insisted on, so a complainer asks whichever it needs and never compares numbers itself.
+Rule: patience counts complaints, so an aim is complained about at most patience times, and a complaint past that is refused.
+Rule: remaining is the patience less the complaints made.
+Rule: insisting begins with the first complaint, since there is nothing to stand on until something came back wrong; a later complaint about the same aim joins the insistence already open and leaves its patience as it was.
 Rule: Insisting does not perform the next attempt, form what carries a complaint, or decide what counts as unusable; those belong to whoever is insisting.
 ```
 

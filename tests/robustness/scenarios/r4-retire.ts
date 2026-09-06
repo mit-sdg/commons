@@ -259,7 +259,7 @@ try {
         .getByRole("dialog")
         .getByRole("button", { name: "Retire", exact: true })
         .click();
-      await overview.getByText("Retired", { exact: true }).waitFor({ timeout: 20000 });
+      await overview.getByText("retired", { exact: true }).waitFor({ timeout: 20000 });
     },
     8000,
   );
@@ -576,7 +576,7 @@ try {
           .getByRole("dialog")
           .getByRole("button", { name: "Retire", exact: true })
           .click();
-        await sheet.getByText("Retired", { exact: true }).waitFor({ timeout: 20000 });
+        await sheet.getByText("retired", { exact: true }).waitFor({ timeout: 20000 });
       },
       8000,
     );
@@ -590,7 +590,7 @@ try {
     const retired = await host.call("/live/quizzes/retire", { questionnaire });
     if (retired.error) log.refused("retire the survey", "POST /live/quizzes/retire", retired);
     await sheet.reload();
-    await sheet.getByText("Retired", { exact: true }).waitFor({ timeout: 20000 });
+    await sheet.getByText("retired", { exact: true }).waitFor({ timeout: 20000 });
   }
   await sleep(1200);
   await snap(sheet, log, "SurveyRetired", STAFF);

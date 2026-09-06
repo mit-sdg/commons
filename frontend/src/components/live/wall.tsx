@@ -8,18 +8,22 @@ import {
   useReducedMotion,
 } from "motion/react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Facts } from "@/components/facts";
+import { Chips } from "@/components/live/chips";
 import { Flights, measure, useFlights } from "@/components/live/flights";
 import {
   Answer,
   Card,
+  type CardMoves,
   CarriesTo,
   Count,
   faceCards,
   NewPile,
   Pile,
 } from "@/components/live/pile";
-import { Figure, RoundToken } from "@/components/live/round-token";
+import { RoundToken } from "@/components/live/round-token";
 import {
   cardsIn,
   choicesOf,
@@ -31,6 +35,7 @@ import {
   type WallCard,
   type Wall as WallShape,
 } from "@/components/live/rounds";
+import { modelNote, roomFigure } from "@/components/live/run-board";
 import { Spread, SpreadButton, SpreadPanel } from "@/components/live/spread";
 import {
   dropped,
@@ -54,9 +59,46 @@ const CONTEXT_SHOWN = 3;
 /** How tall the wall's bottom row stands, which is the line the foot sits on. */
 const FOOT_ROW = { big: "h-[112px]", small: "h-[52px]" };
 
+/** How many of an answer's words the wall says back when its card moves. */
+const MOVE_WORDS = 6;
+
 /** The shelf's cards, oldest first: the tray as the shown wall has it. */
 export function shelfOf(cards: WallCard[]): WallCard[] {
   return cards.filter((card) => card.pile === null);
+}
+
+/**
+ * The three figures a wall gives the room, each of the room alone: who
+ * joined, who is still writing while the round is open, and who handed in.
+ */
+export function roomFigures(wall: {
+  open: boolean;
+  begun: number;
+  begunByModel: number;
+  handedIn: number;
+  handedInByModel: number;
+}): { joined: number; writing: number; handedIn: number } {
+  const joined = roomFigure(wall.begun, wall.begunByModel);
+  const handedIn = roomFigure(wall.handedIn, wall.handedInByModel);
+  return {
+    joined,
+    writing: wall.open ? Math.max(0, joined - handedIn) : 0,
+    handedIn,
+  };
+}
+
+/**
+ * A card as the wall says it back after a move: its first words, cut with a
+ * sign, so a reader who cannot see the card hears which one went.
+ */
+export function cardWords(value: string, most: number = MOVE_WORDS): string {
+  const words = value
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word !== "");
+  if (words.length === 0) return "a blank card";
+  const said = words.slice(0, most).join(" ");
+  return `“${said}${words.length > most ? "…" : ""}”`;
 }
 
 /**
@@ -91,7 +133,8 @@ export function slotted<Pile extends { pile: string; count: number }>(
 export interface WallEdits {
   moveCard: (card: string, pile: string) => void;
   toTray: (card: string) => void;
-  openPile: (card: string, name: string) => void;
+  /** Opens a pile by name: with a card, the card goes in it; with none, the pile opens empty. */
+  openPile: (card: string | null, name: string) => void;
   /** Tapping a pile toggles whether it carries into the next round. */
   togglePick?: (pile: string) => void;
   /** Tapping a choice nobody chose opens its empty pile and carries that. */
@@ -99,6 +142,8 @@ export interface WallEdits {
   renamePile?: (pile: string, name: string) => void;
   mergePile?: (pile: string, into: string) => void;
   summarize?: (pile: string) => void;
+  /** Writes a pile's sentence by hand, the way the model writes its lid. */
+  describePile?: (pile: string, description: string) => void;
   /** Takes a card off the wall for every screen; the hand-in behind it stays. */
   removeCard?: (card: string) => void;
 }
@@ -157,8 +202,14 @@ function StagedWall({
   edits,
   className,
 }: WallProps) {
-  const [naming, setNaming] = useState<string | null>(null);
+  // The pile being named, and the card it opens with, if a card opened it.
+  const [naming, setNaming] = useState<{ card: string | null } | null>(null);
   const [name, setName] = useState("");
+  // The last move, as the wall says it; the count is what makes a move said
+  // twice a second thing to read.
+  const [said, setSaid] = useState<{ words: string; count: number } | null>(
+    null,
+  );
   const [dragging, setDragging] = useState<string | null>(null);
   // The pile in focus, if one is: the rest of the wall gives way to its cards.
   const [spread, setSpread] = useState<string | null>(null);
@@ -184,6 +235,22 @@ function StagedWall({
     onMove,
   });
   const seen = shown ?? wall;
+  const say = useCallback(
+    (words: string) =>
+      setSaid((last) => ({ words, count: (last?.count ?? 0) + 1 })),
+    [],
+  );
+  // A move made from a menu takes its own control off the wall with it, so the
+  // wall itself is where the focus lands. The menu calls this once it has let
+  // go: while it is open its focus trap would pull the focus straight back.
+  const back = useCallback(
+    () => root.current?.focus({ preventScroll: true }),
+    [],
+  );
+  const nameOf = (pile: string) =>
+    seen.piles.find((one) => one.pile === pile)?.name ?? "";
+  const valueOf = (card: string) =>
+    seen.cards.find((one) => one.card === card)?.value ?? "";
 
   // A hand edit lands on the wall the hand is looking at as well as on the
   // server, so the snapshot that answers it has nothing left to play.
@@ -195,23 +262,39 @@ function StagedWall({
           moveCard: (card, pile) => {
             edit(placed(card, pile), card);
             edits.moveCard(card, pile);
+            say(`${cardWords(valueOf(card))} moved to ${nameOf(pile)}`);
           },
           toTray: (card) => {
             edit(placed(card, null));
             edits.toTray(card);
+            say(`${cardWords(valueOf(card))} back to the tray`);
           },
           // The new pile's identity is the server's to mint: the card leaves
           // the tray now and the snapshot brings the pile with it inside.
           openPile: (card, pileName) => {
-            edit(dropped(card));
+            if (card !== null) edit(dropped(card));
             edits.openPile(card, pileName);
+            say(
+              card === null
+                ? `${pileName} opened`
+                : `${cardWords(valueOf(card))} moved to ${pileName}`,
+            );
           },
           mergePile:
             edits.mergePile === undefined
               ? undefined
               : (pile, into) => {
+                  const folded = nameOf(pile);
                   edit(merged(pile, into));
                   edits.mergePile?.(pile, into);
+                  say(`${folded} merged into ${nameOf(into)}`);
+                },
+          describePile:
+            edits.describePile === undefined
+              ? undefined
+              : (pile, description) => {
+                  edits.describePile?.(pile, description);
+                  say(`${nameOf(pile)} described`);
                 },
           // The card leaves now; the next snapshot has it gone.
           removeCard:
@@ -236,12 +319,20 @@ function StagedWall({
   const removable = canRemove ? askToRemove : undefined;
 
   const shelf = shelfOf(seen.cards);
+  // The belt can place the card in the hand before it is dropped; the chip
+  // leaves the shelf and `dragend` never fires, so a drag counts only while
+  // its card is still on the shelf.
+  const inFlight =
+    dragging !== null && shelf.some((card) => card.card === dragging)
+      ? dragging
+      : null;
   const piles = useSlots(seen.piles, seen.open);
   const spreading = piles.find((pile) => pile.pile === spread) ?? null;
   const context = questionOf(seen)?.context ?? [];
   // How many carried groups stand whole, and whether the row is still cut.
   const { ref: strip, fit: whole, over: cut } = useStrip(context.length);
-  const writing = seen.open ? Math.max(0, seen.begun - seen.handedIn) : 0;
+  const room = roomFigures(seen);
+  const seats = big || phone ? null : modelNote(seen.handedInByModel);
   const vote = choicesOf(seen).length > 0;
   /** The round this wall's carried groups and choices came out of. */
   const from = sourceWall?.number ?? null;
@@ -250,33 +341,55 @@ function StagedWall({
   // The shelf stands under the question while a round is open; once the round
   // has closed and nothing is unsorted the piles take the wall. The phone
   // counts the tray on its own page instead.
-  const shelfShown = !phone && (shelf.length > 0 || writing > 0 || seen.open);
+  const shelfShown =
+    !phone && (shelf.length > 0 || room.writing > 0 || seen.open);
   // A projector with a third row of piles keeps every pile on screen, smaller.
   const dense = big && piles.length > 8;
+  // The dashboard is the wall a hand sorts: the projector is the room's read
+  // and the phone is the participant's own wall, so neither carries a menu.
+  const sortable = !big && !phone;
+  const moves: CardMoves | undefined =
+    hand === undefined || !sortable
+      ? undefined
+      : {
+          piles: piles.map((one) => ({ pile: one.pile, name: one.name })),
+          moveCard: (card, pile) => hand.moveCard(card, pile),
+          toTray: (card) => hand.toTray(card),
+          newPile: openPile,
+          settle: back,
+        };
 
-  function openPile(card: string) {
-    setNaming(card);
+  function openPile(card: string | null) {
+    setSpread(null);
+    setNaming({ card });
     setName("");
   }
 
   function commitPile() {
     if (naming === null || hand === undefined) return;
     const trimmed = name.trim();
-    if (trimmed !== "") hand.openPile(naming, trimmed);
+    const card = naming.card;
     setNaming(null);
+    if (trimmed !== "") hand.openPile(card, trimmed);
   }
 
   const shelfRow = (
     <Shelf
       cards={shelf}
-      writing={writing}
       big={big}
       bottom={shelfAt === "bottom"}
-      dragging={dragging}
+      dragging={inFlight}
       onDragStart={canDrag ? (one) => setDragging(one) : undefined}
       onDragEnd={canDrag ? () => setDragging(null) : undefined}
-      onDrop={editable ? (card) => hand.toTray(card) : undefined}
-      onRemove={removable}
+      onDrop={
+        editable
+          ? (card) => {
+              setDragging(null);
+              hand.toTray(card);
+            }
+          : undefined
+      }
+      moves={moves}
     />
   );
 
@@ -365,47 +478,13 @@ function StagedWall({
                       </span>
                     )}
                     <>
-                      {context.slice(0, whole).map((group) => {
-                        const values = distinctValues(group.cards);
-                        const held = values.length - CONTEXT_SHOWN;
-                        return (
-                          <div
-                            key={group.name}
-                            data-group
-                            className={cn(
-                              "flex min-w-0 flex-none flex-col gap-0.5 rounded-lg border border-border bg-card",
-                              big
-                                ? "max-w-[360px] px-4 py-2"
-                                : "max-w-[240px] px-3 py-1.5",
-                            )}
-                          >
-                            <span
-                              dir="auto"
-                              className={cn(
-                                "truncate font-medium",
-                                big ? "text-xl" : "text-sm",
-                              )}
-                            >
-                              {group.name}
-                            </span>
-                            <span
-                              className={cn(
-                                "flex min-w-0 items-baseline gap-1.5 text-muted-foreground",
-                                big ? "text-lg" : "text-xs",
-                              )}
-                            >
-                              <span dir="auto" className="truncate">
-                                {values.slice(0, CONTEXT_SHOWN).join(" · ")}
-                              </span>
-                              {held <= 0 ? null : (
-                                <span className="flex-none">
-                                  and {held} more
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        );
-                      })}
+                      {context.slice(0, whole).map((group) => (
+                        <CarriedGroup
+                          key={group.name}
+                          group={group}
+                          big={big}
+                        />
+                      ))}
                       {context.length - whole <= 0 ? null : (
                         <div
                           data-more
@@ -430,28 +509,29 @@ function StagedWall({
                   {promptOf(seen)}
                 </p>
               </div>
-              {/* The one figure the room reads, with the noun it counts.
-                  It is read whole when it moves, never a number on its own. */}
-              <span
+              {/* The room's figures are read whole when they move, never one
+                  number on its own. */}
+              <div
                 role="status"
                 aria-live="polite"
                 aria-atomic="true"
                 className="flex flex-none flex-col gap-1.5"
               >
-                <Figure
-                  value={seen.handedIn}
-                  of={seen.begun}
-                  size={big ? "lg" : "md"}
-                />
-                <span
-                  className={cn(
-                    "text-muted-foreground leading-none",
-                    big ? "text-xl" : "text-sm",
-                  )}
-                >
-                  handed in
-                </span>
-              </span>
+                <Facts className={cn(big && "flex-nowrap gap-x-8")}>
+                  <RoomFigure value={room.joined} noun="joined" big={big} />
+                  <RoomFigure value={room.writing} noun="writing" big={big} />
+                  <RoomFigure
+                    value={room.handedIn}
+                    noun="handed in"
+                    big={big}
+                  />
+                </Facts>
+                {seats === null ? null : (
+                  <span className="text-muted-foreground text-xs leading-none">
+                    {seats}
+                  </span>
+                )}
+              </div>
             </header>
           )}
 
@@ -499,6 +579,7 @@ function StagedWall({
                               if (removing === null) setSpread(null);
                             }}
                             onRemove={removable}
+                            moves={moves}
                             className={className}
                           />
                         )
@@ -531,7 +612,10 @@ function StagedWall({
                             landed={landed}
                             onDrop={
                               editable
-                                ? (card) => hand.moveCard(card, pile.pile)
+                                ? (card) => {
+                                    setDragging(null);
+                                    hand.moveCard(card, pile.pile);
+                                  }
                                 : undefined
                             }
                             onTap={
@@ -556,11 +640,24 @@ function StagedWall({
                                     hand.mergePile?.(folded, pile.pile)
                                 : undefined
                             }
+                            onMergeInto={
+                              sortable && hand?.mergePile !== undefined
+                                ? (into) => hand.mergePile?.(pile.pile, into)
+                                : undefined
+                            }
+                            onDescribe={
+                              sortable && hand?.describePile !== undefined
+                                ? (description) =>
+                                    hand.describePile?.(pile.pile, description)
+                                : undefined
+                            }
                             onSummarize={
                               hand?.summarize === undefined
                                 ? undefined
                                 : () => hand.summarize?.(pile.pile)
                             }
+                            piles={moves?.piles}
+                            moves={moves}
                             phone={phone}
                           />
                         );
@@ -572,10 +669,16 @@ function StagedWall({
                             key="new-pile"
                             big={big}
                             phone={phone}
-                            onDrop={openPile}
-                            naming={
-                              seen.cards.find((one) => one.card === naming) ??
-                              null
+                            onDrop={(card) => {
+                              setDragging(null);
+                              openPile(card);
+                            }}
+                            onOpen={sortable ? () => openPile(null) : undefined}
+                            naming={naming !== null}
+                            card={
+                              seen.cards.find(
+                                (one) => one.card === naming?.card,
+                              ) ?? null
                             }
                             name={name}
                             onName={setName}
@@ -614,6 +717,28 @@ function StagedWall({
             </div>
           ) : null}
 
+          {/* What the hand just did, for a reader who cannot watch the card
+              cross the wall. */}
+          {!editable ? null : (
+            <span role="status" aria-live="polite" className="sr-only">
+              {said === null ? null : (
+                <span key={said.count}>{said.words}</span>
+              )}
+            </span>
+          )}
+
+          {!trashShown(inFlight, canRemove) ? null : (
+            <Trash
+              wall={root}
+              big={big}
+              onDrop={(id) => {
+                setDragging(null);
+                const card = seen.cards.find((one) => one.card === id);
+                if (card !== undefined) askToRemove(card);
+              }}
+            />
+          )}
+
           {!canRemove ? null : (
             <ConfirmAction
               open={removing !== null}
@@ -651,27 +776,102 @@ function StagedWall({
   );
 }
 
+/** Whether the wall stands a trash: a card is in the air and a hand can remove it. */
+export function trashShown(dragging: string | null, canRemove: boolean) {
+  return dragging !== null && canRemove;
+}
+
+/**
+ * The trash: while a card is in the air, a strip across the foot of the wall's
+ * column that takes it. A card dropped on it is asked about before it goes.
+ */
+function Trash({
+  wall,
+  big,
+  onDrop,
+}: {
+  wall: React.RefObject<HTMLElement | null>;
+  big: boolean;
+  onDrop: (card: string) => void;
+}) {
+  const [over, setOver] = useState(false);
+
+  return createPortal(
+    <div
+      ref={(node) => {
+        const box = wall.current?.getBoundingClientRect();
+        if (node === null || box === undefined) return;
+        node.style.left = `${box.left}px`;
+        node.style.width = `${box.width}px`;
+      }}
+      data-trash-target
+      onDragOver={(event) => {
+        event.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setOver(false);
+        const card = event.dataTransfer.getData("text/plain");
+        if (card !== "") onDrop(card);
+      }}
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-40 flex items-center justify-center rounded-t-xl border border-border border-b-0 bg-card text-muted-foreground",
+        big ? `${FOOT_ROW.big} text-xl` : `${FOOT_ROW.small} text-sm`,
+        over &&
+          "border-primary/70 text-foreground shadow-[0_0_0_3px_var(--primary)]",
+      )}
+    >
+      Remove
+    </div>,
+    document.body,
+  );
+}
+
+/** One figure of the room: the number, with the noun it counts beside it. */
+function RoomFigure({
+  value,
+  noun,
+  big,
+}: {
+  value: number;
+  noun: string;
+  big: boolean;
+}) {
+  return (
+    <span className="flex items-baseline gap-2 whitespace-nowrap">
+      <span
+        className={cn(
+          "font-display font-semibold leading-none tabular-nums",
+          big ? "text-[56px]" : "text-3xl",
+        )}
+      >
+        {value}
+      </span>
+      <span className={big ? "text-xl" : "text-sm"}>{noun}</span>
+    </span>
+  );
+}
+
 /**
  * The shelf: one row, one card tall — two lines tall on a projector, where an
  * answer is read from the back of the room. The count of everything unsorted
- * at the left with one chip beside it for the answers still being written,
- * and the newest cards at the right with the oldest clipped under the fade. A card dropped
- * on the shelf goes back to the tray. A card that flies to a pile leaves the
+ * at the left, and the newest cards at the right with the oldest clipped
+ * under the fade. A card dropped on the shelf goes back to the tray. A card that flies to a pile leaves the
  * row at once, and the row closes over its place as the card goes.
  */
 function Shelf({
   cards,
-  writing,
   big,
   bottom = false,
   dragging,
   onDragStart,
   onDragEnd,
   onDrop,
-  onRemove,
+  moves,
 }: {
   cards: WallCard[];
-  writing: number;
   big: boolean;
   /** The shelf stands in the bottom row, so its rule is above it. */
   bottom?: boolean;
@@ -679,7 +879,8 @@ function Shelf({
   onDragStart?: (card: string) => void;
   onDragEnd?: () => void;
   onDrop?: (card: string) => void;
-  onRemove?: (card: WallCard) => void;
+  /** Where a hand sends a card without dragging it; only a dashboard offers it. */
+  moves?: CardMoves;
 }) {
   const editable = onDrop !== undefined;
   // How many cards the row stands, and how wide the fade over the cut one runs.
@@ -720,16 +921,6 @@ function Shelf({
           )}
         />{" "}
         unsorted
-        {writing === 0 ? null : (
-          <span
-            className={cn(
-              "self-center whitespace-nowrap rounded-full border border-input border-dashed font-mono text-muted-foreground",
-              big ? "px-[18px] py-2 text-xl" : "px-2.5 py-1 text-xs",
-            )}
-          >
-            {writing} writing
-          </span>
-        )}
       </span>
       {/* The row fills from the right, so the newest card is always in the
           same place and what the row cannot hold falls off its left edge. */}
@@ -765,9 +956,7 @@ function Shelf({
               draggable={onDragStart !== undefined}
               onDragStart={(one) => onDragStart?.(one.card)}
               onDragEnd={onDragEnd}
-              onRemove={
-                onRemove === undefined ? undefined : () => onRemove(card)
-              }
+              moves={moves}
             />
           </span>
         ))}
@@ -910,6 +1099,59 @@ function useShelfRoom(
   return { ref, shown: room.shown, fade: room.fade };
 }
 
+/**
+ * One group carried in from an earlier round: its name over the first of its
+ * cards as chips, every chip whole, and a count of the ones the box held back.
+ */
+function CarriedGroup({
+  group,
+  big,
+}: {
+  group: { name: string; cards: string[] };
+  big: boolean;
+}) {
+  const values = distinctValues(group.cards);
+  const shown = Math.min(CONTEXT_SHOWN, values.length);
+  const { ref, fit } = useStrip(shown, "[data-chip]");
+  const held = values.length - fit;
+  return (
+    <div
+      data-group
+      className={cn(
+        "flex min-w-0 flex-none flex-col gap-0.5 rounded-lg border border-border bg-card",
+        big ? "max-w-[360px] px-4 py-2" : "max-w-[240px] px-3 py-1.5",
+      )}
+    >
+      <span
+        dir="auto"
+        className={cn("truncate font-medium", big ? "text-xl" : "text-sm")}
+      >
+        {group.name}
+      </span>
+      <span
+        ref={ref}
+        className={cn(
+          "flex min-w-0 items-baseline gap-1.5 overflow-hidden text-muted-foreground",
+          big ? "text-lg" : "text-xs",
+        )}
+      >
+        <Chips
+          values={values.slice(0, fit)}
+          className={cn(
+            "min-w-0 flex-nowrap overflow-hidden",
+            big ? "text-lg" : "text-xs",
+          )}
+        />
+        {held <= 0 ? null : (
+          <span data-more className="flex-none">
+            and {held} more
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
 /** The room the strip keeps for the chip that counts the groups it held back. */
 const MORE_ROOM = 200;
 
@@ -919,7 +1161,10 @@ const MORE_ROOM = 200;
  * the count of the rest; `over` is whether what it shows still holds past its
  * box, which is the one case the fade is for.
  */
-function useStrip(count: number): {
+function useStrip(
+  count: number,
+  item = "[data-group]",
+): {
   ref: React.RefObject<HTMLDivElement | null>;
   fit: number;
   over: boolean;
@@ -937,7 +1182,7 @@ function useStrip(count: number): {
     if (box === null) return;
     const read = () => {
       const here = box.getBoundingClientRect();
-      const chips = [...box.querySelectorAll<HTMLElement>("[data-group]")];
+      const chips = [...box.querySelectorAll<HTMLElement>(item)];
       if (chips.length === count) {
         edges.current = chips.map(
           (chip) => chip.getBoundingClientRect().right - here.left,

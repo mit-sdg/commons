@@ -24,7 +24,7 @@ export default function JoinPage() {
         setMessage("No room has that code.");
         return;
       }
-      router.push(`/q/${result.token}`);
+      router.push(`/q/${result.token}?by=code`);
     } catch {
       setMessage("No connection. Try again.");
     } finally {

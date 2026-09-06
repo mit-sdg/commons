@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, X } from "lucide-react";
+import { Chips } from "@/components/live/chips";
 import { ActButton } from "@/components/live/round-editor";
 import {
   RoundToken,
@@ -17,7 +18,15 @@ type Round = NonNullable<Output<"/live/relays/get">["relay"]>["rounds"][number];
 /** What a proposal reads off the round it is about. */
 type Stands = Pick<
   Round,
-  "number" | "title" | "prompt" | "parts" | "cap" | "choices" | "takes"
+  | "number"
+  | "title"
+  | "prompt"
+  | "parts"
+  | "cap"
+  | "choices"
+  | "takes"
+  | "piles"
+  | "notes"
 >;
 
 /** The word a proposal stands under: the field it touches, as the card names it. */
@@ -29,7 +38,13 @@ const FIELD: Record<string, string> = {
   takes: "Takes from",
   move: "Move to",
   remove: "Remove",
+  pile: "Add pile",
+  unpile: "Remove pile",
+  notes: "Notes",
 };
+
+/** The word for a pile whose name already stands: only its sentence changes. */
+const DESCRIBE = "Describe pile";
 
 /**
  * A card whose round a proposal would remove: everything under the strip at its
@@ -70,11 +85,28 @@ function strings(value: unknown): string[] {
     : [];
 }
 
+/** The piles an added round carries, each a name and the sentence under it. */
+function piles(value: unknown): { name: string; sentence: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(record)
+    .map((pile) => ({
+      name: typeof pile.name === "string" ? pile.name : "",
+      sentence: typeof pile.sentence === "string" ? pile.sentence : "",
+    }))
+    .filter((pile) => pile.name !== "");
+}
+
+/** One pile in words: its name, and the sentence that says what goes in it. */
+export function pileWords(name: string, sentence: string): string {
+  return sentence === "" ? name : `${name}: ${sentence}`;
+}
+
 /** The boxes a round holds, in words: one label repeated, or the labels in a row. */
 export function partWords(parts: string[], cap: number): string {
   if (parts.length === 0) return "";
   if (cap > 0) return `${parts[0]}, up to ${cap}`;
-  return parts.join(" · ");
+  return parts.join(", ");
 }
 
 /** What a round takes, in words, and `nothing` for a round that takes none. */
@@ -93,10 +125,31 @@ export function addedRound(value: string) {
     parts: strings(drafted.parts),
     cap: typeof drafted.cap === "number" ? drafted.cap : 0,
     choices: strings(drafted.choices),
+    piles: piles(drafted.piles),
+    notes: typeof drafted.notes === "string" ? drafted.notes : "",
     from: typeof takes.from === "number" ? takes.from : 0,
     use: typeof takes.use === "string" ? takes.use : "",
     position: typeof drafted.position === "number" ? drafted.position : 0,
   };
+}
+
+/**
+ * A side of a proposed change: a phrase, or a list of like things that is
+ * read as chips because one of its values may itself hold a comma.
+ */
+export type Said = string | string[];
+
+/** Whether a side says nothing at all, so the row shows one value, not a struck blank. */
+function saidNothing(said: Said): boolean {
+  return Array.isArray(said) ? said.length === 0 : said === "";
+}
+
+/** Whether two sides say the same, so a change that changes nothing shows once. */
+function saidSame(was: Said, to: Said): boolean {
+  if (Array.isArray(was) !== Array.isArray(to)) return false;
+  return Array.isArray(was) && Array.isArray(to)
+    ? was.length === to.length && was.every((word, i) => word === to[i])
+    : was === to;
 }
 
 /**
@@ -107,7 +160,7 @@ export function addedRound(value: string) {
 export function changeWords(
   line: { kind: string; value: string },
   round: Stands | null,
-): { field: string; was: string; to: string } {
+): { field: string; was: Said; to: Said } {
   const field = FIELD[line.kind] ?? line.kind;
   if (line.kind === "remove") {
     return { field, was: round?.title ?? "", to: "" };
@@ -132,12 +185,30 @@ export function changeWords(
     };
   }
   if (line.kind === "choices") {
-    const to = strings(readJson(line.value)).join(" · ");
+    const to = strings(readJson(line.value));
     return {
       field,
-      was: round?.choices.join(" · ") ?? "",
-      to: to === "" ? "nothing" : to,
+      was: round?.choices ?? [],
+      to: to.length === 0 ? "nothing" : to,
     };
+  }
+  if (line.kind === "pile") {
+    const drafted = record(readJson(line.value));
+    const name = typeof drafted.name === "string" ? drafted.name : "";
+    const sentence =
+      typeof drafted.sentence === "string" ? drafted.sentence : "";
+    const stands = round?.piles.find((pile) => pile.name === name) ?? null;
+    return {
+      field: stands === null ? field : DESCRIBE,
+      was: stands === null ? "" : pileWords(name, stands.description),
+      to: pileWords(name, sentence),
+    };
+  }
+  if (line.kind === "unpile") {
+    return { field, was: line.value, to: "" };
+  }
+  if (line.kind === "notes") {
+    return { field, was: round?.notes ?? "", to: line.value };
   }
   if (line.kind === "takes") {
     const drafted = record(readJson(line.value));
@@ -199,6 +270,14 @@ function Settle({
   );
 }
 
+/** One side of a change: a phrase, or a list of like things as chips. */
+function Side({ said, struck = false }: { said: Said; struck?: boolean }) {
+  if (Array.isArray(said))
+    return <Chips values={said} className="min-w-0 text-sm" struck={struck} />;
+  if (struck) return <s className="min-w-0 text-muted-foreground">{said}</s>;
+  return <span className="min-w-0">{said}</span>;
+}
+
 /**
  * One proposal, said in a row: the field, what stands there struck through, and
  * what it would read, with the pair that settles it.
@@ -215,8 +294,8 @@ export function ProposalRow({
   onRefuse,
 }: {
   field: string;
-  was: string;
-  to: string;
+  was: Said;
+  to: Said;
   words: string;
   busy: boolean;
   refusal: string | null;
@@ -224,6 +303,9 @@ export function ProposalRow({
   onAccept: () => void;
   onRefuse: () => void;
 }) {
+  // Nothing stood here, or what stood here still stands: either way the row
+  // says one value, with no arrow and nothing struck.
+  const stands = saidNothing(was) || saidSame(was, to);
   return (
     <div
       className={cn(
@@ -235,15 +317,13 @@ export function ProposalRow({
         {field}
       </span>
       <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-2">
-        {was === "" || was === to ? null : (
-          <s className="min-w-0 text-muted-foreground">{was}</s>
-        )}
-        {to === "" ? null : (
+        {stands ? null : <Side said={was} struck />}
+        {saidNothing(to) ? null : (
           <>
-            {was === "" || was === to ? null : (
+            {stands ? null : (
               <span className="flex-none text-muted-foreground">→</span>
             )}
-            <span className="min-w-0">{to}</span>
+            <Side said={to} />
           </>
         )}
       </span>
@@ -314,7 +394,7 @@ export function ProposedRound({
 }) {
   const { line, refusal } = proposed;
   const round = addedRound(line.value);
-  const boxes = partWords(round.parts, round.cap) || round.choices.join(" · ");
+  const boxes = partWords(round.parts, round.cap);
   return (
     <div
       {...PROPOSED}
@@ -350,6 +430,21 @@ export function ProposedRound({
         )}
         {boxes === "" ? null : (
           <p className="min-w-0 text-muted-foreground text-sm">{boxes}</p>
+        )}
+        <Chips values={round.choices} className="flex min-w-0" />
+        {round.piles.length === 0 ? null : (
+          <ul className="flex min-w-0 flex-col gap-1 text-muted-foreground text-sm">
+            {round.piles.map((pile) => (
+              <li key={pile.name} className="min-w-0">
+                {pileWords(pile.name, pile.sentence)}
+              </li>
+            ))}
+          </ul>
+        )}
+        {round.notes === "" ? null : (
+          <p className="min-w-0 whitespace-pre-wrap text-muted-foreground text-sm">
+            {round.notes}
+          </p>
         )}
         {refusal === null ? null : (
           <p className="text-destructive text-sm">{refusal}</p>

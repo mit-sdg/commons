@@ -24,6 +24,26 @@ export function noChoices({ question: _question }: { question: string }): string
   return [];
 }
 
+/**
+ * The choices a round puts before the room: its own when the leg's word is
+ * `vote` or the leg has no word, and none under `write` or `list`. The kind
+ * is a selector: what was written for the other kinds stays on the question
+ * and is only left out of the presentation.
+ */
+export function kindChoices({ kind, choices }: { kind: string; choices: string[] }): string[] {
+  return kind === "write" || kind === "list" ? [] : choices;
+}
+
+/** The parts a round puts before the room: its own under `list` or no word, none under `write` or `vote`. */
+export function kindParts({ kind, parts }: { kind: string; parts: string[] }): string[] {
+  return kind === "write" || kind === "vote" ? [] : parts;
+}
+
+/** The cap that goes with the parts: the round's own under `list` or no word, none otherwise. */
+export function kindCap({ kind, cap }: { kind: string; cap: number }): number {
+  return kind === "write" || kind === "vote" ? 0 : cap;
+}
+
 export function isSame({ left, right }: { left: string; right: string }): boolean {
   return left === right;
 }

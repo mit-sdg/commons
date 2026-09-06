@@ -1,5 +1,8 @@
 {
   "name": "frontend",
+  "volta": {
+    "extends": "../package.json"
+  },
   "version": "0.1.0",
   "private": true,
   "scripts": {

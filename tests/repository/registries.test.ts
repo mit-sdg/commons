@@ -171,6 +171,7 @@ describe("application-owned design integration", () => {
       "Resolving.Question is Posting.Post",
       "Revising.Item is Posting.Post",
       "Grouping.Person is Authenticating.User",
+      "Guiding.Subject is GuidanceSubject",
       "Tagging.Target is Posting.Post",
       "TaskNotifying.Link is TaskSubject",
       "TaskNotifying.Person is Authenticating.User",

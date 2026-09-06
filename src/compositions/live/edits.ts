@@ -1,6 +1,7 @@
 import {
   compute,
   each,
+  earlier,
   former,
   is,
   no,
@@ -20,8 +21,10 @@ import {
   questionnaireHasNoOpenRun,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
+import { DRAFTING_USE } from "./drafting.ts";
+import { SORTING_USE } from "./rounds.ts";
 
-const { Questioning, Relaying, Insisting, Reasoning, Suggesting } = concepts;
+const { Categorizing, Guiding, Questioning, Relaying, Insisting, Reasoning, Suggesting } = concepts;
 
 /** The one reasoner name this composition asks for; the floor decides what answers it. */
 const REASONER = "gemini-flash";
@@ -47,6 +50,10 @@ export const Draft = endpoint(
     legs,
     questionnaires,
     materials,
+    rounds,
+    piles,
+    notes,
+    relayDocuments,
     passage,
     asking,
   }) =>
@@ -61,7 +68,17 @@ export const Draft = endpoint(
         Relaying._plan({ relay }).is({ legs }),
         compute(computations.legMaterials, { legs }, questionnaires),
         Questioning._materials({ questionnaires }).is({ materials }),
-        compute(computations.relayDraftPassage, { request, title, legs, materials }, passage),
+        compute(computations.legIdentities, { legs }, rounds),
+        Categorizing._categoriesInScopes({ scopes: rounds }).is({ categories: piles }),
+        Guiding._guidanceTexts({ subjects: rounds, use: SORTING_USE }).is({ texts: notes }),
+        Guiding._selectedDocuments({ subject: relay, use: DRAFTING_USE }).is({
+          documents: relayDocuments,
+        }),
+        compute(
+          computations.relayDraftPassage,
+          { request, title, legs, materials, piles, notes, classDocuments: "", relayDocuments },
+          passage,
+        ),
       )
         .then(
           Reasoning.ask({ reasoner: REASONER, about: relay, passage, at }).responds({
@@ -112,6 +129,9 @@ export const ReplyOffersRelayEdits = reaction(
     legs,
     questionnaires,
     materials,
+    rounds,
+    piles,
+    notes,
     lines,
     at,
     offering,
@@ -131,7 +151,14 @@ export const ReplyOffersRelayEdits = reaction(
         Relaying._plan({ relay }).is({ legs }),
         compute(computations.legMaterials, { legs }, questionnaires),
         Questioning._materials({ questionnaires }).is({ materials }),
-        compute(computations.relayEditLines, { reply, title, legs, materials }, lines),
+        compute(computations.legIdentities, { legs }, rounds),
+        Categorizing._categoriesInScopes({ scopes: rounds }).is({ categories: piles }),
+        Guiding._guidanceTexts({ subjects: rounds, use: SORTING_USE }).is({ texts: notes }),
+        compute(
+          computations.relayEditLines,
+          { reply, title, legs, materials, piles, notes },
+          lines,
+        ),
       )
       .then(Suggesting.offer({ subject: relay, lines, at }).responds({ offering }))
       .then(
@@ -400,6 +427,79 @@ export const TakenAddAddsRound = reaction(
           .then(Relaying.draw({ leg: added, source, use }))
           .named("drawn"),
       ),
+);
+
+/**
+ * An added round's piles and notes need the round as their target, so once the
+ * leg the taken add line composed exists they are offered about that round and
+ * taken where they are offered: the person accepted them with the round.
+ */
+export const AddedRoundCarriesItsPiles = reaction(
+  ({ relay, material, added, suggestion, value, at, lines, standing, follow, line }) =>
+    when(Relaying.addLeg({ relay, material }).responds({ leg: added }))
+      .where(
+        earlier(Suggesting.take, { suggestion }, { kind: "add", value }),
+        now(at),
+        compute(computations.editRoundLines, { value, leg: added }, lines),
+        compute(computations.linesStanding, { lines }, standing),
+        is.among(standing, ["some"]),
+      )
+      .then(Suggesting.offer({ subject: added, lines, at }).responds({ offering: follow }))
+      .then(
+        where(Suggesting._pendingIn({ offering: follow }).is({ suggestion: line })).then(
+          Suggesting.take({ suggestion: line }),
+        ),
+      ),
+);
+
+/**
+ * A pile line names a round's standing pile with its sentence: the pile is
+ * reached or made on the round, and its sentence written, whether the line was
+ * offered about the relay and confirmed, or about a round just added.
+ */
+export const TakenPileStandsPile = reaction(
+  ({ suggestion, target, value, name, description, category }) =>
+    when(Suggesting.take({ suggestion }).responds({ kind: "pile", target, value }))
+      .where(
+        Relaying._leg({ leg: target }),
+        compute(computations.editPileName, { value }, name),
+        compute(computations.editPileSentence, { value }, description),
+      )
+      .then(
+        Categorizing.ensureCategory({ scope: target, name, description }).responds({ category }),
+      )
+      .then(Categorizing.describeCategory({ category, description })),
+);
+
+/** An unpile line takes a standing pile off the round by its name. */
+export const TakenUnpileRemovesPile = reaction(({ suggestion, target, value, category }) =>
+  when(Suggesting.take({ suggestion }).responds({ kind: "unpile", target, value }))
+    .where(
+      Relaying._leg({ leg: target }),
+      Categorizing._categoriesIn({ scope: target }).is({ category, name: value }),
+    )
+    .then(Categorizing.deleteCategory({ category })),
+);
+
+/** A notes line replaces the standing note, or clears it when blank. */
+export const TakenNotesSetNote = reaction(({ suggestion, target, value, said }) =>
+  when(Suggesting.take({ suggestion }).responds({ kind: "notes", target, value }))
+    .where(
+      Relaying._leg({ leg: target }),
+      compute(computations.briefStanding, { request: value }, said),
+      is.among(said, ["given"]),
+    )
+    .then(Guiding.set({ subject: target, use: SORTING_USE, title: "", body: value })),
+);
+
+export const TakenNotesRemoveNote = reaction(({ suggestion, target, value, said }) =>
+  when(Suggesting.take({ suggestion }).responds({ kind: "notes", target, value }))
+    .where(
+      Relaying._leg({ leg: target }),
+      compute(computations.briefStanding, { request: value }, said),
+      is.among(said, ["blank"]),
+    )
+    .then(Guiding.clear({ subject: target, use: SORTING_USE })),
 );
 
 export const TakenRemoveRemovesRound = reaction(({ suggestion, target, relay, material }) =>

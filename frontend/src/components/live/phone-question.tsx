@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { distinctValues } from "@/components/live/rounds";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 /** A round's question as a phone meets it: the prompt, and how it is answered. */
@@ -16,9 +16,6 @@ export interface RoundQuestion {
   context?: { name: string; cards: string[] }[];
   position: number;
 }
-
-/** How many of a group's words a phone shows before the rest are counted. */
-const WORDS_SHOWN = 4;
 
 const COUNTING_WORDS = [
   "one",
@@ -125,33 +122,52 @@ export function QuestionCard({
           <span className="text-muted-foreground text-xs">
             From an earlier round
           </span>
-          <div
-            className={cn(
-              "grid gap-2",
-              context.length === 1 ? "grid-cols-1" : "grid-cols-2",
-            )}
-          >
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] items-start gap-2">
             {context.map((group, index) => {
               const values = distinctValues(group.cards);
-              const held = Math.max(0, values.length - WORDS_SHOWN);
-              return (
-                <div
-                  key={`${group.name}-${index}`}
-                  className="min-w-0 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5"
-                >
-                  <p className="truncate font-medium text-xs" dir="auto">
+              if (values.length === 0) {
+                return (
+                  <p
+                    key={`${group.name}-${index}`}
+                    className="min-w-0 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm font-medium [overflow-wrap:anywhere]"
+                    dir="auto"
+                  >
                     {group.name}
                   </p>
-                  {values.length === 0 ? null : (
-                    <p
+                );
+              }
+              return (
+                <details
+                  key={`${group.name}-${index}`}
+                  className="group min-w-0 rounded-lg border border-border bg-muted/40 px-3"
+                >
+                  <summary className="min-h-11 cursor-pointer py-3 text-sm [overflow-wrap:anywhere]">
+                    <span className="font-medium" dir="auto">
+                      {group.name}
+                    </span>
+                    <span className="ml-2 whitespace-nowrap text-muted-foreground text-xs">
+                      {values.length}{" "}
+                      {values.length === 1 ? "response" : "responses"}
+                    </span>
+                    <span
+                      className="mt-1 line-clamp-2 text-muted-foreground text-xs group-open:hidden"
                       dir="auto"
-                      className="text-muted-foreground text-xs leading-[1.45]"
                     >
-                      {values.slice(0, WORDS_SHOWN).join(" · ")}
-                      {held === 0 ? "" : ` and ${held} more`}
-                    </p>
-                  )}
-                </div>
+                      {values[0]}
+                    </span>
+                  </summary>
+                  <ul className="flex flex-col gap-2 pb-3">
+                    {values.map((value, card) => (
+                      <li
+                        key={card}
+                        className="whitespace-pre-wrap rounded-md bg-background p-2.5 text-sm leading-relaxed [overflow-wrap:anywhere]"
+                        dir="auto"
+                      >
+                        {value}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               );
             })}
           </div>
@@ -179,12 +195,11 @@ export function QuestionCard({
         </div>
       ) : question.parts.length === 0 ? (
         <WrittenBox
-          item={question.question}
           value={answers[question.question] ?? ""}
           labelledBy={promptId}
           placeholder="Your answer"
-          onAnswer={onAnswer}
-          onDraft={onDraft}
+          onAnswer={(written) => onAnswer(question.question, written)}
+          onDraft={(written) => onDraft(question.question, written)}
         />
       ) : repeated ? (
         <>
@@ -193,11 +208,10 @@ export function QuestionCard({
             {items.slice(0, shown).map((item, index) => (
               <WrittenBox
                 key={item}
-                item={item}
                 value={answers[item] ?? ""}
                 label={boxName(question.parts[0] ?? "", index, shown)}
-                onAnswer={onAnswer}
-                onDraft={onDraft}
+                onAnswer={(written) => onAnswer(item, written)}
+                onDraft={(written) => onDraft(item, written)}
               />
             ))}
           </div>
@@ -225,10 +239,9 @@ export function QuestionCard({
             <label key={item} className="flex flex-col gap-1">
               <PartLabel>{label}</PartLabel>
               <WrittenBox
-                item={item}
                 value={answers[item] ?? ""}
-                onAnswer={onAnswer}
-                onDraft={onDraft}
+                onAnswer={(written) => onAnswer(item, written)}
+                onDraft={(written) => onDraft(item, written)}
               />
             </label>
           );
@@ -287,13 +300,33 @@ function PartLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** How many lines a written answer grows to before the box scrolls inside. */
+const BOX_LINES = 3;
+
+/** How tall a box stands: what is written in it, up to the cap. */
+function fitBox(box: HTMLTextAreaElement) {
+  const style = window.getComputedStyle(box);
+  const line =
+    Number.parseFloat(style.lineHeight) ||
+    Number.parseFloat(style.fontSize) * 1.5;
+  const inside =
+    Number.parseFloat(style.paddingTop) +
+    Number.parseFloat(style.paddingBottom);
+  const frame =
+    Number.parseFloat(style.borderTopWidth) +
+    Number.parseFloat(style.borderBottomWidth);
+  box.style.height = "auto";
+  const grown = Math.min(box.scrollHeight, line * BOX_LINES + inside);
+  box.style.height = `${grown + frame}px`;
+}
+
 /**
  * The field stays uncontrolled — typing drafts, blur commits. Every blur
  * commits: the draft it would compare against is the same state typing just
- * wrote, and the sender is what knows a value it has already sent.
+ * wrote, and the sender is what knows a value it has already sent. A line
+ * break is part of a written answer, so Enter writes one.
  */
-function WrittenBox({
-  item,
+export function WrittenBox({
   value,
   label,
   labelledBy,
@@ -301,29 +334,36 @@ function WrittenBox({
   onAnswer,
   onDraft,
 }: {
-  item: string;
   value: string;
   label?: string;
   /** The prompt that names the box, when the box stands under it alone. */
   labelledBy?: string;
   placeholder?: string;
-  onAnswer: (item: string, value: string) => void;
-  onDraft: (item: string, value: string) => void;
+  onAnswer: (value: string) => void;
+  onDraft: (value: string) => void;
 }) {
   return (
-    <Input
-      className="h-11"
+    <Textarea
+      rows={1}
+      className="field-sizing-fixed min-h-11 resize-none"
       dir="auto"
       aria-label={label === "" ? undefined : label}
       aria-labelledby={labelledBy}
       defaultValue={value}
       placeholder={placeholder}
-      onChange={(event) => onDraft(item, event.currentTarget.value)}
+      ref={(box) => {
+        if (box !== null) fitBox(box);
+      }}
+      onChange={(event) => {
+        fitBox(event.currentTarget);
+        onDraft(event.currentTarget.value);
+      }}
       onBlur={(event) => {
         const next = event.currentTarget.value.trim();
         if (next === "") return;
         event.currentTarget.value = next;
-        onAnswer(item, next);
+        fitBox(event.currentTarget);
+        onAnswer(next);
       }}
     />
   );

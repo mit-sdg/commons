@@ -3,7 +3,12 @@
 import { X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect } from "react";
-import { Answer, ModelTag } from "@/components/live/pile";
+import {
+  Answer,
+  type CardMoves,
+  ModelTag,
+  MoveMenu,
+} from "@/components/live/pile";
 import type { WallCard } from "@/components/live/rounds";
 import { PILE_MOVE } from "@/components/live/wall-motion";
 import { Button } from "@/components/ui/button";
@@ -31,14 +36,14 @@ export function SpreadButton({
       variant="ghost"
       size={phone ? "sm" : "xs"}
       aria-expanded={open}
-      aria-label={`${open ? "Fold" : "Spread"} ${name}`}
+      aria-label={`${open ? "Hide responses in" : "View responses in"} ${name}`}
       className="text-muted-foreground max-sm:h-9 max-sm:px-3"
       onClick={(event) => {
         event.stopPropagation();
         onClick();
       }}
     >
-      {open ? "fold" : "spread"}
+      {open ? "Hide responses" : "View responses"}
     </Button>
   );
 }
@@ -56,6 +61,7 @@ export function Spread({
   phone = false,
   onClose,
   onRemove,
+  moves,
   className,
 }: {
   name: string;
@@ -67,6 +73,8 @@ export function Spread({
   onClose: () => void;
   /** Takes a card off the wall; only a dashboard offers it. */
   onRemove?: (card: WallCard) => void;
+  /** Where a hand sends a card without dragging it; only a dashboard offers it. */
+  moves?: CardMoves;
   className?: string;
 }) {
   const reduced = useReducedMotion() ?? false;
@@ -131,6 +139,9 @@ export function Spread({
               </span>
             )}
             {card.model ? <ModelTag big={big} /> : null}
+            {moves === undefined ? null : (
+              <MoveMenu card={card} moves={moves} className="self-center" />
+            )}
             {onRemove === undefined ? null : (
               <Button
                 type="button"

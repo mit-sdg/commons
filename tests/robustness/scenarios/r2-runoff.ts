@@ -52,8 +52,8 @@ const MINE = "Let a guest keep a room until they say otherwise.";
 /** How a room's votes lean, fullest choice first, so two lead clearly. */
 const WEIGHTS = [5, 4, 2, 1];
 
-/** How long a screen may take to catch a settled wall up before it is a finding. */
-const CATCH_UP = 6500;
+/** How long a screen may take to catch a settled wall up: the belt's lag bound plus one poll. */
+const CATCH_UP = 6000 + 3000;
 
 /** The ballots a skewed room casts, one per seat, over the choices offered. */
 function ballots(count: number, choices: string[]): string[] {
@@ -435,10 +435,12 @@ try {
   if (spare === undefined) {
     log.note("no third bar to tap: the vote offered only the two that carry");
   } else {
+    // A bar's tap is the pile's covering button, labelled "<choice>, N votes".
     const bar = () =>
       dashboard
-        .getByRole("button")
-        .filter({ has: dashboard.getByText(spare, { exact: true }) })
+        .getByRole("button", {
+          name: new RegExp(`^${spare.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}, `),
+        })
         .first();
     await dashboard.setViewportSize({ width: 1440, height: 900 });
     await log.timed(
@@ -480,8 +482,9 @@ try {
   await dashboard.setViewportSize({ width: 1440, height: 900 });
   for (const name of pickedTwo) {
     await dashboard
-      .getByRole("button")
-      .filter({ has: dashboard.getByText(name, { exact: true }) })
+      .getByRole("button", {
+        name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}, `),
+      })
       .first()
       .click();
     await sleep(600);

@@ -105,20 +105,23 @@ export function RelayProjector({
     return () => clearInterval(timer);
   }, [run.open, refetch]);
 
+  // The close sends one last placing ask, so the wall is read until that
+  // ask has landed and nothing is out, closed or not.
+  const settling = (wall?.asksOut ?? 0) > 0;
   useEffect(() => {
-    if (!run.open) return;
+    if (!run.open && !settling) return;
     const timer = setInterval(refetchWall, POLL_MS);
     return () => clearInterval(timer);
-  }, [run.open, refetchWall]);
+  }, [run.open, settling, refetchWall]);
 
   // A failure is only worth saying while the room would still be waiting on
   // it, so the clock it is read against moves with the poll.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (!run.open) return;
+    if (!run.open && !settling) return;
     const timer = setInterval(() => setNow(Date.now()), POLL_MS);
     return () => clearInterval(timer);
-  }, [run.open]);
+  }, [run.open, settling]);
 
   // One poll that does not come back is a hiccup; two in a row is the room
   // being shown a wall that has stopped moving. The clock above is what

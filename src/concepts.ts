@@ -1,3 +1,4 @@
+import { draftContext, draftReferences, draftRequest } from "./computations/live-background.ts";
 import { conceptSet } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import { assigning } from "./concepts/assigning/registry.ts";
@@ -11,6 +12,7 @@ import { flagging } from "./concepts/flagging/registry.ts";
 import { formatting } from "./concepts/formatting/registry.ts";
 import { grading } from "./concepts/grading/registry.ts";
 import { grouping } from "./concepts/grouping/registry.ts";
+import { guiding } from "./concepts/guiding/registry.ts";
 import { insisting } from "./concepts/insisting/registry.ts";
 import { inviting } from "./concepts/inviting/registry.ts";
 import { itemizing } from "./concepts/itemizing/registry.ts";
@@ -69,14 +71,19 @@ import {
   editPrompt,
   editRoundCap,
   editRoundChoices,
+  editPileName,
+  editPileSentence,
   editRoundJson,
+  editRoundLines,
   editRoundParts,
   editRoundPosition,
   editRoundTakesFrom,
   editRoundTakesUse,
   editTitle,
   editUse,
+  legIdentities,
   legMaterials,
+  linesStanding,
   relayDraftPassage,
   relayDraftReading,
   relayDraftReason,
@@ -87,6 +94,8 @@ import { soleTarget } from "./computations/live-links.ts";
 import {
   answerKind,
   briefStanding,
+  cardGiven,
+  relayGiven,
   cardStanding,
   failureStanding,
   carryUses,
@@ -94,8 +103,18 @@ import {
   pickPriority,
   useFit,
   useStanding,
+  voteStanding,
 } from "./computations/live-carries.ts";
-import { cardId, isSame, noChoices, oneBoxCap, oneBoxParts } from "./computations/live-rounds.ts";
+import {
+  cardId,
+  isSame,
+  kindCap,
+  kindChoices,
+  kindParts,
+  noChoices,
+  oneBoxCap,
+  oneBoxParts,
+} from "./computations/live-rounds.ts";
 import { positionAfter, positionBefore, receiptKind } from "./computations/live-quizzes.ts";
 import {
   answerReceipt,
@@ -109,6 +128,15 @@ import {
   snapshotTitle,
 } from "./computations/live-snapshots.ts";
 import {
+  sampledAnswers,
+  sampledPiles,
+  sampledGroups,
+  sampleStanding,
+  samplingPassage,
+  samplingPassageTaking,
+  unsampledNames,
+} from "./computations/live-sampling.ts";
+import {
   lidLines,
   lidPassage,
   participantAnswers,
@@ -118,6 +146,7 @@ import {
   placingReading,
   placingReason,
   placingRepairPassage,
+  sorterNotes,
 } from "./computations/live-walls.ts";
 import {
   passwordResetCooldownStart,
@@ -153,6 +182,7 @@ const registrations = {
   Formatting: formatting,
   Grading: grading,
   Grouping: grouping,
+  Guiding: guiding,
   Insisting: insisting,
   Inviting: inviting,
   Itemizing: itemizing,
@@ -197,6 +227,9 @@ export const learningConcepts = conceptSet(registrations, {
   cardId,
   clarifiedPassage,
   draftTitle,
+  draftContext,
+  draftReferences,
+  draftRequest,
   draftingPassage,
   editCap,
   editChoices,
@@ -205,7 +238,10 @@ export const learningConcepts = conceptSet(registrations, {
   editPrompt,
   editRoundCap,
   editRoundChoices,
+  editPileName,
+  editPileSentence,
   editRoundJson,
+  editRoundLines,
   editRoundParts,
   editRoundPosition,
   editRoundTakesFrom,
@@ -213,7 +249,9 @@ export const learningConcepts = conceptSet(registrations, {
   editTitle,
   editUse,
   explanationReceipt,
+  legIdentities,
   legMaterials,
+  linesStanding,
   parseKind,
   parsedForm,
   parsedMaterial,
@@ -237,11 +275,17 @@ export const learningConcepts = conceptSet(registrations, {
   pileCards,
   useStanding,
   useFit,
+  voteStanding,
   pickPriority,
+  cardGiven,
+  relayGiven,
   cardStanding,
   failureStanding,
   briefStanding,
   isSame,
+  kindCap,
+  kindChoices,
+  kindParts,
   noChoices,
   oneBoxCap,
   oneBoxParts,
@@ -269,6 +313,14 @@ export const learningConcepts = conceptSet(registrations, {
   placingReading,
   placingReason,
   placingRepairPassage,
+  sorterNotes,
+  sampledAnswers,
+  sampledPiles,
+  sampledGroups,
+  sampleStanding,
+  samplingPassage,
+  samplingPassageTaking,
+  unsampledNames,
   subjectIsAddress,
   taskListMailHtml,
   taskListMailSubject,

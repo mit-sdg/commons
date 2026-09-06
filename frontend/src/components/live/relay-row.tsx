@@ -1,19 +1,16 @@
+import { Fact } from "@/components/facts";
 import { cn } from "@/lib/utils";
 
 /**
- * The one word a row ever carries. A row says nothing about itself unless a
- * run is open on it; while one row on the shelf is live every row holds the
- * column, so the titles line up under it.
+ * The one word a row ever carries is the state badge every screen says a state
+ * with. A row says nothing about itself unless a run is open on it; while one
+ * row on the shelf is live every row holds the column, wide enough for `Open`,
+ * so the titles line up under it.
  */
 export function StateWord({ live }: { live: boolean }) {
   return (
-    <span className="inline-flex w-[54px] flex-none items-center gap-1.5 font-mono text-muted-foreground text-xs">
-      {live ? (
-        <>
-          <span className="inline-block size-2 flex-none rounded-full bg-primary" />
-          live
-        </>
-      ) : null}
+    <span className="inline-flex w-[54px] flex-none items-center">
+      {live ? <Fact.Status status="OPEN" /> : null}
     </span>
   );
 }

@@ -401,6 +401,9 @@
           "code": "location#1",
           "started": 1,
           "handedIn": 1,
+          "seats": [],
+          "silentSeats": 0,
+          "modelResponses": [],
           "questions": [
             {
               "question": "uuid#8",
@@ -449,7 +452,8 @@
               "participant": "phone-1",
               "name": null,
               "score": 1,
-              "outOf": 1
+              "outOf": 1,
+              "model": false
             }
           ]
         }

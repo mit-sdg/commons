@@ -71,6 +71,25 @@ const swapped = () =>
     },
   ]);
 
+/** A write round with two standing piles and a note for the sorter. */
+const wentWrong = () =>
+  relay([
+    {
+      kind: "write",
+      title: "The bug",
+      prompt: "What went wrong the last time an app failed you?",
+      parts: [],
+      cap: 0,
+      choices: [],
+      takes: { from: 0, use: "" },
+      piles: [
+        { name: "Pace", sentence: "It was too slow to use." },
+        { name: "Crashes", sentence: "It stopped working outright." },
+      ],
+      notes: "Group by what went wrong, not by which app it happened in.",
+    },
+  ]);
+
 export function scriptedEditsReply(passage: string): string | undefined {
   if (!passage.includes(CONTRACT)) return undefined;
   const written = passage.split("The brief:\n")[1] ?? "";
@@ -79,7 +98,9 @@ export function scriptedEditsReply(passage: string): string | undefined {
     ? swapped()
     : brief.includes("three verbs")
       ? twoRounds()
-      : oneRound();
+      : brief.includes("went wrong")
+        ? wentWrong()
+        : oneRound();
   if (passage.includes(REPAIR)) return answer;
   return brief.includes("unreadable") ? "this reply is not JSON at all" : answer;
 }

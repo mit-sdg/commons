@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { count, fullTime } from "@/lib/format";
+import { count, dueTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface BalanceInfo {
@@ -130,7 +130,7 @@ export function LateDayControls({
             </div>
             <ConfirmAction
               title={`Change to ${count(days, "late day")}?`}
-              description={`The effective due date will be ${fullTime(newDue)}${newClose ? ` and submissions will close ${fullTime(newClose)}` : ""}.`}
+              description={`The effective due date will be ${dueTime(newDue)}${newClose ? ` and submissions will close ${dueTime(newClose)}` : ""}.`}
               confirmLabel="Change late days"
               onConfirm={change}
               trigger={
@@ -169,7 +169,7 @@ export function LateDayControls({
           </div>
           <ConfirmAction
             title={`Apply ${count(days, "late day")}?`}
-            description={`This spends ${count(days, "late day")} and moves the effective due date to ${fullTime(newDue)}${newClose ? ` and the submission close to ${fullTime(newClose)}` : ""}.`}
+            description={`This spends ${count(days, "late day")} and moves the effective due date to ${dueTime(newDue)}${newClose ? ` and the submission close to ${dueTime(newClose)}` : ""}.`}
             confirmLabel="Apply late days"
             onConfirm={apply}
             trigger={

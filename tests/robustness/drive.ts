@@ -480,7 +480,7 @@ export async function invite(host: Client, run: string, count: number) {
   const replies = [];
   for (let seat = 0; seat < count; seat += 1) {
     replies.push(
-      await host.call<{ participant: string }>("/live/relays/invite", {
+      await host.call<{ participant: string }>("/live/runs/invite", {
         run,
         device: `model-${crypto.randomUUID()}`,
       }),
@@ -670,4 +670,63 @@ export async function snap(
 /** The output directory for one arm. */
 export function outDir(arm: string): string {
   return resolve(import.meta.dirname, "../../test-results/robustness", arm);
+}
+
+// ---------------------------------------------------------------------------
+// The floor: what Reasoning recorded about a round, when `MONGO_URL` names the
+// stack's database (the stack prints it as it starts).
+// ---------------------------------------------------------------------------
+
+export const MONGO_URL = process.env.MONGO_URL ?? "";
+
+export interface AskCounts {
+  asks: number;
+  replies: number;
+  failures: number;
+  /** The passages asked, oldest first. */
+  passages: string[];
+}
+
+/** The asks, replies, and failures the floor holds about a round; null without `MONGO_URL`. */
+export async function askCounts(round: string): Promise<AskCounts | null> {
+  if (MONGO_URL === "") return null;
+  // The driver reads the floor the way the stack script does, around Bun's v8.
+  const v8 = await import("node:v8");
+  v8.startupSnapshot.isBuildingSnapshot = () => false;
+  const { MongoClient } = await import("mongodb");
+  const client = new MongoClient(MONGO_URL);
+  try {
+    await client.connect();
+    const database = client.db();
+    const askings = await database
+      .collection<{ _id: string; about: string; passage: string; seq: number }>("reasoning.askings")
+      .find({ about: round })
+      .sort({ seq: 1 })
+      .toArray();
+    const ids = askings.map((asking) => asking._id);
+    const replies = await database
+      .collection<{ asking: string }>("reasoning.replies")
+      .countDocuments({ asking: { $in: ids } });
+    const failures = await database
+      .collection<{ asking: string }>("reasoning.failures")
+      .countDocuments({ asking: { $in: ids } });
+    return { asks: askings.length, replies, failures, passages: askings.map((one) => one.passage) };
+  } finally {
+    await client.close();
+  }
+}
+
+/** What a dashboard's Sorting panel says beside its eyebrow, or null when it says nothing. */
+export async function sortingWord(page: Page): Promise<string | null> {
+  return (await page
+    .evaluate(
+      `(() => {
+       const eyebrow = Array.from(document.querySelectorAll("span.eyebrow")).find(
+         (one) => one.textContent?.trim() === "Sorting",
+       );
+       const word = eyebrow?.nextElementSibling?.textContent?.trim() ?? "";
+       return word === "" ? null : word;
+     })()`,
+    )
+    .catch(() => null)) as string | null;
 }

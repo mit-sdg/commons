@@ -114,6 +114,18 @@ describe("the local development stack", () => {
     expect(allowedDevOriginsFromPublicOrigin(undefined)).toEqual([]);
   });
 
+  test("allows the participant origin's host beside the public one, once each", () => {
+    expect(
+      allowedDevOriginsFromPublicOrigin("http://127.0.0.1:3000", "http://192.168.1.20:3000"),
+    ).toEqual(["127.0.0.1", "192.168.1.20"]);
+    expect(
+      allowedDevOriginsFromPublicOrigin("http://127.0.0.1:3000", "http://127.0.0.1:3000"),
+    ).toEqual(["127.0.0.1"]);
+    expect(allowedDevOriginsFromPublicOrigin(undefined, "http://192.168.1.20:3000")).toEqual([
+      "192.168.1.20",
+    ]);
+  });
+
   test("preserves an exported backend PUBLIC_ORIGIN and otherwise uses the local web origin", () => {
     const localWebOrigin = "http://127.0.0.1:3210";
     const publicOrigin = "https://current-tunnel.example.test";

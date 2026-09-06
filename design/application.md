@@ -47,9 +47,12 @@ concrete LiveItem
 concrete LiveSubject
   What a live ask, insistence, or offering is about: a Drafting brief (a
   questionnaire being drafted), a Publishing edition (a round being sorted), a
-  Responding response (a model participant answering), or a Relaying relay (a
-  relay being drafted). The reactions that read a reply tell them apart by
-  which concept answers for the subject.
+  Responding response (a model participant answering), a Relaying relay (a
+  relay being drafted), or a Relaying leg (a round just added by a draft,
+  whose piles and note are offered about it and taken at once, and a round
+  being sampled from the editor, whose reply is read back and never taken).
+  The reactions that read a reply tell them apart by which concept answers
+  for the subject.
 
 concrete Subscriber
   Who follows something: a Commons user following a forum conversation, or a
@@ -80,9 +83,20 @@ concrete PinScope
   `sorting`, in which a pinned run is one the model sorts.
 
 concrete CategoryScope
-  Where a category's name is unique: the forum, under the reserved scope `forum`,
-  or a Publishing edition that is a round, whose categories are the piles on its
-  wall.
+  Where a category's name is unique: the forum, under the reserved scope `forum`;
+  a Relaying leg, whose categories are the piles that stand on its round's wall
+  before the room answers; or a Publishing edition that is a round, whose
+  categories are the piles on its wall.
+
+concrete GuidanceSubject
+  What standing guidance is set beside: a Relaying leg, whose guidance under the
+  use `sorting` is the relay's note to whoever sorts the round's wall, on every
+  run; a Publishing edition that is a round, whose guidance under `sorting` is
+  the run's note to the same sorter, read after the relay's and standing on
+  that run alone; a Relaying relay,
+  whose guidance under the use `drafting` is the background documents whoever
+  drafts that series reads; or the class, under the reserved constant
+  `commons`, whose guidance under `drafting` every drafter reads.
 
 concrete Categorizable
   What is sorted into a category: a forum post, or a card on a round's wall —
@@ -148,6 +162,9 @@ instantiate Grading with
 
 instantiate Grouping with
   Person is Authenticating.User
+
+instantiate Guiding with
+  Subject is GuidanceSubject
 
 instantiate Insisting with
   Aim is LiveSubject
@@ -425,21 +442,25 @@ draftTitle(form: String) : String
   Renders a privacy-safe default title for an adopted AI draft from its form,
   without exposing the author's request to participants.
 
-draftingPassage(request: String) : String
+draftingPassage(request: String, documents: Json) : String
   Renders the passage that asks the reasoner to draft a questionnaire from a
-  creator's plain-language request.
+  creator's plain-language request, with the class's background documents
+  fenced between the contract and the request, and absent when none stands.
 
-revisionPassage(request: String, form: String, material: Json) : String
+revisionPassage(request: String, form: String, material: Json, documents: Json) : String
   Renders the passage that asks the reasoner to revise existing material,
-  changing only what the correction asks and otherwise preserving its form.
+  changing only what the correction asks and otherwise preserving its form,
+  with the same background block after the contract.
 
-clarifiedPassage(request: String, question: String, answer: String) : String
+clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String
   Renders the passage that resumes drafting from the original request, the
-  clarifying question, and the creator's answer.
+  clarifying question, and the creator's answer, with the same background block
+  after the contract.
 
-repairPassage(request: String, offering: String, account: String) : String
+repairPassage(request: String, offering: String, account: String, documents: Json) : String
   Renders the passage that stands on a request: the original ask, the exact
-  reply that came back, and the account of what was wrong with it.
+  reply that came back, and the account of what was wrong with it, with the
+  same background block after the contract.
 
 parseKind(reply: String) : String
   Reads a reasoner's reply and answers `draft`, `question`, or `neither` —

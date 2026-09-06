@@ -25,7 +25,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Commons", template: "%s · Commons" },
+  title: { default: "Commons", template: "%s — Commons" },
   description: "Course work and discussion in Commons.",
 };
 

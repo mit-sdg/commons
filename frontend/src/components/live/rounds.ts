@@ -7,10 +7,16 @@
  */
 
 import { useEffect, useState } from "react";
+import { saidRefusal } from "@/components/live/refusals";
 import { api, isApiError, type Output } from "@/lib/api";
 
 /** Why a relay cannot launch yet, said the way a questionnaire says its own. */
 export const NO_ROUNDS = "Add a round first.";
+
+/** What a refused launch says, wherever a screen offers one. */
+export function launchRefusal(error: string): string {
+  return saidRefusal(error, error === "CONFLICT" ? "NO_CHOICES" : null);
+}
 
 /** Done, open, and next are a run's standings; plain is a round that is only written. */
 export type RoundStanding = "done" | "open" | "next" | "plain";
@@ -47,18 +53,28 @@ export function roundStanding(round: RelayRunRound): RoundStanding {
   return standingOf({ round: round.round, open: round.figure.open });
 }
 
-/** The kinds a round is, read off its question and what it takes. */
+/** The three kinds a round is. */
 export type RoundKind = "write" | "list" | "vote";
 
 /** One row of the served table: a use, the kinds it is open to, and its sentence. */
 export type CarryUse = Output<"/live/relays/uses">["uses"][number];
 
-/** Choices make a vote, parts make a list, and a round with neither is a write. */
+/** The kinds in the order the editor offers them. */
+export const KINDS: RoundKind[] = ["write", "list", "vote"];
+
+/**
+ * The word the editor pressed, which the leg holds. A leg with no word is the
+ * kind its content makes it: choices make a vote, parts make a list, and a
+ * round with neither is a write.
+ */
 export function kindOf(round: {
+  kind: string;
   choices: string[];
   parts: string[];
   takes: { use: string }[];
 }): RoundKind {
+  const pressed = KINDS.find((entry) => entry === round.kind);
+  if (pressed !== undefined) return pressed;
   const use = round.takes[0]?.use;
   if (round.choices.length > 0 || use === "choices") return "vote";
   if (round.parts.length > 0 || use === "parts") return "list";

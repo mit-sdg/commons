@@ -3,6 +3,7 @@
 import { ArrowLeft, Clock, GraduationCap, Send } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
+import { Fact, Facts } from "@/components/facts";
 import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { Link } from "@/components/link";
 import { LateDayControls } from "@/components/lms/late-day-controls";
@@ -10,14 +11,13 @@ import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { TaskMarkdown } from "@/components/tasks/task-markdown";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fullTime, relativeTime } from "@/lib/format";
+import { dateTime } from "@/lib/format";
 import {
   loadAssignmentDetail,
   loadAssignments,
@@ -230,15 +230,13 @@ export default function AssignmentDetailPage({
 
       <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h1 className="min-w-0 break-words font-display text-3xl font-semibold tracking-tight">
-              {detail.title}
-            </h1>
-            <Badge variant="secondary">
-              {KIND_LABELS[detail.kind] ?? detail.kind}
-            </Badge>
-            <StatusBadge status={detail.status} />
-          </div>
+          <h1 className="mb-1 min-w-0 break-words font-display text-3xl font-semibold tracking-tight">
+            {detail.title}
+          </h1>
+          <Facts className="text-muted-foreground text-sm">
+            <Fact.Kind>{KIND_LABELS[detail.kind] ?? detail.kind}</Fact.Kind>
+            <Fact.Status status={detail.status} />
+          </Facts>
         </div>
         <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href="/grades">
@@ -287,9 +285,11 @@ export default function AssignmentDetailPage({
                     {submitting ? "Submitting..." : "Submit"}
                   </Button>
                   {latest && (
-                    <p className="text-xs text-muted-foreground">
-                      Last submitted {relativeTime(latest.submittedAt)}
-                    </p>
+                    <Fact.When
+                      verb="Last submitted"
+                      at={latest.submittedAt}
+                      className="text-xs"
+                    />
                   )}
                 </div>
               </CardContent>
@@ -316,9 +316,11 @@ export default function AssignmentDetailPage({
                           <span className="font-medium">
                             Attempt #{attempt.number}
                           </span>
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {fullTime(attempt.submittedAt)}
-                          </span>
+                          <Fact.When
+                            form="absolute"
+                            at={attempt.submittedAt}
+                            className="ml-2 text-xs"
+                          />
                         </span>
                         <StatusBadge status={attempt.status} />
                       </summary>
@@ -404,20 +406,19 @@ export default function AssignmentDetailPage({
             <CardContent className="space-y-3 text-sm">
               <div>
                 <p className="text-muted-foreground">Available</p>
-                <p className="font-medium">{fullTime(detail.availableAt)}</p>
+                <Fact.Due at={detail.availableAt} />
               </div>
               <div>
                 <p className="text-muted-foreground">Due</p>
-                <p
-                  className={cn("font-medium", isOverdue && "text-destructive")}
-                >
-                  {fullTime(due)}
-                </p>
+                <Fact.Due
+                  at={due}
+                  className={cn(isOverdue && "text-destructive")}
+                />
               </div>
               {effectiveClose && (
                 <div>
                   <p className="text-muted-foreground">Closes</p>
-                  <p className="font-medium">{fullTime(effectiveClose)}</p>
+                  <Fact.Due at={effectiveClose} />
                 </div>
               )}
             </CardContent>
@@ -449,7 +450,7 @@ export default function AssignmentDetailPage({
                 </p>
                 <p>
                   <span className="text-muted-foreground">Submitted:</span>{" "}
-                  {fullTime(latest.submittedAt)}
+                  {dateTime(latest.submittedAt)}
                 </p>
               </CardContent>
             </Card>

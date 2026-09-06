@@ -26,13 +26,17 @@ import {
   roundIsNotLive,
   roundIsNotOfAClosedRun,
   roundIsOfAClosedRun,
+  roundIsOfAnOpenRun,
   thePickCount,
   theRunOf,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
+import { SORTING } from "./relays.ts";
+import { RESERVED_PILES, SORTING_USE } from "./rounds.ts";
 
 const {
   Categorizing,
+  Guiding,
   Insisting,
   Locking,
   Pinning,
@@ -131,6 +135,37 @@ const noOfferingIsBeingTakenAbout = view(
   ({ round }, _o, _b) => where(no(anOfferingIsBeingTakenAbout({ round }))),
 ).holds();
 
+/**
+ * The notes whoever sorts the round reads: the relay's, guidance on the
+ * round's leg written in the editor, and after it the run's, guidance on the
+ * round itself written from the dashboard, joined as one text. Both are read
+ * on every ask, so a note revised between asks reaches the next one, and the
+ * run's note stands on this round alone: the next run of the relay starts
+ * with the relay's note and nothing after it.
+ */
+const theNotesFor = view(
+  "the sorter's notes for (round)",
+  ({ round }, { notes }, { questionnaire, leg, relay, run }) =>
+    where(
+      Publishing._edition({ edition: round }).is({ material: questionnaire }),
+      Relaying._legFor({ material: questionnaire }).is({ leg }),
+      Guiding._guidanceText({ subject: leg, use: SORTING_USE }).is({ text: relay }),
+      Guiding._guidanceText({ subject: round, use: SORTING_USE }).is({ text: run }),
+      compute(computations.sorterNotes, { relay, run }, notes),
+    ),
+).optional();
+
+/** Whether any card of the round is in a pile, which is what emptying the piles undoes. */
+const roundHasACardInAPile = view(
+  "(round) has a card in a pile",
+  ({ round }, _outputs, { response, item, card }) =>
+    where(
+      Responding._submittedAnswers({ subject: round }).is({ response, item }),
+      compute(computations.cardId, { response, item }, card),
+      Categorizing._getCategory({ item: card }),
+    ),
+).holds();
+
 const pileExists = view("(pile) is a pile", ({ pile }, _outputs, _bindings) =>
   where(Categorizing._getCategoryDetail({ category: pile })),
 ).holds();
@@ -201,6 +236,9 @@ export const theWall = former(
       questions,
       begun,
       handedIn,
+      modelBegun,
+      modelHandedIn,
+      seat,
       response,
       participant,
       item,
@@ -217,6 +255,8 @@ export const theWall = former(
       held,
       failure,
       failedAt,
+      notes,
+      pendingAsk,
     },
   ) =>
     where(
@@ -233,6 +273,7 @@ export const theWall = former(
       whether(Reasoning._lastFailureAbout({ about: round }).is({ account: failure, failedAt })),
       // The run is the round's: read once for the wall, not once a card.
       whether(theRunOf({ round }).is({ run })),
+      Guiding._guidanceText({ subject: round, use: SORTING_USE }).is({ text: notes }),
     ).form({
       round,
       number,
@@ -243,10 +284,29 @@ export const theWall = former(
       questions,
       failure,
       failedAt,
+      notes,
+      asksOut: each(Reasoning._pending({}).is({ asking: pendingAsk, about: round })).count(),
       begun: each(Responding._responsesFor({ subject: round }).is({ response: begun })).count(),
       handedIn: each(
         Responding._responsesFor({ subject: round }).is({ response: handedIn, submitted: true }),
       ).count(),
+      begunByModel: each(
+        Responding._responsesFor({ subject: round }).is({
+          response: modelBegun,
+          participant: seat,
+        }),
+      )
+        .where(theRunOf({ round }).is({ run }), participantIsSeated({ participant: seat, run }))
+        .count(),
+      handedInByModel: each(
+        Responding._responsesFor({ subject: round }).is({
+          response: modelHandedIn,
+          participant: seat,
+          submitted: true,
+        }),
+      )
+        .where(theRunOf({ round }).is({ run }), participantIsSeated({ participant: seat, run }))
+        .count(),
       cards: each(
         Responding._submittedAnswers({ subject: round }).is({ response, participant, item, value }),
       )
@@ -406,7 +466,7 @@ export const PlacedReplySatisfiesInsistence = reaction(
 
 /** While patience remains, a complaint carries the exchange back to the reasoner. */
 export const ComplaintRetriesTheAsk = reaction(
-  ({ round, offering, account, value, categories, values, removed, passage, at }) =>
+  ({ round, offering, account, value, categories, values, removed, notes, passage, at }) =>
     when(Insisting.complain({ aim: round, offering, account }).responds())
       .where(
         now(at),
@@ -416,9 +476,10 @@ export const ComplaintRetriesTheAsk = reaction(
         Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         Trashing._trashedItems({}).is({ items: removed }),
+        theNotesFor({ round }).is({ notes }),
         compute(
           computations.placingRepairPassage,
-          { value, categories, values, removed, offering, account },
+          { value, categories, values, removed, notes, offering, account },
           passage,
         ),
       )
@@ -500,10 +561,15 @@ export const Read = endpoint(
   { input: { required: ["session", "round"] } },
 );
 
-/** Naming a pile that already stands on this wall reaches it rather than making another. */
+/**
+ * Naming a pile that already stands on this wall reaches it rather than making
+ * another. With a card, the card is placed in it, which is what dropping a card
+ * on the new-pile cell does; without one, the pile opens empty, which is what
+ * a click on the cell does.
+ */
 export const OpenPile = endpoint(
   "/live/walls/open-pile",
-  ({ session, round, name, card, user, at, category, assigned }) =>
+  ({ session, round, name, card, user, at, given, category, opened, assigned }) =>
     receive({ session, round, name, card }).then(
       where(
         now(at),
@@ -519,7 +585,22 @@ export const OpenPile = endpoint(
         )
         .then(Categorizing.assign({ item: card, category }).responds({ item: assigned }))
         .then(respond({ pile: category, card: assigned }))
-        .named("success"),
+        .named("with-card"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        compute(computations.cardGiven, { card }, given),
+        is.among(given, ["none"]),
+      )
+        .then(
+          Categorizing.ensureCategory({ scope: round, name, description: "" }).responds({
+            category: opened,
+          }),
+        )
+        .then(respond({ pile: opened }))
+        .named("empty"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -531,6 +612,8 @@ export const OpenPile = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         roundIsNotOfAClosedRun({ round }),
+        compute(computations.cardGiven, { card }, given),
+        is.among(given, ["given"]),
         no(cardIsOnTheWallOf({ card, round })),
       )
         .then(respond({ error: "CARD_NOT_FOUND" }))
@@ -539,7 +622,7 @@ export const OpenPile = endpoint(
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
-  { input: { required: ["session", "round", "name", "card"] } },
+  { input: { required: ["session", "round", "name"], defaults: { card: "" } } },
 );
 
 /**
@@ -850,7 +933,11 @@ export const Pick = endpoint(
   { input: { required: ["session", "round", "pile"] } },
 );
 
-/** Unpicking a pile unpins it; unpicking one that is not picked changes nothing. */
+/**
+ * Unpicking a pile unpins it. Pinning's unpin changes nothing for a pile with
+ * no pin, so two dashboards unpicking one pile in the same instant both
+ * succeed: there is no read before the act for them to race.
+ */
 export const Unpick = endpoint(
   "/live/walls/unpick",
   ({ session, round, pile, user }) =>
@@ -860,20 +947,10 @@ export const Unpick = endpoint(
         mayHostLive({ user }),
         roundIsNotOfAClosedRun({ round }),
         pileIsOfRound({ pile, round }),
-        Pinning._isPinned({ item: pile, scope: round }).is({ pinned: true }),
       )
         .then(Pinning.unpin({ item: pile, scope: round }).responds())
         .then(respond({ pile }))
         .named("success"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsNotOfAClosedRun({ round }),
-        pileIsOfRound({ pile, round }),
-        Pinning._isPinned({ item: pile, scope: round }).is({ pinned: false }),
-      )
-        .then(respond({ pile }))
-        .named("not-picked"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -896,11 +973,33 @@ export const Unpick = endpoint(
   { input: { required: ["session", "round", "pile"] } },
 );
 
-/** A pile merged away is no longer on the wall, so it is no longer picked. */
+/** Keep the reservation before dropping the merged pile's pins. */
+export const MergedReservedPileKeepsReservation = reaction(({ category, into, at }) =>
+  when(Categorizing.mergeCategory({ category, into }).responds())
+    .where(
+      now(at),
+      Pinning._isPinned({ item: category, scope: RESERVED_PILES }).is({ pinned: true }),
+      Pinning._isPinned({ item: into, scope: RESERVED_PILES }).is({ pinned: false }),
+    )
+    .then(Pinning.pin({ item: into, scope: RESERVED_PILES, priority: 0, at }))
+    .then(Pinning.clearItem({ item: category })),
+);
+
+/** If the destination is already reserved, only the obsolete pins remain. */
+export const MergedReservedPileWasAlreadyKept = reaction(({ category, into }) =>
+  when(Categorizing.mergeCategory({ category, into }).responds())
+    .where(
+      Pinning._isPinned({ item: category, scope: RESERVED_PILES }).is({ pinned: true }),
+      Pinning._isPinned({ item: into, scope: RESERVED_PILES }).is({ pinned: true }),
+    )
+    .then(Pinning.clearItem({ item: category })),
+);
+
+/** An ordinary merged pile has no reservation to transfer. */
 export const MergedPileIsUnpicked = reaction(({ category }) =>
-  when(Categorizing.mergeCategory({ category }).responds()).then(
-    Pinning.clearItem({ item: category }),
-  ),
+  when(Categorizing.mergeCategory({ category }).responds())
+    .where(Pinning._isPinned({ item: category, scope: RESERVED_PILES }).is({ pinned: false }))
+    .then(Pinning.clearItem({ item: category })),
 );
 
 /**
@@ -916,7 +1015,7 @@ export const MergedPileIsUnpicked = reaction(({ category }) =>
  */
 export const Sort = endpoint(
   "/live/walls/sort",
-  ({ session, round, user, at, value, categories, values, removed, passage, asking }) =>
+  ({ session, round, user, at, value, categories, values, removed, notes, passage, asking }) =>
     receive({ session, round })
       .then(
         where(
@@ -939,7 +1038,12 @@ export const Sort = endpoint(
           Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
           Responding._valuesForSubject({ subject: round }).is({ values }),
           Trashing._trashedItems({}).is({ items: removed }),
-          compute(computations.placingPassage, { value, categories, values, removed }, passage),
+          theNotesFor({ round }).is({ notes }),
+          compute(
+            computations.placingPassage,
+            { value, categories, values, removed, notes },
+            passage,
+          ),
         ).then(
           Reasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({ asking }),
         ),
@@ -1012,6 +1116,292 @@ export const SortNotAsked = endpoint("/live/walls/sort", ({ session, round, user
   ),
 );
 
+/**
+ * Closing a round with the run's switch on settles its wall: one last ask over
+ * whatever is left in the tray, on the path the tick takes and with the same
+ * passage, and after it the model never touches the round unless a hand
+ * presses Resort, since the tick asks about an open round only. An ask
+ * already out at the close is the settling ask — its reply places what it was
+ * asked about, and nothing asks again — so the close asks only where the tick
+ * would have. With the switch off the close asks nothing.
+ */
+export const ClosedRoundSettlesWall = reaction(
+  ({ round, at, run, value, categories, values, removed, notes, passage }) =>
+    when(Publishing.close({ edition: round, at }).responds())
+      .where(
+        roundIsAWall({ round }),
+        theRunOf({ round }).is({ run }),
+        Pinning._isPinned({ item: run, scope: SORTING }).is({ pinned: true }),
+        roundHasACardInTheTray({ round }),
+        noAskStandsAbout({ round }),
+        Locking._isLocked({ target: round }).is({ locked: false }),
+        noOfferingIsBeingTakenAbout({ round }),
+      )
+      .then(Locking.lock({ target: round, at }))
+      .then(
+        where(
+          RunSnapshotting._snapshot({ subject: round }).is({ value }),
+          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+          Responding._valuesForSubject({ subject: round }).is({ values }),
+          Trashing._trashedItems({}).is({ items: removed }),
+          theNotesFor({ round }).is({ notes }),
+          compute(
+            computations.placingPassage,
+            { value, categories, values, removed, notes },
+            passage,
+          ),
+        ).then(Reasoning.ask({ reasoner: REASONER, about: round, passage, at })),
+      ),
+);
+
+/**
+ * One deliberate ask about the shown round, which Resort makes after emptying
+ * the piles, whether the switch is on or off and whether the round is open or
+ * closed, as long as the run is open and a card is in the tray: the tick's
+ * guards less the round's own openness, since the passage reads only what a
+ * closed round keeps. It takes the same lock as the tick, so the tick and two
+ * dashboards never ask at once, and it is its own endpoint so each path keeps
+ * total guards.
+ */
+export const SortNow = endpoint(
+  "/live/walls/sort-now",
+  ({ session, round, user, at, value, categories, values, removed, notes, passage, asking }) =>
+    receive({ session, round })
+      .then(
+        where(
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
+          roundIsOfAnOpenRun({ round }),
+          roundHasACardInTheTray({ round }),
+          noAskStandsAbout({ round }),
+          Locking._isLocked({ target: round }).is({ locked: false }),
+          noOfferingIsBeingTakenAbout({ round }),
+          no(roundHasAFreshFailure({ round, at })),
+        )
+          .then(Locking.lock({ target: round, at }).responds())
+          .named("asked"),
+      )
+      .then(
+        where(
+          RunSnapshotting._snapshot({ subject: round }).is({ value }),
+          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+          Responding._valuesForSubject({ subject: round }).is({ values }),
+          Trashing._trashedItems({}).is({ items: removed }),
+          theNotesFor({ round }).is({ notes }),
+          compute(
+            computations.placingPassage,
+            { value, categories, values, removed, notes },
+            passage,
+          ),
+        ).then(
+          Reasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({ asking }),
+        ),
+      )
+      .then(respond({ asked: true, asking })),
+  { input: { required: ["session", "round"] } },
+);
+
+/** The same path, answering that nothing was asked where the tick would, and `CLOSED` once the run has. */
+export const SortNowNotAsked = endpoint("/live/walls/sort-now", ({ session, round, user, at }) =>
+  receive({ session, round }).then(
+    where(
+      now(at),
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsOfAnOpenRun({ round }),
+      roundHasACardInTheTray({ round }),
+      noAskStandsAbout({ round }),
+      Locking._isLocked({ target: round }).is({ locked: true }),
+      noOfferingIsBeingTakenAbout({ round }),
+      no(roundHasAFreshFailure({ round, at })),
+    )
+      .then(respond({ asked: false }))
+      .named("locked"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsOfAnOpenRun({ round }),
+      roundHasEveryCardInAPile({ round }),
+    )
+      .then(respond({ asked: false }))
+      .named("nothing-to-sort"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsOfAnOpenRun({ round }),
+      roundHasACardInTheTray({ round }),
+      anAskStandsAbout({ round }),
+    )
+      .then(respond({ asked: false }))
+      .named("still-out"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsOfAnOpenRun({ round }),
+      roundHasACardInTheTray({ round }),
+      noAskStandsAbout({ round }),
+      anOfferingIsBeingTakenAbout({ round }),
+    )
+      .then(respond({ asked: false }))
+      .named("taking"),
+    where(
+      now(at),
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsOfAnOpenRun({ round }),
+      roundHasACardInTheTray({ round }),
+      noAskStandsAbout({ round }),
+      noOfferingIsBeingTakenAbout({ round }),
+      roundHasAFreshFailure({ round, at }),
+    )
+      .then(respond({ asked: false }))
+      .named("failing"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      no(roundIsOfAnOpenRun({ round })),
+    )
+      .then(respond({ error: "CLOSED" }))
+      .named("closed"),
+    where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
+/**
+ * The run's note to the sorter: one entry of guidance on the round itself,
+ * set whole each time so two dashboards writing at once leave one. It stands
+ * beside the relay's note, which the editor owns, and is read after it on
+ * every ask; a run's note is never copied to the leg, so the next run of the
+ * relay starts without it.
+ */
+export const SetNotes = endpoint(
+  "/live/walls/set-notes",
+  ({ session, round, body, user, at, guidance }) =>
+    receive({ session, round, body }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsAWall({ round }),
+        roundIsNotOfAClosedRun({ round }),
+      )
+        .then(
+          Guiding.set({ subject: round, use: SORTING_USE, title: "", body }).responds({ guidance }),
+        )
+        .then(respond({ guidance }))
+        .named("set"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsAWall({ round }),
+        roundIsOfAClosedRun({ round }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(roundIsAWall({ round })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "round", "body"] } },
+);
+
+export const ClearNotes = endpoint(
+  "/live/walls/clear-notes",
+  ({ session, round, user, cleared }) =>
+    receive({ session, round }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsAWall({ round }),
+        roundIsNotOfAClosedRun({ round }),
+      )
+        .then(Guiding.clear({ subject: round, use: SORTING_USE }).responds({ cleared }))
+        .then(respond({ cleared }))
+        .named("cleared"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsAWall({ round }),
+        roundIsOfAClosedRun({ round }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(roundIsAWall({ round })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "round"] } },
+);
+
+/**
+ * Every card of the round goes back to the tray in one request: the read of
+ * the round's cards continues once per card in a pile, and each is unassigned
+ * in the same flow. The piles stand, empty, with their names, lids, and picks.
+ * It takes no lock and waits for no ask: a reply that lands afterward places
+ * the cards it was asked about, and the next tick or Sort now places the rest.
+ */
+export const EmptyPiles = endpoint(
+  "/live/walls/empty-piles",
+  ({ session, round, user, at, response, item, card }) =>
+    receive({ session, round })
+      .then(
+        where(
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
+          roundIsNotOfAClosedRun({ round }),
+          Responding._submittedAnswers({ subject: round }).is({ response, item }),
+          compute(computations.cardId, { response, item }, card),
+          Categorizing._getCategory({ item: card }),
+        )
+          .then(Categorizing.unassign({ item: card }).responds())
+          .named("emptied"),
+      )
+      .then(respond({ emptied: true })),
+  { input: { required: ["session", "round"] } },
+);
+
+/** The same path for a wall with nothing in a pile, and the refusals. */
+export const EmptyPilesNotNeeded = endpoint("/live/walls/empty-piles", ({ session, round, user }) =>
+  receive({ session, round }).then(
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsNotOfAClosedRun({ round }),
+      no(roundHasACardInAPile({ round })),
+    )
+      .then(respond({ emptied: false }))
+      .named("already-empty"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayHostLive({ user }),
+      roundIsOfAClosedRun({ round }),
+    )
+      .then(respond({ error: "CLOSED" }))
+      .named("closed"),
+    where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
 export const Summarize = endpoint(
   "/live/walls/summarize",
   ({ session, pile, user, at, round, categories, values, removed, passage, asking }) =>
@@ -1059,4 +1449,82 @@ export const Summarize = endpoint(
         .named("forbidden"),
     ),
   { input: { required: ["session", "pile"] } },
+);
+
+/** Only unused, unpicked piles outside the round's starting set can be cleared. */
+const clearablePile = view(
+  "clearable empty pile (pile) in (round)",
+  ({ round }, { pile }, { name, questionnaire, leg }) =>
+    where(
+      Publishing._edition({ edition: round }).is({ material: questionnaire }),
+      Relaying._legFor({ material: questionnaire }).is({ leg }),
+      Categorizing._categoriesIn({ scope: round }).is({ category: pile, name }),
+      no(Categorizing._getItems({ category: pile })),
+      Pinning._isPinned({ item: pile, scope: round }).is({ pinned: false }),
+      Pinning._isPinned({ item: pile, scope: RESERVED_PILES }).is({ pinned: false }),
+      no(Categorizing._categoriesIn({ scope: leg }).is({ name })),
+    ),
+);
+
+export const ClearEmptyPiles = endpoint(
+  "/live/walls/clear-empty-piles",
+  ({ session, round, user, pile, deleted }) =>
+    receive({ session, round }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        Locking._isLocked({ target: round }).is({ locked: false }),
+        noOfferingIsBeingTakenAbout({ round }),
+        clearablePile({ round }).is({ pile }),
+      )
+        .then(Categorizing.deleteEmptyCategory({ category: pile }).responds({ deleted }))
+        .then(respond({ cleared: deleted }))
+        .named("clear"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        Locking._isLocked({ target: round }).is({ locked: false }),
+        noOfferingIsBeingTakenAbout({ round }),
+        no(clearablePile({ round })),
+      )
+        .then(respond({ cleared: false }))
+        .named("none"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        Locking._isLocked({ target: round }).is({ locked: true }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("sorting"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+        Locking._isLocked({ target: round }).is({ locked: false }),
+        anOfferingIsBeingTakenAbout({ round }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("placing"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsOfAClosedRun({ round }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("closed"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(roundIsAWall({ round })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "round"] } },
 );

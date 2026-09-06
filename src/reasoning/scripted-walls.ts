@@ -1,10 +1,11 @@
 /**
- * The deterministic replies to the wall's three passages, for tests and
+ * The deterministic replies to the wall's passages and the editor's sample, for tests and
  * keyless demos. Each reply is read out of the passage itself — the labelled
  * cards, the piles as they stand, the boxes to answer — so the scripted room
  * behaves like a room the reasoner answered.
  */
 
+import { SAMPLING_OPENING } from "../computations/live-sampling.ts";
 import { LID_OPENING, PARTICIPANT_OPENING, PLACING_OPENING } from "../computations/live-walls.ts";
 
 /** The piles the scripted mind sorts into, in the order it reaches for them. */
@@ -69,23 +70,54 @@ function lidReply(passage: string): string {
 function participantReply(passage: string): string {
   const participant = passage.split("You are participant ")[1]?.split("\n")[0]?.replace(/\.$/, "");
   const seed = seedOf(participant ?? "");
-  const offered = passage.split("Choose from: ")[1]?.split("\n")[0];
-  const choices = offered === undefined ? [] : offered.split(" | ");
-  const listed = passage.split("The boxes to answer, one line each:\n")[1] ?? "";
-  const boxes = [...listed.matchAll(/^(\S+) — /gm)].map(([, item]) => item as string);
-  return JSON.stringify({
-    kind: "answers",
-    answers: boxes.map((item, index) => ({
+  const listed =
+    passage.split("The questions, each followed by its boxes to answer, one line each:\n\n")[1] ??
+    "";
+  const answers = listed.split("\n\n").flatMap((block) => {
+    const offered = block.split("Choose from: ")[1]?.split("\n")[0];
+    const choices = offered === undefined ? [] : offered.split(" | ");
+    const boxes = [...block.matchAll(/^(\S+) — /gm)].map(([, item]) => item as string);
+    return boxes.map((item, index) => ({
       item,
       value:
         choices.length === 0
           ? (PHRASES[(seed + index) % PHRASES.length] as string)
           : (choices[(seed + index) % choices.length] as string),
-    })),
+    }));
+  });
+  return JSON.stringify({ kind: "answers", answers });
+}
+
+/**
+ * A sample: one answer per participant listed, each in a pile. A vote's answers
+ * are its choices and sort under them; a written round's answers are the
+ * scripted phrases, filed first into the piles the round already stands on,
+ * then into the buckets, so every standing pile appears in the sample.
+ */
+function sampledReply(passage: string): string {
+  const count = [...section(passage, "The participants, one answer each:").matchAll(/^\d+\. /gm)]
+    .length;
+  const offered = passage.split("Choose from: ")[1]?.split("\n")[0];
+  const choices = offered === undefined ? [] : offered.split(" | ");
+  const standing = [...section(passage, "The piles as they stand:").matchAll(/^- ([^:\n]+)/gm)].map(
+    ([, name]) => (name as string).trim(),
+  );
+  const piles = [...standing, ...BUCKETS];
+  return JSON.stringify({
+    kind: "sampled",
+    answers: Array.from({ length: count }, (_, index) =>
+      choices.length === 0
+        ? {
+            value: PHRASES[index % PHRASES.length] as string,
+            pile: piles[index % piles.length] as string,
+          }
+        : { value: choices[index % choices.length], pile: choices[index % choices.length] },
+    ),
   });
 }
 
 export function scriptedWallReply(passage: string): string | undefined {
+  if (passage.startsWith(SAMPLING_OPENING)) return sampledReply(passage);
   if (passage.startsWith(PLACING_OPENING)) return placingReply(passage);
   if (passage.startsWith(LID_OPENING)) return lidReply(passage);
   if (passage.startsWith(PARTICIPANT_OPENING)) return participantReply(passage);

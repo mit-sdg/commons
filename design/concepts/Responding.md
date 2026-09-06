@@ -3,7 +3,9 @@
 ## Purpose
 
 Let a participant answer what they were given at their own pace and hand it in
-deliberately, once — nothing counts until they say it does.
+deliberately, once. Nothing counts until they say it does.
+
+Prevents: an answer counted before its participant handed it in; a second hand-in from one participant; a reload losing the answers already given.
 
 ## Principle
 

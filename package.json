@@ -11,7 +11,8 @@
     "design:check": "sync-engine check-design design/concepts/*.md design/compositions/*/*.md design/application.md",
     "source:check": "sync-engine check --config generated.config.ts",
     "issues:check": "bun scripts/check-issues.ts",
-    "check": "bun run design:check && bun run source:check && bun run artifacts check && bun run issues:check && vp check && bun run --cwd frontend check",
+    "runtime:check": "bun scripts/check-runtime.ts",
+    "check": "bun run runtime:check && bun run design:check && bun run source:check && bun run artifacts check && bun run issues:check && vp check && bun run --cwd frontend check",
     "build": "BACKEND_ORIGIN=http://127.0.0.1:4000 bun run --cwd frontend build && bun scripts/prepare-platform.ts",
     "platform:start": "bun scripts/start-platform.ts",
     "test": "bun run design:check && bun run source:check && bun run artifacts check && bun run issues:check && LOG_LEVEL=error node ./node_modules/vite-plus/bin/vp test && bun run --cwd frontend test",
@@ -52,6 +53,7 @@
     "vite-plus": "0.2.2"
   },
   "overrides": {
+    "bson": "7.2.0",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2"
   },
   "devEngines": {
@@ -62,7 +64,11 @@
     }
   },
   "engines": {
-    "bun": ">=1.3.0"
+    "bun": ">=1.3.0",
+    "node": ">=24 <25"
+  },
+  "volta": {
+    "node": "24.20.0"
   },
   "packageManager": "bun@1.3.14"
 }

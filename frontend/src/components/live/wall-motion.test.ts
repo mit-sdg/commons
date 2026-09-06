@@ -6,6 +6,7 @@ import {
   BIRTH_GAP_MS,
   diff,
   dropped,
+  enqueue,
   gapAfter,
   LANDING_GAP_MS,
   MAX_LAG_MS,
@@ -14,6 +15,7 @@ import {
   ordered,
   placed,
   timeline,
+  without,
 } from "./wall-motion";
 
 const wall = (cards: [string, string | null][], piles: string[]) => ({
@@ -130,6 +132,26 @@ describe("the wall after a hand edit", () => {
   });
 });
 
+describe("the belt after a hand edit", () => {
+  test("every move about the placed card leaves the belt, and the rest stay", () => {
+    const belt: Move[] = [
+      { kind: "open", pile: "p2" },
+      { kind: "arrive", card: "a" },
+      { kind: "place", card: "b", pile: "p1" },
+      { kind: "place", card: "a", pile: "p2" },
+      { kind: "return", card: "b" },
+      { kind: "close", pile: "p3" },
+    ];
+    expect(without(belt, "b")).toEqual([
+      { kind: "open", pile: "p2" },
+      { kind: "arrive", card: "a" },
+      { kind: "place", card: "a", pile: "p2" },
+      { kind: "close", pile: "p3" },
+    ]);
+    expect(without(belt, "zzz")).toEqual(belt);
+  });
+});
+
 describe("the wall when nothing is left to move", () => {
   test("a pile's new name and its lid arrive though no card moved", () => {
     const shown = wall([["a", "p1"]], ["p1"]);
@@ -223,4 +245,41 @@ describe("the belt's pace", () => {
     ]);
     expect(timeline([])).toEqual([]);
   });
+});
+
+describe("returning responses together", () => {
+  test("a large return batch has one timestamp, followed by the normal sorting cadence", () => {
+    const returns: Move[] = Array.from({ length: 200 }, (_, i) => ({
+      kind: "return",
+      card: `c${i}`,
+    }));
+    const moves: Move[] = [
+      ...returns,
+      { kind: "place", card: "c0", pile: "p1" },
+      { kind: "place", card: "c1", pile: "p1" },
+    ];
+    const times = timeline(moves);
+    expect(new Set(times.slice(0, 200).map((entry) => entry.at))).toEqual(
+      new Set([0]),
+    );
+    expect(times[200].at).toBe(LANDING_GAP_MS);
+    expect(times[201].at - times[200].at).toBe(LANDING_GAP_MS);
+  });
+});
+
+test("a return interrupts obsolete placements without discarding arrivals or other cards", () => {
+  expect(
+    enqueue(
+      [
+        { kind: "arrive", card: "new" },
+        { kind: "place", card: "a", pile: "old" },
+        { kind: "place", card: "b", pile: "keep" },
+      ],
+      [{ kind: "return", card: "a" }],
+    ),
+  ).toEqual([
+    { kind: "return", card: "a" },
+    { kind: "arrive", card: "new" },
+    { kind: "place", card: "b", pile: "keep" },
+  ]);
 });

@@ -8,6 +8,8 @@ export interface RunSnapshotQuestion {
   cap?: number;
   /** The groups a round shows above its prompt, carried from an earlier round. */
   context?: ContextGroup[];
+  /** Original groups behind dynamically carried choices; ballots retain these examples. */
+  choiceSources?: ContextGroup[];
   position: number;
 }
 

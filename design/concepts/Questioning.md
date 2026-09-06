@@ -6,6 +6,8 @@ Let an author compose a questionnaire — ordered questions, each with a prompt,
 offered choices, and, when the author proposes one, an expected answer — and
 revise it freely for as long as it stays in the author's hands.
 
+Prevents: a question that both offers choices and takes parts; an expected answer that is none of the choices offered; a retired questionnaire changed after its teaching life.
+
 ## Principle
 
 Professor Lee composes a five-question quiz about photosynthesis. She adds each

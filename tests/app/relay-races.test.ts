@@ -120,6 +120,71 @@ beforeAll(async () => {
 afterAll(stopTestDb);
 
 describe("two dashboards opening rounds in one instant", () => {
+  test("closing during a round's publication cannot leave that round open afterward", async () => {
+    const instances = mongoImplementations(await testDb());
+    const original = instances.Linking.setLinks.bind(instances.Linking);
+    let reached!: () => void;
+    let release!: () => void;
+    const paused = new Promise<void>((resolve) => {
+      reached = resolve;
+    });
+    const resume = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    instances.Linking.setLinks = async function setLinks({ source, targets }) {
+      reached();
+      await resume;
+      return original({ source, targets });
+    };
+    const isolated = createEdge(instances);
+    const host = await registerHost(isolated);
+    const call = (path: string, body: unknown) => post(isolated, path, body, host).then(json);
+    const { relay } = await call("/live/relays/plan", { title: "Interrupted opening" });
+    const { leg } = await call("/live/relays/add-round", {
+      relay,
+      title: "One",
+      prompt: "Why?",
+      parts: [],
+      cap: 0,
+      choices: [],
+    });
+    const { run } = await call("/live/relays/launch", { relay });
+    const opening = call("/live/relays/open-round", { run, leg });
+    await paused;
+    try {
+      expect((await call("/live/relays/close", { run })).run).toBe(run);
+    } finally {
+      release();
+    }
+    const { round } = await opening;
+    expect(typeof round).toBe("string");
+    const edition = await until(
+      () => isolated.application.concepts.Publishing._edition({ edition: round }),
+      (rows) => rows[0]?.open === false,
+    );
+    expect(edition[0].open).toBe(false);
+    expect(await isolated.application.concepts.Locking._isLocked({ target: run })).toEqual({
+      locked: false,
+    });
+  });
+
+  test("concurrent launches leave one readable run and one participation token", async () => {
+    const attempts = await Promise.all(
+      Array.from({ length: 6 }, () =>
+        post(edge, "/live/relays/launch", { relay }, cookie).then(json),
+      ),
+    );
+    const successes = attempts.filter((reply) => typeof reply.run === "string");
+    expect(successes).toHaveLength(1);
+    expect(attempts.filter((reply) => reply.error === "CONFLICT")).toHaveLength(5);
+    const run = successes[0].run;
+    expect((await readRun(run)).run?.token).toBe(successes[0].token);
+    expect(
+      await edge.application.concepts.Publishing._editionsFor({ material: relay }),
+    ).toHaveLength(1);
+    await post(edge, "/live/relays/close", { run }, cookie);
+  });
+
   test("every trial leaves one round open, refuses the other, and the run still reads", async () => {
     for (let trial = 0; trial < 25; trial += 1) {
       const run = await launch();
@@ -169,6 +234,25 @@ describe("two dashboards opening rounds in one instant", () => {
     expect(await edge.application.concepts.Locking._isLocked({ target: run })).toEqual({
       locked: false,
     });
+  });
+
+  test("a parent close also closes a round already linked to it", async () => {
+    const run = await launch();
+    const { round } = await openRound(run, legs[0]);
+    // Exercise the parent-close event itself, including a round linked after
+    // the Close endpoint selected which child it would close first.
+    await edge.application.concepts.Publishing.close({ edition: run, at: new Date() });
+    const edition = await until(
+      () => edge.application.concepts.Publishing._edition({ edition: round }),
+      (rows) => rows[0]?.open === false,
+    );
+    expect(edition[0].open).toBe(false);
+    expect(
+      await until(
+        () => isLocked(run),
+        (lock) => !lock.locked,
+      ),
+    ).toEqual({ locked: false });
   });
 });
 
@@ -244,6 +328,68 @@ describe("dashboards ticking the sort together", () => {
         (lock) => !lock.locked,
       ),
     ).toEqual({ locked: false });
+    await post(edge, "/live/relays/close", { run }, cookie);
+  });
+});
+
+describe("a classroom reconnects and hands in", () => {
+  test("fifty devices retain one response each and repeated hand-ins make fifty cards", async () => {
+    const run = await launch();
+    const token = (await readRun(run)).run?.token as string;
+    const { round } = await openRound(run, legs[0]);
+    const face = await json(await post(edge, "/live/p/arrive", { token }));
+    const question = (face.relay as unknown as { questions: { question: string }[] }).questions[0]
+      .question;
+    const replies = await Promise.all(
+      Array.from({ length: 50 }, async (_, index) => {
+        const device = `classroom-${index}`;
+        const attempts = await Promise.all([
+          post(edge, "/live/p/begin", { token, device }).then(json),
+          post(edge, "/live/p/begin", { token, device }).then(json),
+        ]);
+        expect(attempts[0].response).toBe(attempts[1].response);
+        const response = attempts[0].response;
+        expect(typeof response).toBe("string");
+        const answered = await json(
+          await post(edge, "/live/p/answer", {
+            response,
+            question,
+            value: `Frustration ${index}`,
+          }),
+        );
+        expect(answered.response).toBe(response);
+        const submitted = await Promise.all([
+          post(edge, "/live/p/submit", { response }).then(json),
+          post(edge, "/live/p/submit", { response }).then(json),
+        ]);
+        expect(submitted.filter((reply) => reply.response === response)).toHaveLength(1);
+        expect(submitted.filter((reply) => reply.error === "CONFLICT")).toHaveLength(1);
+        return response;
+      }),
+    );
+    expect(new Set(replies).size).toBe(50);
+    const read = async () =>
+      (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as unknown as {
+        cards: { value: string }[];
+      };
+    const wall = await until(read, (wall) => wall.cards.length === 50);
+    expect(wall.cards).toHaveLength(50);
+    expect(new Set(wall.cards.map((card) => card.value)).size).toBe(50);
+    await post(edge, "/live/relays/close-round", { round }, cookie);
+    const late = await json(await post(edge, "/live/p/submit", { response: replies[0] }));
+    expect(late.error).toBe("CONFLICT");
+    const between = await json(await post(edge, "/live/p/begin", { token, device: "late-phone" }));
+    expect(between.error).toBe("CONFLICT");
+    const next = await openRound(run, legs[1]);
+    const rejoined = await json(
+      await post(edge, "/live/p/begin", { token, device: "classroom-0" }),
+    );
+    expect(typeof rejoined.response).toBe("string");
+    expect(replies).not.toContain(rejoined.response);
+    expect(
+      (await edge.application.concepts.Responding._response({ response: rejoined.response }))[0]
+        .subject,
+    ).toBe(next.round);
     await post(edge, "/live/relays/close", { run }, cookie);
   });
 });

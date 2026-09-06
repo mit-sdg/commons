@@ -3,6 +3,7 @@ import {
   ForwardDraw,
   UseBlank,
   InvalidTitle,
+  KindBlank,
   LegDrawnOn,
   LegNotFound,
   NoDraw,
@@ -35,6 +36,8 @@ interface LegDoc {
   relay: string;
   material: string;
   position: number;
+  /** Absent on a leg added before kinds were kept, which reads as empty. */
+  kind?: string;
 }
 
 interface DrawDoc {
@@ -93,8 +96,20 @@ export class MongoRelayingConcept {
     }
     const position = (await this.legs.countDocuments({ relay })) + 1;
     const leg = crypto.randomUUID();
-    await this.legs.insertOne({ _id: leg, relay, material, position });
+    await this.legs.insertOne({ _id: leg, relay, material, position, kind: "" });
     return { leg, position };
+  }
+
+  async setKind({ leg, kind }: { leg: string; kind: string }) {
+    const doc = await this.legs.findOne({ _id: leg });
+    if (doc === null) {
+      throw new LegNotFound("There is no such leg.");
+    }
+    if (typeof kind !== "string" || kind.trim() === "") {
+      throw new KindBlank("A kind needs a word.");
+    }
+    await this.legs.updateOne({ _id: leg }, { $set: { kind: kind.trim() } });
+    return { leg };
   }
 
   async removeLeg({ leg }: { leg: string }) {
@@ -205,14 +220,26 @@ export class MongoRelayingConcept {
 
   async _legs({ relay }: { relay: string }) {
     const docs = await this.legs.find({ relay }).sort({ position: 1 }).toArray();
-    return docs.map((doc) => ({ leg: doc._id, material: doc.material, position: doc.position }));
+    return docs.map((doc) => ({
+      leg: doc._id,
+      material: doc.material,
+      position: doc.position,
+      kind: doc.kind ?? "",
+    }));
   }
 
   async _leg({ leg }: { leg: string }) {
     const doc = await this.legs.findOne({ _id: leg });
     return doc === null
       ? []
-      : [{ relay: doc.relay, material: doc.material, position: doc.position }];
+      : [
+          {
+            relay: doc.relay,
+            material: doc.material,
+            position: doc.position,
+            kind: doc.kind ?? "",
+          },
+        ];
   }
 
   async _legFor({ material }: { material: string }) {
@@ -244,6 +271,7 @@ export class MongoRelayingConcept {
           leg: leg._id,
           material: leg.material,
           position: leg.position,
+          kind: leg.kind ?? "",
           draws: drawn
             .filter((draw) => draw.leg === leg._id)
             .map((draw) => ({ source: draw.source, use: draw.use })),

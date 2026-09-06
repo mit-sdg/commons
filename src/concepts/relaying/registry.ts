@@ -4,6 +4,7 @@ import spec from "@design/concepts/Relaying.md" with { type: "text" };
 import {
   ForwardDraw,
   InvalidTitle,
+  KindBlank,
   LegDrawnOn,
   LegNotFound,
   NoDraw,
@@ -27,6 +28,7 @@ export const relaying = registerConcept({
     NOT_SIBLINGS: NotSiblings,
     USE_BLANK: UseBlank,
     NO_DRAW: NoDraw,
+    KIND_BLANK: KindBlank,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoRelayingConcept(database) },
 });

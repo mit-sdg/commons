@@ -82,11 +82,11 @@ for (const [floor, make] of floors) {
       expect(first.position).toBe(1);
       expect(second.position).toBe(2);
       expect(await relaying._legs({ relay })).toEqual([
-        { leg: first.leg, material: "name-it", position: 1 },
-        { leg: second.leg, material: "vote", position: 2 },
+        { leg: first.leg, material: "name-it", position: 1, kind: "" },
+        { leg: second.leg, material: "vote", position: 2, kind: "" },
       ]);
       expect(await relaying._leg({ leg: second.leg })).toEqual([
-        { relay, material: "vote", position: 2 },
+        { relay, material: "vote", position: 2, kind: "" },
       ]);
       expect(await relaying._leg({ leg: "ghost" })).toEqual([]);
       expect(await relaying._legFor({ material: "vote" })).toEqual([
@@ -96,6 +96,25 @@ for (const [floor, make] of floors) {
       expect(
         await refusalOf(() => relaying.addLeg({ relay: "ghost", material: "x" })),
       ).toBeInstanceOf(refusalErrors.RelayNotFound);
+    });
+
+    test("setKind keeps the planner's word on the leg and refuses a missing leg or a blank word", async () => {
+      const relaying = await make();
+      const { relay } = await relaying.plan({ author: "dana", title: "Concept clinic", at });
+      const { leg } = await relaying.addLeg({ relay, material: "vote" });
+      expect(await relaying.setKind({ leg, kind: " vote " })).toEqual({ leg });
+      expect(await relaying._leg({ leg })).toEqual([
+        { relay, material: "vote", position: 1, kind: "vote" },
+      ]);
+      expect(await relaying._legs({ relay })).toEqual([
+        { leg, material: "vote", position: 1, kind: "vote" },
+      ]);
+      expect(
+        await refusalOf(() => relaying.setKind({ leg: "ghost", kind: "vote" })),
+      ).toBeInstanceOf(refusalErrors.LegNotFound);
+      expect(await refusalOf(() => relaying.setKind({ leg, kind: "  " }))).toBeInstanceOf(
+        refusalErrors.KindBlank,
+      );
     });
 
     test("_legs answers no rows for a relay with none", async () => {
@@ -200,9 +219,9 @@ for (const [floor, make] of floors) {
         position: 2,
       });
       expect(await relaying._legs({ relay })).toEqual([
-        { leg: first, material: "name-it", position: 1 },
-        { leg: second, material: "vote", position: 2 },
-        { leg: third, material: "explain", position: 3 },
+        { leg: first, material: "name-it", position: 1, kind: "" },
+        { leg: second, material: "vote", position: 2, kind: "" },
+        { leg: third, material: "explain", position: 3, kind: "" },
       ]);
     });
 
@@ -265,8 +284,8 @@ for (const [floor, make] of floors) {
         material: "vote",
       });
       expect(await relaying._legs({ relay })).toEqual([
-        { leg: first, material: "name-it", position: 1 },
-        { leg: third, material: "explain", position: 2 },
+        { leg: first, material: "name-it", position: 1, kind: "" },
+        { leg: third, material: "explain", position: 2, kind: "" },
       ]);
       expect(await relaying._drawsOn({ source: first })).toEqual([
         { draw: expect.any(String), leg: third, use: "winner" },
@@ -281,7 +300,7 @@ for (const [floor, make] of floors) {
         material: "name-it",
       });
       expect(await relaying._legs({ relay })).toEqual([
-        { leg: third, material: "explain", position: 1 },
+        { leg: third, material: "explain", position: 1, kind: "" },
       ]);
     });
 
@@ -302,17 +321,19 @@ for (const [floor, make] of floors) {
       expect(await relaying._plan({ relay })).toEqual([
         {
           legs: [
-            { leg: first, material: "name-it", position: 1, draws: [] },
+            { leg: first, material: "name-it", position: 1, kind: "", draws: [] },
             {
               leg: second,
               material: "vote",
               position: 2,
+              kind: "",
               draws: [{ source: first, use: "piles" }],
             },
             {
               leg: third,
               material: "explain",
               position: 3,
+              kind: "",
               draws: [{ source: second, use: "winner" }],
             },
           ],
@@ -333,7 +354,7 @@ for (const [floor, make] of floors) {
       const { relay: yours } = await relaying.plan({ author: "ada", title: "Other", at });
       await relaying.addLeg({ relay: yours, material: "elsewhere" });
       expect(await relaying._legs({ relay: yours })).toEqual([
-        { leg: expect.any(String), material: "elsewhere", position: 1 },
+        { leg: expect.any(String), material: "elsewhere", position: 1, kind: "" },
       ]);
       expect((await relaying._legs({ relay: mine })).map((row) => row.leg)).toContain(first);
     });

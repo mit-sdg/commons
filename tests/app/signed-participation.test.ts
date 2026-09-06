@@ -255,7 +255,7 @@ describe("a model seat is an identifier the host made up", () => {
     const student = await register(edge, "student");
     const seated = await post(
       edge,
-      "/live/relays/invite",
+      "/live/runs/invite",
       { run: runId, device: student.user },
       host.cookie,
     );
@@ -268,7 +268,7 @@ describe("a model seat is an identifier the host made up", () => {
     ).toMatchObject({ subscribed: false });
 
     const model = await json(
-      await post(edge, "/live/relays/invite", { run: runId, device: "model-1" }, host.cookie),
+      await post(edge, "/live/runs/invite", { run: runId, device: "model-1" }, host.cookie),
     );
     expect(model.participant).toBe("model-1");
   });

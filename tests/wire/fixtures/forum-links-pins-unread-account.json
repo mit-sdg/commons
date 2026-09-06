@@ -548,7 +548,7 @@
         "scope": "$t1Create.conversation"
       },
       "response": {
-        "pin": "uuid#20"
+        "item": "uuid#10"
       }
     },
     {
@@ -562,7 +562,7 @@
         "scope": "$t1Create.conversation"
       },
       "response": {
-        "error": "ITEM_NOT_PINNED"
+        "item": "uuid#10"
       }
     },
     {

@@ -6,8 +6,11 @@
 
 import { cardId } from "./live-rounds.ts";
 
-/** The kinds a round can be, read off its question: one box, several boxes, or choices. */
+/** The kinds a round can be: one box, several boxes, or choices. */
 export type RoundKind = "write" | "list" | "vote";
+
+/** The words a leg's kind may hold. */
+export const KINDS: readonly RoundKind[] = ["write", "list", "vote"];
 
 export interface CarryUse {
   /** The word Relaying's draw stores as its use. */
@@ -44,26 +47,42 @@ export function useStanding({ use }: { use: string }): string {
 }
 
 /**
- * Whether a use is open to the round as it stands: `open` when the round's kind
- * carries it, or the round holds nothing yet and the take is what makes it a
- * kind; `closed` when the table shuts it to the kind the round's choices or
- * parts already make it; `unknown` when the word names no use.
+ * Whether a use is open to the round as it stands: `open` when the leg's word
+ * carries it, or, for a leg with no word, when its choices or parts make a kind
+ * that carries it or it holds nothing yet and the take is what makes it a
+ * kind; `closed` when the table shuts the use to that kind; `unknown` when the
+ * word names no use.
  */
 export function useFit({
   use,
+  kind,
   choices,
   parts,
 }: {
   use: string;
+  kind: string;
   choices: string[];
   parts: string[];
 }): string {
   if (!isCarryUse(use)) return "unknown";
-  // A round holding neither choices nor parts is the kind its take makes it.
-  if (choices.length === 0 && parts.length === 0) return "open";
-  const kind = roundKind({ choices, parts, use: "" });
   const entry = CARRY_USES.find((candidate) => candidate.use === use);
-  return entry !== undefined && entry.kinds.includes(kind) ? "open" : "closed";
+  const word = KINDS.find((candidate) => candidate === kind);
+  if (word !== undefined)
+    return entry !== undefined && entry.kinds.includes(word) ? "open" : "closed";
+  // A leg with no word holding neither choices nor parts is the kind its take makes it.
+  if (choices.length === 0 && parts.length === 0) return "open";
+  const made = roundKind({ choices, parts, use: "" });
+  return entry !== undefined && entry.kinds.includes(made) ? "open" : "closed";
+}
+
+/**
+ * Whether a leg's kind can be launched: `bare` when the planner's word is
+ * `vote` and the round offers no choice of its own, `filled` otherwise. A bare
+ * vote that takes its choices from an earlier round is filled by the take,
+ * which the view around this computation reads.
+ */
+export function voteStanding({ kind, choices }: { kind: string; choices: string[] }): string {
+  return kind === "vote" && choices.length === 0 ? "bare" : "filled";
 }
 
 /**
@@ -98,6 +117,16 @@ export function cardStanding({ card, values }: { card: string; values: unknown }
     : "unknown";
 }
 
+/** Whether a request named a card at all: `given`, or `none` for a request that opens an empty pile. */
+export function cardGiven({ card }: { card: string }): string {
+  return card === "" ? "none" : "given";
+}
+
+/** Whether a request named a relay: `given`, or `none` for a request about the class itself. */
+export function relayGiven({ relay }: { relay: string }): string {
+  return relay === "" ? "none" : "given";
+}
+
 /** Whether a brief says anything: `given` or `blank`. */
 export function briefStanding({ request }: { request: string }): string {
   return request.trim() === "" ? "blank" : "given";
@@ -130,34 +159,54 @@ interface Value {
   value: string;
 }
 
-/** Mirrors the wall's card identity; the two must agree, so the wall's own is reused. */
 /**
- * The values of a pile's cards, in the order the room handed them in. A card
- * that only repeats the pile's name — a ballot on a vote wall — says nothing
- * above the name and is left out.
+ * Written cards keep the room's answers in hand-in order. A ballot instead
+ * carries the examples attached to its original choice in the captured
+ * question. The ballot text, not the pile's mutable name, identifies that
+ * choice, so renaming and merging piles preserve their supporting examples.
+ * Repeated ballots repeat no examples; repeated written answers remain.
+ * An empty vote pile has no ballot identifying its original choice.
  */
 export function pileCards({
   pile,
   categories,
   values,
+  value,
 }: {
   pile: string;
   categories: PileWithItems[];
   values: Value[];
+  value: unknown;
 }): string[] {
   const held = new Set(categories.find((entry) => entry.category === pile)?.items ?? []);
-  const name = categories
-    .find((entry) => entry.category === pile)
-    ?.name.trim()
-    .toLowerCase();
-  return values
-    .filter(({ response, item }) => held.has(cardId({ response, item })))
-    .map(({ value }) => value)
-    .filter((value) => value.trim().toLowerCase() !== name);
+  const questions = ((value ?? {}) as Snapshot).questions ?? [];
+  const examples = new Set<string>();
+  const cards: string[] = [];
+  for (const answer of values) {
+    if (!held.has(cardId(answer))) continue;
+    const question = questions.find((entry) => entry.item === answer.item);
+    if (!(question?.choices ?? []).includes(answer.value)) {
+      cards.push(answer.value);
+      continue;
+    }
+    for (const source of question?.choiceSources ?? []) {
+      if (source.name !== answer.value) continue;
+      for (const card of source.cards) {
+        if (examples.has(card)) continue;
+        examples.add(card);
+        cards.push(card);
+      }
+    }
+  }
+  return cards;
 }
 
 interface Snapshot {
-  questions?: { choices?: string[] }[];
+  questions?: {
+    item?: string;
+    choices?: string[];
+    choiceSources?: { name: string; cards: string[] }[];
+  }[];
 }
 
 /** Whether an answer is one of the choices the round offered: `choice`, or `written`. */

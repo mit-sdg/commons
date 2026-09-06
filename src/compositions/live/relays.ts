@@ -6,6 +6,7 @@ import {
   no,
   now,
   reaction,
+  view,
   when,
   where,
   whether,
@@ -22,7 +23,6 @@ import {
   legTakesNothing,
   mayHostLive,
   mayNotHostLive,
-  namesNoAccount,
   participantIsSeated,
   questionnaireHasAnOpenRun,
   questionnaireHasNoOpenRun,
@@ -44,15 +44,18 @@ import {
   theTakeOf,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
+import { SORTING_USE } from "./rounds.ts";
 
 const {
   Categorizing,
+  Guiding,
   Linking,
   Locating,
   Locking,
   Pinning,
   Publishing,
   Questioning,
+  Reasoning,
   Relaying,
   Responding,
   RunSnapshotting,
@@ -62,12 +65,27 @@ const {
 } = concepts;
 
 /** The reserved Pinning scope in which a pinned run is one the model sorts. */
-const SORTING = "sorting";
+export const SORTING = "sorting";
 
 /** Whether a round's edition is open, and how many responses it drew. */
 export const theRoundFigure = former(
   "the figure of (round)",
-  ({ round }, { open, openedAt, closedAt, begun, handedIn, modelResponse, participant, run }) =>
+  (
+    { round },
+    {
+      open,
+      openedAt,
+      closedAt,
+      begun,
+      handedIn,
+      modelResponse,
+      participant,
+      run,
+      silentResponse,
+      silentSeat,
+      silentRun,
+    },
+  ) =>
     where(Publishing._edition({ edition: round }).is({ open, openedAt, closedAt })).form({
       round,
       open,
@@ -85,6 +103,23 @@ export const theRoundFigure = former(
         }),
       )
         .where(theRunOf({ round }).is({ run }), participantIsSeated({ participant, run }))
+        .count(),
+      // A seat whose ask failed and has no reply is not writing: nothing is
+      // coming for it, and the Model row says so rather than counting it as
+      // still writing.
+      silentByModel: each(
+        Responding._responsesFor({ subject: round }).is({
+          response: silentResponse,
+          participant: silentSeat,
+          submitted: false,
+        }),
+      )
+        .where(
+          theRunOf({ round }).is({ run: silentRun }),
+          participantIsSeated({ participant: silentSeat, run: silentRun }),
+          Reasoning._lastFailureAbout({ about: silentResponse }),
+          no(Reasoning._repliesAbout({ about: silentResponse })),
+        )
         .count(),
     }),
 ).optional();
@@ -169,6 +204,11 @@ export const theRelay = former(
       code,
       retired,
       ran,
+      pile,
+      pileName,
+      sentence,
+      notes,
+      kind,
     },
   ) =>
     where(
@@ -179,7 +219,7 @@ export const theRelay = former(
       title,
       createdAt,
       retired,
-      rounds: each(Relaying._legs({ relay }).is({ leg, material, position }))
+      rounds: each(Relaying._legs({ relay }).is({ leg, material, position, kind }))
         .where(
           Questioning._getQuestionnaire({ questionnaire: material }).is({ title: roundTitle }),
           Questioning._getQuestions({ questionnaire: material }).is({
@@ -189,10 +229,12 @@ export const theRelay = former(
             parts,
             cap,
           }),
+          Guiding._guidanceText({ subject: leg, use: SORTING_USE }).is({ text: notes }),
         )
         .form({
           leg,
           number: position,
+          kind,
           questionnaire: material,
           title: roundTitle,
           question,
@@ -203,6 +245,14 @@ export const theRelay = former(
           takes: each(Relaying._draws({ leg }).is({ source, use }))
             .where(Relaying._leg({ leg: source }).is({ position: sourceNumber }))
             .form({ source, sourceNumber, use }),
+          piles: each(
+            Categorizing._categoriesIn({ scope: leg }).is({
+              category: pile,
+              name: pileName,
+              description: sentence,
+            }),
+          ).form({ pile, name: pileName, description: sentence }),
+          notes,
         }),
       runs: each(
         Publishing._editionsFor({ material: relay }).is({ edition: run, open, openedAt, closedAt }),
@@ -327,28 +377,37 @@ export const theRelayFace = former(
     }),
 ).optional();
 
-/** The round's questionnaire as it stands, for a round that takes nothing. */
+/**
+ * The round's questionnaire as it stands, for a round that takes nothing. The
+ * leg's kind selects what the room meets: a write round is one box, a list its
+ * parts, a vote its choices, and whatever the question holds for the other
+ * kinds stays on it, left out here.
+ */
 export const theRoundPresentation = former(
   "the presentation of (leg)",
   (
     { leg },
     {
       questionnaire,
+      kind,
       title,
       form,
       disclosure,
       question,
       prompt,
       choices,
+      offered,
       expected,
       explanation,
       parts,
+      boxes,
       cap,
+      boxCap,
       position,
     },
   ) =>
     where(
-      Relaying._leg({ leg }).is({ material: questionnaire }),
+      Relaying._leg({ leg }).is({ material: questionnaire, kind }),
       Questioning._getQuestionnaire({ questionnaire }).is({ title, form, disclosure }),
     ).form({
       title,
@@ -365,9 +424,43 @@ export const theRoundPresentation = former(
           cap,
           position,
         }),
-      ).form({ item: question, prompt, choices, expected, explanation, parts, cap, position }),
+      )
+        .where(
+          compute(computations.kindChoices, { kind, choices }, offered),
+          compute(computations.kindParts, { kind, parts }, boxes),
+          compute(computations.kindCap, { kind, cap }, boxCap),
+        )
+        .form({
+          item: question,
+          prompt,
+          choices: offered,
+          expected,
+          explanation,
+          parts: boxes,
+          cap: boxCap,
+          position,
+        }),
     }),
 ).optional();
+
+/**
+ * The selected groups of a source wall, in pick order. Its captured question
+ * supplies the history behind ballots; live category membership supplies
+ * the lecturer's current selection, renaming, and merges.
+ */
+export const theSelectedGroups = former(
+  "the selected groups of (sourceRound)",
+  ({ sourceRound }, { pile, name, categories, values, value, cards }) =>
+    each(Pinning._getPinned({ scope: sourceRound }).is({ item: pile }))
+      .where(
+        Categorizing._getCategoryDetail({ category: pile }).is({ name }),
+        Categorizing._categoriesWithItems({ scope: sourceRound }).is({ categories }),
+        Responding._valuesForSubject({ subject: sourceRound }).is({ values }),
+        RunSnapshotting._snapshot({ subject: sourceRound }).is({ value }),
+        compute(computations.pileCards, { pile, categories, values, value }, cards),
+      )
+      .form({ name, cards }),
+);
 
 /** The same, with the choices replaced by the piles carried out of the source round. */
 export const theRoundPresentationTaking = former(
@@ -416,6 +509,8 @@ export const theRoundPresentationTaking = former(
           choices: each(Pinning._getPinned({ scope: sourceRound }).is({ item: pile }))
             .where(Categorizing._getCategoryDetail({ category: pile }).is({ name }))
             .distinct(name),
+          context: theSelectedGroups({ sourceRound }),
+          choiceSources: theSelectedGroups({ sourceRound }),
           expected,
           explanation,
           parts,
@@ -475,39 +570,39 @@ export const theRoundPresentationTakingParts = former(
           parts: each(Pinning._getPinned({ scope: sourceRound }).is({ item: pile }))
             .where(Categorizing._getCategoryDetail({ category: pile }).is({ name }))
             .distinct(name),
+          context: theSelectedGroups({ sourceRound }),
           cap,
           position,
         }),
     }),
 ).optional();
 
-/** The questionnaire as it stands, showing the carried piles and their cards above the prompt. */
+/** The questionnaire as its kind selects it, showing the carried piles and their cards above the prompt. */
 export const theRoundPresentationShowing = former(
   "the presentation of (leg) showing (sourceRound)",
   (
     { leg, sourceRound },
     {
       questionnaire,
+      kind,
       title,
       form,
       disclosure,
       question,
       prompt,
       choices,
+      offered,
       expected,
       explanation,
       parts,
+      boxes,
       cap,
+      boxCap,
       position,
-      pile,
-      name,
-      categories,
-      values,
-      cards,
     },
   ) =>
     where(
-      Relaying._leg({ leg }).is({ material: questionnaire }),
+      Relaying._leg({ leg }).is({ material: questionnaire, kind }),
       Questioning._getQuestionnaire({ questionnaire }).is({ title, form, disclosure }),
     ).form({
       title,
@@ -524,24 +619,23 @@ export const theRoundPresentationShowing = former(
           cap,
           position,
         }),
-      ).form({
-        item: question,
-        prompt,
-        choices,
-        expected,
-        explanation,
-        parts,
-        cap,
-        context: each(Pinning._getPinned({ scope: sourceRound }).is({ item: pile }))
-          .where(
-            Categorizing._getCategoryDetail({ category: pile }).is({ name }),
-            Categorizing._categoriesWithItems({ scope: sourceRound }).is({ categories }),
-            Responding._valuesForSubject({ subject: sourceRound }).is({ values }),
-            compute(computations.pileCards, { pile, categories, values }, cards),
-          )
-          .form({ name, cards }),
-        position,
-      }),
+      )
+        .where(
+          compute(computations.kindChoices, { kind, choices }, offered),
+          compute(computations.kindParts, { kind, parts }, boxes),
+          compute(computations.kindCap, { kind, cap }, boxCap),
+        )
+        .form({
+          item: question,
+          prompt,
+          choices: offered,
+          expected,
+          explanation,
+          parts: boxes,
+          cap: boxCap,
+          context: theSelectedGroups({ sourceRound }),
+          position,
+        }),
     }),
 ).optional();
 
@@ -936,16 +1030,30 @@ export const MoveRound = endpoint(
 
 export const SetTakes = endpoint(
   "/live/relays/set-takes",
-  ({ session, leg, source, use, user, at, relay, questionnaire, choices, parts, draw, fit }) =>
+  ({
+    session,
+    leg,
+    source,
+    use,
+    user,
+    at,
+    relay,
+    questionnaire,
+    kind,
+    choices,
+    parts,
+    draw,
+    fit,
+  }) =>
     receive({ session, leg, source, use }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        Relaying._leg({ leg }).is({ relay, material: questionnaire }),
+        Relaying._leg({ leg }).is({ relay, material: questionnaire, kind }),
         relayIsNotRetired({ relay }),
         Questioning._getQuestions({ questionnaire }).is({ choices, parts }),
-        compute(computations.useFit, { use, choices, parts }, fit),
+        compute(computations.useFit, { use, kind, choices, parts }, fit),
         is.among(fit, ["open"]),
       )
         .then(Relaying.draw({ leg, source, use }).responds({ draw }))
@@ -954,10 +1062,10 @@ export const SetTakes = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        Relaying._leg({ leg }).is({ relay, material: questionnaire }),
+        Relaying._leg({ leg }).is({ relay, material: questionnaire, kind }),
         relayIsNotRetired({ relay }),
         Questioning._getQuestions({ questionnaire }).is({ choices, parts }),
-        compute(computations.useFit, { use, choices, parts }, fit),
+        compute(computations.useFit, { use, kind, choices, parts }, fit),
         is.among(fit, ["closed", "unknown"]),
       )
         .then(respond({ error: "INVALID_USE" }))
@@ -1012,7 +1120,75 @@ export const ClearTakes = endpoint(
   { input: { required: ["session", "leg", "source"] } },
 );
 
-/** The relay itself is the run's material; nothing is captured until a round opens. */
+/** A leg whose take fills its choices is a vote with something to vote on. */
+const legTakesChoices = view("(leg) takes its choices", ({ leg }, _outputs, _bindings) =>
+  where(Relaying._draws({ leg }).is({ use: "choices" })),
+).holds();
+
+/**
+ * A leg the planner called a vote that offers nothing to vote on: no choice of
+ * its own and no take that fills them. The kind is the leg's word; a leg with
+ * no word is the kind its content makes it, which is never a bare vote.
+ */
+const legIsABareVote = view(
+  "(leg) is a vote with nothing to vote on",
+  ({ leg }, _outputs, { material, kind, choices, standing }) =>
+    where(
+      Relaying._leg({ leg }).is({ material, kind }),
+      Questioning._getQuestions({ questionnaire: material }).is({ choices }),
+      compute(computations.voteStanding, { kind, choices }, standing),
+      is.among(standing, ["bare"]),
+      no(legTakesChoices({ leg })),
+    ),
+).holds();
+
+const relayHasABareVote = view(
+  "(relay) has a vote with nothing to vote on",
+  ({ relay }, _outputs, { leg }) =>
+    where(Relaying._legs({ relay }).is({ leg }), legIsABareVote({ leg })),
+).holds();
+
+/**
+ * The kind a round is to its planner, kept on the leg so the launch guard can
+ * read what the editor pressed: a vote with no choices yet is a vote after a
+ * reload, not the write round its content would make it.
+ */
+export const SetKind = endpoint(
+  "/live/relays/set-kind",
+  ({ session, leg, kind, user, relay }) =>
+    receive({ session, leg, kind }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay }),
+        relayIsNotRetired({ relay }),
+      )
+        .then(Relaying.setKind({ leg, kind }).responds())
+        .then(respond({ leg, kind }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay }),
+        relayIsRetired({ relay }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), no(Relaying._leg({ leg })))
+        .then(respond({ error: "LEG_NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "leg", "kind"] } },
+);
+
+/**
+ * The relay itself is the run's material; nothing is captured until a round
+ * opens. A relay holding a vote with nothing to vote on is refused, since the
+ * round would open as a write round with the vote's word on it.
+ */
 export const Launch = endpoint(
   "/live/relays/launch",
   ({ session, relay, user, at, run, token, code }) =>
@@ -1023,12 +1199,22 @@ export const Launch = endpoint(
         mayHostLive({ user }),
         Relaying._relay({ relay }),
         relayIsNotRetired({ relay }),
+        no(relayHasABareVote({ relay })),
       )
         .then(Publishing.publish({ author: user, material: relay, at }).responds({ edition: run }))
         .then(Sharing.issue({ subject: run }).responds({ token }))
         .then(Locating.ensure({ subject: run }).responds({ code }))
         .then(respond({ run, token, code }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._relay({ relay }),
+        relayIsNotRetired({ relay }),
+        relayHasABareVote({ relay }),
+      )
+        .then(respond({ error: "NO_CHOICES" }))
+        .named("bare-vote"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -1247,6 +1433,35 @@ export const ClosedRoundUnlocksRun = reaction(({ round, run }) =>
     .then(Locking.unlock({ target: run })),
 );
 
+/**
+ * Closing and opening can overlap between publication and linking. Cover
+ * both event orders: a closed run closes its linked rounds, and a round
+ * linked afterward closes too. This is eventual closure within the running
+ * engine; it does not make publication/linking a crash-atomic transaction.
+ */
+export const ClosedRunClosesRounds = reaction(({ run, round, at }) =>
+  when(Publishing.close({ edition: run }).responds())
+    .where(
+      now(at),
+      runIsARelayRun({ run }),
+      Linking._getBacklinks({ target: run }).is({ source: round }),
+      Publishing._edition({ edition: round }).is({ open: true }),
+    )
+    .then(Publishing.close({ edition: round, at })),
+);
+
+export const RoundTiedToClosedRunCloses = reaction(({ round, run, at }) =>
+  when(Linking.setLinks({ source: round }).responds())
+    .where(
+      now(at),
+      Linking._getLinks({ source: round }).is({ target: run }),
+      runIsARelayRun({ run }),
+      runIsClosed({ run }),
+      Publishing._edition({ edition: round }).is({ open: true }),
+    )
+    .then(Publishing.close({ edition: round, at })),
+);
+
 export const CloseRound = endpoint(
   "/live/relays/close-round",
   ({ session, round, user, at, closed }) =>
@@ -1400,90 +1615,11 @@ export const SortByHand = endpoint(
   { input: { required: ["session", "run"] } },
 );
 
-/**
- * One seat per request, under a participant identity the dashboard minted for
- * it. A seat is a subscription to the run, which is what makes the participant
- * the model's: the round open now reaches it, and so does every round that
- * opens later, until it is dismissed.
- */
-export const Invite = endpoint(
-  "/live/relays/invite",
-  ({ session, run, device, user, at }) =>
-    receive({ session, run, device }).then(
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        namesNoAccount({ identifier: device }),
-        runIsOpen({ run }),
-      )
-        .then(Subscribing.subscribe({ user: device, target: run, at }).responds())
-        .then(respond({ participant: device }))
-        .named("success"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        runIsOpen({ run }),
-        no(namesNoAccount({ identifier: device })),
-      )
-        .then(respond({ error: "NOT_A_SEAT" }))
-        .named("named-account"),
-      where(activeUser({ session }).is({ user }), mayHostLive({ user }), runIsClosed({ run }))
-        .then(respond({ error: "CLOSED" }))
-        .named("closed"),
-      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
-  { input: { required: ["session", "run", "device"] } },
-);
-
 /** A seat taken while a round is open answers that round at once. */
 export const SeatedParticipantAnswersOpenRound = reaction(({ participant, run, round, at }) =>
   when(Subscribing.subscribe({ user: participant, target: run }).responds())
     .where(now(at), runIsARelayRun({ run }), theOpenRoundOf({ run }).is({ round }))
     .then(Responding.begin({ participant, subject: round, at })),
-);
-
-/**
- * A dismissed seat leaves the run: no later round reaches it. What it handed
- * in stays, and stays marked, because dismissing trashes the participant
- * rather than dropping its seat.
- */
-export const Dismiss = endpoint(
-  "/live/relays/dismiss",
-  ({ session, run, participant, user, at }) =>
-    receive({ session, run, participant }).then(
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        participantIsSeated({ participant, run }),
-        seatIsNotDismissed({ participant }),
-      )
-        .then(Trashing.trash({ item: participant, by: user, at }).responds())
-        .then(respond({ participant }))
-        .named("success"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        no(participantIsSeated({ participant, run })),
-      )
-        .then(respond({ error: "NOT_SEATED" }))
-        .named("not-seated"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        participantIsSeated({ participant, run }),
-        no(seatIsNotDismissed({ participant })),
-      )
-        .then(respond({ participant }))
-        .named("already-dismissed"),
-      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
-  { input: { required: ["session", "run", "participant"] } },
 );
 
 /**
