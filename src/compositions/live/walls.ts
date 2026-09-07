@@ -1,5 +1,7 @@
 import {
   compute,
+  count,
+  earlier,
   each,
   former,
   is,
@@ -23,7 +25,6 @@ import {
   pileIsOfAClosedRun,
   pileIsOfRound,
   roundIsLive,
-  roundIsNotLive,
   roundIsNotOfAClosedRun,
   roundIsOfAClosedRun,
   roundIsOfAnOpenRun,
@@ -36,6 +37,7 @@ import { RESERVED_PILES, SORTING_USE } from "./rounds.ts";
 
 const {
   Categorizing,
+  Commissioning,
   Guiding,
   Insisting,
   Locking,
@@ -92,15 +94,6 @@ const roundHasACardInTheTray = view(
     ),
 ).holds();
 
-const roundHasEveryCardInAPile = view(
-  "(round) has every card in a pile",
-  ({ round }, _outputs, _bindings) => where(no(roundHasACardInTheTray({ round }))),
-).holds();
-
-const anAskStandsAbout = view("an ask about (round) is still out", ({ round }, _o, _b) =>
-  where(Reasoning._pending({}).is({ about: round })),
-).holds();
-
 const noAskStandsAbout = view("nothing is still out about (round)", ({ round }, _o, _b) =>
   where(no(Reasoning._pending({}).is({ about: round }))),
 ).holds();
@@ -117,6 +110,14 @@ const anOfferingIsBeingTakenAbout = view(
       Suggesting._offeringsAbout({ subject: round }).is({ offering }),
       Suggesting._pendingIn({ offering }),
     ),
+).holds();
+
+/** Each reply holds its own lock until its consequential placements finish. */
+const aReplyIsApplying = view("a reply about (round) is applying", ({ round }, _o, { asking }) =>
+  where(
+    Locking._getLocked({}).is({ target: asking }),
+    Reasoning._asking({ asking }).is({ about: round }),
+  ),
 ).holds();
 
 /** The last ask about the round failed moments ago, so asking again now would only fail again. */
@@ -155,17 +156,6 @@ const theNotesFor = view(
     ),
 ).optional();
 
-/** Whether any card of the round is in a pile, which is what emptying the piles undoes. */
-const roundHasACardInAPile = view(
-  "(round) has a card in a pile",
-  ({ round }, _outputs, { response, item, card }) =>
-    where(
-      Responding._submittedAnswers({ subject: round }).is({ response, item }),
-      compute(computations.cardId, { response, item }, card),
-      Categorizing._getCategory({ item: card }),
-    ),
-).holds();
-
 const pileExists = view("(pile) is a pile", ({ pile }, _outputs, _bindings) =>
   where(Categorizing._getCategoryDetail({ category: pile })),
 ).holds();
@@ -187,10 +177,6 @@ const cardIsOnTheWallOf = view(
       is.among(standing, ["known"]),
       cardStands({ card }),
     ),
-).holds();
-
-const pileHoldsACard = view("(pile) holds a card", ({ pile }, _outputs, _bindings) =>
-  where(Categorizing._getItems({ category: pile })),
 ).holds();
 
 /**
@@ -257,6 +243,7 @@ export const theWall = former(
       failedAt,
       notes,
       pendingAsk,
+      sortPending,
     },
   ) =>
     where(
@@ -274,6 +261,7 @@ export const theWall = former(
       // The run is the round's: read once for the wall, not once a card.
       whether(theRunOf({ round }).is({ run })),
       Guiding._guidanceText({ subject: round, use: SORTING_USE }).is({ text: notes }),
+      Locking._isLocked({ target: round }).is({ locked: sortPending }),
     ).form({
       round,
       number,
@@ -285,6 +273,7 @@ export const theWall = former(
       failure,
       failedAt,
       notes,
+      sortPending,
       asksOut: each(Reasoning._pending({}).is({ asking: pendingAsk, about: round })).count(),
       begun: each(Responding._responsesFor({ subject: round }).is({ response: begun })).count(),
       handedIn: each(
@@ -466,10 +455,23 @@ export const PlacedReplySatisfiesInsistence = reaction(
 
 /** While patience remains, a complaint carries the exchange back to the reasoner. */
 export const ComplaintRetriesTheAsk = reaction(
-  ({ round, offering, account, value, categories, values, removed, notes, passage, at }) =>
+  ({
+    round,
+    offering,
+    account,
+    value,
+    categories,
+    values,
+    removed,
+    notes,
+    passage,
+    at,
+    previous,
+  }) =>
     when(Insisting.complain({ aim: round, offering, account }).responds())
       .where(
         now(at),
+        earlier(Reasoning.answer, { asking: previous }, {}),
         roundIsAWall({ round }),
         Insisting._standingFor({ aim: round }),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
@@ -483,7 +485,7 @@ export const ComplaintRetriesTheAsk = reaction(
           passage,
         ),
       )
-      .then(Reasoning.ask({ reasoner: REASONER, about: round, passage, at })),
+      .then(Reasoning.followUp({ previous, passage, at })),
 );
 
 /** Once patience is spent the insistence closes; the next tick simply asks again. */
@@ -505,15 +507,48 @@ export const FailedAskGivesUp = reaction(({ asking, round }) =>
 );
 
 /**
- * The lock is given back by whatever takes the ask out of Reasoning's pending
- * set — a reply, or an honest failure — so the tick's lock lives exactly as
- * long as the ask it was taken for.
+ * Before recording a reply, hold both that reply and the round through its
+ * consequences. The per-reply locks let overlapping replies finish independently.
+ * A repair ask waiting on a provider holds no new lock, so a lost retry still
+ * costs one tick. These locks never block manual wall controls.
  */
-export const AnsweredAskUnlocksRound = reaction(({ asking, round }) =>
+export const AnsweringHoldsRound = reaction(({ asking, round, at }) =>
+  when(Reasoning.answer({ asking }))
+    .where(
+      now(at),
+      Reasoning._asking({ asking }).is({ about: round, pending: true }),
+      roundIsAWall({ round }),
+      Locking._isLocked({ target: asking }).is({ locked: false }),
+    )
+    .then(Locking.lock({ target: asking, at }).responds())
+    .then(
+      where(
+        Reasoning._asking({ asking }).is({ about: round }),
+        Locking._isLocked({ target: round }).is({ locked: false }),
+      ).then(Locking.lock({ target: round, at })),
+    ),
+);
+
+export const AppliedReplyReleasesHold = reaction(({ asking, round }) =>
   when(Reasoning.answer({ asking }).responds())
+    .afterFlowSettles()
     .where(
       Reasoning._asking({ asking }).is({ about: round }),
       roundIsAWall({ round }),
+      Locking._isLocked({ target: asking }).is({ locked: true }),
+    )
+    .then(Locking.unlock({ target: asking })),
+);
+
+/** Release the round only after every applying reply and untaken line finishes. */
+export const AnsweredAskUnlocksRound = reaction(({ asking, round }) =>
+  when(Reasoning.answer({ asking }).responds())
+    .afterFlowSettles()
+    .where(
+      Reasoning._asking({ asking }).is({ about: round }),
+      roundIsAWall({ round }),
+      no(aReplyIsApplying({ round })),
+      noOfferingIsBeingTakenAbout({ round }),
       Locking._isLocked({ target: round }).is({ locked: true }),
     )
     .then(Locking.unlock({ target: round })),
@@ -521,9 +556,12 @@ export const AnsweredAskUnlocksRound = reaction(({ asking, round }) =>
 
 export const FailedAskUnlocksRound = reaction(({ asking, round }) =>
   when(Reasoning.fail({ asking }).responds())
+    .afterFlowSettles()
     .where(
       Reasoning._asking({ asking }).is({ about: round }),
       roundIsAWall({ round }),
+      no(aReplyIsApplying({ round })),
+      noOfferingIsBeingTakenAbout({ round }),
       Locking._isLocked({ target: round }).is({ locked: true }),
     )
     .then(Locking.unlock({ target: round })),
@@ -1002,118 +1040,259 @@ export const MergedPileIsUnpicked = reaction(({ category }) =>
     .then(Pinning.clearItem({ item: category })),
 );
 
-/**
- * The dashboard asks on its own poll while the run's switch says the model
- * sorts, so the endpoint decides for itself whether there is anything to ask
- * about. Every dashboard open on the run ticks together, so the round is
- * locked before the passage is read and the ask made: the lock is the tick's
- * ask, held where one holder at a time is the rule, and a tick that finds it
- * held answers that nothing was asked. An insistence
- * standing with no ask in flight does not hold the tick: a reply lost on its
- * way is neither failed nor answered, and the next usable reply settles the
- * insistence as any does.
- */
+/** Optional witnesses make absence an ordinary proposal input. */
+const authorizedSortingObservation = view(
+  "authorized sorting observation",
+  ({ user }, { supported }) =>
+    where(mayHostLive({ user }), compute(computations.sortingObservationPresent, {}, supported)),
+).optional();
+
+const liveSortingObservation = view("live sorting observation", ({ round }, { supported }) =>
+  where(roundIsLive({ round }), compute(computations.sortingObservationPresent, {}, supported)),
+).optional();
+
+const openRunSortingObservation = view("openRun sorting observation", ({ round }, { supported }) =>
+  where(
+    roundIsOfAnOpenRun({ round }),
+    compute(computations.sortingObservationPresent, {}, supported),
+  ),
+).optional();
+
+const waitingSortingObservation = view("waiting sorting observation", ({ round }, { supported }) =>
+  where(
+    roundHasACardInTheTray({ round }),
+    compute(computations.sortingObservationPresent, {}, supported),
+  ),
+).optional();
+
+const unlockedSortingObservation = view(
+  "unlocked sorting observation",
+  ({ round }, { supported }) =>
+    where(
+      Locking._isLocked({ target: round }).is({ locked: false }),
+      compute(computations.sortingObservationPresent, {}, supported),
+    ),
+).optional();
+
+const answeredSortingObservation = view(
+  "answered sorting observation",
+  ({ round }, { supported }) =>
+    where(
+      noAskStandsAbout({ round }),
+      compute(computations.sortingObservationPresent, {}, supported),
+    ),
+).optional();
+
+const appliedSortingObservation = view("applied sorting observation", ({ round }, { supported }) =>
+  where(
+    noOfferingIsBeingTakenAbout({ round }),
+    compute(computations.sortingObservationPresent, {}, supported),
+  ),
+).optional();
+
+const readySortingObservation = view("ready sorting observation", ({ round, at }, { supported }) =>
+  where(
+    no(roundHasAFreshFailure({ round, at })),
+    compute(computations.sortingObservationPresent, {}, supported),
+  ),
+).optional();
+
+/** A automatic request records one proposal before any response branch is chosen. */
 export const Sort = endpoint(
   "/live/walls/sort",
-  ({ session, round, user, at, value, categories, values, removed, notes, passage, asking }) =>
+  ({
+    session,
+    round,
+    user,
+    at,
+    authorized,
+    live,
+    openRun,
+    waiting,
+    unlocked,
+    answered,
+    applied,
+    ready,
+    value,
+    categories,
+    values,
+    removed,
+    notes,
+    commission,
+    status,
+    account,
+    brief,
+    asking,
+  }) =>
     receive({ session, round })
       .then(
         where(
           now(at),
           activeUser({ session }).is({ user }),
-          mayHostLive({ user }),
-          roundIsLive({ round }),
-          roundHasACardInTheTray({ round }),
-          noAskStandsAbout({ round }),
-          Locking._isLocked({ target: round }).is({ locked: false }),
-          noOfferingIsBeingTakenAbout({ round }),
-          no(roundHasAFreshFailure({ round, at })),
-        )
-          .then(Locking.lock({ target: round, at }).responds())
-          .named("asked"),
-      )
-      .then(
-        where(
-          RunSnapshotting._snapshot({ subject: round }).is({ value }),
+          whether(authorizedSortingObservation({ user }).is({ supported: authorized })),
+          whether(liveSortingObservation({ round }).is({ supported: live })),
+          whether(openRunSortingObservation({ round }).is({ supported: openRun })),
+          whether(waitingSortingObservation({ round }).is({ supported: waiting })),
+          whether(unlockedSortingObservation({ round }).is({ supported: unlocked })),
+          whether(answeredSortingObservation({ round }).is({ supported: answered })),
+          whether(appliedSortingObservation({ round }).is({ supported: applied })),
+          whether(readySortingObservation({ round, at }).is({ supported: ready })),
+          whether(RunSnapshotting._snapshot({ subject: round }).is({ value })),
           Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
           Responding._valuesForSubject({ subject: round }).is({ values }),
           Trashing._trashedItems({}).is({ items: removed }),
-          theNotesFor({ round }).is({ notes }),
+          whether(theNotesFor({ round }).is({ notes })),
           compute(
-            computations.placingPassage,
-            { value, categories, values, removed, notes },
-            passage,
+            computations.sortingAdmission,
+            {
+              mode: "automatic",
+              authorized,
+              live,
+              openRun,
+              waiting,
+              unlocked,
+              answered,
+              applied,
+              ready,
+              value,
+            },
+            account,
+          ),
+          compute(
+            computations.sortingBrief,
+            { account, value, categories, values, removed, notes },
+            brief,
           ),
         ).then(
-          Reasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({ asking }),
+          Commissioning.prepare({ subject: round, brief, account, at }).responds({
+            commission,
+            status,
+            account,
+          }),
         ),
       )
-      .then(respond({ asked: true, asking })),
+      .then(
+        where(is.among(status, ["prepared"]))
+          .then(Locking.lock({ target: round, at }).responds())
+          .then(Commissioning.accept({ commission, at }).responds({ brief }))
+          .then(
+            Reasoning.ask({ reasoner: REASONER, about: round, passage: brief, at }).responds({
+              asking,
+            }),
+          )
+          .then(Commissioning.assign({ commission, execution: asking, at }).responds())
+          .then(respond({ asked: true, asking }))
+          .named("asked"),
+        where(is.among(status, ["declined"]), is.among(account, ["idle"]))
+          .then(respond({ asked: false }))
+          .named("idle"),
+        where(is.among(status, ["declined"]), is.among(account, ["FORBIDDEN"]))
+          .then(respond({ error: "FORBIDDEN" }))
+          .named("forbidden"),
+        where(is.among(status, ["declined"]), is.among(account, ["CLOSED"]))
+          .then(respond({ error: "CLOSED" }))
+          .named("closed"),
+      ),
   { input: { required: ["session", "round"] } },
 );
 
-/** The same path, answering the ticks that ask for nothing. */
-export const SortNotAsked = endpoint("/live/walls/sort", ({ session, round, user, at }) =>
-  receive({ session, round }).then(
+/** A losing admission records its failure; the boundary still reports the lock refusal. */
+export const ContendedCommissionFails = reaction(({ commission, at }) =>
+  when(Locking.lock({}).refuses({ error: "TARGET_ALREADY_LOCKED" }))
+    .where(now(at), earlier(Commissioning.prepare, {}, { commission }))
+    .then(
+      Commissioning.conclude({
+        commission,
+        successful: false,
+        account: "Another operation holds the round.",
+        at,
+      }),
+    ),
+);
+
+/** Either order of a correction and its commission association preserves the undertaking. */
+export const RepairAskJoinsCommission = reaction(({ asking, previous, commission, at }) =>
+  when(Reasoning.followUp({ previous }).responds({ asking }))
+    .where(now(at), Commissioning._forExecution({ execution: previous }).is({ commission }))
+    .then(Commissioning.assign({ commission, execution: asking, at })),
+);
+
+export const AssignedCommissionIncludesRepairs = reaction(({ commission, previous, asking, at }) =>
+  when(Commissioning.assign({ commission, execution: previous }).responds())
+    .where(now(at), Reasoning._followups({ previous }).is({ asking }))
+    .then(Commissioning.assign({ commission, execution: asking, at })),
+);
+
+/** Read the conclusion only after the execution's placement hold has been released. */
+const commissionedExecutionResult = view(
+  "conclusion of commissioned execution (asking)",
+  (
+    { asking },
+    { successful, account },
+    { round, reply, failure, insistence, categories, values, removed, outcome, successors },
+  ) =>
     where(
-      now(at),
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsLive({ round }),
-      roundHasACardInTheTray({ round }),
-      noAskStandsAbout({ round }),
-      Locking._isLocked({ target: round }).is({ locked: true }),
-      noOfferingIsBeingTakenAbout({ round }),
-      no(roundHasAFreshFailure({ round, at })),
-    )
-      .then(respond({ asked: false }))
-      .named("locked"),
-    where(activeUser({ session }).is({ user }), mayHostLive({ user }), roundIsNotLive({ round }))
-      .then(respond({ asked: false }))
-      .named("closed"),
-    where(
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsLive({ round }),
-      roundHasEveryCardInAPile({ round }),
-    )
-      .then(respond({ asked: false }))
-      .named("nothing-to-sort"),
-    where(
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsLive({ round }),
-      roundHasACardInTheTray({ round }),
-      anAskStandsAbout({ round }),
-    )
-      .then(respond({ asked: false }))
-      .named("still-out"),
-    where(
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsLive({ round }),
-      roundHasACardInTheTray({ round }),
-      noAskStandsAbout({ round }),
-      anOfferingIsBeingTakenAbout({ round }),
-    )
-      .then(respond({ asked: false }))
-      .named("taking"),
-    where(
-      now(at),
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsLive({ round }),
-      roundHasACardInTheTray({ round }),
-      noAskStandsAbout({ round }),
-      noOfferingIsBeingTakenAbout({ round }),
-      roundHasAFreshFailure({ round, at }),
-    )
-      .then(respond({ asked: false }))
-      .named("failing"),
-    where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-  ),
+      Reasoning._asking({ asking }).is({ about: round }),
+      roundIsAWall({ round }),
+      Locking._isLocked({ target: asking }).is({ locked: false }),
+      whether(Reasoning._replyOf({ asking }).is({ reply })),
+      whether(Reasoning._failureOf({ asking }).is({ account: failure })),
+      whether(Insisting._unsettledFor({ aim: round }).is({ insistence })),
+      count(Reasoning._followups, { previous: asking }, successors),
+      Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+      Responding._valuesForSubject({ subject: round }).is({ values }),
+      Trashing._trashedItems({}).is({ items: removed }),
+      compute(
+        computations.commissionOutcome,
+        { reply, failure, insistence, categories, values, removed, successors },
+        outcome,
+      ),
+      is.among(outcome, ["completed", "failed"]),
+      compute(computations.isSame, { left: outcome, right: "completed" }, successful),
+      compute(computations.commissionAccount, { outcome, failure }, account),
+    ),
+);
+
+/** Placement completion is a receipt; it need not wait for association paperwork. */
+export const ReleasedReplyReportsCompletion = reaction(({ asking, successful, account, at }) =>
+  when(Locking.unlock({ target: asking }).responds())
+    .afterFlowSettles()
+    .where(now(at), commissionedExecutionResult({ asking }).is({ successful, account }))
+    .then(Commissioning.report({ execution: asking, successful, account, at })),
+);
+
+export const FailedExecutionReportsCompletion = reaction(({ asking, successful, account, at }) =>
+  when(Reasoning.fail({ asking }).responds())
+    .afterFlowSettles()
+    .where(now(at), commissionedExecutionResult({ asking }).is({ successful, account }))
+    .then(Commissioning.report({ execution: asking, successful, account, at })),
+);
+
+/** Ordinary domain refusals precede completion at the flow's settlement frontier. */
+export const RefusedPlacementReportsFailure = reaction(({ asking, at }) =>
+  when(Categorizing.assign({}).refuses({ error: "CATEGORY_NOT_FOUND" }))
+    .where(now(at), earlier(Reasoning.answer, {}, { asking }))
+    .then(
+      Commissioning.report({
+        execution: asking,
+        successful: false,
+        account: "A placement could not be applied.",
+        at,
+      }),
+    ),
+);
+
+export const RefusedLidReportsFailure = reaction(({ asking, at }) =>
+  when(Categorizing.describeCategory({}).refuses({ error: "CATEGORY_NOT_FOUND" }))
+    .where(now(at), earlier(Reasoning.answer, {}, { asking }))
+    .then(
+      Commissioning.report({
+        execution: asking,
+        successful: false,
+        account: "A pile description could not be applied.",
+        at,
+      }),
+    ),
 );
 
 /**
@@ -1126,7 +1305,20 @@ export const SortNotAsked = endpoint("/live/walls/sort", ({ session, round, user
  * would have. With the switch off the close asks nothing.
  */
 export const ClosedRoundSettlesWall = reaction(
-  ({ round, at, run, value, categories, values, removed, notes, passage }) =>
+  ({
+    round,
+    at,
+    run,
+    value,
+    categories,
+    values,
+    removed,
+    notes,
+    passage,
+    commission,
+    brief,
+    asking,
+  }) =>
     when(Publishing.close({ edition: round, at }).responds())
       .where(
         roundIsAWall({ round }),
@@ -1136,138 +1328,129 @@ export const ClosedRoundSettlesWall = reaction(
         noAskStandsAbout({ round }),
         Locking._isLocked({ target: round }).is({ locked: false }),
         noOfferingIsBeingTakenAbout({ round }),
+        RunSnapshotting._snapshot({ subject: round }).is({ value }),
+        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+        Responding._valuesForSubject({ subject: round }).is({ values }),
+        Trashing._trashedItems({}).is({ items: removed }),
+        theNotesFor({ round }).is({ notes }),
+        compute(
+          computations.placingPassage,
+          { value, categories, values, removed, notes },
+          passage,
+        ),
       )
-      .then(Locking.lock({ target: round, at }))
       .then(
-        where(
-          RunSnapshotting._snapshot({ subject: round }).is({ value }),
-          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
-          Responding._valuesForSubject({ subject: round }).is({ values }),
-          Trashing._trashedItems({}).is({ items: removed }),
-          theNotesFor({ round }).is({ notes }),
-          compute(
-            computations.placingPassage,
-            { value, categories, values, removed, notes },
-            passage,
-          ),
-        ).then(Reasoning.ask({ reasoner: REASONER, about: round, passage, at })),
-      ),
+        Commissioning.prepare({ subject: round, brief: passage, account: "", at }).responds({
+          commission,
+        }),
+      )
+      .then(Locking.lock({ target: round, at }).responds())
+      .then(Commissioning.accept({ commission, at }).responds({ brief }))
+      .then(
+        Reasoning.ask({ reasoner: REASONER, about: round, passage: brief, at }).responds({
+          asking,
+        }),
+      )
+      .then(Commissioning.assign({ commission, execution: asking, at })),
 );
 
-/**
- * One deliberate ask about the shown round, which Resort makes after emptying
- * the piles, whether the switch is on or off and whether the round is open or
- * closed, as long as the run is open and a card is in the tray: the tick's
- * guards less the round's own openness, since the passage reads only what a
- * closed round keeps. It takes the same lock as the tick, so the tick and two
- * dashboards never ask at once, and it is its own endpoint so each path keeps
- * total guards.
- */
+/** A manual request records one proposal before any response branch is chosen. */
 export const SortNow = endpoint(
   "/live/walls/sort-now",
-  ({ session, round, user, at, value, categories, values, removed, notes, passage, asking }) =>
+  ({
+    session,
+    round,
+    user,
+    at,
+    authorized,
+    live,
+    openRun,
+    waiting,
+    unlocked,
+    answered,
+    applied,
+    ready,
+    value,
+    categories,
+    values,
+    removed,
+    notes,
+    commission,
+    status,
+    account,
+    brief,
+    asking,
+  }) =>
     receive({ session, round })
       .then(
         where(
           now(at),
           activeUser({ session }).is({ user }),
-          mayHostLive({ user }),
-          roundIsOfAnOpenRun({ round }),
-          roundHasACardInTheTray({ round }),
-          noAskStandsAbout({ round }),
-          Locking._isLocked({ target: round }).is({ locked: false }),
-          noOfferingIsBeingTakenAbout({ round }),
-          no(roundHasAFreshFailure({ round, at })),
-        )
-          .then(Locking.lock({ target: round, at }).responds())
-          .named("asked"),
-      )
-      .then(
-        where(
-          RunSnapshotting._snapshot({ subject: round }).is({ value }),
+          whether(authorizedSortingObservation({ user }).is({ supported: authorized })),
+          whether(liveSortingObservation({ round }).is({ supported: live })),
+          whether(openRunSortingObservation({ round }).is({ supported: openRun })),
+          whether(waitingSortingObservation({ round }).is({ supported: waiting })),
+          whether(unlockedSortingObservation({ round }).is({ supported: unlocked })),
+          whether(answeredSortingObservation({ round }).is({ supported: answered })),
+          whether(appliedSortingObservation({ round }).is({ supported: applied })),
+          whether(readySortingObservation({ round, at }).is({ supported: ready })),
+          whether(RunSnapshotting._snapshot({ subject: round }).is({ value })),
           Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
           Responding._valuesForSubject({ subject: round }).is({ values }),
           Trashing._trashedItems({}).is({ items: removed }),
-          theNotesFor({ round }).is({ notes }),
+          whether(theNotesFor({ round }).is({ notes })),
           compute(
-            computations.placingPassage,
-            { value, categories, values, removed, notes },
-            passage,
+            computations.sortingAdmission,
+            {
+              mode: "manual",
+              authorized,
+              live,
+              openRun,
+              waiting,
+              unlocked,
+              answered,
+              applied,
+              ready,
+              value,
+            },
+            account,
+          ),
+          compute(
+            computations.sortingBrief,
+            { account, value, categories, values, removed, notes },
+            brief,
           ),
         ).then(
-          Reasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({ asking }),
+          Commissioning.prepare({ subject: round, brief, account, at }).responds({
+            commission,
+            status,
+            account,
+          }),
         ),
       )
-      .then(respond({ asked: true, asking })),
+      .then(
+        where(is.among(status, ["prepared"]))
+          .then(Locking.lock({ target: round, at }).responds())
+          .then(Commissioning.accept({ commission, at }).responds({ brief }))
+          .then(
+            Reasoning.ask({ reasoner: REASONER, about: round, passage: brief, at }).responds({
+              asking,
+            }),
+          )
+          .then(Commissioning.assign({ commission, execution: asking, at }).responds())
+          .then(respond({ asked: true, asking }))
+          .named("asked"),
+        where(is.among(status, ["declined"]), is.among(account, ["idle"]))
+          .then(respond({ asked: false }))
+          .named("idle"),
+        where(is.among(status, ["declined"]), is.among(account, ["FORBIDDEN"]))
+          .then(respond({ error: "FORBIDDEN" }))
+          .named("forbidden"),
+        where(is.among(status, ["declined"]), is.among(account, ["CLOSED"]))
+          .then(respond({ error: "CLOSED" }))
+          .named("closed"),
+      ),
   { input: { required: ["session", "round"] } },
-);
-
-/** The same path, answering that nothing was asked where the tick would, and `CLOSED` once the run has. */
-export const SortNowNotAsked = endpoint("/live/walls/sort-now", ({ session, round, user, at }) =>
-  receive({ session, round }).then(
-    where(
-      now(at),
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsOfAnOpenRun({ round }),
-      roundHasACardInTheTray({ round }),
-      noAskStandsAbout({ round }),
-      Locking._isLocked({ target: round }).is({ locked: true }),
-      noOfferingIsBeingTakenAbout({ round }),
-      no(roundHasAFreshFailure({ round, at })),
-    )
-      .then(respond({ asked: false }))
-      .named("locked"),
-    where(
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsOfAnOpenRun({ round }),
-      roundHasEveryCardInAPile({ round }),
-    )
-      .then(respond({ asked: false }))
-      .named("nothing-to-sort"),
-    where(
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsOfAnOpenRun({ round }),
-      roundHasACardInTheTray({ round }),
-      anAskStandsAbout({ round }),
-    )
-      .then(respond({ asked: false }))
-      .named("still-out"),
-    where(
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsOfAnOpenRun({ round }),
-      roundHasACardInTheTray({ round }),
-      noAskStandsAbout({ round }),
-      anOfferingIsBeingTakenAbout({ round }),
-    )
-      .then(respond({ asked: false }))
-      .named("taking"),
-    where(
-      now(at),
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsOfAnOpenRun({ round }),
-      roundHasACardInTheTray({ round }),
-      noAskStandsAbout({ round }),
-      noOfferingIsBeingTakenAbout({ round }),
-      roundHasAFreshFailure({ round, at }),
-    )
-      .then(respond({ asked: false }))
-      .named("failing"),
-    where(
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      no(roundIsOfAnOpenRun({ round })),
-    )
-      .then(respond({ error: "CLOSED" }))
-      .named("closed"),
-    where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-  ),
 );
 
 /**
@@ -1350,181 +1533,208 @@ export const ClearNotes = endpoint(
   { input: { required: ["session", "round"] } },
 );
 
-/**
- * Every card of the round goes back to the tray in one request: the read of
- * the round's cards continues once per card in a pile, and each is unassigned
- * in the same flow. The piles stand, empty, with their names, lids, and picks.
- * It takes no lock and waits for no ask: a reply that lands afterward places
- * the cards it was asked about, and the next tick or Sort now places the rest.
- */
+/** Emptying owns the change and answers even when no membership remains. */
 export const EmptyPiles = endpoint(
   "/live/walls/empty-piles",
-  ({ session, round, user, at, response, item, card }) =>
-    receive({ session, round })
+  ({ session, round, user, emptied }) =>
+    receive({ session, round }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsNotOfAClosedRun({ round }),
+      )
+        .then(Categorizing.empty({ scope: round }).responds({ emptied }))
+        .then(respond({ emptied }))
+        .named("emptied"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        roundIsOfAClosedRun({ round }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "round"] } },
+);
+
+const summaryWork = view("the number of cards in (pile)", ({ pile }, { items }, _bindings) =>
+  where(count(Categorizing._getItems, { category: pile }, items)),
+).one();
+
+/** A summary remembers its brief and settles through the same reply receipts as sorting. */
+export const Summarize = endpoint(
+  "/live/walls/summarize",
+  ({
+    session,
+    pile,
+    user,
+    at,
+    round,
+    categories,
+    values,
+    removed,
+    passage,
+    asking,
+    items,
+    account,
+    commission,
+    status,
+    brief,
+  }) =>
+    receive({ session, pile })
       .then(
         where(
           now(at),
           activeUser({ session }).is({ user }),
           mayHostLive({ user }),
-          roundIsNotOfAClosedRun({ round }),
-          Responding._submittedAnswers({ subject: round }).is({ response, item }),
-          compute(computations.cardId, { response, item }, card),
-          Categorizing._getCategory({ item: card }),
-        )
-          .then(Categorizing.unassign({ item: card }).responds())
-          .named("emptied"),
+          pileIsNotOfAClosedRun({ pile }),
+          summaryWork({ pile }).is({ items }),
+          Categorizing._getCategoryDetail({ category: pile }).is({ scope: round }),
+          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+          Responding._valuesForSubject({ subject: round }).is({ values }),
+          Trashing._trashedItems({}).is({ items: removed }),
+          compute(computations.lidPassage, { pile, categories, values, removed }, passage),
+          compute(computations.summaryAdmission, { items }, account),
+        ).then(
+          Commissioning.prepare({ subject: round, brief: passage, account, at }).responds({
+            commission,
+            subject: round,
+            status,
+          }),
+        ),
       )
-      .then(respond({ emptied: true })),
-  { input: { required: ["session", "round"] } },
+      .then(
+        where(is.among(status, ["prepared"]))
+          .then(Commissioning.accept({ commission, at }).responds({ brief }))
+          .then(
+            Reasoning.ask({ reasoner: REASONER, about: round, passage: brief, at }).responds({
+              asking,
+            }),
+          )
+          .then(Commissioning.assign({ commission, execution: asking, at }).responds())
+          .then(respond({ asked: true, asking }))
+          .named("asked"),
+        where(is.among(status, ["declined"]))
+          .then(respond({ asked: false }))
+          .named("empty"),
+      ),
+  { input: { required: ["session", "pile"] } },
 );
 
-/** The same path for a wall with nothing in a pile, and the refusals. */
-export const EmptyPilesNotNeeded = endpoint("/live/walls/empty-piles", ({ session, round, user }) =>
-  receive({ session, round }).then(
-    where(
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsNotOfAClosedRun({ round }),
-      no(roundHasACardInAPile({ round })),
-    )
-      .then(respond({ emptied: false }))
-      .named("already-empty"),
-    where(
-      activeUser({ session }).is({ user }),
-      mayHostLive({ user }),
-      roundIsOfAClosedRun({ round }),
-    )
+export const SummarizeRefused = endpoint("/live/walls/summarize", ({ session, pile, user }) =>
+  receive({ session, pile }).then(
+    where(activeUser({ session }).is({ user }), mayHostLive({ user }), pileIsOfAClosedRun({ pile }))
       .then(respond({ error: "CLOSED" }))
       .named("closed"),
+    where(activeUser({ session }).is({ user }), mayHostLive({ user }), pileDoesNotExist({ pile }))
+      .then(respond({ error: "CATEGORY_NOT_FOUND" }))
+      .named("missing"),
     where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
   ),
 );
 
-export const Summarize = endpoint(
-  "/live/walls/summarize",
-  ({ session, pile, user, at, round, categories, values, removed, passage, asking }) =>
-    receive({ session, pile }).then(
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        pileIsNotOfAClosedRun({ pile }),
-        pileHoldsACard({ pile }),
-        Categorizing._getCategoryDetail({ category: pile }).is({ scope: round }),
-        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
-        Responding._valuesForSubject({ subject: round }).is({ values }),
-        Trashing._trashedItems({}).is({ items: removed }),
-        compute(computations.lidPassage, { pile, categories, values, removed }, passage),
-      )
-        .then(
-          Reasoning.ask({ reasoner: REASONER, about: round, passage, at }).responds({
-            asking,
-          }),
-        )
-        .then(respond({ asked: true, asking }))
-        .named("asked"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        pileIsNotOfAClosedRun({ pile }),
-        pileExists({ pile }),
-        no(pileHoldsACard({ pile })),
-      )
-        .then(respond({ asked: false }))
-        .named("empty"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        pileIsOfAClosedRun({ pile }),
-      )
-        .then(respond({ error: "CLOSED" }))
-        .named("closed"),
-      where(activeUser({ session }).is({ user }), mayHostLive({ user }), pileDoesNotExist({ pile }))
-        .then(respond({ error: "CATEGORY_NOT_FOUND" }))
-        .named("missing"),
-      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
-  { input: { required: ["session", "pile"] } },
-);
-
-/** Only unused, unpicked piles outside the round's starting set can be cleared. */
-const clearablePile = view(
-  "clearable empty pile (pile) in (round)",
-  ({ round }, { pile }, { name, questionnaire, leg }) =>
+/** The starting set exists only for a wall with a captured round presentation. */
+const cleanupStanding = view(
+  "the starting piles of (round)",
+  ({ round }, { standing }, { questionnaire, leg }) =>
     where(
+      roundIsAWall({ round }),
       Publishing._edition({ edition: round }).is({ material: questionnaire }),
       Relaying._legFor({ material: questionnaire }).is({ leg }),
-      Categorizing._categoriesIn({ scope: round }).is({ category: pile, name }),
-      no(Categorizing._getItems({ category: pile })),
-      Pinning._isPinned({ item: pile, scope: round }).is({ pinned: false }),
-      Pinning._isPinned({ item: pile, scope: RESERVED_PILES }).is({ pinned: false }),
-      no(Categorizing._categoriesIn({ scope: leg }).is({ name })),
+      Categorizing._categoriesWithItems({ scope: leg }).is({ categories: standing }),
     ),
-);
+).optional();
 
+/** Record one cleanup selection and disposition, then recheck emptiness on deletion. */
 export const ClearEmptyPiles = endpoint(
   "/live/walls/clear-empty-piles",
-  ({ session, round, user, pile, deleted }) =>
-    receive({ session, round }).then(
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsNotOfAClosedRun({ round }),
-        Locking._isLocked({ target: round }).is({ locked: false }),
-        noOfferingIsBeingTakenAbout({ round }),
-        clearablePile({ round }).is({ pile }),
+  ({
+    session,
+    round,
+    user,
+    at,
+    authorized,
+    openRun,
+    unlocked,
+    applied,
+    categories,
+    picked,
+    reserved,
+    standing,
+    candidates,
+    deleted,
+    account,
+    brief,
+    commission,
+    status,
+  }) =>
+    receive({ session, round })
+      .then(
+        where(
+          now(at),
+          activeUser({ session }).is({ user }),
+          whether(authorizedSortingObservation({ user }).is({ supported: authorized })),
+          whether(openRunSortingObservation({ round }).is({ supported: openRun })),
+          whether(unlockedSortingObservation({ round }).is({ supported: unlocked })),
+          whether(appliedSortingObservation({ round }).is({ supported: applied })),
+          whether(cleanupStanding({ round }).is({ standing })),
+          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+          Pinning._pinnedItems({ scope: round }).is({ items: picked }),
+          Pinning._pinnedItems({ scope: RESERVED_PILES }).is({ items: reserved }),
+          compute(
+            computations.clearablePiles,
+            { categories, standing, picked, reserved },
+            candidates,
+          ),
+          compute(
+            computations.cleanupAdmission,
+            { authorized, openRun, unlocked, applied, standing },
+            account,
+          ),
+          compute(computations.cleanupBrief, { account, candidates }, brief),
+        ).then(
+          Commissioning.prepare({ subject: round, brief, account, at }).responds({
+            commission,
+            status,
+            account,
+          }),
+        ),
       )
-        .then(Categorizing.deleteEmptyCategory({ category: pile }).responds({ deleted }))
-        .then(respond({ cleared: deleted }))
-        .named("clear"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsNotOfAClosedRun({ round }),
-        Locking._isLocked({ target: round }).is({ locked: false }),
-        noOfferingIsBeingTakenAbout({ round }),
-        no(clearablePile({ round })),
+      .then(
+        where(is.among(status, ["prepared"]))
+          .then(Commissioning.accept({ commission, at }).responds({ brief }))
+          .named("accepted"),
+        where(is.among(status, ["declined"]), is.among(account, ["FORBIDDEN"]))
+          .then(respond({ error: "FORBIDDEN" }))
+          .named("forbidden"),
+        where(is.among(status, ["declined"]), is.among(account, ["NOT_FOUND"]))
+          .then(respond({ error: "NOT_FOUND" }))
+          .named("missing"),
+        where(is.among(status, ["declined"]), is.among(account, ["CONFLICT"]))
+          .then(respond({ error: "CONFLICT" }))
+          .named("busy-or-closed"),
       )
-        .then(respond({ cleared: false }))
-        .named("none"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsNotOfAClosedRun({ round }),
-        Locking._isLocked({ target: round }).is({ locked: true }),
+      .then(
+        where(
+          is.among(status, ["prepared"]),
+          compute(computations.cleanupCategories, { brief }, candidates),
+        ).then(
+          Categorizing.deleteEmptyCategories({ categories: candidates }).responds({ deleted }),
+        ),
       )
-        .then(respond({ error: "CONFLICT" }))
-        .named("sorting"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsNotOfAClosedRun({ round }),
-        Locking._isLocked({ target: round }).is({ locked: false }),
-        anOfferingIsBeingTakenAbout({ round }),
+      .then(
+        Commissioning.conclude({
+          commission,
+          successful: true,
+          account: "Empty-only cleanup finished.",
+          at,
+        }).responds(),
       )
-        .then(respond({ error: "CONFLICT" }))
-        .named("placing"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        roundIsOfAClosedRun({ round }),
-      )
-        .then(respond({ error: "CONFLICT" }))
-        .named("closed"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        no(roundIsAWall({ round })),
-      )
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("missing"),
-      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
+      .then(respond({ cleared: deleted })),
   { input: { required: ["session", "round"] } },
 );

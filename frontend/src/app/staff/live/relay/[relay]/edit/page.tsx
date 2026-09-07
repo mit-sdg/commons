@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Link } from "@/components/link";
 import { useDrafting } from "@/components/live/ai-panel";
 import { RELAY_LINES } from "@/components/live/brief-chips";
+import { RelayBasics, RelayGuideEditor } from "@/components/live/host-guide";
 import { ReferenceDocuments } from "@/components/live/reference-documents";
 import { refusalSentence } from "@/components/live/refusals";
 import {
@@ -178,7 +179,8 @@ function RelaySetup({
       const held = document.activeElement;
       if (
         held !== null &&
-        [...cards.current.values()].some((node) => node.contains(held))
+        (phone.current?.contains(held) ||
+          [...cards.current.values()].some((node) => node.contains(held)))
       )
         return;
       const leg = nearestCard(cards.current);
@@ -203,6 +205,14 @@ function RelaySetup({
       // Below lg the column is not laid out and the drawer shows the round.
       if (rail.offsetParent === null) return;
       const card = selected === null ? undefined : cards.current.get(selected);
+      const available =
+        window.innerHeight -
+        Math.max(HEADROOM, rail.getBoundingClientRect().top) -
+        FOOTROOM;
+      box.style.setProperty(
+        "--preview-height",
+        `${Math.max(100, available)}px`,
+      );
       const tall = box.offsetHeight;
       // A row shorter than the phone is stretched to it, so the phone never
       // spills past the rounds into whatever follows them.
@@ -259,6 +269,7 @@ function RelaySetup({
   }, [brief, relay.relay, router]);
 
   const drafting = useDrafting({
+    guidance: relay,
     relay: relay.relay,
     rounds: relay.rounds,
     title: relay.title,
@@ -411,6 +422,8 @@ function RelaySetup({
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-3">
           {relay.retired ? null : drafting.line}
+          <RelayGuideEditor relay={relay} onChanged={onChanged} />
+          <RelayBasics />
           <ReferenceDocuments
             subject={relay.relay}
             retired={relay.retired}
@@ -454,6 +467,7 @@ function RelaySetup({
                     rounds={relay.rounds}
                     selected={selected}
                     variant="drawer"
+                    retired={relay.retired}
                   />
                 </div>
               ) : null}
@@ -477,6 +491,7 @@ function RelaySetup({
               rounds={relay.rounds}
               selected={selected}
               variant="column"
+              retired={relay.retired}
             />
           </div>
         </div>

@@ -83,10 +83,10 @@ async function fill(token: string, question: { question: string; parts: string[]
   return handedIn;
 }
 
-/** What one dashboard's Model sorts switch says. */
+/** What one dashboard's Sort automatically switch says. */
 async function switchSays(page: Page): Promise<string | null> {
   return await page
-    .getByRole("switch", { name: "Model sorts" })
+    .getByRole("switch", { name: "Sort automatically" })
     .first()
     .getAttribute("aria-checked")
     .catch(() => null);
@@ -103,9 +103,6 @@ interface Counts {
 /** The asks, replies, and complaints the floor recorded about the round. */
 async function counts(round: string): Promise<Counts | null> {
   if (MONGO_URL === "") return null;
-  // The driver reads the floor the way the stack script does, around Bun's v8.
-  const v8 = await import("node:v8");
-  v8.startupSnapshot.isBuildingSnapshot = () => false;
   const { MongoClient } = await import("mongodb");
   const client = new MongoClient(MONGO_URL);
   try {
@@ -182,15 +179,16 @@ try {
   await sleep(3000);
 
   // One dashboard flips the switch; it is the run's, so all three read it on.
-  await dashboards[0]?.getByRole("switch", { name: "Model sorts" }).click();
+  await dashboards[0]?.getByRole("switch", { name: "Sort automatically" }).click();
   await sleep(4000);
   const said = await Promise.all(dashboards.map(switchSays));
   log.note(`the three switches read ${JSON.stringify(said)}`);
   if (said.some((one) => one !== "true")) {
     log.finding({
       kind: "broken",
-      title: `the run's Model sorts switch does not read on from every dashboard (${JSON.stringify(said)})`,
-      steps: "Open three dashboards on one run; turn Model sorts on from the first; wait two polls",
+      title: `the run's Sort automatically switch does not read on from every dashboard (${JSON.stringify(said)})`,
+      steps:
+        "Open three dashboards on one run; turn Sort automatically on from the first; wait two polls",
       screenshot: "DashboardBSwitch@1440.png",
     });
   }
@@ -237,7 +235,7 @@ try {
       log.finding({
         kind: "broken",
         title: `${recorded.asks} asks stand against ${recorded.replies} replies and ${recorded.failures} failures: the tick asked more than once per reply`,
-        steps: `Three dashboards on one ${CARDS}-card wall with Model sorts on for ${MINUTES} minutes`,
+        steps: `Three dashboards on one ${CARDS}-card wall with Sort automatically on for ${MINUTES} minutes`,
         evidence: JSON.stringify(recorded),
       });
     }
@@ -246,7 +244,7 @@ try {
       log.finding({
         kind: "broken",
         title: `${stale.length} insistences name a card that is not waiting in the tray`,
-        steps: `Three dashboards on one ${CARDS}-card wall with Model sorts on for ${MINUTES} minutes`,
+        steps: `Three dashboards on one ${CARDS}-card wall with Sort automatically on for ${MINUTES} minutes`,
         evidence: JSON.stringify(stale.slice(0, 5)),
       });
     }
@@ -255,7 +253,7 @@ try {
     log.finding({
       kind: "broken",
       title: `${(wall?.cards.length ?? 0) - placed} of ${wall?.cards.length ?? 0} cards were still in the tray after ${MINUTES} minutes`,
-      steps: `Three dashboards on one ${CARDS}-card wall with Model sorts on`,
+      steps: `Three dashboards on one ${CARDS}-card wall with Sort automatically on`,
       evidence: JSON.stringify({ placed, cards: wall?.cards.length, asked }),
     });
   }

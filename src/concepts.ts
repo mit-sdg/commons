@@ -1,3 +1,12 @@
+import {
+  openingAuthorized,
+  openingBrief,
+  openingAdmission,
+  openingGroups,
+  openingAuthor,
+  openingMaterial,
+  openingPresentation,
+} from "./computations/live-round-opening.ts";
 import { draftContext, draftReferences, draftRequest } from "./computations/live-background.ts";
 import { conceptSet } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
@@ -6,6 +15,7 @@ import { authenticating } from "./concepts/authenticating/registry.ts";
 import { banking } from "./concepts/banking/registry.ts";
 import { bookmarking } from "./concepts/bookmarking/registry.ts";
 import { categorizing } from "./concepts/categorizing/registry.ts";
+import { commissioning } from "./concepts/commissioning/registry.ts";
 import { conversing } from "./concepts/conversing/registry.ts";
 import { drafting } from "./concepts/drafting/registry.ts";
 import { flagging } from "./concepts/flagging/registry.ts";
@@ -64,6 +74,7 @@ import {
   revisionPassage,
 } from "./computations/live-drafting.ts";
 import {
+  editApplied,
   editCap,
   editChoices,
   editParts,
@@ -84,6 +95,10 @@ import {
   legIdentities,
   legMaterials,
   linesStanding,
+  guideUse,
+  guideScope,
+  editGuideField,
+  editGuideBody,
   relayDraftPassage,
   relayDraftReading,
   relayDraftReason,
@@ -125,6 +140,7 @@ import {
   snapshotForm,
   snapshotHasQuestion,
   snapshotIsWhole,
+  snapshotRequirements,
   snapshotTitle,
 } from "./computations/live-snapshots.ts";
 import {
@@ -135,6 +151,11 @@ import {
   samplingPassage,
   samplingPassageTaking,
   unsampledNames,
+  samplingResolution,
+  samplingResolvedPassage,
+  samplingResolvedStanding,
+  samplingResolvedAccount,
+  samplingResolvedPreview,
 } from "./computations/live-sampling.ts";
 import {
   lidLines,
@@ -147,6 +168,16 @@ import {
   placingReason,
   placingRepairPassage,
   sorterNotes,
+  sortingObservationPresent,
+  sortingAdmission,
+  summaryAdmission,
+  clearablePiles,
+  cleanupAdmission,
+  cleanupBrief,
+  cleanupCategories,
+  sortingBrief,
+  commissionOutcome,
+  commissionAccount,
 } from "./computations/live-walls.ts";
 import {
   passwordResetCooldownStart,
@@ -175,6 +206,7 @@ const registrations = {
   Banking: banking,
   Bookmarking: bookmarking,
   Categorizing: categorizing,
+  Commissioning: commissioning,
   Conversing: conversing,
   Drafting: drafting,
   DraftTrashing: trashing,
@@ -221,6 +253,13 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  openingAuthorized,
+  openingBrief,
+  openingAdmission,
+  openingGroups,
+  openingAuthor,
+  openingMaterial,
+  openingPresentation,
   answerReceipt,
   boardQuestions,
   capabilitiesAreKnown,
@@ -231,6 +270,7 @@ export const learningConcepts = conceptSet(registrations, {
   draftReferences,
   draftRequest,
   draftingPassage,
+  editApplied,
   editCap,
   editChoices,
   editParts,
@@ -258,6 +298,10 @@ export const learningConcepts = conceptSet(registrations, {
   parsedQuestion,
   parsedReason,
   participantQuestions,
+  guideUse,
+  guideScope,
+  editGuideField,
+  editGuideBody,
   relayDraftPassage,
   relayDraftReading,
   relayDraftReason,
@@ -303,6 +347,7 @@ export const learningConcepts = conceptSet(registrations, {
   snapshotForm,
   snapshotHasQuestion,
   snapshotIsWhole,
+  snapshotRequirements,
   snapshotTitle,
   lidLines,
   lidPassage,
@@ -314,6 +359,16 @@ export const learningConcepts = conceptSet(registrations, {
   placingReason,
   placingRepairPassage,
   sorterNotes,
+  sortingObservationPresent,
+  sortingAdmission,
+  summaryAdmission,
+  clearablePiles,
+  cleanupAdmission,
+  cleanupBrief,
+  cleanupCategories,
+  sortingBrief,
+  commissionOutcome,
+  commissionAccount,
   sampledAnswers,
   sampledPiles,
   sampledGroups,
@@ -321,6 +376,11 @@ export const learningConcepts = conceptSet(registrations, {
   samplingPassage,
   samplingPassageTaking,
   unsampledNames,
+  samplingResolution,
+  samplingResolvedPassage,
+  samplingResolvedStanding,
+  samplingResolvedAccount,
+  samplingResolvedPreview,
   subjectIsAddress,
   taskListMailHtml,
   taskListMailSubject,

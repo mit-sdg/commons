@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
+import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
@@ -64,6 +65,7 @@ interface Wall {
   open: boolean;
   notes: string;
   asksOut: number;
+  sortPending: boolean;
   cards: { card: string; value: string; pile: string | null }[];
   piles: {
     pile: string;
@@ -539,6 +541,103 @@ describe("the sorting controls the dashboard presses", () => {
     // The tick asks about an open round only, so the settled round is left alone.
     expect((await sort(live.round)).asked).toBe(false);
   }, 90_000);
+
+  test("sorting off keeps the current sort pending through its placement consequences", async () => {
+    const live = await openRound("Finishing with sorting off", "What would help?");
+    await sortByModel(live.run);
+    await handIn(live.token, "more worked examples");
+    await handIn(live.token, "the pace was fast");
+    await until(
+      () => readWall(live.round),
+      (wall) => wall.cards.length === 2,
+    );
+    expect((await sort(live.round)).asked).toBe(true);
+    await post(edge, "/live/relays/sort-by-hand", { run: live.run }, cookie);
+    const waiting = await readWall(live.round);
+    expect(waiting.asksOut).toBe(1);
+    expect(waiting.sortPending).toBe(true);
+    expect((await sort(live.round)).asked).toBe(false);
+    // Emptying does not cancel accepted work, and neither does closing.
+    await post(edge, "/live/walls/empty-piles", { round: live.round }, cookie);
+    await closeRound(live.round);
+    await serveReasoner();
+    const done = await readWall(live.round);
+    expect(done.asksOut).toBe(0);
+    expect(done.sortPending).toBe(false);
+    expect(done.cards.every((card) => card.pile !== null)).toBe(true);
+    const consequences = inspectAssembly(edge.application).occurrences;
+    const categories = new Set(done.piles.map((pile) => pile.pile));
+    const placements = consequences.flatMap((record, index) =>
+      record.concept === "Categorizing" &&
+      ["file", "assign"].includes(record.action) &&
+      categories.has(record.output?.category as string)
+        ? [index]
+        : [],
+    );
+    const unlocked = consequences.findIndex(
+      (record) =>
+        record.concept === "Locking" &&
+        record.action === "unlock" &&
+        record.output?.target === live.round,
+    );
+    expect(placements.length).toBeGreaterThan(0);
+    expect(unlocked).toBeGreaterThan(Math.max(...placements));
+  }, 60_000);
+
+  test("overlapping sorting and pile summaries keep independent reply holds", async () => {
+    const live = await openRound("Overlapping replies", "What would help?");
+    await handIn(live.token, "more examples");
+    await handIn(live.token, "clearer slides");
+    const wall = await until(
+      () => readWall(live.round),
+      (value) => value.cards.length === 2,
+    );
+    const { Categorizing, Reasoning, Locking } = edge.application.concepts;
+    const { category } = await Categorizing.file({
+      scope: live.round,
+      name: "Examples",
+      item: wall.cards[0].card,
+    });
+    expect((await sortNow(live.round)).asked).toBe(true);
+    expect((await post(edge, "/live/walls/summarize", { pile: category }, cookie)).status).toBe(
+      200,
+    );
+    const pending = (await Reasoning._pending()).filter((ask) => ask.about === live.round);
+    expect(pending).toHaveLength(2);
+    await serveReasoner();
+    // Match unique domain identities: the engine retains a bounded flow window,
+    // so offsets into an earlier inspection can shift as old flows expire.
+    const records = inspectAssembly(edge.application).occurrences;
+    const settled = await readWall(live.round);
+    const categories = new Set(settled.piles.map((pile) => pile.pile));
+    for (const ask of pending) {
+      expect(
+        records.some(
+          (record) =>
+            record.concept === "Locking" &&
+            record.action === "lock" &&
+            record.output?.target === ask.asking,
+        ),
+      ).toBe(true);
+      expect(await Locking._isLocked({ target: ask.asking })).toEqual({ locked: false });
+    }
+    const lastChange = records.findLastIndex(
+      (record) =>
+        record.concept === "Categorizing" && categories.has(record.output?.category as string),
+    );
+    const released = records.findLastIndex(
+      (record) =>
+        record.concept === "Locking" &&
+        record.action === "unlock" &&
+        record.output?.target === live.round,
+    );
+    expect(lastChange).toBeGreaterThanOrEqual(0);
+    expect(released).toBeGreaterThan(lastChange);
+    expect(settled.sortPending).toBe(false);
+    expect(settled.asksOut).toBe(0);
+    expect(settled.cards.every((card) => card.pile !== null)).toBe(true);
+    expect(settled.piles.find((pile) => pile.pile === category)?.description).not.toBe("");
+  }, 60_000);
 
   test("with no reasoner the tick's ask fails at once, frees the round, and the wall says why", async () => {
     const live = await openRound("No reasoner", "What would help?");

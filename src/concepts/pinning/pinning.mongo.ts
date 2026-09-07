@@ -96,6 +96,10 @@ export class MongoPinningConcept {
     return docs.map((doc) => ({ item: doc.item, priority: doc.priority }));
   }
 
+  async _pinnedItems({ scope }: { scope: string }) {
+    return { items: (await this._getPinned({ scope })).map(({ item }) => item) };
+  }
+
   async _isPinned({ item, scope }: { item: string; scope: string }) {
     const doc = await this.pins.findOne({ item, scope });
     return { pinned: doc !== null };

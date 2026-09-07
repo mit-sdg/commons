@@ -206,6 +206,30 @@ export class MongoCategorizingConcept {
     });
   }
 
+  /** Empty a scope as one action, including the already-empty case. */
+  async empty({ scope }: { scope: string }) {
+    return this.#write(async () => {
+      const categories = await this.categories.find({ scope }).toArray();
+      const removed = await this.memberships.deleteMany({
+        category: { $in: categories.map((category) => category._id) },
+      });
+      return { emptied: removed.deletedCount > 0 };
+    });
+  }
+
+  /** Recheck every proposed deletion; an intervening assignment keeps its pile. */
+  async deleteEmptyCategories({ categories }: { categories: string[] }) {
+    return this.#write(async () => {
+      let deleted = false;
+      for (const category of categories) {
+        if (await this.memberships.findOne({ category })) continue;
+        const removed = await this.categories.deleteOne({ _id: category });
+        deleted ||= removed.deletedCount > 0;
+      }
+      return { deleted };
+    });
+  }
+
   async deleteCategory({ category }: { category: string }) {
     return this.#write(async () => {
       const removed = await this.categories.deleteOne({ _id: category });

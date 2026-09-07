@@ -4,11 +4,17 @@ The model never edits a relay or a wall directly. Every job it does — placing 
 
 ## Drafting a relay
 
-[Live.edits.Draft](reaction:Live.edits.Draft) puts a brief before Reasoning together with the relay as it stands — its rounds with title, prompt, parts, choices, and takes, read through Relaying's plan and Questioning's materials and rendered by [relayDraftPassage](computation:relayDraftPassage), together with the title the relay goes by and whether that title is only the placeholder its brief minted — and asks for the whole relay as it should read afterward, its own name included; a blank brief — [briefStanding](computation:briefStanding) — is refused `INVALID_REQUEST` before any ask is spent. The passage lives beside the frozen questionnaire-drafting contract and never changes it. Between the contract and the relay as it stands the passage sets down the background documents the drafting page holds — the class's, then this relay's — as one fenced block, and none when none stands, so a relay without documents is asked with the passage it always was; the repair passage stands on the passage that was asked, so it carries the same block. [Live.edits.ReplyOffersRelayEdits](reaction:Live.edits.ReplyOffersRelayEdits) reads a usable reply against the same standing relay through [relayEditLines](computation:relayEditLines) and offers the difference as lines about the relay. The passage shows every standing round with its number, its standing piles with their sentences, and its note to the sorter — the piles and notes read off each leg through [legIdentities](computation:legIdentities) — and asks the reply to keep that number on a round it keeps, renames, or moves, and to number a new round 0, so a round keeps its identity the way a refined questionnaire does: `title`, `prompt`, `parts`, and `choices` for a round whose field changed; `pile` for a standing pile that is new or whose sentence changed, `unpile` for one the reply no longer names, and `notes` for a round whose note changed; `move` for a round that lands at another number; `remove` for a standing round the reply no longer names; `add` for a round numbered 0, carrying its piles, its note, its takes, and the number it lands at; and `takes` for a round whose takes changed, naming the source by its number in the delivered relay. The relay's own name comes first, as a `title` line naming no round: [relayDraftReading](computation:relayDraftReading) answers `named` for a reply that names a relay still standing under the placeholder its brief minted, and that one line is taken where it is offered, so the relay carries the model's name without being asked about it; a relay named by hand is asked like anything else. The lines come in the order they apply — takes cleared off a source that goes, removes, field edits, moves, adds, the takes that remain — so each reads the relay the earlier lines made. A reply that numbers no round is read by position, which is how a draft over an empty relay reads. A reply that leaves the relay as it stands offers one `keep` line, so the panel can say nothing needs to change; taking it changes nothing. A reply that cannot be read is stood upon once, through Insisting, by [Live.edits.ReplyUnusableComplains](reaction:Live.edits.ReplyUnusableComplains), [Live.edits.ComplaintRetriesTheAsk](reaction:Live.edits.ComplaintRetriesTheAsk), [Live.edits.OfferedEditsSatisfyInsistence](reaction:Live.edits.OfferedEditsSatisfyInsistence), and [Live.edits.SpentPatienceGivesUp](reaction:Live.edits.SpentPatienceGivesUp); a reasoner that could not be reached closes the insistence through [Live.edits.FailedAskGivesUp](reaction:Live.edits.FailedAskGivesUp), and the panel reads that nothing came.
+[Live.edits.Draft](reaction:Live.edits.Draft) puts a brief before Reasoning together with the relay as it stands — its rounds with title, prompt, parts, choices, and takes, read through Relaying's plan and Questioning's materials and rendered by [relayDraftPassage](computation:relayDraftPassage), together with the title the relay goes by and whether that title is only the placeholder its brief minted — and asks for the whole relay as it should read afterward, its own name included; a blank brief — [briefStanding](computation:briefStanding) — is refused `INVALID_REQUEST` before any ask is spent. The passage lives beside the frozen questionnaire-drafting contract and never changes it. Between the contract and the relay as it stands the passage sets down the reference documents explicitly selected for the relay as one fenced block, and none when none stands, so a relay without documents is asked with the passage it always was; the repair passage stands on the passage that was asked, so it carries the same block. [Live.edits.ReplyOffersRelayEdits](reaction:Live.edits.ReplyOffersRelayEdits) reads a usable reply against the same standing relay through [relayEditLines](computation:relayEditLines) and offers the difference as lines about the relay. The passage shows every standing round with its number, its standing piles with their sentences, and its note to the sorter — the piles and notes read off each leg through [legIdentities](computation:legIdentities) — and asks the reply to keep that number on a round it keeps, renames, or moves, and to number a new round 0, so a round keeps its identity the way a refined questionnaire does: `title`, `prompt`, `parts`, and `choices` for a round whose field changed; `pile` for a standing pile that is new or whose sentence changed, `unpile` for one the reply no longer names, and `notes` for a round whose note changed; `move` for a round that lands at another number; `remove` for a standing round the reply no longer names; `add` for a round numbered 0, carrying its piles, its note, its takes, and the number it lands at; and `takes` for a round whose takes changed, naming the source by its number in the delivered relay. The relay's own name comes first, as a `title` line naming no round: [relayDraftReading](computation:relayDraftReading) answers `named` for a reply that names a relay still standing under the placeholder its brief minted, and that one line is taken where it is offered, so the relay carries the model's name without being asked about it; a relay named by hand is asked like anything else. The lines come in the order they apply — takes cleared off a source that goes, removes, field edits, moves, adds, the takes that remain — so each reads the relay the earlier lines made. A reply that numbers no round is read by position, which is how a draft over an empty relay reads. A reply that leaves the relay as it stands offers one `keep` line, so the panel can say nothing needs to change; taking it changes nothing. A reply that cannot be read is stood upon once, through Insisting, by [Live.edits.ReplyUnusableComplains](reaction:Live.edits.ReplyUnusableComplains), [Live.edits.ComplaintRetriesTheAsk](reaction:Live.edits.ComplaintRetriesTheAsk), [Live.edits.OfferedEditsSatisfyInsistence](reaction:Live.edits.OfferedEditsSatisfyInsistence), and [Live.edits.SpentPatienceGivesUp](reaction:Live.edits.SpentPatienceGivesUp); a reasoner that could not be reached closes the insistence through [Live.edits.FailedAskGivesUp](reaction:Live.edits.FailedAskGivesUp), and the panel reads that nothing came.
+
+The relay-drafting contract describes a live collaborative experience whose setting and ambition come from the author. Routine feedback, collective invention, and classroom inquiry are equally valid purposes. Selected documents provide relevant concepts, situations, and constraints; membership in the document library alone supplies no context. The model preserves existing work outside the requested revision.
+
+The model infers a take when a later question depends on earlier contributions. It chooses the relevant earlier round, including a nonadjacent one, and uses context for supporting material, parts for one answer per selected group, or choices for a vote among selected groups. Independent questions stay independent. A round receives only one source's selected groups; it does not automatically receive every earlier round. When an activity needs related details to remain together, its prompt asks for them in one written answer, since each list box becomes a separate sortable card. Source grouping preserves the concrete alternatives later participants will choose or develop.
+
+The reply reader rejects a partially specified take and a source at the same or a later delivered position. These failures enter the existing bounded repair loop, retaining the original passage and selected references. These structural checks do not infer dependencies from prose or establish that a model's activity is pedagogically useful. A retained round's number names its standing identity, while takes.from names the source's position in the delivered order.
 
 ## Confirming a line
 
-[Live.edits.Offerings](reaction:Live.edits.Offerings) forms [the offerings about a relay](former:Live.edits.theOfferings): every offering, newest first, with its lines in order and where each stands, which the panel polls while a reply is out and shows once it lands. [Live.edits.Take](reaction:Live.edits.Take) takes one line and [Live.edits.Decline](reaction:Live.edits.Decline) declines one. Accepting every line is one request per line, in the offering's order, because the asks that apply an added round read their line back through the request that took it, and two lines taken in one request would read each other's. Take refuses `RUN_OPEN` for a line about a round whose run is open, before anything changes, so the panel and the setup page's own edits are held to the same rule. Taking is what applies a line:
+[Live.edits.Offerings](reaction:Live.edits.Offerings) forms [the offerings about a relay](former:Live.edits.theOfferings): every offering, newest first, with its lines in order and where each stands, which the panel polls while a reply is out and shows once it lands. [Live.edits.Take](reaction:Live.edits.Take) takes one line and [Live.edits.Decline](reaction:Live.edits.Decline) declines one. Accepting every line is one request per line, in the offering's order, because the asks that apply an added round read their line back through the request that took it, and two lines taken in one request would read each other's. [Live.edits.TakeRefused](reaction:Live.edits.TakeRefused) refuses `RUN_OPEN` for a line about a round whose run is open, before anything changes, so the panel and the setup page's own edits are held to the same rule. A missing suggestion is refused `NOT_FOUND` rather than leaving the request unanswered. Accepting a line starts its application. The response waits with `afterFlowSettles` for ordinary consequences and checks the requested result against current domain state through [editApplied](computation:editApplied). A normal domain refusal reaches the caller before any success response; an unmatched consequence returns `applied: false`, while `applied: true` confirms the requested result stands. Whole-flow quiescence and taken standing alone are not success evidence. The panel counts only this explicit confirmation and keeps refusal feedback visible. Taken remains a record of acceptance, even when application was refused; there is no automatic retry or rollback, so the author reviews the current rounds and requests a fresh suggestion. Each kind applies as follows:
 
 - [Live.edits.TakenAddAddsRound](reaction:Live.edits.TakenAddAddsRound) composes the round's questionnaire, adds its question, sets its parts, and appends the leg — the same chain the setup page's own button runs — then moves it to the number the line says it lands at and draws what the line says it takes. The round's piles and note need the round as their target, so [Live.edits.AddedRoundCarriesItsPiles](reaction:Live.edits.AddedRoundCarriesItsPiles) reads the add line back off the leg the take composed — [editRoundLines](computation:editRoundLines), [linesStanding](computation:linesStanding) — offers them as `pile` and `notes` lines about the new round rather than the relay, and takes each where it is offered, since the person accepted them with the round; the panel, reading offerings about the relay, never sees them.
 - [Live.edits.TakenPileStandsPile](reaction:Live.edits.TakenPileStandsPile) reaches or makes the named standing pile on the round and writes its sentence — [editPileName](computation:editPileName), [editPileSentence](computation:editPileSentence) — and [Live.edits.TakenUnpileRemovesPile](reaction:Live.edits.TakenUnpileRemovesPile) takes a standing pile off the round by its name. [Live.edits.TakenNotesSetNote](reaction:Live.edits.TakenNotesSetNote) and [Live.edits.TakenNotesRemoveNote](reaction:Live.edits.TakenNotesRemoveNote) write the round's note to the sorter as the rounds page does: replaced through Guiding.set as one standing note, or cleared through Guiding.clear when the line says nothing — [briefStanding](computation:briefStanding) tells a note from a blank.
@@ -20,12 +26,14 @@ The model never edits a relay or a wall directly. Every job it does — placing 
 
 A line refused by a concept stays taken with its refusal in the log, and the panel, reading the relay back, shows what did not change.
 
+When a later task needs an earlier contribution's concrete details, the intervening prompt asks for those details alongside the new contribution, in one answer. Naming a group alone does not preserve its situation or constraint. A comparison against a different classmate's situation asks the intermediate contribution to retain the motivating incident, the proposal, and a different selected test incident together. The source selection must contain at least two distinct incidents, which the relevant prompt makes explicit. A comparison of classmates' situations and proposals must carry the needed material through its immediate source; substituting a new personal example changes the author's activity. The drafting contract states this requirement directly. No automatic semantic correction call is added.
+
 ```computations
 briefStanding(request: String) : String
   Answers `given` when a brief says anything, and `blank` when it is empty or
   whitespace.
 
-relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, classDocuments: Json, relayDocuments: Json) : String
+relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String
   Renders the passage that asks the model for a whole relay from a brief and
   the relay as it stands — each round with its standing piles and its note to
   the sorter — under the title it goes by and whether the brief minted it,
@@ -46,17 +54,23 @@ relayDraftRepairPassage(passage: String, offering: String, account: String) : St
 relayDraftReading(reply: String, passage: String) : String
   Reads a relay-drafting reply against the passage it answers: `relay`,
   `named` for one that names a relay still standing under its minted
-  placeholder, or `neither`.
+  placeholder, or `neither`. Partial takes and takes that do not name an earlier delivered position are unreadable.
 
 relayDraftReason(reply: String) : String
   Answers why a relay-drafting reply could not be read, and an empty string
   when it could.
 
-relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json) : Json
+relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json
   Answers the suggestion lines that turn the relay as it stands into the
   drafted one: the relay's own name first, then by the numbers the reply
   keeps, or by position when it numbers no round; one `keep` line when
   nothing changes.
+
+editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean
+  Checks the requested field, removal, position, draw, or complete added round
+  against the relay's current domain state. Missing work or an unknown kind
+  answers false. This is evidence of the requested result, not of a flow's
+  quiescence or a suggestion's acceptance.
 
 editRoundJson(value: String) : Json
   Reads an `add` line's value into the round it describes, its piles and
@@ -123,6 +137,49 @@ Live.edits.Decline at /live/edits/decline
 Live.edits.Draft at /live/edits/draft
 Live.edits.Offerings at /live/edits/offerings
 Live.edits.Take at /live/edits/take
+Live.edits.TakeRefused at /live/edits/take
 ```
 
 Relay drafting reads only the relay's selected reference documents. Library membership alone does not include a document.
+
+## Host guidance
+
+A relay description explains the shared activity. Opening and closing guidance
+belongs to the relay; purpose, facilitation, and selection guidance belongs to
+each round's leg. These are separate Guiding uses: `relay-description`,
+`hosting-opening`, `hosting-closing`, `hosting-purpose`,
+`hosting-facilitation`, and `hosting-selection`. They never enter participant
+questions or snapshots. The model writes this structured guidance before the
+fields that implement the activity, and reads existing guidance on every draft
+and repair. Omitted fields in historical replies preserve standing text;
+explicit empty text clears it. Narrow revisions preserve unrelated guidance.
+
+A `guide` suggestion names its field and body in a JSON value. Its target is
+empty for relay guidance and the leg identity for round guidance. Added rounds
+carry their guide with their question and receive it when their leg exists.
+Acceptance is checked against retained guidance just like other fields.
+Descriptions state the work participants produce and what the host can do
+with it; a vote or initial ideas do not promise consensus, agreement, or a
+finished product.
+Selection guidance belongs to the source round; generated guidance is null
+when no later round takes from that source. Reads expose effective selection
+as null while no downstream take exists and retain the author's inactive text
+separately for editing. Structural checks do not prove arbitrary host prose
+agrees with the activity; comparison cases review that agreement.
+
+```computations
+guideUse(field: String) : String
+  Names the Guiding use for an authored host field.
+guideScope(field: String) : String
+  Answers relay or round for supported fields, or empty for an unknown field.
+editGuideField(value: String) : String
+  Reads the field named by a guide suggestion.
+editGuideBody(value: String) : String
+  Reads the text named by a guide suggestion.
+```
+
+[Live.edits.TakenGuideSetsRelay](reaction:Live.edits.TakenGuideSetsRelay) and
+[Live.edits.TakenGuideSetsRound](reaction:Live.edits.TakenGuideSetsRound)
+set or clear the accepted host field under its dedicated Guiding use.
+
+When a literature activity asks participants to revise a reading after comparing peer interpretations, the comparison prompt asks for the textual detail supporting each reading in the same answer. This makes the evidence available through that comparison’s later carry, rather than relying on the original passage remaining visible.

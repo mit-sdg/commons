@@ -14,6 +14,7 @@ export interface RoundQuestion {
   cap: number;
   /** The groups a round carried from the one it takes from, shown above the prompt. */
   context?: { name: string; cards: string[] }[];
+  contextUse?: string;
   position: number;
 }
 
@@ -116,63 +117,20 @@ export function QuestionCard({
   const promptId = `prompt-${question.question}`;
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
-      {context.length === 0 ? null : (
+    <section className="flex min-w-0 flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+      {context.length > 0 &&
+      (question.contextUse ?? "context") === "context" ? (
         <div className="flex flex-col gap-1.5">
           <span className="text-muted-foreground text-xs">
             From an earlier round
           </span>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] items-start gap-2">
-            {context.map((group, index) => {
-              const values = distinctValues(group.cards);
-              if (values.length === 0) {
-                return (
-                  <p
-                    key={`${group.name}-${index}`}
-                    className="min-w-0 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm font-medium [overflow-wrap:anywhere]"
-                    dir="auto"
-                  >
-                    {group.name}
-                  </p>
-                );
-              }
-              return (
-                <details
-                  key={`${group.name}-${index}`}
-                  className="group min-w-0 rounded-lg border border-border bg-muted/40 px-3"
-                >
-                  <summary className="min-h-11 cursor-pointer py-3 text-sm [overflow-wrap:anywhere]">
-                    <span className="font-medium" dir="auto">
-                      {group.name}
-                    </span>
-                    <span className="ml-2 whitespace-nowrap text-muted-foreground text-xs">
-                      {values.length}{" "}
-                      {values.length === 1 ? "response" : "responses"}
-                    </span>
-                    <span
-                      className="mt-1 line-clamp-2 text-muted-foreground text-xs group-open:hidden"
-                      dir="auto"
-                    >
-                      {values[0]}
-                    </span>
-                  </summary>
-                  <ul className="flex flex-col gap-2 pb-3">
-                    {values.map((value, card) => (
-                      <li
-                        key={card}
-                        className="whitespace-pre-wrap rounded-md bg-background p-2.5 text-sm leading-relaxed [overflow-wrap:anywhere]"
-                        dir="auto"
-                      >
-                        {value}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              );
-            })}
+            {context.map((group, index) => (
+              <SourceEvidence key={`${group.name}-${index}`} group={group} />
+            ))}
           </div>
         </div>
-      )}
+      ) : null}
 
       <h2
         className="font-sans text-[15px] font-medium leading-[1.45]"
@@ -185,12 +143,30 @@ export function QuestionCard({
       {question.choices.length > 0 ? (
         <div className="flex flex-col gap-2">
           {question.choices.map((choice, index) => (
-            <Choice
+            <div
               key={`${choice}-${index}`}
-              choice={choice}
-              picked={answers[chosen] === choice}
-              onPick={() => onAnswer(chosen, choice)}
-            />
+              className="flex min-w-0 flex-col gap-1"
+            >
+              <Choice
+                choice={choice}
+                picked={answers[chosen] === choice}
+                onPick={() => onAnswer(chosen, choice)}
+              />
+              {question.contextUse === "choices"
+                ? context
+                    .filter(
+                      (group) =>
+                        group.name === choice && group.cards.length > 0,
+                    )
+                    .map((group) => (
+                      <SourceEvidence
+                        key={group.name}
+                        group={group}
+                        supporting
+                      />
+                    ))
+                : null}
+            </div>
           ))}
         </div>
       ) : question.parts.length === 0 ? (
@@ -236,18 +212,80 @@ export function QuestionCard({
         question.parts.map((label, index) => {
           const item = items[index] ?? "";
           return (
-            <label key={item} className="flex flex-col gap-1">
+            <div key={item} className="flex min-w-0 flex-col gap-1">
               <PartLabel>{label}</PartLabel>
+              {question.contextUse === "parts"
+                ? context
+                    .filter(
+                      (group) => group.name === label && group.cards.length > 0,
+                    )
+                    .map((group) => (
+                      <SourceEvidence
+                        key={group.name}
+                        group={group}
+                        supporting
+                      />
+                    ))
+                : null}
               <WrittenBox
                 value={answers[item] ?? ""}
+                label={label}
                 onAnswer={(written) => onAnswer(item, written)}
                 onDraft={(written) => onDraft(item, written)}
               />
-            </label>
+            </div>
           );
         })
       )}
     </section>
+  );
+}
+
+function SourceEvidence({
+  group,
+  supporting = false,
+}: {
+  group: { name: string; cards: string[] };
+  supporting?: boolean;
+}) {
+  const values = distinctValues(group.cards);
+  if (values.length === 0)
+    return (
+      <p
+        className="min-w-0 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm font-medium [overflow-wrap:anywhere]"
+        dir="auto"
+      >
+        {group.name}
+      </p>
+    );
+  return (
+    <details className="group min-w-0 rounded-lg border border-border bg-muted/40 px-3">
+      <summary className="min-h-11 cursor-pointer py-3 text-sm [overflow-wrap:anywhere]">
+        <span className="font-medium" dir="auto">
+          {supporting ? "Supporting responses" : group.name}
+        </span>
+        <span className="ml-2 whitespace-nowrap text-muted-foreground text-xs">
+          {values.length} {values.length === 1 ? "response" : "responses"}
+        </span>
+        <span
+          className="mt-1 line-clamp-2 text-muted-foreground text-xs group-open:hidden"
+          dir="auto"
+        >
+          {values[0]}
+        </span>
+      </summary>
+      <ul className="flex flex-col gap-2 pb-3">
+        {values.map((value, card) => (
+          <li
+            key={card}
+            className="whitespace-pre-wrap rounded-md bg-background p-2.5 text-sm leading-relaxed [overflow-wrap:anywhere]"
+            dir="auto"
+          >
+            {value}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
@@ -287,7 +325,7 @@ export function Choice({
       >
         {picked ? <span className="size-2 rounded-full bg-primary" /> : null}
       </span>
-      <span className="min-w-0 flex-1">{choice}</span>
+      <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{choice}</span>
     </button>
   );
 }

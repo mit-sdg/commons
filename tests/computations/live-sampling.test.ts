@@ -8,8 +8,11 @@ import {
   samplingPassage,
   samplingPassageTaking,
   unsampledNames,
+  samplingResolution,
 } from "../../src/computations/live-sampling.ts";
 import { scriptedWallReply } from "../../src/reasoning/scripted-walls.ts";
+import { openingBrief, openingGroups } from "../../src/computations/live-round-opening.ts";
+import { cardId } from "../../src/computations/live-rounds.ts";
 
 /** Two piles standing on the round before the room answers, each with its sentence. */
 const piles = [
@@ -52,6 +55,148 @@ describe("the sampling passage", () => {
     const bare = samplingPassage({ ...written, piles: [], notes: "  " });
     expect(bare).toContain("The piles as they stand:\nNo piles yet.");
     expect(bare).not.toContain("The author's notes:");
+  });
+});
+
+describe("preview selection and source history", () => {
+  const makePlan = () => ({
+    legs: [
+      { leg: "write", material: "m1", kind: "write", draws: [] },
+      { leg: "vote", material: "m2", kind: "vote", draws: [{ source: "write", use: "choices" }] },
+      { leg: "follow", material: "m3", kind: "write", draws: [{ source: "vote", use: "context" }] },
+      { leg: "independent", material: "m4", kind: "write", draws: [] },
+    ],
+    materials: ["m1", "m2", "m3", "m4"].map((questionnaire) => ({
+      questionnaire,
+      questions: [{ prompt: `Question ${questionnaire}?`, choices: [], parts: [], cap: 0 }],
+    })),
+    piles: [],
+    notes: [],
+    replies: [] as { about: string; asking: string; passage: string; reply: string }[],
+    picks: {} as Record<string, string[]>,
+  });
+  const answer = (
+    plan: ReturnType<typeof makePlan>,
+    leg: string,
+    answers: { value: string; pile: string }[],
+    asking = `${leg}-ask`,
+  ) => {
+    const passage = samplingResolution({ ...plan, leg }).passage;
+    plan.replies = plan.replies.filter((reply) => reply.about !== leg);
+    plan.replies.push({ about: leg, asking, passage, reply: sampled(answers) });
+  };
+  const originals = [
+    { pile: "Access", value: "The library lift failed during the evening workshop." },
+    { pile: "Timing", value: "The last bus left before the session ended." },
+    { pile: "Language", value: "The signup form was only in English." },
+    { pile: "Space", value: "The room was full and we had to leave." },
+  ];
+
+  test("defaults to three groups, honors explicit picks, and resolves original evidence through a vote", () => {
+    const plan = makePlan();
+    answer(plan, "write", originals);
+    expect(samplingResolution({ ...plan, leg: "vote" }).preview.available).toHaveLength(4);
+    expect(
+      samplingResolution({ ...plan, leg: "vote" }).preview.groups.map((group) => group.name),
+    ).toEqual(["Access", "Timing", "Language"]);
+    plan.picks.write = ["Timing", "Access", "unknown"];
+    answer(plan, "vote", [
+      { value: "Access", pile: "Access" },
+      { value: "Timing", pile: "Timing" },
+    ]);
+    plan.picks.vote = ["Access"];
+    const follow = samplingResolution({ ...plan, leg: "follow" });
+    expect(follow.preview).toEqual({
+      source: "vote",
+      use: "context",
+      available: ["Access", "Timing"],
+      groups: [{ name: "Access", cards: [originals[0]!.value] }],
+      sourceStanding: "fresh",
+    });
+    expect(follow.passage).toContain(originals[0]!.value);
+    expect(follow.passage).not.toContain(originals[1]!.value);
+    expect(follow.passage).not.toContain("\n  - Access\n");
+  });
+
+  test("offered options with no votes stay selectable with exactly the live opening evidence", () => {
+    const plan = makePlan();
+    answer(plan, "write", originals);
+    plan.picks.write = ["Access", "Timing"];
+    const carried = samplingResolution({ ...plan, leg: "vote" }).preview.groups;
+    const captured = JSON.parse(
+      openingBrief({
+        account: "",
+        author: "host",
+        questionnaire: "m2",
+        kind: "vote",
+        use: "choices",
+        content: { questions: [{ item: "q", prompt: "Choose", choices: [], parts: [], cap: 0 }] },
+        groups: carried,
+      }),
+    ).presentation;
+    const ballot = { response: "r", item: "q", value: "Access" };
+    const liveGroups = openingGroups({
+      picked: ["a", "t"],
+      categories: [
+        { category: "a", name: "Access", items: [cardId(ballot)] },
+        { category: "t", name: "Timing", items: [] },
+      ],
+      values: [ballot],
+      value: captured,
+    });
+    expect(liveGroups).toEqual([
+      { name: "Access", cards: [originals[0]!.value] },
+      { name: "Timing", cards: [] },
+    ]);
+    answer(plan, "vote", [{ value: "Access", pile: "Access" }]);
+    expect(samplingResolution({ ...plan, leg: "follow" }).preview.groups).toEqual(liveGroups);
+    plan.picks.vote = ["Timing"];
+    const follow = samplingResolution({ ...plan, leg: "follow" });
+    expect(follow.preview.available).toEqual(["Access", "Timing"]);
+    expect(follow.preview.groups).toEqual([{ name: "Timing", cards: [] }]);
+    expect(follow.account).toBe("");
+    expect(follow.passage).not.toContain(originals[1]!.value);
+  });
+
+  test("empty and unknown-only picks cannot create model context", () => {
+    const plan = makePlan();
+    answer(plan, "write", originals);
+    for (const picks of [[], ["client invented group"]]) {
+      plan.picks.write = picks;
+      const vote = samplingResolution({ ...plan, leg: "vote" });
+      expect(vote.account).toBe("NOTHING_PICKED");
+      expect(vote.preview.groups).toEqual([]);
+      expect(vote.preview.sourceStanding).toBe("empty");
+    }
+  });
+
+  test("upstream edits and resampling invalidate descendants but not independent samples", () => {
+    const plan = makePlan();
+    answer(plan, "write", originals);
+    answer(plan, "vote", [{ value: "Access", pile: "Access" }]);
+    answer(plan, "follow", [{ value: "Offer a ground floor room.", pile: "Room" }]);
+    answer(plan, "independent", [{ value: "Tea", pile: "Tea" }]);
+    expect(samplingResolution({ ...plan, leg: "follow" }).standing).toBe("fresh");
+    plan.materials[0]!.questions[0]!.prompt = "A changed original question?";
+    expect(samplingResolution({ ...plan, leg: "follow" }).preview.sourceStanding).toBe("stale");
+    expect(samplingResolution({ ...plan, leg: "follow" }).standing).toBe("stale");
+    expect(samplingResolution({ ...plan, leg: "independent" }).standing).toBe("fresh");
+    answer(plan, "write", originals, "write-refreshed");
+    expect(samplingResolution({ ...plan, leg: "vote" }).standing).toBe("stale");
+    expect(samplingResolution({ ...plan, leg: "follow" }).account).toBe("SOURCE_STALE");
+    answer(plan, "vote", [{ value: "Access", pile: "Access" }], "vote-refreshed");
+    expect(samplingResolution({ ...plan, leg: "follow" }).preview.sourceStanding).toBe("fresh");
+    expect(samplingResolution({ ...plan, leg: "follow" }).standing).toBe("stale");
+  });
+
+  test("changing a pick on an ancestor invalidates a downstream sample before resampling", () => {
+    const plan = makePlan();
+    answer(plan, "write", originals);
+    answer(plan, "vote", [{ value: "Access", pile: "Access" }]);
+    answer(plan, "follow", [{ value: "Ramp", pile: "Ramp" }]);
+    plan.picks.write = ["Timing", "Language"];
+    expect(samplingResolution({ ...plan, leg: "follow" }).standing).toBe("stale");
+    expect(samplingResolution({ ...plan, leg: "follow" }).preview.sourceStanding).toBe("stale");
   });
 });
 

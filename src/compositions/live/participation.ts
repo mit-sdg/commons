@@ -15,8 +15,6 @@ import { activeUser } from "../access/session.ts";
 import {
   questionBelongsToRun,
   questionIsNotOfRun,
-  responseIsNotWhole,
-  responseIsWhole,
   runHasNoOpenRound,
   runIsAQuestionnaireRun,
   runIsARelayRun,
@@ -297,7 +295,7 @@ const answerReaction =
       )
         .then(respond({ error: "CLOSED" }))
         .named("closed"),
-      where(Responding._response({ response }), no(ownsResponse(signed, response, session)))
+      where(no(ownsResponse(signed, response, session)))
         .then(respond({ error: "NOT_FOUND" }))
         .named("not-owner"),
     );
@@ -311,7 +309,7 @@ export const AnswerSigned = endpoint("/live/p/answer-signed", answerReaction(tru
 
 const submitReaction =
   (signed: boolean): Parameters<typeof endpoint>[1] =>
-  ({ session, response, run, presentation, form, at, submitted }) =>
+  ({ session, response, run, presentation, form, required, at, submitted }) =>
     receive(signed ? { session, response } : { response }).then(
       where(
         now(at),
@@ -332,20 +330,12 @@ const submitReaction =
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         runIsARound({ run }),
-        responseIsWhole({ response }),
+        RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+        compute(computations.snapshotRequirements, { value: presentation }, required),
       )
-        .then(Responding.submit({ response, at }).responds({ response: submitted }))
+        .then(Responding.submit({ response, at, required }).responds({ response: submitted }))
         .then(respond({ response: submitted }))
         .named("round-whole"),
-      where(
-        ownsResponse(signed, response, session),
-        Responding._response({ response }).is({ subject: run }),
-        runIsOpen({ run }),
-        runIsARound({ run }),
-        responseIsNotWhole({ response }),
-      )
-        .then(respond({ error: "INCOMPLETE" }))
-        .named("round-incomplete"),
       where(
         now(at),
         ownsResponse(signed, response, session),
@@ -354,22 +344,11 @@ const submitReaction =
         RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
         compute(computations.snapshotForm, { value: presentation }, form),
         is.among(form, ["quiz"]),
-        responseIsWhole({ response }),
+        compute(computations.snapshotRequirements, { value: presentation }, required),
       )
-        .then(Responding.submit({ response, at }).responds({ response: submitted }))
+        .then(Responding.submit({ response, at, required }).responds({ response: submitted }))
         .then(respond({ response: submitted }))
         .named("quiz-whole"),
-      where(
-        ownsResponse(signed, response, session),
-        Responding._response({ response }).is({ subject: run }),
-        runIsOpen({ run }),
-        RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
-        compute(computations.snapshotForm, { value: presentation }, form),
-        is.among(form, ["quiz"]),
-        responseIsNotWhole({ response }),
-      )
-        .then(respond({ error: "INCOMPLETE" }))
-        .named("quiz-incomplete"),
       where(
         ownsResponse(signed, response, session),
         Responding._response({ response }).is({ subject: run }),
@@ -377,7 +356,7 @@ const submitReaction =
       )
         .then(respond({ error: "CLOSED" }))
         .named("closed"),
-      where(Responding._response({ response }), no(ownsResponse(signed, response, session)))
+      where(no(ownsResponse(signed, response, session)))
         .then(respond({ error: "NOT_FOUND" }))
         .named("not-owner"),
     );
@@ -427,7 +406,7 @@ const outcomeReaction =
       )
         .then(respond({ error: "NOT_SUBMITTED" }))
         .named("in-progress"),
-      where(Responding._response({ response }), no(ownsResponse(signed, response, session)))
+      where(no(ownsResponse(signed, response, session)))
         .then(respond({ error: "NOT_FOUND" }))
         .named("not-owner"),
     );
@@ -456,7 +435,7 @@ const wallReaction =
       )
         .then(respond({ error: "NOT_SUBMITTED" }))
         .named("in-progress"),
-      where(Responding._response({ response }), no(ownsResponse(signed, response, session)))
+      where(no(ownsResponse(signed, response, session)))
         .then(respond({ error: "NOT_FOUND" }))
         .named("not-owner"),
     );

@@ -96,6 +96,26 @@ beforeAll(async () => {
 
 afterAll(stopTestDb);
 
+test("opening a missing run or round promptly refuses without publishing", async () => {
+  const relay = await plan("Missing round");
+  const leg = await addRound(relay, "One");
+  const { run } = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
+  for (const body of [
+    { run: "missing-run", leg: leg.leg },
+    { run, leg: "missing-leg" },
+    { run: "missing-run", leg: "missing-leg" },
+  ]) {
+    const response = await post(edge, "/live/relays/open-round", body, cookie);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "NOT_FOUND" });
+  }
+  expect(await edge.application.concepts.Locking._isLocked({ target: run })).toEqual({
+    locked: false,
+  });
+  const opened = await post(edge, "/live/relays/open-round", { run, leg: leg.leg }, cookie);
+  expect(opened.status).toBe(200);
+}, 2_000);
+
 /** The boundary answers a refusal's category, so RELAY_RETIRED arrives as CONFLICT. */
 describe("writing to a retired relay", () => {
   let relay: string;

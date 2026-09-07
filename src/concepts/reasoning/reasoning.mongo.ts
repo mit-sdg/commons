@@ -4,6 +4,7 @@ import { AlreadySettled, AskingNotFound } from "./errors.ts";
 interface AskingDoc {
   _id: string;
   reasoner: string;
+  previous?: string;
   about: string;
   passage: string;
   askedAt: Date;
@@ -59,6 +60,22 @@ export class MongoReasoningConcept {
     return doc;
   }
 
+  async #ask(reasoner: string, about: string, passage: string, at: Date, previous?: string) {
+    const asking = crypto.randomUUID();
+    const seq = await this.#nextSeq("askings");
+    await this.askings.insertOne({
+      _id: asking,
+      reasoner,
+      about,
+      passage,
+      askedAt: at,
+      pending: true,
+      seq,
+      ...(previous === undefined ? {} : { previous }),
+    });
+    return { asking };
+  }
+
   async ask({
     reasoner,
     about,
@@ -70,18 +87,19 @@ export class MongoReasoningConcept {
     passage: string;
     at: Date;
   }) {
-    const asking = crypto.randomUUID();
-    const seq = await this.#nextSeq("askings");
-    await this.askings.insertOne({
-      _id: asking,
-      reasoner,
-      about,
-      passage,
-      askedAt: at,
-      pending: true,
-      seq,
-    });
-    return { asking };
+    return await this.#ask(reasoner, about, passage, at);
+  }
+
+  /** A correction remembers the ask it follows, without changing that ask's history. */
+  async followUp({ previous, passage, at }: { previous: string; passage: string; at: Date }) {
+    const original = await this.askings.findOne({ _id: previous });
+    if (original === null) throw new AskingNotFound(`No asking named ${previous}`);
+    return await this.#ask(original.reasoner, original.about, passage, at, previous);
+  }
+
+  async _followups({ previous }: { previous: string }) {
+    const docs = await this.askings.find({ previous }).sort({ seq: 1 }).toArray();
+    return docs.map((doc) => ({ asking: doc._id }));
   }
 
   async answer({ asking, reply, at }: { asking: string; reply: string; at: Date }) {
@@ -177,6 +195,45 @@ export class MongoReasoningConcept {
     return doc === null
       ? []
       : [{ asking: doc.asking, account: doc.account, failedAt: doc.failedAt }];
+  }
+
+  async _lastRepliesAbout({ subjects }: { subjects: string[] }) {
+    const wanted = [...new Set(subjects)];
+    const askings = await this.askings.find({ about: { $in: wanted } }).toArray();
+    const byId = new Map(askings.map((asking) => [asking._id, asking]));
+    const replies = await this.replies
+      .find({ asking: { $in: [...byId.keys()] } })
+      .sort({ seq: -1 })
+      .toArray();
+    const newest = new Map<
+      string,
+      {
+        about: string;
+        asking: string;
+        reasoner: string;
+        passage: string;
+        reply: string;
+        answeredAt: Date;
+      }
+    >();
+    for (const reply of replies) {
+      const asking = byId.get(reply.asking);
+      if (asking === undefined || newest.has(asking.about)) continue;
+      newest.set(asking.about, {
+        about: asking.about,
+        asking: reply.asking,
+        reasoner: asking.reasoner,
+        passage: asking.passage,
+        reply: reply.reply,
+        answeredAt: reply.answeredAt,
+      });
+    }
+    return {
+      replies: wanted.flatMap((subject) => {
+        const reply = newest.get(subject);
+        return reply === undefined ? [] : [reply];
+      }),
+    };
   }
 
   async _repliesAbout({ about }: { about: string }) {

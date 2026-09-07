@@ -422,3 +422,29 @@ for (const [floor, make] of floors) {
     });
   });
 }
+
+test("emptying a scope preserves its categories and other scopes and answers an empty repeat", async () => {
+  const c = new MongoCategorizingConcept(await testDb());
+  const { category } = await c.file({ scope: "wall", name: "Kept", item: "one" });
+  const other = await c.file({ scope: "other", name: "Other", item: "two" });
+  expect(await c.empty({ scope: "wall" })).toEqual({ emptied: true });
+  expect(await c.empty({ scope: "wall" })).toEqual({ emptied: false });
+  expect(await c._getCategoryDetail({ category })).toHaveLength(1);
+  expect(await c._getItems({ category: other.category })).toEqual([{ item: "two" }]);
+});
+
+test("batch deletion rechecks occupied piles and tolerates missing or repeated candidates", async () => {
+  const c = new MongoCategorizingConcept(await testDb());
+  const empty = await c.createCategory({ scope: "wall", name: "Empty", description: "" });
+  const occupied = await c.file({ scope: "wall", name: "Occupied", item: "kept" });
+  expect(
+    await c.deleteEmptyCategories({
+      categories: [empty.category, occupied.category, empty.category, "missing"],
+    }),
+  ).toEqual({ deleted: true });
+  expect(await c.deleteEmptyCategories({ categories: [occupied.category] })).toEqual({
+    deleted: false,
+  });
+  expect(await c.deleteEmptyCategories({ categories: [] })).toEqual({ deleted: false });
+  expect(await c._getItems({ category: occupied.category })).toEqual([{ item: "kept" }]);
+});

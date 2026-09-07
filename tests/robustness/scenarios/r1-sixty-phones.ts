@@ -27,6 +27,7 @@ import {
   sleep,
   snap,
   until,
+  wallSettled,
 } from "../drive.ts";
 
 const ARM = process.argv[2] ?? "r1-sixty-phones";
@@ -76,26 +77,16 @@ const log = new Log(ARM, outDir(ARM));
 const host = await signIn();
 const web = await pages(host, log);
 
-/**
- * Watches the wall until the model has every card in a pile. One round holds
- * one sort lock, so only one ticker asks for a sort: the dashboard's own
- * "Model sorts" switch. A second asker meets a 409 CONFLICT that the board
- * swallows by design, which would read on the page as a broken finding.
- */
+/** Observe the dashboard; extra sort callers belong in contention scenarios. */
 async function everyCardPlaced(round: string, expected: number, tries = 60) {
   const read = await until(
     () => readWall(host, round),
-    (value) =>
-      (value.wall?.cards.length ?? 0) >= expected &&
-      (value.wall?.cards ?? []).every((card) => card.pile !== null),
+    (value) => wallSettled(value.wall, expected),
     tries,
     2000,
   );
   const wall = read.wall;
-  const settled =
-    wall !== null &&
-    wall.cards.length >= expected &&
-    wall.cards.every((card) => card.pile !== null);
+  const settled = wallSettled(wall, expected);
   return { wall, settled };
 }
 
@@ -129,7 +120,7 @@ try {
       evidence: JSON.stringify(one.question),
     });
   }
-  await dashboard.getByRole("switch", { name: "Model sorts" }).click();
+  await dashboard.getByRole("switch", { name: "Sort automatically" }).click();
   await sleep(1500);
   await snap(dashboard, log, "DashboardOpen", STAFF);
   await snap(phone, log, "PhoneOpen", [390]);
@@ -176,7 +167,7 @@ try {
     log.finding({
       kind: "broken",
       title: "the model never placed every card",
-      steps: `Model sorts on, then ${SCRIPTED} phones hand in three verbs each; wait three minutes`,
+      steps: `Sort automatically on, then ${SCRIPTED} phones hand in three verbs each; wait three minutes`,
       evidence: JSON.stringify(sorted.wall?.cards.filter((card) => card.pile === null)),
     });
   }
@@ -221,7 +212,7 @@ try {
     log.finding({
       kind: "slow",
       title: `the staged wall settled ${(catchUp / 1000).toFixed(1)}s after the server did`,
-      steps: `Model sorts on; ${SCRIPTED} phones hand in; watch the dashboard after the wall reads every card placed`,
+      steps: `Sort automatically on; ${SCRIPTED} phones hand in; watch the dashboard after the wall reads every card placed`,
       evidence: `catch-up ${catchUp}ms against the ${allowed}ms the belt's pace allows for ${expected} cards`,
     });
   }

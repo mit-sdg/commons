@@ -76,6 +76,10 @@ clearItem(item: Item) : return (item: Item)
 ## Queries
 
 ```queries
+_pinnedItems (scope: String) : one (items: Seq)
+  answers the pinned item identities as one ordered sequence, empty when none are pinned
+
+
 _getPinned (scope: String) : many (item: String, priority: Number)
   answers the scope's pinned items with highest priority first, with later pins breaking ties
   answers no rows when none match

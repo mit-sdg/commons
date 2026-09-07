@@ -1,0 +1,84 @@
+{
+  "kind": "relay",
+  "title": "Reading the ending",
+  "description": "Students analyze a short passage, contrast contrasting readings of Nia's decision, and synthesize these perspectives into a revised interpretation. The class builds a nuanced collective reading grounded in specific textual evidence.",
+  "hostGuide": {
+    "opening": "Introduce the passage on the screen and give students a quiet minute to read it before opening the first round.",
+    "closing": "Highlight how comparing contrasting viewpoints helped students deepen and refine their initial readings rather than settling on a single obvious meaning."
+  },
+  "rounds": [
+    {
+      "number": 0,
+      "title": "Initial interpretation",
+      "hostGuide": {
+        "purpose": "Gathers individual readings of Nia's actions grounded in specific details from the passage.",
+        "facilitation": "Remind students to cite at least one specific detail or word from the passage in their answer.",
+        "selection": "Select 4 to 6 diverse interpretations that represent contrasting viewpoints on Nia's motivation or future."
+      },
+      "kind": "write",
+      "prompt": "Read the passage: \"When the bus finally arrived, Nia left her suitcase on the bench. She waved to the driver, then walked toward the town she had spent all summer planning to leave.\"\n\nWhat is Nia doing and why? Give your interpretation and cite one specific detail from the text that supports it.",
+      "parts": [],
+      "cap": 0,
+      "choices": [],
+      "takes": {
+        "from": 0,
+        "use": ""
+      },
+      "piles": [
+        {
+          "name": "Staying by choice",
+          "sentence": "Readings where Nia consciously rejects leaving to embrace her town, identity, or relationships."
+        },
+        {
+          "name": "Unfinished business",
+          "sentence": "Readings where Nia stays out of obligation, fear, hesitation, or unresolved conflict."
+        },
+        {
+          "name": "Transformation or rebirth",
+          "sentence": "Readings focusing on leaving the suitcase behind as a symbolic shedding of past baggage."
+        }
+      ],
+      "notes": "Group similar readings together while keeping distinct textual evidence and viewpoints separate so students have diverse interpretations to contrast."
+    },
+    {
+      "number": 0,
+      "title": "Contrasting perspectives",
+      "hostGuide": {
+        "purpose": "Prompts students to identify meaningful tensions or complementary insights between two selected peer readings.",
+        "facilitation": "Encourage students to look for productive tensions or surprising differences rather than declaring one reading right and the other wrong.",
+        "selection": "Select 3 to 5 comparisons that identify clear, productive tensions between the readings."
+      },
+      "kind": "write",
+      "prompt": "Review the selected classmate interpretations.\n\nChoose two distinct interpretations. Name both interpretations, then explain a tension, contrast, or interesting disagreement between them.",
+      "parts": [],
+      "cap": 0,
+      "choices": [],
+      "takes": {
+        "from": 1,
+        "use": "context"
+      },
+      "piles": [],
+      "notes": "Group answers by the pairs of interpretations they contrast or the nature of the tension they highlight."
+    },
+    {
+      "number": 0,
+      "title": "Synthesized interpretation",
+      "hostGuide": {
+        "purpose": "Helps students synthesize peer insights to produce a richer, more nuanced final interpretation.",
+        "facilitation": "Ask a few students to share how their thinking evolved from their initial read to this final synthesis.",
+        "selection": null
+      },
+      "kind": "write",
+      "prompt": "Review the selected peer comparisons.\n\nState the comparison you are responding to, then write a revised interpretation of Nia's choice that incorporates or resolves that tension, using evidence from the text.",
+      "parts": [],
+      "cap": 0,
+      "choices": [],
+      "takes": {
+        "from": 2,
+        "use": "context"
+      },
+      "piles": [],
+      "notes": "Group synthesized interpretations by their core analytical claims and conclusions about Nia's decision."
+    }
+  ]
+}

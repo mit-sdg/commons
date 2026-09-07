@@ -1,7 +1,8 @@
 /**
  * R1's follow-up: the same closed run loaded fresh, to say whether the wall
  * the animation left behind is the wall a reload shows. Reads the server's
- * wall for round one and the counts the dashboard and the projector draw.
+ * wall for round one and logs the fresh dashboard as initially shown.
+ * This is inspection evidence; it does not assert that round one is selected.
  *
  *   bun tests/robustness/scenarios/r1-fresh-load.ts <run> [arm-name]
  */

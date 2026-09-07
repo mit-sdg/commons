@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { type ComponentProps, useState } from "react";
 import { toast } from "sonner";
+import { RoundGuideEditor } from "@/components/live/host-guide";
 import {
   type RefusalAbout,
   type RefusalWord,
@@ -519,15 +520,28 @@ export function RoundEditor({
   const choicesOpen = kind === "vote" && takes?.use !== "choices";
 
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4 focus-within:outline focus-within:outline-2 focus-within:outline-primary focus-within:-outline-offset-2">
-      {proposal === null ? null : <div className="col-span-2">{proposal}</div>}
-      <RoundToken number={round.number} size="lg" standing="plain" />
+    <div className="grid grid-cols-1 items-start gap-4 rounded-xl border border-border bg-card px-4 py-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:px-5 focus-within:outline focus-within:outline-2 focus-within:outline-primary focus-within:-outline-offset-2">
+      {proposal === null ? null : (
+        <div className="sm:col-span-2">{proposal}</div>
+      )}
+      <RoundToken
+        number={round.number}
+        size="lg"
+        standing="plain"
+        className="hidden sm:inline-flex"
+      />
 
       <div className="flex min-w-0 flex-col gap-3">
         {note === null ? null : (
           <p className="text-muted-foreground text-sm">{note}</p>
         )}
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:flex">
+          <RoundToken
+            number={round.number}
+            size="md"
+            standing="plain"
+            className="sm:hidden"
+          />
           <Input
             value={draft.title}
             maxLength={200}
@@ -544,7 +558,7 @@ export function RoundEditor({
             onBlur={() => leaveTitle()}
           />
           {locked ? null : (
-            <div className="flex flex-none gap-0.5">
+            <div className="col-start-2 flex flex-none justify-end gap-0.5">
               <ActButton
                 variant="ghost"
                 size="icon-sm"
@@ -577,6 +591,12 @@ export function RoundEditor({
             </div>
           )}
         </div>
+
+        <RoundGuideEditor
+          round={round}
+          retired={retired}
+          onChanged={onChanged}
+        />
 
         <div
           role="group"
@@ -628,26 +648,33 @@ export function RoundEditor({
         {partsOpen || choicesOpen ? (
           <div className="flex flex-wrap items-start gap-6">
             {partsOpen ? (
-              <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <Label>Parts</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   {draft.parts.map((part, index) => (
                     <span
                       // biome-ignore lint/suspicious/noArrayIndexKey: a part is its row, and a row carries no id
                       key={index}
-                      className="group/part relative inline-flex items-center"
+                      className="group/part relative inline-flex min-w-0 flex-[1_1_16rem] items-center"
                     >
-                      <Input
+                      <Textarea
+                        rows={1}
                         value={part}
                         maxLength={40}
                         disabled={locked}
                         readOnly={busy}
                         aria-label={`Round ${round.number} part ${index + 1}`}
                         placeholder={PART_WORDS[index] ?? ""}
-                        className={cn("w-36 pr-8", LOCKED_BOX)}
+                        className={cn(
+                          "min-h-9 w-full min-w-0 resize-none py-1.5 pr-9",
+                          LOCKED_BOX,
+                        )}
                         onChange={(event) => {
                           const parts = [...draft.parts];
-                          parts[index] = event.target.value;
+                          parts[index] = event.target.value.replace(
+                            /[\r\n]+/g,
+                            " ",
+                          );
                           change({ parts });
                         }}
                         onBlur={() => void commit(draft)}
@@ -658,7 +685,7 @@ export function RoundEditor({
                           size="icon-xs"
                           aria-label={`Remove round ${round.number} part ${index + 1}`}
                           busy={busy}
-                          className="-translate-y-1/2 absolute top-1/2 right-1 opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100"
+                          className="-translate-y-1/2 absolute top-1/2 right-1 opacity-100 sm:opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100 [@media(hover:none)]:opacity-100"
                           onClick={() =>
                             change(
                               {
@@ -723,7 +750,7 @@ export function RoundEditor({
             ) : null}
 
             {choicesOpen ? (
-              <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <Label>Choices</Label>
                 <div className="flex flex-col gap-2">
                   {draft.choices.map((choice, index) => (

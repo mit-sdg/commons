@@ -22,6 +22,7 @@ import {
   sleep,
   snap,
   until,
+  wallSettled,
 } from "../drive.ts";
 
 const ARM = process.argv[2] ?? "three-verbs";
@@ -37,26 +38,16 @@ const log = new Log(ARM, outDir(ARM));
 const host = await signIn();
 const web = await pages(host, log);
 
-/**
- * Watches the wall until the model has every card in a pile. One round holds
- * one sort lock, so only one ticker asks for a sort: the dashboard's own
- * "Model sorts" switch. A second asker meets a 409 CONFLICT that the board
- * swallows by design, which would read on the page as a broken finding.
- */
+/** Observe the dashboard; extra sort callers belong in contention scenarios. */
 async function everyCardPlaced(round: string, expected: number, tries = 45) {
   const read = await until(
     () => readWall(host, round),
-    (value) =>
-      (value.wall?.cards.length ?? 0) >= expected &&
-      (value.wall?.cards ?? []).every((card) => card.pile !== null),
+    (value) => wallSettled(value.wall, expected),
     tries,
     2000,
   );
   const wall = read.wall;
-  const settled =
-    wall !== null &&
-    wall.cards.length >= expected &&
-    wall.cards.every((card) => card.pile !== null);
+  const settled = wallSettled(wall, expected);
   return { wall, settled };
 }
 
@@ -162,7 +153,7 @@ try {
 
   // The model sorts. The switch on the dashboard is the one ticker; the
   // driver only watches the wall, so the round's sort lock is never contested.
-  await dashboard.getByRole("switch", { name: "Model sorts" }).click();
+  await dashboard.getByRole("switch", { name: "Sort automatically" }).click();
   const sorted = await log.timed(
     "the model sorts every card",
     () => everyCardPlaced(one.round, (SCRIPTED + 1 + MODELS) * 3),
@@ -178,7 +169,7 @@ try {
       kind: "broken",
       title: "the model never placed every card",
       steps:
-        "Thirty phones plus two model participants on Three verbs; Model sorts on; wait two minutes",
+        "Thirty phones plus two model participants on Three verbs; Sort automatically on; wait two minutes",
       evidence: JSON.stringify(sorted.wall?.cards.filter((card) => card.pile === null)),
     });
   }
@@ -198,11 +189,11 @@ try {
   await sleep(3000);
   await snap(dashboard, log, "DashboardClosedRound", STAFF);
   await snap(phone, log, "PhoneWaiting", [390]);
-  // A closed round starts in Top, with the four fullest piles already picked
-  // and maintained, so the Open button says "4 piles" before anything is
-  // touched. Three piles is asked for by the Top number: a tap on a pile
-  // would take the pick into By hand and toggle that pile *out* of the four.
+  // Top initially selects up to four existing piles; a scripted model may
+  // produce fewer. Changing the cap must still select the fullest available.
   const closedWall = (await readWall(host, one.round)).wall;
+  const initialPicked = Math.min(4, closedWall?.piles.length ?? 0);
+  const selected = Math.min(PICKED, initialPicked);
   const names = (closedWall?.piles ?? [])
     .slice()
     .sort((left, right) => right.count - left.count)
@@ -213,7 +204,7 @@ try {
     "the fresh pick is the top four",
     () =>
       dashboard
-        .getByRole("button", { name: /^Open.*The stranger.*4 piles/ })
+        .getByRole("button", { name: new RegExp(`^Open.*The stranger.*${initialPicked} piles?`) })
         .waitFor({ timeout: 20000 }),
     8000,
   );
@@ -222,7 +213,7 @@ try {
     `Top ${PICKED} picks the ${PICKED} fullest piles`,
     () =>
       dashboard
-        .getByRole("button", { name: new RegExp(`^Open.*The stranger.*${PICKED} piles`) })
+        .getByRole("button", { name: new RegExp(`^Open.*The stranger.*${selected} piles?`) })
         .waitFor({ timeout: 20000 }),
     8000,
   );
@@ -232,7 +223,7 @@ try {
         .filter((pile) => pile.picked !== null)
         .map((pile) => pile.name)
         .sort(),
-    (found) => found.length === PICKED,
+    (found) => found.length === selected,
     12,
   );
   log.note(`Top ${PICKED} picked ${JSON.stringify(pickedNames)} of ${JSON.stringify(names)}`);

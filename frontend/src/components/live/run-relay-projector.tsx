@@ -107,7 +107,7 @@ export function RelayProjector({
 
   // The close sends one last placing ask, so the wall is read until that
   // ask has landed and nothing is out, closed or not.
-  const settling = (wall?.asksOut ?? 0) > 0;
+  const settling = wall?.sortPending === true || (wall?.asksOut ?? 0) > 0;
   useEffect(() => {
     if (!run.open && !settling) return;
     const timer = setInterval(refetchWall, POLL_MS);

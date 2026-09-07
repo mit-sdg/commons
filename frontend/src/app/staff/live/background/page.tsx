@@ -9,7 +9,7 @@ import { RequireCapability } from "@/components/require-capability";
 export default function BackgroundPage() {
   return (
     <RequireCapability capability="live:host">
-      <PageContainer width="wide">
+      <PageContainer>
         <PageHeader
           eyebrow={
             <Link
@@ -22,9 +22,7 @@ export default function BackgroundPage() {
           title="Documents"
           description="Store reference documents here, then choose which ones each activity uses."
         />
-        <div className="max-w-3xl">
-          <BackgroundCard />
-        </div>
+        <BackgroundCard />
       </PageContainer>
     </RequireCapability>
   );

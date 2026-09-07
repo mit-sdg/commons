@@ -26,7 +26,13 @@ A question's parts are how one phone hands in several answers: labeled boxes (on
 
 [Live.relays.Launch](reaction:Live.relays.Launch) publishes the relay itself as an open edition — the run — and issues its share token and durable room code in the same request, exactly as a questionnaire launches. Nothing is captured at launch: the relay stays editable between rounds, and each round freezes only when it opens. A participant's token stays on the run for the whole meeting.
 
-Opening a round is publishing a second time, with the round's questionnaire as the material. [Live.relays.OpenRound](reaction:Live.relays.OpenRound) opens a round, and [Live.relays.OpenRoundRefused](reaction:Live.relays.OpenRoundRefused) answers the same path with the refusals: `ROUND_OPEN` while another round of the run is open, `ROUND_DONE` when this round already ran in this run, `SOURCE_OPEN` while the round it takes from has not closed in this run, `NOTHING_PICKED` when it takes from a round on which nothing is picked, `CLOSED` once the run has closed, and `LEG_NOT_FOUND` for a round that is not the run's. A round whose source has closed may open whatever its number, so the staff member can skip or return; opening in order is the default the dashboard offers. Opening takes the run's Locking lock before it publishes: the lock is the run's "a round is open" held where one holder is the rule, so two dashboards that tap Open in one instant open one round and the other's request stops at the refused lock, which the wire answers as a conflict and the dashboard reads as `ROUND_OPEN` from the run as it then stands. [Live.relays.ClosedRoundUnlocksRun](reaction:Live.relays.ClosedRoundUnlocksRun) gives the lock back when the round closes, whichever path closed it. [Live.relays.Unlock](reaction:Live.relays.Unlock) gives it back by hand when a run is left locked with no round open — what a crash between the lock and the publish leaves behind — answering the run whether it was locked or not, and `ROUND_OPEN` while a round of it is open; the dashboard offers it as one deliberate tap and never sends it on its own, since a loser of the race that read the run before the winner's publish landed would unlock the winner. Opening then publishes the round and links it to its run through Linking, so the run knows its rounds in opening order; the tie is what captures: [Live.relays.TiedRoundCapturesPresentation](reaction:Live.relays.TiedRoundCapturesPresentation) captures the presentation into RunSnapshotting under the new edition, by the take's use — [the round's presentation](former:Live.relays.theRoundPresentation), the questionnaire as its kind selects it, for a round that takes nothing; [the presentation taking choices](former:Live.relays.theRoundPresentationTaking), with the choices replaced by the picked piles' names, their supporting cards shown as context, and no parts; [the presentation taking parts](former:Live.relays.theRoundPresentationTakingParts), with the parts replaced by the picked piles' names, their supporting cards shown as context, and no choices; or [the presentation showing the source](former:Live.relays.theRoundPresentationShowing), the question as its kind selects it with the picked piles and their cards — [pileCards](computation:pileCards) — as its context. All three carry forms read [the selected groups](former:Live.relays.theSelectedGroups), which joins the source wall's pins, category membership, submitted answers, and captured question in pick order. Dynamic choices additionally capture those groups as `choiceSources`: this explicit association distinguishes supporting examples from unrelated display context on a static vote. [pileCards](computation:pileCards) keeps written answers literally, including repeats; for a ballot it reads the original choice's supporting cards from that ballot question's immutable snapshot and includes each example once. Renaming or merging vote piles therefore carries the original examples identified by their ballots, not by a mutable pile name. Only the selected piles contribute; a later edit of the older source wall cannot rewrite the vote's captured history. A static or older vote without `choiceSources` carries no invented examples. An empty vote pile likewise carries its name and no examples: without a ballot there is no stable evidence of its original choice after renaming. The filled question lives only in that snapshot; the questionnaire itself is never rewritten. Which piles a round carried out are the pins in the source round's scope, set by the wall page's pick and read by the wall as the small tag on a pile.
+[Live.relays.OpenRound](reaction:Live.relays.OpenRound) prepares a Commissioning undertaking before branching. [openingAdmission](computation:openingAdmission) gives one account of the observed eligibility: FORBIDDEN, LEG_NOT_FOUND, CLOSED, ROUND_OPEN, ROUND_DONE, SOURCE_OPEN, NOTHING_PICKED, or permission to proceed. [openingAuthorized](computation:openingAuthorized) carries the host observation. These observations are not a transaction across concepts; the recorded decision belongs to this proposal and is never recomputed by competing response branches.
+
+[openingGroups](computation:openingGroups) resolves the source's selected groups once in pick order. [pileCards](computation:pileCards) keeps written answers literally and carries ballots' original supporting examples from their immutable snapshots, preserving that history through later renaming and merging. [openingBrief](computation:openingBrief) records the author, questionnaire identity, and complete presentation as a JSON publication instruction. Choices and parts receive the selected group names; all take uses preserve the groups as context, and dynamic choices preserve their examples as choiceSources. A later unpick, rename, or questionnaire edit cannot change the admitted publication. Declined proposals retain an empty brief.
+
+An admitted opening acquires the existing run lock, accepts the commission, and publishes the material and author recovered by [openingMaterial](computation:openingMaterial) and [openingAuthor](computation:openingAuthor). It associates the new edition with the commission before linking it to the run. [Live.relays.TiedRoundCapturesPresentation](reaction:Live.relays.TiedRoundCapturesPresentation) captures [openingPresentation](computation:openingPresentation) from that fixed brief. Only after its capture has settled does the opening conclude and return the round. A contended lock is refused; the shared commissioning refusal reaction records the losing proposal without unlocking the winner.
+
+[Live.relays.ClosedRoundUnlocksRun](reaction:Live.relays.ClosedRoundUnlocksRun) returns the run lock when a round closes. [Live.relays.Unlock](reaction:Live.relays.Unlock) remains the deliberate recovery action for a run left locked without an open round. This sequence does not provide crash-atomic publication or storage recovery.
 
 [Live.relays.CloseRound](reaction:Live.relays.CloseRound) closes the round's edition; phones that answer afterward meet the same `CLOSED` refusal a closed quiz gives. [Live.relays.Close](reaction:Live.relays.Close) closes the run, closing its open round first when one stands. [Live.relays.ClosedRunClosesRounds](reaction:Live.relays.ClosedRunClosesRounds) closes any open rounds linked when the parent closes; [Live.relays.RoundTiedToClosedRunCloses](reaction:Live.relays.RoundTiedToClosedRunCloses) closes one linked afterward. Together they cover opening and closing that overlap between publishing and linking. Closure converges through reactions in the running engine; these actions are not a crash-atomic transaction. Showing a closed round again is a read of its wall, never a change of state.
 
@@ -43,6 +49,28 @@ Seats live on the runs page now: `Live.runs.Invite` takes one, `Live.runs.Dismis
 The participation page owns the phone's endpoints; this page owns what they read for a relay. [The face of a relay run](former:Live.relays.theRelayFace) is what Arrive forms when the token opens onto a run whose material is a relay: the relay's title, whether the run is open, its rounds as number, title, and standing — done, open, or next — and the open round's edition and its question, with prompt, parts, and choices only. A phone begins a response to the open round, answers each part as an item of its own, and hands in; the round's edition is its subject, so the guards that refuse a closed run refuse a round that is not open.
 
 ```computations
+openingAuthorized() : Boolean
+  Supplies a witness for an observed host authorization.
+
+openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String
+  Chooses the first applicable refusal from supplied observations, or an empty account for an admitted opening.
+
+openingGroups(picked: Seq, categories: Json, values: Json, value: Json) : Json
+  Resolves the selected names and their supporting cards in the observed pick order.
+
+openingBrief(account: String, author: String, questionnaire: String, kind: String, use: Json, content: Json, groups: Json) : String
+  Serializes the publication instruction with its complete immutable presentation, or leaves a declined proposal's brief empty.
+
+openingAuthor(brief: String) : String
+  Reads the author from the recorded publication instruction.
+
+openingMaterial(brief: String) : String
+  Reads the questionnaire identity from the recorded publication instruction.
+
+openingPresentation(brief: String) : Json
+  Reads the complete presentation from the recorded publication instruction.
+
+
 oneBoxParts(question: String) : Strings
   Answers the parts of a round that offers carried choices: none, since such a
   round is one box.
@@ -100,7 +128,6 @@ Live.relays.Launch at /live/relays/launch
 Live.relays.List at /live/relays/list
 Live.relays.MoveRound at /live/relays/move-round
 Live.relays.OpenRound at /live/relays/open-round
-Live.relays.OpenRoundRefused at /live/relays/open-round
 Live.relays.Plan at /live/relays/plan
 Live.relays.RemoveRound at /live/relays/remove-round
 Live.relays.Retire at /live/relays/retire
@@ -115,3 +142,26 @@ Live.relays.SortByModel at /live/relays/sort-by-model
 Live.relays.Unlock at /live/relays/unlock
 Live.relays.Uses at /live/relays/uses
 ```
+
+## Guidance for the host
+
+The relay editor and host run read a description and opening and closing
+instructions from Guiding, plus each leg's purpose, facilitation, and selection
+guidance. Participant and projector presentations never include these fields.
+The host can set or clear description, opening, or closing through
+`/live/relays/set-guide`, naming a field and body; blank text clears it.
+Only hosts can write, retired relays refuse writes, and guidance remains
+editable during a run. This is standing guidance, not a historical snapshot.
+
+[Live.relays.SetGuide](reaction:Live.relays.SetGuide) writes the host field.
+
+```endpoints
+Live.relays.SetGuide at /live/relays/set-guide
+```
+
+[The relay guide](former:Live.relays.theRelayGuide) and
+[the round guide](former:Live.relays.theRoundGuide) form host-only text.
+
+The editor, overview and host dashboard share concise help for running a relay. It explains piles, manual and model sorting, nonempty Top/All selections, manual selection, explicit round opening, and the limits of carried evidence. The help distinguishes a vote's counts from a host decision and explains that an unvoted option carries no original examples. It gives a pause-and-adapt path when the next question lacks the material it needs. This common procedure accompanies the generated activity-specific guidance.
+
+The generated relay description and each round’s purpose remain visible while detailed guidance is folded. The editor offers the corresponding fields for revision; the overview and dashboard show read-only guidance. “Session host guide” names activity-specific opening and closing advice, distinct from the shared “Running a relay” help. Guidance is not automatically expanded over the host’s round controls. Overview round cards use their full body width on narrow screens, with the number beside the title.

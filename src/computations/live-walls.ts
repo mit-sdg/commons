@@ -77,7 +77,8 @@ Reply with exactly one JSON object and nothing else.
 
 {"kind":"lid","pile":"<the pile id below>","sentence":"..."}
 - "pile" is exactly the pile id given below.
-- "sentence" is one plain sentence of at most twelve words stating the one thing these cards share, said as a fact about the world the cards describe: "Two people hold one thing at once." It is never about the cards themselves — not their spelling, language, length, wording, or kind — and never opens with "These answers", "Every answer", or "Each card", and never restates the question.`;
+- "sentence" is one plain sentence of at most twelve words stating the one thing these cards share, said as a fact about the world the cards describe: "Two people hold one thing at once." It is never about the cards themselves — not their spelling, language, length, wording, or kind — and never opens with "These answers", "Every answer", or "Each card", and never restates the question.
+- When the cards describe different or opposing experiences, preserve that contrast in the sentence. State who or what benefits and who or what struggles when the cards support it, rather than reducing the difference to a vague shared topic. Keep the twelve-word limit.`;
 
 const PARTICIPANT_CONTRACT = `${PARTICIPANT_OPENING}
 Reply with exactly one JSON object and nothing else.
@@ -88,6 +89,7 @@ Reply with exactly one JSON object and nothing else.
 - Otherwise answer the way one participant typing on a phone would, at the length the question asks for: one word when it asks for one, one plain sentence when it asks for a sentence or a rewrite, a few words otherwise.
 - Follow the setting and subject of the question and any shown context. Do not assume a software class: a faculty icebreaker, staff onboarding, or another activity calls for answers in that setting. Use the stance only where it fits the question; never let it change the subject. Prefer plausible everyday examples and stakes; an unusual perspective does not require a catastrophe or a contrived crisis unless the question asks for exceptional cases.
 - Answer the question; never repeat or restate its words back.
+- When a question refers to earlier work, use the supplied groups and responses as the record of that work. Preserve their concrete facts, names, relationships and constraints; do not invent or silently replace source details. Keep each response associated with its source group. Add new ideas, interpretations, proposals or fictional developments when the task asks for them. If a required source detail is absent, acknowledge the gap or work within what is shown.
 - Answer as this participant, using the stance and angle where they fit. Vary open answers naturally, but allow common words and synonymous concept names when they answer the question; do not invent an unrelated answer merely to be unique.`;
 
 /** The stances a room of participants is dealt, one per participant, by its identity. */
@@ -335,7 +337,7 @@ export function participantPassage({
     const shown =
       (question.context ?? []).length === 0
         ? ""
-        : `\nShown above the question, from an earlier round:\n${(question.context ?? [])
+        : `\nSupporting material from an earlier round:\n${(question.context ?? [])
             .map((group) => `- ${group.name}: ${group.cards.join(", ")}`)
             .join("\n")}`;
     return `${index + 1}. ${question.prompt}${shown}${choices}\n${boxes.join("\n")}`;
@@ -526,4 +528,164 @@ export function participantAnswers({ reply, value }: { reply: string; value: unk
     answers.push({ item, value: said });
   }
   return answers;
+}
+
+/** Optional witnesses contribute an explicit value even when their predicate is absent. */
+export function sortingObservationPresent() {
+  return true;
+}
+
+/** Classroom policy chooses a total admission account from the supplied observations. */
+export function sortingAdmission({
+  mode,
+  authorized,
+  live,
+  openRun,
+  waiting,
+  unlocked,
+  answered,
+  applied,
+  ready,
+  value,
+}: {
+  mode: string;
+  authorized: boolean | null;
+  live: boolean | null;
+  openRun: boolean | null;
+  waiting: boolean | null;
+  unlocked: boolean | null;
+  answered: boolean | null;
+  applied: boolean | null;
+  ready: boolean | null;
+  value: unknown;
+}) {
+  return authorized !== true
+    ? "FORBIDDEN"
+    : mode === "manual" && openRun !== true
+      ? "CLOSED"
+      : (mode === "automatic" && live !== true) ||
+          value == null ||
+          waiting !== true ||
+          unlocked !== true ||
+          answered !== true ||
+          applied !== true ||
+          ready !== true
+        ? "idle"
+        : "";
+}
+
+/** Declined requests retain no classroom content; accepted proposals fix their brief. */
+export function sortingBrief({
+  account,
+  value,
+  categories,
+  values,
+  removed,
+  notes,
+}: {
+  account: string;
+  value: unknown;
+  categories: PileWithItems[];
+  values: RunValue[];
+  removed: string[];
+  notes: string | null;
+}) {
+  return account === ""
+    ? placingPassage({ value, categories, values, removed, notes: notes ?? "" })
+    : "";
+}
+
+/** A usable reply concludes only after application; an outstanding repair keeps the undertaking open. */
+export function commissionOutcome({
+  reply,
+  failure,
+  insistence,
+  categories,
+  values,
+  removed,
+  successors,
+}: {
+  reply: string | null;
+  failure: string | null;
+  insistence: string | null;
+  successors: number;
+  categories: PileWithItems[];
+  values: RunValue[];
+  removed: string[];
+}) {
+  if (typeof failure === "string") return "failed";
+  if (typeof reply !== "string") return "pending";
+  const reading = placingReading({ reply, categories, values, removed });
+  if (reading === "placed" || reading === "nothing" || reading === "lid") return "completed";
+  return successors > 0 || typeof insistence === "string" ? "pending" : "failed";
+}
+
+export function commissionAccount({
+  outcome,
+  failure,
+}: {
+  outcome: string;
+  failure: string | null;
+}) {
+  return outcome === "completed" ? "" : (failure ?? "No usable arrangement was produced.");
+}
+
+/** An empty collection declines this particular summary proposal. */
+export function summaryAdmission({ items }: { items: number }): string {
+  return items === 0 ? "idle" : "";
+}
+
+/** Offer one observed selection; Categorizing rechecks emptiness when deleting. */
+export function clearablePiles({
+  categories,
+  standing,
+  picked,
+  reserved,
+}: {
+  categories: { category: string; name: string; items: string[] }[];
+  standing: { name: string }[] | null | undefined;
+  picked: string[];
+  reserved: string[];
+}): string[] {
+  const protectedIds = new Set([...picked, ...reserved]);
+  const standingNames = new Set((standing ?? []).map(({ name }) => name));
+  return categories
+    .filter(
+      ({ category, name, items }) =>
+        items.length === 0 && !protectedIds.has(category) && !standingNames.has(name),
+    )
+    .map(({ category }) => category);
+}
+
+export function cleanupAdmission({
+  authorized,
+  openRun,
+  unlocked,
+  applied,
+  standing,
+}: {
+  authorized: unknown;
+  openRun: unknown;
+  unlocked: unknown;
+  applied: unknown;
+  standing: unknown;
+}): string {
+  if (authorized !== true) return "FORBIDDEN";
+  if (!Array.isArray(standing)) return "NOT_FOUND";
+  if (openRun !== true || unlocked !== true || applied !== true) return "CONFLICT";
+  return "";
+}
+
+export function cleanupBrief({
+  account,
+  candidates,
+}: {
+  account: string;
+  candidates: string[];
+}): string {
+  return account === "" ? JSON.stringify(candidates) : "";
+}
+
+export function cleanupCategories({ brief }: { brief: string }): string[] {
+  return JSON.parse(brief) as string[];
 }

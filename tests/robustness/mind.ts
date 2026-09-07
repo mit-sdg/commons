@@ -2,9 +2,9 @@
  * What the reasoner was asked and what it answered, read straight from the
  * stack's Mongo: every ask about one subject (a relay or a round) with its
  * reply, failure, and latency, and every insistence stood on it. Run under
- * node (the Mongo driver does not start under bun):
+ * Node 24 or Bun:
  *
- *   node --experimental-strip-types tests/robustness/mind.ts <mongo-uri> <about>
+ *   node tests/robustness/mind.ts <mongo-uri> <about>
  */
 
 import { MongoClient } from "mongodb";

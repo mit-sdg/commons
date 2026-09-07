@@ -14,9 +14,9 @@ The note here is the relay's: what the editor writes before class, standing on t
 
 ## The sample
 
-While a staff member writes a round, the phone beside it can show what a room might say and how it would sort. [Live.rounds.SampleAnswers](reaction:Live.rounds.SampleAnswers) makes one deliberate ask about the round's leg with [the sampling passage](computation:samplingPassage): a variant of the placing contract that keeps its rules about piles but writes the cards itself — one answer per stance of the participant passage, twelve in all, each placed as it is written — over the round's question as the phone would put it, its standing piles with their sentences, and its note to the sorter, so the prompt and the note both shape the sample. A round that takes from an earlier one is sampled after its source: [samplingPassageTaking](computation:samplingPassageTaking) puts the source's [sampled groups](computation:sampledGroups) where the take puts the picked piles, as the choices, as the boxes, or as the groups shown above the question. Their written answers accompany the names as explicitly synthetic supporting examples; a vote supplies only names because its ballots are not the original scenarios. A source with no sample yet refuses the ask `SOURCE_UNSAMPLED` rather than asking with placeholders. While an ask is out a second press asks nothing, and a round of a retired relay is refused `RELAY_RETIRED`.
+While a staff member writes a round, the phone beside it can show what a room might say and how it would sort. [Live.rounds.SampleAnswers](reaction:Live.rounds.SampleAnswers) makes one deliberate ask about the round's leg with [the sampling passage](computation:samplingPassage): a variant of the placing contract that keeps its rules about piles but writes the cards itself — one answer per stance of the participant passage, twelve in all, each placed as it is written — over the round's question as the phone would put it, its standing piles with their sentences, and its note to the sorter, so the prompt and the note both shape the sample. A round that takes from an earlier one is sampled after its source: [samplingPassageTaking](computation:samplingPassageTaking) puts the source's [sampled groups](computation:sampledGroups) where the take puts the picked piles, as the choices, as the boxes, or as the groups shown above the question. Their written answers accompany the names as explicitly synthetic supporting examples. A sampled vote resolves its choice labels through its own selected source groups to retain the original written examples; ballots never substitute for that evidence. Every offered vote option stays available after a readable sample, including options with no votes; those options carry an empty card list, matching the live opening where no ballot identifies original evidence. Both sampling endpoints accept an optional `picks` object mapping source-leg identities to arrays of group names. Omitted entries select the first three available groups in sample order; an explicit empty array selects none. These assumptions are preview inputs only, never live run picks. The server resolves every named group from its saved samples, ignores unknown names, and never accepts client-supplied evidence. A source with no sample yet refuses the ask `SOURCE_UNSAMPLED`; a stale ancestor refuses `SOURCE_STALE`; and an empty selection refuses `NOTHING_PICKED`. SampleAnswers keeps these as three distinct refusal branches (`source-unsampled`, `source-stale`, and `nothing-picked`), each matching and returning its literal account so the public wire contract enumerates the possible failures. The author refreshes prerequisites oldest-first before sampling the requested round. While an ask is out a second press asks nothing, and a round of a retired relay is refused `RELAY_RETIRED`.
 
-The sample is durable through Reasoning's own record and nothing else: no reaction reads the reply, nothing is adopted, and no state of its own is kept. [Live.rounds.ReadSample](reaction:Live.rounds.ReadSample) forms [the sample of the round](former:Live.rounds.theSampleOf) from the newest reply about the leg — its answers with their piles, [sampledAnswers](computation:sampledAnswers), and whether it is `fresh` or `stale`, [sampleStanding](computation:sampleStanding), which holds exactly while the passage the round would make now is the one that was asked — together with whether an ask is still out and the newest failure about the leg, so the editor can wait, show, dim, or say the model is not answering. Asking again is what replaces a sample. A reply the reading cannot make out is a sample of no answers; the editor says so and offers the ask again.
+The sample is durable through Reasoning's own record and nothing else: no reaction reads the reply, nothing is adopted, and no state of its own is kept. [Live.rounds.ReadSample](reaction:Live.rounds.ReadSample) forms [the sample of the round](former:Live.rounds.theSampleOf) from the newest reply about the leg — its answers with their piles, [sampledAnswers](computation:sampledAnswers), and whether it is `fresh` or `stale`, [sampleStanding](computation:sampleStanding), which holds exactly while the passage the round would make now is the one that was asked and every required ancestor sample is fresh — together with whether an ask is still out and the newest failure about the leg, so the editor can wait, show, dim, or say the model is not answering. Asking again is what replaces a sample. A reply the reading cannot make out is a sample of no answers; the editor says so and offers the ask again. ReadSample also returns `preview` with the immediate source identity, carry use, available group names, selected groups with original evidence, and source standing (`none`, `missing`, `stale`, `fresh`, or `empty`). The current sample and its source have separate freshness states. A dependent passage includes a source-revision digest derived from its source asking and recomputed passage, so relevant upstream question, kind, take, pile, note, selection, or sample changes invalidate descendants even through votes. Independent rounds do not depend on other samples or selections. The bounded relay read combines its plan, material, sorting guidance, categories, and Reasoning’s latest replies; it records no preview state.
 
 ```computations
 samplingPassage(prompt: String, choices: Json, parts: Json, cap: Number, piles: Json, notes: String) : String
@@ -44,11 +44,29 @@ sampledAnswers(reply: String) : Json
   no value or no pile, and answers an empty sequence when the reply cannot be
   read.
 
-sampledGroups(reply: String, kind: String, choices: Json, use: String) : Json
+sampledGroups(reply: String, kind: String, choices: Json, use: String, carried?: Json) : Json
   Groups sampled answers as `{ name, cards }` in first-seen pile order.
-  Written answers remain in their original order; vote groups have no cards,
-  because ballot labels do not describe the scenarios behind their choices.
+  Written answers remain in their original order; vote groups recover cards
+  by matching each ballot value to its original carried choice.
   A legacy round with no explicit kind is a vote when it offers or takes choices.
+
+samplingResolution(leg: String, legs: Json, materials: Json, piles: Json, notes: Json, replies: Json, picks: Json) : Json
+  Resolves selected original evidence and transitive freshness through the
+  current relay plan and its latest sampled replies. Preview assumptions
+  choose only server-known names, defaulting to the first three groups.
+
+samplingResolvedPassage(resolution: Json) : String
+  Answers the sampling passage with its dependent source revision.
+
+samplingResolvedStanding(resolution: Json) : String
+  Answers fresh only when the current sample and its ancestors remain current.
+
+samplingResolvedAccount(resolution: Json) : String
+  Answers an empty account when sampling can proceed, or SOURCE_UNSAMPLED,
+  SOURCE_STALE, or NOTHING_PICKED for an unavailable prerequisite.
+
+samplingResolvedPreview(resolution: Json) : Json
+  Answers the source, use, available names, selected groups and source standing.
 
 sampledPiles(reply: String) : Json
   Answers the piles a sampled reply names, each once, in the order they are
@@ -67,3 +85,22 @@ Live.rounds.SetNotes at /live/rounds/set-notes
 ```
 
 When an authored pile seeds a run, it is pinned under the reserved `live-reserved-piles` scope. This reservation belongs to the live pile identity and survives renaming. It is separate from the round-scope pins that select downstream input.
+
+## Round guidance for the host
+
+`/live/rounds/set-guide` sets a leg's purpose, facilitation, or selection field
+as guidance under its corresponding hosting use. Blank text clears the field.
+It requires host access and refuses retired relays, while allowing revisions
+during an open run. Selection is effective only when another round takes from
+this leg; the editor retains inactive authored selection text. These fields
+are independent of sorting notes and never reach participant questions.
+
+The captured participant question keeps `contextUse` beside its supporting groups. Participant reading defaults missing legacy values to `context`. Context appears above the prompt; parts show evidence beside the corresponding answer box; choices show evidence beside the corresponding option. Preview simulation and provenance remain outside participant content.
+
+[Live.rounds.SetGuide](reaction:Live.rounds.SetGuide) writes the host field.
+
+```endpoints
+Live.rounds.SetGuide at /live/rounds/set-guide
+```
+
+On narrow screens, the editor puts the round number with its title and gives question and guidance fields the full card width. Part labels wrap within their fields, and their removal controls remain visible without hover. Each selected round has a collapsible preview labelled with its round number; opening or interacting with it preserves the selected round. Desktop previews retain their independent viewport-bound scrolling.

@@ -171,6 +171,7 @@ describe("the round an add line carries", () => {
       from: 2,
       use: "choices",
       position: 3,
+      hostGuide: {},
     });
   });
 
@@ -211,4 +212,44 @@ describe("the words boxes and takes go by", () => {
     expect(takesWords(1, "")).toBe("nothing");
     expect(takesWords(1, "parts")).toBe("1 as parts");
   });
+});
+
+test("guide proposals name the field and retain existing round guidance", () => {
+  const guided = {
+    ...round,
+    hostGuide: {
+      purpose: "Gather incidents.",
+      facilitation: "Allow quiet writing.",
+      selection: "Pick two cases.",
+    },
+    storedSelection: "Pick two cases.",
+  };
+  expect(
+    changeWords(
+      {
+        kind: "guide",
+        value: JSON.stringify({
+          field: "selection",
+          body: "Pick contrasting cases.",
+        }),
+      },
+      guided,
+    ),
+  ).toEqual({
+    field: "Choosing what continues",
+    was: "Pick two cases.",
+    to: "Pick contrasting cases.",
+  });
+  expect(
+    changeWords(
+      {
+        kind: "guide",
+        value: JSON.stringify({
+          field: "opening",
+          body: "Invite a concrete incident.",
+        }),
+      },
+      null,
+    ),
+  ).toEqual({ field: "Opening", was: "", to: "Invite a concrete incident." });
 });

@@ -4,8 +4,7 @@
  * so a test asks for a relay in the words a staff member would use.
  */
 
-/** The first line of the relay-drafting contract, which no other passage carries. */
-const CONTRACT = "You revise a relay for a live classroom tool";
+import { RELAY_DRAFT_OPENING as CONTRACT } from "../computations/live-edits.ts";
 
 const REPAIR = "Your previous reply came back unusable";
 

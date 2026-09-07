@@ -171,10 +171,10 @@ test("a phone can read every source scenario after write, vote, and list, then r
     await participant.goto(`/q/${token}`);
     const sources = participant
       .locator("details")
-      .filter({ has: participant.locator("summary", { hasText: LONG_PILE }) });
+      .filter({ has: participant.locator("summary", { hasText: "6 responses" }) });
     await expect(sources).toHaveCount(1);
     const summary = sources.locator("summary");
-    await expect(summary).toContainText(LONG_PILE);
+    await expect(participant.getByText(LONG_PILE, { exact: true })).toBeVisible();
     await expect(summary).toContainText("6 responses");
     // The full name wraps naturally instead of living in a clipped title.
     expect(

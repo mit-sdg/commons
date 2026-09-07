@@ -3,7 +3,7 @@
 import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { refusalSentence, saidRefusal } from "@/components/live/refusals";
+import { saidRefusal } from "@/components/live/refusals";
 import { ActButton } from "@/components/live/round-editor";
 import {
   changeWords,
@@ -65,17 +65,11 @@ interface Shown {
   number: number;
 }
 
-/**
- * What a refused line says. The boundary answers a category, and the panel
- * reads the word behind it from the round the line names: a line about a round
- * whose run is open is held back, whatever the line changes.
- */
-function refusalWords(error: string, shown: Shown): string {
-  if (error === "NOT_FOUND") return saidRefusal(error, "ROUND_GONE");
-  if (error !== "CONFLICT") return saidRefusal(error, null);
-  return shown.round === null
-    ? "Refused. Nothing changed."
-    : refusalSentence("RUN_OPEN", { round: shown.number });
+/** A public conflict does not identify which domain guard refused the edit. */
+export function refusalWords(error: string): string {
+  if (error === "CONFLICT" || error === "NOT_APPLIED")
+    return "This suggestion could not be completed. Review the current rounds before asking for a new suggestion.";
+  return saidRefusal(error, null);
 }
 
 /**
@@ -88,6 +82,7 @@ function numbered(lines: OfferedLine[], rounds: Round[]): Shown[] {
   return lines.map((line) => {
     const round = rounds.find((entry) => entry.leg === line.target) ?? null;
     if (round !== null) return { line, round, number: round.number };
+    if (line.kind !== "add") return { line, round, number: 0 };
     adds += 1;
     const lands = (readJson(line.value) as { position?: unknown } | null)
       ?.position;
@@ -122,14 +117,14 @@ function Waited({ since }: { since: number }) {
 }
 
 /** What a landed reply says when it left nothing to confirm. */
-function landedNote(offering: Offering | null): string | null {
+export function landedNote(offering: Offering | null): string | null {
   if (offering === null) return null;
   const lines = offering.lines.filter((line) => line.kind !== "keep");
   if (lines.some((line) => line.standing === "pending")) return null;
   const taken = lines.filter((line) => line.standing === "taken").length;
   return taken === 0
     ? null
-    : `${taken} ${taken === 1 ? "change" : "changes"} applied.`;
+    : `${taken} ${taken === 1 ? "change" : "changes"} accepted.`;
 }
 
 /** What the page draws of the model's proposals, and where each belongs. */
@@ -161,6 +156,7 @@ export function useDrafting({
   relay,
   rounds,
   title,
+  guidance,
   open,
   onOpen,
   pending = false,
@@ -171,6 +167,10 @@ export function useDrafting({
   rounds: Round[];
   /** The relay's own name, which the model may propose another for. */
   title: string;
+  guidance: Pick<
+    NonNullable<Output<"/live/relays/get">["relay"]>,
+    "description" | "hostGuide"
+  >;
   /** Whether the line stands open under its handle. */
   open: boolean;
   onOpen: (open: boolean) => void;
@@ -199,13 +199,6 @@ export function useDrafting({
   const applied = useRef(0);
   /** When the reply now waited on was asked for; a failure before it is not its. */
   const [askedAt, setAskedAt] = useState<number | null>(null);
-
-  /** The relay as the panel compares it: every round, whole, in order. */
-  const readRelay = useCallback(async (): Promise<string | null> => {
-    const result = await api["/live/relays/get"]({ relay });
-    if (isApiError(result) || result.relay === null) return null;
-    return JSON.stringify(result.relay.rounds);
-  }, [relay]);
 
   const read = useCallback(async (): Promise<Offered | null> => {
     const result = await api["/live/edits/offerings"]({ relay });
@@ -334,13 +327,20 @@ export function useDrafting({
       setStopped({ line: line.suggestion, error: result.error });
       return false;
     }
+    if (take) {
+      if (!("applied" in result) || result.applied !== true) {
+        setStopped({ line: line.suggestion, error: "NOT_APPLIED" });
+        return false;
+      }
+      applied.current += 1;
+    }
     return true;
   }
 
   /**
    * What the line says once nothing is left to settle, and nothing while a line
-   * still stands. A concept can refuse what a line asks while the take itself
-   * succeeds, and the relay reading back word for word is what says so.
+   * still stands. Only the endpoint's explicit domain evidence counts an edit
+   * as applied; accepting a suggestion alone does not.
    */
   function settledNote(offered: Offered | null): string | null {
     const outstanding = (offered?.offerings[0]?.lines ?? []).filter(
@@ -357,14 +357,10 @@ export function useDrafting({
     setBusy(true);
     setStopped(null);
     setNote(null);
-    const before = take ? await readRelay() : null;
-    if ((await apply(line, take)) && take) {
-      const after = await readRelay();
-      if (after !== null && before !== null && after !== before)
-        applied.current += 1;
-    }
+    const completed = await apply(line, take);
     setBusy(false);
-    setNote(settledNote(await read()));
+    const offered = await read();
+    if (completed) setNote(settledNote(offered));
     onChanged();
   }
 
@@ -373,18 +369,17 @@ export function useDrafting({
     setBusy(true);
     setStopped(null);
     setNote(null);
-    let before = take ? await readRelay() : null;
+    let completed = true;
     for (const line of offering.lines) {
       if (line.standing !== "pending" || line.kind === "keep") continue;
-      if (!(await apply(line, take))) break;
-      if (!take) continue;
-      const after = await readRelay();
-      if (after === null) continue;
-      if (before !== null && after !== before) applied.current += 1;
-      before = after;
+      if (!(await apply(line, take))) {
+        completed = false;
+        break;
+      }
     }
     setBusy(false);
-    setNote(settledNote(await read()));
+    const offered = await read();
+    if (completed) setNote(settledNote(offered));
     onChanged();
   }
 
@@ -401,7 +396,7 @@ export function useDrafting({
     line: entry.line,
     refusal:
       entry.line.suggestion === stopped?.line
-        ? refusalWords(stopped.error, entry)
+        ? refusalWords(stopped.error)
         : null,
   });
   const naming = shown.filter(
@@ -420,9 +415,13 @@ export function useDrafting({
             <ProposalRow
               key={entry.line.suggestion}
               field={changeWords(entry.line, null).field}
-              was={title}
+              was={
+                entry.line.kind === "title"
+                  ? title
+                  : relayGuideBefore(entry.line, guidance)
+              }
               to={changeWords(entry.line, null).to}
-              words="the relay's title"
+              words={`the relay’s ${changeWords(entry.line, null).field.toLowerCase()}`}
               busy={busy}
               refusal={proposedOf(entry).refusal}
               onAccept={() => void settle(entry.line, true)}
@@ -500,6 +499,11 @@ export function useDrafting({
         >
           <Sparkles /> Ask AI
         </Button>
+        {stopped === null ? null : (
+          <p role="alert" className="text-destructive text-sm">
+            {refusalWords(stopped.error)}
+          </p>
+        )}
         {open ? body : null}
       </div>
     ),
@@ -567,4 +571,20 @@ export function useDrafting({
     },
     standing: shown.length,
   };
+}
+
+function relayGuideBefore(
+  line: OfferedLine,
+  relay: Pick<
+    NonNullable<Output<"/live/relays/get">["relay"]>,
+    "description" | "hostGuide"
+  >,
+): string {
+  const value = readJson(line.value) as { field?: string } | null;
+  const field = value?.field;
+  if (line.kind !== "guide") return "";
+  if (field === "description") return relay.description;
+  return field === "opening" || field === "closing"
+    ? relay.hostGuide[field]
+    : "";
 }

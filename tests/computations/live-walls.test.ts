@@ -322,11 +322,11 @@ describe("the model participant", () => {
       ],
     };
     const passage = participantPassage({ value: carried, participant: "model:d2" });
-    expect(passage).toContain("Shown above the question, from an earlier round:");
+    expect(passage).toContain("Supporting material from an earlier round:");
     expect(passage).toContain("- one pile: hoard, purge");
     expect(passage.indexOf("Only these verbs")).toBeLessThan(passage.indexOf("- one pile"));
     expect(participantPassage({ value: presentation, participant: "model:d2" })).not.toContain(
-      "Shown above the question",
+      "Supporting material from an earlier round",
     );
   });
 

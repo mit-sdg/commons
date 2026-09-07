@@ -261,6 +261,11 @@ retire (questionnaire: Questionnaire) : return (questionnaire: Questionnaire)
 ## Queries
 
 ```queries
+_content (questionnaire: String) : optional (content: Json)
+  answers the title, form, disclosure, and ordered questions with their identities as one value
+  answers no row when the questionnaire does not exist
+
+
 _getQuestionnaire (questionnaire: String) : optional (author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)
   answers the complete Questionnaire
   answers no row when the Questionnaire does not exist

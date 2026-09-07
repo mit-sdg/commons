@@ -9,6 +9,7 @@ import { KIND_LINES } from "@/components/live/brief-chips";
 import {
   copyDocuments,
   copyQuestionnaire,
+  copyRelayGuide,
   copyRounds,
   roundsToCopy,
 } from "@/components/live/copy-relay";
@@ -132,6 +133,12 @@ function NewLiveContent() {
       if (isApiError(copied)) {
         setBusy(false);
         toast.error(publicErrorMessage(copied.error));
+        return;
+      }
+      const guided = await copyRelayGuide(planned.relay, read.relay);
+      if (isApiError(guided)) {
+        setBusy(false);
+        toast.error(publicErrorMessage(guided.error));
         return;
       }
       const carried = await copyDocuments(planned.relay, source);

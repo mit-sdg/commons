@@ -3,6 +3,8 @@ import { httpPolicy, type HttpPublicErrorCategory } from "@mit-sdg/sync-engine-h
 /** Domain refusals intentionally exposed by Commons' HTTP boundary. */
 export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategory>> = Object.freeze(
   {
+    COMMISSION_NOT_FOUND: "NOT_FOUND",
+    COMMISSION_NOT_PREPARED: "CONFLICT",
     INVALID_REQUEST: "INVALID_REQUEST",
     UNAUTHORIZED: "UNAUTHORIZED",
     FORBIDDEN: "FORBIDDEN",
@@ -173,6 +175,7 @@ export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategor
     LEG_NOT_FOUND: "NOT_FOUND",
     LEG_DRAWN_ON: "CONFLICT",
     SOURCE_UNSAMPLED: "CONFLICT",
+    SOURCE_STALE: "CONFLICT",
     NO_SUCH_POSITION: "INVALID_REQUEST",
     FORWARD_DRAW: "CONFLICT",
     USE_BLANK: "INVALID_REQUEST",

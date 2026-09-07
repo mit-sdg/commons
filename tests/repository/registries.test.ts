@@ -152,6 +152,8 @@ describe("application-owned design integration", () => {
       "Mailing.Key is MailKey",
       "Submitting.Artifact is Posting.Post",
       "Bookmarking.Item is Posting.Post",
+      "Commissioning.Subject is Publishing.Edition",
+      "Commissioning.Execution is Reasoning.Asking",
       "Categorizing.Item is Categorizable",
       "Categorizing.Scope is CategoryScope",
       "Relaying.Author is Authenticating.User",

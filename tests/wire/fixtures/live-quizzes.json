@@ -276,7 +276,8 @@
               "parts": [],
               "cap": 0,
               "position": 1,
-              "context": []
+              "context": [],
+              "contextUse": "context"
             },
             {
               "question": "uuid#9",
@@ -285,7 +286,8 @@
               "parts": [],
               "cap": 0,
               "position": 2,
-              "context": []
+              "context": [],
+              "contextUse": "context"
             }
           ]
         }

@@ -2,8 +2,6 @@ const root = `${import.meta.dir}/..`;
 const database = `commons-${crypto.randomUUID()}`;
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-const v8 = await import("node:v8");
-v8.startupSnapshot.isBuildingSnapshot = () => false;
 const { MongoClient } = await import("mongodb");
 const { MongoMemoryServer } = await import("mongodb-memory-server");
 

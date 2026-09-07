@@ -33,6 +33,8 @@ const round = (
   takes: [],
   piles: [],
   notes: "",
+  hostGuide: { purpose: "", facilitation: "", selection: null },
+  storedSelection: "",
   ...rest,
 });
 
@@ -226,8 +228,9 @@ describe("what a sample of the source names", () => {
   test("stands where the class's piles would, and nowhere else", () => {
     expect(carriedGroups(write, SAMPLED)).toEqual(SAMPLED);
     expect(carriedGroups(list, SAMPLED)).toEqual(SAMPLED);
-    expect(carriedGroups(vote, SAMPLED)).toEqual(["Warm", "Cool"]);
-    expect(carriedGroups(null, SAMPLED)).toEqual(UNNAMED_PILES);
+    expect(carriedGroups(vote, ["Warm"])).toEqual(["Warm"]);
+    expect(carriedGroups(vote, [])).toEqual([]);
+    expect(carriedGroups(null, SAMPLED)).toEqual(SAMPLED);
   });
 
   test("is the vote's choices when it takes them", () => {
@@ -334,5 +337,6 @@ test("all carry modes include supporting example responses", () => {
       groups,
     );
     expect(question.context).toEqual(groups);
+    expect(question.contextUse).toBe(use);
   }
 });

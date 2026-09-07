@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Fact } from "@/components/facts";
 import { Link } from "@/components/link";
+import { GuideText, RelayBasics } from "@/components/live/host-guide";
 import { ModelRow } from "@/components/live/model-row";
 import { PickControl, usePick } from "@/components/live/pick-control";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
@@ -242,7 +243,7 @@ export function RelayRunBoard({
   // it, so the clock it is read against moves with the poll.
   // The close sends one last placing ask, so the wall is read until that
   // ask has landed and nothing is out, closed or not.
-  const settling = (wall?.asksOut ?? 0) > 0;
+  const settling = wall?.sortPending === true || (wall?.asksOut ?? 0) > 0;
   useEffect(() => {
     if (!run.open && !settling) return;
     const timer = setInterval(() => setNow(Date.now()), POLL_MS);
@@ -741,6 +742,8 @@ export function RelayRunBoard({
       : sortingWord({
           open: inHand.open,
           asksOut: inHand.asksOut,
+          sortPending: inHand.sortPending,
+          modelSorts: run.modelSorts,
           sorting,
           silent,
           notAsked: notAsked === shown,
@@ -946,6 +949,23 @@ export function RelayRunBoard({
           ) : null}
         </div>
       </header>
+      <div className="mb-6 space-y-3">
+        <GuideText guide={run.hostGuide} />
+        <RelayBasics />
+        {shownEntry === null ? (
+          next === null ? null : (
+            <GuideText
+              guide={next.hostGuide}
+              title={`Running round ${next.number}`}
+            />
+          )
+        ) : (
+          <GuideText
+            guide={shownEntry.hostGuide}
+            title={`Running round ${shownEntry.number}`}
+          />
+        )}
+      </div>
 
       {/* Adrift, the figure's own line says it; the banner is for a refusal. */}
       {error !== null && !adrift ? (
@@ -1039,6 +1059,11 @@ export function RelayRunBoard({
                 )}
                 {next === null ? null : (
                   <>
+                    {takesShown && source?.hostGuide.selection ? (
+                      <p className="whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">
+                        {source.hostGuide.selection}
+                      </p>
+                    ) : null}
                     {takesShown ? (
                       <PickControl
                         mode={pick.mode}
@@ -1192,6 +1217,8 @@ function withPicks(wall: WallShape, piles: string[]): WallShape {
 export function sortingWord({
   open,
   asksOut,
+  sortPending,
+  modelSorts,
   sorting,
   silent,
   notAsked,
@@ -1200,6 +1227,9 @@ export function sortingWord({
   open: boolean;
   /** Asks about the shown round the server has not answered yet. */
   asksOut: number;
+  /** The server holds the sort through its consequential placements. */
+  sortPending: boolean;
+  modelSorts: boolean;
   /** The screen made an ask about the shown round and cards are still in the tray. */
   sorting: boolean;
   /** The model's last try at this round failed moments ago. */
@@ -1207,8 +1237,11 @@ export function sortingWord({
   /** Resort asked about this round and there was nothing to ask. */
   notAsked: boolean;
 }): string | null {
+  const pending = asksOut > 0 || sortPending || sorting;
+  if (pending && !modelSorts)
+    return "Finishing current sort; automatic sorting is off.";
   if (silent) return "The model is not answering.";
-  if (asksOut > 0 || sorting) return open ? "sorting…" : "settling…";
+  if (pending) return open ? "sorting…" : "settling…";
   if (!open) return "Settled";
   return notAsked ? NOTHING_TO_SORT : null;
 }

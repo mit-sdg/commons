@@ -128,7 +128,7 @@ export function SortingPanel({
   );
 }
 
-/** What the sweep button says: emptying stays empty by hand, and the model refills what it empties. */
+/** Emptying with sorting off asks for nothing new; an already-pending reply can still place cards. */
 export function sweepWord(modelSorts: boolean): string {
   return modelSorts ? "Resort" : "Move all responses to tray";
 }
@@ -159,8 +159,8 @@ function RelayNotes({ round }: { round: SortingRound }) {
  * The run's note as the round has it until a hand types over it; what a hand
  * is typing stands until it is saved, even when another dashboard's note lands
  * meanwhile, and a note that landed while no hand was in the box replaces it.
- * Once the run has closed the model is never asked again, so the note is read
- * the way the relay's is, not offered in a box.
+ * Once the run has closed, instructions are read only while any intentional
+ * final sort finishes.
  */
 function Notes({
   round,

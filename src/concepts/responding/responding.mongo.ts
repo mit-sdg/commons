@@ -1,5 +1,11 @@
 import type { Collection, Db } from "mongodb";
-import { AlreadySubmitted, AnswerBlank, NoParticipant, ResponseNotFound } from "./errors.ts";
+import {
+  AlreadySubmitted,
+  AnswerBlank,
+  NoParticipant,
+  ResponseNotFound,
+  ResponseIncomplete,
+} from "./errors.ts";
 
 interface ResponseDoc {
   _id: string;
@@ -114,14 +120,35 @@ export class MongoRespondingConcept {
     return { response };
   }
 
-  async submit({ response, at }: { response: string; at: Date }) {
+  async submit({
+    response,
+    at,
+    required = [],
+  }: {
+    response: string;
+    at: Date;
+    required?: string[][];
+  }) {
     const submitted = await this.responses.updateOne(
-      { _id: response, submitted: false },
+      {
+        _id: response,
+        submitted: false,
+        // Each group requires an answer to at least one of its items. The
+        // caller supplies the requirements; the response owns their check.
+        ...(required.length === 0
+          ? {}
+          : {
+              $and: required.map((items) => ({ "answers.item": { $in: items } })),
+            }),
+      },
       { $set: { submitted: true, submittedAt: at } },
     );
     // Only the transition into Submitted succeeds. Racing hand-ins must not
     // produce a second successful action (and therefore a second reaction).
-    if (submitted.matchedCount === 0) await this.#inProgress(response);
+    if (submitted.matchedCount === 0) {
+      await this.#inProgress(response);
+      throw new ResponseIncomplete("An answer is still required.");
+    }
     return { response };
   }
 

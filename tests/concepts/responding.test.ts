@@ -329,3 +329,22 @@ for (const [floor, make] of floors) {
     });
   });
 }
+
+test("submission checks required alternatives with the hand-in and permits a complete retry", async () => {
+  const c = new MongoRespondingConcept(await testDb());
+  const at = new Date();
+  const { response } = await c.begin({ participant: "requirements", subject: "worksheet", at });
+  const required = [["first"], ["second"], ["example-1", "example-2"]];
+  await c.answer({ response, item: "first", value: "one" });
+  await c.answer({ response, item: "example-2", value: "an example" });
+  await expect(c.submit({ response, at, required })).rejects.toBeInstanceOf(
+    refusalErrors.ResponseIncomplete,
+  );
+  expect(await c._response({ response })).toMatchObject([{ submitted: false }]);
+  await c.answer({ response, item: "second", value: "two" });
+  expect(await c.submit({ response, at, required })).toEqual({ response });
+  await expect(c.answer({ response, item: "second", value: "changed" })).rejects.toBeInstanceOf(
+    refusalErrors.AlreadySubmitted,
+  );
+  expect(await c._answers({ response })).toContainEqual({ item: "second", value: "two" });
+});

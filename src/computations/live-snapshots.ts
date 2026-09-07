@@ -8,6 +8,7 @@ export interface RunSnapshotQuestion {
   cap?: number;
   /** The groups a round shows above its prompt, carried from an earlier round. */
   context?: ContextGroup[];
+  contextUse?: string;
   /** Original groups behind dynamically carried choices; ballots retain these examples. */
   choiceSources?: ContextGroup[];
   position: number;
@@ -85,6 +86,14 @@ export function snapshotHasQuestion({ value, question }: { value: unknown; quest
   return snapshot(value).questions.some((candidate) => questionItems(candidate).includes(question));
 }
 
+/** Requirements for a deliberate hand-in: every part, or one repeated box. */
+export function snapshotRequirements({ value }: { value: unknown }): string[][] {
+  return snapshot(value).questions.flatMap((question) => {
+    const items = questionItems(question);
+    return capOf(question) >= 2 ? [items] : items.map((item) => [item]);
+  });
+}
+
 export function snapshotIsWhole({ value, answers }: { value: unknown; answers: Answer[] }) {
   const answered = new Set(answers.map(({ item }) => item));
   return snapshot(value).questions.every((question) => {
@@ -103,6 +112,7 @@ export function participantQuestions({ value }: { value: unknown }) {
     parts: partsOf(question),
     cap: capOf(question),
     context: question.context ?? [],
+    contextUse: question.contextUse ?? "context",
     position: question.position,
   }));
 }

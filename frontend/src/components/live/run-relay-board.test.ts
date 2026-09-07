@@ -36,6 +36,8 @@ const say = (
   sortingWord({
     open: true,
     asksOut: 0,
+    sortPending: false,
+    modelSorts: true,
     sorting: false,
     silent: false,
     notAsked: false,
@@ -50,6 +52,26 @@ describe("what the model is doing about the shown round", () => {
 
   test("settles while the round is closed and an ask is out", () => {
     expect(say({ open: false, asksOut: 1 })).toBe("settling…");
+  });
+
+  test("keeps settling after the provider answers while placements finish", () => {
+    expect(say({ open: false, sortPending: true })).toBe("settling…");
+  });
+
+  test("explains an in-flight sort with automatic sorting off", () => {
+    for (const open of [true, false]) {
+      expect(say({ open, modelSorts: false, sortPending: true })).toBe(
+        "Finishing current sort; automatic sorting is off.",
+      );
+      expect(say({ open, modelSorts: false, asksOut: 1 })).toBe(
+        "Finishing current sort; automatic sorting is off.",
+      );
+    }
+    expect(say({ modelSorts: false, asksOut: 1, silent: true })).toBe(
+      "Finishing current sort; automatic sorting is off.",
+    );
+    expect(say({ modelSorts: false })).toBeNull();
+    expect(say({ open: false, modelSorts: false })).toBe("Settled");
   });
 
   test("is settled once the closed round has no ask out", () => {

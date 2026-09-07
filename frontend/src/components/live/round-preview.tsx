@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 import {
   QuestionCard,
   type RoundQuestion,
@@ -26,29 +28,6 @@ import { cn } from "@/lib/utils";
  * sorted in class, so before it they have no names, only a count and a shape.
  */
 export const UNNAMED_PILES = ["a pile you pick", "another", "another"];
-
-/**
- * The one accent everything sampled wears. Pine is the editor's spare colour:
- * nothing else on the page takes it, so what the model wrote is never read as
- * what the room will write.
- */
-const SAMPLED = "text-brand-pine";
-
-/**
- * Where the sample's names stand inside the phone card: a vote's choices, a
- * list's box labels, and the groups above the prompt. The card is the
- * participant's own component, so the accent reaches its names by where they
- * sit in it rather than by a class of their own.
- */
-const SAMPLED_NAMES = [
-  "[&_button[aria-pressed]]:border-brand-pine/40",
-  "[&_button[aria-pressed]]:text-brand-pine",
-  "[&_span.font-mono]:text-brand-pine",
-  "[&_p.font-medium]:text-brand-pine",
-].join(" ");
-
-/** How far the accent fades on a sample the round has moved out from under. */
-const DIMMED = "opacity-60";
 
 /** A vote with nothing to vote on, which is refused a launch. */
 export function bareVote(round: RelayRound): boolean {
@@ -87,13 +66,14 @@ export function sourceOf(
  */
 export function carriedGroups(
   source: RelayRound | null,
-  sampled: string[] = [],
+  sampled?: string[],
 ): string[] {
+  if (sampled !== undefined) return sampled;
   if (source === null) return UNNAMED_PILES;
   if (kindOf(source) === "vote" && source.choices.length > 0) {
     return source.choices;
   }
-  return sampled.length > 0 ? sampled : UNNAMED_PILES;
+  return UNNAMED_PILES;
 }
 
 /**
@@ -103,7 +83,7 @@ export function carriedGroups(
 export function previewQuestion(
   round: RelayRound,
   rounds: RelayRound[],
-  sampled: string[] = [],
+  sampled: string[] | undefined = undefined,
   groups: SampleGroup[] = [],
 ): RoundQuestion {
   const kind = kindOf(round);
@@ -116,7 +96,7 @@ export function previewQuestion(
   return {
     question: round.leg,
     prompt: round.prompt,
-    choices: use === "choices" ? carried : ownChoices,
+    choices: use === "choices" ? carried : use === "parts" ? [] : ownChoices,
     parts: use === "parts" ? carried : use === "choices" ? [] : ownParts,
     cap: use === "parts" || use === "choices" ? 0 : ownCap,
     context:
@@ -126,6 +106,7 @@ export function previewQuestion(
             name,
             cards: groups.find((group) => group.name === name)?.cards ?? [],
           })),
+    contextUse: use,
     position: 1,
   };
 }
@@ -190,16 +171,41 @@ export function PhoneColumn({
   rounds,
   selected,
   variant,
+  retired = false,
 }: {
   rounds: RelayRound[];
   /** The round shown, by leg; the first round stands when none is selected. */
   selected: string | null;
   variant: "column" | "drawer";
+  retired?: boolean;
 }) {
   const round = shownRound(rounds, selected);
   if (round === null) return null;
-  return (
-    <Phone key={round.leg} round={round} rounds={rounds} variant={variant} />
+  const phone = (
+    <Phone
+      key={round.leg}
+      round={round}
+      rounds={rounds}
+      variant={variant}
+      retired={retired}
+    />
+  );
+  return variant === "column" ? (
+    phone
+  ) : (
+    <details
+      key={round.leg}
+      className="group/preview min-w-0 rounded-xl border border-border bg-background"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+        Preview round {round.number}
+        <ChevronRight
+          aria-hidden
+          className="size-4 shrink-0 transition-transform group-open/preview:rotate-90"
+        />
+      </summary>
+      {phone}
+    </details>
   );
 }
 
@@ -207,72 +213,122 @@ function Phone({
   round,
   rounds,
   variant,
+  retired,
 }: {
   round: RelayRound;
   rounds: RelayRound[];
   variant: "column" | "drawer";
+  retired: boolean;
 }) {
   const sampling = useSample(round, rounds);
+  const [tab, setTab] = useState("participant");
   const source = sourceOf(round, rounds);
   const named = round.title.trim();
   const answers = sampling.sample?.answers ?? [];
-  const namesShown = showsNames(round, rounds, sampling.names);
-  const wall = answers.length > 0 ? previewWall(round, answers) : null;
+  const fresh = sampling.sample?.standing === "fresh";
+  const wall = fresh && answers.length > 0 ? previewWall(round, answers) : null;
+  const groups = sampling.groups;
 
   return (
     <div
+      data-preview={variant}
       className={cn(
-        "flex flex-col gap-3",
-        variant === "column" && "max-w-[360px]",
+        "flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-background p-3 [overflow-anchor:none]",
+        variant === "column"
+          ? "max-h-[var(--preview-height,calc(100dvh-146px))]"
+          : "rounded-none border-0 border-t",
       )}
     >
-      <div className="flex flex-col gap-3 rounded-xl border border-border p-3">
-        {variant === "column" ? (
-          <RoundToken
-            number={round.number}
-            title={named === "" ? undefined : named}
-            standing="plain"
-            size="sm"
-          />
-        ) : null}
-        <Tabs defaultValue="participant">
-          <TabsList className="w-full">
-            <TabsTrigger value="participant">Participant view</TabsTrigger>
-            <TabsTrigger value="results">Example results</TabsTrigger>
-          </TabsList>
+      <RoundToken
+        number={round.number}
+        title={named === "" ? undefined : named}
+        standing="plain"
+        size="sm"
+      />
+      <Tabs
+        value={tab}
+        onValueChange={setTab}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <TabsList className="w-full shrink-0">
+          <TabsTrigger value="participant">Participant view</TabsTrigger>
+          <TabsTrigger value="results">Example results</TabsTrigger>
+        </TabsList>
+        <div
+          data-preview-scroll
+          className={cn(
+            "min-h-0 min-w-0",
+            variant === "column" && "overflow-y-auto overscroll-contain",
+          )}
+        >
           <TabsContent value="participant" className="space-y-3">
             {source === null ? null : (
-              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs">
-                <span>{namesShown ? "Example input from" : "From"}</span>
-                <RoundToken
-                  number={source.number}
-                  title={source.title}
-                  standing="plain"
-                  size="sm"
-                />
-                <span>{source.prompt}</span>
-              </p>
+              <div className="space-y-2 rounded-lg bg-muted/40 p-2.5 text-xs">
+                <p className="text-muted-foreground">
+                  Simulated input from round {source.number}
+                </p>
+                <details>
+                  <summary className="cursor-pointer font-medium">
+                    Assumed picks ({sampling.selected.length})
+                  </summary>
+                  <p className="my-2 text-muted-foreground">
+                    Preview only. In a live run, you choose which groups
+                    continue.
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {sampling.available.map((name) => (
+                      <label
+                        key={name}
+                        className="flex min-h-9 items-start gap-2 py-1 [overflow-wrap:anywhere]"
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-0.5 shrink-0"
+                          checked={sampling.selected.includes(name)}
+                          disabled={retired || sampling.asking}
+                          onChange={(event) =>
+                            sampling.pick(
+                              event.target.checked
+                                ? [...sampling.selected, name]
+                                : sampling.selected.filter(
+                                    (entry) => entry !== name,
+                                  ),
+                            )
+                          }
+                        />
+                        {name}
+                      </label>
+                    ))}
+                  </div>
+                </details>
+                {sampling.sourceStanding === "fresh" ? null : (
+                  <p role="status" className="text-muted-foreground">
+                    {sampling.sourceStanding === "empty"
+                      ? "Choose at least one group for this preview."
+                      : sampling.sourceStanding === "stale"
+                        ? "Source input changed—refresh the preview."
+                        : "Generate a preview to supply example input."}
+                  </p>
+                )}
+              </div>
             )}
             {bareVote(round) ? (
-              <p className="rounded-2xl border border-border border-dashed bg-card p-5 text-muted-foreground text-sm">
+              <p className="rounded-2xl border border-dashed p-5 text-muted-foreground text-sm">
                 {refusalSentence("NO_CHOICES")}
               </p>
+            ) : source !== null && groups.length === 0 ? (
+              <p className="rounded-2xl border border-dashed p-5 text-muted-foreground text-sm">
+                Participant view needs selected source groups.
+              </p>
             ) : (
-              // Keep example inputs disabled while allowing source groups to expand.
-              <fieldset
-                disabled
-                className={cn(
-                  namesShown && SAMPLED_NAMES,
-                  namesShown && sampling.dim && DIMMED,
-                )}
-              >
+              <fieldset disabled data-participant-frame>
                 <QuestionCard
-                  key={round.leg}
+                  key={`${round.leg}-${sampleKeyForQuestion(round, groups)}`}
                   question={previewQuestion(
                     round,
                     rounds,
-                    sampling.names,
-                    sampling.groups,
+                    groups.map((group) => group.name),
+                    groups,
                   )}
                   answers={{}}
                   onAnswer={() => undefined}
@@ -283,26 +339,20 @@ function Phone({
           </TabsContent>
           <TabsContent value="results" className="space-y-2">
             {wall === null ? (
-              <p className="py-4 text-muted-foreground text-sm">
-                Generate example responses to preview the results.
+              <p className="py-4 text-muted-foreground text-sm" role="status">
+                {sampling.sample !== null && !fresh
+                  ? "Preview changed—refresh to see current results."
+                  : "Generate a preview to see example results."}
               </p>
             ) : (
-              <div className={cn("space-y-2", sampling.dim && DIMMED)}>
-                <p className="text-brand-pine text-xs">
-                  AI-generated examples
-                  {sampling.dim ? " — regenerate to reflect your changes" : ""}
-                </p>
-                {source !== null && kindOf(source) === "vote" ? (
-                  <p className="text-muted-foreground text-xs">
-                    These examples use the previous vote’s labels.
-                  </p>
-                ) : null}
+              <div className="space-y-2">
+                <p className="text-brand-pine text-xs">AI-generated examples</p>
                 {wall.piles.map((pile) => (
                   <details
                     key={pile.pile}
-                    className="rounded-lg border border-brand-pine/30 bg-brand-pine/5 px-3 py-2"
+                    className="min-w-0 rounded-lg border border-brand-pine/30 bg-brand-pine/5 px-3 py-2"
                   >
-                    <summary className="cursor-pointer text-sm font-medium">
+                    <summary className="cursor-pointer text-sm font-medium [overflow-wrap:anywhere]">
                       {pile.name}
                       <span className="ml-2 font-normal text-muted-foreground">
                         {pile.count}{" "}
@@ -320,7 +370,7 @@ function Phone({
                         .map((card) => (
                           <li
                             key={card.card}
-                            className="rounded-md bg-card px-3 py-2 text-sm whitespace-pre-wrap break-words"
+                            className="rounded-md bg-card px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]"
                           >
                             {card.value}
                           </li>
@@ -331,42 +381,44 @@ function Phone({
               </div>
             )}
           </TabsContent>
-        </Tabs>
-        {sampling.offered ? (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={sampling.asking}
-                onClick={sampling.ask}
-                className={cn("border-brand-pine/40", SAMPLED)}
-              >
-                {sampling.asking
-                  ? "Generating…"
-                  : answers.length > 0
-                    ? "Regenerate examples"
-                    : "Generate example responses"}
-              </Button>
-              {answers.length === 0 ? null : (
-                <span
-                  className={cn(
-                    "font-mono text-[11px] tracking-[0.04em]",
-                    SAMPLED,
-                    sampling.dim && DIMMED,
-                  )}
-                >
-                  examples
-                </span>
-              )}
-            </div>
-            {sampling.line === null ? null : (
-              <p className="text-muted-foreground text-xs">{sampling.line}</p>
-            )}
-          </div>
-        ) : null}
+        </div>
+      </Tabs>
+      <div className="flex shrink-0 flex-col gap-1.5 border-t border-border pt-3">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={retired || sampling.asking}
+          onClick={() => {
+            void sampling.ask().then((landed) => {
+              if (landed) setTab("results");
+            });
+          }}
+          className="self-start border-brand-pine/40 text-brand-pine"
+        >
+          {sampling.asking
+            ? "Generating…"
+            : sampling.sample !== null
+              ? "Refresh preview"
+              : "Generate preview"}
+        </Button>
+        {sampling.line === null ? null : (
+          <p role="status" className="text-muted-foreground text-xs">
+            {sampling.line}
+          </p>
+        )}
       </div>
     </div>
   );
+}
+
+function sampleKeyForQuestion(round: RelayRound, groups: SampleGroup[]) {
+  return JSON.stringify([
+    round.kind,
+    round.parts,
+    round.choices,
+    round.cap,
+    round.takes,
+    groups,
+  ]);
 }

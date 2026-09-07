@@ -149,6 +149,21 @@ deleteEmptyCategory(category: Category) : return (category: Category, deleted: B
     set deleted to false
     return category, deleted
 
+empty(scope: Scope) : return (emptied: Boolean)
+  where true
+  then
+    remove the memberships of every item in a category of scope
+    leave the categories themselves unchanged
+    set emptied to whether any membership was removed
+    return emptied
+
+deleteEmptyCategories(categories: Seq) : return (deleted: Boolean)
+  where true
+  then
+    for each category in categories, delete it only if it still exists and holds no items
+    set deleted to whether any category was deleted
+    return deleted
+
 deleteCategory(category: Category) : return (category: Category)
   where category in categories
   then

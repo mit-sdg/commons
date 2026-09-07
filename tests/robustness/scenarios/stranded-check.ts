@@ -13,8 +13,6 @@ const MONGO_URL = process.env.MONGO_URL ?? "";
 const log = new Log(ARM, outDir(ARM));
 
 async function lockOnTheFloor(run: string) {
-  const v8 = await import("node:v8");
-  v8.startupSnapshot.isBuildingSnapshot = () => false;
   const { MongoClient } = await import("mongodb");
   const client = new MongoClient(MONGO_URL);
   try {

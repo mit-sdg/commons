@@ -56,6 +56,7 @@ describe("live run snapshot projections", () => {
         parts: [],
         cap: 0,
         context: [],
+        contextUse: "context",
         position: 1,
       },
       {
@@ -65,6 +66,7 @@ describe("live run snapshot projections", () => {
         parts: [],
         cap: 0,
         context: [],
+        contextUse: "context",
         position: 2,
       },
       {
@@ -74,6 +76,7 @@ describe("live run snapshot projections", () => {
         parts: [],
         cap: 0,
         context: [],
+        contextUse: "context",
         position: 3,
       },
     ]);
@@ -136,4 +139,25 @@ describe("live run snapshot projections", () => {
       explanation: "The reason",
     });
   });
+});
+
+test("participant projection retains the captured carry use with its original evidence", () => {
+  for (const contextUse of ["context", "parts", "choices"]) {
+    const questions = participantQuestions({
+      value: {
+        ...presentation,
+        questions: [
+          {
+            ...presentation.questions[0],
+            contextUse,
+            context: [{ name: "Lost work", cards: ["The editor erased my notes."] }],
+          },
+        ],
+      },
+    });
+    expect(questions[0]).toMatchObject({
+      contextUse,
+      context: [{ name: "Lost work", cards: ["The editor erased my notes."] }],
+    });
+  }
 });

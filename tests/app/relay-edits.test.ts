@@ -138,6 +138,15 @@ async function draft(
   return offered[0];
 }
 
+interface GuidedRelay {
+  description: string;
+  hostGuide: { opening: string; closing: string };
+  rounds: {
+    storedSelection: string;
+    hostGuide: { purpose: string; facilitation: string; selection: string | null };
+  }[];
+}
+
 describe("the relay editing loop", () => {
   let edge: Edge;
   let cookie: string;
@@ -148,6 +157,335 @@ describe("the relay editing loop", () => {
   });
 
   afterAll(stopTestDb);
+
+  test("host guides persist separately, clear, and remain outside the participant face", async () => {
+    const relay = await plan(edge, cookie, "Host guide checks");
+    const add = async (title: string) => {
+      const response = await post(
+        edge,
+        "/live/relays/add-round",
+        { relay, title, prompt: "What would help?", parts: [], cap: 0, choices: [] },
+        cookie,
+      );
+      expect(response.status).toBe(200);
+      return (await json(response)).leg as string;
+    };
+    const first = await add("Incidents");
+    const second = await add("Improvements");
+    const set = (path: string, body: unknown) => post(edge, path, body, cookie);
+    expect(
+      (
+        await set("/live/relays/set-guide", {
+          relay,
+          field: "description",
+          body: "Build useful changes.",
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (await set("/live/relays/set-guide", { relay, field: "opening", body: "Invite incidents." }))
+        .status,
+    ).toBe(200);
+    expect(
+      (
+        await set("/live/rounds/set-guide", {
+          leg: first,
+          field: "purpose",
+          body: "Gather concrete situations.",
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await set("/live/rounds/set-guide", {
+          leg: first,
+          field: "selection",
+          body: "Choose distinct incidents.",
+        })
+      ).status,
+    ).toBe(200);
+    const read = async () =>
+      (await json(await set("/live/relays/get", { relay }))).relay as GuidedRelay;
+    let found = await read();
+    expect(found.description).toBe("Build useful changes.");
+    expect(found.hostGuide.opening).toBe("Invite incidents.");
+    expect(found.rounds[0].hostGuide).toEqual({
+      purpose: "Gather concrete situations.",
+      facilitation: "",
+      selection: null,
+    });
+    expect(found.rounds[0].storedSelection).toBe("Choose distinct incidents.");
+    expect(
+      (await set("/live/relays/set-takes", { leg: second, source: first, use: "context" })).status,
+    ).toBe(200);
+    found = await read();
+    expect(found.rounds[0].hostGuide.selection).toBe("Choose distinct incidents.");
+    await set("/live/relays/clear-takes", { leg: second, source: first });
+    found = await read();
+    expect(found.rounds[0].hostGuide.selection).toBeNull();
+    expect(found.rounds[0].storedSelection).toBe("Choose distinct incidents.");
+    await set("/live/relays/set-guide", { relay, field: "opening", body: "  " });
+    expect((await read()).hostGuide.opening).toBe("");
+    expect(
+      (await set("/live/rounds/set-guide", { leg: first, field: "opening", body: "wrong scope" }))
+        .status,
+    ).not.toBe(200);
+    expect(
+      (
+        await post(edge, "/live/relays/set-guide", {
+          relay,
+          field: "opening",
+          body: "unauthorized",
+        })
+      ).status,
+    ).not.toBe(200);
+    const launched = await json(await set("/live/relays/launch", { relay }));
+    expect(typeof launched.run).toBe("string");
+    const hostRun = (await json(await set("/live/relays/run", { run: launched.run })))
+      .run as GuidedRelay;
+    expect(hostRun.description).toBe("Build useful changes.");
+    expect(hostRun.rounds[0].hostGuide.purpose).toBe("Gather concrete situations.");
+    const face = await (await post(edge, "/live/p/arrive", { token: launched.token })).json();
+    expect(JSON.stringify(face)).not.toContain("hostGuide");
+    expect(JSON.stringify(face)).not.toContain("Build useful changes.");
+    expect(
+      (
+        await set("/live/rounds/set-guide", {
+          leg: first,
+          field: "facilitation",
+          body: "Pause during the run.",
+        })
+      ).status,
+    ).toBe(200);
+    await set("/live/relays/close", { run: launched.run });
+    await set("/live/relays/retire", { relay });
+    expect(
+      (await set("/live/relays/set-guide", { relay, field: "opening", body: "retired" })).status,
+    ).not.toBe(200);
+    expect(
+      (await set("/live/rounds/set-guide", { leg: first, field: "purpose", body: "retired" }))
+        .status,
+    ).not.toBe(200);
+  });
+
+  test("accepted generated rounds keep distinct host guides and relay guidance", async () => {
+    const relay = await plan(edge, cookie, "Guided draft");
+    const question = (title: string, purpose: string, selection: string | null, from = 0) => ({
+      number: 0,
+      kind: "write",
+      title,
+      hostGuide: { purpose, facilitation: "", selection },
+      prompt: "What would help?",
+      parts: [],
+      cap: 0,
+      choices: [],
+      piles: [],
+      notes: "",
+      takes: { from, use: from ? "context" : "" },
+    });
+    const asked = await json(
+      await post(
+        edge,
+        "/live/edits/draft",
+        { relay, request: "Gather incidents, then improvements." },
+        cookie,
+      ),
+    );
+    await edge.application.concepts.Reasoning.answer({
+      at: new Date(),
+      asking: asked.asking,
+      reply: JSON.stringify({
+        kind: "relay",
+        title: "Guided draft",
+        description: "Improve shared work.",
+        hostGuide: { opening: "Invite incidents.", closing: "Agree on a trial." },
+        rounds: [
+          question("Incidents", "Gather situations.", "Pick distinct incidents."),
+          question("Improvements", "Develop practical changes.", null, 1),
+        ],
+      }),
+    });
+    const all = await until(
+      () => offerings(edge, cookie, relay),
+      (value) => value.length > 0,
+    );
+    for (const line of all[0].lines) {
+      const applied = await json(
+        await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie),
+      );
+      expect(applied.applied).toBe(true);
+    }
+    const found = (await json(await post(edge, "/live/relays/get", { relay }, cookie)))
+      .relay as GuidedRelay;
+    expect(found.description).toBe("Improve shared work.");
+    expect(found.hostGuide).toEqual({ opening: "Invite incidents.", closing: "Agree on a trial." });
+    expect(
+      found.rounds.map((entry: { hostGuide: { purpose: string } }) => entry.hostGuide.purpose),
+    ).toEqual(["Gather situations.", "Develop practical changes."]);
+    expect(found.rounds[0].hostGuide.selection).toBe("Pick distinct incidents.");
+    expect(found.rounds[1].hostGuide.selection).toBeNull();
+  });
+
+  test("repairs an invalid source before offering and applying a nonadjacent dependency", async () => {
+    const relay = await plan(edge, cookie, "Shared audiences");
+    const brief =
+      "Gather audiences, pause for an independent energy check, then develop an idea for each audience.";
+    const makeRound = (title: string, prompt: string) => ({
+      number: 0,
+      kind: "write",
+      title,
+      prompt,
+      parts: [],
+      cap: 0,
+      choices: [],
+      takes: { from: 0, use: "" },
+      piles: [],
+      notes: "",
+    });
+    const proposed = [
+      makeRound("Audiences", "Who should the event serve?"),
+      makeRound("Energy", "How much energy do you have today?"),
+      {
+        ...makeRound("Event ideas", "What event idea would help each selected audience?"),
+        kind: "list",
+        takes: { from: 1, use: "parts" },
+      },
+    ];
+    const passages: string[] = [];
+    const repairMind: Mind = ({ passage }) => {
+      passages.push(passage);
+      const rounds =
+        passages.length === 1
+          ? proposed.map((round, index) =>
+              index === 2 ? { ...round, takes: { from: 3, use: "parts" } } : round,
+            )
+          : proposed;
+      return Promise.resolve(JSON.stringify({ kind: "relay", title: "Shared audiences", rounds }));
+    };
+    await post(edge, "/live/edits/draft", { relay, request: brief }, cookie);
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await serveOnePass(edge.application.concepts.Reasoning, repairMind);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    const offered = await until(
+      () => offerings(edge, cookie, relay),
+      (all) => all.length === 1,
+    );
+    expect(passages).toHaveLength(2);
+    expect(passages[1]).toContain(passages[0]);
+    expect(passages[1]).toContain("earlier position in the delivered relay");
+    for (const line of offered[0].lines) {
+      const applied = await json(
+        await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie),
+      );
+      expect(applied.applied).toBe(true);
+    }
+    const built = await rounds(edge, cookie, relay);
+    expect(built).toHaveLength(3);
+    expect(built[1].takes).toEqual([]);
+    expect(built[2].takes).toEqual([{ source: built[0].leg, sourceNumber: 1, use: "parts" }]);
+  });
+
+  test("taking a missing suggestion promptly answers not found", async () => {
+    const response = await post(edge, "/live/edits/take", { suggestion: "missing" }, cookie);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "NOT_FOUND" });
+  }, 2_000);
+
+  test("a removal offered before a new draw reports refusal rather than application", async () => {
+    const relay = await plan(edge, cookie, "Stale removal");
+    const add = async (title: string) =>
+      json(
+        await post(
+          edge,
+          "/live/relays/add-round",
+          {
+            relay,
+            title,
+            prompt: "Why?",
+            parts: [],
+            cap: 0,
+            choices: [],
+          },
+          cookie,
+        ),
+      );
+    const first = await add("Source");
+    const second = await add("Later");
+    const { Suggesting, Relaying } = edge.application.concepts;
+    const { offering } = await Suggesting.offer({
+      subject: relay,
+      lines: [{ kind: "remove", target: first.leg, value: "" }],
+      at: new Date(),
+    });
+    const [line] = await Suggesting._pendingIn({ offering });
+    expect(
+      (
+        await post(
+          edge,
+          "/live/relays/set-takes",
+          {
+            leg: second.leg,
+            source: first.leg,
+            use: "context",
+          },
+          cookie,
+        )
+      ).status,
+    ).toBe(200);
+    const response = await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "CONFLICT" });
+    expect(await Relaying._leg({ leg: first.leg })).toHaveLength(1);
+    expect((await Suggesting._suggestion({ suggestion: line.suggestion }))[0].standing).toBe(
+      "taken",
+    );
+  });
+
+  test("suggestions for a removed round neither claim application nor rename the relay", async () => {
+    const relay = await plan(edge, cookie, "Stale notes");
+    const added = await json(
+      await post(
+        edge,
+        "/live/relays/add-round",
+        {
+          relay,
+          title: "Gone",
+          prompt: "Why?",
+          parts: [],
+          cap: 0,
+          choices: [],
+        },
+        cookie,
+      ),
+    );
+    const { Suggesting } = edge.application.concepts;
+    const { offering } = await Suggesting.offer({
+      subject: relay,
+      lines: [
+        { kind: "notes", target: added.leg, value: "Group by meaning." },
+        { kind: "title", target: added.leg, value: "Wrong relay title" },
+      ],
+      at: new Date(),
+    });
+    const lines = await Suggesting._pendingIn({ offering });
+    expect((await post(edge, "/live/relays/remove-round", { leg: added.leg }, cookie)).status).toBe(
+      200,
+    );
+    for (const line of lines) {
+      const response = await post(
+        edge,
+        "/live/edits/take",
+        { suggestion: line.suggestion },
+        cookie,
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ suggestion: line.suggestion, applied: false });
+    }
+    expect((await edge.application.concepts.Relaying._relay({ relay }))[0].title).toBe(
+      "Stale notes",
+    );
+  });
 
   test("taking a notes edit replaces duplicate standing notes and a blank clears them", async () => {
     const relay = await plan(edge, cookie, "Notes regression");
@@ -184,6 +522,7 @@ describe("the relay editing loop", () => {
         await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie),
       );
       expect(taken.error).toBeUndefined();
+      expect(taken.applied).toBe(true);
       const notes = await until(read, (rows) =>
         value === "" ? rows.length === 0 : rows.length === 1 && rows[0].body === value,
       );
@@ -221,7 +560,10 @@ describe("the relay editing loop", () => {
     });
 
     for (const line of offering.lines) {
-      await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie);
+      const taken = await json(
+        await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie),
+      );
+      expect(taken.applied).toBe(true);
     }
     const built = await until(
       () => rounds(edge, cookie, relay),

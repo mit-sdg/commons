@@ -4,9 +4,9 @@ import {
   readMark,
   type SampleAnswer,
   type SampleRead,
-  sampledGroups,
   sampledPiles,
   sampleKey,
+  sampleReadKeys,
   sampleSources,
   sampleWall,
   settled,
@@ -28,6 +28,8 @@ const round: RelayRound = {
   takes: [],
   piles: [],
   notes: "",
+  hostGuide: { purpose: "", facilitation: "", selection: null },
+  storedSelection: "",
 };
 
 const answer = (value: string, pile: string): SampleAnswer => ({ value, pile });
@@ -243,36 +245,62 @@ test("preview sources traverse a long chain once, oldest first", () => {
   expect(sampleSources(third, [cyclic, second, third])).toEqual(["one", "two"]);
 });
 
-test("sample source groups retain empty reservations and written responses through a vote", () => {
-  const source = {
+test("read keys preserve fresh source inputs when only the current round changes", () => {
+  const dependent = {
     ...round,
-    piles: [
-      {
-        pile: "reserved",
-        name: "Desires, not actually bad situations",
-        description: "",
-      },
-    ],
+    leg: "two",
+    takes: [{ source: round.leg, sourceNumber: 1, use: "context" }],
   };
-  const vote = {
+  const marks = new Map([[round.leg, "source-reply-1"]]);
+  const before = sampleReadKeys(dependent, [round, dependent], {}, marks);
+  const edited = { ...dependent, prompt: "A new follow-up question?" };
+  const after = sampleReadKeys(edited, [round, edited], {}, marks);
+  expect(after.source).toBe(before.source);
+  expect(after.result).not.toBe(before.result);
+  expect(after.configuration).not.toBe(before.configuration);
+});
+
+test("ancestor replies invalidate input and result keys without canceling the generation configuration", () => {
+  const dependent = {
     ...round,
-    leg: "vote",
-    kind: "vote",
-    takes: [{ source: "one", sourceNumber: 1, use: "choices" }],
+    leg: "two",
+    takes: [{ source: round.leg, sourceNumber: 1, use: "context" }],
   };
-  const sample = sampled("2026-09-05T10:00:00.000Z").sample!;
-  const samples = new Map([
-    [
-      source.leg,
-      {
-        ...sample,
-        answers: [{ pile: "Lost work", value: "The app erased my notes." }],
-      },
-    ],
-  ]);
-  const groups = sampledGroups(vote, [source, vote], samples);
-  expect(groups).toEqual([
-    { name: "Desires, not actually bad situations", cards: [] },
-    { name: "Lost work", cards: ["The app erased my notes."] },
-  ]);
+  const before = sampleReadKeys(
+    dependent,
+    [round, dependent],
+    {},
+    new Map([[round.leg, "first"]]),
+  );
+  const after = sampleReadKeys(
+    dependent,
+    [round, dependent],
+    {},
+    new Map([[round.leg, "second"]]),
+  );
+  expect(after.source).not.toBe(before.source);
+  expect(after.result).not.toBe(before.result);
+  expect(after.configuration).toBe(before.configuration);
+});
+
+test("unrelated rounds and assumptions do not invalidate a sample", () => {
+  const unrelated = { ...round, leg: "unrelated", prompt: "Unrelated?" };
+  const before = sampleReadKeys(round, [round, unrelated], {}, new Map());
+  const after = sampleReadKeys(
+    round,
+    [round, { ...unrelated, prompt: "Changed?" }],
+    { unrelated: ["A"] },
+    new Map([["unrelated", "new reply"]]),
+  );
+  expect(after).toEqual(before);
+});
+
+test("different ask identities distinguish replies with equal timestamps", () => {
+  const first = sampled("2026-09-05T10:00:00.000Z");
+  const next = {
+    ...first,
+    sample: { ...first.sample!, asking: "another asking" },
+  };
+  expect(readMark(first)).not.toBe(readMark(next));
+  expect(settled(next, readMark(first))).toBe(true);
 });

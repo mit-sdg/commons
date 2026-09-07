@@ -7,7 +7,9 @@
  * before the round ever runs.
  */
 
+import { createHash } from "node:crypto";
 import { roundKind } from "./live-carries.ts";
+import { kindChoices, kindParts, kindCap } from "./live-rounds.ts";
 import { notesOf, PILE_RULES, STANCES } from "./live-walls.ts";
 
 interface StandingPile {
@@ -215,11 +217,13 @@ export function sampledGroups({
   kind,
   choices,
   use,
+  carried = [],
 }: {
   reply: unknown;
   kind: unknown;
   choices: unknown;
   use: unknown;
+  carried?: unknown;
 }): SampleGroup[] {
   const sourceKind =
     asString(kind) || roundKind({ choices: asStrings(choices), parts: [], use: asString(use) });
@@ -230,8 +234,213 @@ export function sampledGroups({
       group = { name: answer.pile, cards: [] };
       groups.set(answer.pile, group);
     }
-    // Ballots name a choice; they are not the original situation behind it.
     if (sourceKind !== "vote") group.cards.push(answer.value);
+    else {
+      const original = asRows<SampleGroup>(carried).find((entry) => entry.name === answer.value);
+      for (const card of original?.cards ?? []) {
+        if (!group.cards.includes(card)) group.cards.push(card);
+      }
+    }
   }
   return [...groups.values()];
+}
+
+interface SamplingLeg {
+  leg: string;
+  material: string;
+  kind: string;
+  draws: { source: string; use: string }[];
+}
+
+interface SamplingReply {
+  about: string;
+  asking: string;
+  passage: string;
+  reply: string;
+}
+
+interface SamplingMaterial {
+  questionnaire: string;
+  questions: { prompt: string; choices: string[]; parts: string[]; cap: number }[];
+}
+
+export interface SamplingPreview {
+  source: string;
+  use: string;
+  available: string[];
+  groups: SampleGroup[];
+  sourceStanding: "none" | "missing" | "stale" | "fresh" | "empty";
+}
+
+interface SamplingResolution {
+  passage: string;
+  standing: string;
+  account: string;
+  preview: SamplingPreview;
+  groups: SampleGroup[];
+}
+
+const missingResolution = (): SamplingResolution => ({
+  passage: "",
+  standing: "stale",
+  account: "SOURCE_UNSAMPLED",
+  preview: { source: "", use: "", available: [], groups: [], sourceStanding: "missing" },
+  groups: [],
+});
+
+export function samplingResolution({
+  leg,
+  legs,
+  materials,
+  piles,
+  notes,
+  replies,
+  picks,
+}: {
+  leg: string;
+  legs: unknown;
+  materials: unknown;
+  piles: unknown;
+  notes: unknown;
+  replies: unknown;
+  picks: unknown;
+}): SamplingResolution {
+  const plan = new Map(asRows<SamplingLeg>(legs).map((entry) => [entry.leg, entry]));
+  const content = new Map(
+    asRows<SamplingMaterial>(materials).map((entry) => [entry.questionnaire, entry]),
+  );
+  const latest = new Map(asRows<SamplingReply>(replies).map((entry) => [entry.about, entry]));
+  const categories = asRows<StandingPile & { scope: string }>(piles);
+  const guidance = new Map(
+    asRows<{ subject: string; text: string }>(notes).map((entry) => [entry.subject, entry.text]),
+  );
+  const assumptions =
+    typeof picks === "object" && picks !== null && !Array.isArray(picks)
+      ? (picks as Record<string, unknown>)
+      : {};
+  const resolved = new Map<string, SamplingResolution>();
+  const visiting = new Set<string>();
+
+  function resolve(identity: string): SamplingResolution {
+    const memo = resolved.get(identity);
+    if (memo !== undefined) return memo;
+    const round = plan.get(identity);
+    const question = content.get(round?.material ?? "")?.questions[0];
+    if (round === undefined || question === undefined || visiting.has(identity))
+      return missingResolution();
+    visiting.add(identity);
+    const draw = round.draws?.[0];
+    const reply = latest.get(identity);
+    const kind =
+      round.kind ||
+      roundKind({ choices: question.choices, parts: question.parts, use: draw?.use ?? "" });
+    const input = {
+      prompt: question.prompt,
+      choices: kindChoices({ kind, choices: question.choices }),
+      parts: kindParts({ kind, parts: question.parts }),
+      cap: kindCap({ kind, cap: question.cap }),
+      piles: categories.filter((pile) => pile.scope === identity),
+      notes: guidance.get(identity) ?? "",
+    };
+    const preview: SamplingPreview = {
+      source: draw?.source ?? "",
+      use: draw?.use ?? "",
+      available: [],
+      groups: [],
+      sourceStanding: "none",
+    };
+    let passage = samplingPassage(input);
+    let account = "";
+    if (draw !== undefined) {
+      const source = resolve(draw.source);
+      const sourceReply = latest.get(draw.source);
+      preview.available = source.groups.map((group) => group.name);
+      const selected = Object.hasOwn(assumptions, draw.source)
+        ? asStrings(assumptions[draw.source])
+        : preview.available.slice(0, 3);
+      preview.groups = source.groups.filter((group) => selected.includes(group.name));
+      preview.sourceStanding =
+        sourceReply === undefined
+          ? "missing"
+          : source.standing !== "fresh"
+            ? "stale"
+            : preview.groups.length === 0
+              ? "empty"
+              : "fresh";
+      account =
+        preview.sourceStanding === "missing"
+          ? "SOURCE_UNSAMPLED"
+          : preview.sourceStanding === "stale"
+            ? "SOURCE_STALE"
+            : preview.sourceStanding === "empty"
+              ? "NOTHING_PICKED"
+              : "";
+      const revision = createHash("sha256")
+        .update(
+          JSON.stringify({
+            source: draw.source,
+            asking: sourceReply?.asking ?? "",
+            passage: source.passage,
+          }),
+        )
+        .digest("hex");
+      passage = `${samplingPassageTaking({ ...input, use: draw.use, carried: preview.groups })}\n\nPreview source revision: ${revision}`;
+    }
+    const sampled = sampledGroups({
+      reply: reply?.reply,
+      kind,
+      choices: question.choices,
+      use: draw?.use ?? "",
+      carried: preview.groups,
+    });
+    const offered =
+      draw?.use === "choices" ? preview.groups.map(({ name }) => name) : input.choices;
+    const groups =
+      kind === "vote" && sampledAnswers({ reply: reply?.reply }).length > 0
+        ? offered.map((name) => sampled.find((group) => group.name === name) ?? { name, cards: [] })
+        : sampled;
+    const result: SamplingResolution = {
+      passage,
+      standing: reply?.passage === passage && account === "" ? "fresh" : "stale",
+      account,
+      preview,
+      groups,
+    };
+    visiting.delete(identity);
+    resolved.set(identity, result);
+    return result;
+  }
+  return resolve(leg);
+}
+
+export function samplingResolvedPassage({
+  resolution,
+}: {
+  resolution: SamplingResolution;
+}): string {
+  return resolution.passage;
+}
+
+export function samplingResolvedStanding({
+  resolution,
+}: {
+  resolution: SamplingResolution;
+}): string {
+  return resolution.standing;
+}
+
+export function samplingResolvedAccount({
+  resolution,
+}: {
+  resolution: SamplingResolution;
+}): string {
+  return resolution.account;
+}
+
+export function samplingResolvedPreview({
+  resolution,
+}: {
+  resolution: SamplingResolution;
+}): SamplingPreview {
+  return resolution.preview;
 }

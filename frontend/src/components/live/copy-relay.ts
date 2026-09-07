@@ -13,6 +13,11 @@ export interface CopyableRound {
   choices: string[];
   piles: { name: string; description: string }[];
   notes: string;
+  hostGuide?: {
+    purpose: string;
+    facilitation: string;
+    selection: string | null;
+  };
   takes?: { from: number; use: string };
 }
 
@@ -32,6 +37,10 @@ export function roundsToCopy(relay: FetchedRelay): CopyableRound[] {
         description: pile.description,
       })),
       notes: round.notes,
+      hostGuide: {
+        ...round.hostGuide,
+        selection: round.storedSelection || null,
+      },
       takes:
         takes === undefined
           ? undefined
@@ -62,6 +71,16 @@ export async function copyRounds(
     });
     if (isApiError(added)) return added;
     legs.push(added.leg);
+    for (const field of ["purpose", "facilitation", "selection"] as const) {
+      const body = round.hostGuide?.[field];
+      if (!body) continue;
+      const guided = await api["/live/rounds/set-guide"]({
+        leg: added.leg,
+        field,
+        body,
+      });
+      if (isApiError(guided)) return guided;
+    }
     if (round.kind !== "") {
       const named = await api["/live/relays/set-kind"]({
         leg: added.leg,
@@ -154,4 +173,15 @@ export async function copyQuestionnaire(
 /** The relay a brief names, before the model has drafted anything into it: the same string the edits page mints, so the reasoner's title is taken without confirmation. */
 export function titleFromBrief(brief: string): string {
   return mintedRelayTitle({ request: brief });
+}
+
+export async function copyRelayGuide(relay: string, source: FetchedRelay) {
+  for (const field of ["description", "opening", "closing"] as const) {
+    const body =
+      field === "description" ? source.description : source.hostGuide[field];
+    if (!body) continue;
+    const result = await api["/live/relays/set-guide"]({ relay, field, body });
+    if (isApiError(result)) return result;
+  }
+  return { relay };
 }

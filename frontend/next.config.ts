@@ -14,6 +14,8 @@ const ALLOWED_DEV_ORIGINS = allowedDevOriginsFromPublicOrigin(
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ALLOWED_DEV_ORIGINS,
+  // Commons renders images directly; keep the unused optimization endpoint closed.
+  images: { unoptimized: true },
   // The participant destination is public configuration, embedded for the
   // client that draws QR codes. Production already requires PUBLIC_ORIGIN; a
   // laptop serving a room over plain http keeps the edge on loopback and

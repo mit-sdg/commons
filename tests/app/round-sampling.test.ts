@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { SAMPLING_OPENING } from "../../src/computations/live-sampling.ts";
+import { SAMPLING_OPENING, type SamplingPreview } from "../../src/computations/live-sampling.ts";
 import { scriptedMind, serveOnePass } from "../../src/reasoning/worker.ts";
 
 type Edge = ReturnType<typeof createEdge>;
@@ -72,6 +72,7 @@ interface Sample {
 }
 
 interface Reading {
+  preview: SamplingPreview;
   sample: Sample | null;
   pending: boolean;
   failure: string | null;
@@ -87,11 +88,13 @@ describe("sampling a round in the editor", () => {
   let taking: string;
   let crashes: string;
 
-  const readSample = async (leg: string) =>
-    (await json(await post(edge, "/live/rounds/sample", { leg }, cookie))) as unknown as Reading;
+  const readSample = async (leg: string, picks: Record<string, string[]> = {}) =>
+    (await json(
+      await post(edge, "/live/rounds/sample", { leg, picks }, cookie),
+    )) as unknown as Reading;
 
-  const askFor = async (leg: string) => {
-    const response = await post(edge, "/live/rounds/sample-answers", { leg }, cookie);
+  const askFor = async (leg: string, picks: Record<string, string[]> = {}) => {
+    const response = await post(edge, "/live/rounds/sample-answers", { leg, picks }, cookie);
     const body = (await response.json()) as { asked?: boolean; asking?: string; error?: string };
     return { status: response.status, ...body };
   };
@@ -202,6 +205,7 @@ describe("sampling a round in the editor", () => {
       pending: false,
       failure: null,
       failedAt: null,
+      preview: { source: "", use: "", available: [], groups: [], sourceStanding: "none" },
     });
   });
 
@@ -283,7 +287,7 @@ describe("sampling a round in the editor", () => {
 
   test("the taking round is sampled after its source, on the source's own pile names", async () => {
     const source = (await readSample(write)).sample!;
-    const carried = namesOf(source);
+    const carried = namesOf(source).slice(0, 3);
     expect(carried.length).toBeGreaterThan(1);
 
     expect((await askFor(taking)).asked).toBe(true);
@@ -303,17 +307,16 @@ describe("sampling a round in the editor", () => {
     expect(sample.answers.every((answer) => carried.includes(answer.value))).toBe(true);
   });
 
-  test("re-sampling identical answers stays fresh until a carried name changes", async () => {
-    // The note shapes the source's own passage, but the names its sample lands
-    // on do not move, so what the taking round carries is the same as before.
+  test("source changes and resampling invalidate the taking round even with identical answers", async () => {
     await post(
       edge,
       "/live/rounds/set-notes",
       { leg: write, body: "Group by what went wrong. Crashing is its own pile." },
       cookie,
     );
+    expect((await readSample(taking)).preview.sourceStanding).toBe("stale");
     const before = namesOf((await sampleAndServe(write)).sample!);
-    expect((await readSample(taking)).sample!.standing).toBe("fresh");
+    expect((await readSample(taking)).sample!.standing).toBe("stale");
 
     // Renaming a standing pile does move them, so the taking round goes stale.
     await post(edge, "/live/rounds/rename-pile", { pile: crashes, name: "Quits" }, cookie);
@@ -361,6 +364,97 @@ describe("sampling a round in the editor", () => {
       expect(passage).not.toContain(`\n  - ${name}`);
     }
     await serveReasoner();
+  });
+
+  test("assumed picks preserve original evidence through votes and invalidate transitive samples", async () => {
+    const first = await addRound(
+      "Workshop barriers",
+      "Describe a barrier to joining the workshop.",
+    );
+    const vote = await addRound("Choose barriers", "Which selected barrier deserves attention?");
+    const follow = await addRound(
+      "Develop a change",
+      "Propose a change grounded in the selected examples.",
+    );
+    for (const [leg, source, use] of [
+      [vote, first, "choices"],
+      [follow, vote, "context"],
+    ]) {
+      expect(
+        (await post(edge, "/live/relays/set-takes", { leg, source, use }, cookie)).status,
+      ).toBe(200);
+    }
+    const picks = { [first]: ["Access", "Timing"], [vote]: ["Access"] };
+    const original = "The library lift failed during the evening workshop.";
+    const answers = [
+      { pile: "Access", value: original },
+      { pile: "Timing", value: "The last bus left before the session ended." },
+      { pile: "Language", value: "The signup form was only in English." },
+      { pile: "Space", value: "The room was full." },
+    ];
+    const answer = async (leg: string, values: { value: string; pile: string }[]) => {
+      const asked = await askFor(leg, picks);
+      expect(asked.asked).toBe(true);
+      await edge.application.concepts.Reasoning.answer({
+        asking: asked.asking!,
+        reply: JSON.stringify({ kind: "sampled", answers: values }),
+        at: new Date(),
+      });
+    };
+    await answer(first, answers);
+    const defaultPreview = (await readSample(vote)).preview;
+    expect(defaultPreview.available).toEqual(["Access", "Timing", "Language", "Space"]);
+    expect(defaultPreview.groups.map((group) => group.name)).toEqual([
+      "Access",
+      "Timing",
+      "Language",
+    ]);
+    expect((await askFor(vote, { [first]: [] })).status).toBe(409);
+    expect((await readSample(vote, { [first]: ["invented"] })).preview.groups).toEqual([]);
+    await answer(vote, [{ value: "Access", pile: "Access" }]);
+    const unvoted = (await readSample(follow, { ...picks, [vote]: ["Timing"] })).preview;
+    expect(unvoted.available).toEqual(["Access", "Timing"]);
+    expect(unvoted.groups).toEqual([{ name: "Timing", cards: [] }]);
+    expect(unvoted.sourceStanding).toBe("fresh");
+    const preview = (await readSample(follow, picks)).preview;
+    expect(preview.groups).toEqual([{ name: "Access", cards: [original] }]);
+    expect(preview.sourceStanding).toBe("fresh");
+    const requested = await askFor(follow, picks);
+    expect(requested.asked).toBe(true);
+    const passage = await passageAbout(follow);
+    expect(passage).toContain(original);
+    expect(passage).not.toContain(answers[1]!.value);
+    expect(passage).not.toContain("\n  - Access\n");
+    await edge.application.concepts.Reasoning.answer({
+      asking: requested.asking!,
+      reply: JSON.stringify({
+        kind: "sampled",
+        answers: [{ value: "Move the workshop downstairs.", pile: "Location" }],
+      }),
+      at: new Date(),
+    });
+    expect((await readSample(follow, picks)).sample!.standing).toBe("fresh");
+    await post(
+      edge,
+      "/live/rounds/set-notes",
+      { leg: first, body: "Keep access barriers visible." },
+      cookie,
+    );
+    expect((await readSample(follow, picks)).preview.sourceStanding).toBe("stale");
+    expect((await readSample(follow, picks)).sample!.standing).toBe("stale");
+    expect((await askFor(follow, picks)).status).toBe(409);
+    await answer(first, answers);
+    expect((await readSample(vote, picks)).sample!.standing).toBe("stale");
+    await answer(vote, [
+      { value: "Access", pile: "Access" },
+      { value: "Timing", pile: "Timing" },
+    ]);
+    expect((await readSample(follow, picks)).preview.sourceStanding).toBe("fresh");
+    expect((await readSample(follow, picks)).sample!.standing).toBe("stale");
+    expect(
+      (await readSample(follow, { ...picks, [first]: ["Language", "Timing"] })).preview
+        .sourceStanding,
+    ).toBe("stale");
   });
 
   test("a reply the reading cannot make out is a sample of no answers", async () => {

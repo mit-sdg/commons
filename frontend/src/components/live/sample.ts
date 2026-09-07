@@ -1,16 +1,9 @@
 "use client";
 
-/**
- * The sample: one ask about the round the phone shows, and what comes back —
- * a dozen answers, each written the way a participant writes and placed in a
- * pile. Nothing is kept here: the ask is about the leg and the reply is
- * Reasoning's own record, so a reload reads the same sample back.
- */
+/** How does the editor preview selected earlier work and its generated responses? */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { refusalSentence } from "@/components/live/refusals";
 import {
-  kindOf,
   type RelayRound,
   type Wall as WallShape,
 } from "@/components/live/rounds";
@@ -62,7 +55,6 @@ export function sampleKey(round: RelayRound | null): string {
   ]);
 }
 
-/** A sample the round has moved out from under keeps its accent, dimmed. */
 export function stale(sample: Sample | null): boolean {
   return sample?.standing === "stale";
 }
@@ -84,7 +76,7 @@ function after(later: string | null, earlier: string | null): boolean {
 /** What a read of a leg holds, in one string, to tell one read from the next. */
 export function readMark(read: SampleRead | null): string {
   if (read === null) return "";
-  return `${read.sample?.answeredAt ?? ""}|${read.failedAt ?? ""}`;
+  return `${read.sample?.asking ?? ""}|${read.sample?.answeredAt ?? ""}|${read.failedAt ?? ""}`;
 }
 
 /**
@@ -116,6 +108,7 @@ export function sampleWall(
     failedAt: null,
     notes: "",
     asksOut: 0,
+    sortPending: false,
     questions: [],
     cards: answers.map((answer, index) => ({
       card: `sample-${index + 1}`,
@@ -135,7 +128,6 @@ export function sampleWall(
   };
 }
 
-/** Resolve preview dependencies oldest first; malformed cycles stop locally. */
 export function sampleSources(
   round: RelayRound,
   rounds: RelayRound[],
@@ -161,78 +153,79 @@ export interface SampleGroup {
   cards: string[];
 }
 
-/** Examples preserve written responses through a vote, instead of showing votes as source text. */
-export function sampledGroups(
+export function sampleReadKeys(
   round: RelayRound,
   rounds: RelayRound[],
-  samples: ReadonlyMap<string, Sample | null>,
-  visited = new Set<string>(),
-): SampleGroup[] {
-  if (visited.has(round.leg)) return [];
-  visited.add(round.leg);
-  const answers = samples.get(round.leg)?.answers ?? [];
-  if (kindOf(round) === "vote") {
-    const take = round.takes.find((entry) => entry.use === "choices");
-    const source = rounds.find((entry) => entry.leg === take?.source);
-    if (source) return sampledGroups(source, rounds, samples, visited);
-    return round.choices.map((name) => ({ name, cards: [] }));
-  }
-  const names = [
-    ...new Set([
-      ...round.piles.map((pile) => pile.name),
-      ...sampledPiles(answers),
-    ]),
-  ];
-  return names.map((name) => ({
-    name,
-    cards: answers
-      .filter((answer) => answer.pile === name)
-      .map((answer) => answer.value),
-  }));
+  picks: Readonly<Record<string, string[]>>,
+  marks: ReadonlyMap<string, string>,
+): { configuration: string; source: string; result: string } {
+  const sources = sampleSources(round, rounds);
+  const sourceConfiguration = sources.map((source) => [
+    source,
+    sampleKey(rounds.find((entry) => entry.leg === source) ?? null),
+    picks[source],
+  ]);
+  const source = JSON.stringify([
+    sourceConfiguration,
+    sources.map((identity) => marks.get(identity) ?? ""),
+  ]);
+  return {
+    configuration: JSON.stringify([sampleKey(round), sourceConfiguration]),
+    source,
+    result: JSON.stringify([sampleKey(round), source]),
+  };
 }
 
 export interface Sampling {
-  /** The round's own sample, when a reply about its leg stands. */
   sample: Sample | null;
-  /** The piles the source's sample named, which stand where the class's would. */
-  names: string[];
   groups: SampleGroup[];
-  /** An ask is out: the button says so and is out with it. */
+  available: string[];
+  selected: string[];
+  sourceStanding: string;
   asking: boolean;
-  /** Whether the ask is offered at all — a retired relay's round is not. */
-  offered: boolean;
-  /** The accent dims where what is shown is behind the round as it stands now. */
-  dim: boolean;
-  /** What stands beside the button when something has to be said. */
   line: string | null;
-  ask: () => void;
+  pick: (names: string[]) => void;
+  ask: () => Promise<boolean>;
 }
 
-/**
- * One round's sample: read on mount and after every edit, asked for on a
- * press. A round that takes from an earlier one is sampled after its source,
- * so a press with no source sample asks the source first and asks the round
- * once the source's reply lands — one press, and the button is out for both.
- */
 export function useSample(round: RelayRound, rounds: RelayRound[]): Sampling {
-  const leg = round.leg;
-  const from = round.takes[0]?.source ?? null;
-  const key = sampleKey(round);
-  const ancestors = JSON.stringify(
-    sampleSources(round, rounds).map((source) => [
-      source,
-      sampleKey(rounds.find((entry) => entry.leg === source) ?? null),
-    ]),
-  );
-  /** A read landing anywhere on the page redraws every phone standing on it. */
   const [, redraw] = useState(0);
-  /** A press is out, from the press itself until the reply it waits on lands. */
   const [busy, setBusy] = useState(false);
-  const [line, setLine] = useState<string | null>(null);
-  const [retired, setRetired] = useState(false);
-  /** Which press is the live one: an older one drops whatever it comes back with. */
+  const [notice, setNotice] = useState<{
+    key: string;
+    text: string | null;
+  } | null>(null);
   const press = useRef(0);
   const alive = useRef(true);
+  const leg = round.leg;
+  const from = round.takes[0]?.source ?? null;
+  const picksText = JSON.stringify(
+    Object.fromEntries(
+      rounds
+        .filter((entry) => assumed.has(entry.leg))
+        .map((entry) => [entry.leg, assumed.get(entry.leg)]),
+    ),
+  );
+  const selection = JSON.parse(picksText) as Record<string, string[]>;
+  const marks = new Map(
+    [...held].map(([identity, value]) => [identity, readMark(value)]),
+  );
+  const keys = sampleReadKeys(round, rounds, selection, marks);
+  const key = keys.configuration;
+  const sourceKey = keys.source;
+  const configuration = useRef(key);
+  const ancestorMarks = JSON.stringify(
+    sampleSources(round, rounds).map((source) => readMark(readOf(source))),
+  );
+  const generationOwner = useRef<symbol | null>(null);
+  const line = notice?.key === key ? notice.text : null;
+  const setLine = useCallback(
+    (text: string | null) => setNotice({ key, text }),
+    [key],
+  );
+  const invalidate = useCallback(() => {
+    press.current++;
+  }, []);
 
   useEffect(() => {
     alive.current = true;
@@ -240,58 +233,51 @@ export function useSample(round: RelayRound, rounds: RelayRound[]): Sampling {
     watching.add(watcher);
     return () => {
       alive.current = false;
+      invalidate();
       watching.delete(watcher);
     };
-  }, []);
+  }, [invalidate]);
+
+  useEffect(() => {
+    if (configuration.current === key) return;
+    configuration.current = key;
+    invalidate();
+  }, [key, invalidate]);
 
   const readLeg = useCallback(
     async (which: string): Promise<SampleRead | null> => {
-      const result = await api["/live/rounds/sample"]({ leg: which });
+      const entry = rounds.find((candidate) => candidate.leg === which);
+      if (entry === undefined) return null;
+      const requestKeys = sampleReadKeys(
+        entry,
+        rounds,
+        JSON.parse(picksText),
+        new Map(
+          [...held].map(([identity, value]) => [identity, readMark(value)]),
+        ),
+      );
+      const ticket = (reading.get(which) ?? 0) + 1;
+      reading.set(which, ticket);
+      const result = await api["/live/rounds/sample"]({
+        leg: which,
+        picks: JSON.parse(picksText),
+      });
       if (isApiError(result)) return null;
-      keep(which, result);
+      if (reading.get(which) === ticket) {
+        held.set(which, result);
+        readKeys.set(which, requestKeys.result);
+        sourceKeys.set(which, requestKeys.source);
+        for (const watcher of watching) watcher();
+      }
       return result;
     },
-    [],
+    [picksText, rounds],
   );
 
-  // The sample is durable through Reasoning's own record: what the leg was
-  // told last stands after a reload, and after an edit the same read is what
-  // says the sample no longer fits the round.
   useEffect(() => {
     void readLeg(leg);
-  }, [readLeg, leg, key]);
+  }, [readLeg, leg, ancestorMarks]);
 
-  useEffect(() => {
-    for (const [source] of JSON.parse(ancestors) as [string, string][])
-      void readLeg(source);
-  }, [readLeg, ancestors]);
-
-  /**
-   * A refused ask says which word stands behind the category. The boundary
-   * refuses a round whose source has no sample and a round of a retired relay
-   * alike, and the source is asked first here, so only a round that takes from
-   * one this press did not reach can be the first.
-   */
-  const refuse = useCallback(
-    (which: string, error: string) => {
-      if (error !== "CONFLICT") {
-        setLine(publicErrorMessage(error));
-        return;
-      }
-      const asked = rounds.find((entry) => entry.leg === which) ?? null;
-      const takes = which === leg ? undefined : asked?.takes[0];
-      if (takes === undefined) {
-        setRetired(true);
-        return;
-      }
-      setLine(
-        refusalSentence("SOURCE_UNSAMPLED", { round: takes.sourceNumber }),
-      );
-    },
-    [leg, rounds],
-  );
-
-  /** Reads the leg about once a second until the reply this press waits on lands. */
   const waitFor = useCallback(
     async (
       which: string,
@@ -299,117 +285,144 @@ export function useSample(round: RelayRound, rounds: RelayRound[]): Sampling {
       ticket: number,
     ): Promise<SampleRead | null> => {
       const started = Date.now();
-      for (;;) {
+      while (Date.now() - started < WAIT_MS) {
         await sleep(POLL_MS);
         if (press.current !== ticket || !alive.current) return null;
         const landed = await readLeg(which);
         if (press.current !== ticket || !alive.current) return null;
         if (landed !== null && settled(landed, mark)) return landed;
-        if (Date.now() - started >= WAIT_MS) {
-          setLine(NOT_ANSWERING);
-          return null;
-        }
       }
+      setLine(NOT_ANSWERING);
+      return null;
     },
-    [readLeg],
+    [readLeg, setLine],
   );
 
-  /**
-   * One ask, behind a read of what the leg held before it: that read is what
-   * tells the reply this ask waits on from the one it replaces. An ask already
-   * out is one this press waits on rather than a second.
-   */
   const askLeg = useCallback(
     async (which: string, ticket: number): Promise<SampleRead | null> => {
-      const mark = readMark(await readLeg(which));
-      const result = await api["/live/rounds/sample-answers"]({ leg: which });
-      if (press.current !== ticket) return null;
+      const before = await readLeg(which);
+      if (press.current !== ticket || !alive.current) return null;
+      const number = rounds.find((entry) => entry.leg === which)?.number;
+      const progress = `Generating round ${number ?? ""}…`;
+      setLine(progress);
+      if (generation?.owner === generationOwner.current) {
+        generation.line = progress;
+        for (const watcher of watching) watcher();
+      }
+      const result = await api["/live/rounds/sample-answers"]({
+        leg: which,
+        picks: JSON.parse(picksText),
+      });
+      if (press.current !== ticket || !alive.current) return null;
       if (isApiError(result)) {
-        refuse(which, result.error);
+        setLine(publicErrorMessage(result.error));
         return null;
       }
-      return waitFor(which, mark, ticket);
+      return waitFor(which, readMark(before), ticket);
     },
-    [readLeg, refuse, waitFor],
+    [readLeg, rounds, picksText, waitFor, setLine],
   );
 
-  const ask = useCallback(() => {
-    if (busy) return;
+  const ask = useCallback(async () => {
+    if (busy || generation !== null) return false;
+    const owner = Symbol("preview generation");
+    generationOwner.current = owner;
+    generation = { owner, line: null };
+    for (const watcher of watching) watcher();
     const ticket = ++press.current;
     setBusy(true);
     setLine(null);
-    void (async () => {
-      try {
-        for (const source of sampleSources(round, rounds)) {
-          let carried = await readLeg(source);
-          if (press.current !== ticket || !alive.current) return;
-          if (carried?.sample == null || stale(carried.sample)) {
-            carried = await askLeg(source, ticket);
-          }
-          if (press.current !== ticket || !alive.current) return;
-          if (
-            carried?.sample == null ||
-            unanswered(carried) ||
-            stale(carried.sample)
-          )
-            return;
+    try {
+      for (const source of sampleSources(round, rounds)) {
+        let carried = await readLeg(source);
+        if (press.current !== ticket || !alive.current) return false;
+        if (
+          carried?.sample == null ||
+          stale(carried.sample) ||
+          carried.sample.answers.length === 0 ||
+          unanswered(carried)
+        )
+          carried = await askLeg(source, ticket);
+        if (press.current !== ticket || !alive.current) return false;
+        if (
+          carried?.sample == null ||
+          unanswered(carried) ||
+          stale(carried.sample) ||
+          carried.sample.answers.length === 0
+        ) {
+          setLine(
+            carried?.sample?.answers.length === 0
+              ? NOTHING_SAMPLED
+              : NOT_ANSWERING,
+          );
+          return false;
         }
-        await askLeg(leg, ticket);
-      } finally {
-        if (press.current === ticket && alive.current) setBusy(false);
       }
-    })();
-  }, [busy, round, rounds, leg, readLeg, askLeg]);
+      const landed = await askLeg(leg, ticket);
+      if (press.current !== ticket || !alive.current) return false;
+      if (landed?.sample == null || unanswered(landed)) {
+        setLine(NOT_ANSWERING);
+        return false;
+      }
+      if (stale(landed.sample) || landed.sample.answers.length === 0) {
+        setLine(
+          stale(landed.sample)
+            ? "Preview changed—refresh to see current results."
+            : NOTHING_SAMPLED,
+        );
+        return false;
+      }
+      setLine(null);
+      return true;
+    } finally {
+      if (generation?.owner === owner) {
+        generation = null;
+        generationOwner.current = null;
+        for (const watcher of watching) watcher();
+      }
+      if (alive.current) setBusy(false);
+    }
+  }, [busy, round, rounds, leg, readLeg, askLeg, setLine]);
 
   const own = readOf(leg);
-  const source = from === null ? null : readOf(from);
-
-  // A reply an earlier session asked for may still be out when the editor
-  // opens, so a read that says an ask stands is read again until it settles.
   useEffect(() => {
-    if (busy) return;
-    const out = [leg, ...(from === null ? [] : [from])].filter(
-      (which) => readOf(which)?.pending === true,
-    );
-    if (out.length === 0) return;
-    const timer = setTimeout(() => {
-      for (const which of out) void readLeg(which);
-    }, POLL_MS);
+    if (busy || !own?.pending) return;
+    const timer = setTimeout(() => void readLeg(leg), POLL_MS);
     return () => clearTimeout(timer);
-  }, [busy, own, source, leg, from, readLeg]);
+  }, [busy, own, leg, readLeg]);
 
-  const sample = own?.sample ?? null;
-  const carried = source?.sample ?? null;
-  const said =
-    line ??
-    (unanswered(own) || unanswered(source)
-      ? NOT_ANSWERING
-      : sample !== null && sample.answers.length === 0
-        ? NOTHING_SAMPLED
-        : null);
-
-  const sourceRound = rounds.find((entry) => entry.leg === from);
+  const preview = own?.preview;
+  const available = preview?.available ?? [];
   const groups =
-    sourceRound === undefined
-      ? []
-      : sampledGroups(
-          sourceRound,
-          rounds,
-          new Map(
-            rounds.map((entry) => [
-              entry.leg,
-              readOf(entry.leg)?.sample ?? null,
-            ]),
-          ),
-        );
+    sourceKeys.get(leg) === sourceKey ? (preview?.groups ?? []) : [];
+  const sample =
+    own?.sample == null
+      ? null
+      : readKeys.get(leg) === keys.result
+        ? own.sample
+        : { ...own.sample, standing: "stale" };
   return {
     sample,
-    names: groups.map((group) => group.name),
     groups,
-    asking: busy,
-    offered: !retired,
-    dim: stale(sample) || stale(carried),
-    line: said,
+    available,
+    selected:
+      from === null
+        ? []
+        : (assumed.get(from)?.filter((name) => available.includes(name)) ??
+          groups.map((group) => group.name)),
+    sourceStanding:
+      from === null
+        ? "none"
+        : sourceKeys.get(leg) === sourceKey
+          ? (preview?.sourceStanding ?? "missing")
+          : "stale",
+    asking: busy || generation !== null || own?.pending === true,
+    line: generation?.line ?? line ?? (unanswered(own) ? NOT_ANSWERING : null),
+    pick: (names) => {
+      if (from === null) return;
+      assumed.set(from, names);
+      for (const watcher of watching) watcher();
+    },
     ask,
   };
 }
@@ -423,15 +436,15 @@ const sleep = (ms: number): Promise<void> =>
  * one of them asked for lands on the other as well.
  */
 const held = new Map<string, SampleRead>();
+const assumed = new Map<string, string[]>();
+const readKeys = new Map<string, string>();
+const sourceKeys = new Map<string, string>();
+const reading = new Map<string, number>();
 const watching = new Set<() => void>();
+let generation: { owner: symbol; line: string | null } | null = null;
 
 function readOf(leg: string): SampleRead | null {
   return held.get(leg) ?? null;
-}
-
-function keep(leg: string, standing: SampleRead): void {
-  held.set(leg, standing);
-  for (const watcher of watching) watcher();
 }
 
 /**

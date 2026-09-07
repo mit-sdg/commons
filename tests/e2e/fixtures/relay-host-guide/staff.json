@@ -1,0 +1,71 @@
+{
+  "kind": "relay",
+  "title": "Handoff improvements",
+  "description": "Library staff share specific recent handoff friction, prioritize which handoffs need the most attention, and develop actionable adjustments grounded in the actual incidents. The host leaves with concrete, small changes the team can trial immediately.",
+  "hostGuide": {
+    "opening": "Introduce the session as a practical review of recent shift or desk handoffs. Emphasize sharing concrete incidents so the team can identify specific friction points to address next week.",
+    "closing": "Review the proposed adjustments with the staff. Choose two or three small changes to test during shift changes starting next week."
+  },
+  "rounds": [
+    {
+      "number": 0,
+      "title": "Recent handoffs",
+      "hostGuide": {
+        "purpose": "Collect specific recent handoff incidents and what made them difficult.",
+        "facilitation": "Encourage staff to name specific situations, roles involved, and what fell through rather than general complaints.",
+        "selection": "Select distinct handoff situations that represent meaningful operational friction for the team to prioritize."
+      },
+      "kind": "write",
+      "prompt": "Describe a recent shift or desk handoff that felt bumpy: state what happened, who needed what information or task, and what got in the way.",
+      "parts": [],
+      "cap": 0,
+      "choices": [],
+      "takes": {
+        "from": 0,
+        "use": ""
+      },
+      "piles": [],
+      "notes": "Group answers by the type of handoff situation or operational barrier. Keep distinct concrete incidents separate so their specific details remain visible."
+    },
+    {
+      "number": 0,
+      "title": "Priority handoffs",
+      "hostGuide": {
+        "purpose": "Identify which handoff situations the staff feel most urgent to address.",
+        "facilitation": "Remind the group that voting highlights priorities for today's discussion rather than creating a permanent policy mandate.",
+        "selection": "Select two or three top-voted handoff friction points for the team to solve in the next round."
+      },
+      "kind": "vote",
+      "prompt": "Which handoff friction point most needs our attention to fix?",
+      "parts": [],
+      "cap": 0,
+      "choices": [],
+      "takes": {
+        "from": 1,
+        "use": "choices"
+      },
+      "piles": [],
+      "notes": ""
+    },
+    {
+      "number": 0,
+      "title": "Actionable adjustments",
+      "hostGuide": {
+        "purpose": "Develop concrete, small procedural adjustments to improve each prioritized handoff.",
+        "facilitation": "Ask staff to keep suggestions small, testable, and directly responsive to the specific friction described.",
+        "selection": null
+      },
+      "kind": "list",
+      "prompt": "For each selected handoff issue, propose one small, concrete change we can try next week to prevent this friction.",
+      "parts": [],
+      "cap": 0,
+      "choices": [],
+      "takes": {
+        "from": 2,
+        "use": "parts"
+      },
+      "piles": [],
+      "notes": "Group similar adjustments together so the host can identify practical actions ready to trial next week."
+    }
+  ]
+}

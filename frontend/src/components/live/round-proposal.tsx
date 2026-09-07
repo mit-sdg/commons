@@ -2,6 +2,7 @@
 
 import { Check, X } from "lucide-react";
 import { Chips } from "@/components/live/chips";
+import { GUIDE_LABELS, GuideText } from "@/components/live/host-guide";
 import { ActButton } from "@/components/live/round-editor";
 import {
   RoundToken,
@@ -27,7 +28,8 @@ type Stands = Pick<
   | "takes"
   | "piles"
   | "notes"
->;
+> &
+  Partial<Pick<Round, "hostGuide" | "storedSelection">>;
 
 /** The word a proposal stands under: the field it touches, as the card names it. */
 const FIELD: Record<string, string> = {
@@ -127,6 +129,11 @@ export function addedRound(value: string) {
     choices: strings(drafted.choices),
     piles: piles(drafted.piles),
     notes: typeof drafted.notes === "string" ? drafted.notes : "",
+    hostGuide: Object.fromEntries(
+      Object.entries(record(drafted.hostGuide)).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      ),
+    ),
     from: typeof takes.from === "number" ? takes.from : 0,
     use: typeof takes.use === "string" ? takes.use : "",
     position: typeof drafted.position === "number" ? drafted.position : 0,
@@ -162,6 +169,21 @@ export function changeWords(
   round: Stands | null,
 ): { field: string; was: Said; to: Said } {
   const field = FIELD[line.kind] ?? line.kind;
+  if (line.kind === "guide") {
+    const guide = record(readJson(line.value));
+    const name = typeof guide.field === "string" ? guide.field : "";
+    const was =
+      name === "selection"
+        ? (round?.storedSelection ?? "")
+        : name === "purpose" || name === "facilitation"
+          ? (round?.hostGuide?.[name] ?? "")
+          : "";
+    return {
+      field: GUIDE_LABELS[name] ?? "Host guide",
+      was,
+      to: typeof guide.body === "string" ? guide.body : "",
+    };
+  }
   if (line.kind === "remove") {
     return { field, was: round?.title ?? "", to: "" };
   }
@@ -423,6 +445,7 @@ export function ProposedRound({
             <TakesChip from={round.from} use={round.use} standing="plain" />
           ) : null}
         </div>
+        <GuideText guide={round.hostGuide} />
         {round.prompt === "" ? null : (
           <p className="min-w-0 text-muted-foreground text-sm">
             {round.prompt}

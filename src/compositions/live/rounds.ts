@@ -1,6 +1,7 @@
 import {
   compute,
   former,
+  is,
   no,
   now,
   reaction,
@@ -12,13 +13,11 @@ import {
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
 import {
-  legTakesNothing,
   mayHostLive,
   mayNotHostLive,
   relayIsNotRetired,
   relayIsRetired,
   theRoundOfLegInRun,
-  theTakeOf,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
@@ -308,6 +307,60 @@ export const SetNotes = endpoint(
   { input: { required: ["session", "leg", "body"] } },
 );
 
+export const SetGuide = endpoint(
+  "/live/rounds/set-guide",
+  ({ session, leg, field, body, user, use, said, guidance, cleared, scope }) =>
+    receive({ session, leg, field, body }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsNotOfARetiredRelay({ leg }),
+        is.among(field, ["purpose", "facilitation", "selection"]),
+        compute(computations.guideUse, { field }, use),
+        compute(computations.briefStanding, { request: body }, said),
+        is.among(said, ["given"]),
+      )
+        .then(Guiding.set({ subject: leg, use, title: "", body }).responds({ guidance }))
+        .then(respond({ guidance }))
+        .named("set"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsNotOfARetiredRelay({ leg }),
+        is.among(field, ["purpose", "facilitation", "selection"]),
+        compute(computations.guideUse, { field }, use),
+        compute(computations.briefStanding, { request: body }, said),
+        is.among(said, ["blank"]),
+      )
+        .then(Guiding.clear({ subject: leg, use }).responds({ cleared }))
+        .then(respond({ cleared }))
+        .named("clear"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsOfARetiredRelay({ leg }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), no(Relaying._leg({ leg })))
+        .then(respond({ error: "LEG_NOT_FOUND" }))
+        .named("missing"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsNotOfARetiredRelay({ leg }),
+        compute(computations.guideScope, { field }, scope),
+        is.among(scope, ["relay", ""]),
+      )
+        .then(respond({ error: "INVALID_FIELD" }))
+        .named("field"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "leg", "field", "body"] } },
+);
+
 export const ClearNotes = endpoint(
   "/live/rounds/clear-notes",
   ({ session, leg, user, cleared }) =>
@@ -337,98 +390,38 @@ export const ClearNotes = endpoint(
   { input: { required: ["session", "leg"] } },
 );
 
-/**
- * The passage a sample of the round is asked with: its question as the phone
- * would put it, which its kind selects, its standing piles, its note to the sorter, and, when it takes
- * from an earlier round, the names and written examples of its sampled piles where the
- * placeholders stand — so a round is sampled after its source. The same
- * passage is formed on the ask and on every read, so a sample is fresh exactly
- * while nothing it was asked about has moved.
- */
-const theSamplingPassage = view(
-  "the sampling passage of (leg)",
+const theSamplingResolution = view(
+  "the preview inputs of (leg) with (picks)",
   (
-    { leg },
-    { passage },
-    {
-      questionnaire,
-      kind,
-      prompt,
-      choices,
-      offered,
-      parts,
-      boxes,
-      cap,
-      boxCap,
-      piles,
-      notes,
-      source,
-      sourceKind,
-      sourceMaterial,
-      sourceChoices,
-      sourceUse,
-      use,
-      reply,
-      carried,
-    },
-  ) => [
+    { leg, picks },
+    { resolution },
+    { relay, legs, questionnaires, materials, subjects, piles, notes, replies },
+  ) =>
     where(
-      Relaying._leg({ leg }).is({ material: questionnaire, kind }),
-      Questioning._getQuestions({ questionnaire }).is({ prompt, choices, parts, cap }),
-      compute(computations.kindChoices, { kind, choices }, offered),
-      compute(computations.kindParts, { kind, parts }, boxes),
-      compute(computations.kindCap, { kind, cap }, boxCap),
-      Categorizing._categoriesWithItems({ scope: leg }).is({ categories: piles }),
-      Guiding._guidanceText({ subject: leg, use: SORTING_USE }).is({ text: notes }),
-      legTakesNothing({ leg }),
+      Relaying._leg({ leg }).is({ relay }),
+      Relaying._plan({ relay }).is({ legs }),
+      compute(computations.legMaterials, { legs }, questionnaires),
+      compute(computations.legIdentities, { legs }, subjects),
+      Questioning._materials({ questionnaires }).is({ materials }),
+      Categorizing._categoriesInScopes({ scopes: subjects }).is({ categories: piles }),
+      Guiding._guidanceTexts({ subjects, use: SORTING_USE }).is({ texts: notes }),
+      Reasoning._lastRepliesAbout({ subjects }).is({ replies }),
       compute(
-        computations.samplingPassage,
-        { prompt, choices: offered, parts: boxes, cap: boxCap, piles, notes },
-        passage,
+        computations.samplingResolution,
+        { leg, legs, materials, piles, notes, replies, picks },
+        resolution,
       ),
     ),
+).optional();
+
+const theSamplingRequest = view(
+  "the sampling request for (leg) with (picks)",
+  ({ leg, picks }, { passage, account }, { resolution }) =>
     where(
-      Relaying._leg({ leg }).is({ material: questionnaire, kind }),
-      Questioning._getQuestions({ questionnaire }).is({ prompt, choices, parts, cap }),
-      compute(computations.kindChoices, { kind, choices }, offered),
-      compute(computations.kindParts, { kind, parts }, boxes),
-      compute(computations.kindCap, { kind, cap }, boxCap),
-      Categorizing._categoriesWithItems({ scope: leg }).is({ categories: piles }),
-      Guiding._guidanceText({ subject: leg, use: SORTING_USE }).is({ text: notes }),
-      theTakeOf({ leg }).is({ source, use }),
-      Reasoning._lastReplyAbout({ about: source }).is({ reply }),
-      Relaying._leg({ leg: source }).is({ kind: sourceKind, material: sourceMaterial }),
-      Questioning._getQuestions({ questionnaire: sourceMaterial }).is({ choices: sourceChoices }),
-      whether(theTakeOf({ leg: source }).is({ use: sourceUse })),
-      compute(
-        computations.sampledGroups,
-        { reply, kind: sourceKind, choices: sourceChoices, use: sourceUse },
-        carried,
-      ),
-      compute(
-        computations.samplingPassageTaking,
-        { prompt, choices: offered, parts: boxes, cap: boxCap, piles, notes, use, carried },
-        passage,
-      ),
+      theSamplingResolution({ leg, picks }).is({ resolution }),
+      compute(computations.samplingResolvedPassage, { resolution }, passage),
+      compute(computations.samplingResolvedAccount, { resolution }, account),
     ),
-    where(
-      Relaying._leg({ leg }).is({ material: questionnaire, kind }),
-      Questioning._getQuestions({ questionnaire }).is({ prompt, choices, parts, cap }),
-      compute(computations.kindChoices, { kind, choices }, offered),
-      compute(computations.kindParts, { kind, parts }, boxes),
-      compute(computations.kindCap, { kind, cap }, boxCap),
-      Categorizing._categoriesWithItems({ scope: leg }).is({ categories: piles }),
-      Guiding._guidanceText({ subject: leg, use: SORTING_USE }).is({ text: notes }),
-      theTakeOf({ leg }).is({ source, use }),
-      no(Reasoning._lastReplyAbout({ about: source })),
-      compute(computations.unsampledNames, { use }, carried),
-      compute(
-        computations.samplingPassageTaking,
-        { prompt, choices: offered, parts: boxes, cap: boxCap, piles, notes, use, carried },
-        passage,
-      ),
-    ),
-  ],
 ).optional();
 
 const anAskStandsAboutLeg = view("a sample of (leg) is still being asked", ({ leg }, _o, _b) =>
@@ -439,69 +432,59 @@ const noAskStandsAboutLeg = view("no sample of (leg) is being asked", ({ leg }, 
   where(no(Reasoning._pending({}).is({ about: leg }))),
 ).holds();
 
-/**
- * The round's newest sample, read straight from Reasoning's record: what the
- * model wrote and where each answer went, and whether the passage it was asked
- * with is still the one the round would make now. Nothing is adopted and no
- * state of its own is kept; asking again is what replaces it.
- */
 export const theSampleOf = former(
-  "the sample of (leg)",
-  ({ leg }, { asking, asked, reply, answeredAt, passage, standing, answers }) =>
+  "the sample of (leg) with (picks)",
+  ({ leg, picks }, { asking, reply, answeredAt, standing, answers, resolution }) =>
     where(
-      Relaying._leg({ leg }),
-      Reasoning._lastReplyAbout({ about: leg }).is({ asking, passage: asked, reply, answeredAt }),
-      theSamplingPassage({ leg }).is({ passage }),
-      compute(computations.sampleStanding, { asked, passage }, standing),
+      Reasoning._lastReplyAbout({ about: leg }).is({ asking, reply, answeredAt }),
+      theSamplingResolution({ leg, picks }).is({ resolution }),
+      compute(computations.samplingResolvedStanding, { resolution }, standing),
       compute(computations.sampledAnswers, { reply }, answers),
     ).form({ asking, answeredAt, standing, answers }),
 ).optional();
 
-/**
- * One deliberate ask about the previewed round. A round that takes from an
- * earlier one is sampled after its source: with no sample of the source to
- * name the carried piles, the ask is refused rather than made with
- * placeholders. While an ask is out, a second press asks nothing.
- */
 export const SampleAnswers = endpoint(
   "/live/rounds/sample-answers",
-  ({ session, leg, user, at, source, passage, asking }) =>
-    receive({ session, leg }).then(
+  ({ session, leg, picks, user, at, passage, asking }) =>
+    receive({ session, leg, picks }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         legIsNotOfARetiredRelay({ leg }),
         noAskStandsAboutLeg({ leg }),
-        legTakesNothing({ leg }),
-        theSamplingPassage({ leg }).is({ passage }),
+        theSamplingRequest({ leg, picks }).is({ passage, account: "" }),
       )
         .then(Reasoning.ask({ reasoner: REASONER, about: leg, passage, at }).responds({ asking }))
         .then(respond({ asked: true, asking }))
-        .named("plain"),
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        legIsNotOfARetiredRelay({ leg }),
-        noAskStandsAboutLeg({ leg }),
-        theTakeOf({ leg }).is({ source }),
-        Reasoning._lastReplyAbout({ about: source }),
-        theSamplingPassage({ leg }).is({ passage }),
-      )
-        .then(Reasoning.ask({ reasoner: REASONER, about: leg, passage, at }).responds({ asking }))
-        .then(respond({ asked: true, asking }))
-        .named("after-source"),
+        .named("ready"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         legIsNotOfARetiredRelay({ leg }),
         noAskStandsAboutLeg({ leg }),
-        theTakeOf({ leg }).is({ source }),
-        no(Reasoning._lastReplyAbout({ about: source })),
+        theSamplingRequest({ leg, picks }).is({ account: "SOURCE_UNSAMPLED" }),
       )
         .then(respond({ error: "SOURCE_UNSAMPLED" }))
         .named("source-unsampled"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsNotOfARetiredRelay({ leg }),
+        noAskStandsAboutLeg({ leg }),
+        theSamplingRequest({ leg, picks }).is({ account: "SOURCE_STALE" }),
+      )
+        .then(respond({ error: "SOURCE_STALE" }))
+        .named("source-stale"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsNotOfARetiredRelay({ leg }),
+        noAskStandsAboutLeg({ leg }),
+        theSamplingRequest({ leg, picks }).is({ account: "NOTHING_PICKED" }),
+      )
+        .then(respond({ error: "NOTHING_PICKED" }))
+        .named("nothing-picked"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -524,14 +507,13 @@ export const SampleAnswers = endpoint(
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
-  { input: { required: ["session", "leg"] } },
+  { input: { required: ["session", "leg"], defaults: { picks: {} } } },
 );
 
-/** The round's sample as it stands, whether an ask is still out, and the newest failure about it. */
 export const ReadSample = endpoint(
   "/live/rounds/sample",
-  ({ session, leg, user, at, failure, failedAt }) =>
-    receive({ session, leg }).then(
+  ({ session, leg, picks, user, at, failure, failedAt, resolution, preview }) =>
+    receive({ session, leg, picks }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
@@ -539,8 +521,18 @@ export const ReadSample = endpoint(
         Relaying._leg({ leg }),
         anAskStandsAboutLeg({ leg }),
         whether(Reasoning._lastFailureAbout({ about: leg }).is({ account: failure, failedAt })),
+        theSamplingResolution({ leg, picks }).is({ resolution }),
+        compute(computations.samplingResolvedPreview, { resolution }, preview),
       )
-        .then(respond({ sample: theSampleOf({ leg }), pending: true, failure, failedAt }))
+        .then(
+          respond({
+            sample: theSampleOf({ leg, picks }),
+            pending: true,
+            failure,
+            failedAt,
+            preview,
+          }),
+        )
         .named("pending"),
       where(
         now(at),
@@ -549,8 +541,18 @@ export const ReadSample = endpoint(
         Relaying._leg({ leg }),
         noAskStandsAboutLeg({ leg }),
         whether(Reasoning._lastFailureAbout({ about: leg }).is({ account: failure, failedAt })),
+        theSamplingResolution({ leg, picks }).is({ resolution }),
+        compute(computations.samplingResolvedPreview, { resolution }, preview),
       )
-        .then(respond({ sample: theSampleOf({ leg }), pending: false, failure, failedAt }))
+        .then(
+          respond({
+            sample: theSampleOf({ leg, picks }),
+            pending: false,
+            failure,
+            failedAt,
+            preview,
+          }),
+        )
         .named("settled"),
       where(activeUser({ session }).is({ user }), mayHostLive({ user }), no(Relaying._leg({ leg })))
         .then(respond({ error: "LEG_NOT_FOUND" }))
@@ -559,5 +561,5 @@ export const ReadSample = endpoint(
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
-  { input: { required: ["session", "leg"] } },
+  { input: { required: ["session", "leg"], defaults: { picks: {} } } },
 );

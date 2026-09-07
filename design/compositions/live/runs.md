@@ -116,6 +116,9 @@ snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean
   Says whether the captured presentation contains the item identity — a
   question, or one part of a question with parts.
 
+snapshotRequirements(value: Json) : Seq
+  Names the answer groups required by the captured questionnaire: one per ordinary part, or alternatives for a repeated box. Responding.submit checks each group and fixes the answers together; optional surveys supply no requirements.
+
 snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean
   Says whether the answers include every captured item: each question without
   parts, each labeled part, and at least one repetition of a repeated box.

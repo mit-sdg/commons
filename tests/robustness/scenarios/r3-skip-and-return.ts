@@ -29,7 +29,7 @@ import {
   signIn,
   sleep,
   snap,
-  sortUntilPlaced,
+  waitUntilPlaced,
   until,
 } from "../drive.ts";
 
@@ -326,14 +326,14 @@ try {
 
   // The model sorts round one's wall.
   await atBoard();
-  await dashboard.getByRole("switch", { name: "Model sorts" }).click();
+  await dashboard.getByRole("switch", { name: "Sort automatically" }).click();
   const sorted = await log.timed(
     "the model places every card",
-    () => sortUntilPlaced(host, first.round, SCRIPTED + 1, 40),
+    () => waitUntilPlaced(host, first.round, SCRIPTED + 1, 40),
     60000,
   );
   log.note(
-    `sorted: ${sorted.settled}, ticks ${sorted.ticks}, asks ${sorted.asks}, piles ${JSON.stringify(
+    `sorted: ${sorted.settled}, ticks ${sorted.ticks}, piles ${JSON.stringify(
       sorted.wall?.piles.map((pile) => [pile.name, pile.count]),
     )}`,
   );
@@ -341,7 +341,7 @@ try {
     log.finding({
       kind: "broken",
       title: "the model never placed every card of round one",
-      steps: `Model sorts on with ${SCRIPTED + 1} cards on round one's wall; wait two minutes`,
+      steps: `Sort automatically on with ${SCRIPTED + 1} cards on round one's wall; wait two minutes`,
       evidence: JSON.stringify(sorted.wall?.cards.filter((card) => card.pile === null)),
     });
   }
