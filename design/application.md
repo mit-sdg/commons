@@ -383,6 +383,24 @@ identity at runtime, or make one concept depend on another.
 ## Computations
 
 ```computations
+hasStoredPosts(posts: Rows) : Bool
+  Reports whether at least one placed post remains in Posting, independently of trash state.
+
+threadPostIds(nodes: Rows) : Strings
+  Selects item identities from the ordered conversation nodes.
+
+visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows
+  Joins nodes to existing post metadata, omits trashed posts, and preserves node order; absent inputs yield no visible posts.
+
+threadReplyCount(posts: Rows) : Number
+  Counts visible nodes with a parent, including replies whose parent is unavailable.
+
+threadLastActivity(posts: Rows) : Any
+  Returns the latest visible post creation time, or null when none remain.
+
+threadParticipants(posts: Rows) : Strings
+  Returns distinct authors in first visible appearance order.
+
 previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings
   Returns the sorted explicit selection, including the sender for people or otherwise unreadable collectives.
 

@@ -91,4 +91,17 @@ export class MongoPostingConcept {
       [...doc.content.matchAll(/@([a-zA-Z0-9_]+)/g)].some((match) => match[1] === handle);
     return { mentioned };
   }
+  async _postMetadata({ posts }: { posts: string[] }) {
+    const rows = await this.posts
+      .find({ _id: { $in: posts } })
+      .project<{ _id: string; author: string; createdAt: Date }>({
+        _id: 1,
+        author: 1,
+        createdAt: 1,
+      })
+      .toArray();
+    return {
+      posts: rows.map((row) => ({ post: row._id, author: row.author, createdAt: row.createdAt })),
+    };
+  }
 }

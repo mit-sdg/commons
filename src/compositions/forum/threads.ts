@@ -2,6 +2,7 @@ import { createThreadInput } from "./audience-inputs.ts";
 import { activeUser } from "../access/session.ts";
 import {
   conversationReader,
+  establishedConversationReader,
   postReader,
   targetReader,
   addressedAudience,
@@ -53,7 +54,8 @@ export const theThread = former(
   ) =>
     each(Conversing._getThread({ conversation }).is({ node, item, parent, depth }))
       .where(
-        postReader({ user: reader, post: item }),
+        establishedConversationReader({ user: reader, conversation }),
+        Trashing._isTrashed({ item }).is({ trashed: false }),
         Posting._getPost({ post: item }).is({ author, content, createdAt, editedAt }),
         Formatting._getRendered({ target: item }).is({ rendered }),
       )

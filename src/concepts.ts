@@ -1,4 +1,12 @@
 import {
+  hasStoredPosts,
+  threadPostIds,
+  visibleThreadPosts,
+  threadReplyCount,
+  threadLastActivity,
+  threadParticipants,
+} from "./computations/thread-statistics.ts";
+import {
   staffQuestion,
   forumMailKey,
   visibleAnswer,
@@ -274,6 +282,12 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  hasStoredPosts,
+  threadPostIds,
+  visibleThreadPosts,
+  threadReplyCount,
+  threadLastActivity,
+  threadParticipants,
   staffQuestion,
   forumMailKey,
   visibleAnswer,

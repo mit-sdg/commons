@@ -93,16 +93,26 @@ export const establishedConversationReader = view(
       usableUser({ user }),
       Accessing._holders({ resource: conversation }).is({ holders }),
       audienceMember({ user, holders }),
-      Conversing._getConversations({}).is({ conversation }),
+      Conversing._exists({ conversation }).is({ exists: true }),
     ),
 ).holds();
-export const conversationReader = view(
-  "(user) may read audience conversation (conversation)",
-  ({ user, conversation }, _out, { item }) =>
+export const conversationPosts = view(
+  "the stored posts in (conversation) for (user)",
+  ({ user, conversation }, { nodes, posts }, { items }) =>
     where(
       establishedConversationReader({ user, conversation }),
-      Conversing._getThread({ conversation }).is({ item }),
-      Posting._getPost({ post: item }),
+      Conversing._threadNodes({ conversation }).is({ nodes }),
+      compute(c.threadPostIds, { nodes }, items),
+      Posting._postMetadata({ posts: items }).is({ posts }),
+    ),
+).optional();
+export const conversationReader = view(
+  "(user) may read audience conversation (conversation)",
+  ({ user, conversation }, _out, { posts, present }) =>
+    where(
+      conversationPosts({ user, conversation }).is({ posts }),
+      compute(c.hasStoredPosts, { posts }, present),
+      is.among(present, [true]),
     ),
 ).holds();
 

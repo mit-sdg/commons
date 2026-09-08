@@ -85,6 +85,13 @@ remove(node: Node) : return (node: Node)
 ## Queries
 
 ```queries
+_exists (conversation: String) : one (exists: Boolean)
+  answers whether the Conversation exists, independently of its Nodes
+
+_threadNodes (conversation: String) : one (nodes: Seq)
+  answers the same ordered node, item, parent, and depth records as _getThread in one sequence
+  answers an empty sequence when no Nodes match
+
 _getThread (conversation: String) : many (node: String, item: String, parent: String|Null, depth: Number)
   answers the Conversation's Nodes in creation order
   answers no rows when the Conversation has no Nodes or does not exist

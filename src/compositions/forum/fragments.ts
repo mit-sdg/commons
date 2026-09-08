@@ -1,8 +1,8 @@
-import { each, form, former, view, where } from "@mit-sdg/sync-engine/language";
-import { concepts } from "../../concepts.ts";
-import { establishedConversationReader, postReader } from "./audience-policy.ts";
+import { former, view, where, whether, compute } from "@mit-sdg/sync-engine/language";
+import { concepts, computations as c } from "../../concepts.ts";
+import { conversationPosts, postReader } from "./audience-policy.ts";
 
-const { Authenticating, Conversing, Posting, Profiling, Trashing } = concepts;
+const { Authenticating, Posting, Profiling, Trashing } = concepts;
 
 /** What profile face belongs to this user? */
 export const theProfileFaceOf = former(
@@ -50,40 +50,26 @@ export const thePostSummaryOf = former(
     }),
 ).optional();
 
-export const publicThreadPosts = view(
-  "the posts in (conversation) for (reader)",
-  ({ conversation, reader }, { node, item, author, createdAt }, _bindings) =>
+const statisticsInputs = view(
+  "the available inputs for statistics of (conversation) for (reader)",
+  ({ conversation, reader }, { nodes, posts, trashed }, _vars) =>
     where(
-      establishedConversationReader({ user: reader, conversation }),
-      Conversing._getThread({ conversation }).is({ node, item }),
-      Trashing._isTrashed({ item }).is({ trashed: false }),
-      Posting._getPost({ post: item }).is({ author, createdAt }),
+      conversationPosts({ user: reader, conversation }).is({ nodes, posts }),
+      Trashing._trashedItems({}).is({ items: trashed }),
     ),
-).many();
-
+).optional();
 /** What statistics describe this conversation? */
 export const theThreadStatsOf = former(
   "the thread stats of (conversation) for (reader)",
   (
     { conversation, reader },
-    { replyNode, replyItem, activityItem, activityAt, partItem, participant },
+    { nodes, posts, trashed, visible, replyCount, lastActivityAt, participants },
   ) =>
-    form({
-      replyCount: each(
-        publicThreadPosts({ conversation, reader }).is({ node: replyNode, item: replyItem }),
-      )
-        .where(Conversing._parentOf({ node: replyNode }))
-        .count(),
-      lastActivityAt: each(
-        publicThreadPosts({ conversation, reader }).is({
-          item: activityItem,
-          createdAt: activityAt,
-        }),
-      )
-        .arranged(activityAt, "descending")
-        .first(activityAt),
-      participants: each(
-        publicThreadPosts({ conversation, reader }).is({ item: partItem, author: participant }),
-      ).distinct(participant),
-    }),
+    where(
+      whether(statisticsInputs({ conversation, reader }).is({ nodes, posts, trashed })),
+      compute(c.visibleThreadPosts, { nodes, posts, trashed }, visible),
+      compute(c.threadReplyCount, { posts: visible }, replyCount),
+      compute(c.threadLastActivity, { posts: visible }, lastActivityAt),
+      compute(c.threadParticipants, { posts: visible }, participants),
+    ).form({ replyCount, lastActivityAt, participants }),
 );

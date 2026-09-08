@@ -40,8 +40,4 @@ require a readable opening; [readableHome](view:Forum.feed.readableHome) prevent
 retained category metadata appearing for unavailable content. No underlying
 conversation or stored posts means no conversation context.
 
-Thread statistics use the known conversation's established audience admission,
-then select placed posts with Posting records and non-trash state. They do not
-rediscover each selected post's conversation through the generic post reader.
-The three statistics still fold the full visible post selection; bounded feed
-capacity remains an [open classroom-use issue](../../../content/issues/open/forum-feed-capacity.md).
+Thread statistics establish conversation admission, read its ordered node sequence and the corresponding post metadata, and exclude trashed or missing posts. The count, latest activity, and participants derive from this one visible sequence. Bulk queries stay inside their owners; visibility and the join remain application computations. Conversation existence is checked directly against its owned record. Admission uses the same batch of placed post metadata to require at least one stored post, independently of trash state; content reads exclude trash separately. The full feed remains unpaged; classroom capacity is tracked in the [feed capacity issue](../../../content/issues/open/forum-feed-capacity.md).

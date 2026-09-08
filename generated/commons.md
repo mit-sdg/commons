@@ -271,6 +271,8 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Queries
 
+- `_exists(conversation: String) : one (exists: Boolean)`
+- `_threadNodes(conversation: String) : one (nodes: Seq)`
 - `_getThread(conversation: String) : many (node: String, item: String, parent: String | Null, depth: Number)`
 - `_getConversation(node: String) : optional (conversation: String)`
 - `_getNodeByItem(item: String) : optional (node: String)`
@@ -789,6 +791,7 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Queries
 
+- `_postMetadata(posts: Seq) : one (posts: Seq)`
 - `_getPost(post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date | Null)`
 - `_getByAuthor(author: String) : many (post: String)`
 - `_getMentions(post: String) : many (handle: String)`
@@ -1566,33 +1569,33 @@ Concrete types:
 
 ## Computations
 
-- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 392.
+- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 410.
 - `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 153.
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 134.
-- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 398.
+- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 416.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 130.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 437.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 455.
 - `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 114.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 96.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 505.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 523.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
 - `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
 - `clearablePiles(categories: Json, standing?: Json, picked: Seq, reserved: Seq) : Seq` — [The wall](../design/compositions/live/walls.md), line 53.
 - `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
 - `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
-- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 407.
-- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 389.
-- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 416.
+- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 425.
+- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 407.
+- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 434.
 - `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 212.
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 491.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 495.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 509.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 513.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
@@ -1613,17 +1616,18 @@ Concrete types:
 - `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 441.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 459.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 137.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
 - `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 57.
 - `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
 - `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
-- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 410.
-- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 404.
-- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 401.
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 428.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 425.
+- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 386.
+- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 428.
+- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 422.
+- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 419.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 446.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 443.
 - `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 90.
 - `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
 - `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 84.
@@ -1634,8 +1638,8 @@ Concrete types:
 - `lidPassage(pile: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 133.
 - `linesStanding(lines: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 83.
 - `noChoices(question: String) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 81.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 434.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 431.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 452.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 449.
 - `oneBoxCap(question: String) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 78.
 - `oneBoxParts(question: String) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 74.
 - `openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 55.
@@ -1645,19 +1649,19 @@ Concrete types:
 - `openingGroups(picked: Seq, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 58.
 - `openingMaterial(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 67.
 - `openingPresentation(brief: String) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 70.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 515.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 519.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 522.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 526.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 530.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 533.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 537.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 540.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 544.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 548.
 - `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 157.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 149.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 142.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 126.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 446.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 451.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 457.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 454.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 464.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 469.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 475.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 472.
 - `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
 - `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 115.
 - `placingLines(reply: String, categories: Json, values: Json, removed: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 124.
@@ -1665,18 +1669,18 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 118.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 129.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 110.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 538.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 543.
-- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 386.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 547.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 556.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 561.
+- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 404.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 565.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 510.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 500.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 528.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 518.
 - `sampleStanding(asked: String, passage: String) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 38.
 - `sampledAnswers(reply: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 42.
 - `sampledGroups(reply: String, kind: String, choices: Json, use: String, carried?: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 47.
@@ -1688,35 +1692,40 @@ Concrete types:
 - `samplingResolvedPassage(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 58.
 - `samplingResolvedPreview(resolution: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 68.
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 61.
-- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 395.
-- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 419.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 460.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 463.
+- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 413.
+- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 437.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 478.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 481.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 112.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 115.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 122.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 119.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 109.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 534.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 552.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 93.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
 - `sortingObservationPresent() : Boolean` — [The wall](../design/compositions/live/walls.md), line 57.
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 209.
-- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 413.
+- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 431.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 31.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 469.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 487.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 479.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 473.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 476.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 488.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 482.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 485.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 497.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 491.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 494.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 506.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 500.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 503.
+- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 398.
+- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 401.
+- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 389.
+- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 395.
 - `unsampledNames(use: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 34.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 109.
 - `useStanding(use: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 100.
-- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 422.
+- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 440.
+- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 392.
 - `voteStanding(kind: String, choices: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 104.
 
 ## Views
@@ -1757,7 +1766,7 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     view "(user) is an available audience account" with (user)
     Accessing._holders (resource: conversation) has (holders)
     view "(holders) admit (user)" with (holders, user)
-    Conversing._getConversations () has (conversation)
+    Conversing._exists (conversation) has (exists: true)
 ```
 
 ### the structural conversation containing post (post)
@@ -1868,14 +1877,25 @@ Authored path: `Course.submissions.submissionHasArtifact`.
   where no view "(card) is in a pile of a closed run" with (card)
 ```
 
+### the stored posts in (conversation) for (user)
+
+```view
+the stored posts in (conversation) for (user) — inputs (user, conversation); outputs (nodes, posts); bindings (items) — answers at most one (nodes, posts)
+  where
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
+    Conversing._threadNodes (conversation) has (nodes)
+    items is threadPostIds (nodes)
+    Posting._postMetadata (posts: items) has (posts)
+```
+
 ### (user) may read audience conversation (conversation)
 
 ```view
-(user) may read audience conversation (conversation) — inputs (user, conversation); outputs (); bindings (item)
+(user) may read audience conversation (conversation) — inputs (user, conversation); outputs (); bindings (posts, present)
   where
-    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
-    Conversing._getThread (conversation) has (item)
-    Posting._getPost (post: item)
+    view "the stored posts in (conversation) for (user)" with (conversation, user) has (posts)
+    present is hasStoredPosts (posts)
+    present is among [true]
 ```
 
 ### (conversation) is readable by (reader)
@@ -2953,6 +2973,15 @@ the audience reader of (conversation) through (session) — inputs (conversation
     view "(user) may read audience conversation (conversation)" with (conversation, user)
 ```
 
+### the available inputs for statistics of (conversation) for (reader)
+
+```view
+the available inputs for statistics of (conversation) for (reader) — inputs (conversation, reader); outputs (nodes, posts, trashed); bindings () — answers at most one (nodes, posts, trashed)
+  where
+    view "the stored posts in (conversation) for (user)" with (conversation, user: reader) has (nodes, posts)
+    Trashing._trashedItems () has (items: trashed)
+```
+
 ### the background document rows of (relay)
 
 ```view
@@ -3111,17 +3140,6 @@ the other users mentioned in (post) — inputs (post); outputs (user); bindings 
 ```view
 the pick count of (round) — inputs (round); outputs (taken); bindings () — answers exactly one (taken)
   where taken is the count of Pinning._getPinned (scope: round)
-```
-
-### the posts in (conversation) for (reader)
-
-```view
-the posts in (conversation) for (reader) — inputs (conversation, reader); outputs (node, item, author, createdAt); bindings () — answers any number of (node, item, author, createdAt)
-  where
-    view "(user) belongs to the established audience of (conversation)" with (conversation, user: reader)
-    Conversing._getThread (conversation) has (item, node)
-    Trashing._isTrashed (item) has (trashed: false)
-    Posting._getPost (post: item) has (author, createdAt)
 ```
 
 ### the preview inputs of (leg) with (picks)
@@ -4203,13 +4221,16 @@ Former "the grades on (item)" — inputs (item); bindings (learner, grade, score
 ### the thread stats of (conversation) for (reader)
 
 ```former
-Former "the thread stats of (conversation) for (reader)" — inputs (conversation, reader); bindings (replyNode, replyItem, activityItem, activityAt, partItem, participant); promises exactly one record — forms:
+Former "the thread stats of (conversation) for (reader)" — inputs (conversation, reader); bindings (nodes, posts, trashed, visible, replyCount, lastActivityAt, participants); promises exactly one record — forms:
   a record of
-    lastActivityAt: the activityAt of the first view "the posts in (conversation) for (reader)" with (conversation, reader) has (createdAt: activityAt, item: activityItem)
-      arranged by activityAt, descending
-    participants: the distinct participant of each view "the posts in (conversation) for (reader)" with (conversation, reader) has (author: participant, item: partItem)
-    replyCount: the count of view "the posts in (conversation) for (reader)" with (conversation, reader) has (item: replyItem, node: replyNode)
-      where Conversing._parentOf (node: replyNode)
+    where whether view "the available inputs for statistics of (conversation) for (reader)" with (conversation, reader) has (nodes, posts, trashed)
+    where visible is visibleThreadPosts (nodes, posts, trashed)
+    where replyCount is threadReplyCount (posts: visible)
+    where lastActivityAt is threadLastActivity (posts: visible)
+    where participants is threadParticipants (posts: visible)
+    lastActivityAt
+    participants
+    replyCount
 ```
 
 ### the home feed by activity ()
@@ -5452,7 +5473,8 @@ Authored path: `Forum.threads.theThread`.
 ```former
 Former "the thread (conversation) for (reader)" — inputs (conversation, reader); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
   each Conversing._getThread (conversation) has (depth, item, node, parent)
-    where view "(user) may read forum post (post)" with (post: item, user: reader)
+    where view "(user) belongs to the established audience of (conversation)" with (conversation, user: reader)
+    where Trashing._isTrashed (item) has (trashed: false)
     where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target: item) has (rendered)
     form a record of

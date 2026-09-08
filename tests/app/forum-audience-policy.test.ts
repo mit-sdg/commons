@@ -474,3 +474,56 @@ test("conversation statistics use placed readable posts without rediscovering th
     participants: [],
   });
 });
+
+test("conversation admission and statistics use bounded batch reads without individual post queries", async () => {
+  const f = await fixture((people) => [`account:${people[1].user}`]);
+  const reader = f.people[1];
+  const [opening] = await f.instances.Posting._getPost({ post: f.post });
+  const at = new Date(opening.createdAt.getTime() + 1000);
+  for (let index = 0; index < 5; index++) {
+    const { post } = await f.instances.Posting.create({
+      author: reader.user,
+      content: `Reply ${index}`,
+      at,
+    });
+    await f.instances.Conversing.reply({ item: post, parent: f.node, at });
+  }
+  f.instances.Conversing._getConversations = async function _getConversations() {
+    throw new Error("A specific conversation read must not list every conversation");
+  };
+  f.instances.Posting._getPost = async function _getPost() {
+    throw new Error("Admission and statistics must not read posts individually");
+  };
+  let batches = 0;
+  const metadata = f.instances.Posting._postMetadata.bind(f.instances.Posting);
+  f.instances.Posting._postMetadata = async function _postMetadata(input) {
+    batches++;
+    const result = await metadata(input);
+    return { posts: result.posts.reverse() };
+  };
+  const app = assemble({
+    conceptSet: learningConcepts,
+    instances: f.instances,
+    composition: { admission, stats: theThreadStatsOf },
+    queryCache: "none",
+  });
+  expect(
+    await app.form(admission({ session: reader.session, conversation: f.conversation })),
+  ).toEqual({ user: reader.user });
+  expect(batches).toBe(1);
+  expect(
+    await app.form(theThreadStatsOf({ reader: reader.user, conversation: f.conversation })),
+  ).toMatchObject({
+    replyCount: 5,
+    participants: [f.people[0].user, reader.user],
+  });
+  expect(batches).toBe(2);
+  expect(
+    await app.form(theThreadStatsOf({ reader: f.people[2].user, conversation: f.conversation })),
+  ).toEqual({
+    replyCount: 0,
+    lastActivityAt: null,
+    participants: [],
+  });
+  expect(batches).toBe(2);
+});

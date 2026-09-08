@@ -11,11 +11,13 @@ concepts:
 
 ## Current behavior
 
-The feed builds every eligible conversation and computes reply count, latest visible activity, and participants from its visible posts. Conversation-scoped admission avoids redundant placement checks, but each request still enriches the full feed. A local burst with 100 discussions, one 201-post thread, and 200 readers takes tens of seconds and has little request-deadline headroom.
+The feed builds every eligible conversation. Admission and statistics share a batch of placed post metadata, while visibility is derived from current audience membership, owned conversation existence, stored posts, and trash state. Conversation listing groups its nodes in one pass. The feed remains unpaged and each reader still forms every eligible row.
+
+Local checks with 50 simultaneous readers, 100 discussions, and 300 posts complete in about 2.6–2.7 seconds when every discussion is addressed to Everyone, and 1.7–1.8 seconds with mixed audiences. Fifty readers plus ten private submissions complete without timeouts in both datasets. These are local observations; representative deployment capacity remains unverified.
 
 ## Unresolved decision
 
-Agree on an ordinary classroom feed latency and burst-capacity target, then decide how much feed and summary work one request should perform. Paging before expensive enrichment or another bounded read design requires a separate scoped decision. Preserve current audience membership, missing-resource denial, and visible-only statistics.
+The classroom workload is 50 simultaneous student readers. Confirm the latency on deployment resources; roughly two-second p95 is the proposed target, with headroom for concurrent submissions. If full-feed formation remains too expensive, decide how much feed and summary work one request should perform. Paging before expensive enrichment or another bounded read design requires a separate scoped decision. Preserve current audience membership, missing-resource denial, and visible-only statistics.
 
 This is ordinary classroom-use capacity work, separate from [interrupted-operation recovery and withheld delivery](audience-operation-completion.md). Increasing deadlines or retrying the full feed does not bound its work; timeout does not cancel already-forwarded application work.
 
