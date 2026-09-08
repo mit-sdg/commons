@@ -583,6 +583,7 @@ export const AddRound = endpoint(
     parts,
     cap,
     choices,
+    valid,
     user,
     at,
     questionnaire,
@@ -597,6 +598,8 @@ export const AddRound = endpoint(
         mayHostLive({ user }),
         Relaying._relay({ relay }),
         relayIsNotRetired({ relay }),
+        compute(computations.roundMaterialIsValid, { title, prompt, choices, parts, cap }, valid),
+        is.among(valid, [true]),
       )
         .then(
           Questioning.compose({
@@ -625,6 +628,16 @@ export const AddRound = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         Relaying._relay({ relay }),
+        relayIsNotRetired({ relay }),
+        compute(computations.roundMaterialIsValid, { title, prompt, choices, parts, cap }, valid),
+        is.among(valid, [false]),
+      )
+        .then(respond({ error: "INVALID_REQUEST" }))
+        .named("invalid-material"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._relay({ relay }),
         relayIsRetired({ relay }),
       )
         .then(respond({ error: "RELAY_RETIRED" }))
@@ -643,10 +656,6 @@ export const AddRound = endpoint(
   { input: { required: ["session", "relay", "title", "prompt", "parts", "cap", "choices"] } },
 );
 
-/**
- * Clears the parts, revises the question, and sets the parts again, so a round
- * may change shape. Each stage reads the round's question afresh from the leg.
- */
 export const ReviseRound = endpoint(
   "/live/relays/revise-round",
   ({
@@ -657,6 +666,7 @@ export const ReviseRound = endpoint(
     parts,
     cap,
     choices,
+    valid,
     user,
     at,
     relay,
@@ -677,6 +687,8 @@ export const ReviseRound = endpoint(
           Relaying._leg({ leg }).is({ relay, material: questionnaire }),
           relayIsNotRetired({ relay }),
           questionnaireHasNoOpenRun({ questionnaire }),
+          compute(computations.roundMaterialIsValid, { title, prompt, choices, parts, cap }, valid),
+          is.among(valid, [true]),
         ).then(Questioning.retitle({ questionnaire, title }).responds()),
       )
       .then(
@@ -704,8 +716,19 @@ export const ReviseRound = endpoint(
 
 export const ReviseRoundRefused = endpoint(
   "/live/relays/revise-round",
-  ({ session, leg, user, relay, questionnaire }) =>
-    receive({ session, leg }).then(
+  ({ session, leg, title, prompt, choices, parts, cap, valid, user, relay, questionnaire }) =>
+    receive({ session, leg, title, prompt, choices, parts, cap }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._leg({ leg }).is({ relay, material: questionnaire }),
+        relayIsNotRetired({ relay }),
+        questionnaireHasNoOpenRun({ questionnaire }),
+        compute(computations.roundMaterialIsValid, { title, prompt, choices, parts, cap }, valid),
+        is.among(valid, [false]),
+      )
+        .then(respond({ error: "INVALID_REQUEST" }))
+        .named("invalid-material"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),

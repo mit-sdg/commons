@@ -21,7 +21,8 @@ concrete MailKey
 concrete Lockable
   A post or conversation identity that moderation may lock, or a Publishing
   edition that is a relay run, locked while one of its rounds is open, or a
-  round, locked while a placing ask about it is out.
+  round, locked while a placing ask about it is out; or a Reasoning asking,
+  locked while its reply is applied.
 
 concrete TaskSubject
   A task-list group or task identity that a task-domain notification is about and links to.
@@ -38,6 +39,10 @@ concrete LiveReasoner
 concrete LiveRunSnapshot
   The complete structured presentation captured for one published live run, or
   for one round of a relay run.
+
+concrete LiveExecution
+  A Reasoning asking that sorts a round or summarizes a pile, or a Publishing
+  edition created when a relay round opens.
 
 concrete LiveMaterial
   What a live edition releases: a Questioning questionnaire for a quiz, survey,
@@ -92,14 +97,11 @@ concrete CategoryScope
   categories are the piles on its wall.
 
 concrete GuidanceSubject
-  What standing guidance is set beside: a Relaying leg, whose guidance under the
-  use `sorting` is the relay's note to whoever sorts the round's wall, on every
-  run; a Publishing edition that is a round, whose guidance under `sorting` is
-  the run's note to the same sorter, read after the relay's and standing on
-  that run alone; a Relaying relay,
-  whose guidance under the use `drafting` is the background documents whoever
-  drafts that series reads; or the class, under the reserved constant
-  `commons`, whose guidance under `drafting` every drafter reads.
+  A Relaying leg or Publishing round edition with sorting guidance; a Relaying
+  relay or leg with host guidance; a Categorizing category with a definition
+  or summary; or a Relaying relay or Questioning questionnaire with selected
+  reference documents under `drafting`. The reserved subject `commons` holds
+  the reference library; documents enter requests only through selection.
 
 concrete Categorizable
   What is sorted into a category: a forum post, or a card on a round's wall —
@@ -109,10 +111,7 @@ concrete Categorizable
 
 ## Instances
 
-Commons selects a same-name instance of every concept it registers, except
-`Notifying`, which is registered twice: under its own name for the forum, and as
-`TaskNotifying` for the task domain. Each instance supplies its external
-parameters inline.
+Commons registers concepts under their own names and uses additional named instances where separate state is needed. Each instance supplies its external parameters inline.
 
 ```instances
 instantiate Accessing with
@@ -121,7 +120,7 @@ instantiate Accessing with
 
 instantiate Commissioning with
   Subject is Publishing.Edition
-  Execution is Reasoning.Asking
+  Execution is LiveExecution
 
 instantiate Trashing as Archiving with
   User is Authenticating.User
@@ -512,7 +511,7 @@ draftTitle(form: String) : String
 
 draftingPassage(request: String, documents: Json) : String
   Renders the passage that asks the reasoner to draft a questionnaire from a
-  creator's plain-language request, with the class's background documents
+  creator's plain-language request, with the selected reference documents
   fenced between the contract and the request, and absent when none stands.
 
 revisionPassage(request: String, form: String, material: Json, documents: Json) : String

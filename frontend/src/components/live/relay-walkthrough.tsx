@@ -374,7 +374,7 @@ export function RelayWalkthrough() {
     {
       title: "Close the round, then choose piles",
       caption:
-        "After closing the round, use Top, All, or By hand to choose what continues. Here Lost work is selected. A vote does not automatically advance its winner.",
+        "After closing the round, use Top, All, or By hand to choose what continues. Here Lost work is selected. A vote does not automatically advance its winner. If you select an option that received no votes, participants see its name in the next round, but no original responses.",
       visual: (
         <Screen name="Host dashboard">
           <RoundToken number={2} title="Explore the problem" size="sm" />

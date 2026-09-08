@@ -16,8 +16,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (!loading && !me && !isPublic) router.replace("/login");
   }, [isPublic, loading, me, router]);
 
-  if (isPublic) return <>{children}</>;
   if (loading) return <LoadingState label="Checking your session…" />;
+  if (isPublic) return <>{children}</>;
   if (!me) return <LoadingState label="Redirecting to sign in…" />;
   return <>{children}</>;
 }

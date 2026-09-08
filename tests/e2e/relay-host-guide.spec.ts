@@ -77,7 +77,9 @@ test("generated guides accompany realistic relay authoring and hosting", async (
       path: testInfo.outputPath(`${name}-overview-desktop.png`),
       fullPage: true,
     });
-    await page.getByText("Session host guide", { exact: true }).click();
+    await page
+      .getByRole("button", { name: "Relay guide: Session host guide", exact: true })
+      .click();
     await expect(page.getByText(draft.hostGuide.opening, { exact: true })).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
     await fits(page);
@@ -90,15 +92,27 @@ test("generated guides accompany realistic relay authoring and hosting", async (
       draft.rounds[0]!.title,
     );
     await expect(page.getByRole("paragraph").filter({ hasText: draft.description })).toBeVisible();
+    await page.getByRole("button", { name: /^Round guide: Round 1 —/ }).click();
+    await expect(page.getByText(draft.rounds[0]!.hostGuide.purpose, { exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "How it works", exact: true }).click();
+    const walkthrough = page.getByRole("dialog", { name: "How it works", exact: true });
+    await expect(walkthrough).toBeVisible();
+    for (let step = 0; step < 5; step += 1)
+      await walkthrough.getByRole("button", { name: "Next", exact: true }).click();
     await expect(
-      page.getByRole("paragraph").filter({ hasText: draft.rounds[0]!.hostGuide.purpose }),
+      walkthrough.getByRole("heading", { name: "Close the round, then choose piles", exact: true }),
     ).toBeVisible();
-    await page.getByText("Running a relay", { exact: true }).click();
-    await expect(page.getByText(/a vote does not automatically advance its winner/)).toBeVisible();
     await expect(
-      page.getByText(/A vote option with no votes carries no original examples/),
+      walkthrough.getByText(/A vote does not automatically advance its winner/),
     ).toBeVisible();
-    await page.getByText("Running a relay", { exact: true }).click();
+    await expect(
+      walkthrough.getByText(
+        /If you select an option that received no votes, participants see its name in the next round, but no original responses/,
+      ),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(walkthrough).toHaveCount(0);
     await fits(page);
     await page.screenshot({ path: testInfo.outputPath(`${name}-editor-mobile.png`) });
     if (name === "staff") {
@@ -127,8 +141,12 @@ test("generated guides accompany realistic relay authoring and hosting", async (
     if (name === "staff") {
       const { run } = await call<{ run: string }>(page, "/live/relays/launch", { relay });
       await page.goto(`/staff/live/run/${run}`);
-      await page.getByText("Session host guide", { exact: true }).click();
-      await page.getByText("Running round 1", { exact: true }).click();
+      await page
+        .getByRole("button", { name: "Relay guide: Session host guide", exact: true })
+        .click();
+      await expect(page.getByText(draft.hostGuide.opening, { exact: true })).toBeVisible();
+      await page.keyboard.press("Escape");
+      await page.getByRole("button", { name: "Round guide: Running round 1", exact: true }).click();
       await expect(
         page.getByText(draft.rounds[0]!.hostGuide.facilitation, { exact: true }),
       ).toBeVisible();

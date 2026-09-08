@@ -1,13 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
   SAMPLING_OPENING,
-  sampleStanding,
   sampledAnswers,
   sampledGroups,
   sampledPiles,
   samplingPassage,
   samplingPassageTaking,
-  unsampledNames,
   samplingResolution,
 } from "../../src/computations/live-sampling.ts";
 import { scriptedWallReply } from "../../src/reasoning/scripted-walls.ts";
@@ -234,22 +232,6 @@ describe("the sampling passage of a round that takes from an earlier one", () =>
   });
 });
 
-describe("a source with no sample, and whether a sample still stands", () => {
-  test("an unsampled source names nothing at all, whatever the take", () => {
-    expect(unsampledNames({ use: "choices" })).toEqual([]);
-    expect(unsampledNames({ use: "context" })).toEqual([]);
-  });
-
-  test("a sample is fresh only against the very passage it was asked with", () => {
-    const passage = samplingPassage(written);
-    expect(sampleStanding({ asked: passage, passage })).toBe("fresh");
-    expect(sampleStanding({ asked: passage, passage: `${passage} ` })).toBe("stale");
-    expect(
-      sampleStanding({ asked: passage, passage: samplingPassage({ ...written, notes: "" }) }),
-    ).toBe("stale");
-  });
-});
-
 describe("reading a sampled reply", () => {
   test("a good reply reads into its answers, and its piles come out once each in order", () => {
     const reply = sampled([
@@ -355,9 +337,7 @@ describe("supporting examples in a carried sample", () => {
         ...group,
         cards: ["A different concrete situation."],
       }));
-      expect(
-        sampleStanding({ asked, passage: samplingPassageTaking({ ...args, carried: changed }) }),
-      ).toBe("stale");
+      expect(samplingPassageTaking({ ...args, carried: changed })).not.toBe(asked);
     },
   );
 

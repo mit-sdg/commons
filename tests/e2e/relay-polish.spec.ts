@@ -32,8 +32,9 @@ test("reference selection, separate previews, and Runs navigation", async ({ pag
   await page.getByRole("textbox", { name: "Password" }).fill("password123");
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL("**/");
+  const documentTitle = `Workshop reading ${crypto.randomUUID()}`;
   const { document } = await call<{ document: string }>(page, "/live/drafts/give-document", {
-    title: "Workshop reading",
+    title: documentTitle,
     body: "A concept has a purpose, state, and actions.",
   });
   const { relay } = await call<{ relay: string }>(page, "/live/relays/plan", {
@@ -50,9 +51,14 @@ test("reference selection, separate previews, and Runs navigation", async ({ pag
     });
   }
   await page.goto(`/staff/live/relay/${relay}/edit`);
+  const references = page.getByRole("button", {
+    name: "References: Documents used for AI edits",
+    exact: true,
+  });
+  await references.click();
   await expect(page.getByText("No reference documents selected.")).toBeVisible();
-  await page.getByRole("button", { name: "Add reference" }).click();
-  await page.getByRole("checkbox", { name: "Workshop reading" }).check();
+  await page.getByRole("button", { name: "Add document", exact: true }).click();
+  await page.getByRole("checkbox", { name: documentTitle, exact: true }).check();
   await expect
     .poll(
       async () =>
@@ -60,9 +66,13 @@ test("reference selection, separate previews, and Runs navigation", async ({ pag
           .references,
     )
     .toEqual([document]);
-  await page.getByRole("button", { name: "Add reference" }).click();
-  await page.getByText("Response sorting", { exact: false }).first().click();
-  await expect(page.getByText("Reserved piles", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Add document", exact: true }).click();
+  await page.keyboard.press("Escape");
+  const sorting = page
+    .getByRole("button", { name: "Response sorting 0 piles", exact: true })
+    .first();
+  await sorting.click();
+  await expect(sorting).toHaveAttribute("aria-expanded", "true");
   await page.getByRole("tab", { name: "Example results" }).click();
   await page.getByRole("button", { name: "Generate preview" }).click();
   await expect(page.getByText("AI-generated examples", { exact: true })).toBeVisible({
@@ -72,8 +82,19 @@ test("reference selection, separate previews, and Runs navigation", async ({ pag
   await example.locator("summary").click();
   await expect(example.locator("li").first()).toBeVisible();
   await page.screenshot({ path: "/tmp/relay-polish-editor.png", fullPage: false });
-  await page.getByRole("button", { name: "Remove reference Workshop reading" }).click();
+  await references.click();
+  await page
+    .getByRole("button", { name: `Remove reference ${documentTitle}`, exact: true })
+    .click();
   await expect(page.getByText("No reference documents selected.")).toBeVisible();
+  await expect
+    .poll(
+      async () =>
+        (await call<{ references: string[] }>(page, "/live/references/get", { subject: relay }))
+          .references,
+    )
+    .toEqual([]);
+  await page.keyboard.press("Escape");
   expect(
     (
       await call<{ documents: { document: string }[] }>(page, "/live/drafts/documents", {})
@@ -91,7 +112,7 @@ test("reference selection, separate previews, and Runs navigation", async ({ pag
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/staff/live/background");
   await expect(page.getByRole("button", { name: "Add document", exact: true })).toBeVisible();
-  await expect(page.getByText("Workshop reading", { exact: true })).toBeVisible();
+  await expect(page.getByText(documentTitle, { exact: true })).toBeVisible();
   expect(await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")).toBe(
     true,
   );
@@ -236,17 +257,20 @@ test("dependent preview generates earlier rounds and expands source responses", 
     )
     .toEqual(legs);
   expect(asked).toEqual(legs);
-  await expect(page.getByRole("tab", { name: "Example results" })).toHaveAttribute(
+  await expect(page.getByRole("tab", { name: "Participant view" })).toHaveAttribute(
     "data-state",
     "active",
   );
   await page.getByRole("tab", { name: "Participant view" }).click();
   const preview = page.locator('[data-preview="column"] [data-participant-frame]');
-  const group = preview.locator("details").first();
+  const group = preview.getByRole("button", { name: /^Inspect \d+ responses? for / }).first();
   await expect(group).toBeVisible({ timeout: 90_000 });
-  await group.locator("summary").click();
-  await expect(group.locator("ul")).toBeVisible();
-  await expect(preview.locator("textarea").first()).toBeDisabled();
+  await group.click();
+  const evidence = page.getByRole("dialog", { name: /^Responses for / });
+  await expect(evidence.getByRole("listitem").first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(group).toBeFocused();
+  await expect(preview.locator("textarea").first()).toHaveAttribute("readonly", "");
   await page.screenshot({ path: "/tmp/relay-polish-preview-context.png", fullPage: false });
 });
 
@@ -313,18 +337,24 @@ test("bounded preview picks, carry rendering, guides, and viewport reachability"
   const preview = page.locator('[data-preview="column"]');
   await expect(preview.getByText("Round 2", { exact: true }).first()).toBeVisible();
   await preview.getByRole("button", { name: "Generate preview", exact: true }).click();
-  await expect(preview.getByRole("tab", { name: "Example results" })).toHaveAttribute(
+  await expect(preview.getByRole("button", { name: "Refresh preview", exact: true })).toBeEnabled({
+    timeout: 90_000,
+  });
+  await expect(preview.getByRole("tab", { name: "Participant view" })).toHaveAttribute(
     "data-state",
     "active",
     { timeout: 90_000 },
   );
   await preview.getByRole("tab", { name: "Participant view" }).click();
-  await expect(preview.getByText("Assumed picks (3)", { exact: true })).toBeVisible();
-  await expect(preview.locator("[data-participant-frame] details")).toHaveCount(3);
-  await preview.getByText("Assumed picks (3)", { exact: true }).click();
+  await expect(preview.getByText("Preview picks (3)", { exact: true })).toBeVisible();
+  const sourceEvidence = preview
+    .locator("[data-participant-frame]")
+    .getByRole("button", { name: /^Inspect \d+ responses? for / });
+  await expect(sourceEvidence).toHaveCount(3);
+  await preview.getByText("Preview picks (3)", { exact: true }).click();
   await expect(preview.getByRole("checkbox")).toHaveCount(9);
   await preview.getByRole("checkbox").first().uncheck();
-  await expect(preview.locator("[data-participant-frame] details")).toHaveCount(2);
+  await expect(sourceEvidence).toHaveCount(2);
   await preview.getByRole("tab", { name: "Example results" }).click();
   await expect(preview.getByText("Preview changed—refresh to see current results.")).toBeVisible();
   await preview.getByRole("tab", { name: "Participant view" }).click();
@@ -352,17 +382,16 @@ test("bounded preview picks, carry rendering, guides, and viewport reachability"
   await expect(
     preview.locator("[data-participant-frame]").getByText("From an earlier round", { exact: true }),
   ).toHaveCount(0);
-  await expect(
-    preview.locator("[data-participant-frame]").getByText("Supporting responses", { exact: true }),
-  ).toHaveCount(3);
+  await expect(sourceEvidence).toHaveCount(3);
   await call(page, "/live/relays/set-takes", { leg: followup, source, use: "choices" });
   await page.reload();
   await page.getByRole("textbox", { name: "Round 2 title", exact: true }).click();
   await expect(preview.locator("[data-participant-frame] button[aria-pressed]")).toHaveCount(3);
   await expect(preview.locator("[data-participant-frame] textarea")).toHaveCount(0);
-  await expect(preview.locator("[data-participant-frame]")).not.toContainText("Assumed picks");
+  await expect(preview.locator("[data-participant-frame]")).not.toContainText("Preview picks");
   await expect(preview.locator("[data-participant-frame]")).not.toContainText("AI-generated");
-  await page.getByText("Description and host guide", { exact: true }).click();
+  await page.getByRole("button", { name: "Relay guide: Whole relay", exact: true }).click();
+  await page.getByRole("button", { name: "Edit opening", exact: true }).click();
   const opening = page.getByRole("textbox", { name: "Opening", exact: true });
   await opening.fill("Invite one concrete incident from each person.");
   await opening.blur();
@@ -376,6 +405,7 @@ test("bounded preview picks, carry rendering, guides, and viewport reachability"
         ).relay.hostGuide.opening,
     )
     .toBe("Invite one concrete incident from each person.");
+  await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 1024, height: 650 });
   await page.getByRole("textbox", { name: "Round 2 title", exact: true }).click();
   await expect(preview.getByRole("button", { name: "Refresh preview" })).toBeInViewport();
@@ -401,13 +431,14 @@ test("bounded preview picks, carry rendering, guides, and viewport reachability"
   expect(await page.evaluate("document.documentElement.scrollWidth <= innerWidth")).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("part-label-mobile.png") });
   await page.goto(`/staff/live/relay/${relay}`);
-  await page.getByText("Session host guide", { exact: true }).click();
+  await page.getByRole("button", { name: "Relay guide: Session host guide", exact: true }).click();
   await expect(
     page.getByText("Invite one concrete incident from each person.", { exact: true }),
   ).toBeVisible();
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Launch", exact: true }).click();
   await page.waitForURL("**/staff/live/run/**");
-  await page.getByText("Session host guide", { exact: true }).click();
+  await page.getByRole("button", { name: "Relay guide: Session host guide", exact: true }).click();
   await expect(
     page.getByText("Invite one concrete incident from each person.", { exact: true }),
   ).toBeVisible();

@@ -4,18 +4,11 @@
 
 Let someone stand on a request that came back unusable, saying what was wrong rather than accepting it, and stop once the patience they gave themselves is spent.
 
-Prevents: an unusable answer accepted for want of a second try; a request chased past the number of tries its asker allowed; two people standing on the same request at once without knowing it.
+Prevents: an unusable answer accepted for want of a second try; an insistence continued past the number of complaints its asker allowed; two people standing on the same request at once without knowing it.
 
 ## Principle
 
-Noor asks for a figure in a fixed format and receives one in the wrong format,
-so she stands on the request: she sends back exactly what she got with an
-account of what was wrong. The second attempt is right, so her insistence is
-satisfied and the matter closes. Had she given herself two complaints and used
-both, the insistence would be exhausted — she would stop, with both attempts
-and both accounts on record, rather than asking a third time or accepting the
-wrong format; a further complaint is refused because every complaint she gave
-herself is spent.
+Noor asks for a figure in a fixed format and receives one in the wrong format. She complains with the received figure and an account of what was wrong, allowing herself two complaints. The next attempt is right, so she marks her insistence satisfied. If both complaints instead lead to unusable figures, she gives up, retaining the figures and accounts for review.
 
 ## Types
 
@@ -41,7 +34,7 @@ a Satisfied set of Insistences
 an Exhausted set of Insistences
 
 Rule: at most one unsettled insistence exists per aim, which is what makes addressing by aim unambiguous.
-Rule: patience counts complaints, so an aim is complained about at most patience times, and a complaint past that is refused.
+Rule: patience counts complaints, so an insistence contains at most patience complaints, and a complaint past that is refused until the insistence is settled.
 Rule: remaining is the patience less the complaints made.
 Rule: insisting begins with the first complaint, since there is nothing to stand on until something came back wrong; a later complaint about the same aim joins the insistence already open and leaves its patience as it was.
 Rule: Insisting does not perform the next attempt, form what carries a complaint, or decide what counts as unusable; those belong to whoever is insisting.

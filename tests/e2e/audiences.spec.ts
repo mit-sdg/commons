@@ -227,6 +227,7 @@ test("shared group management explains and changes access to earlier discussions
       },
     });
     expect(enrolled.ok()).toBe(true);
+    await authorContext.clearCookies();
     await signIn(author, "noah");
     await signIn(recipient, "priya");
     // Compile these routes before drafting: Next dev may reload other open tabs
@@ -313,5 +314,38 @@ test("shared group management explains and changes access to earlier discussions
   } finally {
     await authorContext.close();
     await recipientContext.close();
+  }
+});
+
+test("public form input waits for the initial account scope", async ({ page, context }) => {
+  const login = await context.request.post("/api/auth/login", {
+    data: { username: "noah", password: "password123" },
+  });
+  expect(login.ok()).toBe(true);
+  let release!: () => void;
+  let reached!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const requested = new Promise<void>((resolve) => {
+    reached = resolve;
+  });
+  await page.route("**/api/auth/me", async (route) => {
+    reached();
+    await held;
+    await route.continue();
+  });
+  try {
+    await page.goto("/join");
+    await requested;
+    await expect(page.getByText("Checking your session…", { exact: true })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Code", exact: true })).toHaveCount(0);
+    release();
+    await page.getByRole("textbox", { name: "Code", exact: true }).fill("ABC234");
+    await expect(page.getByRole("textbox", { name: "Code", exact: true })).toHaveValue("ABC234");
+    await expect(page.getByRole("button", { name: "Join", exact: true })).toBeEnabled();
+  } finally {
+    release();
+    await page.unrouteAll({ behavior: "wait" });
   }
 });

@@ -155,7 +155,7 @@ describe("application-owned design integration", () => {
       "Submitting.Artifact is Posting.Post",
       "Bookmarking.Item is Posting.Post",
       "Commissioning.Subject is Publishing.Edition",
-      "Commissioning.Execution is Reasoning.Asking",
+      "Commissioning.Execution is LiveExecution",
       "Categorizing.Item is Categorizable",
       "Categorizing.Scope is CategoryScope",
       "Relaying.Author is Authenticating.User",

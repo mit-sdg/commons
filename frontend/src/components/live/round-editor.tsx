@@ -285,12 +285,6 @@ function report(
   return false;
 }
 
-/**
- * One round, edited in place. The card holds its own draft and writes it back
- * whenever a field is left or a row is added or dropped, so a round never
- * stands half written. A question may hold parts and choices at once, and the
- * card shows the pressed kind's.
- */
 export function RoundEditor({
   round,
   rounds,

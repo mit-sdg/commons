@@ -3,11 +3,8 @@
 import { ChevronRight, FileText, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Link } from "@/components/link";
 import {
-  addStands,
   BODY_MAX,
-  classDocumentsLine,
   type DocumentDraft,
   documentEdit,
   documentTotal,
@@ -74,37 +71,13 @@ function DocumentRow({
   );
 }
 
-/**
- * The documents the drafter reads for one subject: a relay's own, or the
- * class's when no relay is named. Each stands under its name, is given by
- * pasting text or choosing a file the browser reads, and is revised or
- * removed in place.
- */
-export function BackgroundCard({
-  relay,
-  retired = false,
-  onChanged,
-}: {
-  /** The relay these belong to; the class's own when none is named. */
-  relay?: string;
-  /** The relay is retired, so its documents are kept and read, never written. */
-  retired?: boolean;
-  onChanged?: () => void;
-}) {
+/** The shared document library, where references are added, revised, and removed. */
+export function BackgroundCard() {
   const { session } = useAuth();
   const { data, error, refetch } = useQuery(
-    session
-      ? () => api["/live/drafts/documents"]({ relay }).then(unwrap)
-      : null,
-    [session, relay],
+    session ? () => api["/live/drafts/documents"]({}).then(unwrap) : null,
+    [session],
   );
-  const { data: classData } = useQuery(
-    session && relay !== undefined
-      ? () => api["/live/drafts/documents"]({}).then(unwrap)
-      : null,
-    [session, relay],
-  );
-
   const [open, setOpen] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<DocumentDraft>(NOTHING);
@@ -185,7 +158,7 @@ export function BackgroundCard({
     setBusy(true);
     const result =
       standing === null
-        ? await api["/live/drafts/give-document"]({ relay, ...written })
+        ? await api["/live/drafts/give-document"](written)
         : await api["/live/drafts/revise-document"]({
             document: standing.document,
             ...written,
@@ -197,7 +170,6 @@ export function BackgroundCard({
     }
     close();
     refetch();
-    onChanged?.();
   }
 
   async function remove() {
@@ -213,14 +185,13 @@ export function BackgroundCard({
     }
     close();
     refetch();
-    onChanged?.();
   }
 
   const asking = removeAsked(asked, open);
   const total = documentTotal(documents);
   const tooLong = draft.body.trim().length > BODY_MAX;
   const wanting = nameWanting(draft.title, askedName);
-  const adds = addStands(adding, retired);
+  const adds = !adding;
 
   const form = (
     <div className="flex flex-col gap-2.5 rounded-lg border border-border px-3 py-3">
@@ -331,11 +302,9 @@ export function BackgroundCard({
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4">
-      {relay === undefined && !adds ? null : (
+      {!adds ? null : (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-medium">
-            {relay === undefined ? "Document library" : "Reference documents"}
-          </h2>
+          <h2 className="text-sm font-medium">Document library</h2>
           {adds ? (
             <ActButton
               variant="outline"
@@ -373,38 +342,20 @@ export function BackgroundCard({
 
       <div className="flex flex-col gap-1">
         {documents.map((entry) =>
-          open === entry.document && !retired ? (
+          open === entry.document ? (
             <div key={entry.document}>{form}</div>
           ) : (
             <div key={entry.document} className="flex flex-col gap-1.5">
               <DocumentRow
                 title={entry.title}
                 busy={busy}
-                onOpen={() =>
-                  retired
-                    ? setOpen(open === entry.document ? null : entry.document)
-                    : edit(entry)
-                }
+                onOpen={() => edit(entry)}
               />
-              {retired && open === entry.document ? (
-                <p className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/40 px-3 py-2 text-sm">
-                  {entry.body}
-                </p>
-              ) : null}
             </div>
           ),
         )}
         {adding ? form : null}
       </div>
-
-      {relay === undefined || classData === null ? null : (
-        <Link
-          href="/staff/live/background"
-          className="text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
-        >
-          {classDocumentsLine(classData.documents.length, "card")}
-        </Link>
-      )}
     </div>
   );
 }

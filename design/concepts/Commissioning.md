@@ -89,6 +89,7 @@ report(execution: Execution, successful: Boolean, account: String, at: Date) : r
   then
     record execution's receipt with successful, account, and at only if it has no receipt
     conclude each associated accepted commission from the recorded receipt
+    let successful and account be the recorded receipt's values
     return execution, successful, account
 
 

@@ -96,10 +96,13 @@ beforeAll(async () => {
 
 afterAll(stopTestDb);
 
-test("opening a missing run or round promptly refuses without publishing", async () => {
+test("opening a missing run or round refuses without publishing", async () => {
   const relay = await plan("Missing round");
   const leg = await addRound(relay, "One");
   const { run } = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
+  const editions = await edge.application.concepts.Publishing._editionsFor({
+    material: leg.questionnaire,
+  });
   for (const body of [
     { run: "missing-run", leg: leg.leg },
     { run, leg: "missing-leg" },
@@ -112,9 +115,12 @@ test("opening a missing run or round promptly refuses without publishing", async
   expect(await edge.application.concepts.Locking._isLocked({ target: run })).toEqual({
     locked: false,
   });
+  expect(
+    await edge.application.concepts.Publishing._editionsFor({ material: leg.questionnaire }),
+  ).toEqual(editions);
   const opened = await post(edge, "/live/relays/open-round", { run, leg: leg.leg }, cookie);
   expect(opened.status).toBe(200);
-}, 2_000);
+});
 
 /** The boundary answers a refusal's category, so RELAY_RETIRED arrives as CONFLICT. */
 describe("writing to a retired relay", () => {
@@ -274,5 +280,94 @@ describe("a relay round's questionnaire on the quiz and run endpoints", () => {
     expect(standing.map((entry) => entry.title)).toEqual(["Three verbs"]);
     expect(standing[0].prompt).toBe("Three verbs?");
     expect(standing[0].question).toBe(round.question);
+  });
+});
+
+describe("invalid round material", () => {
+  const original = {
+    title: "Compare incidents",
+    prompt: "Describe each incident",
+    choices: [],
+    parts: ["First", "Second"],
+    cap: 0,
+  };
+  const cases = [
+    { name: "blank title", change: { title: " " } },
+    { name: "long title", change: { title: "x".repeat(201) } },
+    { name: "blank prompt", change: { prompt: " " } },
+    { name: "long prompt", change: { prompt: "x".repeat(10_001) } },
+    { name: "blank choice", change: { choices: [" "], parts: [] } },
+    { name: "duplicate choices", change: { choices: ["One", "one"], parts: [] } },
+    { name: "duplicate parts", change: { parts: ["First", "first"] } },
+    { name: "invalid cap", change: { cap: 1 } },
+    { name: "choices beside parts", change: { choices: ["One", "Two"] } },
+  ];
+
+  test.each(cases)("$name leaves no new material and preserves a revision", async ({ change }) => {
+    const relay = await plan("Validation");
+    const added = await json(
+      await post(edge, "/live/relays/add-round", { relay, ...original }, cookie),
+    );
+    const questionnaire = added.questionnaire as string;
+    const before = await edge.application.concepts.Questioning._getQuestionnaire({ questionnaire });
+    const questions = await edge.application.concepts.Questioning._getQuestions({ questionnaire });
+    const questionnaires = await edge.application.concepts.Questioning._getQuestionnaires();
+    const legs = await edge.application.concepts.Relaying._legs({ relay });
+    const replacement = { ...original, title: "Replacement", prompt: "New prompt", ...change };
+
+    const refusedAdd = await post(
+      edge,
+      "/live/relays/add-round",
+      { relay, ...replacement },
+      cookie,
+    );
+    expect(refusedAdd.status).toBe(400);
+    expect(await refusedAdd.json()).toEqual({ error: "INVALID_REQUEST" });
+    expect(await edge.application.concepts.Questioning._getQuestionnaires()).toEqual(
+      questionnaires,
+    );
+    expect(await edge.application.concepts.Relaying._legs({ relay })).toEqual(legs);
+
+    const refusedRevision = await post(
+      edge,
+      "/live/relays/revise-round",
+      { leg: added.leg, ...replacement },
+      cookie,
+    );
+    expect(refusedRevision.status).toBe(400);
+    expect(await refusedRevision.json()).toEqual({ error: "INVALID_REQUEST" });
+    expect(
+      await edge.application.concepts.Questioning._getQuestionnaire({ questionnaire }),
+    ).toEqual(before);
+    expect(await edge.application.concepts.Questioning._getQuestions({ questionnaire })).toEqual(
+      questions,
+    );
+  });
+
+  test("valid revisions replace parts with choices and choices with repeated parts", async () => {
+    const relay = await plan("Change shape");
+    const added = await json(
+      await post(edge, "/live/relays/add-round", { relay, ...original }, cookie),
+    );
+    for (const replacement of [
+      { title: "Vote", prompt: "Choose", choices: ["One", "Two"], parts: [], cap: 0 },
+      { title: "List", prompt: "List incidents", choices: [], parts: ["Incident"], cap: 3 },
+    ]) {
+      const revised = await post(
+        edge,
+        "/live/relays/revise-round",
+        { leg: added.leg, ...replacement },
+        cookie,
+      );
+      expect(revised.status).toBe(200);
+      const questionnaire = added.questionnaire as string;
+      expect(
+        await edge.application.concepts.Questioning._getQuestionnaire({ questionnaire }),
+      ).toEqual([expect.objectContaining({ title: replacement.title })]);
+      const { title: _title, ...material } = replacement;
+      expect(await edge.application.concepts.Questioning._getQuestions({ questionnaire })).toEqual([
+        expect.objectContaining({ question: added.question, ...material }),
+      ]);
+    }
   });
 });

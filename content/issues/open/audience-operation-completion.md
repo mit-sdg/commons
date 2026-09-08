@@ -26,6 +26,12 @@ Design repeated-request handling, interruption recovery, deletion recovery, and 
 
 Exact-version report evidence, review without conversation access, individual report resolution, and independent report purge are a separate reporting project. Ordinary reports currently require the reviewer to belong to the source conversation’s audience.
 
+When an unresolved guarantee describes a distinct course of action, write its Purpose, Principle, State, Actions, and refusals and compare it with existing concepts. Adopt the additional concept when that comparison earns it. Repeated checks, incidental reaction ordering, and engine changes are not substitutes for a missing behavior. Storage still must implement the owned invariant atomically; a concept name alone supplies no execution guarantee.
+
+Before reusing Commissioning for publication or reports, extend its application bindings to enumerate any additional Subject and Execution owners. An accepted commission does not grant permission to execute future protected operations after authority has ended.
+
+Ordinary views are observations, not transactions with membership changes. State the behavior of work already admitted when access changes; later admissions must observe the loss of access. Dispatch that already began cannot be recalled.
+
 ## Acceptance condition
 
 Failure and repeated-request tests demonstrate the chosen completion behavior without weakening audience isolation. Delivery tests distinguish withholding, dispatch, transport failure, and cancellation, and verify that ineligible messages are never marked delivered.
