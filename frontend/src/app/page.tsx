@@ -11,7 +11,7 @@ import {
 import { useCallback, useState } from "react";
 import { audiencePresentation } from "@/components/forum/audience-picker";
 import { CategoryDot } from "@/components/forum/badges";
-import { TopicRow } from "@/components/forum/topic-row";
+import { TopicList } from "@/components/forum/topic-list";
 import { Link } from "@/components/link";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,7 @@ import {
   loadRosterMe,
   loadVisibleNotes,
 } from "@/lib/lms";
-import { loadFeed } from "@/lib/loaders";
+import { loadFeedIndex } from "@/lib/loaders";
 import { SELF_ADD_HREF } from "@/lib/roster-people";
 
 function CategoriesCard() {
@@ -330,7 +330,7 @@ export default function HomePage() {
     error: feedError,
     refetch,
   } = useQuery(
-    useCallback(() => loadFeed(sort), [sort]),
+    useCallback(() => loadFeedIndex(sort), [sort]),
     [sort, me?.user],
   );
 
@@ -490,15 +490,10 @@ export default function HomePage() {
         ) : feedError ? (
           <ErrorState message={feedError} onRetry={refetch} />
         ) : visible && visible.length > 0 ? (
-          <div className="-mx-3">
-            {visible.map((summary, i) => (
-              <TopicRow
-                key={String(summary.conversation)}
-                summary={summary}
-                index={i}
-              />
-            ))}
-          </div>
+          <TopicList
+            key={JSON.stringify([me?.user, sort, audienceFilter, addressedTo])}
+            conversations={visible.map((row) => String(row.conversation))}
+          />
         ) : addressedTo || audienceFilter !== "all" ? (
           <EmptyState
             icon={MessagesSquare}

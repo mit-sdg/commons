@@ -4,7 +4,7 @@
 [the creation-ordered home feed](former:Forum.feed.theHomeFeedByCreation) to return audience-authorized conversations
 from newest to oldest creation. [Forum.feed.ListActivity](reaction:Forum.feed.ListActivity) uses
 [the activity-ordered home feed](former:Forum.feed.theHomeFeedByActivity) to order those same conversations by
-their latest visible activity. Each row joins the root post with current category,
+their latest structural activity. Each row joins the root post with current category,
 tags, lock and accepted-answer state, visible reply count, latest visible
 activity, and distinct visible participants.
 
@@ -40,4 +40,6 @@ require a readable opening; [readableHome](view:Forum.feed.readableHome) prevent
 retained category metadata appearing for unavailable content. No underlying
 conversation or stored posts means no conversation context.
 
-Thread statistics establish conversation admission, read its ordered node sequence and the corresponding post metadata, and exclude trashed or missing posts. The count, latest activity, and participants derive from this one visible sequence. Bulk queries stay inside their owners; visibility and the join remain application computations. Conversation existence is checked directly against its owned record. Admission uses the same batch of placed post metadata to require at least one stored post, independently of trash state; content reads exclude trash separately. The full feed remains unpaged; classroom capacity is tracked in the [feed capacity issue](../../../content/issues/open/forum-feed-capacity.md).
+Thread statistics establish conversation admission, read its ordered node sequence and the corresponding post metadata, and exclude trashed or missing posts. The count, latest activity, and participants derive from this one visible sequence. Bulk queries stay inside their owners; visibility and the join remain application computations. Conversation existence is checked directly against its owned record. Admission uses the same batch of placed post metadata to require at least one stored post, independently of trash state; content reads exclude trash separately. The legacy latest/activity endpoints remain unpaged; classroom capacity is tracked in the [feed capacity issue](../../../content/issues/open/forum-feed-capacity.md).
+
+The [paged discussion list](feed-pages.md) uses a metadata index and bounded summaries.

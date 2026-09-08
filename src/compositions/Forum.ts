@@ -1,6 +1,7 @@
 import * as audiences from "./forum/audiences.ts";
 import * as bookmarks from "./forum/bookmarks.ts";
 import * as categories from "./forum/categories.ts";
+import * as feedPages from "./forum/feed-pages.ts";
 import * as feed from "./forum/feed.ts";
 import * as links from "./forum/links.ts";
 import * as moderation from "./forum/moderation.ts";
@@ -21,6 +22,7 @@ export const compositions = {
   audiences,
   threads,
   feed,
+  feedPages,
   moderation,
   categories,
   tags,

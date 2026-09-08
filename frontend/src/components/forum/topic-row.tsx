@@ -6,8 +6,8 @@ import { AudienceChips } from "@/components/forum/audience-picker";
 import { CategoryBadge, TagBadge } from "@/components/forum/badges";
 import { Link } from "@/components/link";
 import { UserAvatar } from "@/components/user-avatar";
-import { bodyExcerpt, count, titleFromContent } from "@/lib/format";
-import type { ConversationSummary } from "@/lib/models";
+import { count } from "@/lib/format";
+import type { ConversationPreview } from "@/lib/models";
 import { useProfile } from "@/lib/profiles";
 import { cn } from "@/lib/utils";
 
@@ -32,19 +32,15 @@ export function TopicRow({
   summary,
   index = 0,
 }: {
-  summary: ConversationSummary;
+  summary: ConversationPreview;
   index?: number;
 }) {
   const conversation = String(summary.conversation);
   const author = summary.post?.author ?? "";
   const authorProfile = useProfile(author || null);
 
-  const title =
-    summary.post?.content != null
-      ? titleFromContent(summary.post.content)
-      : "Opening post unavailable";
-  const preview =
-    summary.post?.content != null ? bodyExcerpt(summary.post.content) : "";
+  const title = summary.post?.preview?.title ?? "Opening post unavailable";
+  const preview = summary.post?.preview?.excerpt ?? "";
 
   return (
     <article
@@ -52,7 +48,7 @@ export function TopicRow({
       style={{ animationDelay: `${Math.min(index, 12) * 30}ms` }}
     >
       <div className="flex gap-4 rounded-xl border border-transparent px-3 py-4 transition-colors hover:border-border hover:bg-card">
-        {summary.post?.content != null ? (
+        {summary.post?.preview != null ? (
           <UserAvatar
             user={author}
             name={authorProfile?.displayName}
@@ -110,7 +106,7 @@ export function TopicRow({
                 name={tag.name}
               />
             ))}
-            {summary.post?.content != null ? (
+            {summary.post?.preview != null ? (
               <span className="inline-flex min-h-6 items-center gap-1.5">
                 <UserAvatar
                   user={author}

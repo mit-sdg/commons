@@ -1,3 +1,9 @@
+import {
+  validFeedOrder,
+  validThreadSelection,
+  metadataOpeningAuthor,
+  postPreview,
+} from "./computations/feed.ts";
 import { validProfileSelection } from "./computations/profile-display.ts";
 import {
   hasStoredPosts,
@@ -279,6 +285,10 @@ const registrations = {
 
 export const learningConcepts = conceptSet(registrations, {
   validProfileSelection,
+  validFeedOrder,
+  validThreadSelection,
+  metadataOpeningAuthor,
+  postPreview,
   hasStoredPosts,
   threadPostIds,
   visibleThreadPosts,

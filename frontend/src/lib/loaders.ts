@@ -2,22 +2,39 @@ import { api, CommonsError, unwrap } from "@/lib/api";
 import { COMMONS_CONTEXT } from "@/lib/auth";
 import type {
   Category,
-  ConversationSummary,
+  ConversationPreview,
+  FeedEntry,
   Profile,
   RoleOfUser,
   Tag,
   ThreadNode,
 } from "@/lib/models";
 
-export async function loadFeed(
-  sort: "latest" | "activity" = "latest",
-): Promise<ConversationSummary[]> {
-  const result =
-    sort === "activity"
-      ? await api.threads.activity({})
-      : await api.threads.latest({});
-  const { conversations } = unwrap(result);
-  return conversations;
+export async function loadFeedIndex(
+  order: "latest" | "activity",
+): Promise<FeedEntry[]> {
+  return unwrap(await api.threads.index({ order })).conversations;
+}
+
+export async function loadThreadSummaries(
+  conversations: string[],
+): Promise<ConversationPreview[]> {
+  const rows: ConversationPreview[] = [];
+  const unique = [...new Set(conversations)];
+  for (let offset = 0; offset < unique.length; offset += 25) {
+    rows.push(
+      ...unwrap(
+        await api.threads.summaries({
+          conversations: unique.slice(offset, offset + 25),
+        }),
+      ).conversations,
+    );
+  }
+  const byId = new Map(rows.map((row) => [String(row.conversation), row]));
+  return unique.flatMap((id) => {
+    const row = byId.get(id);
+    return row ? [row] : [];
+  });
 }
 
 export async function loadUserOverview(user: string): Promise<{

@@ -11,18 +11,22 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { shortId, titleFromContent } from "@/lib/format";
-import { loadFeed } from "@/lib/loaders";
-import type { ConversationSummary, Subscription } from "@/lib/models";
+import { shortId } from "@/lib/format";
+import { loadThreadSummaries } from "@/lib/loaders";
+import type { ConversationPreview, Subscription } from "@/lib/models";
 
 function Following() {
   const { session } = useAuth();
   const { data, error, loading, refetch } = useQuery<{
     subscriptions: Subscription[];
   }>(session ? () => api.subscriptions.mine({}) : null, [session]);
-  const feed = useQuery<ConversationSummary[]>(() => loadFeed(), []);
+  const targets = (data?.subscriptions ?? []).map((sub) => String(sub.target));
+  const feed = useQuery<ConversationPreview[]>(
+    data ? () => loadThreadSummaries(targets) : null,
+    [session, JSON.stringify(targets)],
+  );
 
-  const byConversation = new Map<string, ConversationSummary>();
+  const byConversation = new Map<string, ConversationPreview>();
   for (const s of feed.data ?? [])
     byConversation.set(String(s.conversation), s);
 
@@ -43,10 +47,13 @@ function Following() {
         title="Following"
         description="Discussions you're watching for new replies."
       />
-      {loading && !data ? (
+      {(loading && !data) ||
+      (feed.loading && !feed.data && !!data?.subscriptions.length) ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message={error} onRetry={refetch} />
+      ) : feed.error ? (
+        <ErrorState message={feed.error} onRetry={feed.refetch} />
       ) : !data || data.subscriptions.length === 0 ? (
         <EmptyState
           icon={Bell}
@@ -59,8 +66,8 @@ function Following() {
             const target = String(sub.target);
             const summary = byConversation.get(target);
             const title =
-              summary?.post?.content != null
-                ? titleFromContent(summary.post.content)
+              summary?.post?.preview != null
+                ? summary.post.preview.title
                 : summary
                   ? "Opening post unavailable"
                   : `Conversation ${shortId(target)}`;

@@ -1638,6 +1638,7 @@ Concrete types:
 - `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 138.
 - `lidPassage(pile: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 133.
 - `linesStanding(lines: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 83.
+- `metadataOpeningAuthor(item: String, posts: Seq) : Any` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 38.
 - `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 454.
 - `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 451.
 - `openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 57.
@@ -1669,6 +1670,7 @@ Concrete types:
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 110.
 - `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 558.
 - `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 563.
+- `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
 - `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 406.
 - `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 567.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
@@ -1720,7 +1722,9 @@ Concrete types:
 - `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 391.
 - `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 397.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 97.
+- `validFeedOrder(order: String) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 34.
 - `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 385.
+- `validThreadSelection(conversations: Seq) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 36.
 - `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 442.
 - `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 394.
 - `voteStanding(kind: String, choices: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
@@ -3452,6 +3456,20 @@ the user named (username) — inputs (username); outputs (user); bindings () —
   where Authenticating._getByUsername (username) has (user)
 ```
 
+### the visible opening author outside Staff in (conversation)
+
+Authored path: `Forum.feedPages.nonStaffMetadataOpening`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 11.
+
+```view
+the visible opening author outside Staff in (conversation) — inputs (conversation, item, reader); outputs (author); bindings (posts) — answers at most one (author)
+  where
+    view "the stored posts in (conversation) for (user)" with (conversation, user: reader) has (posts)
+    Trashing._isTrashed (item) has (trashed: false)
+    author is metadataOpeningAuthor (item, posts)
+    no view "(user) belongs to Staff" with (user: author)
+```
+
 ### the visible resolution of (question) for (reader)
 
 Authored path: `Forum.resolutions.visibleResolution`.
@@ -3515,6 +3533,65 @@ Former "host guidance for round (leg)" — inputs (leg); bindings (purpose, faci
     facilitation
     purpose
     selection: the selection of the first Relaying._drawsOn (source: leg) has (leg: consumer)
+```
+
+### the visible holder (holder)
+
+Authored path: `Forum.audiences.theHolder`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 13.
+
+```former
+Former "the visible holder (holder)" — inputs (holder); bindings (kind, identity, name, label); promises exactly one record — forms:
+  a record of
+    where kind is holderKind (holder)
+    where identity is holderSubject (holder)
+    where whether view "the retained name of (identity) as (kind)" with (identity, kind) has (name)
+    where label is audienceLabel (identity, kind, name)
+    holder
+    identity
+    kind
+    label
+```
+
+### the explicit audience of (conversation)
+
+Authored path: `Forum.audiences.theAudience`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 11.
+
+```former
+Former "the explicit audience of (conversation)" — inputs (conversation); bindings (holder); promises exactly one record — forms:
+  each Accessing._grants (resource: conversation) has (holder)
+    form a record of
+      … former "the visible holder (holder)" with (holder)
+```
+
+### the feed metadata of (conversation) for (reader)
+
+Authored path: `Forum.feedPages.theFeedEntry`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 5.
+
+```former
+Former "the feed metadata of (conversation) for (reader)" — inputs (conversation, item, reader); bindings (holders, nonStaffAuthor, staffQuestion); promises at most one record — forms:
+  a record of
+    where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+    where Accessing._holders (resource: conversation) has (holders)
+    where whether view "the visible opening author outside Staff in (conversation)" with (conversation, item, reader) has (author: nonStaffAuthor)
+    where staffQuestion is staffQuestion (holders, nonStaffAuthor)
+    audience: former "the explicit audience of (conversation)" with (conversation)
+    staffQuestion
+```
+
+### the activity-ordered feed index for (reader)
+
+Authored path: `Forum.feedPages.theActivityIndex`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 7.
+
+```former
+Former "the activity-ordered feed index for (reader)" — inputs (reader); bindings (conversation, item); promises exactly one record — forms:
+  each Conversing._getConversationsByLastActivity () has (conversation, item)
+    form a record of
+      conversation
+      … former "the feed metadata of (conversation) for (reader)" with (conversation, item, reader)
 ```
 
 ### the answers outcome of (response)
@@ -3786,6 +3863,19 @@ Former "the category of (item) for (reader)" — inputs (item, reader); bindings
       name
 ```
 
+### the creation-ordered feed index for (reader)
+
+Authored path: `Forum.feedPages.theCreationIndex`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 6.
+
+```former
+Former "the creation-ordered feed index for (reader)" — inputs (reader); bindings (conversation, item); promises exactly one record — forms:
+  each Conversing._getConversations () has (conversation, item)
+    form a record of
+      conversation
+      … former "the feed metadata of (conversation) for (reader)" with (conversation, item, reader)
+```
+
 ### the criteria of (item)
 
 Authored path: `Course.grades.theCriteriaOf`.
@@ -3815,24 +3905,6 @@ Former "the criterion scores of (learner) on (item)" — inputs (learner, item);
       feedback
       maxPoints
       points
-```
-
-### the visible holder (holder)
-
-Authored path: `Forum.audiences.theHolder`.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 13.
-
-```former
-Former "the visible holder (holder)" — inputs (holder); bindings (kind, identity, name, label); promises exactly one record — forms:
-  a record of
-    where kind is holderKind (holder)
-    where identity is holderSubject (holder)
-    where whether view "the retained name of (identity) as (kind)" with (identity, kind) has (name)
-    where label is audienceLabel (identity, kind, name)
-    holder
-    identity
-    kind
-    label
 ```
 
 ### the current audience options of (user)
@@ -4042,18 +4114,6 @@ Former "the explained outcome of (response)" — inputs (response); bindings (ru
     receipt
     response
     score
-```
-
-### the explicit audience of (conversation)
-
-Authored path: `Forum.audiences.theAudience`.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 11.
-
-```former
-Former "the explicit audience of (conversation)" — inputs (conversation); bindings (holder); promises exactly one record — forms:
-  each Accessing._grants (resource: conversation) has (holder)
-    form a record of
-      … former "the visible holder (holder)" with (holder)
 ```
 
 ### the face of (run)
@@ -4698,6 +4758,23 @@ Former "the post (post)" — inputs (post, reader); bindings (author, content, c
     rendered
 ```
 
+### the preview of opening (item) for (reader)
+
+Authored path: `Forum.feedPages.theOpeningPreview`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 21.
+
+```former
+Former "the preview of opening (item) for (reader)" — inputs (item, reader); bindings (author, content, createdAt, editedAt, preview); promises at most one record — forms:
+  a record of
+    where view "(user) may read forum post (post)" with (post: item, user: reader)
+    where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
+    where preview is postPreview (content)
+    author
+    createdAt
+    editedAt
+    preview
+```
+
 ### the private profile of (user)
 
 ```former
@@ -5156,6 +5233,32 @@ Former "the sections ()" — inputs (); bindings (section, name, location, meeti
       status
 ```
 
+### the selected summary of (conversation) for (reader)
+
+Authored path: `Forum.feedPages.theSelectedSummary`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 20.
+
+```former
+Former "the selected summary of (conversation) for (reader)" — inputs (conversation, item, reader); bindings (locked, answer, resolved, home, tag, tagName); promises at most one record — forms:
+  a record of
+    where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+    where Locking._isLocked (target: conversation) has (locked)
+    where whether view "the visible resolution of (question) for (reader)" with (question: item, reader) has (answer)
+    where resolved is visibleAnswer (answer)
+    where whether view "the readable home of opening (item) for (reader)" with (item, reader) has (home)
+    category: home
+    locked
+    post: whether former "the preview of opening (item) for (reader)" with (item, reader)
+    resolved
+    tags: each Tagging._getTags (target: item) has (name: tagName, tag)
+      where view "(user) may read forum post (post)" with (post: item, user: reader)
+      form a record of
+        name: tagName
+        tag
+    … former "the feed metadata of (conversation) for (reader)" with (conversation, item, reader)
+    … former "the thread stats of (conversation) for (reader)" with (conversation, reader)
+```
+
 ### the staff assignments ()
 
 Authored path: `Course.assignments.theStaffAssignments`.
@@ -5313,6 +5416,23 @@ Former "the subscriptions of (user)" — inputs (user); bindings (target, subscr
     form a record of
       subscribedAt
       target
+```
+
+### the summaries selected by (conversations) for (reader)
+
+Authored path: `Forum.feedPages.theSelectedSummaries`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 19.
+
+```former
+Former "the summaries selected by (conversations) for (reader)" — inputs (conversations, reader); bindings (conversation, root, item, createdAt); promises exactly one record — forms:
+  each Conversing._getConversations () has (conversation, createdAt, item, root)
+    where conversation is among conversations
+    form a record of
+      conversation
+      createdAt
+      item
+      root
+      … former "the selected summary of (conversation) for (reader)" with (conversation, item, reader)
 ```
 
 ### the tags ()
@@ -11502,6 +11622,89 @@ where
   view "the active user of (session)" with (session) has (user: reader)
 then
   RequestBoundary.respond (conversations: former "the home feed by creation ()" with (reader), requestId)
+```
+
+### Forum.feedPages.Index:activity
+
+Authored path: `Forum.feedPages.Index`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 3.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 29.
+
+```reaction
+when RequestBoundary.request (order, path: "/threads/index", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validFeedOrder (order)
+  order is among ["activity"]
+  view "the active user of (session)" with (session) has (user: reader)
+then
+  RequestBoundary.respond (conversations: former "the activity-ordered feed index for (reader)" with (reader), requestId)
+```
+
+### Forum.feedPages.Index:invalid
+
+Authored path: `Forum.feedPages.Index`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 3.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 29.
+
+```reaction
+when RequestBoundary.request (order, path: "/threads/index", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validFeedOrder (order)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Forum.feedPages.Index:latest
+
+Authored path: `Forum.feedPages.Index`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 3.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 29.
+
+```reaction
+when RequestBoundary.request (order, path: "/threads/index", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validFeedOrder (order)
+  order is among ["latest"]
+  view "the active user of (session)" with (session) has (user: reader)
+then
+  RequestBoundary.respond (conversations: former "the creation-ordered feed index for (reader)" with (reader), requestId)
+```
+
+### Forum.feedPages.Summaries:invalid
+
+Authored path: `Forum.feedPages.Summaries`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 15.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 30.
+
+```reaction
+when RequestBoundary.request (conversations, path: "/threads/summaries", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validThreadSelection (conversations)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Forum.feedPages.Summaries:valid
+
+Authored path: `Forum.feedPages.Summaries`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 15.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 30.
+
+```reaction
+when RequestBoundary.request (conversations, path: "/threads/summaries", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validThreadSelection (conversations)
+  valid is among [true]
+  view "the active user of (session)" with (session) has (user: reader)
+then
+  RequestBoundary.respond (conversations: former "the summaries selected by (conversations) for (reader)" with (conversations, reader), requestId)
 ```
 
 ### Forum.links.Backlinks:hidden
@@ -27355,8 +27558,10 @@ not listed here have no explicit input contract.
 - `/threads/create` — requires `content`, `holders`, `session`
 - `/threads/forItem` — requires `item`, `session`
 - `/threads/get` — requires `conversation`, `session`
+- `/threads/index` — requires `session`, `order`
 - `/threads/latest` — requires `session`
 - `/threads/reply` — requires `content`, `parent`, `session`
+- `/threads/summaries` — requires `session`, `conversations`
 - `/trash/isTrashed` — requires `item`, `session`
 - `/trash/list` — requires `session`
 - `/trash/purge` — requires `item`, `session`
