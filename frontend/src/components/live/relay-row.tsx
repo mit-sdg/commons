@@ -57,7 +57,7 @@ export function LiveRow({
   return (
     <li
       className={cn(
-        "flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3",
+        "flex flex-wrap lg:flex-nowrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3",
         live && "border-primary/40",
         className,
       )}
@@ -65,7 +65,7 @@ export function LiveRow({
       {stateColumn ? <StateWord live={live} /> : null}
       {/* Half the row is the title's own: the strip and the actions wrap under
           it rather than squeezing it to one letter per line. */}
-      <span className="flex min-w-0 shrink grow basis-1/2 flex-wrap items-center gap-2 font-medium">
+      <span className="flex min-w-0 shrink grow basis-1/2 lg:basis-0 flex-wrap items-center gap-2 font-medium">
         {title}
       </span>
       {middle}

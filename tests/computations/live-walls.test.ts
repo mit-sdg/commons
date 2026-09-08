@@ -2,6 +2,8 @@ import { describe, expect, test } from "vite-plus/test";
 import { cardId } from "../../src/computations/live-rounds.ts";
 import type { RunSnapshot } from "../../src/computations/live-snapshots.ts";
 import {
+  definedSortingPiles,
+  sortingPileSubjects,
   lidLines,
   lidPassage,
   participantAnswers,
@@ -443,4 +445,27 @@ describe("the scripted mind", () => {
     expect(quiz.questions[0]!.choices).toContain(answers[0]!.value);
     expect(answers[1]!.value).not.toBe("");
   });
+});
+
+test("sorting uses explicit definitions without recycling summaries or legacy text", () => {
+  const categories = [
+    { category: "standing", name: "Pace", description: "Old ambiguous text", items: ["card-1"] },
+    {
+      category: "generated",
+      name: "Crashes",
+      description: "An on-demand summary",
+      items: ["card-2"],
+    },
+  ];
+  expect(sortingPileSubjects({ categories })).toEqual(["standing", "generated"]);
+  expect(
+    definedSortingPiles({
+      categories,
+      texts: [{ subject: "standing", text: "Slow interactions" }],
+    }),
+  ).toEqual([
+    { ...categories[0], description: "Slow interactions" },
+    { ...categories[1], description: "" },
+  ]);
+  expect(categories[0].description).toBe("Old ambiguous text");
 });

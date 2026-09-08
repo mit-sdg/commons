@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Presentation, Sparkles } from "lucide-react";
+import { ArrowLeft, Presentation } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
@@ -949,18 +949,20 @@ export function RelayRunBoard({
           ) : null}
         </div>
       </header>
-      <div className="mb-6 space-y-3">
-        <GuideText guide={run.hostGuide} />
+      <div className="mb-4 flex flex-wrap items-center gap-1">
+        <GuideText guide={run.hostGuide} detail="Relay" />
         <RelayBasics />
         {shownEntry === null ? (
           next === null ? null : (
             <GuideText
+              detail="Round"
               guide={next.hostGuide}
               title={`Running round ${next.number}`}
             />
           )
         ) : (
           <GuideText
+            detail="Round"
             guide={shownEntry.hostGuide}
             title={`Running round ${shownEntry.number}`}
           />
@@ -1026,6 +1028,7 @@ export function RelayRunBoard({
                   <ArrowLeft /> Back to the relay
                 </Link>
               </Button>
+              <PileGuidance piles={inHand?.piles ?? []} />
               {sortingRound === null || shownVotes ? null : (
                 <>
                   <div className="h-px bg-border" />
@@ -1057,12 +1060,17 @@ export function RelayRunBoard({
                     />
                   </Button>
                 )}
-                {next === null ? null : (
+                {next === null || openEntry !== null ? null : (
                   <>
                     {takesShown && source?.hostGuide.selection ? (
-                      <p className="whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">
-                        {source.hostGuide.selection}
-                      </p>
+                      <details className="text-sm">
+                        <summary className="cursor-pointer text-muted-foreground">
+                          Host selection advice
+                        </summary>
+                        <p className="mt-2 whitespace-pre-wrap [overflow-wrap:anywhere]">
+                          {source.hostGuide.selection}
+                        </p>
+                      </details>
                     ) : null}
                     {takesShown ? (
                       <PickControl
@@ -1148,11 +1156,9 @@ export function RelayRunBoard({
                     {refusalSentence("ROUNDS_RUN")}
                   </p>
                 ) : null}
-
-                {next !== null || openEntry !== null ? (
-                  <div className="h-px bg-border" />
-                ) : null}
-
+              </div>
+              <div className="order-3 flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
+                <PileGuidance piles={inHand?.piles ?? []} />
                 {voting || (everyRoundRan && inHand === null) ? null : (
                   <>
                     {panel}
@@ -1160,34 +1166,26 @@ export function RelayRunBoard({
                   </>
                 )}
                 {everyRoundRan ? null : (
-                  <>
-                    <ModelRow
-                      count={run.seats.length}
-                      writing={writing}
-                      silent={silentSeats}
-                      onInvite={invite}
-                      onDismiss={dismiss}
-                      onDismissAll={dismissAll}
-                    />
-
-                    <div className="h-px bg-border" />
-                  </>
+                  <details className="min-w-0">
+                    <summary className="cursor-pointer py-2 text-sm text-muted-foreground">
+                      AI participants
+                    </summary>
+                    <div className="pt-3">
+                      <ModelRow
+                        count={run.seats.length}
+                        writing={writing}
+                        silent={silentSeats}
+                        onInvite={invite}
+                        onDismiss={dismiss}
+                        onDismissAll={dismissAll}
+                      />
+                    </div>
+                  </details>
                 )}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="self-start"
-                  asChild
-                >
-                  <Link href={`/staff/live/relay/${run.relay}/edit?draft=1`}>
-                    <Sparkles /> Draft a round
-                  </Link>
-                </Button>
               </div>
 
               {run.token === null || run.code === null ? null : (
-                <div className="order-3 rounded-xl border border-border bg-card p-4">
+                <div className="order-4 rounded-xl border border-border bg-card p-4">
                   <JoinCode url={joinUrl(run.token)} code={run.code} />
                 </div>
               )}
@@ -1358,4 +1356,40 @@ export function refusalFor({
   if (take !== null && picks === 0)
     return { word: "NOTHING_PICKED", about: {} };
   return null;
+}
+
+function PileGuidance({ piles }: { piles: WallShape["piles"] }) {
+  return piles.some((pile) => pile.definition || pile.legacyText) ? (
+    <details className="min-w-0">
+      <summary className="cursor-pointer py-2 text-sm text-muted-foreground">
+        Pile guidance
+      </summary>
+      <div className="space-y-3 pt-2">
+        {piles
+          .filter((pile) => pile.definition || pile.legacyText)
+          .map((pile) => (
+            <div key={pile.pile}>
+              <p className="text-sm font-medium">{pile.name}</p>
+              {pile.definition ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {pile.definition}
+                </p>
+              ) : null}
+              {pile.legacyText ? (
+                <details className="mt-2 text-xs text-muted-foreground">
+                  <summary className="cursor-pointer">
+                    Existing pile text (review)
+                  </summary>
+                  <p className="mt-1 whitespace-pre-wrap">{pile.legacyText}</p>
+                  <p className="mt-1">
+                    Preserved from an older run. Its original role is uncertain;
+                    it is not shown as a result summary.
+                  </p>
+                </details>
+              ) : null}
+            </div>
+          ))}
+      </div>
+    </details>
+  ) : null;
 }

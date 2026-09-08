@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Layers } from "lucide-react";
 import { useState } from "react";
 import {
   QuestionCard,
@@ -86,6 +86,7 @@ export function previewQuestion(
   sampled: string[] | undefined = undefined,
   groups: SampleGroup[] = [],
 ): RoundQuestion {
+  const source = sourceOf(round, rounds);
   const kind = kindOf(round);
   const ownChoices = kind === "vote" ? round.choices : [];
   const ownParts = kind === "list" ? round.parts : [];
@@ -107,6 +108,9 @@ export function previewQuestion(
             cards: groups.find((group) => group.name === name)?.cards ?? [],
           })),
     contextUse: use,
+    ...(source
+      ? { contextSource: { number: source.number, title: source.title } }
+      : {}),
     position: 1,
   };
 }
@@ -147,7 +151,9 @@ export function previewWall(
     return {
       pile: placed?.pile ?? `standing-pile-${index + 1}`,
       name: pile.name,
-      description: pile.description,
+      description: "",
+      definition: pile.description,
+      legacyText: "",
       count: placed?.count ?? 0,
       picked: null,
     };
@@ -228,6 +234,10 @@ function Phone({
   const fresh = sampling.sample?.standing === "fresh";
   const wall = fresh && answers.length > 0 ? previewWall(round, answers) : null;
   const groups = sampling.groups;
+  const voteChoices =
+    round.takes[0]?.use === "choices"
+      ? groups.map((group) => group.name)
+      : round.choices;
 
   return (
     <div
@@ -269,7 +279,7 @@ function Phone({
                 </p>
                 <details>
                   <summary className="cursor-pointer font-medium">
-                    Assumed picks ({sampling.selected.length})
+                    Preview picks ({sampling.selected.length})
                   </summary>
                   <p className="my-2 text-muted-foreground">
                     Preview only. In a live run, you choose which groups
@@ -279,7 +289,7 @@ function Phone({
                     {sampling.available.map((name) => (
                       <label
                         key={name}
-                        className="flex min-h-9 items-start gap-2 py-1 [overflow-wrap:anywhere]"
+                        className="flex min-h-9 items-center gap-2 rounded-md border border-border px-2 py-1 [overflow-wrap:anywhere] has-[:checked]:border-primary/40 has-[:checked]:bg-primary/5"
                       >
                         <input
                           type="checkbox"
@@ -296,6 +306,7 @@ function Phone({
                             )
                           }
                         />
+                        <Layers className="size-3 shrink-0" />
                         {name}
                       </label>
                     ))}
@@ -321,8 +332,9 @@ function Phone({
                 Participant view needs selected source groups.
               </p>
             ) : (
-              <fieldset disabled data-participant-frame>
+              <div data-participant-frame>
                 <QuestionCard
+                  readOnly
                   key={`${round.leg}-${sampleKeyForQuestion(round, groups)}`}
                   question={previewQuestion(
                     round,
@@ -334,7 +346,7 @@ function Phone({
                   onAnswer={() => undefined}
                   onDraft={() => undefined}
                 />
-              </fieldset>
+              </div>
             )}
           </TabsContent>
           <TabsContent value="results" className="space-y-2">
@@ -347,37 +359,63 @@ function Phone({
             ) : (
               <div className="space-y-2">
                 <p className="text-brand-pine text-xs">AI-generated examples</p>
-                {wall.piles.map((pile) => (
-                  <details
-                    key={pile.pile}
-                    className="min-w-0 rounded-lg border border-brand-pine/30 bg-brand-pine/5 px-3 py-2"
-                  >
-                    <summary className="cursor-pointer text-sm font-medium [overflow-wrap:anywhere]">
-                      {pile.name}
-                      <span className="ml-2 font-normal text-muted-foreground">
-                        {pile.count}{" "}
-                        {pile.count === 1 ? "response" : "responses"}
-                      </span>
-                    </summary>
-                    {pile.description ? (
-                      <p className="mt-2 text-muted-foreground text-xs">
-                        {pile.description}
-                      </p>
-                    ) : null}
-                    <ul className="mt-2 space-y-2">
-                      {wall.cards
-                        .filter((card) => card.pile === pile.pile)
-                        .map((card) => (
-                          <li
-                            key={card.card}
-                            className="rounded-md bg-card px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]"
+                {kindOf(round) === "vote" ? (
+                  <dl className="divide-y divide-border">
+                    {voteChoices.map((choice) => {
+                      const votes = answers.filter(
+                        (answer) => answer.value === choice,
+                      ).length;
+                      return (
+                        <div
+                          key={choice}
+                          className="flex items-baseline justify-between gap-3 py-3 text-sm"
+                        >
+                          <dt
+                            className="min-w-0 [overflow-wrap:anywhere]"
+                            dir="auto"
                           >
-                            {card.value}
-                          </li>
-                        ))}
-                    </ul>
-                  </details>
-                ))}
+                            {choice}
+                          </dt>
+                          <dd className="shrink-0 tabular-nums text-muted-foreground">
+                            {votes} {votes === 1 ? "vote" : "votes"}
+                          </dd>
+                        </div>
+                      );
+                    })}
+                  </dl>
+                ) : (
+                  wall.piles.map((pile) => (
+                    <details
+                      key={pile.pile}
+                      className="min-w-0 rounded-lg border border-brand-pine/30 bg-brand-pine/5 px-3 py-2"
+                    >
+                      <summary className="cursor-pointer text-sm font-medium [overflow-wrap:anywhere]">
+                        {pile.name}
+                        <span className="ml-2 font-normal text-muted-foreground">
+                          {pile.count}{" "}
+                          {pile.count === 1 ? "response" : "responses"}
+                        </span>
+                      </summary>
+                      {pile.description ? (
+                        <p className="mt-2 text-muted-foreground text-xs">
+                          {pile.description}
+                        </p>
+                      ) : null}
+                      <ul className="mt-2 space-y-2">
+                        {wall.cards
+                          .filter((card) => card.pile === pile.pile)
+                          .map((card) => (
+                            <li
+                              key={card.card}
+                              className="rounded-md bg-card px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]"
+                            >
+                              {card.value}
+                            </li>
+                          ))}
+                      </ul>
+                    </details>
+                  ))
+                )}
               </div>
             )}
           </TabsContent>
@@ -390,9 +428,7 @@ function Phone({
           variant="outline"
           disabled={retired || sampling.asking}
           onClick={() => {
-            void sampling.ask().then((landed) => {
-              if (landed) setTab("results");
-            });
+            void sampling.ask();
           }}
           className="self-start border-brand-pine/40 text-brand-pine"
         >

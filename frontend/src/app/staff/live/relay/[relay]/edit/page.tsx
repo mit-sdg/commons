@@ -7,8 +7,7 @@ import { toast } from "sonner";
 import { Link } from "@/components/link";
 import { useDrafting } from "@/components/live/ai-panel";
 import { RELAY_LINES } from "@/components/live/brief-chips";
-import { RelayBasics, RelayGuideEditor } from "@/components/live/host-guide";
-import { ReferenceDocuments } from "@/components/live/reference-documents";
+import { RelayGuideEditor } from "@/components/live/host-guide";
 import { refusalSentence } from "@/components/live/refusals";
 import {
   ActButton,
@@ -423,12 +422,6 @@ function RelaySetup({
         <div className="flex flex-col gap-3">
           {relay.retired ? null : drafting.line}
           <RelayGuideEditor relay={relay} onChanged={onChanged} />
-          <RelayBasics />
-          <ReferenceDocuments
-            subject={relay.relay}
-            retired={relay.retired}
-            onChanged={onChanged}
-          />
           {relay.rounds.map((round) => (
             <Fragment key={round.leg}>
               {drafting.adds(round.number)}

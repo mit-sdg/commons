@@ -66,6 +66,8 @@ interface Wall {
     pile: string;
     name: string;
     description: string;
+    definition: string;
+    legacyText: string;
     count: number;
     picked: string | null;
   }[];
@@ -209,12 +211,15 @@ describe("what a round carries besides its question", () => {
     const readWall = async () =>
       (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall;
 
-    // The wall opens with both piles standing, empty, their sentences as lids.
+    // Standing definitions guide sorting; empty piles have no result summary.
     const seeded = await until(readWall, (wall) => wall.piles.length === 2);
-    expect(seeded.piles.map((pile) => [pile.name, pile.description, pile.count])).toEqual([
+    expect(seeded.piles.map((pile) => [pile.name, pile.definition, pile.count])).toEqual([
       ["Pace", "It was too slow to use.", 0],
       ["Crashes", "It stopped working.", 0],
     ]);
+    expect(seeded.piles.every((pile) => pile.description === "" && pile.legacyText === "")).toBe(
+      true,
+    );
     expect(seeded.cards).toEqual([]);
 
     // Once the round has opened, its piles are frozen and its note is not.
@@ -314,7 +319,7 @@ describe("what a round carries besides its question", () => {
     const emptied = await json(await post(edge, "/live/walls/empty-piles", { round }, cookie));
     expect(emptied.emptied).toBe(true);
     const tray = await until(readWall, (wall) => wall.cards.every((card) => card.pile === null));
-    expect(tray.piles.map((pile) => [pile.name, pile.description, pile.count])).toEqual([
+    expect(tray.piles.map((pile) => [pile.name, pile.definition, pile.count])).toEqual([
       ["Pace", "It was too slow to use.", 0],
       ["Crashes", "It stopped working.", 0],
       ["Confusing", "", 0],
@@ -349,6 +354,27 @@ describe("what a round carries besides its question", () => {
     expect((await readWall()).piles.find((pile) => pile.name === "Confusing")?.description).toBe(
       "The room lost its place.",
     );
+
+    // Writing and clearing a result summary never overwrites its standing definition.
+    const standingPile = seeded.piles[0]!;
+    await post(
+      edge,
+      "/live/walls/describe-pile",
+      { pile: standingPile.pile, description: "Two responses describe delays." },
+      cookie,
+    );
+    let separated = (await readWall()).piles.find((pile) => pile.pile === standingPile.pile)!;
+    expect(separated.definition).toBe("It was too slow to use.");
+    expect(separated.description).toBe("Two responses describe delays.");
+    await post(
+      edge,
+      "/live/walls/describe-pile",
+      { pile: standingPile.pile, description: "" },
+      cookie,
+    );
+    separated = (await readWall()).piles.find((pile) => pile.pile === standingPile.pile)!;
+    expect(separated.definition).toBe("It was too slow to use.");
+    expect(separated.description).toBe("");
 
     // Once the run closes, both controls are refused.
     await post(edge, "/live/relays/close", { run }, cookie);

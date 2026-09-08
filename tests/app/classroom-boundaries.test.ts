@@ -408,6 +408,16 @@ test("an admitted round keeps its picked material when the source changes before
 for (const removePile of [false, true]) {
   test(`summary commissioning records ${removePile ? "application refusal" : "the applied sentence"}`, async () => {
     const f = await fixture();
+    await f.c.Categorizing.describeCategory({
+      category: f.category,
+      description: "Preserved legacy text",
+    });
+    await f.c.Guiding.set({
+      subject: f.category,
+      use: "pile-definition",
+      title: "",
+      body: "Sorting definition",
+    });
     const { asking } = await f.call("/live/walls/summarize", { pile: f.category });
     f.suggesting.armed = true;
     await resumeAfter(
@@ -435,10 +445,17 @@ for (const removePile of [false, true]) {
     expect((await f.c.Commissioning._forExecution({ execution: asking }))[0].status).toBe(
       removePile ? "failed" : "completed",
     );
-    if (!removePile)
+    if (!removePile) {
       expect(await f.c.Categorizing._getCategoryDetail({ category: f.category })).toMatchObject([
-        { description: "A synthetic summary." },
+        { description: "Preserved legacy text" },
       ]);
+      expect(
+        await f.c.Guiding._guidanceText({ subject: f.category, use: "pile-definition" }),
+      ).toEqual({ text: "Sorting definition" });
+      expect(
+        await f.c.Guiding._guidanceText({ subject: f.category, use: "pile-summary" }),
+      ).toMatchObject({ text: "A synthetic summary." });
+    }
   });
 }
 

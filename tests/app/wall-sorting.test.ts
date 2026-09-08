@@ -71,6 +71,7 @@ interface Wall {
     pile: string;
     name: string;
     description: string;
+    definition: string;
     count: number;
     picked: string | null;
   }[];
@@ -259,7 +260,7 @@ describe("the sorting controls the dashboard presses", () => {
       () => readWall(round),
       (wall) => wall.piles.length === 2,
     );
-    expect(standing.piles.map((pile) => [pile.name, pile.description, pile.count])).toEqual([
+    expect(standing.piles.map((pile) => [pile.name, pile.definition, pile.count])).toEqual([
       ["Pace", "It went too fast.", 0],
       ["Examples", "The room wants more worked examples.", 0],
     ]);
@@ -282,7 +283,7 @@ describe("the sorting controls the dashboard presses", () => {
       ["Pace", 1],
       ["Examples", 1],
     ]);
-    expect(filed.piles.map((pile) => pile.description)).toEqual([
+    expect(filed.piles.map((pile) => pile.definition)).toEqual([
       "It went too fast.",
       "The room wants more worked examples.",
     ]);
@@ -307,7 +308,7 @@ describe("the sorting controls the dashboard presses", () => {
       () => readWall(round),
       (wall) => wall.cards.every((card) => card.pile === null),
     );
-    expect(tray.piles.map((pile) => [pile.name, pile.description, pile.count])).toEqual([
+    expect(tray.piles.map((pile) => [pile.name, pile.definition, pile.count])).toEqual([
       ["Pace", "It went too fast.", 0],
       ["Examples", "The room wants more worked examples.", 0],
     ]);

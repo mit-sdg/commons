@@ -83,22 +83,40 @@ const theLegOf = view("the round (pile) stands on", ({ pile }, { leg }, _binding
 /**
  * The wall opens with the round's standing piles already on it: when the
  * round's presentation is captured, each pile authored on the leg is ensured
- * on the round's wall with its name and its sentence, which is its lid at
- * birth. A round whose word is `vote` sorts itself by its choices, so its
+ * on the round's wall with its name. Its definition is captured separately
+ * as sorting guidance, never as a participant-facing summary. A round whose word is `vote` sorts itself by its choices, so its
  * standing piles stay on the leg and none is seeded.
  */
 export const CapturedRoundSeedsStandingPiles = reaction(
-  ({ round, questionnaire, leg, name, description, category, at }) =>
+  ({ round, questionnaire, leg, name, category, at }) =>
     when(RunSnapshotting.capture({ subject: round }).responds())
       .where(
         Publishing._edition({ edition: round }).is({ material: questionnaire }),
         Relaying._legFor({ material: questionnaire }).is({ leg }),
         Relaying._leg({ leg }).is.not({ kind: "vote" }),
         now(at),
-        Categorizing._categoriesIn({ scope: leg }).is({ name, description }),
+        Categorizing._categoriesIn({ scope: leg }).is({ name }),
       )
-      .then(Categorizing.ensureCategory({ scope: round, name, description }).responds({ category }))
+      .then(
+        Categorizing.ensureCategory({ scope: round, name, description: "" }).responds({ category }),
+      )
       .then(Pinning.pin({ item: category, scope: RESERVED_PILES, priority: 0, at })),
+);
+
+/** Definitions are captured once, separately from summaries and legacy descriptions. */
+export const SeededPileKeepsDefinition = reaction(
+  ({ category, round, name, description, questionnaire, leg, said }) =>
+    when(Categorizing.ensureCategory({ scope: round, name }).responds({ category }))
+      .where(
+        Publishing._edition({ edition: round }).is({ material: questionnaire }),
+        Relaying._legFor({ material: questionnaire }).is({ leg }),
+        Categorizing._categoriesIn({ scope: leg }).is({ name, description }),
+        compute(computations.briefStanding, { request: description }, said),
+        is.among(said, ["given"]),
+      )
+      .then(
+        Guiding.set({ subject: category, use: "pile-definition", title: "", body: description }),
+      ),
 );
 
 export const AddPile = endpoint(

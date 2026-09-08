@@ -173,8 +173,10 @@ function RelayOverviewContent() {
             {found.description}
           </p>
         ) : null}
-        <GuideText guide={found.hostGuide} />
-        <RelayBasics />
+        <div className="flex flex-wrap items-center gap-1">
+          <GuideText guide={found.hostGuide} />
+          <RelayBasics />
+        </div>
 
         <section className="space-y-3">
           <h2 className="font-display text-xl font-semibold">
@@ -295,7 +297,7 @@ function RoundCard({
             {kind}
           </span>
         </span>
-        <GuideText guide={round.hostGuide} title="Running this round" />
+
         {round.prompt === "" ? null : (
           <p dir="auto" className="min-w-0 text-sm">
             {round.prompt}
@@ -323,38 +325,6 @@ function RoundCard({
             ))}
           </div>
         ) : null}
-        {round.piles.length === 0 ? null : (
-          <div className="flex flex-col gap-1">
-            <span className="eyebrow">Standing piles</span>
-            <ul className="flex flex-col gap-1 text-sm">
-              {round.piles.map((pile) => (
-                <li
-                  key={pile.pile}
-                  dir="auto"
-                  className="flex min-w-0 flex-wrap items-baseline gap-2"
-                >
-                  <span>{pile.name}</span>
-                  {pile.description === "" ? null : (
-                    <span className="min-w-0 text-muted-foreground">
-                      {pile.description}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {round.notes === "" ? null : (
-          <div className="flex flex-col gap-1">
-            <span className="eyebrow">Notes for the sorter</span>
-            <p
-              dir="auto"
-              className="min-w-0 whitespace-pre-wrap text-muted-foreground text-sm"
-            >
-              {round.notes}
-            </p>
-          </div>
-        )}
         {takes === undefined ? null : takeWords(takes.use) === takes.use ? (
           <span className="font-mono text-muted-foreground text-[13px]">
             takes from {takes.sourceNumber}
@@ -380,6 +350,55 @@ function RoundCard({
             )}
           </span>
         )}
+        <div className="flex flex-wrap items-start gap-2 border-t pt-2">
+          <GuideText
+            guide={round.hostGuide}
+            title={`Round ${round.number}: ${round.title}`}
+          />
+          {round.piles.length || round.notes ? (
+            <details className="min-w-0 flex-1">
+              <summary className="cursor-pointer rounded-md px-3 py-2 text-sm text-muted-foreground">
+                Response sorting ({round.piles.length}{" "}
+                {round.piles.length === 1 ? "pile" : "piles"})
+              </summary>
+              <div className="space-y-3 p-3">
+                {" "}
+                {round.piles.length === 0 ? null : (
+                  <div className="flex flex-col gap-1">
+                    <span className="eyebrow">Reserved piles</span>
+                    <ul className="flex flex-col gap-1 text-sm">
+                      {round.piles.map((pile) => (
+                        <li
+                          key={pile.pile}
+                          dir="auto"
+                          className="flex min-w-0 flex-col gap-1"
+                        >
+                          <span className="font-medium">{pile.name}</span>
+                          {pile.description === "" ? null : (
+                            <span className="min-w-0 text-muted-foreground">
+                              {pile.description}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {round.notes === "" ? null : (
+                  <div className="flex flex-col gap-1">
+                    <span className="eyebrow">Notes for the sorter</span>
+                    <p
+                      dir="auto"
+                      className="min-w-0 whitespace-pre-wrap text-muted-foreground text-sm"
+                    >
+                      {round.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </details>
+          ) : null}
+        </div>
       </div>
     </div>
   );

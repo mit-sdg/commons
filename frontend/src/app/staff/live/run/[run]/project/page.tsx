@@ -142,7 +142,7 @@ function QuizProjector() {
         <p className="text-2xl text-muted-foreground">Nothing to project</p>
       ) : (
         <>
-          <JoinCode url={url} code={code} wall />
+          <JoinCode audience="room" url={url} code={code} wall />
           <Facts className="justify-center text-lg sm:text-2xl">
             <span>{board.started - model.begun} joined</span>
             <span>{board.handedIn - model.handedIn} handed in</span>

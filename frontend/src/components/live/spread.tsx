@@ -104,7 +104,17 @@ export function Spread({
         className,
       )}
     >
-      {description === "" ? null : (
+      {description === "" ? null : phone ? (
+        <details
+          className="mb-3 text-sm"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <summary className="cursor-pointer text-muted-foreground">
+            Summary
+          </summary>
+          <p className="mt-2">{description}</p>
+        </details>
+      ) : (
         <p
           className={cn(
             "font-display text-foreground",
@@ -114,6 +124,7 @@ export function Spread({
           {description}
         </p>
       )}
+
       <ul
         className={cn(
           "min-w-0 gap-x-8",
@@ -133,7 +144,8 @@ export function Spread({
             )}
           >
             <Answer value={card.value} className="flex-1" />
-            {card.part === "" ? null : (
+            {card.part === "" ||
+            new Set(cards.map((one) => one.part)).size === 1 ? null : (
               <span className="flex-none font-mono text-muted-foreground text-xs">
                 {card.part}
               </span>
@@ -261,7 +273,8 @@ export function SpreadPanel({
             )}
           >
             <Answer value={card.value} className="flex-1" />
-            {card.part === "" ? null : (
+            {card.part === "" ||
+            new Set(cards.map((one) => one.part)).size === 1 ? null : (
               <span className="flex-none font-mono text-muted-foreground text-xs">
                 {card.part}
               </span>

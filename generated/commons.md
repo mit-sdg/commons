@@ -1551,6 +1551,7 @@ Concrete types:
 - `clearablePiles(categories: Json, standing?: Json, picked: Seq, reserved: Seq) : Seq` — [The wall](../design/compositions/live/walls.md), line 53.
 - `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
 - `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
+- `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 212.
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
@@ -1600,7 +1601,7 @@ Concrete types:
 - `openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 55.
 - `openingAuthor(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 64.
 - `openingAuthorized() : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 52.
-- `openingBrief(account: String, author: String, questionnaire: String, kind: String, use: Json, content: Json, groups: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 61.
+- `openingBrief(account: String, author: String, questionnaire: String, kind: String, use: Json, content: Json, groups: Json, sourceNumber?: Json, sourceValue?: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 61.
 - `openingGroups(picked: Seq, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 58.
 - `openingMaterial(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 67.
 - `openingPresentation(brief: String) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 70.
@@ -1658,6 +1659,7 @@ Concrete types:
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
 - `sortingObservationPresent() : Boolean` — [The wall](../design/compositions/live/walls.md), line 57.
+- `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 209.
 - `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 423.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
 - `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 433.
@@ -2535,6 +2537,17 @@ authorized sorting observation — inputs (user); outputs (supported); bindings 
     supported is sortingObservationPresent
 ```
 
+### sorting piles of (round)
+
+```view
+sorting piles of (round) — inputs (round); outputs (categories); bindings (raw, subjects, texts) — answers exactly one (categories)
+  where
+    Categorizing._categoriesWithItems (scope: round) has (categories: raw)
+    subjects is sortingPileSubjects (categories: raw)
+    Guiding._guidanceTexts (subjects, use: "pile-definition") has (texts)
+    categories is definedSortingPiles (categories: raw, texts)
+```
+
 ### conclusion of commissioned execution (asking)
 
 ```view
@@ -2547,7 +2560,7 @@ conclusion of commissioned execution (asking) — inputs (asking); outputs (succ
     whether Reasoning._failureOf (asking) has (account: failure)
     whether Insisting._unsettledFor (aim: round) has (insistence)
     successors is the count of Reasoning._followups (previous: asking)
-    Categorizing._categoriesWithItems (scope: round) has (categories)
+    view "sorting piles of (round)" with (round) has (categories)
     Responding._valuesForSubject (subject: round) has (values)
     Trashing._trashedItems () has (items: removed)
     outcome is commissionOutcome (categories, failure, insistence, removed, reply, successors, values)
@@ -2968,15 +2981,16 @@ what (leg) takes — inputs (leg); outputs (source, use); bindings () — answer
 ### the source for opening (leg) in (run)
 
 ```view
-the source for opening (leg) in (run) — inputs (run, leg); outputs (source, sourceRound, sourceOpen, groups); bindings (picked, categories, values, value) — answers at most one (source, sourceRound, sourceOpen, groups)
+the source for opening (leg) in (run) — inputs (run, leg); outputs (source, sourceRound, sourceOpen, groups, sourceValue, sourceNumber); bindings (picked, categories, values) — answers at most one (source, sourceRound, sourceOpen, groups, sourceValue, sourceNumber)
   where
     view "what (leg) takes" with (leg) has (source)
     view "the round of (leg) in (run)" with (leg: source, run) has (open: sourceOpen, round: sourceRound)
     Pinning._pinnedItems (scope: sourceRound) has (items: picked)
     Categorizing._categoriesWithItems (scope: sourceRound) has (categories)
     Responding._valuesForSubject (subject: sourceRound) has (values)
-    RunSnapshotting._snapshot (subject: sourceRound) has (value)
-    groups is openingGroups (categories, picked, value, values)
+    RunSnapshotting._snapshot (subject: sourceRound) has (value: sourceValue)
+    Relaying._leg (leg: source) has (position: sourceNumber)
+    groups is openingGroups (categories, picked, value: sourceValue, values)
 ```
 
 ### the starting piles of (round)
@@ -5051,7 +5065,7 @@ Authored path: `Live.walls.theWall`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 5.
 
 ```former
-Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bindings (questionnaire, presentation, open, openedAt, closedAt, title, leg, number, questions, begun, handedIn, modelBegun, modelHandedIn, seat, response, participant, item, value, card, pile, run, model, mine, part, category, name, description, held, failure, failedAt, notes, pendingAsk, sortPending); promises at most one record — forms:
+Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bindings (questionnaire, presentation, open, openedAt, closedAt, title, leg, number, questions, begun, handedIn, modelBegun, modelHandedIn, seat, response, participant, item, value, card, pile, run, model, mine, part, category, name, description, definition, summary, held, failure, failedAt, notes, pendingAsk, sortPending); promises at most one record — forms:
   a record of
     where Publishing._edition (edition: round) has (closedAt, material: questionnaire, open, openedAt)
     where RunSnapshotting._snapshot (subject: round) has (value: presentation)
@@ -5093,10 +5107,14 @@ Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bin
     open
     openedAt
     piles: each Categorizing._categoriesIn (scope: round) has (category, description, name)
+      where Guiding._guidanceText (subject: category, use: "pile-definition") has (text: definition)
+      where Guiding._guidanceText (subject: category, use: "pile-summary") has (text: summary)
       form a record of
         count: the count of Categorizing._getItems (category) has (item: held)
           where view "(card) stands on its wall" with (card: held)
-        description
+        definition
+        description: summary
+        legacyText: description
         name
         pile: category
         … former "the pick of (pile) on (round)" with (pile: category, round), with blank leaves if absent
@@ -19073,10 +19091,10 @@ where
   whether view "the open round of (run)" with (run) has (round: openRound)
   whether view "the round of (leg) in (run)" with (leg, run) has (round: ran)
   whether view "what (leg) takes" with (leg) has (source, use)
-  whether view "the source for opening (leg) in (run)" with (leg, run) has (groups, sourceOpen, sourceRound)
+  whether view "the source for opening (leg) in (run)" with (leg, run) has (groups, sourceNumber, sourceOpen, sourceRound, sourceValue)
   whether view "the material for opening (leg)" with (leg) has (content)
   account is openingAdmission (authorized, content, groups, legRelay, open, openRound, ran, relay, source, sourceOpen, sourceRound)
-  brief is openingBrief (account, author: user, content, groups, kind, questionnaire, use)
+  brief is openingBrief (account, author: user, content, groups, kind, questionnaire, sourceNumber, sourceValue, use)
 then
   Commissioning.prepare (account, at, brief, subject: run)
 ```
@@ -21068,9 +21086,9 @@ where
   Relaying._legFor (material: questionnaire) has (leg)
   Relaying._leg (leg) and not (kind: "vote")
   at is the current flow's instant
-  Categorizing._categoriesIn (scope: leg) has (description, name)
+  Categorizing._categoriesIn (scope: leg) has (name)
 then
-  Categorizing.ensureCategory (description, name, scope: round)
+  Categorizing.ensureCategory (description: "", name, scope: round)
 ```
 
 ### Live.rounds.CapturedRoundSeedsStandingPiles#2
@@ -21079,7 +21097,7 @@ Authored path: `Live.rounds.CapturedRoundSeedsStandingPiles`.
 - Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 9.
 
 ```reaction
-when Categorizing.ensureCategory (description, name, scope: round, category), asked by Live.rounds.CapturedRoundSeedsStandingPiles
+when Categorizing.ensureCategory (description: "", name, scope: round, category), asked by Live.rounds.CapturedRoundSeedsStandingPiles
 where
   at is the current flow's instant
 then
@@ -21682,6 +21700,23 @@ where
   view "the sampling request for (leg) with (picks)" with (leg, picks) has (account: "SOURCE_UNSAMPLED")
 then
   RequestBoundary.respond (error: "SOURCE_UNSAMPLED", requestId)
+```
+
+### Live.rounds.SeededPileKeepsDefinition
+
+Authored path: `Live.rounds.SeededPileKeepsDefinition`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 9.
+
+```reaction
+when Categorizing.ensureCategory (name, scope: round, category)
+where
+  Publishing._edition (edition: round) has (material: questionnaire)
+  Relaying._legFor (material: questionnaire) has (leg)
+  Categorizing._categoriesIn (scope: leg) has (description, name)
+  said is briefStanding (request: description)
+  said is among ["given"]
+then
+  Guiding.set (body: description, subject: category, title: "", use: "pile-definition")
 ```
 
 ### Live.rounds.SetGuide:clear
@@ -22544,7 +22579,7 @@ where
   whether view "unlocked sorting observation" with (round) has (supported: unlocked)
   whether view "applied sorting observation" with (round) has (supported: applied)
   whether view "the starting piles of (round)" with (round) has (standing)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Pinning._pinnedItems (scope: round) has (items: picked)
   Pinning._pinnedItems (scope: "live-reserved-piles") has (items: reserved)
   candidates is clearablePiles (categories, picked, reserved, standing)
@@ -22891,7 +22926,7 @@ where
   Locking._isLocked (target: round) has (locked: false)
   view "no offering about (round) has lines left to take" with (round)
   RunSnapshotting._snapshot (subject: round) has (value)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   view "the sorter's notes for (round)" with (round) has (notes)
@@ -22963,7 +22998,7 @@ where
   view "(round) is a round with a captured question" with (round)
   Insisting._standingFor (aim: round)
   RunSnapshotting._snapshot (subject: round) has (value)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   view "the sorter's notes for (round)" with (round) has (notes)
@@ -22984,6 +23019,38 @@ where
   earlier, Commissioning.prepare (commission)
 then
   Commissioning.conclude (account: "Another operation holds the round.", at, commission, successful: false)
+```
+
+### Live.walls.DescribePile:clear
+
+Authored path: `Live.walls.DescribePile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 165.
+
+```reaction
+when RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(pile) is not on the wall of a closed run" with (pile)
+  said is briefStanding (request: description)
+  said is among ["blank"]
+then
+  Guiding.clear (subject: pile, use: "pile-summary")
+```
+
+### Live.walls.DescribePile:clear#2
+
+Authored path: `Live.walls.DescribePile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 165.
+
+```reaction
+when Guiding.clear (subject: pile, use: "pile-summary", cleared), asked by Live.walls.DescribePile:clear
+where
+  earlier, RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
+then
+  RequestBoundary.respond (pile, requestId)
 ```
 
 ### Live.walls.DescribePile:closed
@@ -23030,8 +23097,10 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   view "(pile) is not on the wall of a closed run" with (pile)
+  said is briefStanding (request: description)
+  said is among ["given"]
 then
-  Categorizing.describeCategory (category: pile, description)
+  Guiding.set (body: description, subject: pile, title: "", use: "pile-summary")
 ```
 
 ### Live.walls.DescribePile:success#2
@@ -23041,11 +23110,11 @@ Authored path: `Live.walls.DescribePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 165.
 
 ```reaction
-when Categorizing.describeCategory (category: pile, description, result.category: described), asked by Live.walls.DescribePile:success
+when Guiding.set (body: description, subject: pile, title: "", use: "pile-summary", guidance: described), asked by Live.walls.DescribePile:success
 where
   earlier, RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
 then
-  RequestBoundary.respond (pile: described, requestId)
+  RequestBoundary.respond (pile, requestId)
 ```
 
 ### Live.walls.EmptyPiles:closed
@@ -23291,6 +23360,22 @@ where
   Pinning._isPinned (item: into, scope: "live-reserved-piles") has (pinned: true)
 then
   Pinning.clearItem (item: category)
+```
+
+### Live.walls.MissingSummaryPileReportsFailure
+
+Authored path: `Live.walls.MissingSummaryPileReportsFailure`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 216.
+
+```reaction
+when Suggesting.take (suggestion, kind, target)
+where
+  kind is among ["lid"]
+  no Categorizing._getCategoryDetail (category: target)
+  at is the current flow's instant
+  earlier, Reasoning.answer (asking)
+then
+  Commissioning.report (account: "The summarized pile no longer exists.", at, execution: asking, successful: false)
 ```
 
 ### Live.walls.MoveCard:closed
@@ -23712,7 +23797,7 @@ when Reasoning.answer (asking, reply)
 where
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   reading is placingReading (categories, removed, reply, values)
@@ -23992,7 +24077,7 @@ where
   at is the current flow's instant
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   reading is placingReading (categories, removed, reply, values)
@@ -24013,7 +24098,7 @@ where
   at is the current flow's instant
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   reading is placingReading (categories, removed, reply, values)
@@ -24033,7 +24118,7 @@ when Reasoning.answer (asking, reply)
 where
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   reading is placingReading (categories, removed, reply, values)
@@ -24143,7 +24228,7 @@ where
   whether view "applied sorting observation" with (round) has (supported: applied)
   whether view "ready sorting observation" with (at, round) has (supported: ready)
   whether RunSnapshotting._snapshot (subject: round) has (value)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   whether view "the sorter's notes for (round)" with (round) has (notes)
@@ -24291,7 +24376,7 @@ where
   whether view "applied sorting observation" with (round) has (supported: applied)
   whether view "ready sorting observation" with (at, round) has (supported: ready)
   whether RunSnapshotting._snapshot (subject: round) has (value)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   whether view "the sorter's notes for (round)" with (round) has (notes)
@@ -24448,7 +24533,7 @@ where
   view "(pile) is not on the wall of a closed run" with (pile)
   view "the number of cards in (pile)" with (pile) has (items)
   Categorizing._getCategoryDetail (category: pile) has (scope: round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   passage is lidPassage (categories, pile, removed, values)
@@ -24586,8 +24671,9 @@ where
   Suggesting._suggestion (suggestion) has (subject: round)
   view "(round) is a round with a captured question" with (round)
   kind is among ["lid"]
+  Categorizing._getCategoryDetail (category: target) has (scope: round)
 then
-  Categorizing.describeCategory (category: target, description: value)
+  Guiding.set (body: value, subject: target, title: "", use: "pile-summary")
 ```
 
 ### Live.walls.TakenOpenMakesPile

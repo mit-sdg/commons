@@ -158,6 +158,8 @@ import {
   samplingResolvedPreview,
 } from "./computations/live-sampling.ts";
 import {
+  sortingPileSubjects,
+  definedSortingPiles,
   lidLines,
   lidPassage,
   participantAnswers,
@@ -349,6 +351,8 @@ export const learningConcepts = conceptSet(registrations, {
   snapshotIsWhole,
   snapshotRequirements,
   snapshotTitle,
+  sortingPileSubjects,
+  definedSortingPiles,
   lidLines,
   lidPassage,
   participantAnswers,

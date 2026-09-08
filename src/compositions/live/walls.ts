@@ -200,6 +200,18 @@ const thePickOn = former("the pick of (pile) on (round)", ({ round, pile }, _bin
   }),
 ).optional();
 
+/** Only authored definitions influence category meaning; summaries are results. */
+const sortingPiles = view(
+  "sorting piles of (round)",
+  ({ round }, { categories }, { raw, subjects, texts }) =>
+    where(
+      Categorizing._categoriesWithItems({ scope: round }).is({ categories: raw }),
+      compute(computations.sortingPileSubjects, { categories: raw }, subjects),
+      Guiding._guidanceTexts({ subjects, use: "pile-definition" }).is({ texts }),
+      compute(computations.definedSortingPiles, { categories: raw, texts }, categories),
+    ),
+).one();
+
 /**
  * A round's wall: its question, its figure, every card the room handed in, and
  * the piles those cards were sorted into. A card carries neither its response
@@ -238,6 +250,8 @@ export const theWall = former(
       category,
       name,
       description,
+      definition,
+      summary,
       held,
       failure,
       failedAt,
@@ -309,10 +323,18 @@ export const theWall = former(
         )
         .form({ card, value, part, pile, model, mine }),
       piles: each(Categorizing._categoriesIn({ scope: round }).is({ category, name, description }))
+        .where(
+          Guiding._guidanceText({ subject: category, use: "pile-definition" }).is({
+            text: definition,
+          }),
+          Guiding._guidanceText({ subject: category, use: "pile-summary" }).is({ text: summary }),
+        )
         .form({
           pile: category,
           name,
-          description,
+          description: summary,
+          definition,
+          legacyText: description,
           count: each(Categorizing._getItems({ category }).is({ item: held }))
             .where(cardStands({ card: held }))
             .count(),
@@ -349,7 +371,7 @@ export const ReplyPlacesCards = reaction(
         now(at),
         Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
-        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+        sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         Trashing._trashedItems({}).is({ items: removed }),
         compute(computations.placingReading, { reply, categories, values, removed }, reading),
@@ -366,7 +388,7 @@ export const ReplyOffersLid = reaction(
         now(at),
         Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
-        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+        sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         Trashing._trashedItems({}).is({ items: removed }),
         compute(computations.placingReading, { reply, categories, values, removed }, reading),
@@ -382,7 +404,7 @@ export const ReplyUnusableComplains = reaction(
       .where(
         Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
-        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+        sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         Trashing._trashedItems({}).is({ items: removed }),
         compute(computations.placingReading, { reply, categories, values, removed }, reading),
@@ -428,8 +450,9 @@ export const TakenLidDescribesPile = reaction(({ suggestion, kind, target, value
       Suggesting._suggestion({ suggestion }).is({ subject: round }),
       roundIsAWall({ round }),
       is.among(kind, ["lid"]),
+      Categorizing._getCategoryDetail({ category: target }).is({ scope: round }),
     )
-    .then(Categorizing.describeCategory({ category: target, description: value })),
+    .then(Guiding.set({ subject: target, use: "pile-summary", title: "", body: value })),
 );
 
 /**
@@ -443,7 +466,7 @@ export const PlacedReplySatisfiesInsistence = reaction(
       .where(
         Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
-        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+        sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         Trashing._trashedItems({}).is({ items: removed }),
         compute(computations.placingReading, { reply, categories, values, removed }, reading),
@@ -475,7 +498,7 @@ export const ComplaintRetriesTheAsk = reaction(
         roundIsAWall({ round }),
         Insisting._standingFor({ aim: round }),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
-        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+        sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         Trashing._trashedItems({}).is({ items: removed }),
         theNotesFor({ round }).is({ notes }),
@@ -888,21 +911,36 @@ export const MergePile = endpoint(
 
 export const DescribePile = endpoint(
   "/live/walls/describe-pile",
-  ({ session, pile, description, user, at, described }) =>
+  ({ session, pile, description, user, at, described, said, cleared }) =>
     receive({ session, pile, description }).then(
       where(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         pileIsNotOfAClosedRun({ pile }),
+        compute(computations.briefStanding, { request: description }, said),
+        is.among(said, ["given"]),
       )
         .then(
-          Categorizing.describeCategory({ category: pile, description }).responds({
-            category: described,
-          }),
+          Guiding.set({
+            subject: pile,
+            use: "pile-summary",
+            title: "",
+            body: description,
+          }).responds({ guidance: described }),
         )
-        .then(respond({ pile: described }))
+        .then(respond({ pile }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        pileIsNotOfAClosedRun({ pile }),
+        compute(computations.briefStanding, { request: description }, said),
+        is.among(said, ["blank"]),
+      )
+        .then(Guiding.clear({ subject: pile, use: "pile-summary" }).responds({ cleared }))
+        .then(respond({ pile }))
+        .named("clear"),
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -1138,7 +1176,7 @@ export const Sort = endpoint(
           whether(appliedSortingObservation({ round }).is({ supported: applied })),
           whether(readySortingObservation({ round, at }).is({ supported: ready })),
           whether(RunSnapshotting._snapshot({ subject: round }).is({ value })),
-          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+          sortingPiles({ round }).is({ categories }),
           Responding._valuesForSubject({ subject: round }).is({ values }),
           Trashing._trashedItems({}).is({ items: removed }),
           whether(theNotesFor({ round }).is({ notes })),
@@ -1239,7 +1277,7 @@ const commissionedExecutionResult = view(
       whether(Reasoning._failureOf({ asking }).is({ account: failure })),
       whether(Insisting._unsettledFor({ aim: round }).is({ insistence })),
       count(Reasoning._followups, { previous: asking }, successors),
-      Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+      sortingPiles({ round }).is({ categories }),
       Responding._valuesForSubject({ subject: round }).is({ values }),
       Trashing._trashedItems({}).is({ items: removed }),
       compute(
@@ -1295,6 +1333,26 @@ export const RefusedLidReportsFailure = reaction(({ asking, at }) =>
     ),
 );
 
+/** A pile removed while the summary was being written is an application refusal. */
+export const MissingSummaryPileReportsFailure = reaction(
+  ({ suggestion, kind, target, asking, at }) =>
+    when(Suggesting.take({ suggestion }).responds({ kind, target }))
+      .where(
+        is.among(kind, ["lid"]),
+        no(Categorizing._getCategoryDetail({ category: target })),
+        now(at),
+        earlier(Reasoning.answer, {}, { asking }),
+      )
+      .then(
+        Commissioning.report({
+          execution: asking,
+          successful: false,
+          account: "The summarized pile no longer exists.",
+          at,
+        }),
+      ),
+);
+
 /**
  * Closing a round with the run's switch on settles its wall: one last ask over
  * whatever is left in the tray, on the path the tick takes and with the same
@@ -1329,7 +1387,7 @@ export const ClosedRoundSettlesWall = reaction(
         Locking._isLocked({ target: round }).is({ locked: false }),
         noOfferingIsBeingTakenAbout({ round }),
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
-        Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+        sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
         Trashing._trashedItems({}).is({ items: removed }),
         theNotesFor({ round }).is({ notes }),
@@ -1395,7 +1453,7 @@ export const SortNow = endpoint(
           whether(appliedSortingObservation({ round }).is({ supported: applied })),
           whether(readySortingObservation({ round, at }).is({ supported: ready })),
           whether(RunSnapshotting._snapshot({ subject: round }).is({ value })),
-          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+          sortingPiles({ round }).is({ categories }),
           Responding._valuesForSubject({ subject: round }).is({ values }),
           Trashing._trashedItems({}).is({ items: removed }),
           whether(theNotesFor({ round }).is({ notes })),
@@ -1593,7 +1651,7 @@ export const Summarize = endpoint(
           pileIsNotOfAClosedRun({ pile }),
           summaryWork({ pile }).is({ items }),
           Categorizing._getCategoryDetail({ category: pile }).is({ scope: round }),
-          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+          sortingPiles({ round }).is({ categories }),
           Responding._valuesForSubject({ subject: round }).is({ values }),
           Trashing._trashedItems({}).is({ items: removed }),
           compute(computations.lidPassage, { pile, categories, values, removed }, passage),
@@ -1683,7 +1741,7 @@ export const ClearEmptyPiles = endpoint(
           whether(unlockedSortingObservation({ round }).is({ supported: unlocked })),
           whether(appliedSortingObservation({ round }).is({ supported: applied })),
           whether(cleanupStanding({ round }).is({ standing })),
-          Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+          sortingPiles({ round }).is({ categories }),
           Pinning._pinnedItems({ scope: round }).is({ items: picked }),
           Pinning._pinnedItems({ scope: RESERVED_PILES }).is({ items: reserved }),
           compute(

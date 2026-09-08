@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
-import { RELAY_HELP } from "@/components/live/relay-help";
+import { GuidancePanel } from "@/components/live/guidance-panel";
+import { RelayWalkthrough } from "@/components/live/relay-walkthrough";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { api, isApiError, type Output, publicErrorMessage } from "@/lib/api";
 
@@ -21,45 +23,40 @@ export const GUIDE_LABELS: Record<string, string> = {
 export function GuideText({
   guide,
   title = "Session host guide",
+  detail,
 }: {
   guide: Record<string, string | null>;
   title?: string;
+  detail?: string;
 }) {
-  const purpose = guide.purpose?.trim();
-  const entries = Object.entries(guide).filter(
-    ([field, body]) => field !== "purpose" && body?.trim(),
-  );
-  if (entries.length === 0 && !purpose) return null;
+  const entries = Object.entries(guide).filter(([, body]) => body?.trim());
+  if (!entries.length) return null;
   return (
-    <div className="min-w-0 space-y-3">
-      {purpose ? (
-        <p className="whitespace-pre-wrap text-sm text-muted-foreground [overflow-wrap:anywhere]">
-          {purpose}
-        </p>
-      ) : null}
-      {entries.length > 0 ? (
-        <details className="min-w-0 rounded-lg border border-border bg-muted/30 p-3">
-          <summary className="cursor-pointer text-sm font-medium">
-            {title}
-          </summary>
-          <dl className="mt-3 space-y-3">
-            {entries.map(([field, body]) => (
-              <div key={field}>
-                <dt className="text-xs font-medium text-muted-foreground">
-                  {GUIDE_LABELS[field] ?? field}
-                </dt>
-                <dd
-                  className="mt-1 whitespace-pre-wrap text-sm [overflow-wrap:anywhere]"
-                  dir="auto"
-                >
-                  {body}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </details>
-      ) : null}
-    </div>
+    <GuidancePanel
+      audience="host"
+      scope={title}
+      label={
+        detail === "Round" || /round/i.test(title)
+          ? "Round guide"
+          : "Relay guide"
+      }
+    >
+      <dl className="space-y-4">
+        {entries.map(([field, body]) => (
+          <div key={field}>
+            <dt className="text-xs font-medium text-muted-foreground">
+              {GUIDE_LABELS[field] ?? field}
+            </dt>
+            <dd
+              className="mt-1 whitespace-pre-wrap text-sm [overflow-wrap:anywhere]"
+              dir="auto"
+            >
+              {body}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </GuidancePanel>
   );
 }
 
@@ -75,9 +72,48 @@ function GuideField({
   save: (body: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  if (!editing)
+    return (
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-medium text-muted-foreground">
+            {label}
+          </span>
+          {disabled ? null : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              aria-label={`Edit ${label.toLowerCase()}`}
+              onClick={() => setEditing(true)}
+            >
+              Edit
+            </Button>
+          )}
+        </div>
+        <p
+          className="whitespace-pre-wrap text-sm leading-relaxed [overflow-wrap:anywhere]"
+          dir="auto"
+        >
+          {body || "No note added."}
+        </p>
+      </div>
+    );
   return (
-    <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium">
-      {label}
+    <div className="flex min-w-0 flex-col gap-1.5 text-xs font-medium">
+      <div className="flex items-center justify-between gap-3">
+        <span>{label}</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 text-xs"
+          disabled={busy}
+          onClick={() => setEditing(false)}
+        >
+          Done
+        </Button>
+      </div>
       <Textarea
         key={body}
         defaultValue={body}
@@ -93,16 +129,18 @@ function GuideField({
           void save(next).finally(() => setBusy(false));
         }}
       />
-    </label>
+    </div>
   );
 }
 
 export function RelayGuideEditor({
   relay,
   onChanged,
+  tools,
 }: {
   relay: Relay;
   onChanged: () => void;
+  tools?: ReactNode;
 }) {
   async function save(
     field: "description" | "opening" | "closing",
@@ -118,31 +156,27 @@ export function RelayGuideEditor({
   }
   return (
     <div className="min-w-0 space-y-3">
-      {relay.description ? (
-        <p className="max-w-prose whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">
-          {relay.description}
-        </p>
-      ) : null}
-      <details className="min-w-0 rounded-xl border border-border p-4">
-        <summary className="cursor-pointer font-medium text-sm">
-          Description and host guide
-        </summary>
-        <div className="mt-4 space-y-3">
-          {(["description", "opening", "closing"] as const).map((field) => (
+      <GuideField
+        label="Overview"
+        body={relay.description}
+        disabled={relay.retired}
+        save={(body) => save("description", body)}
+      />
+      <div className="flex flex-wrap items-center gap-1">
+        {tools}
+        <GuidancePanel audience="host" label="Relay guide" scope="Whole relay">
+          {(["opening", "closing"] as const).map((field) => (
             <GuideField
               key={field}
               label={GUIDE_LABELS[field] ?? field}
-              body={
-                field === "description"
-                  ? relay.description
-                  : relay.hostGuide[field]
-              }
+              body={relay.hostGuide[field]}
               disabled={relay.retired}
               save={(body) => save(field, body)}
             />
           ))}
-        </div>
-      </details>
+        </GuidancePanel>
+        <RelayBasics />
+      </div>
     </div>
   );
 }
@@ -169,53 +203,38 @@ export function RoundGuideEditor({
     else onChanged();
   }
   return (
-    <div className="min-w-0 space-y-3">
-      {round.hostGuide.purpose ? (
-        <p className="whitespace-pre-wrap text-sm text-muted-foreground [overflow-wrap:anywhere]">
-          {round.hostGuide.purpose}
+    <GuidancePanel
+      audience="host"
+      label="Round guide"
+      scope={`Round ${round.number} — ${round.title}`}
+    >
+      {(["purpose", "facilitation", "selection"] as const).map((field) => (
+        <GuideField
+          key={field}
+          label={GUIDE_LABELS[field] ?? field}
+          body={
+            field === "selection"
+              ? round.storedSelection
+              : round.hostGuide[field]
+          }
+          disabled={retired}
+          save={(body) => save(field, body)}
+        />
+      ))}
+      {round.hostGuide.selection === null && round.storedSelection ? (
+        <p className="text-muted-foreground text-xs">
+          Selection guidance is saved but inactive: no later round takes from
+          this round.
         </p>
       ) : null}
-      <details className="min-w-0 rounded-lg border border-border p-3">
-        <summary className="cursor-pointer text-sm font-medium">
-          Round host guide
-        </summary>
-        <div className="mt-3 space-y-3">
-          {(["purpose", "facilitation", "selection"] as const).map((field) => (
-            <GuideField
-              key={field}
-              label={`Round ${round.number} ${GUIDE_LABELS[field]?.toLowerCase() ?? field}`}
-              body={
-                field === "selection"
-                  ? round.storedSelection
-                  : round.hostGuide[field]
-              }
-              disabled={retired}
-              save={(body) => save(field, body)}
-            />
-          ))}
-          {round.hostGuide.selection === null && round.storedSelection ? (
-            <p className="text-muted-foreground text-xs">
-              Selection guidance is saved but inactive: no later round takes
-              from this round.
-            </p>
-          ) : null}
-        </div>
-      </details>
-    </div>
+    </GuidancePanel>
   );
 }
 
 export function RelayBasics() {
   return (
-    <details className="min-w-0 rounded-lg border border-border bg-muted/30 p-3">
-      <summary className="cursor-pointer text-sm font-medium">
-        Running a relay
-      </summary>
-      <ol className="mt-3 list-decimal space-y-3 pl-5 text-sm">
-        {RELAY_HELP.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ol>
-    </details>
+    <GuidancePanel audience="help" scope="Running a relay">
+      <RelayWalkthrough />
+    </GuidancePanel>
   );
 }

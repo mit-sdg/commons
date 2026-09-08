@@ -58,7 +58,7 @@ openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, open
 openingGroups(picked: Seq, categories: Json, values: Json, value: Json) : Json
   Resolves the selected names and their supporting cards in the observed pick order.
 
-openingBrief(account: String, author: String, questionnaire: String, kind: String, use: Json, content: Json, groups: Json) : String
+openingBrief(account: String, author: String, questionnaire: String, kind: String, use: Json, content: Json, groups: Json, sourceNumber?: Json, sourceValue?: Json) : String
   Serializes the publication instruction with its complete immutable presentation, or leaves a declined proposal's brief empty.
 
 openingAuthor(brief: String) : String

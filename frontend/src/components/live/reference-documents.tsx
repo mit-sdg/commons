@@ -108,10 +108,10 @@ export function ReferencePicker({
     }
   }
   return (
-    <div className="rounded-xl border border-border bg-card px-4 py-3">
+    <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-medium">
-          Reference documents{" "}
+          Documents{" "}
           <span className="ml-1 text-muted-foreground">({value.length})</span>
         </h2>
         <Button
@@ -122,7 +122,7 @@ export function ReferencePicker({
           aria-expanded={choosing}
           onClick={() => setChoosing(!choosing)}
         >
-          <Plus /> Add reference
+          <Plus /> Add document
         </Button>
       </div>
       {error ? <p className="mt-2 text-destructive text-sm">{error}</p> : null}

@@ -132,8 +132,11 @@ describe("preview selection and source history", () => {
         use: "choices",
         content: { questions: [{ item: "q", prompt: "Choose", choices: [], parts: [], cap: 0 }] },
         groups: carried,
+        sourceValue: { title: "Earlier question" },
+        sourceNumber: 2,
       }),
     ).presentation;
+    expect(captured.questions[0].contextSource).toEqual({ number: 2, title: "Earlier question" });
     const ballot = { response: "r", item: "q", value: "Access" };
     const liveGroups = openingGroups({
       picked: ["a", "t"],

@@ -113,7 +113,7 @@ export function BackgroundCard({
   const [busy, setBusy] = useState(false);
   // The document Remove has asked about, until it is removed or kept.
   const [asked, setAsked] = useState<string | null>(null);
-  // The name has been asked for: the hand left the Name box, or Save was pressed.
+  // Ask for a missing name only after Save; choosing a file can supply it.
   const [askedName, setAskedName] = useState(false);
   const chooser = useRef<HTMLInputElement>(null);
 
@@ -232,7 +232,6 @@ export function BackgroundCard({
           maxLength={TITLE_MAX}
           readOnly={busy}
           aria-invalid={wanting}
-          onBlur={() => setAskedName(true)}
           onChange={(event) =>
             setDraft({ ...draft, title: event.target.value })
           }

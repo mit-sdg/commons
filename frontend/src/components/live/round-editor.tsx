@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowDown, ArrowUp, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  CircleHelp,
+  Layers,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { type ComponentProps, useState } from "react";
 import { toast } from "sonner";
 import { RoundGuideEditor } from "@/components/live/host-guide";
@@ -23,6 +30,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -32,6 +44,42 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api, isApiError, type Output } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+function CarryHelp({
+  text,
+  label = "How this round uses selected piles",
+}: {
+  text: string;
+  label?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+          onMouseEnter={() => setOpen(true)}
+          onFocus={() => setOpen(true)}
+          onClick={(event) => {
+            event.preventDefault();
+            setOpen(true);
+          }}
+        >
+          <CircleHelp className="size-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => event.preventDefault()}
+        className="text-sm"
+      >
+        {text}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export type RelayRound = NonNullable<
   Output<"/live/relays/get">["relay"]
@@ -279,6 +327,8 @@ export function RoundEditor({
   const [seenPiles, setSeenPiles] = useState(pilesKey(round.piles));
   const [naming, setNaming] = useState<PileBoxes | null>(null);
   const [notes, setNotes] = useState(round.notes);
+  const [editingSorting, setEditingSorting] = useState(false);
+  const [sortingOpen, setSortingOpen] = useState(false);
   const [seenNotes, setSeenNotes] = useState(round.notes);
   const [busy, setBusy] = useState(false);
   // The kind pressed, held for the instant before the round comes back with
@@ -592,12 +642,6 @@ export function RoundEditor({
           )}
         </div>
 
-        <RoundGuideEditor
-          round={round}
-          retired={retired}
-          onChanged={onChanged}
-        />
-
         <div
           role="group"
           aria-label={`Round ${round.number} kind`}
@@ -713,39 +757,49 @@ export function RoundEditor({
                     </ActButton>
                   ) : null}
                 </div>
-                {draft.parts.length === 1 ? (
-                  <label className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <input
-                      type="checkbox"
-                      checked={repeats}
-                      disabled={locked}
-                      aria-disabled={busy || undefined}
-                      className="size-4 rounded-sm border-input accent-primary disabled:cursor-default"
-                      onChange={(event) => {
-                        if (busy) return;
-                        change(
-                          { cap: event.target.checked ? CAP_START : 0 },
-                          true,
-                        );
-                      }}
-                    />
-                    Repeat up to
-                    <Input
-                      type="number"
-                      min={CAP_MIN}
-                      max={CAP_MAX}
-                      value={repeats ? draft.cap : CAP_START}
-                      disabled={locked || !repeats}
-                      readOnly={busy}
-                      aria-label={`Round ${round.number} repeat up to`}
-                      className={cn("h-8 w-16", LOCKED_BOX)}
-                      onChange={(event) =>
-                        change({ cap: Number(event.target.value) })
-                      }
-                      onBlur={() => void commit(draft)}
-                    />
-                  </label>
-                ) : null}
+                <div className="flex flex-wrap items-center gap-2">
+                  {draft.parts.length === 1 ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant={repeats ? "secondary" : "ghost"}
+                        disabled={locked || busy}
+                        aria-pressed={repeats}
+                        onClick={() => change({ cap: CAP_START }, true)}
+                      >
+                        Repeat one part
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={!repeats ? "secondary" : "ghost"}
+                        disabled={locked || busy}
+                        aria-pressed={!repeats}
+                        onClick={() => change({ cap: 0 }, true)}
+                      >
+                        Define separate parts
+                      </Button>
+                    </>
+                  ) : null}
+                  {repeats ? (
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                      Up to
+                      <Input
+                        type="number"
+                        min={CAP_MIN}
+                        max={CAP_MAX}
+                        value={draft.cap}
+                        disabled={locked}
+                        readOnly={busy}
+                        aria-label={`Round ${round.number} repeat up to`}
+                        className={cn("h-8 w-16", LOCKED_BOX)}
+                        onChange={(event) =>
+                          change({ cap: Number(event.target.value) })
+                        }
+                        onBlur={() => void commit(draft)}
+                      />
+                    </label>
+                  ) : null}
+                </div>
               </div>
             ) : null}
 
@@ -872,7 +926,6 @@ export function RoundEditor({
                         size="sm"
                         aria-label={`Round ${round.number} use`}
                         aria-disabled={busy || undefined}
-                        aria-describedby={`use-${round.leg}`}
                         className={LOCKED_BOX}
                       >
                         <SelectValue />
@@ -889,177 +942,274 @@ export function RoundEditor({
                     <span>{takes.use}</span>
                   )}
                 </span>
-                <span id={`use-${round.leg}`} className="text-muted-foreground">
-                  {sentenceOf(uses, takes.use)}
-                </span>
+                <CarryHelp text={sentenceOf(uses, takes.use)} />
               </>
             )}
           </div>
         ) : null}
 
-        {kind === "vote" ? null : (
-          <details className="rounded-lg border border-border px-3 py-2">
-            <summary className="cursor-pointer text-sm font-medium">
-              Response sorting
-              <span className="ml-2 font-normal text-muted-foreground text-xs">
-                {round.piles.length} reserved{" "}
-                {round.piles.length === 1 ? "pile" : "piles"}
-                {notes.trim() ? ", instructions added" : ""}
-              </span>
-            </summary>
-            <div className="mt-4 flex flex-col gap-4">
-              {locked && round.piles.length === 0 ? null : (
-                <div className="flex flex-col gap-1.5">
-                  <Label>Reserved piles</Label>
-                  <p className="text-muted-foreground text-xs">
-                    These categories stay available throughout the run, even
-                    when empty.
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {round.piles.map((pile, index) => (
-                      <span
-                        key={pile.pile}
-                        className="flex min-w-0 flex-wrap items-center gap-2"
-                      >
-                        <Input
-                          value={boxesOf(pile).name}
-                          maxLength={PILE_NAME_MAX}
-                          disabled={locked}
-                          readOnly={busy}
-                          aria-label={`Round ${round.number} pile ${index + 1} name`}
-                          className={cn("w-40", LOCKED_BOX)}
-                          onChange={(event) =>
-                            setBoxes({
-                              ...boxes,
-                              [pile.pile]: {
-                                ...boxesOf(pile),
-                                name: event.target.value,
-                              },
-                            })
-                          }
-                          onBlur={() => void renamePile(pile)}
-                        />
-                        <Input
-                          value={boxesOf(pile).description}
-                          maxLength={PILE_SENTENCE_MAX}
-                          disabled={locked}
-                          readOnly={busy}
-                          aria-label={`Round ${round.number} pile ${index + 1} sentence`}
-                          placeholder="What goes in it"
-                          className={cn("min-w-0 flex-1", LOCKED_BOX)}
-                          onChange={(event) =>
-                            setBoxes({
-                              ...boxes,
-                              [pile.pile]: {
-                                ...boxesOf(pile),
-                                description: event.target.value,
-                              },
-                            })
-                          }
-                          onBlur={() => void describePile(pile)}
-                        />
-                        {locked ? null : (
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1 border-t border-border pt-2">
+          <RoundGuideEditor
+            round={round}
+            retired={retired}
+            onChanged={onChanged}
+          />
+          {kind === "vote" ? null : (
+            <>
+              <div className="flex flex-wrap items-center gap-1">
+                <button
+                  type="button"
+                  aria-expanded={sortingOpen}
+                  aria-controls={`sorting-${round.leg}`}
+                  onClick={() => setSortingOpen(!sortingOpen)}
+                  className="flex w-fit max-w-full cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden"
+                >
+                  <Layers className="size-4" /> Response sorting
+                  <span className="text-xs">
+                    {round.piles.length}{" "}
+                    {round.piles.length === 1 ? "pile" : "piles"}
+                  </span>
+                  <span
+                    className={cn(
+                      "transition-transform",
+                      sortingOpen && "rotate-90",
+                    )}
+                    aria-hidden
+                  >
+                    ›
+                  </span>
+                </button>
+                <CarryHelp
+                  label="How response sorting works"
+                  text="Piles group related responses. Reserved piles remain available even when empty, with or without AI sorting. Their definitions explain what belongs in each pile; participants see the pile name and supporting responses."
+                />
+                {sortingOpen && !retired ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto"
+                    disabled={busy}
+                    onClick={() => setEditingSorting(!editingSorting)}
+                  >
+                    {editingSorting ? "Done" : "Edit"}
+                  </Button>
+                ) : null}
+              </div>
+              <div
+                hidden={!sortingOpen}
+                id={`sorting-${round.leg}`}
+                className="col-span-2 min-w-0 mt-2"
+              >
+                <div className="mt-3 flex flex-col gap-3">
+                  {locked && round.piles.length === 0 ? null : (
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex flex-col gap-2">
+                        {round.piles.map((pile, index) => (
+                          <span
+                            key={pile.pile}
+                            className="relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5 py-1"
+                          >
+                            <Layers
+                              className="absolute -left-6 top-3 size-4 text-muted-foreground"
+                              aria-hidden
+                            />
+                            {!editingSorting ? (
+                              <span
+                                className="inline-flex w-fit items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium [overflow-wrap:anywhere]"
+                                dir="auto"
+                              >
+                                {pile.name}
+                              </span>
+                            ) : (
+                              <Input
+                                value={boxesOf(pile).name}
+                                maxLength={PILE_NAME_MAX}
+                                disabled={locked}
+                                readOnly={busy || !editingSorting}
+                                aria-label={`Round ${round.number} pile ${index + 1} name`}
+                                className={cn(
+                                  "w-full font-medium",
+                                  LOCKED_BOX,
+                                  !editingSorting &&
+                                    "border-transparent bg-transparent shadow-none dark:bg-transparent",
+                                )}
+                                onChange={(event) =>
+                                  setBoxes({
+                                    ...boxes,
+                                    [pile.pile]: {
+                                      ...boxesOf(pile),
+                                      name: event.target.value,
+                                    },
+                                  })
+                                }
+                                onBlur={() => void renamePile(pile)}
+                              />
+                            )}
+                            <label className="col-span-2 text-xs text-muted-foreground">
+                              <span className="mr-1 font-medium">
+                                What belongs:
+                              </span>
+
+                              {!editingSorting ? (
+                                <p
+                                  className="inline text-sm leading-relaxed [overflow-wrap:anywhere]"
+                                  dir="auto"
+                                >
+                                  {pile.description || "No definition added."}
+                                </p>
+                              ) : (
+                                <Textarea
+                                  rows={2}
+                                  value={boxesOf(pile).description}
+                                  maxLength={PILE_SENTENCE_MAX}
+                                  disabled={locked}
+                                  readOnly={busy || !editingSorting}
+                                  aria-label={`Round ${round.number} pile ${index + 1} sentence`}
+                                  placeholder="What goes in it"
+                                  className={cn(
+                                    "min-w-0 text-sm",
+                                    !editingSorting &&
+                                      "border-transparent bg-transparent shadow-none dark:bg-transparent",
+                                    LOCKED_BOX,
+                                  )}
+                                  onChange={(event) =>
+                                    setBoxes({
+                                      ...boxes,
+                                      [pile.pile]: {
+                                        ...boxesOf(pile),
+                                        description: event.target.value,
+                                      },
+                                    })
+                                  }
+                                  onBlur={() => void describePile(pile)}
+                                />
+                              )}
+                            </label>
+                            {locked || !editingSorting ? null : (
+                              <ActButton
+                                variant="ghost"
+                                size="icon-sm"
+                                className="col-start-2 row-start-1"
+                                aria-label={`Remove pile ${pile.name}`}
+                                busy={busy}
+                                onClick={() => void removePile(pile)}
+                              >
+                                <X />
+                              </ActButton>
+                            )}
+                          </span>
+                        ))}
+                        {locked || !editingSorting ? null : naming === null ? (
                           <ActButton
                             variant="ghost"
-                            size="icon-sm"
-                            aria-label={`Remove pile ${pile.name}`}
+                            size="sm"
+                            className="self-start"
                             busy={busy}
-                            onClick={() => void removePile(pile)}
+                            onClick={() =>
+                              setNaming({ name: "", description: "" })
+                            }
                           >
-                            <X />
+                            + Pile
                           </ActButton>
+                        ) : (
+                          <span className="flex min-w-0 flex-wrap items-center gap-2">
+                            <Input
+                              // biome-ignore lint/a11y/noAutofocus: the pile is named the moment the row appears.
+                              autoFocus
+                              value={naming.name}
+                              maxLength={PILE_NAME_MAX}
+                              readOnly={busy || !editingSorting}
+                              aria-label={`Round ${round.number} new pile name`}
+                              placeholder="Name"
+                              className="w-40"
+                              onChange={(event) =>
+                                setNaming({
+                                  ...naming,
+                                  name: event.target.value,
+                                })
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") void addPile();
+                              }}
+                            />
+                            <Input
+                              value={naming.description}
+                              maxLength={PILE_SENTENCE_MAX}
+                              readOnly={busy || !editingSorting}
+                              aria-label={`Round ${round.number} new pile sentence`}
+                              placeholder="What goes in it"
+                              className="min-w-0 flex-1"
+                              onChange={(event) =>
+                                setNaming({
+                                  ...naming,
+                                  description: event.target.value,
+                                })
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") void addPile();
+                              }}
+                            />
+                            <ActButton
+                              size="sm"
+                              out={naming.name.trim() === ""}
+                              busy={busy}
+                              onClick={() => void addPile()}
+                            >
+                              Add
+                            </ActButton>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Close"
+                              onClick={() => setNaming(null)}
+                            >
+                              <X />
+                            </Button>
+                          </span>
                         )}
-                      </span>
-                    ))}
-                    {locked ? null : naming === null ? (
-                      <ActButton
-                        variant="ghost"
-                        size="sm"
-                        className="self-start"
-                        busy={busy}
-                        onClick={() => setNaming({ name: "", description: "" })}
-                      >
-                        + Pile
-                      </ActButton>
-                    ) : (
-                      <span className="flex min-w-0 flex-wrap items-center gap-2">
-                        <Input
-                          // biome-ignore lint/a11y/noAutofocus: the pile is named the moment the row appears.
-                          autoFocus
-                          value={naming.name}
-                          maxLength={PILE_NAME_MAX}
-                          readOnly={busy}
-                          aria-label={`Round ${round.number} new pile name`}
-                          placeholder="Name"
-                          className="w-40"
-                          onChange={(event) =>
-                            setNaming({ ...naming, name: event.target.value })
-                          }
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") void addPile();
-                          }}
-                        />
-                        <Input
-                          value={naming.description}
-                          maxLength={PILE_SENTENCE_MAX}
-                          readOnly={busy}
-                          aria-label={`Round ${round.number} new pile sentence`}
-                          placeholder="What goes in it"
-                          className="min-w-0 flex-1"
-                          onChange={(event) =>
-                            setNaming({
-                              ...naming,
-                              description: event.target.value,
-                            })
-                          }
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") void addPile();
-                          }}
-                        />
-                        <ActButton
-                          size="sm"
-                          out={naming.name.trim() === ""}
-                          busy={busy}
-                          onClick={() => void addPile()}
-                        >
-                          Add
-                        </ActButton>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label="Close"
-                          onClick={() => setNaming(null)}
-                        >
-                          <X />
-                        </Button>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
+                      </div>
+                    </div>
+                  )}
 
-              {retired && notes === "" ? null : (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`notes-${round.leg}`}>
-                    Sorting instructions
-                  </Label>
-                  <Textarea
-                    id={`notes-${round.leg}`}
-                    value={notes}
-                    maxLength={NOTES_MAX}
-                    disabled={retired}
-                    readOnly={busy}
-                    rows={2}
-                    placeholder="Describe how to group responses."
-                    className={cn("min-h-11", LOCKED_BOX)}
-                    onChange={(event) => setNotes(event.target.value)}
-                    onBlur={() => void writeNotes()}
-                  />
+                  {retired && notes === "" ? null : (
+                    <div className="flex flex-col gap-1.5 rounded-lg bg-brand-pine/5 px-3 py-2.5">
+                      <Label
+                        className="text-xs text-brand-pine"
+                        htmlFor={`notes-${round.leg}`}
+                      >
+                        <Sparkles className="size-3.5" /> AI sorting
+                        instructions
+                      </Label>
+                      {!editingSorting ? (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
+                          {round.notes || "No additional instructions."}
+                        </p>
+                      ) : (
+                        <Textarea
+                          id={`notes-${round.leg}`}
+                          value={notes}
+                          maxLength={NOTES_MAX}
+                          disabled={retired}
+                          readOnly={busy || !editingSorting}
+                          rows={2}
+                          placeholder="Describe how to group responses."
+                          className={cn(
+                            "min-h-11",
+                            LOCKED_BOX,
+                            !editingSorting &&
+                              "border-transparent bg-transparent shadow-none dark:bg-transparent",
+                          )}
+                          onChange={(event) => setNotes(event.target.value)}
+                          onBlur={() => void writeNotes()}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </details>
-        )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

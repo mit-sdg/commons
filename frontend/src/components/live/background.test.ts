@@ -125,7 +125,7 @@ describe("the Name box a document is wanting", () => {
     expect(nameWanting("", false)).toBe(false);
   });
 
-  test("wants a name once the hand has left the box or pressed Save", () => {
+  test("wants a name once Save was pressed", () => {
     expect(nameWanting("", true)).toBe(true);
     expect(nameWanting("   ", true)).toBe(true);
   });

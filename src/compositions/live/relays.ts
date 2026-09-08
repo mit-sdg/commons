@@ -1016,8 +1016,8 @@ const openingSource = view(
   "the source for opening (leg) in (run)",
   (
     { run, leg },
-    { source, sourceRound, sourceOpen, groups },
-    { picked, categories, values, value },
+    { source, sourceRound, sourceOpen, groups, sourceValue, sourceNumber },
+    { picked, categories, values },
   ) =>
     where(
       theTakeOf({ leg }).is({ source }),
@@ -1025,8 +1025,13 @@ const openingSource = view(
       Pinning._pinnedItems({ scope: sourceRound }).is({ items: picked }),
       Categorizing._categoriesWithItems({ scope: sourceRound }).is({ categories }),
       Responding._valuesForSubject({ subject: sourceRound }).is({ values }),
-      RunSnapshotting._snapshot({ subject: sourceRound }).is({ value }),
-      compute(computations.openingGroups, { picked, categories, values, value }, groups),
+      RunSnapshotting._snapshot({ subject: sourceRound }).is({ value: sourceValue }),
+      Relaying._leg({ leg: source }).is({ position: sourceNumber }),
+      compute(
+        computations.openingGroups,
+        { picked, categories, values, value: sourceValue },
+        groups,
+      ),
     ),
 ).optional();
 
@@ -1069,6 +1074,8 @@ export const OpenRound = endpoint(
     source,
     sourceRound,
     sourceOpen,
+    sourceValue,
+    sourceNumber,
     groups,
     kind,
     use,
@@ -1094,7 +1101,15 @@ export const OpenRound = endpoint(
           whether(theOpenRoundOf({ run }).is({ round: openRound })),
           whether(theRoundOfLegInRun({ run, leg }).is({ round: ran })),
           whether(theTakeOf({ leg }).is({ source, use })),
-          whether(openingSource({ run, leg }).is({ sourceRound, sourceOpen, groups })),
+          whether(
+            openingSource({ run, leg }).is({
+              sourceRound,
+              sourceOpen,
+              groups,
+              sourceValue,
+              sourceNumber,
+            }),
+          ),
           whether(openingContent({ leg }).is({ content })),
           compute(
             computations.openingAdmission,
@@ -1115,7 +1130,17 @@ export const OpenRound = endpoint(
           ),
           compute(
             computations.openingBrief,
-            { account, author: user, questionnaire, kind, use, content, groups },
+            {
+              account,
+              author: user,
+              questionnaire,
+              kind,
+              use,
+              content,
+              groups,
+              sourceValue,
+              sourceNumber,
+            },
             brief,
           ),
         ).then(

@@ -689,3 +689,18 @@ export function cleanupBrief({
 export function cleanupCategories({ brief }: { brief: string }): string[] {
   return JSON.parse(brief) as string[];
 }
+
+/** Keep grouping meaning separate from summaries and unclassified legacy text. */
+export function sortingPileSubjects({ categories }: { categories: PileWithItems[] }): string[] {
+  return categories.map((pile) => pile.category);
+}
+export function definedSortingPiles({
+  categories,
+  texts,
+}: {
+  categories: PileWithItems[];
+  texts: { subject: string; text: string }[];
+}): PileWithItems[] {
+  const definitions = new Map(texts.map((entry) => [entry.subject, entry.text]));
+  return categories.map((pile) => ({ ...pile, description: definitions.get(pile.category) ?? "" }));
+}

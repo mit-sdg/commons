@@ -11,8 +11,8 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Facts } from "@/components/facts";
-import { Chips } from "@/components/live/chips";
 import { Flights, measure, useFlights } from "@/components/live/flights";
+import { SourceEvidence } from "@/components/live/phone-question";
 import {
   Answer,
   Card,
@@ -54,7 +54,6 @@ const SHELF_SHOWN = 18;
 const SHELF_FADE = { big: 120, small: 72 };
 
 /** How many of a context group's words a chip carries before the rest are a count. */
-const CONTEXT_SHOWN = 3;
 
 /** How tall the wall's bottom row stands, which is the line the foot sits on. */
 const FOOT_ROW = { big: "h-[112px]", small: "h-[52px]" };
@@ -330,7 +329,11 @@ function StagedWall({
   const spreading = piles.find((pile) => pile.pile === spread) ?? null;
   const context = questionOf(seen)?.context ?? [];
   // How many carried groups stand whole, and whether the row is still cut.
-  const { ref: strip, fit: whole, over: cut } = useStrip(context.length);
+  const {
+    ref: strip,
+    fit: whole,
+    over: cut,
+  } = useStrip(big ? context.length : 0);
   const room = roomFigures(seen);
   const seats = big || phone ? null : modelNote(seen.handedInByModel);
   const vote = choicesOf(seen).length > 0;
@@ -456,7 +459,9 @@ function StagedWall({
                   <div
                     ref={strip}
                     className={cn(
-                      "flex min-w-0 items-center overflow-hidden",
+                      big
+                        ? "flex min-w-0 items-center overflow-hidden"
+                        : "flex min-w-0 flex-wrap items-center gap-2",
                       cut &&
                         "[mask-image:linear-gradient(to_right,#000_calc(100%_-_48px),transparent)]",
                       big ? "gap-3" : "gap-2",
@@ -478,14 +483,16 @@ function StagedWall({
                       </span>
                     )}
                     <>
-                      {context.slice(0, whole).map((group) => (
-                        <CarriedGroup
-                          key={group.name}
-                          group={group}
-                          big={big}
-                        />
-                      ))}
-                      {context.length - whole <= 0 ? null : (
+                      {context
+                        .slice(0, big ? whole : undefined)
+                        .map((group) =>
+                          big ? (
+                            <CarriedGroup key={group.name} group={group} />
+                          ) : (
+                            <SourceEvidence key={group.name} group={group} />
+                          ),
+                        )}
+                      {!big || context.length - whole <= 0 ? null : (
                         <div
                           data-more
                           className={cn(
@@ -600,7 +607,7 @@ function StagedWall({
                             id={pile.pile}
                             name={pile.name}
                             count={cards.length}
-                            description={pile.description}
+                            description={phone ? "" : pile.description}
                             cards={cards}
                             lit={lit.has(pile.pile)}
                             airborne={flying.size > 0}
@@ -1099,54 +1106,23 @@ function useShelfRoom(
   return { ref, shown: room.shown, fade: room.fade };
 }
 
-/**
- * One group carried in from an earlier round: its name over the first of its
- * cards as chips, every chip whole, and a count of the ones the box held back.
- */
-function CarriedGroup({
-  group,
-  big,
-}: {
-  group: { name: string; cards: string[] };
-  big: boolean;
-}) {
-  const values = distinctValues(group.cards);
-  const shown = Math.min(CONTEXT_SHOWN, values.length);
-  const { ref, fit } = useStrip(shown, "[data-chip]");
-  const held = values.length - fit;
+/** A projected source pile: its identity and evidence count, readable at a distance. */
+function CarriedGroup({ group }: { group: { name: string; cards: string[] } }) {
+  const count = distinctValues(group.cards).length;
   return (
     <div
       data-group
-      className={cn(
-        "flex min-w-0 flex-none flex-col gap-0.5 rounded-lg border border-border bg-card",
-        big ? "max-w-[360px] px-4 py-2" : "max-w-[240px] px-3 py-1.5",
-      )}
+      className="flex min-w-0 max-w-[420px] flex-none items-baseline gap-3 rounded-lg border border-border bg-card px-4 py-2"
     >
-      <span
-        dir="auto"
-        className={cn("truncate font-medium", big ? "text-xl" : "text-sm")}
-      >
+      <span dir="auto" className="truncate text-xl font-medium">
         {group.name}
       </span>
       <span
-        ref={ref}
-        className={cn(
-          "flex min-w-0 items-baseline gap-1.5 overflow-hidden text-muted-foreground",
-          big ? "text-lg" : "text-xs",
-        )}
+        className="flex-none text-lg tabular-nums text-muted-foreground"
+        aria-label={`${count} supporting responses`}
+        title={`${count} supporting responses`}
       >
-        <Chips
-          values={values.slice(0, fit)}
-          className={cn(
-            "min-w-0 flex-nowrap overflow-hidden",
-            big ? "text-lg" : "text-xs",
-          )}
-        />
-        {held <= 0 ? null : (
-          <span data-more className="flex-none">
-            and {held} more
-          </span>
-        )}
+        {count}
       </span>
     </div>
   );

@@ -33,11 +33,15 @@ export function JoinCode({
   code,
   wall = false,
   size = "panel",
+  audience = "host",
+  onExpand,
 }: {
   url: string;
   code: string;
   wall?: boolean;
   size?: "panel" | "corner" | "room";
+  audience?: "host" | "room";
+  onExpand?: () => void;
 }) {
   const svg = useMemo(() => renderSVG(url, { ecc: "M", border: 2 }), [url]);
   const entry = joinEntryUrl();
@@ -48,10 +52,19 @@ export function JoinCode({
   const configured = (process.env.NEXT_PUBLIC_PARTICIPANT_ORIGIN ?? "") !== "";
   const spec = SIZES[shape];
   const beside = shape === "corner" || shape === "room";
+  const Frame = onExpand ? "button" : "figure";
+  const Caption = onExpand ? "span" : "figcaption";
   return (
-    <figure
+    <Frame
+      type={onExpand ? "button" : undefined}
+      onClick={onExpand}
+      aria-label={onExpand ? "Expand join code" : undefined}
+      aria-haspopup={onExpand ? "dialog" : undefined}
+      data-join-expand={onExpand ? "" : undefined}
       className={cn(
         "flex",
+        onExpand &&
+          "cursor-zoom-in rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
         beside ? "flex-row items-center gap-6" : "flex-col items-center gap-3",
       )}
     >
@@ -65,7 +78,7 @@ export function JoinCode({
         // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is drawn locally by uqr from a same-origin URL this app builds, never from user content.
         dangerouslySetInnerHTML={{ __html: svg }}
       />
-      <figcaption
+      <Caption
         className={cn(
           "flex flex-col",
           beside ? "items-start gap-1 text-left" : "items-center text-center",
@@ -95,13 +108,15 @@ export function JoinCode({
               shape === "wall" ? "text-base" : "text-xs",
             )}
           >
-            {configured
-              ? "PARTICIPANT_ORIGIN is this machine's own address. Set it to one the room can reach."
-              : "This address works on this device only. Set PARTICIPANT_ORIGIN."}
+            {audience === "room"
+              ? "Joining is unavailable on other devices. Ask your host for help."
+              : configured
+                ? "PARTICIPANT_ORIGIN is this machine's own address. Set it to one the room can reach."
+                : "This address works on this device only. Set PARTICIPANT_ORIGIN."}
           </span>
         ) : null}
-      </figcaption>
-    </figure>
+      </Caption>
+    </Frame>
   );
 }
 

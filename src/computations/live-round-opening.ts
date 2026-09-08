@@ -75,7 +75,11 @@ export function openingBrief({
   use,
   content,
   groups,
+  sourceValue,
+  sourceNumber,
 }: {
+  sourceValue?: unknown;
+  sourceNumber?: unknown;
   account: string;
   author: string;
   questionnaire: string;
@@ -94,6 +98,9 @@ export function openingBrief({
       if (use === "choices")
         return {
           ...question,
+          ...(typeof sourceNumber === "number" && sourceValue != null
+            ? { contextSource: { number: sourceNumber, title: (sourceValue as RunSnapshot).title } }
+            : {}),
           choices: names,
           parts: [],
           cap: 0,
@@ -104,6 +111,9 @@ export function openingBrief({
       if (use === "parts")
         return {
           ...question,
+          ...(typeof sourceNumber === "number" && sourceValue != null
+            ? { contextSource: { number: sourceNumber, title: (sourceValue as RunSnapshot).title } }
+            : {}),
           choices: [],
           parts: names,
           cap: 0,
@@ -112,6 +122,9 @@ export function openingBrief({
         };
       return {
         ...question,
+        ...(typeof sourceNumber === "number" && sourceValue != null
+          ? { contextSource: { number: sourceNumber, title: (sourceValue as RunSnapshot).title } }
+          : {}),
         choices: kindChoices({ kind, choices: question.choices }),
         parts: kindParts({ kind, parts: question.parts ?? [] }),
         cap: kindCap({ kind, cap: question.cap ?? 0 }),

@@ -9,6 +9,7 @@ export interface RunSnapshotQuestion {
   /** The groups a round shows above its prompt, carried from an earlier round. */
   context?: ContextGroup[];
   contextUse?: string;
+  contextSource?: { number: number; title: string };
   /** Original groups behind dynamically carried choices; ballots retain these examples. */
   choiceSources?: ContextGroup[];
   position: number;
@@ -113,6 +114,7 @@ export function participantQuestions({ value }: { value: unknown }) {
     cap: capOf(question),
     context: question.context ?? [],
     contextUse: question.contextUse ?? "context",
+    ...(question.contextSource ? { contextSource: question.contextSource } : {}),
     position: question.position,
   }));
 }

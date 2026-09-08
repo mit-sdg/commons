@@ -78,7 +78,7 @@ export function addStands(adding: boolean, retired: boolean): boolean {
 
 /**
  * The Name box a document is wanting: empty, with the name asked for by a hand
- * that left the box or pressed Save. Text given before the name asks nothing.
+ * that pressed Save. Text given before the name asks nothing.
  */
 export function nameWanting(title: string, asked: boolean): boolean {
   return asked && title.trim() === "";

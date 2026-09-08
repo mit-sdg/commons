@@ -28,7 +28,7 @@ The sorting passage groups by shared meaning and honors standing category names 
 
 Summarization records its observed work with [summaryAdmission](computation:summaryAdmission) and Commissioning, then branches on the prepared result. Its accepted brief and execution use the same completion receipts as sorting. [Live.walls.SummarizeRefused](reaction:Live.walls.SummarizeRefused) answers closed, missing, and unauthorized requests. Emptying is one Categorizing.empty action: it retains the categories and answers whether any membership was removed, including an already-empty scope.
 
-A pile's sentence is its category's description. [Live.walls.Summarize](reaction:Live.walls.Summarize) asks the model for one sentence over a pile's cards through [lidPassage](computation:lidPassage), and answers that nothing was asked for a pile with no cards; [Live.walls.ReplyOffersLid](reaction:Live.walls.ReplyOffersLid) reads the reply into a `lid` suggestion about the round, taken like any placing line, and [Live.walls.TakenLidDescribesPile](reaction:Live.walls.TakenLidDescribesPile) writes it onto the pile. [Live.walls.DescribePile](reaction:Live.walls.DescribePile) lets a person write or fix the sentence by hand.
+A pile's result summary is stored in Guiding under `pile-summary`, separately from authored `pile-definition` guidance. Old category descriptions are preserved as unclassified legacy text for host review; they are neither silently relabeled nor shown as result summaries. Sorting reads explicit definitions only. [Live.walls.Summarize](reaction:Live.walls.Summarize) asks the model for one sentence over a pile's cards through [lidPassage](computation:lidPassage), and answers that nothing was asked for a pile with no cards; [Live.walls.ReplyOffersLid](reaction:Live.walls.ReplyOffersLid) reads the reply into a `lid` suggestion about the round, taken like any placing line, and [Live.walls.TakenLidDescribesPile](reaction:Live.walls.TakenLidDescribesPile) writes it onto the pile. [Live.walls.DescribePile](reaction:Live.walls.DescribePile) lets a person write or fix the sentence by hand.
 
 A generated pile summary states a supported relationship in at most twelve words. When the cards describe opposing experiences, it preserves the contrast rather than replacing it with a vague shared topic.
 
@@ -202,3 +202,15 @@ Reasoning still owns passages and replies; Categorizing still owns memberships; 
 [RefusedPlacementReportsFailure](reaction:Live.walls.RefusedPlacementReportsFailure) and [RefusedLidReportsFailure](reaction:Live.walls.RefusedLidReportsFailure) record ordinary application refusals before the deferred success receipt. A completed model reply cannot disguise a refused placement as successful application. Receipts are remembered independently of association so a fast reply has the same outcome.
 
 The initial brief stays fixed. A repair keeps its own passage and its predecessor: the existing repair policy may incorporate the current wall and notes. This records the change of instructions rather than claiming every attempt uses the initial passage unchanged.
+
+## Definition projection
+
+```computations
+sortingPileSubjects(categories: Json) : Json
+  Lists category identities in stable order for the definition lookup.
+
+definedSortingPiles(categories: Json, texts: Json) : Json
+  Preserves names, identities, membership and ordering, replacing the sorter description with explicit pile-definition guidance only. Summaries and unclassified legacy text do not override authored guidance.
+```
+
+[Live.walls.MissingSummaryPileReportsFailure](reaction:Live.walls.MissingSummaryPileReportsFailure) reports failed application if the requested pile disappears before the summary can be applied.

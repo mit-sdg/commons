@@ -307,9 +307,10 @@ describe("the wall the preview stands under", () => {
     ]);
   });
 
-  test("keeps a standing pile's sentence and the cards it took", () => {
+  test("keeps sorting definitions separate from participant summaries and retains cards", () => {
     const [saving, undo] = wall.piles;
-    expect(saving?.description).toBe("Anything kept for later.");
+    expect(saving?.definition).toBe("Anything kept for later.");
+    expect(saving?.description).toBe("");
     expect(undo?.description).toBe("");
     expect(
       wall.cards.filter((card) => card.pile === saving?.pile),

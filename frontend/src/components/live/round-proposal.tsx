@@ -331,20 +331,26 @@ export function ProposalRow({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-x-2.5 gap-y-1 py-1.5 text-sm",
+        "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-3 text-sm",
         refusal === null ? null : "text-destructive",
       )}
     >
-      <span className="w-full flex-none whitespace-nowrap font-mono text-[10.5px] text-muted-foreground uppercase tracking-[0.06em] sm:w-[92px]">
+      <span className="col-start-1 row-start-1 font-mono text-[10.5px] text-muted-foreground uppercase tracking-[0.06em] [overflow-wrap:anywhere]">
         {field}
       </span>
-      <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-2">
-        {stands ? null : <Side said={was} struck />}
-        {saidNothing(to) ? null : (
+      <span className="col-start-1 row-start-2 flex min-w-0 flex-col gap-2 [overflow-wrap:anywhere]">
+        {stands ? null : (
+          <details className="w-full text-xs text-muted-foreground">
+            <summary className="cursor-pointer">Previous value</summary>
+            <div className="mt-2">
+              <Side said={was} />
+            </div>
+          </details>
+        )}
+        {saidNothing(to) ? (
+          <span>Remove</span>
+        ) : (
           <>
-            {stands ? null : (
-              <span className="flex-none text-muted-foreground">→</span>
-            )}
             <Side said={to} />
           </>
         )}
@@ -357,7 +363,7 @@ export function ProposalRow({
         onRefuse={onRefuse}
       />
       {refusal === null ? null : (
-        <p className="w-full text-destructive sm:pl-[102px]">{refusal}</p>
+        <p className="col-span-2 text-destructive">{refusal}</p>
       )}
     </div>
   );
@@ -381,23 +387,65 @@ export function RoundChanges({
       {...PROPOSED}
       className="mb-1 divide-y divide-primary/20 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1"
     >
-      {proposed.map(({ line, refusal }) => {
-        const { field, was, to } = changeWords(line, round);
-        return (
-          <ProposalRow
-            key={line.suggestion}
-            field={field}
-            was={was}
-            to={to}
-            words={`${field.toLowerCase()} on round ${round.number}`}
-            busy={busy}
-            refusal={refusal}
-            reversed={line.kind === "remove"}
-            onAccept={() => onSettle(line, true)}
-            onRefuse={() => onSettle(line, false)}
-          />
-        );
-      })}
+      <p className="py-2 text-xs font-medium">
+        {proposed.length} proposed changes
+      </p>
+      {[
+        {
+          label: "Content",
+          lines: proposed.filter(
+            ({ line }) =>
+              !["guide", "pile", "unpile", "notes"].includes(line.kind),
+          ),
+        },
+        {
+          label: "Host guide",
+          lines: proposed.filter(({ line }) => line.kind === "guide"),
+        },
+        {
+          label: "Response sorting",
+          lines: proposed.filter(({ line }) =>
+            ["pile", "unpile", "notes"].includes(line.kind),
+          ),
+        },
+      ]
+        .filter((group) => group.lines.length)
+        .map((group) => {
+          const rows = group.lines.map(({ line, refusal }) => {
+            const { field, was, to } = changeWords(line, round);
+            return (
+              <ProposalRow
+                key={line.suggestion}
+                field={field}
+                was={was}
+                to={to}
+                words={`${field.toLowerCase()} on round ${round.number}`}
+                busy={busy}
+                refusal={refusal}
+                reversed={line.kind === "remove"}
+                onAccept={() => onSettle(line, true)}
+                onRefuse={() => onSettle(line, false)}
+              />
+            );
+          });
+          return group.label === "Content" ? (
+            <div key={group.label}>{rows}</div>
+          ) : (
+            <details
+              key={group.label}
+              open={group.lines.some((entry) => entry.refusal !== null)}
+              className="py-2"
+            >
+              <summary className="cursor-pointer text-sm">
+                {group.label}{" "}
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {group.lines.length} changes
+                </span>
+              </summary>
+              <div className="mt-2 space-y-2">{rows}</div>
+            </details>
+          );
+        })}
     </div>
   );
 }
@@ -445,7 +493,7 @@ export function ProposedRound({
             <TakesChip from={round.from} use={round.use} standing="plain" />
           ) : null}
         </div>
-        <GuideText guide={round.hostGuide} />
+
         {round.prompt === "" ? null : (
           <p className="min-w-0 text-muted-foreground text-sm">
             {round.prompt}
@@ -455,20 +503,44 @@ export function ProposedRound({
           <p className="min-w-0 text-muted-foreground text-sm">{boxes}</p>
         )}
         <Chips values={round.choices} className="flex min-w-0" />
-        {round.piles.length === 0 ? null : (
-          <ul className="flex min-w-0 flex-col gap-1 text-muted-foreground text-sm">
-            {round.piles.map((pile) => (
-              <li key={pile.name} className="min-w-0">
-                {pileWords(pile.name, pile.sentence)}
-              </li>
-            ))}
-          </ul>
-        )}
-        {round.notes === "" ? null : (
-          <p className="min-w-0 whitespace-pre-wrap text-muted-foreground text-sm">
-            {round.notes}
-          </p>
-        )}
+        <div className="flex flex-wrap gap-3 border-t border-primary/20 pt-3">
+          <details className="w-full">
+            <summary className="cursor-pointer text-xs">
+              Host guide{" "}
+              <span className="ml-2 text-muted-foreground">Proposed</span>
+            </summary>
+            <div className="mt-2">
+              <GuideText guide={round.hostGuide} />
+            </div>
+          </details>
+          {round.piles.length > 0 || round.notes ? (
+            <details className="w-full">
+              <summary className="cursor-pointer text-xs">
+                Response sorting{" "}
+                <span className="ml-2 text-muted-foreground">
+                  {round.piles.length} piles
+                  {round.notes ? ", instructions added" : ""}
+                </span>
+              </summary>
+              <div className="mt-3 space-y-3">
+                {round.piles.length === 0 ? null : (
+                  <ul className="flex min-w-0 flex-col gap-1 text-muted-foreground text-sm">
+                    {round.piles.map((pile) => (
+                      <li key={pile.name} className="min-w-0">
+                        {pileWords(pile.name, pile.sentence)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {round.notes === "" ? null : (
+                  <p className="min-w-0 whitespace-pre-wrap text-muted-foreground text-sm">
+                    {round.notes}
+                  </p>
+                )}
+              </div>
+            </details>
+          ) : null}
+        </div>
         {refusal === null ? null : (
           <p className="text-destructive text-sm">{refusal}</p>
         )}

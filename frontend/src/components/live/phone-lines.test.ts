@@ -27,7 +27,7 @@ describe("what the phone says the tray holds", () => {
   });
 
   test("says so while a card of this phone's is still unsorted", () => {
-    expect(trayLine(4, true)).toBe("4 in the tray, yours pending");
+    expect(trayLine(4, true)).toBe("4 in the tray, including yours");
   });
 
   test("says nothing about an empty tray", () => {

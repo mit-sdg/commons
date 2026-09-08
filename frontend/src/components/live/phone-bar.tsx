@@ -11,7 +11,9 @@ export function HandInBar({
   busy = false,
   refusal = null,
   onHandIn,
+  progress,
 }: {
+  progress?: string;
   answered: number;
   of: number;
   /** A hand-in already in flight: the button is out until it lands. */
@@ -51,7 +53,7 @@ export function HandInBar({
           aria-atomic="true"
           className="text-sm text-muted-foreground"
         >
-          {answered} of {of} answered
+          {progress ?? `${answered} of ${of} answered`}
         </span>
         {/* Out, the button keeps its place under the thumb and in the tab
             order: a disabled control drops the focus it holds and says

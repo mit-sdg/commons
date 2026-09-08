@@ -122,6 +122,8 @@ export function sampleWall(
       pile: ids.get(name) ?? name,
       name,
       description: "",
+      definition: "",
+      legacyText: "",
       count: answers.filter((answer) => answer.pile === name).length,
       picked: null,
     })),

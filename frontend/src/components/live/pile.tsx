@@ -821,7 +821,7 @@ export function Pile({
             // biome-ignore lint/a11y/noAutofocus: the sentence is being typed the moment it appears.
             autoFocus
             value={describing}
-            aria-label="Describe the pile"
+            aria-label="Edit pile summary"
             onChange={(event) => setDescribing(event.target.value)}
             onBlur={commitDescription}
             onKeyDown={(event) => {
@@ -1068,7 +1068,7 @@ function PileMenu({
       >
         {onDescribe === undefined ? null : (
           <DropdownMenuItem onSelect={() => take(onDescribe)}>
-            Describe
+            Edit summary
           </DropdownMenuItem>
         )}
         {onMergeInto === undefined || piles.length === 0 ? null : (

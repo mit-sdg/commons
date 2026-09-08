@@ -3,6 +3,8 @@
 import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { GuidancePanel } from "@/components/live/guidance-panel";
+import { ReferenceDocuments } from "@/components/live/reference-documents";
 import { saidRefusal } from "@/components/live/refusals";
 import { ActButton } from "@/components/live/round-editor";
 import {
@@ -486,19 +488,24 @@ export function useDrafting({
           open && "rounded-xl border border-primary/30 bg-primary/5 px-4 py-3",
         )}
       >
-        <Button
-          variant={open ? "outline" : "ghost"}
-          size="sm"
-          aria-expanded={open}
-          aria-controls="brief-line"
-          className={cn(
-            "w-fit",
-            open ? "border-primary text-primary" : "text-muted-foreground",
-          )}
-          onClick={() => onOpen(!open)}
-        >
-          <Sparkles /> Ask AI
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            aria-expanded={open}
+            aria-controls="brief-line"
+            className={cn(
+              "w-fit",
+              open ? "border-primary text-primary" : "text-muted-foreground",
+            )}
+            onClick={() => onOpen(!open)}
+          >
+            <Sparkles /> Edit with AI
+          </Button>
+          <GuidancePanel audience="ai" scope="Documents used for AI edits">
+            <ReferenceDocuments subject={relay} onChanged={onChanged} />
+          </GuidancePanel>
+        </div>
         {stopped === null ? null : (
           <p role="alert" className="text-destructive text-sm">
             {refusalWords(stopped.error)}

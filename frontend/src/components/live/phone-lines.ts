@@ -16,6 +16,6 @@ export function identityLine(
 export function trayLine(count: number, minePending: boolean): string | null {
   if (count <= 0) return null;
   return minePending
-    ? `${count} in the tray, yours pending`
+    ? `${count} in the tray, including yours`
     : `${count} in the tray`;
 }

@@ -876,13 +876,13 @@ function Line({ children }: { children: React.ReactNode }) {
  * closed line says what the student can see, in the words the rounds use.
  */
 function waitingLine(relay: Relay): string {
-  if (!relay.open) return refusalSentence("CLOSED");
+  if (!relay.open) return "Relay finished. Thank you for taking part.";
   if (
     relay.rounds.length > 0 &&
     relay.rounds.every((round) => round.round !== null)
   )
     return refusalSentence("ROUNDS_RUN");
-  return refusalSentence("NO_OPEN_ROUND");
+  return "You’re joined. Waiting for the next round.";
 }
 
 /** A response is per round, so each round keeps its own slot on the device. */
@@ -1482,7 +1482,7 @@ function RelayPhone({
                 tabIndex={-1}
                 className="font-display text-lg font-semibold outline-none"
               >
-                Handed in
+                {relay.open ? "Response received" : "Relay finished"}
               </h2>
               {landed === null || landed.mine.length === 0 ? null : (
                 <div className="flex flex-wrap justify-center gap-2">
@@ -1495,7 +1495,9 @@ function RelayPhone({
               )}
               {round !== null && runOpen ? null : (
                 <p className="text-muted-foreground text-sm">
-                  {waitingLine(relay)}
+                  {relay.open
+                    ? waitingLine(relay)
+                    : "Thank you for taking part."}
                 </p>
               )}
             </div>
@@ -1564,6 +1566,11 @@ function RelayPhone({
 
       {answering ? (
         <HandInBar
+          progress={
+            questions.length === 1 && questions[0].cap > 0
+              ? `${answeredOf(questions, answers)} ${answeredOf(questions, answers) === 1 ? "response" : "responses"}, up to ${questions[0].cap}`
+              : undefined
+          }
           answered={answeredOf(questions, answers)}
           of={itemCountOf(questions)}
           busy={busy}
