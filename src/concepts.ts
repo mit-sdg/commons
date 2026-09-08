@@ -1,3 +1,4 @@
+import { validPostControlSelection } from "./computations/post-controls.ts";
 import {
   validFeedOrder,
   validThreadSelection,
@@ -284,6 +285,7 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  validPostControlSelection,
   validProfileSelection,
   validFeedOrder,
   validThreadSelection,

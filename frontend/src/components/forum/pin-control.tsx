@@ -6,23 +6,27 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import type { SharedPostControls } from "@/lib/post-controls";
 import { cn } from "@/lib/utils";
 
 export function PinControl({
   item,
   scope,
   onChanged,
+  controls,
 }: {
   item: string;
   scope: string;
   onChanged?: () => void;
+  controls?: SharedPostControls;
 }) {
   const { session, permissions } = useAuth();
-  const { data, refetch } = useQuery<{ pinned: boolean }>(
-    () => api.pins.isPinned({ item, scope }),
+  const { data, refetch: refetchIndividual } = useQuery<{ pinned: boolean }>(
+    controls ? null : () => api.pins.isPinned({ item, scope }),
     [item, scope],
   );
-  const pinned = data?.pinned ?? false;
+  const refetch = controls?.refetch ?? refetchIndividual;
+  const pinned = controls?.data.pinned ?? data?.pinned ?? false;
 
   if (!session || !permissions.can("moderate")) {
     return pinned ? (

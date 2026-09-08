@@ -6,21 +6,25 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import type { SharedPostControls } from "@/lib/post-controls";
 import { cn } from "@/lib/utils";
 
 export function BookmarkButton({
   item,
   withLabel = false,
+  controls,
 }: {
   item: string;
   withLabel?: boolean;
+  controls?: SharedPostControls;
 }) {
   const { session } = useAuth();
-  const { data, refetch } = useQuery<{ saved: boolean }>(
-    session ? () => api.bookmarks.isSaved({ item }) : null,
+  const { data, refetch: refetchIndividual } = useQuery<{ saved: boolean }>(
+    session && !controls ? () => api.bookmarks.isSaved({ item }) : null,
     [session, item],
   );
-  const saved = data?.saved ?? false;
+  const refetch = controls?.refetch ?? refetchIndividual;
+  const saved = controls?.data.saved ?? data?.saved ?? false;
 
   async function toggle() {
     if (!session) {

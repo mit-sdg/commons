@@ -4298,6 +4298,28 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" };
   };
+  "/threads/post-controls": {
+    input: {
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>]>>;
+      "posts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validPostControlSelection"]["fn"]>[0], ["posts"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "posts": {
+        "backlinks": number;
+        "forwardLinks": number;
+        "pinned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
+        "post": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>>;
+        "reactions": {
+          "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_countByKind"]>>>, ["count"]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reacting"]["_hasReacted"]>[0], ["kind"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_countByKind"]>>>, ["kind"]>]>>;
+          "mine": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_hasReacted"]>>>, ["hasReacted"]>>;
+        }[];
+        "saved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Bookmarking"]["_isSaved"]>>>, ["saved"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
   "/threads/reply": {
     input: {
       "content": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["create"]>[0], ["content"]>>;
@@ -8482,6 +8504,27 @@ export type CommonsWireHttp = {
       })[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/threads/post-controls": {
+    input: {
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>]>>;
+      "posts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validPostControlSelection"]["fn"]>[0], ["posts"]>>;
+    };
+    output: {
+      "posts": {
+        "backlinks": number;
+        "forwardLinks": number;
+        "pinned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
+        "post": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>>;
+        "reactions": {
+          "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_countByKind"]>>>, ["count"]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reacting"]["_hasReacted"]>[0], ["kind"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_countByKind"]>>>, ["kind"]>]>>;
+          "mine": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_hasReacted"]>>>, ["hasReacted"]>>;
+        }[];
+        "saved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Bookmarking"]["_isSaved"]>>>, ["saved"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/threads/reply": {
     input: {

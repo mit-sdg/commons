@@ -8,6 +8,7 @@ import * as moderation from "./forum/moderation.ts";
 import * as notifications from "./forum/notifications.ts";
 import * as pins from "./forum/pins.ts";
 import * as posts from "./forum/posts.ts";
+import * as postControls from "./forum/post-controls.ts";
 import * as profiles from "./forum/profiles.ts";
 import * as purge from "./forum/purge.ts";
 import * as reactions from "./forum/reactions.ts";
@@ -28,6 +29,7 @@ export const compositions = {
   tags,
   resolutions,
   posts,
+  postControls,
   revisions,
   profiles,
   reactions,

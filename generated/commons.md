@@ -1723,6 +1723,7 @@ Concrete types:
 - `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 397.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 97.
 - `validFeedOrder(order: String) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 34.
+- `validPostControlSelection(posts: Seq) : Boolean` — [Selected post controls](../design/compositions/forum/post-controls.md), line 33.
 - `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 385.
 - `validThreadSelection(conversations: Seq) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 36.
 - `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 442.
@@ -3863,6 +3864,56 @@ Former "the category of (item) for (reader)" — inputs (item, reader); bindings
       category
       description
       name
+```
+
+### the reaction controls on (post) for (reader)
+
+Authored path: `Forum.postControls.theReactionControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 14.
+
+```former
+Former "the reaction controls on (post) for (reader)" — inputs (post, reader); bindings (kind, count, mine); promises exactly one record — forms:
+  each Reacting._countByKind (target: post) has (count, kind)
+    where Reacting._hasReacted (kind, reactor: reader, target: post) has (hasReacted: mine)
+    arranged by count, descending
+    form a record of
+      count
+      kind
+      mine
+```
+
+### the controls of (post) in (conversation) for (reader)
+
+Authored path: `Forum.postControls.thePostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 12.
+
+```former
+Former "the controls of (post) in (conversation) for (reader)" — inputs (post, conversation, reader); bindings (saved, pinned, source, target); promises at most one record — forms:
+  a record of
+    where view "(item) belongs to pin scope (scope) for (reader)" with (item: post, reader, scope: conversation)
+    where Bookmarking._isSaved (item: post, user: reader) has (saved)
+    where Pinning._isPinned (item: post, scope: conversation) has (pinned)
+    backlinks: the count of Linking._getBacklinks (target: post) has (source)
+      where view "(post) is readable" with (post: source, reader)
+    forwardLinks: the count of Linking._getLinks (source: post) has (target)
+      where view "(post) is readable" with (post: target, reader)
+    pinned
+    reactions: former "the reaction controls on (post) for (reader)" with (post, reader)
+    saved
+```
+
+### the controls selected by (posts) in (conversation) for (reader)
+
+Authored path: `Forum.postControls.theSelectedPostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 10.
+
+```former
+Former "the controls selected by (posts) in (conversation) for (reader)" — inputs (posts, conversation, reader); bindings (post); promises exactly one record — forms:
+  each Conversing._getThread (conversation) has (item: post)
+    where post is among posts
+    form a record of
+      post
+      … former "the controls of (post) in (conversation) for (reader)" with (conversation, post, reader)
 ```
 
 ### the creation-ordered feed index for (reader)
@@ -13034,6 +13085,58 @@ where
   earlier, RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 then
   RequestBoundary.respond (item, requestId)
+```
+
+### Forum.postControls.PostControls:hidden
+
+Authored path: `Forum.postControls.PostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 3.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 29.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/threads/post-controls", posts, requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validPostControlSelection (posts)
+  valid is among [true]
+  view "the active user of (session)" with (session) has (user: reader)
+  no view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.postControls.PostControls:invalid
+
+Authored path: `Forum.postControls.PostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 3.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 29.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/threads/post-controls", posts, requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validPostControlSelection (posts)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Forum.postControls.PostControls:visible
+
+Authored path: `Forum.postControls.PostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 3.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 29.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/threads/post-controls", posts, requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validPostControlSelection (posts)
+  valid is among [true]
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+then
+  RequestBoundary.respond (posts: former "the controls selected by (posts) in (conversation) for (reader)" with (conversation, posts, reader), requestId)
 ```
 
 ### Forum.posts.CreatedPostRefreshesDerivedContent:links
@@ -27562,6 +27665,7 @@ not listed here have no explicit input contract.
 - `/threads/get` — requires `conversation`, `session`
 - `/threads/index` — requires `session`, `order`
 - `/threads/latest` — requires `session`
+- `/threads/post-controls` — requires `session`, `conversation`, `posts`
 - `/threads/reply` — requires `content`, `parent`, `session`
 - `/threads/summaries` — requires `session`, `conversations`
 - `/trash/isTrashed` — requires `item`, `session`

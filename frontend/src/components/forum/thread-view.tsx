@@ -7,6 +7,7 @@ import { CategoryBadge } from "@/components/forum/badges";
 import { CategoryAssign } from "@/components/forum/category-assign";
 import { Composer } from "@/components/forum/composer";
 import { PostCard } from "@/components/forum/post-card";
+import { PostControlsProvider } from "@/components/forum/post-controls-provider";
 import { PostPreview } from "@/components/forum/post-preview";
 import { SubscribeButton } from "@/components/forum/subscribe-button";
 import { TagEditor } from "@/components/forum/tag-editor";
@@ -58,7 +59,13 @@ function buildThreadTree(
   return roots;
 }
 
-export function ThreadView({ conversation }: { conversation: string }) {
+export function ThreadView({
+  conversation,
+  batchedControls = false,
+}: {
+  conversation: string;
+  batchedControls?: boolean;
+}) {
   const { session, permissions } = useAuth();
   const { data, error, loading, refetch } = useQuery<ThreadPage>(
     () => loadThreadPage(conversation),
@@ -256,23 +263,29 @@ export function ThreadView({ conversation }: { conversation: string }) {
         </section>
       ) : null}
 
-      <ol className="thread-tree" aria-label="Discussion thread">
-        {threadTree.map((branch) => (
-          <ThreadBranchView
-            key={branch.position.node}
-            branch={branch}
-            level={0}
-            rootNodeId={data.rootNodeId}
-            questionId={questionId}
-            rootAuthorId={rootAuthorId}
-            acceptedAnswer={acceptedAnswer}
-            locked={locked}
-            scope={conversation}
-            unreadItems={unread.unreadItems}
-            onChanged={refetchAll}
-          />
-        ))}
-      </ol>
+      <PostControlsProvider
+        conversation={conversation}
+        observation={data}
+        enabled={batchedControls}
+      >
+        <ol className="thread-tree" aria-label="Discussion thread">
+          {threadTree.map((branch) => (
+            <ThreadBranchView
+              key={branch.position.node}
+              branch={branch}
+              level={0}
+              rootNodeId={data.rootNodeId}
+              questionId={questionId}
+              rootAuthorId={rootAuthorId}
+              acceptedAnswer={acceptedAnswer}
+              locked={locked}
+              scope={conversation}
+              unreadItems={unread.unreadItems}
+              onChanged={refetchAll}
+            />
+          ))}
+        </ol>
+      </PostControlsProvider>
 
       <section className="mt-8 border-t border-border pt-6">
         {locked ? (
