@@ -36,6 +36,10 @@ concrete LiveRunSnapshot
   The complete structured presentation captured for one published live run, or
   for one round of a relay run.
 
+concrete LiveExecution
+  A Reasoning asking that sorts a round or summarizes a pile, or a Publishing
+  edition created when a relay round opens.
+
 concrete LiveMaterial
   What a live edition releases: a Questioning questionnaire for a quiz, survey,
   or round, or a Relaying relay for a relay run.
@@ -114,7 +118,7 @@ parameters inline.
 ```instances
 instantiate Commissioning with
   Subject is Publishing.Edition
-  Execution is Reasoning.Asking
+  Execution is LiveExecution
 
 instantiate Trashing as Archiving with
   User is Authenticating.User

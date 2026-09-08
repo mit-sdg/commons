@@ -57,10 +57,8 @@ checks, incidental reaction ordering, and engine changes are not substitutes
 for a missing behavior. Storage still must implement the owned invariant
 atomically; a concept name alone supplies no execution guarantee.
 
-Before reusing Commissioning, verify its merged Subject and Execution bindings.
-The inspected application declaration binds Execution to Reasoning.Asking,
-while round opening associates a Publishing edition. References must enumerate
-their actual owners when the application broadens their use.
+Before reusing Commissioning for publication or reports, extend its application
+bindings to enumerate any additional Subject and Execution owners.
 
 Choose how a report binds the exact source version selected by its reporter,
 and when flag creation plus evidence capture become a completed report. An
