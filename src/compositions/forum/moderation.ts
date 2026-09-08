@@ -1,51 +1,56 @@
+import { storedPostReader } from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import { each, form, former, no, whether, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
-import { notReadable, readable, thePost } from "./posts.ts";
-import { forumPost, publicTarget } from "./threads.ts";
+import { notReadable, readable } from "./posts.ts";
+import { publicTarget } from "./threads.ts";
 
 const { Conversing, Flagging, Formatting, Locking, Posting, Trashing } = concepts;
 
 /** Which forum posts are in the trash? Trashing holds other kinds too, and they are not the forum's. */
-export const theTrashBin = former("the trash bin ()", (_inputs, { item, trashedBy, trashedAt }) =>
-  each(Trashing._getTrashed({}).is({ item, trashedBy, trashedAt }))
-    .where(forumPost({ post: item }))
-    .form({ item, trashedBy, trashedAt }),
+export const theTrashBin = former(
+  "the trash bin ()",
+  ({ reader }, { item, trashedBy, trashedAt }) =>
+    each(Trashing._getTrashed({}).is({ item, trashedBy, trashedAt }))
+      .where(storedPostReader({ post: item, user: reader }))
+      .form({ item, trashedBy, trashedAt }),
 );
 
 /** Which targets are locked? */
-export const theLockedList = former("the locked list ()", (_inputs, { target, lockedAt }) =>
+export const theLockedList = former("the locked list ()", ({ reader }, { target, lockedAt }) =>
   each(Locking._getLocked({}).is({ target, lockedAt }))
-    .where(publicTarget({ target }))
+    .where(publicTarget({ target, reader }))
     .form({ target, lockedAt }),
 );
 
 /** Which targets have open flags? */
-export const theOpenFlags = former("the open flags ()", (_inputs, { target, count }) =>
+export const theOpenFlags = former("the open flags ()", ({ reader }, { target, count }) =>
   each(Flagging._getOpenTargets({}).is({ target, count }))
-    .where(readable({ post: target }))
+    .where(readable({ post: target, reader }))
     .form({ target, count }),
 );
 
 /** Which flags are on this target? */
 export const theFlagsOn = former(
   "the flags on (target)",
-  ({ target }, { flag, reporter, reason, status, createdAt }) =>
-    each(Flagging._getFlags({ target }).is({ flag, reporter, reason, status, createdAt })).form({
-      flag,
-      reporter,
-      reason,
-      status,
-      createdAt,
-    }),
+  ({ target, reader }, { flag, reporter, reason, status, createdAt }) =>
+    each(Flagging._getFlags({ target }).is({ flag, reporter, reason, status, createdAt }))
+      .where(readable({ post: target, reader }))
+      .form({
+        flag,
+        reporter,
+        reason,
+        status,
+        createdAt,
+      }),
 );
 /** What is the moderation queue? */
 export const theModerationQueue = former(
   "the moderation queue ()",
   (
-    _inputs,
+    { reader },
     {
       target,
       count,
@@ -65,7 +70,7 @@ export const theModerationQueue = former(
   ) =>
     each(Flagging._getOpenTargets({}).is({ target, count }))
       .where(
-        readable({ post: target }),
+        readable({ post: target, reader }),
         Posting._getPost({ post: target }).is({ author, content, createdAt, editedAt }),
         Formatting._getRendered({ target }).is({ rendered }),
         whether(Conversing._getNodeByItem({ item: target }).is({ node })),
@@ -91,25 +96,34 @@ export const theModerationQueue = former(
       }),
 );
 
+export const theStoredPost = former(
+  "the stored post (post) for (reader)",
+  ({ post, reader }, { author, content, createdAt, editedAt, rendered }) =>
+    where(
+      storedPostReader({ post, user: reader }),
+      Posting._getPost({ post }).is({ author, content, createdAt, editedAt }),
+      Formatting._getRendered({ target: post }).is({ rendered }),
+    ).form({ author, content, createdAt, editedAt, rendered }),
+);
 export const TrashItem = endpoint("/trash/trash", ({ session, item, user, at }) =>
   receive({ session, item }).then(
     where(
       now(at),
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      forumPost({ post: item }),
+      storedPostReader({ post: item, user }),
     )
       .then(Trashing.trash({ item, by: user, at }))
       .then(respond({ item }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
     where(
       activeUser({ session }).is({ user }),
-      mayModerate({ user }),
-      no(forumPost({ post: item })),
+      mayNotModerate({ user }),
+      storedPostReader({ post: item, user }),
     )
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+    where(activeUser({ session }).is({ user }), no(storedPostReader({ post: item, user })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("missing"),
   ),
@@ -117,18 +131,22 @@ export const TrashItem = endpoint("/trash/trash", ({ session, item, user, at }) 
 
 export const RestoreItem = endpoint("/trash/restore", ({ session, item, user }) =>
   receive({ session, item }).then(
-    where(activeUser({ session }).is({ user }), mayModerate({ user }), forumPost({ post: item }))
-      .then(Trashing.restore({ item }))
-      .then(respond({ item }))
-      .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      no(forumPost({ post: item })),
+      storedPostReader({ post: item, user }),
     )
+      .then(Trashing.restore({ item }))
+      .then(respond({ item }))
+      .named("success"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayNotModerate({ user }),
+      storedPostReader({ post: item, user }),
+    )
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+    where(activeUser({ session }).is({ user }), no(storedPostReader({ post: item, user })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
@@ -136,27 +154,41 @@ export const RestoreItem = endpoint("/trash/restore", ({ session, item, user }) 
 
 export const PurgeItem = endpoint("/trash/purge", ({ session, item, user }) =>
   receive({ session, item }).then(
-    where(activeUser({ session }).is({ user }), mayModerate({ user }), forumPost({ post: item }))
-      .then(Trashing.purge({ item }))
-      .then(respond({ item }))
-      .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      no(forumPost({ post: item })),
+      storedPostReader({ post: item, user }),
+      Trashing._isTrashed({ item }).is({ trashed: true }),
     )
+      .then(Posting.delete({ post: item }))
+      .then(Trashing.purge({ item }))
+      .then(respond({ item }))
+      .named("success"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayNotModerate({ user }),
+      storedPostReader({ post: item, user }),
+    )
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+    where(activeUser({ session }).is({ user }), no(storedPostReader({ post: item, user })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
+    where(
+      activeUser({ session }).is({ user }),
+      storedPostReader({ post: item, user }),
+      mayModerate({ user }),
+      Trashing._isTrashed({ item }).is({ trashed: false }),
+    )
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("not-trashed"),
   ),
 );
 
 export const TrashList = endpoint("/trash/list", ({ session, user }) =>
   receive({ session }).then(
     where(activeUser({ session }).is({ user }), mayModerate({ user }))
-      .then(respond({ trashed: theTrashBin({}) }))
+      .then(respond({ trashed: theTrashBin({ reader: user }) }))
       .named("success"),
     where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
       .then(respond({ error: "NOT_FOUND" }))
@@ -169,19 +201,19 @@ export const IsTrashed = endpoint("/trash/isTrashed", ({ session, item, trashed,
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      forumPost({ post: item }),
+      storedPostReader({ post: item, user }),
       Trashing._isTrashed({ item }).is({ trashed }),
     )
       .then(respond({ trashed }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-      .then(respond({ error: "NOT_FOUND" }))
-      .named("hidden"),
     where(
       activeUser({ session }).is({ user }),
-      mayModerate({ user }),
-      no(forumPost({ post: item })),
+      mayNotModerate({ user }),
+      storedPostReader({ post: item, user }),
     )
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+    where(activeUser({ session }).is({ user }), no(storedPostReader({ post: item, user })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("missing"),
   ),
@@ -192,10 +224,10 @@ export const GetTrashedPost = endpoint("/moderation/posts/get", ({ session, item
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      forumPost({ post: item }),
+      storedPostReader({ post: item, user }),
       Trashing._isTrashed({ item }).is({ trashed: true }),
     )
-      .then(respond({ post: thePost({ post: item }) }))
+      .then(respond({ post: theStoredPost({ post: item, reader: user }) }))
       .named("success"),
     where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
       .then(respond({ error: "NOT_FOUND" }))
@@ -203,14 +235,14 @@ export const GetTrashedPost = endpoint("/moderation/posts/get", ({ session, item
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      no(forumPost({ post: item })),
+      no(storedPostReader({ post: item, user })),
     )
       .then(respond({ error: "NOT_FOUND" }))
       .named("missing"),
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      forumPost({ post: item }),
+      storedPostReader({ post: item, user }),
       Trashing._isTrashed({ item }).is({ trashed: false }),
     )
       .then(respond({ error: "NOT_FOUND" }))
@@ -224,15 +256,19 @@ export const LockTarget = endpoint("/locks/lock", ({ session, target, user, at }
       now(at),
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      publicTarget({ target }),
+      publicTarget({ target, reader: user }),
     )
       .then(Locking.lock({ target, at }))
       .then(respond({ target }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+    where(
+      activeUser({ session }).is({ user }),
+      mayNotModerate({ user }),
+      publicTarget({ target, reader: user }),
+    )
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
-    where(activeUser({ session }).is({ user }), mayModerate({ user }), no(publicTarget({ target })))
+    where(activeUser({ session }).is({ user }), no(publicTarget({ target, reader: user })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
@@ -240,41 +276,53 @@ export const LockTarget = endpoint("/locks/lock", ({ session, target, user, at }
 
 export const UnlockTarget = endpoint("/locks/unlock", ({ session, target, user }) =>
   receive({ session, target }).then(
-    where(activeUser({ session }).is({ user }), mayModerate({ user }), publicTarget({ target }))
+    where(
+      activeUser({ session }).is({ user }),
+      mayModerate({ user }),
+      publicTarget({ target, reader: user }),
+    )
       .then(Locking.unlock({ target }))
       .then(respond({ target }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
+    where(
+      activeUser({ session }).is({ user }),
+      mayNotModerate({ user }),
+      publicTarget({ target, reader: user }),
+    )
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
-    where(activeUser({ session }).is({ user }), mayModerate({ user }), no(publicTarget({ target })))
+    where(activeUser({ session }).is({ user }), no(publicTarget({ target, reader: user })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
 );
 
-export const LockList = endpoint("/locks/list", () =>
-  receive().then(respond({ locked: theLockedList({}) })),
+export const LockList = endpoint("/locks/list", ({ session, user }) =>
+  receive({ session })
+    .where(activeUser({ session }).is({ user }))
+    .then(respond({ locked: theLockedList({ reader: user }) })),
 );
 
-export const IsLocked = endpoint("/locks/isLocked", ({ target, locked }) =>
-  receive({ target }).then(
-    where(publicTarget({ target }), Locking._isLocked({ target }).is({ locked }))
-      .then(respond({ locked }))
-      .named("success"),
-    where(no(publicTarget({ target })))
-      .then(respond({ error: "NOT_FOUND" }))
-      .named("hidden"),
-  ),
+export const IsLocked = endpoint("/locks/isLocked", ({ session, target, locked, user }) =>
+  receive({ session, target })
+    .where(activeUser({ session }).is({ user }))
+    .then(
+      where(publicTarget({ target, reader: user }), Locking._isLocked({ target }).is({ locked }))
+        .then(respond({ locked }))
+        .named("success"),
+      where(no(publicTarget({ target, reader: user })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
 );
 
 export const FlagRaise = endpoint("/flags/raise", ({ session, target, reason, user, at, flag }) =>
   receive({ session, target, reason }).then(
-    where(now(at), activeUser({ session }).is({ user }), readable({ post: target }))
+    where(now(at), activeUser({ session }).is({ user }), readable({ post: target, reader: user }))
       .then(Flagging.flag({ reporter: user, target, reason, at }).responds({ flag }))
       .then(respond({ flag }))
       .named("success"),
-    where(activeUser({ session }), notReadable({ post: target }))
+    where(activeUser({ session }).is({ user }), notReadable({ post: target, reader: user }))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
@@ -284,18 +332,22 @@ export const FlagResolve = endpoint(
   "/flags/resolve",
   ({ session, target, outcome, user }) =>
     receive({ session, target, outcome }).then(
-      where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: target }))
-        .then(Flagging.resolve({ target, outcome }))
-        .then(respond({ target }))
-        .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        notReadable({ post: target }),
+        readable({ post: target, reader: user }),
       )
+        .then(Flagging.resolve({ target, outcome }))
+        .then(respond({ target }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayNotModerate({ user }),
+        readable({ post: target, reader: user }),
+      )
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(activeUser({ session }).is({ user }), notReadable({ post: target, reader: user }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
     ),
@@ -305,7 +357,7 @@ export const FlagResolve = endpoint(
 export const FlagsOpen = endpoint("/flags/open", ({ session, user }) =>
   receive({ session }).then(
     where(activeUser({ session }).is({ user }), mayModerate({ user }))
-      .then(respond({ targets: theOpenFlags({}) }))
+      .then(respond({ targets: theOpenFlags({ reader: user }) }))
       .named("success"),
     where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
       .then(respond({ error: "NOT_FOUND" }))
@@ -315,8 +367,12 @@ export const FlagsOpen = endpoint("/flags/open", ({ session, user }) =>
 
 export const FlagsForTarget = endpoint("/flags/forTarget", ({ session, target, user }) =>
   receive({ session, target }).then(
-    where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: target }))
-      .then(respond({ flags: theFlagsOn({ target }) }))
+    where(
+      activeUser({ session }).is({ user }),
+      mayModerate({ user }),
+      readable({ post: target, reader: user }),
+    )
+      .then(respond({ flags: theFlagsOn({ target, reader: user }) }))
       .named("target"),
     where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
       .then(respond({ error: "NOT_FOUND" }))
@@ -324,7 +380,7 @@ export const FlagsForTarget = endpoint("/flags/forTarget", ({ session, target, u
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      notReadable({ post: target }),
+      notReadable({ post: target, reader: user }),
     )
       .then(respond({ error: "NOT_FOUND" }))
       .named("missing-target"),

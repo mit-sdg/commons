@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface ComposerProps {
+  disabled?: boolean;
   initialValue?: string;
   placeholder?: string;
   submitLabel?: string;
@@ -35,6 +36,7 @@ const TOOLS: {
 ];
 
 export function Composer({
+  disabled = false,
   initialValue = "",
   placeholder = "Share your thoughts… Markdown supported.",
   submitLabel = "Post",
@@ -107,7 +109,7 @@ export function Composer({
   }
 
   async function submit() {
-    if (!value.trim() || busy) return;
+    if (!value.trim() || busy || disabled) return;
     setMentionQuery(null);
     setBusy(true);
     try {
@@ -191,7 +193,7 @@ export function Composer({
           type="button"
           size="sm"
           onClick={submit}
-          disabled={busy || !value.trim()}
+          disabled={disabled || busy || !value.trim()}
         >
           {busy ? <Spinner className="size-4" /> : null}
           {submitLabel}

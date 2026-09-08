@@ -37,6 +37,7 @@ export default {
       new URL("./design/compositions/course/notes.md", import.meta.url),
       new URL("./design/compositions/course/roster.md", import.meta.url),
       new URL("./design/compositions/course/submissions.md", import.meta.url),
+      new URL("./design/compositions/forum/audiences.md", import.meta.url),
       new URL("./design/compositions/forum/bookmarks.md", import.meta.url),
       new URL("./design/compositions/forum/categories.md", import.meta.url),
       new URL("./design/compositions/forum/feed.md", import.meta.url),

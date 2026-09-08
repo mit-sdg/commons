@@ -35,6 +35,12 @@ async function actor(app: App, username: string) {
     email,
   });
   if ("error" in registered) throw new Error(String(registered.error));
+  await app.concepts.Rostering.enrol({
+    user: registered.user,
+    email: email,
+    kind: "STUDENT",
+    section: null,
+  });
   await app.concepts.Profiling.createProfile({
     user: registered.user,
     displayName: username,
@@ -98,6 +104,7 @@ describe("the forum path is unchanged, proved through the forum's own boundary",
     // A genuine forum event: Bob replies to Alice's thread, so the forum's own
     // reaction raises the notification rather than the test raising it.
     const thread = await call(app, "/threads/create", {
+      holders: ["standing:everyone"],
       session: alice.session,
       content: "Hello forum",
     });
@@ -120,7 +127,7 @@ describe("the forum path is unchanged, proved through the forum's own boundary",
     const afterReply = await pending(app);
     expect(afterReply).toHaveLength(1);
     expect(afterReply[0]).toMatchObject({
-      key: forumRows[0].notification,
+      key: expect.stringContaining(forumRows[0].notification),
       recipient: alice.email,
       subject: GENERIC_SUBJECT,
     });
@@ -290,6 +297,7 @@ describe("notification and mail state outlive the process", () => {
     // and one forum notification for the same person, so the restart is judged
     // on both instances rather than one
     const thread = await call(app1, "/threads/create", {
+      holders: ["standing:everyone"],
       session: noah.session,
       content: "A thread of my own",
     });

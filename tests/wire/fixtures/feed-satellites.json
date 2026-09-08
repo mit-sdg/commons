@@ -17,6 +17,31 @@
       }
     },
     {
+      "id": "regAdminSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regAdmin.user",
+        "email": "hf_admin@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#2",
+          "email": "hf_admin@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#1"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#1",
+        "section": null
+      }
+    },
+    {
       "id": "loginAdmin",
       "phase": "setup",
       "kind": "send",
@@ -26,8 +51,8 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#3",
         "expiresAt": "<date>",
-        "session": "uuid#2",
         "user": "uuid#1"
       }
     },
@@ -43,7 +68,32 @@
         "email": "mara@example.com"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
+      }
+    },
+    {
+      "id": "regMaraSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regMara.user",
+        "email": "mara@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#5",
+          "email": "mara@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#4"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#4",
+        "section": null
       }
     },
     {
@@ -56,9 +106,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#6",
         "expiresAt": "<date>",
-        "session": "uuid#4",
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -73,7 +123,32 @@
         "email": "noah@example.com"
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "regNoahSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regNoah.user",
+        "email": "noah@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#8",
+          "email": "noah@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#7"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#7",
+        "section": null
       }
     },
     {
@@ -86,9 +161,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#9",
         "expiresAt": "<date>",
-        "session": "uuid#6",
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -102,7 +177,7 @@
         "description": "Course logistics and scheduling"
       },
       "response": {
-        "category": "uuid#7"
+        "category": "uuid#10"
       }
     },
     {
@@ -144,7 +219,7 @@
         "description": "Exam threads"
       },
       "response": {
-        "category": "uuid#8"
+        "category": "uuid#11"
       }
     },
     {
@@ -158,7 +233,7 @@
         "description": "About the forum"
       },
       "response": {
-        "category": "uuid#9"
+        "category": "uuid#12"
       }
     },
     {
@@ -166,21 +241,23 @@
       "phase": "assert",
       "kind": "send",
       "target": "/categories/list",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
         "categories": [
           {
-            "category": "uuid#7",
+            "category": "uuid#10",
             "name": "Logistics",
             "description": "Course logistics and scheduling"
           },
           {
-            "category": "uuid#8",
+            "category": "uuid#11",
             "name": "Exams",
             "description": "Exam threads"
           },
           {
-            "category": "uuid#9",
+            "category": "uuid#12",
             "name": "Meta",
             "description": "About the forum"
           }
@@ -197,7 +274,7 @@
         "category": "$catCreateExams.category"
       },
       "response": {
-        "category": "uuid#8"
+        "category": "uuid#11"
       }
     },
     {
@@ -233,12 +310,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginMara.session",
-        "content": "How do I submit HW1? I cannot find the button."
+        "content": "How do I submit HW1? I cannot find the button.",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#10",
-        "conversation": "uuid#11",
-        "node": "uuid#12"
+        "post": "uuid#13",
+        "conversation": "uuid#14",
+        "node": "uuid#15"
       }
     },
     {
@@ -252,8 +330,8 @@
         "content": "Use the assignments page."
       },
       "response": {
-        "post": "uuid#13",
-        "node": "uuid#14"
+        "post": "uuid#16",
+        "node": "uuid#17"
       }
     },
     {
@@ -267,8 +345,8 @@
         "content": "Found it, thanks!"
       },
       "response": {
-        "post": "uuid#15",
-        "node": "uuid#16"
+        "post": "uuid#18",
+        "node": "uuid#19"
       }
     },
     {
@@ -278,12 +356,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginNoah.session",
-        "content": "Office hours this week?"
+        "content": "Office hours this week?",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#17",
-        "conversation": "uuid#18",
-        "node": "uuid#19"
+        "post": "uuid#20",
+        "conversation": "uuid#21",
+        "node": "uuid#22"
       }
     },
     {
@@ -293,12 +372,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginMara.session",
-        "content": "Lost umbrella in the lab"
+        "content": "Lost umbrella in the lab",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#20",
-        "conversation": "uuid#21",
-        "node": "uuid#22"
+        "post": "uuid#23",
+        "conversation": "uuid#24",
+        "node": "uuid#25"
       }
     },
     {
@@ -311,7 +391,7 @@
         "target": "$threadT3.conversation"
       },
       "response": {
-        "target": "uuid#21"
+        "target": "uuid#24"
       }
     },
     {
@@ -325,7 +405,7 @@
         "category": "$catCreateLogistics.category"
       },
       "response": {
-        "item": "uuid#10"
+        "item": "uuid#13"
       }
     },
     {
@@ -367,7 +447,7 @@
         "category": "$catCreateLogistics.category"
       },
       "response": {
-        "item": "uuid#17"
+        "item": "uuid#20"
       }
     },
     {
@@ -381,7 +461,7 @@
         "category": "$catCreateMeta.category"
       },
       "response": {
-        "item": "uuid#17"
+        "item": "uuid#20"
       }
     },
     {
@@ -390,12 +470,13 @@
       "kind": "send",
       "target": "/categories/forItem",
       "body": {
-        "item": "$threadT2.post"
+        "item": "$threadT2.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "category": [
           {
-            "category": "uuid#9",
+            "category": "uuid#12",
             "name": "Meta",
             "description": "About the forum"
           }
@@ -408,12 +489,13 @@
       "kind": "send",
       "target": "/categories/items",
       "body": {
-        "category": "$catCreateLogistics.category"
+        "category": "$catCreateLogistics.category",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "items": [
           {
-            "item": "uuid#10"
+            "item": "uuid#13"
           }
         ]
       }
@@ -424,7 +506,8 @@
       "kind": "send",
       "target": "/categories/forItem",
       "body": {
-        "item": "$threadT3.post"
+        "item": "$threadT3.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "category": []
@@ -466,7 +549,7 @@
         "name": "homework"
       },
       "response": {
-        "tag": "uuid#23"
+        "tag": "uuid#26"
       }
     },
     {
@@ -488,10 +571,11 @@
       "kind": "send",
       "target": "/tags/create",
       "body": {
-        "name": "orphan"
+        "name": "orphan",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "tag": "uuid#27"
       }
     },
     {
@@ -504,7 +588,7 @@
         "name": "urgent"
       },
       "response": {
-        "tag": "uuid#24"
+        "tag": "uuid#28"
       }
     },
     {
@@ -518,7 +602,7 @@
         "tag": "$tagCreateHomework.tag"
       },
       "response": {
-        "target": "uuid#10"
+        "target": "uuid#13"
       }
     },
     {
@@ -560,7 +644,7 @@
         "tag": "$tagCreateUrgent.tag"
       },
       "response": {
-        "target": "uuid#10"
+        "target": "uuid#13"
       }
     },
     {
@@ -574,7 +658,7 @@
         "tag": "$tagCreateUrgent.tag"
       },
       "response": {
-        "target": "uuid#17"
+        "target": "uuid#20"
       }
     },
     {
@@ -583,16 +667,17 @@
       "kind": "send",
       "target": "/tags/forTarget",
       "body": {
-        "target": "$threadT1.post"
+        "target": "$threadT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "tags": [
           {
-            "tag": "uuid#23",
+            "tag": "uuid#26",
             "name": "homework"
           },
           {
-            "tag": "uuid#24",
+            "tag": "uuid#28",
             "name": "urgent"
           }
         ]
@@ -604,15 +689,16 @@
       "kind": "send",
       "target": "/tags/targets",
       "body": {
-        "tag": "$tagCreateUrgent.tag"
+        "tag": "$tagCreateUrgent.tag",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "targets": [
           {
-            "target": "uuid#10"
+            "target": "uuid#13"
           },
           {
-            "target": "uuid#17"
+            "target": "uuid#20"
           }
         ]
       }
@@ -628,7 +714,7 @@
         "tag": "$tagCreateUrgent.tag"
       },
       "response": {
-        "target": "uuid#17"
+        "target": "uuid#20"
       }
     },
     {
@@ -650,15 +736,21 @@
       "phase": "assert",
       "kind": "send",
       "target": "/tags/list",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
         "tags": [
           {
-            "tag": "uuid#23",
+            "tag": "uuid#26",
             "name": "homework"
           },
           {
-            "tag": "uuid#24",
+            "tag": "uuid#27",
+            "name": "orphan"
+          },
+          {
+            "tag": "uuid#28",
             "name": "urgent"
           }
         ]
@@ -689,7 +781,7 @@
         "answer": "$replyNoah.post"
       },
       "response": {
-        "resolution": "uuid#10"
+        "resolution": "uuid#13"
       }
     },
     {
@@ -698,7 +790,8 @@
       "kind": "send",
       "target": "/resolutions/isResolved",
       "body": {
-        "question": "$threadT1.post"
+        "question": "$threadT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "resolved": true
@@ -710,13 +803,14 @@
       "kind": "send",
       "target": "/resolutions/get",
       "body": {
-        "question": "$threadT1.post"
+        "question": "$threadT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "resolution": [
           {
-            "answer": "uuid#13",
-            "resolvedBy": "uuid#3",
+            "answer": "uuid#16",
+            "resolvedBy": "uuid#4",
             "resolvedAt": "<date>"
           }
         ]
@@ -733,7 +827,7 @@
         "answer": "$threadT2.post"
       },
       "response": {
-        "resolution": "uuid#10"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -787,7 +881,7 @@
         "question": "$threadT1.post"
       },
       "response": {
-        "question": "uuid#10"
+        "question": "uuid#13"
       }
     },
     {
@@ -809,7 +903,8 @@
       "kind": "send",
       "target": "/resolutions/isResolved",
       "body": {
-        "question": "$threadT1.post"
+        "question": "$threadT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "resolved": false
@@ -826,7 +921,7 @@
         "answer": "$replyNoah.post"
       },
       "response": {
-        "resolution": "uuid#10"
+        "resolution": "uuid#13"
       }
     },
     {
@@ -834,35 +929,55 @@
       "phase": "assert",
       "kind": "send",
       "target": "/threads/latest",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
         "conversations": [
           {
-            "conversation": "uuid#21",
-            "root": "uuid#22",
-            "item": "uuid#20",
+            "conversation": "uuid#24",
+            "root": "uuid#25",
+            "item": "uuid#23",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": true,
             "resolved": false,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Lost umbrella in the lab",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 0,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3"]
+            "participants": ["uuid#4"]
           },
           {
-            "conversation": "uuid#18",
-            "root": "uuid#19",
-            "item": "uuid#17",
+            "conversation": "uuid#21",
+            "root": "uuid#22",
+            "item": "uuid#20",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": {
-              "category": "uuid#9",
+              "category": "uuid#12",
               "name": "Meta",
               "description": "About the forum"
             },
@@ -870,46 +985,55 @@
             "locked": false,
             "resolved": false,
             "post": {
-              "author": "uuid#5",
+              "author": "uuid#7",
               "content": "Office hours this week?",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 0,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#5"]
+            "participants": ["uuid#7"]
           },
           {
-            "conversation": "uuid#11",
-            "root": "uuid#12",
-            "item": "uuid#10",
+            "conversation": "uuid#14",
+            "root": "uuid#15",
+            "item": "uuid#13",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": {
-              "category": "uuid#7",
+              "category": "uuid#10",
               "name": "Logistics",
               "description": "Course logistics and scheduling"
             },
             "tags": [
               {
-                "tag": "uuid#23",
+                "tag": "uuid#26",
                 "name": "homework"
               },
               {
-                "tag": "uuid#24",
+                "tag": "uuid#28",
                 "name": "urgent"
               }
             ],
             "locked": false,
             "resolved": true,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "How do I submit HW1? I cannot find the button.",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 2,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3", "uuid#5"]
+            "participants": ["uuid#4", "uuid#7"]
           }
         ]
       }
@@ -919,35 +1043,55 @@
       "phase": "assert",
       "kind": "send",
       "target": "/threads/activity",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
         "conversations": [
           {
-            "conversation": "uuid#21",
-            "root": "uuid#22",
-            "item": "uuid#20",
+            "conversation": "uuid#24",
+            "root": "uuid#25",
+            "item": "uuid#23",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": true,
             "resolved": false,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Lost umbrella in the lab",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 0,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3"]
+            "participants": ["uuid#4"]
           },
           {
-            "conversation": "uuid#18",
-            "root": "uuid#19",
-            "item": "uuid#17",
+            "conversation": "uuid#21",
+            "root": "uuid#22",
+            "item": "uuid#20",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": {
-              "category": "uuid#9",
+              "category": "uuid#12",
               "name": "Meta",
               "description": "About the forum"
             },
@@ -955,46 +1099,55 @@
             "locked": false,
             "resolved": false,
             "post": {
-              "author": "uuid#5",
+              "author": "uuid#7",
               "content": "Office hours this week?",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 0,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#5"]
+            "participants": ["uuid#7"]
           },
           {
-            "conversation": "uuid#11",
-            "root": "uuid#12",
-            "item": "uuid#10",
+            "conversation": "uuid#14",
+            "root": "uuid#15",
+            "item": "uuid#13",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": {
-              "category": "uuid#7",
+              "category": "uuid#10",
               "name": "Logistics",
               "description": "Course logistics and scheduling"
             },
             "tags": [
               {
-                "tag": "uuid#23",
+                "tag": "uuid#26",
                 "name": "homework"
               },
               {
-                "tag": "uuid#24",
+                "tag": "uuid#28",
                 "name": "urgent"
               }
             ],
             "locked": false,
             "resolved": true,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "How do I submit HW1? I cannot find the button.",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 2,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3", "uuid#5"]
+            "participants": ["uuid#4", "uuid#7"]
           }
         ]
       }
@@ -1005,17 +1158,18 @@
       "kind": "send",
       "target": "/threads/get",
       "body": {
-        "conversation": "$threadT1.conversation"
+        "conversation": "$threadT1.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "thread": [
           {
-            "node": "uuid#12",
-            "item": "uuid#10",
+            "node": "uuid#15",
+            "item": "uuid#13",
             "parent": null,
             "depth": 0,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "How do I submit HW1? I cannot find the button.",
               "createdAt": "<date>",
               "editedAt": null
@@ -1023,12 +1177,12 @@
             "rendered": "<p>How do I submit HW1? I cannot find the button.</p>\n"
           },
           {
-            "node": "uuid#14",
-            "item": "uuid#13",
-            "parent": "uuid#12",
+            "node": "uuid#17",
+            "item": "uuid#16",
+            "parent": "uuid#15",
             "depth": 1,
             "post": {
-              "author": "uuid#5",
+              "author": "uuid#7",
               "content": "Use the assignments page.",
               "createdAt": "<date>",
               "editedAt": null
@@ -1036,12 +1190,12 @@
             "rendered": "<p>Use the assignments page.</p>\n"
           },
           {
-            "node": "uuid#16",
-            "item": "uuid#15",
-            "parent": "uuid#12",
+            "node": "uuid#19",
+            "item": "uuid#18",
+            "parent": "uuid#15",
             "depth": 1,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Found it, thanks!",
               "createdAt": "<date>",
               "editedAt": null
@@ -1051,27 +1205,35 @@
         ],
         "context": [
           {
-            "item": "uuid#10",
+            "item": "uuid#13",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
             "category": {
-              "category": "uuid#7",
+              "category": "uuid#10",
               "name": "Logistics",
               "description": "Course logistics and scheduling"
             },
             "tags": [
               {
-                "tag": "uuid#23",
+                "tag": "uuid#26",
                 "name": "homework"
               },
               {
-                "tag": "uuid#24",
+                "tag": "uuid#28",
                 "name": "urgent"
               }
             ],
             "locked": false,
-            "acceptedAnswer": "uuid#13",
+            "acceptedAnswer": "uuid#16",
             "replyCount": 2,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3", "uuid#5"]
+            "participants": ["uuid#4", "uuid#7"]
           }
         ]
       }
@@ -1082,12 +1244,13 @@
       "kind": "send",
       "target": "/categories/forItem",
       "body": {
-        "item": "$threadT1.post"
+        "item": "$threadT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "category": [
           {
-            "category": "uuid#7",
+            "category": "uuid#10",
             "name": "Logistics",
             "description": "Course logistics and scheduling"
           }
@@ -1100,7 +1263,8 @@
       "kind": "send",
       "target": "/locks/isLocked",
       "body": {
-        "target": "$threadT1.conversation"
+        "target": "$threadT1.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "locked": false
@@ -1112,7 +1276,8 @@
       "kind": "send",
       "target": "/locks/isLocked",
       "body": {
-        "target": "$threadT3.conversation"
+        "target": "$threadT3.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "locked": true
@@ -1124,7 +1289,8 @@
       "kind": "send",
       "target": "/resolutions/isResolved",
       "body": {
-        "question": "$threadT1.post"
+        "question": "$threadT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "resolved": true
@@ -1141,7 +1307,7 @@
         "category": "$catCreateLogistics.category"
       },
       "response": {
-        "item": "uuid#13"
+        "item": "uuid#16"
       }
     },
     {
@@ -1155,7 +1321,7 @@
         "tag": "$tagCreateHomework.tag"
       },
       "response": {
-        "target": "uuid#13"
+        "target": "uuid#16"
       }
     },
     {
@@ -1168,7 +1334,7 @@
         "item": "$replyNoah.post"
       },
       "response": {
-        "item": "uuid#13"
+        "item": "uuid#16"
       }
     },
     {
@@ -1181,7 +1347,7 @@
         "item": "$replyNoah.post"
       },
       "response": {
-        "item": "uuid#13"
+        "item": "uuid#16"
       }
     },
     {
@@ -1190,7 +1356,8 @@
       "kind": "send",
       "target": "/tags/forTarget",
       "body": {
-        "target": "$replyNoah.post"
+        "target": "$replyNoah.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -1202,7 +1369,8 @@
       "kind": "send",
       "target": "/categories/forItem",
       "body": {
-        "item": "$replyNoah.post"
+        "item": "$replyNoah.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -1214,12 +1382,13 @@
       "kind": "send",
       "target": "/categories/items",
       "body": {
-        "category": "$catCreateLogistics.category"
+        "category": "$catCreateLogistics.category",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "items": [
           {
-            "item": "uuid#10"
+            "item": "uuid#13"
           }
         ]
       }
@@ -1230,7 +1399,8 @@
       "kind": "send",
       "target": "/resolutions/get",
       "body": {
-        "question": "$threadT1.post"
+        "question": "$threadT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "resolution": []
@@ -1242,7 +1412,8 @@
       "kind": "send",
       "target": "/resolutions/isResolved",
       "body": {
-        "question": "$threadT1.post"
+        "question": "$threadT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "resolved": false
@@ -1254,17 +1425,18 @@
       "kind": "send",
       "target": "/threads/get",
       "body": {
-        "conversation": "$threadT1.conversation"
+        "conversation": "$threadT1.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "thread": [
           {
-            "node": "uuid#12",
-            "item": "uuid#10",
+            "node": "uuid#15",
+            "item": "uuid#13",
             "parent": null,
             "depth": 0,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "How do I submit HW1? I cannot find the button.",
               "createdAt": "<date>",
               "editedAt": null
@@ -1272,12 +1444,12 @@
             "rendered": "<p>How do I submit HW1? I cannot find the button.</p>\n"
           },
           {
-            "node": "uuid#16",
-            "item": "uuid#15",
-            "parent": "uuid#12",
+            "node": "uuid#19",
+            "item": "uuid#18",
+            "parent": "uuid#15",
             "depth": 1,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Found it, thanks!",
               "createdAt": "<date>",
               "editedAt": null
@@ -1287,19 +1459,27 @@
         ],
         "context": [
           {
-            "item": "uuid#10",
+            "item": "uuid#13",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
             "category": {
-              "category": "uuid#7",
+              "category": "uuid#10",
               "name": "Logistics",
               "description": "Course logistics and scheduling"
             },
             "tags": [
               {
-                "tag": "uuid#23",
+                "tag": "uuid#26",
                 "name": "homework"
               },
               {
-                "tag": "uuid#24",
+                "tag": "uuid#28",
                 "name": "urgent"
               }
             ],
@@ -1307,7 +1487,7 @@
             "acceptedAnswer": null,
             "replyCount": 1,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3"]
+            "participants": ["uuid#4"]
           }
         ]
       }
@@ -1321,7 +1501,7 @@
         "tag": "$tagCreateUrgent.tag"
       },
       "response": {
-        "tag": "uuid#24"
+        "tag": "uuid#28"
       }
     },
     {
@@ -1329,12 +1509,18 @@
       "phase": "assert",
       "kind": "send",
       "target": "/tags/list",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
         "tags": [
           {
-            "tag": "uuid#23",
+            "tag": "uuid#26",
             "name": "homework"
+          },
+          {
+            "tag": "uuid#27",
+            "name": "orphan"
           }
         ]
       }

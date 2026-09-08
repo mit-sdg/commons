@@ -33,3 +33,5 @@ Forum.tags.TagTargets at /tags/targets
 Forum.tags.TagTargetsByName at /tags/targetsByName
 Forum.tags.TagsForTarget at /tags/forTarget
 ```
+
+All target reads and changes derive the reader from the session and apply the conversation’s current audience. Collections filter before projecting related identities or counts; author and moderator roles provide no ordinary read exception.

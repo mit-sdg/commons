@@ -1,3 +1,4 @@
+import * as audiences from "./forum/audiences.ts";
 import * as bookmarks from "./forum/bookmarks.ts";
 import * as categories from "./forum/categories.ts";
 import * as feed from "./forum/feed.ts";
@@ -17,6 +18,7 @@ import * as threads from "./forum/threads.ts";
 import * as unread from "./forum/unread.ts";
 
 export const compositions = {
+  audiences,
   threads,
   feed,
   moderation,

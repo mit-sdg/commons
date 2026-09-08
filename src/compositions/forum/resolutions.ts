@@ -1,23 +1,40 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, reaction, when, where, now } from "@mit-sdg/sync-engine/language";
+import { each, former, no, reaction, view, when, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { authored, didNotAuthor } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 import { notReadable, readable } from "./posts.ts";
+import { postConversation } from "./audience-policy.ts";
 
 const { Resolving, Trashing } = concepts;
 
-/** What is the accepted resolution of this question? */
+export const admissibleAnswer = view(
+  "(answer) is a visible answer to (question) for (reader)",
+  ({ answer, question, reader }, _out, { conversation }) =>
+    where(
+      readable({ post: question, reader }),
+      readable({ post: answer, reader }),
+      postConversation({ post: question }).is({ conversation }),
+      postConversation({ post: answer }).is({ conversation }),
+    ),
+).holds();
+export const visibleResolution = view(
+  "the visible resolution of (question) for (reader)",
+  ({ question, reader }, { answer, resolvedBy, resolvedAt }, _vars) =>
+    where(
+      Resolving._getResolution({ question }).is({ answer, resolvedBy, resolvedAt }),
+      admissibleAnswer({ question, answer, reader }),
+    ),
+).optional();
+/** What accepted answer may this reader see? */
 export const theResolutionOf = former(
-  "the resolution of (question)",
-  ({ question }, { answer, resolvedBy, resolvedAt }) =>
-    each(Resolving._getResolution({ question }).is({ answer, resolvedBy, resolvedAt }))
-      .where(readable({ post: answer }))
-      .form({
-        answer,
-        resolvedBy,
-        resolvedAt,
-      }),
+  "the resolution of (question) for (reader)",
+  ({ question, reader }, { answer, resolvedBy, resolvedAt }) =>
+    each(visibleResolution({ question, reader }).is({ answer, resolvedBy, resolvedAt })).form({
+      answer,
+      resolvedBy,
+      resolvedAt,
+    }),
 );
 
 export const PurgedPostClearsResolutions = reaction(({ item, question }) =>
@@ -41,8 +58,7 @@ export const AcceptAnswer = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         authored({ user, post: question }),
-        readable({ post: question }),
-        readable({ post: answer }),
+        admissibleAnswer({ question, answer, reader: user }),
       )
         .then(Resolving.accept({ question, answer, by: user, at }).responds({ resolution }))
         .then(respond({ resolution }))
@@ -50,15 +66,18 @@ export const AcceptAnswer = endpoint(
       where(
         activeUser({ session }).is({ user }),
         didNotAuthor({ user, post: question }),
-        readable({ post: question }),
-        readable({ post: answer }),
+        admissibleAnswer({ question, answer, reader: user }),
       )
         .then(respond({ error: "FORBIDDEN" }))
         .named("not-author"),
-      where(activeUser({ session }), notReadable({ post: question }))
+      where(activeUser({ session }).is({ user }), notReadable({ post: question, reader: user }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden-question"),
-      where(activeUser({ session }), readable({ post: question }), notReadable({ post: answer }))
+      where(
+        activeUser({ session }).is({ user }),
+        readable({ post: question, reader: user }),
+        no(admissibleAnswer({ question, answer, reader: user })),
+      )
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden-answer"),
     ),
@@ -70,7 +89,7 @@ export const ClearResolution = endpoint(
       where(
         activeUser({ session }).is({ user }),
         authored({ user, post: question }),
-        readable({ post: question }),
+        readable({ post: question, reader: user }),
       )
         .then(Resolving.clear({ question }).responds({ question: cleared }))
         .then(respond({ question: cleared }))
@@ -78,34 +97,40 @@ export const ClearResolution = endpoint(
       where(
         activeUser({ session }).is({ user }),
         didNotAuthor({ user, post: question }),
-        readable({ post: question }),
+        readable({ post: question, reader: user }),
       )
         .then(respond({ error: "FORBIDDEN" }))
         .named("not-author"),
-      where(activeUser({ session }), notReadable({ post: question }))
+      where(activeUser({ session }).is({ user }), notReadable({ post: question, reader: user }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
     ),
 );
 
-export const GetResolution = endpoint("/resolutions/get", ({ question }) =>
-  receive({ question }).then(
-    where(readable({ post: question }))
-      .then(respond({ resolution: theResolutionOf({ question }) }))
-      .named("success"),
-    where(notReadable({ post: question }))
-      .then(respond({ error: "NOT_FOUND" }))
-      .named("hidden"),
-  ),
+export const GetResolution = endpoint("/resolutions/get", ({ session, question, reader }) =>
+  receive({ session, question })
+    .where(activeUser({ session }).is({ user: reader }))
+    .then(
+      where(readable({ post: question, reader }))
+        .then(respond({ resolution: theResolutionOf({ question, reader }) }))
+        .named("success"),
+      where(notReadable({ post: question, reader }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
 );
-
-export const IsResolved = endpoint("/resolutions/isResolved", ({ question, resolved }) =>
-  receive({ question }).then(
-    where(readable({ post: question }), Resolving._isResolved({ question }).is({ resolved }))
-      .then(respond({ resolved }))
-      .named("success"),
-    where(notReadable({ post: question }))
-      .then(respond({ error: "NOT_FOUND" }))
-      .named("hidden"),
-  ),
+export const IsResolved = endpoint("/resolutions/isResolved", ({ session, question, reader }) =>
+  receive({ session, question })
+    .where(activeUser({ session }).is({ user: reader }))
+    .then(
+      where(readable({ post: question, reader }), visibleResolution({ question, reader }))
+        .then(respond({ resolved: true }))
+        .named("resolved"),
+      where(readable({ post: question, reader }), no(visibleResolution({ question, reader })))
+        .then(respond({ resolved: false }))
+        .named("unresolved"),
+      where(notReadable({ post: question, reader }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
 );

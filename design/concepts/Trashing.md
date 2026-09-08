@@ -64,6 +64,9 @@ purge(item: Item) : return (item: Item)
 ## Queries
 
 ```queries
+_anyTrashed (items: Seq) : one (trashed: Boolean)
+  answers whether any supplied item is currently trashed
+
 _isTrashed (item: String) : one (trashed: Boolean)
   answers whether the Item is in trash
 

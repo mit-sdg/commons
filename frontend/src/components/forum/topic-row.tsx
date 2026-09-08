@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Lock, MessageSquare } from "lucide-react";
 import { Fact } from "@/components/facts";
+import { AudienceChips } from "@/components/forum/audience-picker";
 import { CategoryBadge, TagBadge } from "@/components/forum/badges";
 import { Link } from "@/components/link";
 import { UserAvatar } from "@/components/user-avatar";
@@ -35,11 +36,13 @@ export function TopicRow({
   index?: number;
 }) {
   const conversation = String(summary.conversation);
-  const author = String(summary.post.author);
-  const authorProfile = useProfile(author);
+  const author = summary.post ? String(summary.post.author) : "";
+  const authorProfile = useProfile(author || null);
 
-  const title = titleFromContent(summary.post.content);
-  const preview = bodyExcerpt(summary.post.content);
+  const title = summary.post
+    ? titleFromContent(summary.post.content)
+    : "Opening post unavailable";
+  const preview = summary.post ? bodyExcerpt(summary.post.content) : "";
 
   return (
     <article
@@ -47,12 +50,14 @@ export function TopicRow({
       style={{ animationDelay: `${Math.min(index, 12) * 30}ms` }}
     >
       <div className="flex gap-4 rounded-xl border border-transparent px-3 py-4 transition-colors hover:border-border hover:bg-card">
-        <UserAvatar
-          user={author}
-          name={authorProfile?.displayName}
-          avatar={authorProfile?.avatar}
-          className="mt-0.5 hidden size-10 shrink-0 sm:flex"
-        />
+        {summary.post ? (
+          <UserAvatar
+            user={author}
+            name={authorProfile?.displayName}
+            avatar={authorProfile?.avatar}
+            className="mt-0.5 hidden size-10 shrink-0 sm:flex"
+          />
+        ) : null}
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
             <h3 className="min-w-0 flex-1 font-display text-lg font-semibold leading-snug tracking-tight">
@@ -77,6 +82,12 @@ export function TopicRow({
             ) : null}
           </div>
 
+          <div className="mt-2">
+            <AudienceChips
+              holders={summary.audience.map((holder) => holder.holder)}
+              options={summary.audience}
+            />
+          </div>
           {preview ? (
             <p className="mt-2 line-clamp-2 border-l border-primary/30 pl-3 text-[0.925rem] leading-6 text-foreground/70">
               {preview}
@@ -97,25 +108,27 @@ export function TopicRow({
                 name={tag.name}
               />
             ))}
-            <span className="inline-flex min-h-6 items-center gap-1.5">
-              <UserAvatar
-                user={author}
-                name={authorProfile?.displayName}
-                avatar={authorProfile?.avatar}
-                className="size-5 sm:hidden"
-              />
-              <Link
-                href={`/u/${author}`}
-                className="inline-flex items-center font-medium leading-none text-foreground/80 hover:text-primary"
-              >
-                {authorProfile?.displayName ?? "…"}
-              </Link>
-            </span>
-            <Fact.When at={summary.post.createdAt} />
+            {summary.post ? (
+              <span className="inline-flex min-h-6 items-center gap-1.5">
+                <UserAvatar
+                  user={author}
+                  name={authorProfile?.displayName}
+                  avatar={authorProfile?.avatar}
+                  className="size-5 sm:hidden"
+                />
+                <Link
+                  href={`/u/${author}`}
+                  className="inline-flex items-center font-medium leading-none text-foreground/80 hover:text-primary"
+                >
+                  {authorProfile?.displayName ?? "…"}
+                </Link>
+              </span>
+            ) : null}
+            <Fact.When at={summary.post?.createdAt ?? summary.createdAt} />
             {summary.replyCount > 0 &&
             summary.lastActivityAt &&
             String(summary.lastActivityAt) !==
-              String(summary.post.createdAt) ? (
+              String(summary.post?.createdAt ?? summary.createdAt) ? (
               <Fact.When verb="last reply" at={summary.lastActivityAt} />
             ) : null}
           </div>

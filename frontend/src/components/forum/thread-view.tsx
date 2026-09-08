@@ -2,6 +2,7 @@
 
 import { Lock, LockOpen, MessageSquare, Pin, Users } from "lucide-react";
 import { toast } from "sonner";
+import { AudienceChips } from "@/components/forum/audience-picker";
 import { CategoryBadge } from "@/components/forum/badges";
 import { CategoryAssign } from "@/components/forum/category-assign";
 import { Composer } from "@/components/forum/composer";
@@ -208,6 +209,13 @@ export function ThreadView({ conversation }: { conversation: string }) {
         </div>
       </header>
 
+      <AudienceChips
+        holders={data.audience.map((holder) => holder.holder)}
+        options={data.audience}
+      />
+      <Button asChild size="sm" variant="outline">
+        <Link href="/new">Continue with other people</Link>
+      </Button>
       <UnreadBanner newCount={unread.newCount} onMarkAll={unread.markAll} />
 
       {pinnedItems.length > 0 ? (

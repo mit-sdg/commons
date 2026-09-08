@@ -7,7 +7,7 @@ concepts:
   - Rostering
   - Notifying
   - Flagging
-  - Snapshotting
+  - Accessing
   - Trashing
 ---
 
@@ -15,16 +15,7 @@ concepts:
 
 ## Current behavior
 
-A discussion has no audience. Signed-in accounts can read forum conversations,
-and the create endpoint takes only content. Students cannot choose to write
-privately to staff, a classmate, or their group.
-
-The HTTP edge already requires a valid session for forum routes in
-[`src/edge.ts`](../../../src/edge.ts). The internal endpoint and former
-definitions still return forum content without a reader identity. The
-[`thread route tests`](../../../tests/app/thread-list-contract.test.ts) and
-[`wire transcript`](../../../tests/wire/fixtures/threads.json) exercise these
-different boundaries.
+Audiences are implemented through Accessing and audience-gated forum composition. New conversations establish a fixed complete holder set, and current collective membership determines access. There are no deployed conversations requiring backfill. Completion robustness remains tracked in [audience operation completion](../open/audience-operation-completion.md).
 
 ## Desired behavior
 
@@ -58,15 +49,9 @@ The final explicit audience is shown before posting. Staff membership follows
 the [shared capability policy](staff-classification.md).
 
 Conversation grants remain while the conversation exists, including after root
-trash or purge when replies survive. Final conversation removal cleans up its
-audience. Posting and Conversing retain their independent responsibilities.
+trash or purge when replies survive. An absent conversation remains inaccessible even if audience records survive cleanup. Posting and Conversing retain their independent responsibilities.
 
-A participant may report a specific post. Flagging keeps the concern and review
-outcome; Snapshotting preserves the selected evidence. Moderators may review
-that evidence without gaining ordinary access to the conversation, neighboring
-posts, or later edits. Report evidence survives resolution and source-post
-purge until a separate report purge removes it. Participant-facing reads do not
-disclose the reporter's identity.
+A participant may report a readable post. Flagging keeps the concern and review outcome. Reviewing reports requires ordinary audience access. Exact-version evidence and review without conversation access are separate reporting work.
 
 The shared feed supports All, Everyone, and Private. Staff questions addressed
 privately to Staff appear in a shared Staff questions view. Starting a question
@@ -86,7 +71,7 @@ failure and delivery contract is tracked in
 The audience picker and server-side holder validation use the same addressing
 policy. Ordinary read and mutation policies derive the actor from the session.
 No staff or administrator role silently bypasses a conversation's audience.
-Report evidence has a separate, bounded authorization path.
+Report review uses the same audience authorization.
 
 Permanent tests cover intended readers, outsiders, anonymous callers, moderators
 with and without a report, and accounts whose membership or role changes. They
@@ -94,9 +79,4 @@ exercise content, placement, author history, statistics, categories, tags, pins,
 reactions, resolutions, links, revisions, subscriptions, bookmarks, notifications,
 unread counts, moderation, trash, and mutation refusal behavior.
 
-Creation failure, uncertain completion, report capture, mail suppression,
-root removal, and migration restart follow explicit tested contracts. Migration
-grants Everyone to legacy conversations without granting it to existing private
-or incompletely created conversations on rerun. Browser rehearsals demonstrate
-staff questions, direct messages, group history, reporting, and audience changes
-through a new conversation.
+Creation failure before audience establishment keeps content closed. Withheld mail remains queued. Robust completion after interrupted or repeated operations has its own [application issue](../open/audience-operation-completion.md). An installation with zero discussions needs no audience backfill; absent grants always deny access.

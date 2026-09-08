@@ -12,12 +12,9 @@ activity, and distinct visible participants.
 rendering, and non-trash state, beside
 [the separately formed root context](former:Forum.feed.theThreadContext). Trashing
 the root omits that root and its context but does not hide intact replies.
-Purging a root with children likewise leaves those replies visible; because the
-root's placement is retained and its trash record is gone, root context also
-remains even though the root post does not. Feed rows still omit that
-conversation because they require root-post presentation.
+Purging a root with children leaves admitted replies readable through the thread endpoint. Root context and feed rows require the root post to exist.
 
-These public reads assemble current state from its owners. Category, tag, lock,
+These audience-authorized reads assemble current state from its owners. Category, tag, lock,
 resolution, post, or conversation changes therefore affect the next read
 without rebuilding a stored feed. Optional category state can be absent within
 a retained result.
@@ -26,4 +23,11 @@ a retained result.
 Forum.feed.GetThread at /threads/get
 Forum.feed.ListActivity at /threads/activity
 Forum.feed.ListLatest at /threads/latest
+```
+
+The shared Staff questions filter selects conversations explicitly addressed to Staff whose [opening author is outside Staff](view:Forum.feed.nonStaffOpening). Each reader must still belong to the conversation audience.
+
+```computations
+staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean
+  Identifies an explicit Staff question opened by someone outside Staff.
 ```

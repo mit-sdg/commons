@@ -272,9 +272,20 @@ describe("HTTP session cookies", () => {
       user: bob.user,
       displayName: "Bob",
     });
+    await edge.application.concepts.Rostering.enrol({
+      user: bob.user,
+      email: "bob@example.com",
+      kind: "STUDENT",
+      section: null,
+    });
     const bobLogin = await post(edge, "/auth/login", { username: "bob", password: "pw-bob-123" });
     const bobCookie = bobLogin.headers.get("set-cookie")?.split(";")[0] as string;
-    const made = await post(edge, "/threads/create", { content: "owned by Alice" }, aliceCookie);
+    const made = await post(
+      edge,
+      "/threads/create",
+      { holders: ["standing:everyone"], content: "owned by Alice" },
+      aliceCookie,
+    );
     const { post: item } = (await made.json()) as { post: string };
 
     const bodyOnly = await post(edge, "/posts/edit", {

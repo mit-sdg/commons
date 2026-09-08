@@ -1,6 +1,6 @@
 import { each, form, former, view, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
-import { intact } from "./threads.ts";
+import { postReader } from "./audience-policy.ts";
 
 const { Authenticating, Conversing, Posting, Profiling } = concepts;
 
@@ -37,9 +37,12 @@ export const thePrivateProfileOf = former(
 
 /** What summary describes this post? */
 export const thePostSummaryOf = former(
-  "the post summary of (item)",
-  ({ item }, { author, content, createdAt, editedAt }) =>
-    where(Posting._getPost({ post: item }).is({ author, content, createdAt, editedAt })).form({
+  "the post summary of (item) for (reader)",
+  ({ item, reader }, { author, content, createdAt, editedAt }) =>
+    where(
+      postReader({ user: reader, post: item }),
+      Posting._getPost({ post: item }).is({ author, content, createdAt, editedAt }),
+    ).form({
       author,
       content,
       createdAt,
@@ -48,30 +51,38 @@ export const thePostSummaryOf = former(
 ).optional();
 
 export const publicThreadPosts = view(
-  "the public posts in (conversation)",
-  ({ conversation }, { node, item, author, createdAt }, _bindings) =>
+  "the posts in (conversation) for (reader)",
+  ({ conversation, reader }, { node, item, author, createdAt }, _bindings) =>
     where(
       Conversing._getThread({ conversation }).is({ node, item }),
-      intact({ item }),
+      postReader({ user: reader, post: item }),
       Posting._getPost({ post: item }).is({ author, createdAt }),
     ),
 ).many();
 
 /** What statistics describe this conversation? */
 export const theThreadStatsOf = former(
-  "the thread stats of (conversation)",
-  ({ conversation }, { replyNode, replyItem, activityItem, activityAt, partItem, participant }) =>
+  "the thread stats of (conversation) for (reader)",
+  (
+    { conversation, reader },
+    { replyNode, replyItem, activityItem, activityAt, partItem, participant },
+  ) =>
     form({
-      replyCount: each(publicThreadPosts({ conversation }).is({ node: replyNode, item: replyItem }))
+      replyCount: each(
+        publicThreadPosts({ conversation, reader }).is({ node: replyNode, item: replyItem }),
+      )
         .where(Conversing._parentOf({ node: replyNode }))
         .count(),
       lastActivityAt: each(
-        publicThreadPosts({ conversation }).is({ item: activityItem, createdAt: activityAt }),
+        publicThreadPosts({ conversation, reader }).is({
+          item: activityItem,
+          createdAt: activityAt,
+        }),
       )
         .arranged(activityAt, "descending")
         .first(activityAt),
       participants: each(
-        publicThreadPosts({ conversation }).is({ item: partItem, author: participant }),
+        publicThreadPosts({ conversation, reader }).is({ item: partItem, author: participant }),
       ).distinct(participant),
     }),
 );

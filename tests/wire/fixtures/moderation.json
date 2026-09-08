@@ -17,6 +17,31 @@
       }
     },
     {
+      "id": "regAdminSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regAdmin.user",
+        "email": "mod_admin@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#2",
+          "email": "mod_admin@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#1"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#1",
+        "section": null
+      }
+    },
+    {
       "id": "loginAdmin",
       "phase": "setup",
       "kind": "send",
@@ -26,7 +51,7 @@
         "password": "password123"
       },
       "response": {
-        "session": "uuid#2",
+        "session": "uuid#3",
         "expiresAt": "<date>",
         "user": "uuid#1"
       }
@@ -62,7 +87,32 @@
         "email": "mod_member@example.com"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
+      }
+    },
+    {
+      "id": "regMemberSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regMember.user",
+        "email": "mod_member@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#5",
+          "email": "mod_member@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#4"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#4",
+        "section": null
       }
     },
     {
@@ -75,9 +125,9 @@
         "password": "password123"
       },
       "response": {
-        "session": "uuid#4",
+        "session": "uuid#6",
         "expiresAt": "<date>",
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -89,7 +139,7 @@
         "session": "$loginMember.session"
       },
       "response": {
-        "user": "uuid#3",
+        "user": "uuid#4",
         "username": "mod_member",
         "email": "mod_member@example.com",
         "profile": {
@@ -106,12 +156,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginMember.session",
-        "content": "First topic"
+        "content": "First topic",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#5",
-        "conversation": "uuid#6",
-        "node": "uuid#7"
+        "post": "uuid#7",
+        "conversation": "uuid#8",
+        "node": "uuid#9"
       }
     },
     {
@@ -125,8 +176,8 @@
         "content": "A reply"
       },
       "response": {
-        "post": "uuid#8",
-        "node": "uuid#9"
+        "post": "uuid#10",
+        "node": "uuid#11"
       }
     },
     {
@@ -136,12 +187,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginAdmin.session",
-        "content": "Second topic"
+        "content": "Second topic",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#10",
-        "conversation": "uuid#11",
-        "node": "uuid#12"
+        "post": "uuid#12",
+        "conversation": "uuid#13",
+        "node": "uuid#14"
       }
     },
     {
@@ -154,7 +206,7 @@
         "item": "x1"
       },
       "response": {
-        "error": "FORBIDDEN"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -180,7 +232,7 @@
         "item": "$replyT1.post"
       },
       "response": {
-        "item": "uuid#8"
+        "item": "uuid#10"
       }
     },
     {
@@ -189,10 +241,11 @@
       "kind": "send",
       "target": "/trash/isTrashed",
       "body": {
-        "item": "$replyT1.post"
+        "item": "$replyT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "trashed": true
       }
     },
     {
@@ -200,9 +253,17 @@
       "phase": "assert",
       "kind": "send",
       "target": "/trash/list",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
-        "error": "INVALID_INPUT"
+        "trashed": [
+          {
+            "item": "uuid#10",
+            "trashedBy": "uuid#1",
+            "trashedAt": "<date>"
+          }
+        ]
       }
     },
     {
@@ -211,17 +272,18 @@
       "kind": "send",
       "target": "/threads/get",
       "body": {
-        "conversation": "$createT1.conversation"
+        "conversation": "$createT1.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "thread": [
           {
-            "node": "uuid#7",
-            "item": "uuid#5",
+            "node": "uuid#9",
+            "item": "uuid#7",
             "parent": null,
             "depth": 0,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "First topic",
               "createdAt": "<date>",
               "editedAt": null
@@ -231,14 +293,22 @@
         ],
         "context": [
           {
-            "item": "uuid#5",
+            "item": "uuid#7",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
             "category": null,
             "tags": [],
             "locked": false,
             "acceptedAnswer": null,
             "replyCount": 0,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3"]
+            "participants": ["uuid#4"]
           }
         ]
       }
@@ -266,7 +336,7 @@
         "item": "$replyT1.post"
       },
       "response": {
-        "item": "uuid#8"
+        "item": "uuid#10"
       }
     },
     {
@@ -292,7 +362,7 @@
         "item": "$replyT1.post"
       },
       "response": {
-        "error": "ITEM_NOT_TRASHED"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -301,10 +371,11 @@
       "kind": "send",
       "target": "/trash/isTrashed",
       "body": {
-        "item": "$replyT1.post"
+        "item": "$replyT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "trashed": false
       }
     },
     {
@@ -313,17 +384,18 @@
       "kind": "send",
       "target": "/threads/get",
       "body": {
-        "conversation": "$createT1.conversation"
+        "conversation": "$createT1.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "thread": [
           {
-            "node": "uuid#7",
-            "item": "uuid#5",
+            "node": "uuid#9",
+            "item": "uuid#7",
             "parent": null,
             "depth": 0,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "First topic",
               "createdAt": "<date>",
               "editedAt": null
@@ -331,12 +403,12 @@
             "rendered": "<p>First topic</p>\n"
           },
           {
-            "node": "uuid#9",
-            "item": "uuid#8",
-            "parent": "uuid#7",
+            "node": "uuid#11",
+            "item": "uuid#10",
+            "parent": "uuid#9",
             "depth": 1,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "A reply",
               "createdAt": "<date>",
               "editedAt": null
@@ -346,14 +418,22 @@
         ],
         "context": [
           {
-            "item": "uuid#5",
+            "item": "uuid#7",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
             "category": null,
             "tags": [],
             "locked": false,
             "acceptedAnswer": null,
             "replyCount": 1,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3"]
+            "participants": ["uuid#4"]
           }
         ]
       }
@@ -407,7 +487,7 @@
         "target": "$createT1.conversation"
       },
       "response": {
-        "target": "uuid#6"
+        "target": "uuid#8"
       }
     },
     {
@@ -428,11 +508,13 @@
       "phase": "assert",
       "kind": "send",
       "target": "/locks/list",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
         "locked": [
           {
-            "target": "uuid#6",
+            "target": "uuid#8",
             "lockedAt": "<date>"
           }
         ]
@@ -444,7 +526,8 @@
       "kind": "send",
       "target": "/locks/isLocked",
       "body": {
-        "target": "$createT1.conversation"
+        "target": "$createT1.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "locked": true
@@ -474,7 +557,7 @@
         "target": "$createT1.conversation"
       },
       "response": {
-        "target": "uuid#6"
+        "target": "uuid#8"
       }
     },
     {
@@ -488,8 +571,8 @@
         "content": "After unlock"
       },
       "response": {
-        "post": "uuid#13",
-        "node": "uuid#14"
+        "post": "uuid#15",
+        "node": "uuid#16"
       }
     },
     {
@@ -516,7 +599,7 @@
         "reason": "spam"
       },
       "response": {
-        "flag": "uuid#15"
+        "flag": "uuid#17"
       }
     },
     {
@@ -544,7 +627,7 @@
         "reason": "agreed"
       },
       "response": {
-        "flag": "uuid#16"
+        "flag": "uuid#18"
       }
     },
     {
@@ -558,7 +641,7 @@
         "reason": "off-topic"
       },
       "response": {
-        "flag": "uuid#17"
+        "flag": "uuid#19"
       }
     },
     {
@@ -591,10 +674,26 @@
       "kind": "send",
       "target": "/flags/forTarget",
       "body": {
-        "target": "$createT1.post"
+        "target": "$createT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "flags": [
+          {
+            "flag": "uuid#17",
+            "reporter": "uuid#4",
+            "reason": "spam",
+            "status": "open",
+            "createdAt": "<date>"
+          },
+          {
+            "flag": "uuid#18",
+            "reporter": "uuid#1",
+            "reason": "agreed",
+            "status": "open",
+            "createdAt": "<date>"
+          }
+        ]
       }
     },
     {
@@ -649,7 +748,7 @@
         "outcome": "upheld"
       },
       "response": {
-        "target": "uuid#5"
+        "target": "uuid#7"
       }
     },
     {
@@ -670,10 +769,26 @@
       "kind": "send",
       "target": "/flags/forTarget",
       "body": {
-        "target": "$createT1.post"
+        "target": "$createT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "flags": [
+          {
+            "flag": "uuid#17",
+            "reporter": "uuid#4",
+            "reason": "spam",
+            "status": "upheld",
+            "createdAt": "<date>"
+          },
+          {
+            "flag": "uuid#18",
+            "reporter": "uuid#1",
+            "reason": "agreed",
+            "status": "upheld",
+            "createdAt": "<date>"
+          }
+        ]
       }
     },
     {
@@ -700,7 +815,7 @@
         "item": "$replyAfterUnlock.post"
       },
       "response": {
-        "item": "uuid#13"
+        "item": "uuid#15"
       }
     },
     {
@@ -713,7 +828,7 @@
         "item": "$replyAfterUnlock.post"
       },
       "response": {
-        "item": "uuid#13"
+        "item": "uuid#15"
       }
     },
     {
@@ -722,17 +837,18 @@
       "kind": "send",
       "target": "/threads/get",
       "body": {
-        "conversation": "$createT1.conversation"
+        "conversation": "$createT1.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "thread": [
           {
-            "node": "uuid#7",
-            "item": "uuid#5",
+            "node": "uuid#9",
+            "item": "uuid#7",
             "parent": null,
             "depth": 0,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "First topic",
               "createdAt": "<date>",
               "editedAt": null
@@ -740,12 +856,12 @@
             "rendered": "<p>First topic</p>\n"
           },
           {
-            "node": "uuid#9",
-            "item": "uuid#8",
-            "parent": "uuid#7",
+            "node": "uuid#11",
+            "item": "uuid#10",
+            "parent": "uuid#9",
             "depth": 1,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "A reply",
               "createdAt": "<date>",
               "editedAt": null
@@ -755,14 +871,22 @@
         ],
         "context": [
           {
-            "item": "uuid#5",
+            "item": "uuid#7",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
             "category": null,
             "tags": [],
             "locked": false,
             "acceptedAnswer": null,
             "replyCount": 1,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3"]
+            "participants": ["uuid#4"]
           }
         ]
       }
@@ -773,10 +897,11 @@
       "kind": "send",
       "target": "/trash/isTrashed",
       "body": {
-        "item": "$replyAfterUnlock.post"
+        "item": "$replyAfterUnlock.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -789,7 +914,7 @@
         "item": "$createT1.post"
       },
       "response": {
-        "item": "uuid#5"
+        "item": "uuid#7"
       }
     },
     {
@@ -797,14 +922,25 @@
       "phase": "assert",
       "kind": "send",
       "target": "/threads/latest",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
         "conversations": [
           {
-            "conversation": "uuid#11",
-            "root": "uuid#12",
-            "item": "uuid#10",
+            "conversation": "uuid#13",
+            "root": "uuid#14",
+            "item": "uuid#12",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": false,
@@ -832,7 +968,7 @@
         "item": "$createT1.post"
       },
       "response": {
-        "item": "uuid#5"
+        "item": "uuid#7"
       }
     },
     {
@@ -841,17 +977,18 @@
       "kind": "send",
       "target": "/threads/get",
       "body": {
-        "conversation": "$createT1.conversation"
+        "conversation": "$createT1.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "thread": [
           {
-            "node": "uuid#9",
-            "item": "uuid#8",
-            "parent": "uuid#7",
+            "node": "uuid#11",
+            "item": "uuid#10",
+            "parent": "uuid#9",
             "depth": 1,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "A reply",
               "createdAt": "<date>",
               "editedAt": null
@@ -859,18 +996,7 @@
             "rendered": "<p>A reply</p>\n"
           }
         ],
-        "context": [
-          {
-            "item": "uuid#5",
-            "category": null,
-            "tags": [],
-            "locked": false,
-            "acceptedAnswer": null,
-            "replyCount": 1,
-            "lastActivityAt": "<date>",
-            "participants": ["uuid#3"]
-          }
-        ]
+        "context": []
       }
     },
     {
@@ -878,14 +1004,25 @@
       "phase": "assert",
       "kind": "send",
       "target": "/threads/latest",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
         "conversations": [
           {
-            "conversation": "uuid#11",
-            "root": "uuid#12",
-            "item": "uuid#10",
+            "conversation": "uuid#13",
+            "root": "uuid#14",
+            "item": "uuid#12",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": false,
@@ -909,10 +1046,11 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$replyT1.post"
+        "item": "$replyT1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "conversation": "uuid#6"
+        "conversation": "uuid#8"
       }
     },
     {
@@ -946,9 +1084,11 @@
       "phase": "assert",
       "kind": "send",
       "target": "/trash/list",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
-        "error": "INVALID_INPUT"
+        "trashed": []
       }
     },
     {
@@ -975,7 +1115,7 @@
         "item": "x-recovery"
       },
       "response": {
-        "error": "FORBIDDEN"
+        "error": "NOT_FOUND"
       }
     },
     {

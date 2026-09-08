@@ -1,45 +1,52 @@
+import { storedPostReader } from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import { each, former, no, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts.ts";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
 import { notReadable, readable } from "./posts.ts";
-import { forumPost, intact } from "./threads.ts";
+import { intact } from "./threads.ts";
 
 const { Posting, Revising, Trashing } = concepts;
 
 /** What is the revision history of this item? */
 export const theRevisionHistoryOf = former(
   "the revision history of (item)",
-  ({ item }, { revision, number, content, savedAt }) =>
-    each(Revising._getRevisions({ item }).is({ revision, number, content, savedAt })).form({
-      revision,
-      number,
-      content,
-      savedAt,
-    }),
+  ({ item, reader }, { revision, number, content, savedAt }) =>
+    each(Revising._getRevisions({ item }).is({ revision, number, content, savedAt }))
+      .where(storedPostReader({ post: item, user: reader }))
+      .form({
+        revision,
+        number,
+        content,
+        savedAt,
+      }),
 );
 
 /** What is this numbered revision of the item? */
 export const theRevisionNumberedOf = former(
   "the revision numbered (number) of (item)",
-  ({ number, item }, { content, savedAt }) =>
-    each(Revising._getRevision({ item, number }).is({ content, savedAt })).form({
-      content,
-      savedAt,
-    }),
+  ({ number, item, reader }, { content, savedAt }) =>
+    each(Revising._getRevision({ item, number }).is({ content, savedAt }))
+      .where(storedPostReader({ post: item, user: reader }))
+      .form({
+        content,
+        savedAt,
+      }),
 );
 
 /** What is the latest revision of this item? */
 export const theLatestRevisionOf = former(
   "the latest revision of (item)",
-  ({ item }, { revision, number, content, savedAt }) =>
-    each(Revising._getLatest({ item }).is({ revision, number, content, savedAt })).form({
-      revision,
-      number,
-      content,
-      savedAt,
-    }),
+  ({ item, reader }, { revision, number, content, savedAt }) =>
+    each(Revising._getLatest({ item }).is({ revision, number, content, savedAt }))
+      .where(storedPostReader({ post: item, user: reader }))
+      .form({
+        revision,
+        number,
+        content,
+        savedAt,
+      }),
 );
 
 export const RecordRevisionOnCreate = reaction(({ content, post, at }) =>
@@ -59,44 +66,50 @@ export const PurgeClearsRevisions = reaction(({ item }) =>
 
 export const ListRevisions = endpoint(
   "/revisions/list",
-  ({ item }) =>
-    receive({ item }).then(
-      where(readable({ post: item }))
-        .then(respond({ revisions: theRevisionHistoryOf({ item }) }))
-        .named("success"),
-      where(notReadable({ post: item }))
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("hidden"),
-    ),
-  { input: { required: ["item"] } },
+  ({ session, item, user }) =>
+    receive({ session, item })
+      .where(activeUser({ session }).is({ user }))
+      .then(
+        where(readable({ post: item, reader: user }))
+          .then(respond({ revisions: theRevisionHistoryOf({ item, reader: user }) }))
+          .named("success"),
+        where(notReadable({ post: item, reader: user }))
+          .then(respond({ error: "NOT_FOUND" }))
+          .named("hidden"),
+      ),
+  { input: { required: ["session", "item"] } },
 );
 
 export const GetRevision = endpoint(
   "/revisions/get",
-  ({ item, number }) =>
-    receive({ item, number }).then(
-      where(readable({ post: item }))
-        .then(respond({ revision: theRevisionNumberedOf({ number, item }) }))
-        .named("success"),
-      where(notReadable({ post: item }))
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("hidden"),
-    ),
-  { input: { required: ["item", "number"] } },
+  ({ session, item, number, user }) =>
+    receive({ session, item, number })
+      .where(activeUser({ session }).is({ user }))
+      .then(
+        where(readable({ post: item, reader: user }))
+          .then(respond({ revision: theRevisionNumberedOf({ number, item, reader: user }) }))
+          .named("success"),
+        where(notReadable({ post: item, reader: user }))
+          .then(respond({ error: "NOT_FOUND" }))
+          .named("hidden"),
+      ),
+  { input: { required: ["session", "item", "number"] } },
 );
 
 export const LatestRevision = endpoint(
   "/revisions/latest",
-  ({ item }) =>
-    receive({ item }).then(
-      where(readable({ post: item }))
-        .then(respond({ revision: theLatestRevisionOf({ item }) }))
-        .named("success"),
-      where(notReadable({ post: item }))
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("hidden"),
-    ),
-  { input: { required: ["item"] } },
+  ({ session, item, user }) =>
+    receive({ session, item })
+      .where(activeUser({ session }).is({ user }))
+      .then(
+        where(readable({ post: item, reader: user }))
+          .then(respond({ revision: theLatestRevisionOf({ item, reader: user }) }))
+          .named("success"),
+        where(notReadable({ post: item, reader: user }))
+          .then(respond({ error: "NOT_FOUND" }))
+          .named("hidden"),
+      ),
+  { input: { required: ["session", "item"] } },
 );
 
 export const ModeratorListRevisions = endpoint(
@@ -106,10 +119,10 @@ export const ModeratorListRevisions = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        forumPost({ post: item }),
+        storedPostReader({ post: item, user }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
-        .then(respond({ revisions: theRevisionHistoryOf({ item }) }))
+        .then(respond({ revisions: theRevisionHistoryOf({ item, reader: user }) }))
         .named("revisions"),
       where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
         .then(respond({ error: "NOT_FOUND" }))
@@ -117,14 +130,14 @@ export const ModeratorListRevisions = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        no(forumPost({ post: item })),
+        no(storedPostReader({ post: item, user })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("missing"),
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        forumPost({ post: item }),
+        storedPostReader({ post: item, user }),
         intact({ item }),
       )
         .then(respond({ error: "NOT_FOUND" }))
@@ -138,10 +151,10 @@ export const ModeratorGetRevision = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        forumPost({ post: item }),
+        storedPostReader({ post: item, user }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
-        .then(respond({ revision: theRevisionNumberedOf({ number, item }) }))
+        .then(respond({ revision: theRevisionNumberedOf({ number, item, reader: user }) }))
         .named("revision"),
       where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
         .then(respond({ error: "NOT_FOUND" }))
@@ -149,14 +162,14 @@ export const ModeratorGetRevision = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        no(forumPost({ post: item })),
+        no(storedPostReader({ post: item, user })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("missing"),
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        forumPost({ post: item }),
+        storedPostReader({ post: item, user }),
         intact({ item }),
       )
         .then(respond({ error: "NOT_FOUND" }))
@@ -170,10 +183,10 @@ export const ModeratorLatestRevision = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        forumPost({ post: item }),
+        storedPostReader({ post: item, user }),
         Trashing._isTrashed({ item }).is({ trashed: true }),
       )
-        .then(respond({ revision: theLatestRevisionOf({ item }) }))
+        .then(respond({ revision: theLatestRevisionOf({ item, reader: user }) }))
         .named("revision"),
       where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
         .then(respond({ error: "NOT_FOUND" }))
@@ -181,14 +194,14 @@ export const ModeratorLatestRevision = endpoint(
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        no(forumPost({ post: item })),
+        no(storedPostReader({ post: item, user })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("missing"),
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        forumPost({ post: item }),
+        storedPostReader({ post: item, user }),
         intact({ item }),
       )
         .then(respond({ error: "NOT_FOUND" }))

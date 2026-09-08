@@ -9,6 +9,7 @@ import {
   StickyNote,
 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { audiencePresentation } from "@/components/forum/audience-picker";
 import { CategoryDot } from "@/components/forum/badges";
 import { TopicRow } from "@/components/forum/topic-row";
 import { Link } from "@/components/link";
@@ -16,6 +17,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -309,7 +311,19 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
 }
 
 export default function HomePage() {
+  const { me, permissions } = useAuth();
+  const [recipientSelection, setRecipientSelection] = useState({
+    user: me?.user,
+    holder: "",
+  });
+  const addressedTo =
+    recipientSelection.user === me?.user ? recipientSelection.holder : "";
+  const selectRecipient = (holder: string) =>
+    setRecipientSelection({ user: me?.user, holder });
   const [sort, setSort] = useState<"latest" | "activity">("latest");
+  const [audienceFilter, setAudienceFilter] = useState<
+    "all" | "everyone" | "private" | "staff"
+  >("all");
   const {
     data,
     loading: feedLoading,
@@ -317,11 +331,40 @@ export default function HomePage() {
     refetch,
   } = useQuery(
     useCallback(() => loadFeed(sort), [sort]),
-    [sort],
+    [sort, me?.user],
   );
-  const { me, permissions } = useAuth();
 
   const showLms = me !== null;
+  const recipients = [
+    ...new Map(
+      (data ?? [])
+        .flatMap((conversation) => conversation.audience)
+        .map((holder) => [holder.holder, holder]),
+    ).values(),
+  ].sort(
+    (a, b) =>
+      a.label.localeCompare(b.label) ||
+      a.kind.localeCompare(b.kind) ||
+      a.holder.localeCompare(b.holder),
+  );
+  const missingRecipient =
+    !!addressedTo &&
+    !recipients.some((recipient) => recipient.holder === addressedTo);
+  const visible = data?.filter((conversation) => {
+    const everyone = conversation.audience.some(
+      (holder) => holder.holder === "standing:everyone",
+    );
+    return (
+      (!addressedTo ||
+        conversation.audience.some(
+          (holder) => holder.holder === addressedTo,
+        )) &&
+      (audienceFilter === "all" ||
+        (audienceFilter === "everyone" && everyone) ||
+        (audienceFilter === "private" && !everyone) ||
+        (audienceFilter === "staff" && conversation.staffQuestion))
+    );
+  });
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_18rem] lg:py-10">
@@ -371,13 +414,84 @@ export default function HomePage() {
           </Button>
         </div>
 
+        <div
+          aria-label="Discussion audience filters"
+          className="mb-4 flex flex-wrap gap-2"
+        >
+          {(
+            [
+              "all",
+              "everyone",
+              "private",
+              ...(permissions.isStaff ? ["staff"] : []),
+            ] as const
+          ).map((filter) => (
+            <Button
+              key={filter}
+              size="sm"
+              variant={audienceFilter === filter ? "default" : "outline"}
+              aria-pressed={audienceFilter === filter}
+              onClick={() => {
+                setAudienceFilter(filter as typeof audienceFilter);
+                if (filter === "staff") setSort("activity");
+              }}
+            >
+              {
+                (
+                  {
+                    all: "All",
+                    everyone: "Everyone",
+                    private: "Private",
+                    staff: "Staff questions",
+                  } as Record<string, string>
+                )[filter]
+              }
+            </Button>
+          ))}
+          {!permissions.isStaff && me ? (
+            <Button asChild size="sm" variant="outline">
+              <Link href="/new?audience=staff">Ask Staff privately</Link>
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="mb-5 space-y-2">
+          <Label htmlFor="addressed-to">Addressed to</Label>
+          <select
+            id="addressed-to"
+            aria-describedby="addressed-to-help"
+            value={addressedTo}
+            onChange={(event) => selectRecipient(event.target.value)}
+            disabled={feedLoading && !data}
+            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:max-w-sm"
+          >
+            <option value="">All recipients</option>
+            {missingRecipient ? (
+              <option value={addressedTo} disabled>
+                Selected recipient unavailable in this feed
+              </option>
+            ) : null}
+            {recipients.map((recipient) => {
+              const displayed = audiencePresentation(recipient, recipients);
+              return (
+                <option key={recipient.holder} value={recipient.holder}>
+                  {displayed.label} ({displayed.kind})
+                </option>
+              );
+            })}
+          </select>
+          <p id="addressed-to-help" className="text-xs text-muted-foreground">
+            Matches people or audiences explicitly named on a discussion.
+          </p>
+        </div>
+
         {feedLoading && !data ? (
           <LoadingState label="Gathering the latest…" />
         ) : feedError ? (
           <ErrorState message={feedError} onRetry={refetch} />
-        ) : data && data.length > 0 ? (
+        ) : visible && visible.length > 0 ? (
           <div className="-mx-3">
-            {data.map((summary, i) => (
+            {visible.map((summary, i) => (
               <TopicRow
                 key={String(summary.conversation)}
                 summary={summary}
@@ -385,6 +499,23 @@ export default function HomePage() {
               />
             ))}
           </div>
+        ) : addressedTo || audienceFilter !== "all" ? (
+          <EmptyState
+            icon={MessagesSquare}
+            title="No discussions match these filters"
+            description="Only discussions you can read appear here."
+            action={
+              <Button
+                variant="outline"
+                onClick={() => {
+                  selectRecipient("");
+                  setAudienceFilter("all");
+                }}
+              >
+                Reset filters
+              </Button>
+            }
+          />
         ) : (
           <EmptyState
             icon={MessagesSquare}

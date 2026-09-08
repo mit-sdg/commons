@@ -531,4 +531,18 @@ export class MongoRosteringConcept {
       ...(doc.user !== null ? { user: doc.user } : {}),
     };
   }
+  async _activeUsers({ users }: { users: string[] }) {
+    const rows = await this.seats
+      .find({ user: { $in: users }, status: "ACTIVE" }, { projection: { user: 1 } })
+      .toArray();
+    return { active: [...new Set(rows.flatMap((row) => (row.user === null ? [] : [row.user])))] };
+  }
+  async _activeSections({ sections }: { sections: string[] }) {
+    const selected = [...new Set(sections)];
+    return {
+      active:
+        (await this.sections.countDocuments({ _id: { $in: selected }, status: "ACTIVE" })) ===
+        selected.length,
+    };
+  }
 }

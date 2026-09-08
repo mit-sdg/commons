@@ -6,7 +6,7 @@ import { isActiveCourseMember, mayManageCourse, mayNotManageCourse } from "../ac
 import { theRoleFaceOf } from "../access/roles.ts";
 import { concepts } from "../../concepts.ts";
 import { thePostSummaryOf, thePrivateProfileOf, theProfileFaceOf } from "./fragments.ts";
-import { intact } from "./threads.ts";
+import { postReader } from "./audience-policy.ts";
 
 const { Authenticating, Conversing, Posting, Profiling } = concepts;
 /** What is this user's profile? */
@@ -23,21 +23,21 @@ export const theUserSearch = former("the user search (query)", ({ query }, { use
 );
 /** What belongs on this user's page? */
 export const theUserPage = former(
-  "the user page of (user)",
-  ({ user }, { post, node, conversation }) =>
+  "the user page of (user) for (reader)",
+  ({ user, reader }, { post, node, conversation }) =>
     form({
       profile: whether(theProfileFaceOf({ user })),
       role: whether(theRoleFaceOf({ user, context: COMMONS })),
       posts: each(Posting._getByAuthor({ author: user }).is({ post }))
         .where(
-          intact({ item: post }),
+          postReader({ user: reader, post }),
           whether(Conversing._getNodeByItem({ item: post }).is({ node })),
           whether(Conversing._getConversation({ node }).is({ conversation })),
         )
         .form({
           item: post,
           conversation,
-          post: whether(thePostSummaryOf({ item: post })),
+          post: whether(thePostSummaryOf({ item: post, reader })),
         }),
     }),
 );

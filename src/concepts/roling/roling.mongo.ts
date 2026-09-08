@@ -218,4 +218,25 @@ export class MongoRolingConcept {
     if (byName !== null) return { role: byName._id };
     return { role: ref };
   }
+  async _capableUsers({
+    users,
+    context,
+    capabilities,
+  }: {
+    users: string[];
+    context: string;
+    capabilities: string[];
+  }) {
+    if (capabilities.length === 0) return { capable: [] as string[] };
+    const roles = await this.roles
+      .find({ capabilities: { $in: [...capabilities, "administer"] } }, { projection: { _id: 1 } })
+      .toArray();
+    const rows = await this.assignments
+      .find(
+        { user: { $in: users }, context, role: { $in: roles.map((role) => role._id) } },
+        { projection: { user: 1 } },
+      )
+      .toArray();
+    return { capable: [...new Set(rows.map((row) => row.user))] };
+  }
 }

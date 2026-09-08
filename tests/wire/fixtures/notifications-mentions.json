@@ -17,6 +17,31 @@
       }
     },
     {
+      "id": "regAdminSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regAdmin.user",
+        "email": "u2_admin@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#2",
+          "email": "u2_admin@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#1"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#1",
+        "section": null
+      }
+    },
+    {
       "id": "loginAdmin",
       "phase": "setup",
       "kind": "send",
@@ -26,8 +51,8 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#3",
         "expiresAt": "<date>",
-        "session": "uuid#2",
         "user": "uuid#1"
       }
     },
@@ -43,7 +68,32 @@
         "email": "u2_mara@example.com"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
+      }
+    },
+    {
+      "id": "regMaraSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regMara.user",
+        "email": "u2_mara@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#5",
+          "email": "u2_mara@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#4"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#4",
+        "section": null
       }
     },
     {
@@ -56,9 +106,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#6",
         "expiresAt": "<date>",
-        "session": "uuid#4",
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -73,7 +123,32 @@
         "email": "u2_noah@example.com"
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "regNoahSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regNoah.user",
+        "email": "u2_noah@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#8",
+          "email": "u2_noah@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#7"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#7",
+        "section": null
       }
     },
     {
@@ -86,9 +161,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#9",
         "expiresAt": "<date>",
-        "session": "uuid#6",
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -103,7 +178,32 @@
         "email": "u2_iris@example.com"
       },
       "response": {
-        "user": "uuid#7"
+        "user": "uuid#10"
+      }
+    },
+    {
+      "id": "regIrisSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regIris.user",
+        "email": "u2_iris@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#11",
+          "email": "u2_iris@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#10"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#10",
+        "section": null
       }
     },
     {
@@ -116,9 +216,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#12",
         "expiresAt": "<date>",
-        "session": "uuid#8",
-        "user": "uuid#7"
+        "user": "uuid#10"
       }
     },
     {
@@ -128,12 +228,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginMara.session",
-        "content": "Notification test thread"
+        "content": "Notification test thread",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#9",
-        "conversation": "uuid#10",
-        "node": "uuid#11"
+        "post": "uuid#13",
+        "conversation": "uuid#14",
+        "node": "uuid#15"
       }
     },
     {
@@ -147,8 +248,8 @@
         "content": "First reply"
       },
       "response": {
-        "post": "uuid#12",
-        "node": "uuid#13"
+        "post": "uuid#16",
+        "node": "uuid#17"
       }
     },
     {
@@ -162,10 +263,10 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#14",
+            "notification": "uuid#18",
             "kind": "reply",
-            "subject": "uuid#12",
-            "link": "uuid#12",
+            "subject": "uuid#16",
+            "link": "uuid#16",
             "createdAt": "<date>",
             "read": false
           }
@@ -194,7 +295,7 @@
         "target": "$t1Create.conversation"
       },
       "response": {
-        "subscription": "uuid#15"
+        "subscription": "uuid#19"
       }
     },
     {
@@ -221,8 +322,8 @@
         "content": "Second reply"
       },
       "response": {
-        "post": "uuid#16",
-        "node": "uuid#17"
+        "post": "uuid#20",
+        "node": "uuid#21"
       }
     },
     {
@@ -236,18 +337,18 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#18",
+            "notification": "uuid#22",
             "kind": "reply",
-            "subject": "uuid#16",
-            "link": "uuid#16",
+            "subject": "uuid#20",
+            "link": "uuid#20",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#14",
+            "notification": "uuid#18",
             "kind": "reply",
-            "subject": "uuid#12",
-            "link": "uuid#12",
+            "subject": "uuid#16",
+            "link": "uuid#16",
             "createdAt": "<date>",
             "read": false
           }
@@ -265,10 +366,10 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#19",
+            "notification": "uuid#23",
             "kind": "followed_reply",
-            "subject": "uuid#16",
-            "link": "uuid#16",
+            "subject": "uuid#20",
+            "link": "uuid#20",
             "createdAt": "<date>",
             "read": false
           }
@@ -286,8 +387,8 @@
         "content": "Iris replies"
       },
       "response": {
-        "post": "uuid#20",
-        "node": "uuid#21"
+        "post": "uuid#24",
+        "node": "uuid#25"
       }
     },
     {
@@ -301,10 +402,10 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#19",
+            "notification": "uuid#23",
             "kind": "followed_reply",
-            "subject": "uuid#16",
-            "link": "uuid#16",
+            "subject": "uuid#20",
+            "link": "uuid#20",
             "createdAt": "<date>",
             "read": false
           }
@@ -321,7 +422,7 @@
         "target": "$t1Create.conversation"
       },
       "response": {
-        "subscription": "uuid#22"
+        "subscription": "uuid#26"
       }
     },
     {
@@ -335,8 +436,8 @@
         "content": "Third reply"
       },
       "response": {
-        "post": "uuid#23",
-        "node": "uuid#24"
+        "post": "uuid#27",
+        "node": "uuid#28"
       }
     },
     {
@@ -350,15 +451,23 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#25",
+            "notification": "uuid#29",
             "kind": "reply",
-            "subject": "uuid#23",
-            "link": "uuid#23",
+            "subject": "uuid#27",
+            "link": "uuid#27",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#26",
+            "notification": "uuid#30",
+            "kind": "reply",
+            "subject": "uuid#24",
+            "link": "uuid#24",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#22",
             "kind": "reply",
             "subject": "uuid#20",
             "link": "uuid#20",
@@ -370,14 +479,6 @@
             "kind": "reply",
             "subject": "uuid#16",
             "link": "uuid#16",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#14",
-            "kind": "reply",
-            "subject": "uuid#12",
-            "link": "uuid#12",
             "createdAt": "<date>",
             "read": false
           }
@@ -391,12 +492,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginNoah.session",
-        "content": "Root post pinging @u2_mara"
+        "content": "Root post pinging @u2_mara",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#27",
-        "conversation": "uuid#28",
-        "node": "uuid#29"
+        "post": "uuid#31",
+        "conversation": "uuid#32",
+        "node": "uuid#33"
       }
     },
     {
@@ -410,23 +512,31 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#30",
+            "notification": "uuid#34",
             "kind": "mention",
+            "subject": "uuid#31",
+            "link": "uuid#31",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#29",
+            "kind": "reply",
             "subject": "uuid#27",
             "link": "uuid#27",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#25",
+            "notification": "uuid#30",
             "kind": "reply",
-            "subject": "uuid#23",
-            "link": "uuid#23",
+            "subject": "uuid#24",
+            "link": "uuid#24",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#26",
+            "notification": "uuid#22",
             "kind": "reply",
             "subject": "uuid#20",
             "link": "uuid#20",
@@ -438,14 +548,6 @@
             "kind": "reply",
             "subject": "uuid#16",
             "link": "uuid#16",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#14",
-            "kind": "reply",
-            "subject": "uuid#12",
-            "link": "uuid#12",
             "createdAt": "<date>",
             "read": false
           }
@@ -463,8 +565,8 @@
         "content": "thanks @u2_mara"
       },
       "response": {
-        "post": "uuid#31",
-        "node": "uuid#32"
+        "post": "uuid#35",
+        "node": "uuid#36"
       }
     },
     {
@@ -478,31 +580,39 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#33",
+            "notification": "uuid#37",
             "kind": "reply",
+            "subject": "uuid#35",
+            "link": "uuid#35",
+            "createdAt": "<date>",
+            "read": false
+          },
+          {
+            "notification": "uuid#34",
+            "kind": "mention",
             "subject": "uuid#31",
             "link": "uuid#31",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#30",
-            "kind": "mention",
+            "notification": "uuid#29",
+            "kind": "reply",
             "subject": "uuid#27",
             "link": "uuid#27",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#25",
+            "notification": "uuid#30",
             "kind": "reply",
-            "subject": "uuid#23",
-            "link": "uuid#23",
+            "subject": "uuid#24",
+            "link": "uuid#24",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#26",
+            "notification": "uuid#22",
             "kind": "reply",
             "subject": "uuid#20",
             "link": "uuid#20",
@@ -514,14 +624,6 @@
             "kind": "reply",
             "subject": "uuid#16",
             "link": "uuid#16",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#14",
-            "kind": "reply",
-            "subject": "uuid#12",
-            "link": "uuid#12",
             "createdAt": "<date>",
             "read": false
           }
@@ -539,8 +641,8 @@
         "content": "cc @u2_noah"
       },
       "response": {
-        "post": "uuid#34",
-        "node": "uuid#35"
+        "post": "uuid#38",
+        "node": "uuid#39"
       }
     },
     {
@@ -554,10 +656,10 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#36",
+            "notification": "uuid#40",
             "kind": "mention",
-            "subject": "uuid#34",
-            "link": "uuid#34",
+            "subject": "uuid#38",
+            "link": "uuid#38",
             "createdAt": "<date>",
             "read": false
           }
@@ -575,8 +677,8 @@
         "content": "for @u2_iris"
       },
       "response": {
-        "post": "uuid#37",
-        "node": "uuid#38"
+        "post": "uuid#41",
+        "node": "uuid#42"
       }
     },
     {
@@ -590,26 +692,26 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#39",
+            "notification": "uuid#43",
             "kind": "mention",
-            "subject": "uuid#37",
-            "link": "uuid#37",
+            "subject": "uuid#41",
+            "link": "uuid#41",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#40",
+            "notification": "uuid#44",
             "kind": "followed_reply",
-            "subject": "uuid#23",
-            "link": "uuid#23",
+            "subject": "uuid#27",
+            "link": "uuid#27",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#19",
+            "notification": "uuid#23",
             "kind": "followed_reply",
-            "subject": "uuid#16",
-            "link": "uuid#16",
+            "subject": "uuid#20",
+            "link": "uuid#20",
             "createdAt": "<date>",
             "read": false
           }
@@ -627,8 +729,8 @@
         "content": "note to self @u2_mara"
       },
       "response": {
-        "post": "uuid#41",
-        "node": "uuid#42"
+        "post": "uuid#45",
+        "node": "uuid#46"
       }
     },
     {
@@ -642,8 +744,8 @@
         "content": "hi @u2_ghost"
       },
       "response": {
-        "post": "uuid#43",
-        "node": "uuid#44"
+        "post": "uuid#47",
+        "node": "uuid#48"
       }
     },
     {
@@ -657,8 +759,8 @@
         "content": "@u2_noah @u2_noah twice"
       },
       "response": {
-        "post": "uuid#45",
-        "node": "uuid#46"
+        "post": "uuid#49",
+        "node": "uuid#50"
       }
     },
     {
@@ -672,18 +774,18 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#47",
+            "notification": "uuid#51",
             "kind": "mention",
-            "subject": "uuid#45",
-            "link": "uuid#45",
+            "subject": "uuid#49",
+            "link": "uuid#49",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#36",
+            "notification": "uuid#40",
             "kind": "mention",
-            "subject": "uuid#34",
-            "link": "uuid#34",
+            "subject": "uuid#38",
+            "link": "uuid#38",
             "createdAt": "<date>",
             "read": false
           }
@@ -701,7 +803,7 @@
         "content": "now pinging @u2_iris"
       },
       "response": {
-        "post": "uuid#23"
+        "post": "uuid#27"
       }
     },
     {
@@ -715,7 +817,7 @@
         "answer": "$replyNoah1.post"
       },
       "response": {
-        "resolution": "uuid#9"
+        "resolution": "uuid#13"
       }
     },
     {
@@ -729,26 +831,26 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#48",
+            "notification": "uuid#52",
             "kind": "accepted",
-            "subject": "uuid#12",
-            "link": "uuid#12",
+            "subject": "uuid#16",
+            "link": "uuid#16",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#47",
+            "notification": "uuid#51",
             "kind": "mention",
-            "subject": "uuid#45",
-            "link": "uuid#45",
+            "subject": "uuid#49",
+            "link": "uuid#49",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#36",
+            "notification": "uuid#40",
             "kind": "mention",
-            "subject": "uuid#34",
-            "link": "uuid#34",
+            "subject": "uuid#38",
+            "link": "uuid#38",
             "createdAt": "<date>",
             "read": false
           }
@@ -766,7 +868,7 @@
         "answer": "$t2Mention.post"
       },
       "response": {
-        "resolution": "uuid#27"
+        "resolution": "uuid#31"
       }
     },
     {
@@ -779,7 +881,7 @@
         "notification": "$inboxMara5.notifications.0.notification"
       },
       "response": {
-        "notification": "uuid#33"
+        "notification": "uuid#37"
       }
     },
     {
@@ -792,7 +894,7 @@
         "notification": "$inboxMara5.notifications.0.notification"
       },
       "response": {
-        "error": "NOTIFICATION_NOT_FOUND"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -816,7 +918,7 @@
         "session": "$loginMara.session"
       },
       "response": {
-        "recipient": "uuid#3"
+        "recipient": "uuid#4"
       }
     },
     {
@@ -841,7 +943,7 @@
         "notification": "$inboxNoah3.notifications.0.notification"
       },
       "response": {
-        "notification": "uuid#48"
+        "notification": "uuid#52"
       }
     },
     {
@@ -854,7 +956,7 @@
         "notification": "$inboxNoah3.notifications.0.notification"
       },
       "response": {
-        "error": "NOTIFICATION_NOT_FOUND"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -899,10 +1001,11 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$inboxMara5.notifications.0.link"
+        "item": "$inboxMara5.notifications.0.link",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "conversation": "uuid#10"
+        "conversation": "uuid#14"
       }
     },
     {
@@ -911,11 +1014,12 @@
       "kind": "send",
       "target": "/posts/get",
       "body": {
-        "post": "$inboxMara5.notifications.0.link"
+        "post": "$inboxMara5.notifications.0.link",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "post": {
-          "author": "uuid#7",
+          "author": "uuid#10",
           "content": "thanks @u2_mara",
           "createdAt": "<date>",
           "editedAt": null,
@@ -934,7 +1038,7 @@
       "response": {
         "subscriptions": [
           {
-            "target": "uuid#10",
+            "target": "uuid#14",
             "subscribedAt": "<date>"
           }
         ]
@@ -945,46 +1049,66 @@
       "phase": "assert",
       "kind": "send",
       "target": "/threads/latest",
-      "body": {},
+      "body": {
+        "session": "$loginAdmin.session"
+      },
       "response": {
         "conversations": [
           {
-            "conversation": "uuid#28",
-            "root": "uuid#29",
-            "item": "uuid#27",
+            "conversation": "uuid#32",
+            "root": "uuid#33",
+            "item": "uuid#31",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": false,
             "resolved": true,
             "post": {
-              "author": "uuid#5",
+              "author": "uuid#7",
               "content": "Root post pinging @u2_mara",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 0,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#5"]
+            "participants": ["uuid#7"]
           },
           {
-            "conversation": "uuid#10",
-            "root": "uuid#11",
-            "item": "uuid#9",
+            "conversation": "uuid#14",
+            "root": "uuid#15",
+            "item": "uuid#13",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": false,
             "resolved": true,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Notification test thread",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 10,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3", "uuid#5", "uuid#7"]
+            "participants": ["uuid#4", "uuid#7", "uuid#10"]
           }
         ]
       }
@@ -1008,15 +1132,16 @@
       "kind": "send",
       "target": "/subscriptions/subscribers",
       "body": {
-        "target": "$t1Create.conversation"
+        "target": "$t1Create.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "subscribers": [
           {
-            "user": "uuid#7"
+            "user": "uuid#10"
           },
           {
-            "user": "uuid#3"
+            "user": "uuid#4"
           }
         ]
       }
@@ -1031,7 +1156,7 @@
         "target": "$t1Create.conversation"
       },
       "response": {
-        "subscription": "uuid#15"
+        "subscription": "uuid#19"
       }
     },
     {
@@ -1057,7 +1182,7 @@
         "item": "$replyNoah1.post"
       },
       "response": {
-        "item": "uuid#12"
+        "item": "uuid#16"
       }
     },
     {
@@ -1070,7 +1195,7 @@
         "item": "$replyNoah1.post"
       },
       "response": {
-        "item": "uuid#12"
+        "item": "uuid#16"
       }
     },
     {
@@ -1084,74 +1209,74 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#49",
+            "notification": "uuid#53",
             "kind": "reply",
-            "subject": "uuid#45",
-            "link": "uuid#45",
+            "subject": "uuid#49",
+            "link": "uuid#49",
             "createdAt": "<date>",
             "read": true
           },
           {
-            "notification": "uuid#50",
+            "notification": "uuid#54",
             "kind": "reply",
-            "subject": "uuid#43",
-            "link": "uuid#43",
+            "subject": "uuid#47",
+            "link": "uuid#47",
             "createdAt": "<date>",
             "read": true
           },
           {
-            "notification": "uuid#51",
+            "notification": "uuid#55",
             "kind": "reply",
-            "subject": "uuid#37",
-            "link": "uuid#37",
+            "subject": "uuid#41",
+            "link": "uuid#41",
             "createdAt": "<date>",
             "read": true
           },
           {
-            "notification": "uuid#52",
+            "notification": "uuid#56",
             "kind": "reply",
-            "subject": "uuid#34",
-            "link": "uuid#34",
+            "subject": "uuid#38",
+            "link": "uuid#38",
             "createdAt": "<date>",
             "read": true
           },
           {
-            "notification": "uuid#33",
+            "notification": "uuid#37",
             "kind": "reply",
+            "subject": "uuid#35",
+            "link": "uuid#35",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#34",
+            "kind": "mention",
             "subject": "uuid#31",
             "link": "uuid#31",
             "createdAt": "<date>",
             "read": true
           },
           {
-            "notification": "uuid#30",
-            "kind": "mention",
+            "notification": "uuid#29",
+            "kind": "reply",
             "subject": "uuid#27",
             "link": "uuid#27",
             "createdAt": "<date>",
             "read": true
           },
           {
-            "notification": "uuid#25",
+            "notification": "uuid#30",
             "kind": "reply",
-            "subject": "uuid#23",
-            "link": "uuid#23",
+            "subject": "uuid#24",
+            "link": "uuid#24",
             "createdAt": "<date>",
             "read": true
           },
           {
-            "notification": "uuid#26",
+            "notification": "uuid#22",
             "kind": "reply",
             "subject": "uuid#20",
             "link": "uuid#20",
-            "createdAt": "<date>",
-            "read": true
-          },
-          {
-            "notification": "uuid#18",
-            "kind": "reply",
-            "subject": "uuid#16",
-            "link": "uuid#16",
             "createdAt": "<date>",
             "read": true
           }
@@ -1164,7 +1289,8 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$replyNoah1.post"
+        "item": "$replyNoah1.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "conversation": null

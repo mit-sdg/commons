@@ -24,23 +24,33 @@ describe("forum identity and lookup presentation", () => {
       content: "A tagged post",
       at: new Date("2026-07-19T12:00:00.000Z"),
     });
-    await app.concepts.Conversing.start({
+    const { conversation } = await app.concepts.Conversing.start({
       item: post,
       at: new Date("2026-07-19T12:00:00.000Z"),
+    });
+    const { user: reader } = await app.concepts.Authenticating.register({
+      username: "reader",
+      password: "password123",
+      email: "reader@example.edu",
+    });
+    const { session } = await app.concepts.Sessioning.start({ user: reader });
+    await app.concepts.Accessing.establish({
+      resource: conversation,
+      holders: [`account:${reader}`],
     });
     const { tag } = await app.concepts.Tagging.createTag({ name: "design" });
     await app.concepts.Tagging.addTag({ target: post, tag });
 
-    expect(await app.form(theTargetsTaggedWithName({ name: "design" }))).toEqual([
+    expect(await app.form(theTargetsTaggedWithName({ name: "design", reader }))).toEqual([
       { target: post },
     ]);
-    expect(await send(app, "/tags/targetsByName", { name: "design" })).toEqual({
+    expect(await send(app, "/tags/targetsByName", { session, name: "design" })).toEqual({
       targets: [{ target: post }],
     });
-    expect(await send(app, "/tags/targets", { tag })).toEqual({
+    expect(await send(app, "/tags/targets", { session, tag })).toEqual({
       targets: [{ target: post }],
     });
-    expect(await send(app, "/tags/targetsByName", { name: "missing" })).toEqual({
+    expect(await send(app, "/tags/targetsByName", { session, name: "missing" })).toEqual({
       targets: [],
     });
   });
@@ -67,6 +77,12 @@ describe("forum identity and lookup presentation", () => {
       content: "A named reply",
       at,
     });
+    const { conversation } = await app.concepts.Conversing.start({ item: post, at });
+    await app.concepts.Accessing.establish({
+      resource: conversation,
+      holders: [`account:${recipient}`],
+    });
+    await app.concepts.Notifying.clearSubject({ subject: post });
     const { notification } = await app.concepts.Notifying.notify({
       recipient,
       kind: "reply",

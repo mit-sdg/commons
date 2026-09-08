@@ -17,6 +17,31 @@
       }
     },
     {
+      "id": "regAdminSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regAdmin.user",
+        "email": "f0_admin@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#2",
+          "email": "f0_admin@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#1"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#1",
+        "section": null
+      }
+    },
+    {
       "id": "loginAdmin",
       "phase": "setup",
       "kind": "send",
@@ -26,7 +51,7 @@
         "password": "password123"
       },
       "response": {
-        "session": "uuid#2",
+        "session": "uuid#3",
         "expiresAt": "<date>",
         "user": "uuid#1"
       }
@@ -43,7 +68,32 @@
         "displayName": "f0_alice"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
+      }
+    },
+    {
+      "id": "regAliceSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regAlice.user",
+        "email": "f0_alice@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#5",
+          "email": "f0_alice@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#4"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#4",
+        "section": null
       }
     },
     {
@@ -56,9 +106,9 @@
         "password": "password123"
       },
       "response": {
-        "session": "uuid#4",
+        "session": "uuid#6",
         "expiresAt": "<date>",
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -73,7 +123,32 @@
         "displayName": "f0_bob"
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "regBobSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regBob.user",
+        "email": "f0_bob@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#8",
+          "email": "f0_bob@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#7"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#7",
+        "section": null
       }
     },
     {
@@ -86,9 +161,9 @@
         "password": "password123"
       },
       "response": {
-        "session": "uuid#6",
+        "session": "uuid#9",
         "expiresAt": "<date>",
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -98,12 +173,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginAdmin.session",
-        "content": "Root of thread T1, by admin."
+        "content": "Root of thread T1, by admin.",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#7",
-        "conversation": "uuid#8",
-        "node": "uuid#9"
+        "post": "uuid#10",
+        "conversation": "uuid#11",
+        "node": "uuid#12"
       }
     },
     {
@@ -117,8 +193,8 @@
         "parent": "$t1Create.node"
       },
       "response": {
-        "post": "uuid#10",
-        "node": "uuid#11"
+        "post": "uuid#13",
+        "node": "uuid#14"
       }
     },
     {
@@ -132,8 +208,8 @@
         "parent": "$t1Create.node"
       },
       "response": {
-        "post": "uuid#12",
-        "node": "uuid#13"
+        "post": "uuid#15",
+        "node": "uuid#16"
       }
     },
     {
@@ -143,12 +219,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginAlice.session",
-        "content": "Root of thread T2 by alice, references [[$t1Create.post]]."
+        "content": "Root of thread T2 by alice, references [[$t1Create.post]].",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#14",
-        "conversation": "uuid#15",
-        "node": "uuid#16"
+        "post": "uuid#17",
+        "conversation": "uuid#18",
+        "node": "uuid#19"
       }
     },
     {
@@ -163,13 +240,13 @@
       "response": {
         "items": [
           {
-            "item": "uuid#7"
-          },
-          {
             "item": "uuid#10"
           },
           {
-            "item": "uuid#12"
+            "item": "uuid#13"
+          },
+          {
+            "item": "uuid#15"
           }
         ]
       }
@@ -197,7 +274,7 @@
         "item": "$t1Create.post"
       },
       "response": {
-        "item": "uuid#7"
+        "item": "uuid#10"
       }
     },
     {
@@ -236,7 +313,7 @@
         "item": "00000000-0000-4000-8000-00000000dead"
       },
       "response": {
-        "error": "ITEM_NOT_REGISTERED"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -249,7 +326,7 @@
         "scope": "$t1Create.conversation"
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -275,7 +352,7 @@
         "scope": "$t1Create.conversation"
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -288,7 +365,7 @@
         "scope": "00000000-0000-4000-8000-00000000dead"
       },
       "response": {
-        "items": []
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -309,15 +386,16 @@
       "kind": "send",
       "target": "/links/backlinks",
       "body": {
-        "target": "$t1Create.post"
+        "target": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "sources": [
           {
-            "source": "uuid#12"
+            "source": "uuid#15"
           },
           {
-            "source": "uuid#14"
+            "source": "uuid#17"
           }
         ]
       }
@@ -328,12 +406,13 @@
       "kind": "send",
       "target": "/links/forward",
       "body": {
-        "source": "$r2Reply.post"
+        "source": "$r2Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "targets": [
           {
-            "target": "uuid#7"
+            "target": "uuid#10"
           }
         ]
       }
@@ -344,7 +423,8 @@
       "kind": "send",
       "target": "/links/backlinks",
       "body": {
-        "target": "$r1Reply.post"
+        "target": "$r1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "sources": []
@@ -362,7 +442,7 @@
         "priority": 1
       },
       "response": {
-        "pin": "uuid#17"
+        "pin": "uuid#20"
       }
     },
     {
@@ -406,7 +486,7 @@
         "capabilities": ["moderate"]
       },
       "response": {
-        "role": "uuid#18"
+        "role": "uuid#21"
       }
     },
     {
@@ -421,7 +501,7 @@
         "role": "$definePinRole.role"
       },
       "response": {
-        "assignment": "uuid#19"
+        "assignment": "uuid#22"
       }
     },
     {
@@ -436,7 +516,7 @@
         "priority": 5
       },
       "response": {
-        "pin": "uuid#20"
+        "pin": "uuid#23"
       }
     },
     {
@@ -451,7 +531,7 @@
         "priority": 1
       },
       "response": {
-        "pin": "uuid#21"
+        "pin": "uuid#24"
       }
     },
     {
@@ -460,16 +540,17 @@
       "kind": "send",
       "target": "/pins/forScope",
       "body": {
-        "scope": "$t1Create.conversation"
+        "scope": "$t1Create.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "pinned": [
           {
-            "item": "uuid#10",
+            "item": "uuid#13",
             "priority": 5
           },
           {
-            "item": "uuid#7",
+            "item": "uuid#10",
             "priority": 1
           }
         ]
@@ -487,7 +568,7 @@
         "priority": 10
       },
       "response": {
-        "pin": "uuid#17"
+        "pin": "uuid#20"
       }
     },
     {
@@ -496,16 +577,17 @@
       "kind": "send",
       "target": "/pins/forScope",
       "body": {
-        "scope": "$t1Create.conversation"
+        "scope": "$t1Create.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "pinned": [
           {
-            "item": "uuid#7",
+            "item": "uuid#10",
             "priority": 10
           },
           {
-            "item": "uuid#10",
+            "item": "uuid#13",
             "priority": 5
           }
         ]
@@ -518,7 +600,8 @@
       "target": "/pins/isPinned",
       "body": {
         "item": "$t1Create.post",
-        "scope": "$t1Create.conversation"
+        "scope": "$t1Create.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "pinned": true
@@ -531,7 +614,8 @@
       "target": "/pins/isPinned",
       "body": {
         "item": "00000000-0000-4000-8000-00000000dead",
-        "scope": "$t1Create.conversation"
+        "scope": "$t1Create.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -548,7 +632,7 @@
         "scope": "$t1Create.conversation"
       },
       "response": {
-        "item": "uuid#10"
+        "item": "uuid#13"
       }
     },
     {
@@ -562,7 +646,7 @@
         "scope": "$t1Create.conversation"
       },
       "response": {
-        "item": "uuid#10"
+        "item": "uuid#13"
       }
     },
     {
@@ -591,7 +675,7 @@
         "priority": 3
       },
       "response": {
-        "pin": "uuid#22"
+        "pin": "uuid#25"
       }
     },
     {
@@ -604,7 +688,7 @@
         "item": "$r2Reply.post"
       },
       "response": {
-        "item": "uuid#12"
+        "item": "uuid#15"
       }
     },
     {
@@ -617,7 +701,7 @@
         "item": "$r2Reply.post"
       },
       "response": {
-        "item": "uuid#12"
+        "item": "uuid#15"
       }
     },
     {
@@ -626,12 +710,13 @@
       "kind": "send",
       "target": "/pins/forScope",
       "body": {
-        "scope": "$t1Create.conversation"
+        "scope": "$t1Create.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "pinned": [
           {
-            "item": "uuid#7",
+            "item": "uuid#10",
             "priority": 10
           }
         ]
@@ -644,7 +729,8 @@
       "target": "/pins/isPinned",
       "body": {
         "item": "$r2Reply.post",
-        "scope": "$t1Create.conversation"
+        "scope": "$t1Create.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -660,7 +746,7 @@
       },
       "response": [
         {
-          "item": "uuid#7",
+          "item": "uuid#10",
           "priority": 10
         }
       ]
@@ -689,10 +775,10 @@
       },
       "response": [
         {
-          "item": "uuid#7"
+          "item": "uuid#10"
         },
         {
-          "item": "uuid#10"
+          "item": "uuid#13"
         }
       ]
     },
@@ -732,7 +818,7 @@
         "post": "$r1Reply.post"
       },
       "response": {
-        "post": "uuid#10"
+        "post": "uuid#13"
       }
     },
     {
@@ -741,12 +827,13 @@
       "kind": "send",
       "target": "/links/backlinks",
       "body": {
-        "target": "$t1Create.post"
+        "target": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "sources": [
           {
-            "source": "uuid#14"
+            "source": "uuid#17"
           }
         ]
       }
@@ -761,7 +848,7 @@
       },
       "response": [
         {
-          "source": "uuid#14"
+          "source": "uuid#17"
         }
       ]
     },
@@ -771,13 +858,14 @@
       "kind": "send",
       "target": "/threads/get",
       "body": {
-        "conversation": "$t1Create.conversation"
+        "conversation": "$t1Create.conversation",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "thread": [
           {
-            "node": "uuid#9",
-            "item": "uuid#7",
+            "node": "uuid#12",
+            "item": "uuid#10",
             "parent": null,
             "depth": 0,
             "post": {
@@ -791,7 +879,15 @@
         ],
         "context": [
           {
-            "item": "uuid#7",
+            "item": "uuid#10",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
             "category": null,
             "tags": [],
             "locked": false,
@@ -813,8 +909,8 @@
       },
       "response": [
         {
-          "node": "uuid#9",
-          "item": "uuid#7",
+          "node": "uuid#12",
+          "item": "uuid#10",
           "parent": null,
           "depth": 0
         }
@@ -844,7 +940,7 @@
       },
       "response": [
         {
-          "item": "uuid#7"
+          "item": "uuid#10"
         }
       ]
     },
@@ -858,7 +954,7 @@
         "post": "00000000-0000-4000-8000-00000000dead"
       },
       "response": {
-        "error": "POST_NOT_FOUND"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -913,7 +1009,7 @@
         "newPassword": "newpass456"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -951,9 +1047,9 @@
         "password": "newpass456"
       },
       "response": {
-        "session": "uuid#23",
+        "session": "uuid#26",
         "expiresAt": "<date>",
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     }
   ]

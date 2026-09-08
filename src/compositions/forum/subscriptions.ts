@@ -21,7 +21,7 @@ export const theSubscriptionsOf = former(
   "the subscriptions of (user)",
   ({ user }, { target, subscribedAt }) =>
     each(Subscribing._getSubscriptions({ user }).is({ target, subscribedAt }))
-      .where(readableConversation({ conversation: target }))
+      .where(readableConversation({ conversation: target, reader: user }))
       .form({
         target,
         subscribedAt,
@@ -29,10 +29,12 @@ export const theSubscriptionsOf = former(
 );
 
 /** Which users follow this target? */
-export const theSubscribersOf = former("the subscribers of (target)", ({ target }, { user }) =>
-  each(Subscribing._getSubscribers({ target }).is({ user }))
-    .where(readableConversation({ conversation: target }))
-    .form({ user }),
+export const theSubscribersOf = former(
+  "the subscribers of (target) for (reader)",
+  ({ target, reader }, { user }) =>
+    each(Subscribing._getSubscribers({ target }).is({ user }))
+      .where(readableConversation({ conversation: target, reader }))
+      .form({ user }),
 );
 
 /** Which followed conversations should this user see? */
@@ -41,7 +43,7 @@ export const theWatchedThreadsOf = former(
   ({ user }, { target, subscribedAt, rootItem, rootNode }) =>
     each(Subscribing._getSubscriptions({ user }).is({ target, subscribedAt }))
       .where(
-        readableConversation({ conversation: target }),
+        readableConversation({ conversation: target, reader: user }),
         Conversing._getThread({ conversation: target }).is({
           node: rootNode,
           item: rootItem,
@@ -51,19 +53,9 @@ export const theWatchedThreadsOf = former(
       .form({
         conversation: target,
         subscribedAt,
-        post: whether(thePostSummaryOf({ item: rootItem })),
+        post: whether(thePostSummaryOf({ item: rootItem, reader: user })),
       })
-      .splicing(whether(theThreadStatsOf({ conversation: target }))),
-);
-
-export const PurgeClearsConversationSubscriptions = reaction(({ item, node, conversation }) =>
-  when(Trashing.purge({}).responds({ item }))
-    .where(
-      Conversing._getNodeByItem({ item }).is({ node }),
-      no(Conversing._parentOf({ node })),
-      Conversing._getConversation({ node }).is({ conversation }),
-    )
-    .then(Subscribing.clearTarget({ target: conversation })),
+      .splicing(whether(theThreadStatsOf({ conversation: target, reader: user }))),
 );
 
 export const Subscribe = endpoint(
@@ -73,12 +65,15 @@ export const Subscribe = endpoint(
       where(
         now(at),
         activeUser({ session }).is({ user }),
-        readableConversation({ conversation: target }),
+        readableConversation({ conversation: target, reader: user }),
       )
         .then(Subscribing.subscribe({ user, target, at }).responds({ subscription }))
         .then(respond({ subscription }))
         .named("success"),
-      where(activeUser({ session }), no(readableConversation({ conversation: target })))
+      where(
+        activeUser({ session }).is({ user }),
+        no(readableConversation({ conversation: target, reader: user })),
+      )
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
     ),
@@ -88,11 +83,17 @@ export const Unsubscribe = endpoint(
   "/subscriptions/unsubscribe",
   ({ session, target, user, subscription }) =>
     receive({ session, target }).then(
-      where(activeUser({ session }).is({ user }), readableConversation({ conversation: target }))
+      where(
+        activeUser({ session }).is({ user }),
+        readableConversation({ conversation: target, reader: user }),
+      )
         .then(Subscribing.unsubscribe({ user, target }).responds({ subscription }))
         .then(respond({ subscription }))
         .named("success"),
-      where(activeUser({ session }), no(readableConversation({ conversation: target })))
+      where(
+        activeUser({ session }).is({ user }),
+        no(readableConversation({ conversation: target, reader: user })),
+      )
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
     ),
@@ -110,24 +111,39 @@ export const IsSubscribed = endpoint(
     receive({ session, target }).then(
       where(
         activeUser({ session }).is({ user }),
-        readableConversation({ conversation: target }),
+        readableConversation({ conversation: target, reader: user }),
         Subscribing._isSubscribed({ user, target }).is({ subscribed }),
       )
         .then(respond({ subscribed }))
         .named("success"),
-      where(activeUser({ session }), no(readableConversation({ conversation: target })))
+      where(
+        activeUser({ session }).is({ user }),
+        no(readableConversation({ conversation: target, reader: user })),
+      )
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
     ),
 );
 
-export const Subscribers = endpoint("/subscriptions/subscribers", ({ target }) =>
-  receive({ target }).then(
-    where(readableConversation({ conversation: target }))
-      .then(respond({ subscribers: theSubscribersOf({ target }) }))
-      .named("success"),
-    where(no(readableConversation({ conversation: target })))
-      .then(respond({ error: "NOT_FOUND" }))
-      .named("hidden"),
-  ),
+export const Subscribers = endpoint("/subscriptions/subscribers", ({ session, target, reader }) =>
+  receive({ session, target })
+    .where(activeUser({ session }).is({ user: reader }))
+    .then(
+      where(readableConversation({ conversation: target, reader }))
+        .then(respond({ subscribers: theSubscribersOf({ target, reader }) }))
+        .named("success"),
+      where(no(readableConversation({ conversation: target, reader })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
+);
+
+export const PurgeClearsConversationSubscriptions = reaction(({ item, node, conversation }) =>
+  when(Trashing.purge({}).responds({ item }))
+    .where(
+      Conversing._getNodeByItem({ item }).is({ node }),
+      no(Conversing._parentOf({ node })),
+      Conversing._getConversation({ node }).is({ conversation }),
+    )
+    .then(Subscribing.clearTarget({ target: conversation })),
 );

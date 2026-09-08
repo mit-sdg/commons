@@ -17,6 +17,31 @@
       }
     },
     {
+      "id": "regAdminSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regAdmin.user",
+        "email": "u3_admin@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#2",
+          "email": "u3_admin@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#1"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#1",
+        "section": null
+      }
+    },
+    {
       "id": "loginAdmin",
       "phase": "setup",
       "kind": "send",
@@ -26,8 +51,8 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#3",
         "expiresAt": "<date>",
-        "session": "uuid#2",
         "user": "uuid#1"
       }
     },
@@ -43,7 +68,32 @@
         "email": "u3_mara@example.com"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
+      }
+    },
+    {
+      "id": "regMaraSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regMara.user",
+        "email": "u3_mara@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#5",
+          "email": "u3_mara@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#4"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#4",
+        "section": null
       }
     },
     {
@@ -56,9 +106,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#6",
         "expiresAt": "<date>",
-        "session": "uuid#4",
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -73,7 +123,32 @@
         "email": "u3_noah@example.com"
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "regNoahSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regNoah.user",
+        "email": "u3_noah@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#8",
+          "email": "u3_noah@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#7"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#7",
+        "section": null
       }
     },
     {
@@ -86,9 +161,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#9",
         "expiresAt": "<date>",
-        "session": "uuid#6",
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -98,12 +173,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginMara.session",
-        "content": "Original P1 content"
+        "content": "Original P1 content",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#7",
-        "conversation": "uuid#8",
-        "node": "uuid#9"
+        "post": "uuid#10",
+        "conversation": "uuid#11",
+        "node": "uuid#12"
       }
     },
     {
@@ -117,8 +193,8 @@
         "content": "Reply P2 original"
       },
       "response": {
-        "post": "uuid#10",
-        "node": "uuid#11"
+        "post": "uuid#13",
+        "node": "uuid#14"
       }
     },
     {
@@ -128,12 +204,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginNoah.session",
-        "content": "T2 root P3 original"
+        "content": "T2 root P3 original",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#12",
-        "conversation": "uuid#13",
-        "node": "uuid#14"
+        "post": "uuid#15",
+        "conversation": "uuid#16",
+        "node": "uuid#17"
       }
     },
     {
@@ -142,12 +219,13 @@
       "kind": "send",
       "target": "/revisions/list",
       "body": {
-        "item": "$t1Create.post"
+        "item": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "revisions": [
           {
-            "revision": "uuid#15",
+            "revision": "uuid#18",
             "number": 1,
             "content": "Original P1 content",
             "savedAt": "<date>"
@@ -163,10 +241,10 @@
       "body": {
         "session": "$loginMara.session",
         "post": "$t1Create.post",
-        "content": "P1 v2 \u2014 see [[$t2Create.post]], hello @u3_noah and @u3_mara"
+        "content": "P1 v2 — see [[$t2Create.post]], hello @u3_noah and @u3_mara"
       },
       "response": {
-        "post": "uuid#7"
+        "post": "uuid#10"
       }
     },
     {
@@ -175,15 +253,16 @@
       "kind": "send",
       "target": "/posts/get",
       "body": {
-        "post": "$t1Create.post"
+        "post": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "post": {
-          "author": "uuid#3",
-          "content": "P1 v2 \u2014 see [[uuid#12]], hello @u3_noah and @u3_mara",
+          "author": "uuid#4",
+          "content": "P1 v2 — see [[uuid#15]], hello @u3_noah and @u3_mara",
           "createdAt": "<date>",
           "editedAt": "<date>",
-          "rendered": "<p>P1 v2 \u2014 see [[uuid#12]], hello <a href=\"/u/u3_noah\">@u3_noah</a> and <a href=\"/u/u3_mara\">@u3_mara</a></p>\n"
+          "rendered": "<p>P1 v2 — see [[uuid#15]], hello <a href=\"/u/u3_noah\">@u3_noah</a> and <a href=\"/u/u3_mara\">@u3_mara</a></p>\n"
         }
       }
     },
@@ -198,10 +277,10 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#16",
+            "notification": "uuid#19",
             "kind": "mention",
-            "subject": "uuid#7",
-            "link": "uuid#7",
+            "subject": "uuid#10",
+            "link": "uuid#10",
             "createdAt": "<date>",
             "read": false
           }
@@ -214,12 +293,13 @@
       "kind": "send",
       "target": "/links/forward",
       "body": {
-        "source": "$t1Create.post"
+        "source": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "targets": [
           {
-            "target": "uuid#12"
+            "target": "uuid#15"
           }
         ]
       }
@@ -235,7 +315,7 @@
         "content": "P1 v3 final, still @u3_noah"
       },
       "response": {
-        "post": "uuid#7"
+        "post": "uuid#10"
       }
     },
     {
@@ -244,24 +324,25 @@
       "kind": "send",
       "target": "/revisions/list",
       "body": {
-        "item": "$t1Create.post"
+        "item": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "revisions": [
           {
-            "revision": "uuid#15",
+            "revision": "uuid#18",
             "number": 1,
             "content": "Original P1 content",
             "savedAt": "<date>"
           },
           {
-            "revision": "uuid#17",
+            "revision": "uuid#20",
             "number": 2,
-            "content": "P1 v2 \u2014 see [[uuid#12]], hello @u3_noah and @u3_mara",
+            "content": "P1 v2 — see [[uuid#15]], hello @u3_noah and @u3_mara",
             "savedAt": "<date>"
           },
           {
-            "revision": "uuid#18",
+            "revision": "uuid#21",
             "number": 3,
             "content": "P1 v3 final, still @u3_noah",
             "savedAt": "<date>"
@@ -275,12 +356,13 @@
       "kind": "send",
       "target": "/revisions/latest",
       "body": {
-        "item": "$t1Create.post"
+        "item": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "revision": [
           {
-            "revision": "uuid#18",
+            "revision": "uuid#21",
             "number": 3,
             "content": "P1 v3 final, still @u3_noah",
             "savedAt": "<date>"
@@ -295,12 +377,13 @@
       "target": "/revisions/get",
       "body": {
         "item": "$t1Create.post",
-        "number": 2
+        "number": 2,
+        "session": "$loginAdmin.session"
       },
       "response": {
         "revision": [
           {
-            "content": "P1 v2 \u2014 see [[uuid#12]], hello @u3_noah and @u3_mara",
+            "content": "P1 v2 — see [[uuid#15]], hello @u3_noah and @u3_mara",
             "savedAt": "<date>"
           }
         ]
@@ -313,7 +396,8 @@
       "target": "/revisions/get",
       "body": {
         "item": "$t1Create.post",
-        "number": 9
+        "number": 9,
+        "session": "$loginAdmin.session"
       },
       "response": {
         "revision": []
@@ -325,7 +409,8 @@
       "kind": "send",
       "target": "/revisions/list",
       "body": {
-        "item": "00000000-0000-4000-8000-00000000dead"
+        "item": "00000000-0000-4000-8000-00000000dead",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -356,7 +441,7 @@
         "content": "editing a ghost post"
       },
       "response": {
-        "error": "POST_NOT_FOUND"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -366,10 +451,11 @@
       "target": "/posts/edit",
       "body": {
         "post": "$t1Create.post",
-        "content": "edit with no session key"
+        "content": "edit with no session key",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "error": "FORBIDDEN"
       }
     },
     {
@@ -392,15 +478,16 @@
       "kind": "send",
       "target": "/posts/byAuthor",
       "body": {
-        "author": "$loginNoah.user"
+        "author": "$loginNoah.user",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "posts": [
           {
-            "post": "uuid#12"
+            "post": "uuid#15"
           },
           {
-            "post": "uuid#10"
+            "post": "uuid#13"
           }
         ]
       }
@@ -415,7 +502,7 @@
         "item": "$t1Reply.post"
       },
       "response": {
-        "item": "uuid#10"
+        "item": "uuid#13"
       }
     },
     {
@@ -424,7 +511,8 @@
       "kind": "send",
       "target": "/revisions/list",
       "body": {
-        "item": "$t1Reply.post"
+        "item": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -436,7 +524,8 @@
       "kind": "send",
       "target": "/posts/get",
       "body": {
-        "post": "$t1Reply.post"
+        "post": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -462,7 +551,8 @@
       "kind": "send",
       "target": "/revisions/list",
       "body": {
-        "item": "$t1Reply.post"
+        "item": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -474,12 +564,13 @@
       "kind": "send",
       "target": "/posts/byAuthor",
       "body": {
-        "author": "$loginNoah.user"
+        "author": "$loginNoah.user",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "posts": [
           {
-            "post": "uuid#12"
+            "post": "uuid#15"
           }
         ]
       }
@@ -494,7 +585,7 @@
         "target": "$t2Create.conversation"
       },
       "response": {
-        "target": "uuid#13"
+        "target": "uuid#16"
       }
     },
     {
@@ -521,7 +612,7 @@
         "item": "$t1Reply.post"
       },
       "response": {
-        "item": "uuid#10"
+        "item": "uuid#13"
       }
     },
     {
@@ -530,7 +621,8 @@
       "kind": "send",
       "target": "/revisions/list",
       "body": {
-        "item": "$t1Reply.post"
+        "item": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -542,7 +634,8 @@
       "kind": "send",
       "target": "/revisions/latest",
       "body": {
-        "item": "$t1Reply.post"
+        "item": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -554,7 +647,8 @@
       "kind": "send",
       "target": "/posts/get",
       "body": {
-        "post": "$t1Reply.post"
+        "post": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -571,7 +665,7 @@
         "content": "editing a purged post"
       },
       "response": {
-        "error": "POST_NOT_FOUND"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -594,12 +688,13 @@
       "kind": "send",
       "target": "/revisions/list",
       "body": {
-        "item": "$t2Create.post"
+        "item": "$t2Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "revisions": [
           {
-            "revision": "uuid#19",
+            "revision": "uuid#22",
             "number": 1,
             "content": "T2 root P3 original",
             "savedAt": "<date>"
@@ -627,7 +722,7 @@
       },
       "response": [
         {
-          "post": "uuid#12"
+          "post": "uuid#15"
         }
       ]
     },

@@ -55,4 +55,7 @@ export class MongoTrashingConcept {
     const docs = await this.trashed.find({}, { projection: { _id: 1 } }).toArray();
     return { items: docs.map((doc) => doc._id) };
   }
+  async _anyTrashed({ items }: { items: string[] }) {
+    return { trashed: (await this.trashed.findOne({ _id: { $in: items } })) !== null };
+  }
 }

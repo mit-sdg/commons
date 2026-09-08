@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { api, unwrap } from "@/lib/api";
@@ -66,42 +67,62 @@ export interface AuthState {
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState(false);
-  const [me, setMe] = useState<Me | null>(null);
+  const [identity, setIdentity] = useState<{
+    session: boolean;
+    me: Me | null;
+    permissions: Permissions;
+  }>({ session: false, me: null, permissions: NO_PERMISSIONS });
+  const { session, me, permissions } = identity;
   const [loading, setLoading] = useState(true);
-  const [permissions, setPermissions] = useState<Permissions>(NO_PERMISSIONS);
+  const hydration = useRef(0);
+
+  const clearIdentity = useCallback(() => {
+    hydration.current += 1;
+    setIdentity({ session: false, me: null, permissions: NO_PERMISSIONS });
+    return hydration.current;
+  }, []);
 
   const hydrate = useCallback(async () => {
-    const result = await api.auth.me();
-    if ("error" in result) {
-      setSession(false);
-      setMe(null);
-      setPermissions(NO_PERMISSIONS);
-      return;
+    const attempt = ++hydration.current;
+    try {
+      const result = await api.auth.me();
+      if (attempt !== hydration.current) return;
+      if ("error" in result) {
+        setIdentity({ session: false, me: null, permissions: NO_PERMISSIONS });
+        return;
+      }
+      const granted = await api.auth.permissions({});
+      if (attempt !== hydration.current) return;
+      setIdentity({
+        session: true,
+        me: result,
+        permissions:
+          "error" in granted
+            ? NO_PERMISSIONS
+            : permissionsOf(granted.capabilities as Capability[]),
+      });
+    } catch (error) {
+      if (attempt === hydration.current)
+        setIdentity({ session: false, me: null, permissions: NO_PERMISSIONS });
+      throw error;
     }
-    setSession(true);
-    setMe(result);
-    const granted = await api.auth.permissions({});
-    setPermissions(
-      "error" in granted
-        ? NO_PERMISSIONS
-        : permissionsOf(granted.capabilities as Capability[]),
-    );
   }, []);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- auth hydration must run once on mount
-    hydrate().finally(() => setLoading(false));
+    hydrate()
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = useCallback(
     async (username: string, password: string) => {
+      const attempt = clearIdentity();
       unwrap(await api.auth.login({ username, password }));
-      setSession(true);
-      await hydrate();
+      if (attempt === hydration.current) await hydrate();
     },
-    [hydrate],
+    [hydrate, clearIdentity],
   );
 
   const register = useCallback(
@@ -111,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       username: string,
       displayName: string,
     ) => {
+      const attempt = clearIdentity();
       unwrap(
         await api.auth["accept-invitation"]({
           invitation,
@@ -120,19 +142,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           displayName,
         }),
       );
+      if (attempt !== hydration.current) return;
       unwrap(await api.auth.login({ username, password: temporaryPassword }));
-      setSession(true);
-      await hydrate();
+      if (attempt === hydration.current) await hydrate();
     },
-    [hydrate],
+    [hydrate, clearIdentity],
   );
 
   const logout = useCallback(async () => {
+    clearIdentity();
     if (session) unwrap(await api.auth.logout());
-    setSession(false);
-    setMe(null);
-    setPermissions(NO_PERMISSIONS);
-  }, [session]);
+  }, [session, clearIdentity]);
 
   const refresh = useCallback(async () => {
     await hydrate();

@@ -1,4 +1,22 @@
 import {
+  staffQuestion,
+  forumMailKey,
+  visibleAnswer,
+  selectedSection,
+  currentAudienceMembership,
+  staffCapabilities,
+  holderCode,
+  completeAddressing,
+  holderKind,
+  holderSubject,
+  audienceLabel,
+  selectedIdentities,
+  addressingPeople,
+  currentAddressing,
+  previewHolders,
+} from "./computations/audiences.ts";
+import { accessing } from "./concepts/accessing/registry.ts";
+import {
   openingAuthorized,
   openingBrief,
   openingAdmission,
@@ -201,6 +219,7 @@ import {
 } from "./computations/mail-content.ts";
 
 const registrations = {
+  Accessing: accessing,
   AdoptLinking: linking,
   Archiving: trashing,
   Assigning: assigning,
@@ -255,6 +274,21 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  staffQuestion,
+  forumMailKey,
+  visibleAnswer,
+  selectedSection,
+  currentAudienceMembership,
+  staffCapabilities,
+  holderCode,
+  completeAddressing,
+  holderKind,
+  holderSubject,
+  audienceLabel,
+  selectedIdentities,
+  addressingPeople,
+  currentAddressing,
+  previewHolders,
   openingAuthorized,
   openingBrief,
   openingAdmission,

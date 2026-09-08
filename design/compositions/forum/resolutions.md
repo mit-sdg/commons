@@ -2,8 +2,7 @@
 
 Only the author of a readable question can accept a readable answer through
 [Forum.resolutions.AcceptAnswer](reaction:Forum.resolutions.AcceptAnswer). A new acceptance replaces the prior answer;
-question and answer need not share a conversation, and the answer need not be a
-reply. The successful Resolving action independently triggers notification of
+question and answer must share a conversation. The successful Resolving action independently triggers notification of
 the answer author. [Forum.resolutions.ClearResolution](reaction:Forum.resolutions.ClearResolution) lets the same question
 author remove the current acceptance; another caller receives `FORBIDDEN`,
 while hidden posts return `NOT_FOUND`.
@@ -11,9 +10,7 @@ while hidden posts return `NOT_FOUND`.
 [Forum.resolutions.GetResolution](reaction:Forum.resolutions.GetResolution) forms
 [the readable resolution](former:Forum.resolutions.theResolutionOf) of a readable question,
 returning its accepted answer only while that answer is also readable.
-[Forum.resolutions.IsResolved](reaction:Forum.resolutions.IsResolved) reports Resolving's status for a readable
-question, so it can remain true while the accepted answer is trashed even though
-the detailed public resolution is empty.
+[Forum.resolutions.IsResolved](reaction:Forum.resolutions.IsResolved) reports whether the question has a currently readable answer in the same conversation.
 
 After permanent purge,
 [Forum.resolutions.PurgedPostClearsResolutions](reaction:Forum.resolutions.PurgedPostClearsResolutions) clears the post's own question
@@ -26,3 +23,7 @@ Forum.resolutions.ClearResolution at /resolutions/clear
 Forum.resolutions.GetResolution at /resolutions/get
 Forum.resolutions.IsResolved at /resolutions/isResolved
 ```
+
+[admissibleAnswer](view:Forum.resolutions.admissibleAnswer) Both posts must be readable in the same conversation.
+
+[visibleResolution](view:Forum.resolutions.visibleResolution) Resolution status and presentation use the same admitted answer.

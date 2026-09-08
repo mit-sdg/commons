@@ -34,6 +34,7 @@ export async function loadUserOverview(user: string): Promise<{
 }
 
 export interface ThreadPage {
+  audience: import("@/lib/api").Output<"/audiences/forConversation">["holders"];
   nodes: ThreadNode[];
   root: ThreadNode;
   questionId: string;
@@ -54,6 +55,7 @@ export async function loadThreadPage(
   const details = context[0];
   if (!root || !details) throw new CommonsError("Conversation not found");
   return {
+    audience: details.audience,
     nodes,
     root,
     questionId: String(details.item),

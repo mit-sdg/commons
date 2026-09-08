@@ -11,18 +11,14 @@ adds each followed conversation's root-post summary and current thread statistic
 reports that account's state for one readable conversation.
 
 [Forum.subscriptions.Subscribers](reaction:Forum.subscriptions.Subscribers) forms
-[the current followers](former:Forum.subscriptions.theSubscribersOf) only while the conversation remains readable. A trashed or deleted root therefore hides the
-subscription state without removing it; restore can reveal it again. Successful
+[the current followers](former:Forum.subscriptions.theSubscribersOf) only while the session account belongs to the conversation’s current audience. Root trash or missing root content does not by itself hide subscription state. Successful
 replies consult the retained subscribers when creating followed-reply
 notifications, with author and mention exclusions defined by notification
 behavior.
 
-Purging a placed root triggers
-[Forum.subscriptions.PurgeClearsConversationSubscriptions](reaction:Forum.subscriptions.PurgeClearsConversationSubscriptions), which clears every
-subscription to that conversation. Purging a reply leaves the conversation's
-subscriptions intact. The Trashing transition remains committed if root lookup
-or cleanup faults, so retained subscribers can still receive later reply
-notifications.
+Root removal with surviving replies preserves following. Only final conversation
+removal permanently ends its audience and clears current subscriptions, as described by the
+[lifecycle](lifecycle.md). A delayed following record cannot make an ended conversation readable.
 
 ```endpoints
 Forum.subscriptions.IsSubscribed at /subscriptions/isSubscribed
@@ -31,3 +27,5 @@ Forum.subscriptions.Subscribe at /subscriptions/subscribe
 Forum.subscriptions.Subscribers at /subscriptions/subscribers
 Forum.subscriptions.Unsubscribe at /subscriptions/unsubscribe
 ```
+
+[Purge clears conversation subscriptions](reaction:Forum.subscriptions.PurgeClearsConversationSubscriptions) when the root placement is still present.

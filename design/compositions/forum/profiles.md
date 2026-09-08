@@ -35,7 +35,7 @@ case-insensitive username match; ambiguous or absent identities return both the
 user and username as `null` rather than exposing candidates.
 
 The [user-page former](former:Forum.profiles.theUserPage) combines current account, profile, post, and thread
-state without copying it into another owner. A missing optional profile face
+state without copying it into another owner. Its post collection takes a trusted reader and filters each post through the current conversation audience before exposing content or placement. A missing optional profile face
 does not create a replacement identity or grant access.
 
 ```endpoints

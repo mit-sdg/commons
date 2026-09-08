@@ -59,11 +59,24 @@ describe("invitations and email", () => {
       email: "member@example.edu",
     });
     if ("error" in registered) throw new Error(String(registered.error));
+    const { post: forumPost } = await edge.application.concepts.Posting.create({
+      author: registered.user,
+      content: "Forum notice",
+      at: new Date(),
+    });
+    const { conversation } = await edge.application.concepts.Conversing.start({
+      item: forumPost,
+      at: new Date(),
+    });
+    await edge.application.concepts.Accessing.establish({
+      resource: conversation,
+      holders: [`account:${registered.user}`],
+    });
     const notified = await edge.application.concepts.Notifying.notify({
       recipient: registered.user,
       kind: "reply",
-      subject: "post-1",
-      link: "post-1",
+      subject: forumPost,
+      link: forumPost,
       at: new Date(),
     });
     if ("error" in notified) throw new Error(String(notified.error));
@@ -72,7 +85,7 @@ describe("invitations and email", () => {
     const pending = await edge.application.concepts.Mailing._getPending({});
     expect(pending).toHaveLength(1);
     expect(pending[0]).toMatchObject({
-      key: notified.notification,
+      key: expect.stringContaining(notified.notification),
       recipient: "member@example.edu",
       subject: "New Commons notification",
     });

@@ -22,20 +22,24 @@ export const theCategories = former(
 );
 
 /** Which items are in this category? */
-export const theItemsIn = former("the items in (category)", ({ category }, { item }) =>
-  each(Categorizing._getItems({ category }).is({ item }))
-    .where(readable({ post: item }))
-    .form({ item }),
+export const theItemsIn = former(
+  "the items in (category) for (reader)",
+  ({ category, reader }, { item }) =>
+    each(Categorizing._getItems({ category }).is({ item }))
+      .where(readable({ post: item, reader }))
+      .form({ item }),
 );
 /** Which category contains this item? */
 export const theCategoryOf = former(
-  "the category of (item)",
-  ({ item }, { category, name, description }) =>
-    each(Categorizing._getCategory({ item }).is({ category, name, description })).form({
-      category,
-      name,
-      description,
-    }),
+  "the category of (item) for (reader)",
+  ({ item, reader }, { category, name, description }) =>
+    each(Categorizing._getCategory({ item }).is({ category, name, description }))
+      .where(readable({ post: item, reader }))
+      .form({
+        category,
+        name,
+        description,
+      }),
 );
 
 export const PurgeUnassignsCategory = reaction(({ item }) =>
@@ -78,18 +82,22 @@ export const AssignCategory = endpoint(
   "/categories/assign",
   ({ session, item, category, user, assigned }) =>
     receive({ session, item, category }).then(
-      where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: item }))
-        .then(Categorizing.assign({ item, category }).responds({ item: assigned }))
-        .then(respond({ item: assigned }))
-        .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        notReadable({ post: item }),
+        readable({ post: item, reader: user }),
       )
+        .then(Categorizing.assign({ item, category }).responds({ item: assigned }))
+        .then(respond({ item: assigned }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayNotModerate({ user }),
+        readable({ post: item, reader: user }),
+      )
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(activeUser({ session }).is({ user }), notReadable({ post: item, reader: user }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
     ),
@@ -99,38 +107,46 @@ export const UnassignCategory = endpoint(
   "/categories/unassign",
   ({ session, item, user, unassigned }) =>
     receive({ session, item }).then(
-      where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: item }))
-        .then(Categorizing.unassign({ item }).responds({ item: unassigned }))
-        .then(respond({ item: unassigned }))
-        .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
       where(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
-        notReadable({ post: item }),
+        readable({ post: item, reader: user }),
       )
+        .then(Categorizing.unassign({ item }).responds({ item: unassigned }))
+        .then(respond({ item: unassigned }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayNotModerate({ user }),
+        readable({ post: item, reader: user }),
+      )
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(activeUser({ session }).is({ user }), notReadable({ post: item, reader: user }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
     ),
 );
 
-export const ListCategories = endpoint("/categories/list", () =>
-  receive({}).then(respond({ categories: theCategories({}) })),
+export const ListCategories = endpoint("/categories/list", ({ session }) =>
+  receive({ session })
+    .where(activeUser({ session }))
+    .then(respond({ categories: theCategories({}) })),
 );
-
-export const CategoryItems = endpoint("/categories/items", ({ category }) =>
-  receive({ category }).then(respond({ items: theItemsIn({ category }) })),
+export const CategoryItems = endpoint("/categories/items", ({ session, category, reader }) =>
+  receive({ session, category })
+    .where(activeUser({ session }).is({ user: reader }))
+    .then(respond({ items: theItemsIn({ category, reader }) })),
 );
-
-export const CategoryForItem = endpoint("/categories/forItem", ({ item }) =>
-  receive({ item }).then(
-    where(readable({ post: item }))
-      .then(respond({ category: theCategoryOf({ item }) }))
-      .named("success"),
-    where(notReadable({ post: item }))
-      .then(respond({ error: "NOT_FOUND" }))
-      .named("hidden"),
-  ),
+export const CategoryForItem = endpoint("/categories/forItem", ({ session, item, reader }) =>
+  receive({ session, item })
+    .where(activeUser({ session }).is({ user: reader }))
+    .then(
+      where(readable({ post: item, reader }))
+        .then(respond({ category: theCategoryOf({ item, reader }) }))
+        .named("success"),
+      where(notReadable({ post: item, reader }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
 );

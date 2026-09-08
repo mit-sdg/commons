@@ -355,10 +355,16 @@ describe("the Commons process with MongoDB", () => {
       const operatorMe = await post(edge.origin, "/api/auth/me", {}, operatorCookie);
       expect(operatorMe.body.username).toBe("operator");
 
+      await post(
+        edge.origin,
+        "/api/roster/import",
+        { rows: [{ email: "learner@example.com", kind: "STUDENT" }] },
+        operatorCookie,
+      );
       const threadResult = await post(
         edge.origin,
         "/api/threads/create",
-        { content: "# Reading notes\nA question for @operator" },
+        { holders: ["standing:everyone"], content: "# Reading notes\nA question for @operator" },
         learnerCookie,
       );
       expect(threadResult.response.status).toBe(200);

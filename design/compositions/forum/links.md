@@ -20,3 +20,5 @@ unexposed link state until repaired.
 Forum.links.Backlinks at /links/backlinks
 Forum.links.Forward at /links/forward
 ```
+
+All target reads and changes derive the reader from the session and apply the conversation’s current audience. Collections filter before projecting related identities or counts; author and moderator roles provide no ordinary read exception.

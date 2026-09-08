@@ -29,3 +29,5 @@ Course.submissions.ForAssignment at /submissions/for-assignment
 Course.submissions.ForStudent at /submissions/for-student
 Course.submissions.Latest at /submissions/latest
 ```
+
+[Artifact presentation](former:Course.submissions.theArtifactPost) uses assignment submission authorization independently of forum audiences.

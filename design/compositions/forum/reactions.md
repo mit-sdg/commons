@@ -21,3 +21,5 @@ Forum.reactions.AddReaction at /reactions/add
 Forum.reactions.ReactionsForTarget at /reactions/forTarget
 Forum.reactions.RemoveReaction at /reactions/remove
 ```
+
+All target reads and changes derive the reader from the session and apply the conversation’s current audience. Collections filter before projecting related identities or counts; author and moderator roles provide no ordinary read exception.
