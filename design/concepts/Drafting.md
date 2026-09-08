@@ -77,13 +77,13 @@ Rule: Drafting does not generate drafts, decide who is asked for one, or interpr
 describe (author: Author, request: String, at: Date, context?: String) : return (brief: Brief)
   where true
   then
-    add a new brief with author, request, and createdAt at
+    add a new brief with author, request, context (empty if omitted), and createdAt at
     return brief
 
 open (author: Author, request: String, form: String, material: Seq, origin: Origin, at: Date, context?: String) : return (brief: Brief, candidate: Candidate)
   where true
   then
-    add a new brief with author, request, createdAt at, and origin
+    add a new brief with author, request, context (empty if omitted), createdAt at, and origin
     add a new candidate with brief and form
     add a new item for each entry of material with its prompt, choices, expected,
       and explanation, appending it to candidate's items

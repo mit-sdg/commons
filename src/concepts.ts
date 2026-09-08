@@ -119,7 +119,14 @@ import {
   useFit,
   voteStanding,
 } from "./computations/live-carries.ts";
-import { cardId, isSame, kindCap, kindChoices, kindParts } from "./computations/live-rounds.ts";
+import {
+  cardId,
+  isSame,
+  kindCap,
+  kindChoices,
+  kindParts,
+  roundMaterialIsValid,
+} from "./computations/live-rounds.ts";
 import { positionAfter, positionBefore, receiptKind } from "./computations/live-quizzes.ts";
 import {
   answerReceipt,
@@ -319,6 +326,7 @@ export const learningConcepts = conceptSet(registrations, {
   kindCap,
   kindChoices,
   kindParts,
+  roundMaterialIsValid,
   partLabel,
   invitationMailHtml,
   invitationMailText,

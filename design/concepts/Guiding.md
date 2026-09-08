@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Let an author set standing guidance beside a subject, so that whoever acts on the subject reads it first, and the guidance can change while the subject stays as it is.
+Let an author keep guidance by subject and use, select it for related work, and revise it independently of the subject.
 
-Prevents: guidance written into the subject itself, where those it is not meant for read it; guidance frozen with its subject, so it cannot change once its reader's work has been seen; guidance meant for one reader of a subject reaching another.
+Prevents: guidance frozen into a subject that must stay unchanged; unrelated uses mixed together; copies of selected guidance drifting from their source.
 
 ## Principle
 
@@ -35,7 +35,7 @@ Rule: absent selections are empty. Selecting guidance never copies or deletes th
 Rule: removing guidance, directly or by replacement, removes its identity from every selection.
 Rule: text retained by Guiding is trimmed first. A use is valid when it is nonblank; what a use means, and who reads guidance under it, is the surrounding design's to say. A title is valid when it is no longer than 200 characters, and an empty title carries none. A body is valid when it is nonblank and no longer than 40000 characters.
 Rule: guidance for one subject under one use stands in the order it was given.
-Rule: mutations are serialized within the supported single-process Mongo floor; a set, clear, or removal cannot interleave with another mutation or selection.
+Rule: mutations take effect in order; concurrent selection and removal cannot leave a selection referring to removed guidance.
 Rule: subjects are opaque identities; Guiding neither creates nor validates them, and does not decide who may give guidance or who reads it.
 ```
 

@@ -34,7 +34,7 @@ a set of Pins with
   a pinnedAt  Date
 
 Rule: a scope has at most one pin for a given item.
-Rule: mutations are serialized within the supported single-process Mongo floor, so concurrent pinning cannot create duplicate membership.
+Rule: concurrent pinning cannot create duplicate membership.
 Rule: unpin and clearItem are idempotent: unpinning an item with no pin in the scope, or clearing an item with no pins, changes nothing and is not refused.
 Rule: items and scopes are opaque identities; Pinning neither creates nor validates them.
 ```

@@ -48,7 +48,7 @@ a set of Categorized with
 Rule: at most one categorized entry has each item, so an item belongs to at most one category.
 Rule: a category's name is unique within its scope; the same name in another scope names another category.
 Rule: a category's scope is fixed when it is created.
-Rule: category and membership mutations are serialized within the supported single-process Mongo floor. Empty-only deletion rechecks membership as part of that action, so a concurrent assignment cannot be discarded by a prior empty read.
+Rule: deleting an empty category and assigning an item take effect in order; deletion cannot discard a concurrently assigned membership.
 Rule: items and scopes are opaque identities; Categorizing neither creates nor validates them.
 ```
 

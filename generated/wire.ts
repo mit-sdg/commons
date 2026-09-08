@@ -1670,13 +1670,13 @@ export type CommonsWire = {
   };
   "/live/relays/add-round": {
     input: {
-      "cap": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>>;
-      "choices": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["choices"]>>;
-      "parts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>>;
-      "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>>;
+      "cap": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["cap"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>]>>;
+      "choices": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["choices"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["choices"]>]>>;
+      "parts": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["parts"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>]>>;
+      "prompt": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["prompt"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>]>>;
       "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>[0], ["relay"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["compose"]>[0], ["title"]>>;
+      "title": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["title"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["compose"]>[0], ["title"]>]>>;
     };
     output: {
       "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>>, ["leg"]>>;
@@ -1684,7 +1684,7 @@ export type CommonsWire = {
       "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>>, ["question"]>>;
       "questionnaire": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["questionnaire"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>[0], ["material"]>]>>;
     };
-    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "DUPLICATE_CHOICES" | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_GUIDANCE" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_SUGGESTION" | "INVALID_TITLE" | "INVALID_USE" | "LEG_DRAWN_ON" | "LEG_NOT_FOUND" | "NOTHING_OFFERED" | "NOT_INSISTING" | "NOT_SIBLINGS" | "NO_DRAW" | "NO_SUCH_POSITION" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" | "SUGGESTION_NOT_FOUND" | "SUGGESTION_SETTLED" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" | "USE_BLANK" };
+    error: { error: AppWideError | "CATEGORY_NOT_FOUND" | "DUPLICATE_CHOICES" | "FORBIDDEN" | "FORWARD_DRAW" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_GUIDANCE" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_REQUEST" | "INVALID_SUGGESTION" | "INVALID_TITLE" | "INVALID_USE" | "LEG_DRAWN_ON" | "LEG_NOT_FOUND" | "NOTHING_OFFERED" | "NOT_INSISTING" | "NOT_SIBLINGS" | "NO_DRAW" | "NO_SUCH_POSITION" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_LIMIT_REACHED" | "QUESTION_NOT_FOUND" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" | "SUGGESTION_NOT_FOUND" | "SUGGESTION_SETTLED" | "UNKNOWN_DISCLOSURE" | "UNKNOWN_FORM" | "USE_BLANK" };
   };
   "/live/relays/clear-takes": {
     input: {
@@ -1903,18 +1903,18 @@ export type CommonsWire = {
   };
   "/live/relays/revise-round": {
     input: {
-      "cap": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>>;
-      "choices": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["choices"]>>;
+      "cap": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["cap"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>]>>;
+      "choices": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["choices"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["choices"]>]>>;
       "leg": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>>;
-      "parts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>>;
-      "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["prompt"]>>;
+      "parts": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["parts"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>]>>;
+      "prompt": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["prompt"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["prompt"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>>;
+      "title": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["title"]>]>>;
     };
     output: {
       "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>>, ["question"]>>;
     };
-    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_TITLE" | "LEG_NOT_FOUND" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RELAY_RETIRED" | "RUN_OPEN" };
+    error: { error: AppWideError | "DUPLICATE_CHOICES" | "FORBIDDEN" | "INVALID_CHOICES" | "INVALID_EXPECTED" | "INVALID_EXPLANATION" | "INVALID_INPUT" | "INVALID_PARTS" | "INVALID_PROMPT" | "INVALID_REFERENCE" | "INVALID_REQUEST" | "INVALID_TITLE" | "LEG_NOT_FOUND" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "QUESTION_NOT_FOUND" | "RELAY_RETIRED" | "RUN_OPEN" };
   };
   "/live/relays/run": {
     input: {
@@ -5880,12 +5880,12 @@ export type CommonsWireHttp = {
   };
   "/live/relays/add-round": {
     input: {
-      "cap": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>>;
-      "choices": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["choices"]>>;
-      "parts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>>;
-      "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>>;
+      "cap": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["cap"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>]>>;
+      "choices": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["choices"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["choices"]>]>>;
+      "parts": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["parts"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>]>>;
+      "prompt": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["prompt"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["addQuestion"]>[0], ["prompt"]>]>>;
       "relay": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>[0], ["relay"]>]>>;
-      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["compose"]>[0], ["title"]>>;
+      "title": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["title"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["compose"]>[0], ["title"]>]>>;
     };
     output: {
       "leg": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["addLeg"]>>, ["leg"]>>;
@@ -6099,12 +6099,12 @@ export type CommonsWireHttp = {
   };
   "/live/relays/revise-round": {
     input: {
-      "cap": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>>;
-      "choices": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["choices"]>>;
+      "cap": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["cap"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["cap"]>]>>;
+      "choices": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["choices"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["choices"]>]>>;
       "leg": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>>;
-      "parts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>>;
-      "prompt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["prompt"]>>;
-      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>>;
+      "parts": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["parts"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>[0], ["parts"]>]>>;
+      "prompt": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["prompt"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["reviseQuestion"]>[0], ["prompt"]>]>>;
+      "title": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["retitle"]>[0], ["title"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["roundMaterialIsValid"]["fn"]>[0], ["title"]>]>>;
     };
     output: {
       "question": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["setParts"]>>, ["question"]>>;

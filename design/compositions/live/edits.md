@@ -37,7 +37,7 @@ relayDraftPassage(request: String, title: String, legs: Json, materials: Json, p
   Renders the passage that asks the model for a whole relay from a brief and
   the relay as it stands — each round with its standing piles and its note to
   the sorter — under the title it goes by and whether the brief minted it,
-  with the background documents, the class's then the relay's, fenced between
+  with the relay's selected reference documents fenced between
   the contract and the relay, and absent when none stands.
 
 legMaterials(legs: Json) : Strings
