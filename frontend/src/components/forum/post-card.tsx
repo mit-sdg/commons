@@ -68,14 +68,15 @@ export function PostCard({
   const nodeId = String(node.node);
   const author = String(node.post.author);
   const myId = me ? String(me.user) : null;
+  const canModerate = permissions.can("moderate");
   const isMine = myId === author;
   const canAcceptAnswers = !!myId && myId === rootAuthorId && !isRoot;
   const isAccepted = acceptedAnswer === postId;
   const edited = !!node.post.editedAt;
 
   const trashed = useQuery<{ trashed: boolean }>(
-    () => api.trash.isTrashed({ item: postId }),
-    [postId, session],
+    canModerate ? () => api.trash.isTrashed({ item: postId }) : null,
+    [postId, session, canModerate],
   );
   const isTrashed = trashed.data?.trashed ?? false;
   const highlightUnread = isUnread && !isTrashed && !isAccepted;
@@ -273,7 +274,7 @@ export function PostCard({
                     <FlagIcon className="size-4" />
                     Report
                   </DropdownMenuItem>
-                  {permissions.can("moderate") ? (
+                  {canModerate ? (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={moderatorTrash}>
