@@ -26,7 +26,7 @@ establishment succeeds, the conversation is unavailable. Initial notifications
 and creation success follow that event.
 
 A published conversation's explicit holders are fixed. To address different
-people, a participant starts a new conversation. Continue with other people
+people, a participant starts a new conversation. Start a discussion with other people
 opens an empty composer; it copies no prior content or revealing link.
 
 Person holders name fixed accounts. Group, section, and staff holders refer to
@@ -35,6 +35,8 @@ the access that holder supplies. A reader admitted by more than one holder
 retains access while any of them admits the reader. Grouping keeps its existing
 equal-power membership; staff address groups they belong to, not groups whose
 creator would need to be recovered.
+
+Discussion groups and shared task lists use the same membership. The picker links to Tasks for group management, and membership controls state that adding someone admits them to earlier group discussions. Removal and departure end the grant through that group; another holder may still admit the person. Group management opens separately from the composer, whose audience choices refresh on return while its draft remains intact. Refresh audiences also reloads choices without clearing the draft. Switching between the Staff-question and general-discussion routes initializes the corresponding audience.
 
 Everyone means active course members plus staff. Students means active student
 seats. A section admits its active members. All ordinary readers need an

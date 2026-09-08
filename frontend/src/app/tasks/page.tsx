@@ -102,8 +102,8 @@ function NewListDialog({
             }
           />
           <p className="text-xs text-muted-foreground">
-            You will be added as a member. You can add more members now or
-            later.
+            You are included in this group. Its members share this task list and
+            can read discussions addressed to the group.
           </p>
         </div>
         <DialogFooter>

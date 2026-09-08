@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Link } from "@/components/link";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Output } from "@/lib/api";
@@ -81,11 +83,13 @@ export function AudiencePicker({
   options,
   disabled,
   onChange,
+  onRefresh,
 }: {
   selected: string[];
   options: AudienceOption[];
   disabled: boolean;
   onChange: (holders: string[]) => void;
+  onRefresh: () => void;
 }) {
   const [query, setQuery] = useState("");
   const matches = options.filter((option) =>
@@ -108,6 +112,21 @@ export function AudiencePicker({
   return (
     <fieldset disabled={disabled} className="space-y-3">
       <legend className="mb-2 text-sm font-medium">Addressed to</legend>
+      <p className="text-xs text-muted-foreground">
+        Groups share their membership with task lists. Current members can read
+        all discussions addressed to their group, including earlier ones.{" "}
+        <Link
+          href="/tasks"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline underline-offset-4"
+        >
+          Create or manage groups in Tasks (new tab)
+        </Link>
+      </p>
+      <Button type="button" variant="outline" size="sm" onClick={onRefresh}>
+        Refresh audiences
+      </Button>
       <Label htmlFor="audience-search" className="sr-only">
         Find people or audiences
       </Label>

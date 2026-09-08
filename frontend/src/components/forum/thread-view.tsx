@@ -225,8 +225,16 @@ export function ThreadView({ conversation }: { conversation: string }) {
         holders={data.audience.map((holder) => holder.holder)}
         options={data.audience}
       />
+      {data.audience.some(
+        (holder) => holder.kind === "group" || holder.kind === "section",
+      ) ? (
+        <p className="text-xs text-muted-foreground">
+          Group and section access follows current membership. New members can
+          read earlier posts in this discussion.
+        </p>
+      ) : null}
       <Button asChild size="sm" variant="outline">
-        <Link href="/new">Continue with other people</Link>
+        <Link href="/new">Start a discussion with other people</Link>
       </Button>
       <UnreadBanner newCount={unread.newCount} onMarkAll={unread.markAll} />
 

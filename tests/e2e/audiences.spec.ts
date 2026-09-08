@@ -46,7 +46,7 @@ test("private Staff preview, explicit recipient filter, and account switching", 
   await page.waitForURL(/\/t\//);
   const privateUrl = page.url();
   await expect(page.getByRole("heading", { name: "A private Staff question" })).toBeVisible();
-  await page.getByRole("link", { name: "Continue with other people" }).click();
+  await page.getByRole("link", { name: "Start a discussion with other people" }).click();
   await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue("");
   await expect(page.locator("textarea")).toHaveValue("");
   await expect(audience).toContainText("Everyone");
@@ -201,5 +201,117 @@ test("opening trash, restore and purge preserve nested replies, feed and followi
     }
   } finally {
     for (const account of accounts) await account.context.close();
+  }
+});
+
+test("shared group management explains and changes access to earlier discussions", async ({
+  browser,
+}, testInfo) => {
+  test.setTimeout(120_000);
+  const authorContext = await browser.newContext({ baseURL: "http://127.0.0.1:3755" });
+  const recipientContext = await browser.newContext({ baseURL: "http://127.0.0.1:3755" });
+  const author = await authorContext.newPage();
+  const recipient = await recipientContext.newPage();
+  try {
+    const adminLogin = await authorContext.request.post("/api/auth/login", {
+      data: { username: "mara", password: "password123" },
+    });
+    const adminCookie = adminLogin.headers()["set-cookie"]!.split(";")[0]!;
+    const enrolled = await authorContext.request.post("/api/roster/import", {
+      headers: { Cookie: adminCookie },
+      data: {
+        rows: [
+          { email: "noah@example.edu", kind: "STUDENT" },
+          { email: "priya@example.edu", kind: "STUDENT" },
+        ],
+      },
+    });
+    expect(enrolled.ok()).toBe(true);
+    await signIn(author, "noah");
+    await signIn(recipient, "priya");
+    // Compile these routes before drafting: Next dev may reload other open tabs
+    // when it first builds a route. Production has no such compilation reload.
+    for (const route of ["/new", "/tasks", "/tasks/warmup"]) {
+      await authorContext.request.get(route);
+    }
+    await author.goto("/new");
+    await author
+      .getByRole("textbox", { name: "Title", exact: true })
+      .fill("Earlier group discussion");
+    await author.locator("textarea").fill("This draft survives a visit to group management.");
+    const popup = author.waitForEvent("popup");
+    await author.getByRole("link", { name: "Create or manage groups in Tasks (new tab)" }).click();
+    const management = await popup;
+    await management.getByRole("button", { name: "New list", exact: true }).click();
+    const create = management.getByRole("dialog");
+    await expect(create).toContainText("Its members share this task list");
+    await create.getByLabel("Title (optional)", { exact: true }).fill("UI shared group");
+    await create.getByRole("button", { name: "Create list", exact: true }).click();
+    await management.waitForURL(/\/tasks\//);
+    await expect(
+      management.getByText("This task list and its discussion group share the members below.", {
+        exact: false,
+      }),
+    ).toBeVisible();
+    await author.bringToFront();
+    await author.getByRole("button", { name: "Refresh audiences", exact: true }).click();
+    await expect(author.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(
+      "Earlier group discussion",
+    );
+    await author.getByRole("checkbox", { name: "UI shared group Group", exact: true }).check();
+    await expect(author.locator("textarea")).toHaveValue(
+      "This draft survives a visit to group management.",
+    );
+    await expect(author.getByRole("list", { name: "Audience", exact: true })).toContainText(
+      "UI shared group",
+    );
+    await expect(author.getByRole("list", { name: "Audience", exact: true })).not.toContainText(
+      "Everyone",
+    );
+    await author.setViewportSize({ width: 390, height: 844 });
+    await author.screenshot({
+      path: testInfo.outputPath("shared-group-composer-mobile.png"),
+      fullPage: true,
+    });
+    await author.getByRole("button", { name: "Post discussion", exact: true }).click();
+    await author.waitForURL(/\/t\//);
+    const discussionUrl = author.url();
+    await expect(
+      author.getByText("New members can read earlier posts in this discussion.", { exact: false }),
+    ).toBeVisible();
+    await recipient.goto(discussionUrl);
+    await expect(recipient.getByText("That item is not available.", { exact: true })).toBeVisible();
+    await management.bringToFront();
+    await management.getByRole("button", { name: "Add member", exact: true }).click();
+    const add = management.getByRole("dialog");
+    await expect(add).toContainText("New members can read earlier and future discussions");
+    await add.getByPlaceholder("Search by name or username").fill("priya");
+    await add.getByRole("button", { name: "Find", exact: true }).click();
+    await add.getByRole("button", { name: /Priya/ }).click();
+    await management.screenshot({
+      path: testInfo.outputPath("shared-group-add-member.png"),
+      fullPage: true,
+    });
+    await add.getByRole("button", { name: "Add to list", exact: true }).click();
+    await expect(add).toHaveCount(0);
+    await recipient.reload();
+    await expect(
+      recipient.getByRole("heading", { name: "Earlier group discussion", exact: true }),
+    ).toBeVisible();
+    await management.getByRole("button", { name: /^Remove Priya/ }).click();
+    const remove = management.getByRole("dialog");
+    await expect(remove).toContainText(
+      "another audience on a discussion may still give them access",
+    );
+    await remove.getByRole("button", { name: "Remove", exact: true }).click();
+    await expect(remove).toHaveCount(0);
+    await recipient.reload();
+    await expect(recipient.getByText("That item is not available.", { exact: true })).toBeVisible();
+    await expect(
+      recipient.getByText("This draft survives a visit to group management.", { exact: true }),
+    ).toHaveCount(0);
+  } finally {
+    await authorContext.close();
+    await recipientContext.close();
   }
 });

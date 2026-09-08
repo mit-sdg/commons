@@ -200,8 +200,9 @@ function AddMemberDialog({
             }
           />
           <p className="text-xs text-muted-foreground">
-            All members have equal authority to create, edit, assign, and manage
-            tasks.
+            New members can read earlier and future discussions addressed to
+            this group, as well as its tasks. Every member can manage
+            membership.
           </p>
         </div>
         <DialogFooter>
@@ -464,7 +465,7 @@ function TaskListView() {
                   </Button>
                 }
                 title="Leave this list?"
-                description="Its tasks will stop appearing in your assigned tasks list, and any open tasks you hold will be released."
+                description="Your open tasks will be released. Access to discussions through this group will end; another audience on a discussion may still give you access."
                 confirmLabel="Leave"
                 destructive
                 onConfirm={leave}
@@ -486,6 +487,10 @@ function TaskListView() {
         />
       ) : (
         <div className="space-y-6">
+          <p className="text-sm text-muted-foreground">
+            This task list and its discussion group share the members below.
+            Membership changes also affect access to earlier group discussions.
+          </p>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Members:
@@ -511,7 +516,7 @@ function TaskListView() {
                       </button>
                     }
                     title={`Remove ${member.displayName}?`}
-                    description={`Remove ${member.displayName} from this list? Any open tasks assigned to them will be released.`}
+                    description={`${member.displayName}'s open tasks will be released. Their access to discussions through this group will end; another audience on a discussion may still give them access.`}
                     confirmLabel="Remove"
                     destructive
                     onConfirm={() =>
