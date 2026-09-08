@@ -239,3 +239,51 @@ test("an uncategorized opening retains its content in the feed", async () => {
       },
     });
 });
+
+test("resolution admission excludes the question itself and hides retained self-resolutions", async () => {
+  const f = await fixture();
+  const question = f.shared.post;
+  const session = f.author.session;
+  const accept = (answer: string) => f.invoke("/resolutions/accept", { session, question, answer });
+  expect(await accept(question)).toMatchObject(missing);
+  expect(await f.instances.Resolving._getResolution({ question })).toEqual([]);
+  await f.instances.Resolving.accept({
+    question,
+    answer: question,
+    by: f.author.user,
+    at: new Date(),
+  });
+  expect(await f.invoke("/resolutions/get", { session, question })).toMatchObject({
+    ok: true,
+    value: { resolution: [] },
+  });
+  expect(await f.invoke("/resolutions/isResolved", { session, question })).toMatchObject({
+    ok: true,
+    value: { resolved: false },
+  });
+  const reply = async (parent: string) => {
+    const at = new Date();
+    const { post } = await f.instances.Posting.create({
+      author: f.reader.user,
+      content: "Answer",
+      at,
+    });
+    const { node } = await f.instances.Conversing.reply({ parent, item: post, at });
+    return { post, node };
+  };
+  const direct = await reply(f.shared.node);
+  const descendant = await reply(direct.node);
+  for (const answer of [direct.post, descendant.post]) {
+    expect(await accept(answer)).toMatchObject({ ok: true });
+    expect(await f.invoke("/resolutions/get", { session, question })).toMatchObject({
+      ok: true,
+      value: { resolution: [{ answer }] },
+    });
+  }
+  expect(await accept(f.privateThread.post)).toMatchObject(missing);
+  expect(await accept("unknown-answer")).toMatchObject(missing);
+  expect(await accept(question)).toMatchObject(missing);
+  expect(await f.instances.Resolving._getResolution({ question })).toMatchObject([
+    { answer: descendant.post },
+  ]);
+});

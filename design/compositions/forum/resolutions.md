@@ -2,7 +2,7 @@
 
 Only the author of a readable question can accept a readable answer through
 [Forum.resolutions.AcceptAnswer](reaction:Forum.resolutions.AcceptAnswer). A new acceptance replaces the prior answer;
-question and answer must share a conversation. The successful Resolving action independently triggers notification of
+question and answer must be distinct posts in the same conversation. The successful Resolving action independently triggers notification of
 the answer author. [Forum.resolutions.ClearResolution](reaction:Forum.resolutions.ClearResolution) lets the same question
 author remove the current acceptance; another caller receives `FORBIDDEN`,
 while hidden posts return `NOT_FOUND`.
@@ -24,6 +24,6 @@ Forum.resolutions.GetResolution at /resolutions/get
 Forum.resolutions.IsResolved at /resolutions/isResolved
 ```
 
-[admissibleAnswer](view:Forum.resolutions.admissibleAnswer) Both posts must be readable in the same conversation.
+[admissibleAnswer](view:Forum.resolutions.admissibleAnswer) Both posts must be readable, distinct, and in the same conversation.
 
 [visibleResolution](view:Forum.resolutions.visibleResolution) Resolution status and presentation use the same admitted answer.

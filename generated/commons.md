@@ -1806,12 +1806,14 @@ Authored path: `Forum.resolutions.admissibleAnswer`.
 - Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 27.
 
 ```view
-(answer) is a visible answer to (question) for (reader) — inputs (answer, question, reader); outputs (); bindings (conversation)
+(answer) is a visible answer to (question) for (reader) — inputs (answer, question, reader); outputs (); bindings (conversation, questionNode, answerNode)
   where
     view "(post) is readable" with (post: question, reader)
     view "(post) is readable" with (post: answer, reader)
-    view "the structural conversation containing post (post)" with (post: question) has (conversation)
-    view "the structural conversation containing post (post)" with (post: answer) has (conversation)
+    Conversing._getNodeByItem (item: question) has (node: questionNode)
+    Conversing._getNodeByItem (item: answer) has (node: answerNode) and not (node: questionNode)
+    Conversing._getConversation (node: questionNode) has (conversation)
+    Conversing._getConversation (node: answerNode) has (conversation)
 ```
 
 ### (assignment) by (submitter) has submission artifact (artifact)

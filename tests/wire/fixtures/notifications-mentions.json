@@ -932,7 +932,7 @@
         "answer": "$t2Mention.post"
       },
       "response": {
-        "resolution": "uuid#30"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -1135,7 +1135,7 @@
             "category": null,
             "tags": [],
             "locked": false,
-            "resolved": true,
+            "resolved": false,
             "post": {
               "author": "uuid#7",
               "content": "Root post pinging @u2_mara",

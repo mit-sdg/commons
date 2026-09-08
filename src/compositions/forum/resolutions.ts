@@ -4,18 +4,21 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { authored, didNotAuthor } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 import { notReadable, readable } from "./posts.ts";
-import { postConversation } from "./audience-policy.ts";
 
-const { Resolving, Trashing } = concepts;
+const { Conversing, Resolving, Trashing } = concepts;
 
 export const admissibleAnswer = view(
   "(answer) is a visible answer to (question) for (reader)",
-  ({ answer, question, reader }, _out, { conversation }) =>
+  ({ answer, question, reader }, _out, { conversation, questionNode, answerNode }) =>
     where(
       readable({ post: question, reader }),
       readable({ post: answer, reader }),
-      postConversation({ post: question }).is({ conversation }),
-      postConversation({ post: answer }).is({ conversation }),
+      Conversing._getNodeByItem({ item: question }).is({ node: questionNode }),
+      Conversing._getNodeByItem({ item: answer })
+        .is({ node: answerNode })
+        .is.not({ node: questionNode }),
+      Conversing._getConversation({ node: questionNode }).is({ conversation }),
+      Conversing._getConversation({ node: answerNode }).is({ conversation }),
     ),
 ).holds();
 export const visibleResolution = view(
