@@ -1570,33 +1570,33 @@ Concrete types:
 
 ## Computations
 
-- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 409.
+- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 412.
 - `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 153.
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 134.
-- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 415.
+- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 418.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 130.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 454.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 457.
 - `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 114.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 522.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 525.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
 - `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
 - `clearablePiles(categories: Json, standing?: Json, picked: Seq, reserved: Seq) : Seq` — [The wall](../design/compositions/live/walls.md), line 53.
 - `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
 - `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
-- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 424.
-- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 406.
-- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 433.
+- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 427.
+- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 409.
+- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 436.
 - `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 212.
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 508.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 512.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 511.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 515.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
@@ -1617,18 +1617,18 @@ Concrete types:
 - `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 458.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 461.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 137.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
 - `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 57.
 - `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
 - `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
-- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 385.
-- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 427.
-- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 421.
-- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 418.
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 445.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 442.
+- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 388.
+- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 430.
+- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 424.
+- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 421.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 448.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 445.
 - `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 90.
 - `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 84.
 - `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 76.
@@ -1638,8 +1638,8 @@ Concrete types:
 - `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 138.
 - `lidPassage(pile: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 133.
 - `linesStanding(lines: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 83.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 451.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 448.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 454.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 451.
 - `openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 57.
 - `openingAuthor(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 66.
 - `openingAuthorized() : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 54.
@@ -1647,19 +1647,19 @@ Concrete types:
 - `openingGroups(picked: Seq, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 60.
 - `openingMaterial(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 69.
 - `openingPresentation(brief: String) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 72.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 532.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 536.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 539.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 543.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 547.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 535.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 539.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 542.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 546.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 550.
 - `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 157.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 149.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 142.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 126.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 463.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 468.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 474.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 471.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 466.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 471.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 477.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 474.
 - `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
 - `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 103.
 - `placingLines(reply: String, categories: Json, values: Json, removed: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 124.
@@ -1667,18 +1667,18 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 118.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 129.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 110.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 555.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 560.
-- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 403.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 564.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 558.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 563.
+- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 406.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 567.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 527.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 517.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 530.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 520.
 - `roundMaterialIsValid(title: String, prompt: String, choices: Strings, parts: Strings, cap: Number) : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 158.
 - `sampledAnswers(reply: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 34.
 - `sampledGroups(reply: String, kind: String, choices: Json, use: String, carried?: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 39.
@@ -1690,38 +1690,39 @@ Concrete types:
 - `samplingResolvedPassage(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 50.
 - `samplingResolvedPreview(resolution: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 60.
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
-- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 412.
-- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 436.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 477.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 480.
+- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 415.
+- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 439.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 480.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 483.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 112.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 115.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 122.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 119.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 109.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 551.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 554.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 93.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
 - `sortingObservationPresent() : Boolean` — [The wall](../design/compositions/live/walls.md), line 57.
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 209.
-- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 430.
+- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 433.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 31.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 486.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 489.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 496.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 490.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 493.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 505.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 499.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 502.
-- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 397.
-- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 400.
-- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 388.
-- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 394.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 499.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 493.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 496.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 508.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 502.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 505.
+- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 400.
+- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 403.
+- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 391.
+- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 397.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 97.
-- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 439.
-- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 391.
+- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 385.
+- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 442.
+- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 394.
 - `voteStanding(kind: String, choices: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
 
 ## Views
@@ -2321,6 +2322,37 @@ the open round of (run) — inputs (run); outputs (round); bindings () — answe
   where Publishing._edition (edition: run) has (open: false)
 ```
 
+### (user) is an active course member
+
+```view
+(user) is an active course member — inputs (user); outputs (); bindings ()
+  where Rostering._getSeatByUser (user) has (status: "ACTIVE")
+```
+
+### (user) may manage the course
+
+```view
+(user) may manage the course — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "course:manage", context: "commons", user) has (allowed: true)
+  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
+```
+
+### (session) may read the display identity of (user)
+
+Authored path: `Forum.profiles.profileDisplayReader`.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
+
+```view
+(session) may read the display identity of (user) — inputs (session, user); outputs (); bindings (reader)
+  where view "the active user of (session)" with (session) has (user)
+  where
+    view "the active user of (session)" with (session) has (user: reader)
+    view "(user) may manage the course" with (user: reader)
+  where
+    view "the active user of (session)" with (session) has (user: reader)
+    view "(user) is an active course member" with (user: reader)
+```
+
 ### (user) may read forum target (target)
 
 ```view
@@ -2390,13 +2422,6 @@ Authored path: `Forum.threads.publicTarget`.
 ```view
 (user) holds no role in (context) — inputs (user, context); outputs (); bindings ()
   where no Roling._getRole (context, user)
-```
-
-### (user) is an active course member
-
-```view
-(user) is an active course member — inputs (user); outputs (); bindings ()
-  where Rostering._getSeatByUser (user) has (status: "ACTIVE")
 ```
 
 ### (user) is an active student
@@ -2577,14 +2602,6 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 ```view
 (user) may manage student records — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "student-records", context: "commons", user) has (allowed: true)
-  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
-```
-
-### (user) may manage the course
-
-```view
-(user) may manage the course — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "course:manage", context: "commons", user) has (allowed: true)
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
 ```
 
@@ -3157,7 +3174,7 @@ the preview inputs of (leg) with (picks) — inputs (leg, picks); outputs (resol
 ### the profile of (user)
 
 Authored path: `Forum.profiles.theProfileOf`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 4.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 6.
 
 ```view
 the profile of (user) — inputs (user); outputs (profile); bindings () — answers at most one (profile)
@@ -3872,6 +3889,21 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
       capabilities
       name
       role
+```
+
+### the display identities of (users) for (session)
+
+Authored path: `Forum.profiles.theProfileDisplays`.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
+
+```former
+Former "the display identities of (users) for (session)" — inputs (users, session); bindings (user, displayName, avatar); promises exactly one record — forms:
+  each Profiling._getProfilesOf (users) has (avatar, displayName, user)
+    where view "(session) may read the display identity of (user)" with (session, user)
+    form a record of
+      avatar
+      displayName
+      user
 ```
 
 ### the drafting line of (brief)
@@ -5560,7 +5592,7 @@ Former "the unread of (user) in (scope)" — inputs (user, scope); bindings (ite
 ### the user page of (user) for (reader)
 
 Authored path: `Forum.profiles.theUserPage`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 37.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 39.
 
 ```former
 Former "the user page of (user) for (reader)" — inputs (user, reader); bindings (post, node, conversation); promises exactly one record — forms:
@@ -5580,7 +5612,7 @@ Former "the user page of (user) for (reader)" — inputs (user, reader); binding
 ### the user search (query)
 
 Authored path: `Forum.profiles.theUserSearch`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 31.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 33.
 
 ```former
 Former "the user search (query)" — inputs (query); bindings (user, username); promises exactly one record — forms:
@@ -13135,8 +13167,8 @@ then
 ### Forum.profiles.GetProfile:hidden
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -13151,8 +13183,8 @@ then
 ### Forum.profiles.GetProfile:member
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -13168,8 +13200,8 @@ then
 ### Forum.profiles.GetProfile:missing
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -13183,8 +13215,8 @@ then
 ### Forum.profiles.GetProfile:staff
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -13199,8 +13231,8 @@ then
 ### Forum.profiles.GetProfile:success
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -13211,11 +13243,43 @@ then
   RequestBoundary.respond (profile: former "the private profile of (user)" with (user), requestId)
 ```
 
+### Forum.profiles.GetProfileDisplays:invalid
+
+Authored path: `Forum.profiles.GetProfileDisplays`.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/profiles/displays", requestId, session, users)
+where
+  view "the active user of (session)" with (session)
+  valid is validProfileSelection (users)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Forum.profiles.GetProfileDisplays:valid
+
+Authored path: `Forum.profiles.GetProfileDisplays`.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/profiles/displays", requestId, session, users)
+where
+  view "the active user of (session)" with (session)
+  valid is validProfileSelection (users)
+  valid is among [true]
+then
+  RequestBoundary.respond (profiles: former "the display identities of (users) for (session)" with (session, users), requestId)
+```
+
 ### Forum.profiles.ResolvePublicUser
 
 Authored path: `Forum.profiles.ResolvePublicUser`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 32.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 43.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 34.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 46.
 
 ```reaction
 when RequestBoundary.request (path: "/users/resolve", ref, requestId)
@@ -13228,8 +13292,8 @@ then
 ### Forum.profiles.SearchUsers:hidden
 
 Authored path: `Forum.profiles.SearchUsers`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 30.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 44.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 32.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/users/search", query, requestId, session)
@@ -13243,8 +13307,8 @@ then
 ### Forum.profiles.SearchUsers:success
 
 Authored path: `Forum.profiles.SearchUsers`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 30.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 44.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 32.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/users/search", query, requestId, session)
@@ -13258,8 +13322,8 @@ then
 ### Forum.profiles.SetAvatar
 
 Authored path: `Forum.profiles.SetAvatar`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 26.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 28.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 48.
 
 ```reaction
 when RequestBoundary.request (avatar, path: "/profiles/setAvatar", requestId, session)
@@ -13272,8 +13336,8 @@ then
 ### Forum.profiles.SetAvatar#2
 
 Authored path: `Forum.profiles.SetAvatar`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 26.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 28.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 48.
 
 ```reaction
 when Profiling.setAvatar (avatar, user), asked by Forum.profiles.SetAvatar
@@ -13286,8 +13350,8 @@ then
 ### Forum.profiles.SetBio
 
 Authored path: `Forum.profiles.SetBio`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 25.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 46.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 49.
 
 ```reaction
 when RequestBoundary.request (bio, path: "/profiles/setBio", requestId, session)
@@ -13300,8 +13364,8 @@ then
 ### Forum.profiles.SetBio#2
 
 Authored path: `Forum.profiles.SetBio`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 25.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 46.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 49.
 
 ```reaction
 when Profiling.setBio (bio, user), asked by Forum.profiles.SetBio
@@ -13314,8 +13378,8 @@ then
 ### Forum.profiles.SetDisplayName
 
 Authored path: `Forum.profiles.SetDisplayName`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 25.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 47.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 50.
 
 ```reaction
 when RequestBoundary.request (displayName, path: "/profiles/setDisplayName", requestId, session)
@@ -13328,8 +13392,8 @@ then
 ### Forum.profiles.SetDisplayName#2
 
 Authored path: `Forum.profiles.SetDisplayName`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 25.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 47.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 50.
 
 ```reaction
 when Profiling.setDisplayName (displayName, user), asked by Forum.profiles.SetDisplayName
@@ -27199,6 +27263,7 @@ not listed here have no explicit input contract.
 - `/posts/delete` — requires `post`, `session`
 - `/posts/edit` — requires `content`, `post`, `session`
 - `/posts/get` — requires `session`, `post`
+- `/profiles/displays` — requires `session`, `users`
 - `/profiles/get` — requires `session`, `user`
 - `/profiles/setAvatar` — requires `session`, `avatar`
 - `/profiles/setBio` — requires `session`, `bio`

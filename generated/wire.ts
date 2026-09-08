@@ -2946,6 +2946,20 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
   };
+  "/profiles/displays": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "users": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validProfileSelection"]["fn"]>[0], ["users"]>>;
+    };
+    output: {
+      "profiles": {
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["avatar"]>>;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
+        "user": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_REQUEST" };
+  };
   "/profiles/get": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
@@ -7153,6 +7167,19 @@ export type CommonsWireHttp = {
       };
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/profiles/displays": {
+    input: {
+      "users": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validProfileSelection"]["fn"]>[0], ["users"]>>;
+    };
+    output: {
+      "profiles": {
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["avatar"]>>;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
+        "user": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/profiles/get": {
     input: {

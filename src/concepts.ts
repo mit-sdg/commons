@@ -1,3 +1,4 @@
+import { validProfileSelection } from "./computations/profile-display.ts";
 import {
   hasStoredPosts,
   threadPostIds,
@@ -277,6 +278,7 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  validProfileSelection,
   hasStoredPosts,
   threadPostIds,
   visibleThreadPosts,

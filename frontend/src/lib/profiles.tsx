@@ -1,46 +1,29 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { api } from "@/lib/api";
-import type { Profile } from "@/lib/models";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { api, unwrap } from "@/lib/api";
+import { createProfileCache, type ProfileDisplay } from "@/lib/profile-cache";
 
 interface ProfilesState {
-  get: (user: string) => Profile | undefined;
+  get: (user: string) => ProfileDisplay | undefined;
   ensure: (user: string) => void;
 }
 
 const ProfilesContext = createContext<ProfilesState | null>(null);
 
 export function ProfilesProvider({ children }: { children: React.ReactNode }) {
-  const [cache, setCache] = useState<Record<string, Profile>>({});
-  const inflight = useRef<Set<string>>(new Set());
-
-  const ensure = useCallback(
-    (user: string) => {
-      if (!user || cache[user] || inflight.current.has(user)) return;
-      inflight.current.add(user);
-      api.profiles
-        .get({ user })
-        .then((result) => {
-          if (!("error" in result)) {
-            setCache((prev) => ({ ...prev, [user]: result.profile }));
-          }
-        })
-        .finally(() => inflight.current.delete(user));
-    },
-    [cache],
+  const [revision, setRevision] = useState(0);
+  const [cache] = useState(() =>
+    createProfileCache(
+      async (users) => unwrap(await api.profiles.displays({ users })).profiles,
+      () => setRevision((previous) => previous + 1),
+    ),
   );
-
-  const get = useCallback((user: string) => cache[user], [cache]);
-
-  const value = useMemo(() => ({ get, ensure }), [get, ensure]);
+  useEffect(() => () => cache.clear(), [cache]);
+  const value = useMemo(
+    () => ({ get: cache.get, ensure: cache.ensure, revision }),
+    [cache, revision],
+  );
   return (
     <ProfilesContext.Provider value={value}>
       {children}
@@ -50,11 +33,13 @@ export function ProfilesProvider({ children }: { children: React.ReactNode }) {
 
 export function useProfile(
   user: string | null | undefined,
-): Profile | undefined {
+): ProfileDisplay | undefined {
   const ctx = useContext(ProfilesContext);
   if (!ctx)
     throw new Error("useProfile must be used within <ProfilesProvider>");
   const { get, ensure } = ctx;
-  if (user) ensure(user);
+  useEffect(() => {
+    if (user) ensure(user);
+  });
   return user ? get(user) : undefined;
 }

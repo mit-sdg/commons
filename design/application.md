@@ -382,6 +382,9 @@ identity at runtime, or make one concept depend on another.
 ## Computations
 
 ```computations
+validProfileSelection(users: Strings) : Bool
+  Accepts at most 64 nonempty account identifiers, each at most 256 characters.
+
 hasStoredPosts(posts: Rows) : Bool
   Reports whether at least one placed post remains in Posting, independently of trash state.
 
