@@ -1,3 +1,4 @@
+import { theThreadStatsOf } from "../../src/compositions/forum/fragments.ts";
 import { createEdge } from "../../src/edge.ts";
 import { afterAll, afterEach, expect, test } from "vite-plus/test";
 import { assemble } from "@mit-sdg/sync-engine/assembly";
@@ -409,4 +410,67 @@ test("a post-specific read does not enumerate its thread to prove a surviving po
     await app.form(admission({ session: reader.session, conversation: f.conversation })),
   ).toEqual({ user: reader.user });
   expect(threadReads).toBeGreaterThan(0);
+});
+
+test("conversation statistics use placed readable posts without rediscovering their conversation", async () => {
+  const f = await fixture((people) => [`account:${people[1].user}`]);
+  const [author, reader, outsider] = f.people;
+  const { post: reply } = await f.instances.Posting.create({
+    author: reader.user,
+    content: "Visible reply",
+    at: new Date(),
+  });
+  await f.instances.Conversing.reply({ item: reply, parent: f.node, at: new Date() });
+  await f.instances.Posting.create({
+    author: outsider.user,
+    content: "Unplaced secret",
+    at: new Date(),
+  });
+  let placementReads = 0;
+  for (const name of ["_getNodeByItem", "_getConversation"] as const) {
+    const original = f.instances.Conversing[name].bind(f.instances.Conversing);
+    const counted = async (input: never) => {
+      placementReads++;
+      return original(input);
+    };
+    Object.defineProperty(counted, "name", { value: name });
+    Object.assign(f.instances.Conversing, { [name]: counted });
+  }
+  const app = assemble({
+    conceptSet: learningConcepts,
+    instances: f.instances,
+    composition: { stats: theThreadStatsOf },
+    queryCache: "none",
+  });
+  const input = { reader: reader.user, conversation: f.conversation };
+  expect(await app.form(theThreadStatsOf(input))).toMatchObject({
+    replyCount: 1,
+    participants: [author.user, reader.user],
+  });
+  expect(placementReads).toBe(0);
+  expect(await app.form(theThreadStatsOf({ ...input, reader: outsider.user }))).toEqual({
+    replyCount: 0,
+    lastActivityAt: null,
+    participants: [],
+  });
+  await f.instances.Trashing.trash({ item: f.post, by: author.user, at: new Date() });
+  expect(await app.form(theThreadStatsOf(input))).toMatchObject({
+    replyCount: 1,
+    participants: [reader.user],
+  });
+  await f.instances.Posting.delete({ post: reply });
+  expect(await app.form(theThreadStatsOf(input))).toEqual({
+    replyCount: 0,
+    lastActivityAt: null,
+    participants: [],
+  });
+  await f.instances.Trashing.restore({ item: f.post });
+  await f.db
+    .collection<{ _id: string }>("conversing.conversations")
+    .deleteOne({ _id: f.conversation });
+  expect(await app.form(theThreadStatsOf(input))).toEqual({
+    replyCount: 0,
+    lastActivityAt: null,
+    participants: [],
+  });
 });

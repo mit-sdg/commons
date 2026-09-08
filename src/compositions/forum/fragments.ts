@@ -1,8 +1,8 @@
 import { each, form, former, view, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
-import { postReader } from "./audience-policy.ts";
+import { establishedConversationReader, postReader } from "./audience-policy.ts";
 
-const { Authenticating, Conversing, Posting, Profiling } = concepts;
+const { Authenticating, Conversing, Posting, Profiling, Trashing } = concepts;
 
 /** What profile face belongs to this user? */
 export const theProfileFaceOf = former(
@@ -54,8 +54,9 @@ export const publicThreadPosts = view(
   "the posts in (conversation) for (reader)",
   ({ conversation, reader }, { node, item, author, createdAt }, _bindings) =>
     where(
+      establishedConversationReader({ user: reader, conversation }),
       Conversing._getThread({ conversation }).is({ node, item }),
-      postReader({ user: reader, post: item }),
+      Trashing._isTrashed({ item }).is({ trashed: false }),
       Posting._getPost({ post: item }).is({ author, createdAt }),
     ),
 ).many();

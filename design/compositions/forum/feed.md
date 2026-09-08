@@ -39,3 +39,9 @@ readable replies. Post summaries, category, tags and opening-author classificati
 require a readable opening; [readableHome](view:Forum.feed.readableHome) prevents
 retained category metadata appearing for unavailable content. No underlying
 conversation or stored posts means no conversation context.
+
+Thread statistics use the known conversation's established audience admission,
+then select placed posts with Posting records and non-trash state. They do not
+rediscover each selected post's conversation through the generic post reader.
+The three statistics still fold the full visible post selection; bounded feed
+capacity remains an [open classroom-use issue](../../../content/issues/open/forum-feed-capacity.md).

@@ -14,7 +14,11 @@ concepts:
 
 Discussion creation creates a post, starts its conversation, then establishes its complete audience. A failure before audience establishment leaves the discussion inaccessible. Earlier actions remain committed; an uncertain result can leave inaccessible content or a completed discussion that the caller did not receive. Repeating the request may create a duplicate. Replies and deletion retain the baseline completion behavior. Occurrence logs do not survive restart; see [durable occurrence logs](durable-occurrence-logs.md).
 
+A reproduced non-crashing case is a caller deadline expiring while creation continues. The discussion completes after the caller stops waiting; retrying creates another completed discussion. A deadline does not cancel the forwarded operation, and no request identity currently connects the retry to that earlier completion.
+
 Forum notification recipients are checked against the current audience before enqueueing and before mail dispatch. Forum mail contains no post content. If the recipient loses access, the worker withholds the message and leaves it queued without marking it sent or treating it as an SMTP failure. It may become eligible on a later pass. Mailing has no cancellation outcome. Dispatch that has already begun cannot be recalled.
+
+Another reproduced non-crashing case is SMTP accepting a message before Mailing's `markSent` database write fails. The message remains pending, so a later worker pass can send it again. Transport acceptance and recording completion are separate steps; the current message identity does not guarantee recipient-side deduplication.
 
 ## Unresolved decision
 

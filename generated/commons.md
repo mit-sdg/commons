@@ -3118,8 +3118,9 @@ the pick count of (round) — inputs (round); outputs (taken); bindings () — a
 ```view
 the posts in (conversation) for (reader) — inputs (conversation, reader); outputs (node, item, author, createdAt); bindings () — answers any number of (node, item, author, createdAt)
   where
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user: reader)
     Conversing._getThread (conversation) has (item, node)
-    view "(user) may read forum post (post)" with (post: item, user: reader)
+    Trashing._isTrashed (item) has (trashed: false)
     Posting._getPost (post: item) has (author, createdAt)
 ```
 
