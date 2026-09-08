@@ -16,9 +16,7 @@ replies consult the retained subscribers when creating followed-reply
 notifications, with author and mention exclusions defined by notification
 behavior.
 
-Root removal with surviving replies preserves following. Only final conversation
-removal permanently ends its audience and clears current subscriptions, as described by the
-[lifecycle](lifecycle.md). A delayed following record cannot make an ended conversation readable.
+Root removal with surviving replies preserves following. A delayed following record cannot make an absent conversation readable.
 
 ```endpoints
 Forum.subscriptions.IsSubscribed at /subscriptions/isSubscribed
@@ -28,4 +26,10 @@ Forum.subscriptions.Subscribers at /subscriptions/subscribers
 Forum.subscriptions.Unsubscribe at /subscriptions/unsubscribe
 ```
 
-[Purge clears conversation subscriptions](reaction:Forum.subscriptions.PurgeClearsConversationSubscriptions) when the root placement is still present.
+[Purge clears conversation subscriptions](reaction:Forum.subscriptions.PurgeClearsConversationSubscriptions) when the root placement is still present and has no children.
+
+[Starting follows the conversation](reaction:Forum.subscriptions.StartingFollowsConversation)
+after its audience is established. [Replying follows the conversation](reaction:Forum.subscriptions.ReplyingFollowsConversation)
+after a readable reply is placed. Each uses the ordinary subscribe action only
+when the participant is not already following. Reading and receiving notices do
+not follow: deliberate unfollowing persists until that person participates again.

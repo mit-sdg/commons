@@ -1206,6 +1206,27 @@
         "context": [
           {
             "item": "uuid#13",
+            "root": "uuid#15",
+            "structure": [
+              {
+                "node": "uuid#15",
+                "item": "uuid#13",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#17",
+                "item": "uuid#16",
+                "parent": "uuid#15",
+                "depth": 1
+              },
+              {
+                "node": "uuid#19",
+                "item": "uuid#18",
+                "parent": "uuid#15",
+                "depth": 1
+              }
+            ],
             "audience": [
               {
                 "holder": "standing:everyone",
@@ -1460,6 +1481,21 @@
         "context": [
           {
             "item": "uuid#13",
+            "root": "uuid#15",
+            "structure": [
+              {
+                "node": "uuid#15",
+                "item": "uuid#13",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#19",
+                "item": "uuid#18",
+                "parent": "uuid#15",
+                "depth": 1
+              }
+            ],
             "audience": [
               {
                 "holder": "standing:everyone",

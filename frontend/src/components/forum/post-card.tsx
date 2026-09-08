@@ -97,8 +97,11 @@ export function PostCard({
       parent: nodeId,
       content,
     });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
+    if ("error" in result) {
+      const message = publicErrorMessage(result.error);
+      toast.error(message);
+      throw new Error(message);
+    } else {
       toast.success("Reply posted");
       setReplying(false);
       onChanged();

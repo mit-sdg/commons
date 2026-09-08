@@ -1,3 +1,4 @@
+import { conversationReader, postReader } from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import {
   each,
@@ -14,7 +15,7 @@ import { concepts } from "../../concepts.ts";
 import { thePostSummaryOf, theThreadStatsOf } from "./fragments.ts";
 import { readableConversation } from "./threads.ts";
 
-const { Conversing, Subscribing, Trashing } = concepts;
+const { Accessing, Conversing, Posting, Subscribing, Trashing } = concepts;
 
 /** Which targets does this user follow? */
 export const theSubscriptionsOf = former(
@@ -143,7 +144,30 @@ export const PurgeClearsConversationSubscriptions = reaction(({ item, node, conv
     .where(
       Conversing._getNodeByItem({ item }).is({ node }),
       no(Conversing._parentOf({ node })),
+      Conversing._hasChildren({ node }).is({ present: false }),
       Conversing._getConversation({ node }).is({ conversation }),
     )
     .then(Subscribing.clearTarget({ target: conversation })),
+);
+
+export const StartingFollowsConversation = reaction(({ resource, user, item, at }) =>
+  when(Accessing.establish({ resource }).responds())
+    .where(
+      Conversing._getConversations({}).is({ conversation: resource, item }),
+      Posting._getPost({ post: item }).is({ author: user, createdAt: at }),
+      conversationReader({ user, conversation: resource }),
+      Subscribing._isSubscribed({ user, target: resource }).is({ subscribed: false }),
+    )
+    .then(Subscribing.subscribe({ user, target: resource, at })),
+);
+
+export const ReplyingFollowsConversation = reaction(({ item, node, user, conversation, at }) =>
+  when(Conversing.reply({ item, at }).responds({ node }))
+    .where(
+      Posting._getPost({ post: item }).is({ author: user }),
+      Conversing._getConversation({ node }).is({ conversation }),
+      postReader({ user, post: item }),
+      Subscribing._isSubscribed({ user, target: conversation }).is({ subscribed: false }),
+    )
+    .then(Subscribing.subscribe({ user, target: conversation, at })),
 );

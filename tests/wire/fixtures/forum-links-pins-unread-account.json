@@ -880,6 +880,15 @@
         "context": [
           {
             "item": "uuid#10",
+            "root": "uuid#12",
+            "structure": [
+              {
+                "node": "uuid#12",
+                "item": "uuid#10",
+                "parent": null,
+                "depth": 0
+              }
+            ],
             "audience": [
               {
                 "holder": "standing:everyone",

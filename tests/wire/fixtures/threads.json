@@ -230,6 +230,27 @@
         "context": [
           {
             "item": "uuid#7",
+            "root": "uuid#9",
+            "structure": [
+              {
+                "node": "uuid#9",
+                "item": "uuid#7",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#11",
+                "item": "uuid#10",
+                "parent": "uuid#9",
+                "depth": 1
+              },
+              {
+                "node": "uuid#13",
+                "item": "uuid#12",
+                "parent": "uuid#11",
+                "depth": 2
+              }
+            ],
             "audience": [
               {
                 "holder": "standing:everyone",
@@ -511,6 +532,33 @@
         "context": [
           {
             "item": "uuid#7",
+            "root": "uuid#9",
+            "structure": [
+              {
+                "node": "uuid#9",
+                "item": "uuid#7",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#11",
+                "item": "uuid#10",
+                "parent": "uuid#9",
+                "depth": 1
+              },
+              {
+                "node": "uuid#13",
+                "item": "uuid#12",
+                "parent": "uuid#11",
+                "depth": 2
+              },
+              {
+                "node": "uuid#18",
+                "item": "uuid#17",
+                "parent": "uuid#9",
+                "depth": 1
+              }
+            ],
             "audience": [
               {
                 "holder": "standing:everyone",

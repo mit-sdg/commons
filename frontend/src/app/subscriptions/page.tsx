@@ -58,9 +58,12 @@ function Following() {
           {data.subscriptions.map((sub) => {
             const target = String(sub.target);
             const summary = byConversation.get(target);
-            const title = summary
-              ? titleFromContent(summary.post.content)
-              : `Conversation ${shortId(target)}`;
+            const title =
+              summary?.post?.content != null
+                ? titleFromContent(summary.post.content)
+                : summary
+                  ? "Opening post unavailable"
+                  : `Conversation ${shortId(target)}`;
             return (
               <div
                 key={target}

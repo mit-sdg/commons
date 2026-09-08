@@ -3077,8 +3077,9 @@ Authored path: `Forum.feed.nonStaffOpening`.
 - Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 28.
 
 ```view
-the opening (item) by someone outside Staff — inputs (item); outputs (author); bindings () — answers at most one (author)
+the opening (item) by someone outside Staff — inputs (item, reader); outputs (author); bindings () — answers at most one (author)
   where
+    view "(user) may read forum post (post)" with (post: item, user: reader)
     Posting._getPost (post: item) has (author)
     no view "(user) belongs to Staff" with (user: author)
 ```
@@ -3169,6 +3170,18 @@ the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bin
   where
     Bookmarking._getSaved (user) has (item, savedAt)
     view "(post) is readable" with (post: item, reader: user)
+```
+
+### the readable home of opening (item) for (reader)
+
+Authored path: `Forum.feed.readableHome`.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 39.
+
+```view
+the readable home of opening (item) for (reader) — inputs (item, reader); outputs (home); bindings () — answers at most one (home)
+  where
+    view "(user) may read forum post (post)" with (post: item, user: reader)
+    Categorizing._getHome (item) has (home)
 ```
 
 ### the readable parent (parent) for (user)
@@ -4199,14 +4212,13 @@ Authored path: `Forum.feed.theHomeFeedByActivity`.
 Former "the home feed by activity ()" — inputs (reader); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName, answer, holders, nonStaffAuthor, staffQuestion); promises exactly one record — forms:
   each Conversing._getConversationsByLastActivity () has (conversation, createdAt, item, root)
     where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
-    where view "(user) may read forum post (post)" with (post: item, user: reader)
     where Accessing._holders (resource: conversation) has (holders)
-    where whether view "the opening (item) by someone outside Staff" with (item) has (author: nonStaffAuthor)
+    where whether view "the opening (item) by someone outside Staff" with (item, reader) has (author: nonStaffAuthor)
     where staffQuestion is staffQuestion (holders, nonStaffAuthor)
     where Locking._isLocked (target: conversation) has (locked)
     where whether view "the visible resolution of (question) for (reader)" with (question: item, reader) has (answer)
     where resolved is visibleAnswer (answer)
-    where whether Categorizing._getHome (item) has (home)
+    where whether view "the readable home of opening (item) for (reader)" with (item, reader) has (home)
     form a record of
       audience: former "the explicit audience of (conversation)" with (conversation)
       category: home
@@ -4214,11 +4226,12 @@ Former "the home feed by activity ()" — inputs (reader); bindings (conversatio
       createdAt
       item
       locked
-      post: former "the post summary of (item) for (reader)" with (item, reader)
+      post: whether former "the post summary of (item) for (reader)" with (item, reader)
       resolved
       root
       staffQuestion
       tags: each Tagging._getTags (target: item) has (name: tagName, tag)
+        where view "(user) may read forum post (post)" with (post: item, user: reader)
         form a record of
           name: tagName
           tag
@@ -4234,14 +4247,13 @@ Authored path: `Forum.feed.theHomeFeedByCreation`.
 Former "the home feed by creation ()" — inputs (reader); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName, answer, holders, nonStaffAuthor, staffQuestion); promises exactly one record — forms:
   each Conversing._getConversations () has (conversation, createdAt, item, root)
     where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
-    where view "(user) may read forum post (post)" with (post: item, user: reader)
     where Accessing._holders (resource: conversation) has (holders)
-    where whether view "the opening (item) by someone outside Staff" with (item) has (author: nonStaffAuthor)
+    where whether view "the opening (item) by someone outside Staff" with (item, reader) has (author: nonStaffAuthor)
     where staffQuestion is staffQuestion (holders, nonStaffAuthor)
     where Locking._isLocked (target: conversation) has (locked)
     where whether view "the visible resolution of (question) for (reader)" with (question: item, reader) has (answer)
     where resolved is visibleAnswer (answer)
-    where whether Categorizing._getHome (item) has (home)
+    where whether view "the readable home of opening (item) for (reader)" with (item, reader) has (home)
     form a record of
       audience: former "the explicit audience of (conversation)" with (conversation)
       category: home
@@ -4249,11 +4261,12 @@ Former "the home feed by creation ()" — inputs (reader); bindings (conversatio
       createdAt
       item
       locked
-      post: former "the post summary of (item) for (reader)" with (item, reader)
+      post: whether former "the post summary of (item) for (reader)" with (item, reader)
       resolved
       root
       staffQuestion
       tags: each Tagging._getTags (target: item) has (name: tagName, tag)
+        where view "(user) may read forum post (post)" with (post: item, user: reader)
         form a record of
           name: tagName
           tag
@@ -5452,12 +5465,11 @@ Authored path: `Forum.feed.theThreadContext`.
 - Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 13.
 
 ```former
-Former "the thread context (conversation)" — inputs (conversation, reader); bindings (node, item, category, tag, tagName, locked, answer); promises exactly one record — forms:
+Former "the thread context (conversation)" — inputs (conversation, reader); bindings (node, item, category, tag, tagName, locked, answer, child, childItem, parent, depth); promises exactly one record — forms:
   each Conversing._getThread (conversation) has (item, node)
     where no Conversing._parentOf (node)
     where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
-    where view "(user) may read forum post (post)" with (post: item, user: reader)
-    where whether Categorizing._getHome (item) has (home: category)
+    where whether view "the readable home of opening (item) for (reader)" with (item, reader) has (home: category)
     where Locking._isLocked (target: conversation) has (locked)
     where whether view "the visible resolution of (question) for (reader)" with (question: item, reader) has (answer)
     form a record of
@@ -5466,7 +5478,15 @@ Former "the thread context (conversation)" — inputs (conversation, reader); bi
       category
       item
       locked
+      root: node
+      structure: each Conversing._getThread (conversation) has (depth, item: childItem, node: child, parent)
+        form a record of
+          depth
+          item: childItem
+          node: child
+          parent
       tags: each Tagging._getTags (target: item) has (name: tagName, tag)
+        where view "(user) may read forum post (post)" with (post: item, user: reader)
         form a record of
           name: tagName
           tag
@@ -14098,7 +14118,7 @@ then
 
 Authored path: `Forum.subscriptions.IsSubscribed`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 10.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 24.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/isSubscribed", requestId, session, target)
@@ -14113,7 +14133,7 @@ then
 
 Authored path: `Forum.subscriptions.IsSubscribed`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 10.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 24.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/isSubscribed", requestId, session, target)
@@ -14129,7 +14149,7 @@ then
 
 Authored path: `Forum.subscriptions.MySubscriptions`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 6.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 25.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 23.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/mine", requestId, session)
@@ -14142,23 +14162,56 @@ then
 ### Forum.subscriptions.PurgeClearsConversationSubscriptions
 
 Authored path: `Forum.subscriptions.PurgeClearsConversationSubscriptions`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 31.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 29.
 
 ```reaction
 when Trashing.purge (item)
 where
   Conversing._getNodeByItem (item) has (node)
   no Conversing._parentOf (node)
+  Conversing._hasChildren (node) has (present: false)
   Conversing._getConversation (node) has (conversation)
 then
   Subscribing.clearTarget (target: conversation)
+```
+
+### Forum.subscriptions.ReplyingFollowsConversation
+
+Authored path: `Forum.subscriptions.ReplyingFollowsConversation`.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 32.
+
+```reaction
+when Conversing.reply (at, item, node)
+where
+  Posting._getPost (post: item) has (author: user)
+  Conversing._getConversation (node) has (conversation)
+  view "(user) may read forum post (post)" with (post: item, user)
+  Subscribing._isSubscribed (target: conversation, user) has (subscribed: false)
+then
+  Subscribing.subscribe (at, target: conversation, user)
+```
+
+### Forum.subscriptions.StartingFollowsConversation
+
+Authored path: `Forum.subscriptions.StartingFollowsConversation`.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 31.
+
+```reaction
+when Accessing.establish (resource)
+where
+  Conversing._getConversations () has (conversation: resource, item)
+  Posting._getPost (post: item) has (author: user, createdAt: at)
+  view "(user) may read audience conversation (conversation)" with (conversation: resource, user)
+  Subscribing._isSubscribed (target: resource, user) has (subscribed: false)
+then
+  Subscribing.subscribe (at, target: resource, user)
 ```
 
 ### Forum.subscriptions.Subscribe:hidden
 
 Authored path: `Forum.subscriptions.Subscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 24.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribe", requestId, session, target)
@@ -14173,7 +14226,7 @@ then
 
 Authored path: `Forum.subscriptions.Subscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 24.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribe", requestId, session, target)
@@ -14189,7 +14242,7 @@ then
 
 Authored path: `Forum.subscriptions.Subscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 24.
 
 ```reaction
 when Subscribing.subscribe (at, target, user, subscription), asked by Forum.subscriptions.Subscribe:success
@@ -14203,7 +14256,7 @@ then
 
 Authored path: `Forum.subscriptions.Subscribers`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 13.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 27.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 25.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, session, target)
@@ -14218,7 +14271,7 @@ then
 
 Authored path: `Forum.subscriptions.Subscribers`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 13.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 27.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 25.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, session, target)
@@ -14233,7 +14286,7 @@ then
 
 Authored path: `Forum.subscriptions.Unsubscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 28.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/unsubscribe", requestId, session, target)
@@ -14248,7 +14301,7 @@ then
 
 Authored path: `Forum.subscriptions.Unsubscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 28.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/unsubscribe", requestId, session, target)
@@ -14263,7 +14316,7 @@ then
 
 Authored path: `Forum.subscriptions.Unsubscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 28.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
 
 ```reaction
 when Subscribing.unsubscribe (target, user, subscription), asked by Forum.subscriptions.Unsubscribe:success

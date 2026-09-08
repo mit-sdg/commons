@@ -10,6 +10,6 @@ Posting is already absent, it asks Conversing to remove a leaf node; otherwise
 successful Posting deletion delegates that request to ordinary post cleanup. A
 node with children is preserved. Other purge reactions clear their own
 organization, personal, revision, resolution, and notification state;
-conversation subscriptions are cleared only when the purged post is the root.
+conversation subscriptions are cleared only when the purged post is a root without children.
 
 Cleanup reactions have independent sibling paths. A failure can leave residual records, but audience reads require the underlying post to exist, so those records cannot restore access to purged content. Automatic completion after failure remains an open application issue.

@@ -36,7 +36,9 @@ export async function loadUserOverview(user: string): Promise<{
 export interface ThreadPage {
   audience: import("@/lib/api").Output<"/audiences/forConversation">["holders"];
   nodes: ThreadNode[];
-  root: ThreadNode;
+  root: ThreadNode | null;
+  rootNodeId: string;
+  structure: import("@/lib/api").Output<"/threads/get">["context"][number]["structure"];
   questionId: string;
   category: Category | null;
   tags: Tag[];
@@ -51,13 +53,14 @@ export async function loadThreadPage(
   const { thread: nodes, context } = unwrap(
     await api.threads.get({ conversation }),
   );
-  const root = nodes[0];
   const details = context[0];
-  if (!root || !details) throw new CommonsError("Conversation not found");
+  if (!details) throw new CommonsError("Conversation not found");
   return {
     audience: details.audience,
     nodes,
-    root,
+    root: nodes.find((node) => node.node === details.root) ?? null,
+    rootNodeId: details.root,
+    structure: details.structure,
     questionId: String(details.item),
     category: details.category,
     tags: details.tags,

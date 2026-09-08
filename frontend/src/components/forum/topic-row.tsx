@@ -36,13 +36,15 @@ export function TopicRow({
   index?: number;
 }) {
   const conversation = String(summary.conversation);
-  const author = summary.post ? String(summary.post.author) : "";
+  const author = summary.post?.author ?? "";
   const authorProfile = useProfile(author || null);
 
-  const title = summary.post
-    ? titleFromContent(summary.post.content)
-    : "Opening post unavailable";
-  const preview = summary.post ? bodyExcerpt(summary.post.content) : "";
+  const title =
+    summary.post?.content != null
+      ? titleFromContent(summary.post.content)
+      : "Opening post unavailable";
+  const preview =
+    summary.post?.content != null ? bodyExcerpt(summary.post.content) : "";
 
   return (
     <article
@@ -50,7 +52,7 @@ export function TopicRow({
       style={{ animationDelay: `${Math.min(index, 12) * 30}ms` }}
     >
       <div className="flex gap-4 rounded-xl border border-transparent px-3 py-4 transition-colors hover:border-border hover:bg-card">
-        {summary.post ? (
+        {summary.post?.content != null ? (
           <UserAvatar
             user={author}
             name={authorProfile?.displayName}
@@ -108,7 +110,7 @@ export function TopicRow({
                 name={tag.name}
               />
             ))}
-            {summary.post ? (
+            {summary.post?.content != null ? (
               <span className="inline-flex min-h-6 items-center gap-1.5">
                 <UserAvatar
                   user={author}

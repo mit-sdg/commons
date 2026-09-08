@@ -294,6 +294,21 @@
         "context": [
           {
             "item": "uuid#7",
+            "root": "uuid#9",
+            "structure": [
+              {
+                "node": "uuid#9",
+                "item": "uuid#7",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#11",
+                "item": "uuid#10",
+                "parent": "uuid#9",
+                "depth": 1
+              }
+            ],
             "audience": [
               {
                 "holder": "standing:everyone",
@@ -419,6 +434,21 @@
         "context": [
           {
             "item": "uuid#7",
+            "root": "uuid#9",
+            "structure": [
+              {
+                "node": "uuid#9",
+                "item": "uuid#7",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#11",
+                "item": "uuid#10",
+                "parent": "uuid#9",
+                "depth": 1
+              }
+            ],
             "audience": [
               {
                 "holder": "standing:everyone",
@@ -872,6 +902,21 @@
         "context": [
           {
             "item": "uuid#7",
+            "root": "uuid#9",
+            "structure": [
+              {
+                "node": "uuid#9",
+                "item": "uuid#7",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#11",
+                "item": "uuid#10",
+                "parent": "uuid#9",
+                "depth": 1
+              }
+            ],
             "audience": [
               {
                 "holder": "standing:everyone",
@@ -954,6 +999,34 @@
             "replyCount": 0,
             "lastActivityAt": "<date>",
             "participants": ["uuid#1"]
+          },
+          {
+            "conversation": "uuid#8",
+            "root": "uuid#9",
+            "item": "uuid#7",
+            "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": null,
+              "content": null,
+              "createdAt": null,
+              "editedAt": null
+            },
+            "replyCount": 1,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#4"]
           }
         ]
       }
@@ -996,7 +1069,41 @@
             "rendered": "<p>A reply</p>\n"
           }
         ],
-        "context": []
+        "context": [
+          {
+            "item": "uuid#7",
+            "root": "uuid#9",
+            "structure": [
+              {
+                "node": "uuid#9",
+                "item": "uuid#7",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#11",
+                "item": "uuid#10",
+                "parent": "uuid#9",
+                "depth": 1
+              }
+            ],
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "acceptedAnswer": null,
+            "replyCount": 1,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#4"]
+          }
+        ]
       }
     },
     {
@@ -1036,6 +1143,34 @@
             "replyCount": 0,
             "lastActivityAt": "<date>",
             "participants": ["uuid#1"]
+          },
+          {
+            "conversation": "uuid#8",
+            "root": "uuid#9",
+            "item": "uuid#7",
+            "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
+            "category": null,
+            "tags": [],
+            "locked": false,
+            "resolved": false,
+            "post": {
+              "author": null,
+              "content": null,
+              "createdAt": null,
+              "editedAt": null
+            },
+            "replyCount": 1,
+            "lastActivityAt": "<date>",
+            "participants": ["uuid#4"]
           }
         ]
       }

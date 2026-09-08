@@ -115,6 +115,8 @@ export function Composer({
     try {
       await onSubmit(value.trim());
       setValue("");
+    } catch {
+      // The submit callback reports the failure; retain the draft for another attempt.
     } finally {
       setBusy(false);
     }

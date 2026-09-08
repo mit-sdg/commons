@@ -12,8 +12,17 @@ const { Categorizing, Conversing, Locking, Tagging, Posting, Accessing } = conce
 
 export const nonStaffOpening = view(
   "the opening (item) by someone outside Staff",
-  ({ item }, { author }, _vars) =>
-    where(Posting._getPost({ post: item }).is({ author }), no(staff({ user: author }))),
+  ({ item, reader }, { author }, _vars) =>
+    where(
+      postReader({ user: reader, post: item }),
+      Posting._getPost({ post: item }).is({ author }),
+      no(staff({ user: author })),
+    ),
+).optional();
+export const readableHome = view(
+  "the readable home of opening (item) for (reader)",
+  ({ item, reader }, { home }, _vars) =>
+    where(postReader({ user: reader, post: item }), Categorizing._getHome({ item }).is({ home })),
 ).optional();
 /** What is the home feed ordered by activity? */
 export const theHomeFeedByActivity = former(
@@ -46,14 +55,13 @@ export const theHomeFeedByActivity = former(
     )
       .where(
         conversationReader({ user: reader, conversation }),
-        postReader({ user: reader, post: item }),
         Accessing._holders({ resource: conversation }).is({ holders }),
-        whether(nonStaffOpening({ item }).is({ author: nonStaffAuthor })),
+        whether(nonStaffOpening({ item, reader }).is({ author: nonStaffAuthor })),
         compute(c.staffQuestion, { holders, nonStaffAuthor }, staffQuestion),
         Locking._isLocked({ target: conversation }).is({ locked }),
         whether(visibleResolution({ question: item, reader }).is({ answer })),
         compute(c.visibleAnswer, { answer }, resolved),
-        whether(Categorizing._getHome({ item }).is({ home })),
+        whether(readableHome({ item, reader }).is({ home })),
       )
       .form({
         conversation,
@@ -63,13 +71,15 @@ export const theHomeFeedByActivity = former(
         audience: theAudience({ conversation }),
         staffQuestion,
         category: home,
-        tags: each(Tagging._getTags({ target: item }).is({ tag, name: tagName })).form({
-          tag,
-          name: tagName,
-        }),
+        tags: each(Tagging._getTags({ target: item }).is({ tag, name: tagName }))
+          .where(postReader({ user: reader, post: item }))
+          .form({
+            tag,
+            name: tagName,
+          }),
         locked,
         resolved,
-        post: thePostSummaryOf({ item, reader }),
+        post: whether(thePostSummaryOf({ item, reader })),
       })
       .splicing(theThreadStatsOf({ conversation, reader })),
 );
@@ -98,14 +108,13 @@ export const theHomeFeedByCreation = former(
     each(Conversing._getConversations({}).is({ conversation, root, item, createdAt }))
       .where(
         conversationReader({ user: reader, conversation }),
-        postReader({ user: reader, post: item }),
         Accessing._holders({ resource: conversation }).is({ holders }),
-        whether(nonStaffOpening({ item }).is({ author: nonStaffAuthor })),
+        whether(nonStaffOpening({ item, reader }).is({ author: nonStaffAuthor })),
         compute(c.staffQuestion, { holders, nonStaffAuthor }, staffQuestion),
         Locking._isLocked({ target: conversation }).is({ locked }),
         whether(visibleResolution({ question: item, reader }).is({ answer })),
         compute(c.visibleAnswer, { answer }, resolved),
-        whether(Categorizing._getHome({ item }).is({ home })),
+        whether(readableHome({ item, reader }).is({ home })),
       )
       .form({
         conversation,
@@ -115,13 +124,15 @@ export const theHomeFeedByCreation = former(
         audience: theAudience({ conversation }),
         staffQuestion,
         category: home,
-        tags: each(Tagging._getTags({ target: item }).is({ tag, name: tagName })).form({
-          tag,
-          name: tagName,
-        }),
+        tags: each(Tagging._getTags({ target: item }).is({ tag, name: tagName }))
+          .where(postReader({ user: reader, post: item }))
+          .form({
+            tag,
+            name: tagName,
+          }),
         locked,
         resolved,
-        post: thePostSummaryOf({ item, reader }),
+        post: whether(thePostSummaryOf({ item, reader })),
       })
       .splicing(theThreadStatsOf({ conversation, reader })),
 );
@@ -129,24 +140,37 @@ export const theHomeFeedByCreation = former(
 /** What context belongs beside this conversation's thread? */
 export const theThreadContext = former(
   "the thread context (conversation)",
-  ({ conversation, reader }, { node, item, category, tag, tagName, locked, answer }) =>
+  (
+    { conversation, reader },
+    { node, item, category, tag, tagName, locked, answer, child, childItem, parent, depth },
+  ) =>
     each(Conversing._getThread({ conversation }).is({ node, item }))
       .where(
         no(Conversing._parentOf({ node })),
         conversationReader({ user: reader, conversation }),
-        postReader({ user: reader, post: item }),
-        whether(Categorizing._getHome({ item }).is({ home: category })),
+        whether(readableHome({ item, reader }).is({ home: category })),
         Locking._isLocked({ target: conversation }).is({ locked }),
         whether(visibleResolution({ question: item, reader }).is({ answer })),
       )
       .form({
         item,
+        root: node,
+        structure: each(
+          Conversing._getThread({ conversation }).is({
+            node: child,
+            item: childItem,
+            parent,
+            depth,
+          }),
+        ).form({ node: child, item: childItem, parent, depth }),
         audience: theAudience({ conversation }),
         category,
-        tags: each(Tagging._getTags({ target: item }).is({ tag, name: tagName })).form({
-          tag,
-          name: tagName,
-        }),
+        tags: each(Tagging._getTags({ target: item }).is({ tag, name: tagName }))
+          .where(postReader({ user: reader, post: item }))
+          .form({
+            tag,
+            name: tagName,
+          }),
         locked,
         acceptedAnswer: answer,
       })
