@@ -169,36 +169,43 @@ test("a phone can read every source scenario after write, vote, and list, then r
   try {
     const participant = await phone.newPage();
     await participant.goto(`/q/${token}`);
-    const sources = participant
-      .locator("details")
-      .filter({ has: participant.locator("summary", { hasText: "6 responses" }) });
-    await expect(sources).toHaveCount(1);
-    const summary = sources.locator("summary");
-    await expect(participant.getByText(LONG_PILE, { exact: true })).toBeVisible();
-    await expect(summary).toContainText("6 responses");
-    // The full name wraps naturally instead of living in a clipped title.
-    expect(
-      await summary
-        .locator("span")
-        .first()
-        .evaluate("(node) => getComputedStyle(node).webkitLineClamp"),
-    ).not.toBe("2");
+    const inspect = participant.getByRole("button", {
+      name: `Inspect 6 responses for ${LONG_PILE}`,
+      exact: true,
+    });
+    await expect(inspect).toHaveCount(1);
     await noHorizontalOverflow(participant);
-    await expect(sources.locator("li").first()).toBeHidden();
-    await summary.click();
-    await expect(sources.locator("li")).toHaveCount(6);
-    await expect(sources.getByText(SCENARIOS[5]!, { exact: true })).toBeVisible();
-    for (const value of SCENARIOS)
-      await expect(sources.getByRole("listitem").filter({ hasText: value })).toBeVisible();
+    await expect(participant.getByText(SCENARIOS[5]!, { exact: true })).toHaveCount(0);
+    await inspect.click();
+    const sources = participant.getByRole("dialog", {
+      name: `Responses for ${LONG_PILE}`,
+      exact: true,
+    });
+    const pileName = sources.getByRole("heading", { name: LONG_PILE, exact: true });
+    await expect(pileName).toBeVisible();
+    // Long source names remain readable in the evidence popover.
+    expect(
+      await pileName.evaluate(
+        (node) => node.ownerDocument.defaultView!.getComputedStyle(node).webkitLineClamp,
+      ),
+    ).toBe("none");
+    await expect(sources.getByRole("listitem")).toHaveCount(6);
+    for (const value of SCENARIOS) {
+      const item = sources.getByRole("listitem").filter({ hasText: value });
+      await item.scrollIntoViewIfNeeded();
+      await expect(item).toBeInViewport();
+    }
     await noHorizontalOverflow(participant);
     await participant.screenshot({
       path: testInfo.outputPath("relay-source-context-phone.png"),
       fullPage: true,
     });
-    await summary.click();
-    await expect(sources.getByText(SCENARIOS[5]!, { exact: true })).toBeHidden();
-    await summary.click();
+    await participant.keyboard.press("Escape");
+    await expect(inspect).toBeFocused();
+    await expect(sources).toHaveCount(0);
+    await inspect.click();
     await expect(sources.getByText(SCENARIOS[5]!, { exact: true })).toBeVisible();
+    await participant.keyboard.press("Escape");
 
     const costBox = participant.getByRole("textbox", { name: LONG_PILE, exact: true });
     const desireBox = participant.getByRole("textbox", { name: OTHER_PILE, exact: true });
@@ -216,11 +223,11 @@ test("a phone can read every source scenario after write, vote, and list, then r
     await expect(submit).toBeEnabled();
     await submit.click();
     await expect(
-      participant.getByRole("heading", { name: "Handed in", exact: true }),
+      participant.getByRole("heading", { name: "Response received", exact: true }),
     ).toBeVisible();
     await participant.reload();
     await expect(
-      participant.getByRole("heading", { name: "Handed in", exact: true }),
+      participant.getByRole("heading", { name: "Response received", exact: true }),
     ).toBeVisible();
     await expect(participant.getByRole("button", { name: "Hand in", exact: true })).toBeHidden();
     await noHorizontalOverflow(participant);
