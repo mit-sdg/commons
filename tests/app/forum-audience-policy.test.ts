@@ -36,6 +36,12 @@ const addressing = former(
       policy.addressableAccount({ user, recipient }),
     ).form({ user }),
 ).optional();
+const postAdmission = former("the readable post (post) for (user)", ({ post, user }, _vars) =>
+  where(policy.postReader({ post, user })).form({ post }),
+).optional();
+const storedAdmission = former("the stored post (post) for (user)", ({ post, user }, _vars) =>
+  where(policy.storedPostReader({ post, user })).form({ post }),
+).optional();
 async function fixture(holders: (people: { user: string; session: string }[]) => string[]) {
   const db = await testDb();
   databases.add(db);
@@ -70,7 +76,7 @@ async function fixture(holders: (people: { user: string; session: string }[]) =>
   const app = assemble({
     conceptSet: learningConcepts,
     instances,
-    composition: { policy, admission, addressing, fullAddressing },
+    composition: { policy, admission, addressing, fullAddressing, postAdmission, storedAdmission },
     queryCache: "none",
   });
   return { db, instances, people, post, node, conversation, app };
@@ -339,4 +345,68 @@ test("Staff preview includes the sender for another section without altering pub
   expect(
     await f.app.form(fullAddressing({ session: author.session, holders: selected })),
   ).toBeNull();
+});
+
+test("post and conversation admission retain their distinct existence conditions", async () => {
+  const f = await fixture((people) => [`account:${people[1].user}`]);
+  const reader = f.people[1];
+  const postInput = { user: reader.user, post: f.post };
+  const conversationInput = { session: reader.session, conversation: f.conversation };
+  expect(await f.app.form(postAdmission(postInput))).toEqual({ post: f.post });
+  await f.instances.Trashing.trash({ item: f.post, by: reader.user, at: new Date() });
+  expect(await f.app.form(postAdmission(postInput))).toBeNull();
+  expect(await f.app.form(storedAdmission(postInput))).toEqual({ post: f.post });
+  expect(await f.app.form(admission(conversationInput))).toEqual({ user: reader.user });
+  await f.instances.Posting.delete({ post: f.post });
+  expect(await f.instances.Accessing._holders({ resource: f.conversation })).toHaveLength(1);
+  expect(await f.instances.Conversing._getThread({ conversation: f.conversation })).toHaveLength(1);
+  expect(await f.app.form(postAdmission(postInput))).toBeNull();
+  expect(await f.app.form(storedAdmission(postInput))).toBeNull();
+  expect(await f.app.form(admission(conversationInput))).toBeNull();
+  const { post } = await f.instances.Posting.create({
+    author: reader.user,
+    content: "Survivor",
+    at: new Date(),
+  });
+  expect(await f.app.form(postAdmission({ user: reader.user, post }))).toBeNull();
+  await f.instances.Conversing.reply({ item: post, parent: f.node, at: new Date() });
+  expect(await f.app.form(admission(conversationInput))).toEqual({ user: reader.user });
+  expect(await f.app.form(postAdmission({ user: reader.user, post }))).toEqual({ post });
+  expect(await f.app.form(storedAdmission(postInput))).toBeNull();
+  // Model residual nodes/grants after the owning conversation record is absent.
+  await f.db
+    .collection<{ _id: string }>("conversing.conversations")
+    .deleteOne({ _id: f.conversation });
+  expect(await f.instances.Conversing._getThread({ conversation: f.conversation })).toHaveLength(2);
+  expect(await f.app.form(admission(conversationInput))).toBeNull();
+  expect(await f.app.form(postAdmission({ user: reader.user, post }))).toBeNull();
+  expect(await f.app.form(storedAdmission({ user: reader.user, post }))).toBeNull();
+});
+
+test("a post-specific read does not enumerate its thread to prove a surviving post", async () => {
+  const f = await fixture((people) => [`account:${people[1].user}`]);
+  const reader = f.people[1];
+  let threadReads = 0;
+  const original = f.instances.Conversing._getThread.bind(f.instances.Conversing);
+  f.instances.Conversing._getThread = async function _getThread(input) {
+    threadReads += 1;
+    return original(input);
+  };
+  const app = assemble({
+    conceptSet: learningConcepts,
+    instances: f.instances,
+    composition: { policy, admission, postAdmission, storedAdmission },
+    queryCache: "none",
+  });
+  expect(await app.form(postAdmission({ user: reader.user, post: f.post }))).toEqual({
+    post: f.post,
+  });
+  expect(await app.form(storedAdmission({ user: reader.user, post: f.post }))).toEqual({
+    post: f.post,
+  });
+  expect(threadReads).toBe(0);
+  expect(
+    await app.form(admission({ session: reader.session, conversation: f.conversation })),
+  ).toEqual({ user: reader.user });
+  expect(threadReads).toBeGreaterThan(0);
 });

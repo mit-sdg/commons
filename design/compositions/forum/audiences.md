@@ -28,3 +28,12 @@ Forum.audiences.Preview at /audiences/preview
 Forum.audiences.Options at /audiences/options
 Forum.audiences.ForConversation at /audiences/forConversation
 ```
+
+Established conversation admission
+requires a current usable account, current audience membership, and the owning
+conversation record. Conversation-only reads additionally require some stored
+post in that conversation. Post-specific reads instead verify their own placement
+and Posting record; that post supplies the existence witness without enumerating
+the entire thread again. Ordinary reads also reject trashed posts, while stored
+post inspection retains its existing moderation policy. Retained grants or nodes
+alone never admit an absent conversation or absent post.

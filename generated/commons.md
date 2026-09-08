@@ -1749,17 +1749,15 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     Archiving._isTrashed (item: user) has (trashed: false)
 ```
 
-### (user) may read audience conversation (conversation)
+### (user) belongs to the established audience of (conversation)
 
 ```view
-(user) may read audience conversation (conversation) — inputs (user, conversation); outputs (); bindings (holders, item)
+(user) belongs to the established audience of (conversation) — inputs (user, conversation); outputs (); bindings (holders)
   where
     view "(user) is an available audience account" with (user)
     Accessing._holders (resource: conversation) has (holders)
     view "(holders) admit (user)" with (holders, user)
     Conversing._getConversations () has (conversation)
-    Conversing._getThread (conversation) has (item)
-    Posting._getPost (post: item)
 ```
 
 ### the structural conversation containing post (post)
@@ -1777,7 +1775,7 @@ the structural conversation containing post (post) — inputs (post); outputs (c
 (user) may read forum post (post) — inputs (user, post); outputs (); bindings (conversation)
   where
     view "the structural conversation containing post (post)" with (post) has (conversation)
-    view "(user) may read audience conversation (conversation)" with (conversation, user)
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
     Posting._getPost (post)
     Trashing._isTrashed (item: post) has (trashed: false)
 ```
@@ -1868,6 +1866,16 @@ Authored path: `Course.submissions.submissionHasArtifact`.
 ```view
 (card) is in no pile of a closed run — inputs (card); outputs (); bindings ()
   where no view "(card) is in a pile of a closed run" with (card)
+```
+
+### (user) may read audience conversation (conversation)
+
+```view
+(user) may read audience conversation (conversation) — inputs (user, conversation); outputs (); bindings (item)
+  where
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
+    Conversing._getThread (conversation) has (item)
+    Posting._getPost (post: item)
 ```
 
 ### (conversation) is readable by (reader)
@@ -2544,7 +2552,7 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 (user) may inspect stored forum post (post) — inputs (user, post); outputs (); bindings (conversation)
   where
     view "the structural conversation containing post (post)" with (post) has (conversation)
-    view "(user) may read audience conversation (conversation)" with (conversation, user)
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
     Posting._getPost (post)
 ```
 

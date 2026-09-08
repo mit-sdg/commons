@@ -86,14 +86,21 @@ export const audienceMember = view(
       is.among(allowed, [true]),
     ),
 ).holds();
-export const conversationReader = view(
-  "(user) may read audience conversation (conversation)",
-  ({ user, conversation }, _out, { holders, item }) =>
+export const establishedConversationReader = view(
+  "(user) belongs to the established audience of (conversation)",
+  ({ user, conversation }, _out, { holders }) =>
     where(
       usableUser({ user }),
       Accessing._holders({ resource: conversation }).is({ holders }),
       audienceMember({ user, holders }),
       Conversing._getConversations({}).is({ conversation }),
+    ),
+).holds();
+export const conversationReader = view(
+  "(user) may read audience conversation (conversation)",
+  ({ user, conversation }, _out, { item }) =>
+    where(
+      establishedConversationReader({ user, conversation }),
       Conversing._getThread({ conversation }).is({ item }),
       Posting._getPost({ post: item }),
     ),
@@ -112,7 +119,7 @@ export const storedPostReader = view(
   ({ user, post }, _out, { conversation }) =>
     where(
       postConversation({ post }).is({ conversation }),
-      conversationReader({ user, conversation }),
+      establishedConversationReader({ user, conversation }),
       Posting._getPost({ post }),
     ),
 ).holds();
@@ -121,7 +128,7 @@ export const postReader = view(
   ({ user, post }, _out, { conversation }) =>
     where(
       postConversation({ post }).is({ conversation }),
-      conversationReader({ user, conversation }),
+      establishedConversationReader({ user, conversation }),
       Posting._getPost({ post }),
       Trashing._isTrashed({ item: post }).is({ trashed: false }),
     ),
