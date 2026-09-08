@@ -10,20 +10,6 @@ export function cardId({ response, item }: { response: string; item: string }): 
   return createHash("sha256").update(`${response}/${item}`).digest("hex").slice(0, 32);
 }
 
-/** A round that offers carried choices is one box: no parts. */
-export function oneBoxParts({ question: _question }: { question: string }): string[] {
-  return [];
-}
-
-export function oneBoxCap({ question: _question }: { question: string }): number {
-  return 0;
-}
-
-/** A round that takes its parts offers no choices. */
-export function noChoices({ question: _question }: { question: string }): string[] {
-  return [];
-}
-
 /**
  * The choices a round puts before the room: its own when the leg's word is
  * `vote` or the leg has no word, and none under `write` or `list`. The kind

@@ -41,11 +41,6 @@ export function isCarryUse(use: string): use is CarryUse["use"] {
   return USE_WORDS.includes(use);
 }
 
-/** Whether a word names a use this composition fills: `known` or `unknown`. */
-export function useStanding({ use }: { use: string }): string {
-  return isCarryUse(use) ? "known" : "unknown";
-}
-
 /**
  * Whether a use is open to the round as it stands: `open` when the leg's word
  * carries it, or, for a leg with no word, when its choices or parts make a kind

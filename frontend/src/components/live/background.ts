@@ -1,5 +1,3 @@
-import { count } from "@/lib/format";
-
 /** A document as the card holds it: the name it stands under, and its text. */
 export interface DocumentDraft {
   title: string;
@@ -41,22 +39,6 @@ export function documentEdit(
     : written;
 }
 
-/** Who asks what the drafter reads: a relay's own card, or a brief of either kind. */
-export type DocumentsAsker = "card" | "questionnaire" | "relay";
-
-/** What the drafter reads beside the brief, in one sentence. */
-export function classDocumentsLine(
-  documents: number,
-  asker: DocumentsAsker,
-): string {
-  if (documents === 0) return "No shared documents added.";
-  const named = count(documents, "shared document");
-  if (asker === "card") return `${named} available in the library.`;
-  return asker === "relay"
-    ? `${named} available in the library.`
-    : `${named} available in the library.`;
-}
-
 /**
  * The question a press of Remove raises stands on the document it was raised
  * on, so opening another document or closing the card leaves nothing asked.
@@ -66,14 +48,6 @@ export function removeAsked(
   open: string | null,
 ): boolean {
   return asked !== null && asked === open;
-}
-
-/**
- * The way to add another document, which stands while one is open to be read
- * or corrected and goes only while the form for a new one already stands.
- */
-export function addStands(adding: boolean, retired: boolean): boolean {
-  return !adding && !retired;
 }
 
 /**

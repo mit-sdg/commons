@@ -71,16 +71,6 @@ openingPresentation(brief: String) : Json
   Reads the complete presentation from the recorded publication instruction.
 
 
-oneBoxParts(question: String) : Strings
-  Answers the parts of a round that offers carried choices: none, since such a
-  round is one box.
-
-oneBoxCap(question: String) : Number
-  Answers the cap of a round that offers carried choices: none.
-
-noChoices(question: String) : Strings
-  Answers the choices of a round that takes its parts: none.
-
 kindChoices(kind: String, choices: Strings) : Strings
   Answers the choices the kind puts before the room: the round's own under
   `vote` or no word, and none under `write` or `list`.
@@ -96,10 +86,6 @@ kindCap(kind: String, cap: Number) : Number
 carryUses() : Json
   Answers the table of uses: each use, the kinds it is open to, and the one
   sentence the editor shows beside it.
-
-useStanding(use: String) : String
-  Answers `known` when the word names a use this composition fills, and
-  `unknown` otherwise.
 
 voteStanding(kind: String, choices: Strings) : String
   Answers `bare` when the kind is `vote` and the round offers no choice of its

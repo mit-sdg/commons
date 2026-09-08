@@ -1,7 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import {
-  addStands,
-  classDocumentsLine,
   documentEdit,
   documentTotal,
   isReadableFile,
@@ -68,26 +66,6 @@ describe("what a saved document asks to be written", () => {
   });
 });
 
-describe("what the drafter reads beside the brief", () => {
-  test("counts the class's documents", () => {
-    expect(classDocumentsLine(2, "questionnaire")).toBe(
-      "2 shared documents available in the library.",
-    );
-    expect(classDocumentsLine(1, "card")).toBe(
-      "1 shared document available in the library.",
-    );
-    expect(classDocumentsLine(3, "relay")).toBe(
-      "3 shared documents available in the library.",
-    );
-  });
-
-  test("says so when the class has none", () => {
-    for (const asker of ["card", "questionnaire", "relay"] as const) {
-      expect(classDocumentsLine(0, asker)).toBe("No shared documents added.");
-    }
-  });
-});
-
 describe("the question a press of Remove raises", () => {
   test("stands on the document it was raised on", () => {
     expect(removeAsked("d1", "d1")).toBe(true);
@@ -103,20 +81,6 @@ describe("the question a press of Remove raises", () => {
 
   test("goes with the form when the card closes", () => {
     expect(removeAsked("d1", null)).toBe(false);
-  });
-});
-
-describe("the way to add another document", () => {
-  test("stands while a document is open to be read or corrected", () => {
-    expect(addStands(false, false)).toBe(true);
-  });
-
-  test("goes while the form for a new one already stands", () => {
-    expect(addStands(true, false)).toBe(false);
-  });
-
-  test("goes on a retired relay, whose documents are only read", () => {
-    expect(addStands(false, true)).toBe(false);
   });
 });
 

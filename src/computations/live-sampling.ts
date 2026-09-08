@@ -169,16 +169,6 @@ export function samplingPassageTaking({
   });
 }
 
-/** The names a round takes from a source that has no sample yet: none, so its passage names nothing it could be asked with. */
-export function unsampledNames({ use: _use }: { use: unknown }): string[] {
-  return [];
-}
-
-/** Whether the passage a sample was asked with is the one the round would make now: `fresh`, or `stale`. */
-export function sampleStanding({ asked, passage }: { asked: unknown; passage: unknown }): string {
-  return asked === passage ? "fresh" : "stale";
-}
-
 /** The answers of a sampled reply, each with the pile it was placed in; nothing when the reply cannot be read. */
 export function sampledAnswers({ reply }: { reply: unknown }): SampledAnswer[] {
   let parsed: unknown;
