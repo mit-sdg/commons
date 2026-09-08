@@ -47,11 +47,11 @@ export const PinItem = endpoint(
 
 export const UnpinItem = endpoint(
   "/pins/unpin",
-  ({ session, item, scope, user, pin }) =>
+  ({ session, item, scope, user }) =>
     receive({ session, item, scope }).then(
       where(activeUser({ session }).is({ user }), mayModerate({ user }), readable({ post: item }))
-        .then(Pinning.unpin({ item, scope }).responds({ pin }))
-        .then(respond({ pin }))
+        .then(Pinning.unpin({ item, scope }).responds())
+        .then(respond({ item }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotModerate({ user }))
         .then(respond({ error: "FORBIDDEN" }))

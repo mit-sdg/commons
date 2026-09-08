@@ -17,18 +17,18 @@ import {
   launch,
   Log,
   openFace,
+  outDir,
   pages,
   readWall,
   signIn,
   sleep,
   snap,
-  sortUntilPlaced,
+  waitUntilPlaced,
   until,
   WEB,
 } from "../drive.ts";
 
-const OUT =
-  process.argv[2] ?? resolve(process.env.HOME ?? "", "ctx/evaluation/rounds-polish/phase0");
+const OUT = process.argv[2] ?? outDir("phase0");
 mkdirSync(OUT, { recursive: true });
 const log = new Log("phase0", OUT);
 const SEATS = 30;
@@ -172,7 +172,7 @@ try {
   // Round one: one word. The model seats answer; the phone answers too.
   await dashboard.getByRole("button", { name: /^Open.*Name it/ }).click();
   const one = await openFace(host, token);
-  await dashboard.getByRole("switch", { name: "Model sorts" }).click();
+  await dashboard.getByRole("switch", { name: "Sort automatically" }).click();
   await sleep(2000);
   await snap(phone, log, "03-phone-round-one", [390]);
   await words(phone, "03-phone-round-one");
@@ -201,9 +201,9 @@ try {
   await snap(phone, log, "04-phone-handed-in", [390]);
   await words(dashboard, "04-dashboard-streaming");
   await words(phone, "04-phone-handed-in");
-  const sortedOne = await sortUntilPlaced(host, one.round, SEATS + 1, 80);
+  const sortedOne = await waitUntilPlaced(host, one.round, SEATS + 1, 80);
   log.note(
-    `round one sorted ${sortedOne.settled} ticks ${sortedOne.ticks} asks ${sortedOne.asks} piles ${JSON.stringify(sortedOne.wall?.piles.map((pile) => [pile.name, pile.count]))}`,
+    `round one sorted ${sortedOne.settled} ticks ${sortedOne.ticks} piles ${JSON.stringify(sortedOne.wall?.piles.map((pile) => [pile.name, pile.count]))}`,
   );
   // The projector catches the server up when?
   const settledAt = Date.now();
@@ -266,7 +266,7 @@ try {
   await words(projector, "08-projector-flood");
   // Reload every screen while the flood is on.
   await reloadTimed(dashboard, "dashboard", () =>
-    dashboard.getByText("Tray").first().waitFor({ timeout: 15000 }),
+    dashboard.getByRole("switch", { name: "Sort automatically" }).waitFor({ timeout: 15000 }),
   );
   await reloadTimed(projector, "projector", () =>
     projector.getByText("Three verbs").first().waitFor({ timeout: 15000 }),
@@ -279,9 +279,9 @@ try {
   await snap(projector, log, "09-projector-reloaded", [WALL], false);
   await snap(phone, log, "09-phone-reloaded", [390]);
   await words(phone, "09-phone-reloaded");
-  const sortedTwo = await sortUntilPlaced(host, two.round, (SEATS + 1) * 3, 100);
+  const sortedTwo = await waitUntilPlaced(host, two.round, (SEATS + 1) * 3, 100);
   log.note(
-    `round two sorted ${sortedTwo.settled} ticks ${sortedTwo.ticks} asks ${sortedTwo.asks} piles ${JSON.stringify(sortedTwo.wall?.piles.map((pile) => [pile.name, pile.count]))}`,
+    `round two sorted ${sortedTwo.settled} ticks ${sortedTwo.ticks} piles ${JSON.stringify(sortedTwo.wall?.piles.map((pile) => [pile.name, pile.count]))}`,
   );
   const settledTwo = Date.now();
   await until(
@@ -314,12 +314,7 @@ try {
   await words(phone, "12-phone-vote");
   const choice = three.question.choices[0];
   if (choice !== undefined) {
-    await phone
-      .getByRole("radio", { name: choice })
-      .click()
-      .catch(async () => {
-        await phone.getByText(choice, { exact: true }).first().click();
-      });
+    await phone.getByRole("button", { name: choice, exact: true }).click();
     await phone.getByRole("button", { name: "Hand in" }).click();
   } else {
     log.finding({
@@ -329,11 +324,14 @@ try {
       evidence: JSON.stringify(three.question),
     });
   }
-  await until(
+  const voted = await until(
     () => readWall(host, three.round),
-    (value) => (value.wall?.handedIn ?? 0) >= SEATS,
+    (value) => (value.wall?.handedIn ?? 0) >= SEATS + 1,
     40,
   );
+  if ((voted.wall?.handedIn ?? 0) < SEATS + 1) {
+    throw new Error("The model seats and the phone did not all hand in their votes");
+  }
   await sleep(4000);
   await snap(dashboard, log, "13-dashboard-vote", [DASH]);
   await snap(projector, log, "13-projector-vote", [WALL], false);
@@ -368,6 +366,6 @@ try {
     error: String(error),
   });
 } finally {
-  log.write();
   await web.close();
+  log.write();
 }

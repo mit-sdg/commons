@@ -1,19 +1,20 @@
 "use client";
 
-import { ChevronDown, Radio, Sparkles } from "lucide-react";
+import { BookOpen, ChevronDown, History, Radio, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
+import { KIND_PHRASES } from "@/components/live/brief-chips";
 import {
-  FormBadge,
+  FormTag,
   QUIZ_NOT_READY_MESSAGE,
   RETIRE_NOTE,
 } from "@/components/live/quiz-meta";
 import { LiveRow, RoomCode } from "@/components/live/relay-row";
 import { Figure, RoundStrip } from "@/components/live/round-token";
-import { NO_ROUNDS, standingOf } from "@/components/live/rounds";
+import { launchRefusal, NO_ROUNDS, standingOf } from "@/components/live/rounds";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -62,6 +63,22 @@ const KINDS = [
  */
 function Named({ title }: { title: string }) {
   return <span className="sr-only"> {title}</span>;
+}
+
+/**
+ * The way to an item's runs. The overview holds them, but it was reachable
+ * only by the row's title, so the runs were found by opening Edit and coming
+ * back. The icon keeps this apart from Run, which opens the one that is live.
+ */
+function RunsButton({ href, title }: { href: string; title: string }) {
+  return (
+    <Button variant="ghost" size="sm" asChild>
+      <Link href={`${href}#runs`}>
+        <History /> Runs
+        <Named title={title} />
+      </Link>
+    </Button>
+  );
 }
 
 function when(value: unknown): number {
@@ -135,7 +152,7 @@ function LiveListContent() {
     const result = await api["/live/relays/launch"]({ relay });
     if (isApiError(result)) {
       setBusy(false);
-      toast.error(publicErrorMessage(result.error));
+      toast.error(launchRefusal(result.error));
       return;
     }
     router.push(`/staff/live/run/${result.run}`);
@@ -171,6 +188,11 @@ function LiveListContent() {
         </h1>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button variant="outline" asChild>
+            <Link href="/staff/live/background">
+              <BookOpen /> Documents
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
             <Link href="/staff/live/draft">
               <Sparkles /> Draft with AI
             </Link>
@@ -184,8 +206,14 @@ function LiveListContent() {
             <DropdownMenuContent align="end">
               {KINDS.map((entry) => (
                 <DropdownMenuItem key={entry.kind} asChild>
-                  <Link href={`/staff/live/new?kind=${entry.kind}`}>
+                  <Link
+                    href={`/staff/live/new?kind=${entry.kind}`}
+                    className="flex flex-col items-start gap-0.5"
+                  >
                     {entry.label}
+                    <span className="text-muted-foreground text-xs">
+                      {KIND_PHRASES[entry.kind]}
+                    </span>
                   </Link>
                 </DropdownMenuItem>
               ))}
@@ -324,7 +352,7 @@ function RelayEntry({
           >
             {relay.title}
           </Link>
-          <FormBadge form="relay" />
+          <FormTag form="relay" />
         </>
       }
       middle={
@@ -342,6 +370,10 @@ function RelayEntry({
       actions={
         live ? (
           <>
+            <RunsButton
+              href={`/staff/live/relay/${relay.relay}`}
+              title={relay.title}
+            />
             <Button variant="ghost" size="sm" asChild>
               <Link href={`/staff/live/relay/${relay.relay}/edit`}>
                 Edit
@@ -349,14 +381,21 @@ function RelayEntry({
               </Link>
             </Button>
             <Button size="sm" asChild>
+              {/* Not "Run": beside Runs it read as the list, and beside Launch
+                  as the act of starting one. This goes to the run that is
+                  already going. */}
               <Link href={`/staff/live/run/${relay.run}`}>
-                Run
+                Dashboard
                 <Named title={relay.title} />
               </Link>
             </Button>
           </>
         ) : (
           <>
+            <RunsButton
+              href={`/staff/live/relay/${relay.relay}`}
+              title={relay.title}
+            />
             <Button variant="ghost" size="sm" asChild>
               <Link href={`/staff/live/relay/${relay.relay}/edit`}>
                 Edit
@@ -431,19 +470,29 @@ function QuestionnaireEntry({
           >
             {entry.title}
           </Link>
-          <FormBadge form={entry.form} />
+          <FormTag form={entry.form} />
         </>
       }
       actions={
         live ? (
-          <Button size="sm" asChild>
-            <Link href={`/staff/live/run/${entry.openRun}`}>
-              Run
-              <Named title={entry.title} />
-            </Link>
-          </Button>
+          <>
+            <RunsButton
+              href={`/staff/live/${entry.questionnaire}`}
+              title={entry.title}
+            />
+            <Button size="sm" asChild>
+              <Link href={`/staff/live/run/${entry.openRun}`}>
+                Dashboard
+                <Named title={entry.title} />
+              </Link>
+            </Button>
+          </>
         ) : (
           <>
+            <RunsButton
+              href={`/staff/live/${entry.questionnaire}`}
+              title={entry.title}
+            />
             <Button variant="ghost" size="sm" asChild>
               <Link href={`/staff/live/${entry.questionnaire}/edit`}>
                 Edit
@@ -513,7 +562,7 @@ function RetiredEntry({
           <Link href={href} className="min-w-0 break-words hover:text-primary">
             {title}
           </Link>
-          <FormBadge form={form} />
+          <FormTag form={form} />
         </>
       }
     />

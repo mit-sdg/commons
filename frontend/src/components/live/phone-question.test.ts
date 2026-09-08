@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
   answeredOf,
   boxName,
   itemCountOf,
+  QuestionCard,
   type RoundQuestion,
   wholeOf,
 } from "./phone-question";
@@ -77,4 +80,31 @@ describe("what a repeated question's boxes are called", () => {
   test("a part the round left blank leaves the place alone", () => {
     expect(boxName("", 1, 2)).toBe("two of two");
   });
+});
+
+test("supporting evidence stays hidden but inspectable in every preview carry mode", () => {
+  for (const use of ["choices", "parts", "context"]) {
+    const html = renderToStaticMarkup(
+      createElement(QuestionCard, {
+        question: question({
+          question: "source-test",
+          prompt: "Use this earlier work",
+          choices: use === "choices" ? ["Lost work"] : [],
+          parts: use === "parts" ? ["Lost work"] : [],
+          contextUse: use,
+          context: [{ name: "Lost work", cards: ["My draft disappeared"] }],
+        }),
+        answers: {},
+        readOnly: true,
+        onAnswer: () => undefined,
+        onDraft: () => undefined,
+      }),
+    );
+    expect(html).not.toContain("My draft disappeared");
+    const inspect = html.match(
+      /<button[^>]*aria-label="Inspect 1 response for Lost work"[^>]*>/,
+    )?.[0];
+    expect(inspect).toBeDefined();
+    expect(inspect).not.toContain("disabled");
+  }
 });

@@ -194,6 +194,6 @@ _getPublishedForAudience (audience: String|Null) : many (assignment: String)
   answers no rows when none match
 
 _getPublishedInWindow (start: String|Date, end: String|Date) : many (assignment: String)
-  answers published assignments whose availability or due date falls within the inclusive window, in creation order
+  answers published assignments whose availability, due, or close date falls within the inclusive window, in creation order
   answers no rows when none match
 ```

@@ -7,29 +7,36 @@ import { Input } from "@/components/ui/input";
 /** How many seats the row offers before anyone touches it. */
 const SEATS = 5;
 
+/** The number the box last held, so it stays where a hand put it while the row comes and goes. */
+let held = String(SEATS);
+
 /** A button that is out reads as out without leaving the tab order. */
 const OUT =
   "cursor-default text-muted-foreground hover:bg-background hover:text-muted-foreground dark:hover:bg-input/30";
 
 /**
  * The model participants of a run: the seats taken, how many of them are still
- * writing the open round, and the buttons that take or drop seats. One seat is
- * one request, so the dashboard sends as many as were asked for.
+ * writing the open round, how many nothing is coming for, and the buttons that
+ * take or drop seats. One seat is one request, so the dashboard sends as many
+ * as were asked for.
  */
 export function ModelRow({
   count,
   writing = 0,
+  silent = 0,
   onInvite,
   onDismiss,
   onDismissAll,
 }: {
   count: number;
   writing?: number;
+  /** Seats whose ask failed with no reply after: the panel's words for the same fact. */
+  silent?: number;
   onInvite: (seats: number) => void | Promise<void>;
   onDismiss: () => void | Promise<void>;
   onDismissAll: () => void | Promise<void>;
 }) {
-  const [seats, setSeats] = useState(String(SEATS));
+  const [seats, setSeats] = useState(held);
   const [busy, setBusy] = useState(false);
   const asked = Number(seats);
   const usable = Number.isInteger(asked) && asked > 0 && asked <= 100;
@@ -57,7 +64,10 @@ export function ModelRow({
             value={seats}
             inputMode="numeric"
             aria-label="Seats"
-            onChange={(event) => setSeats(event.target.value)}
+            onChange={(event) => {
+              held = event.target.value;
+              setSeats(held);
+            }}
             className="h-8 w-[52px] px-2.5 text-center"
           />
           <Button
@@ -106,6 +116,9 @@ export function ModelRow({
       ) : null}
       {writing > 0 ? (
         <p className="text-muted-foreground text-xs">{writing} writing</p>
+      ) : null}
+      {silent > 0 ? (
+        <p className="text-muted-foreground text-xs">{silent} not answering</p>
       ) : null}
     </div>
   );

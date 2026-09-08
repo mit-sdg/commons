@@ -3,6 +3,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent, MouseEvent } from "react";
+import { Fact } from "@/components/facts";
 import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { Link } from "@/components/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,7 +12,7 @@ import { UserName } from "@/components/user-name";
 import { notifyHashTargetNavigation } from "@/hooks/use-hash-target-highlight";
 import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
-import { relativeTime, titleFromContent } from "@/lib/format";
+import { titleFromContent } from "@/lib/format";
 import type { PostView } from "@/lib/models";
 import { cn } from "@/lib/utils";
 
@@ -111,12 +112,9 @@ export function PostPreview({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <UserAvatar user={author} className="size-7" />
-          <div className="min-w-0 text-sm">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 text-sm">
             <UserName user={author} />
-            <span className="mx-1.5 text-muted-foreground">·</span>
-            <time className="text-muted-foreground">
-              {relativeTime(post.createdAt)}
-            </time>
+            <Fact.When at={post.createdAt} />
           </div>
         </div>
         {action}
@@ -138,7 +136,7 @@ export function PostPreview({
         html={post.rendered}
         className={cn(
           "line-clamp-4 text-sm",
-          showTitle && "[&>h1:first-child]:hidden",
+          showTitle && "[&>:is(h1,h2,h3,p):first-child]:hidden",
           !showTitle &&
             "[&>*+*]:mt-2 [&>h1:first-child]:mt-0 [&>h2:first-child]:mt-0 [&>h3:first-child]:mt-0 [&_h1]:mt-2 [&_h1]:text-base [&_h1]:leading-6 [&_h2]:mt-2 [&_h2]:text-base [&_h2]:leading-6 [&_h3]:mt-2 [&_h3]:text-base [&_h3]:leading-6 [&_p]:leading-6",
         )}

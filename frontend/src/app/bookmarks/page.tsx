@@ -2,6 +2,7 @@
 
 import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
+import { Fact } from "@/components/facts";
 import { PostPreview } from "@/components/forum/post-preview";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireAuth } from "@/components/require-auth";
@@ -10,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { relativeTime } from "@/lib/format";
 import { loadPostConversationIndex } from "@/lib/loaders";
 import type { Bookmark as BookmarkModel } from "@/lib/models";
 
@@ -66,7 +66,7 @@ function Bookmarks() {
                 key={item}
                 item={item}
                 conversation={index.data?.[item] ?? null}
-                meta={`Saved ${relativeTime(bookmark.savedAt)}`}
+                meta={<Fact.When verb="Saved" at={bookmark.savedAt} />}
                 action={
                   <Button
                     variant="ghost"

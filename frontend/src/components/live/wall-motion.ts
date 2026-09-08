@@ -64,6 +64,24 @@ export function diff<Wall extends Staged>(shown: Wall, target: Wall): Move[] {
   return [...opens, ...arrivals, ...places, ...leaves, ...closes];
 }
 
+/** A reset supersedes queued placements for the cards it returns. */
+export function enqueue(belt: Move[], moves: Move[]): Move[] {
+  const returns = moves.filter((move) => move.kind === "return");
+  if (returns.length === 0) return [...belt, ...moves];
+  const cards = new Set(returns.map((move) => move.card));
+  return [
+    ...returns,
+    ...belt.filter(
+      (move) =>
+        !(
+          (move.kind === "place" || move.kind === "return") &&
+          cards.has(move.card)
+        ),
+    ),
+    ...moves.filter((move) => move.kind !== "return"),
+  ];
+}
+
 /**
  * The shown wall after one move: every field of the target, with the cards
  * and piles as they stand after that move alone. Pile counts follow the
@@ -170,6 +188,15 @@ export const merged =
     );
 
 /**
+ * The belt less every move about one card: a hand that placed the card has
+ * shown where it stands, and a move queued for it before that would put it
+ * back where the hand took it from.
+ */
+export function without(belt: Move[], card: string): Move[] {
+  return belt.filter((move) => !("card" in move) || move.card !== card);
+}
+
+/**
  * The wall when nothing is left to move: the target whole — a pile's new name,
  * its lid, the pick on it — with the cards as they stand.
  */
@@ -215,7 +242,7 @@ export const GAP_MS: Record<Move["kind"], number> = {
   open: BIRTH_GAP_MS,
   arrive: ARRIVAL_GAP_MS,
   place: LANDING_GAP_MS,
-  return: LANDING_GAP_MS,
+  return: 0,
   leave: 0,
   close: 0,
 };
@@ -265,6 +292,9 @@ export function span(belt: Move[]): number {
 export function gapAfter(belt: Move[]): number {
   const head = belt[0];
   if (head === undefined) return 0;
+  if (head.kind === "return") {
+    return belt[1]?.kind === "return" ? 0 : LANDING_GAP_MS;
+  }
   const whole = span(belt);
   const squeeze = whole > MAX_LAG_MS ? MAX_LAG_MS / whole : 1;
   return Math.round(GAP_MS[head.kind] * squeeze);
@@ -357,7 +387,16 @@ export function useStagedWall<Wall extends Staged>(
         return;
       }
       told.current?.(move, standing);
-      const played = apply(standing, goal, move);
+      let played = apply(standing, goal, move);
+      // Return the whole group in one render before any new placements play.
+      if (move.kind === "return") {
+        while (belt.current[0]?.kind === "return") {
+          const next = belt.current.shift();
+          if (next === undefined) break;
+          told.current?.(next, standing);
+          played = apply(played, goal, next);
+        }
+      }
       if (move.kind === "arrive" || move.kind === "place") stamp(move.card);
       show(played);
       if (belt.current.length === 0) {
@@ -387,7 +426,14 @@ export function useStagedWall<Wall extends Staged>(
       return;
     }
     setSettled(false);
-    belt.current.push(...moves);
+    belt.current = enqueue(belt.current, moves);
+    if (
+      moves.some((move) => move.kind === "return") &&
+      timer.current !== null
+    ) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
     if (timer.current === null) timer.current = setTimeout(pump, 0);
   }, [wall, instant, finish, pump]);
 
@@ -405,7 +451,10 @@ export function useStagedWall<Wall extends Staged>(
       if (standing !== null) show(change(standing));
       if (target.current !== null) target.current = change(target.current);
       if (reached.current !== null) reached.current = change(reached.current);
-      if (card !== undefined) stamp(card);
+      if (card !== undefined) {
+        belt.current = without(belt.current, card);
+        stamp(card);
+      }
     },
     [show, stamp],
   );

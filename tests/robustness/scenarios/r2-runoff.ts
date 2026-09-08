@@ -25,7 +25,7 @@ import {
   signIn,
   sleep,
   snap,
-  sortUntilPlaced,
+  waitUntilPlaced,
   until,
 } from "../drive.ts";
 
@@ -52,8 +52,8 @@ const MINE = "Let a guest keep a room until they say otherwise.";
 /** How a room's votes lean, fullest choice first, so two lead clearly. */
 const WEIGHTS = [5, 4, 2, 1];
 
-/** How long a screen may take to catch a settled wall up before it is a finding. */
-const CATCH_UP = 6500;
+/** How long a screen may take to catch a settled wall up: the belt's lag bound plus one poll. */
+const CATCH_UP = 6000 + 3000;
 
 /** The ballots a skewed room casts, one per seat, over the choices offered. */
 function ballots(count: number, choices: string[]): string[] {
@@ -179,7 +179,7 @@ try {
       evidence: JSON.stringify(one.question),
     });
   }
-  await dashboard.getByRole("switch", { name: "Model sorts" }).click();
+  await dashboard.getByRole("switch", { name: "Sort automatically" }).click();
   await sleep(1500);
   await shot(dashboard, "DashboardOpen", STAFF);
   await shot(phone, "PhoneOpen", [390]);
@@ -203,11 +203,11 @@ try {
   const written = SCRIPTED + 1;
   const sorted = await log.timed(
     "the model places every card",
-    () => sortUntilPlaced(host, one.round, written, 40),
+    () => waitUntilPlaced(host, one.round, written, 40),
     60000,
   );
   log.note(
-    `sorted: ${sorted.settled}, ticks ${sorted.ticks}, asks ${sorted.asks}, piles ${JSON.stringify(
+    `sorted: ${sorted.settled}, ticks ${sorted.ticks}, piles ${JSON.stringify(
       sorted.wall?.piles.map((pile) => [pile.name, pile.count]),
     )}`,
   );
@@ -215,7 +215,7 @@ try {
     log.finding({
       kind: "broken",
       title: "the model never placed every rewrite",
-      steps: `Model sorts on, then ${written} phones hand in a rewrite; wait two minutes`,
+      steps: `Sort automatically on, then ${written} phones hand in a rewrite; wait two minutes`,
       evidence: JSON.stringify(sorted.wall?.cards.filter((card) => card.pile === null)),
     });
   }
@@ -309,8 +309,8 @@ try {
     () => phones(token, SCRIPTED, two.question, (seat) => cast[seat] as string),
     25000,
   );
-  await phone.getByText(lead, { exact: true }).first().waitFor({ timeout: 20000 });
-  await phone.getByText(lead, { exact: true }).first().click();
+  await phone.getByRole("button", { name: lead, exact: true }).waitFor({ timeout: 20000 });
+  await phone.getByRole("button", { name: lead, exact: true }).click();
   await phone.getByRole("button", { name: "Hand in" }).click();
 
   // A vote's ballots file into a pile per choice, and the bars read those piles.
@@ -435,10 +435,12 @@ try {
   if (spare === undefined) {
     log.note("no third bar to tap: the vote offered only the two that carry");
   } else {
+    // A bar's tap is the pile's covering button, labelled "<choice>, N votes".
     const bar = () =>
       dashboard
-        .getByRole("button")
-        .filter({ has: dashboard.getByText(spare, { exact: true }) })
+        .getByRole("button", {
+          name: new RegExp(`^${spare.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}, `),
+        })
         .first();
     await dashboard.setViewportSize({ width: 1440, height: 900 });
     await log.timed(
@@ -480,8 +482,9 @@ try {
   await dashboard.setViewportSize({ width: 1440, height: 900 });
   for (const name of pickedTwo) {
     await dashboard
-      .getByRole("button")
-      .filter({ has: dashboard.getByText(name, { exact: true }) })
+      .getByRole("button", {
+        name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}, `),
+      })
       .first()
       .click();
     await sleep(600);
@@ -547,8 +550,8 @@ try {
     () => phones(token, SCRIPTED, three.question, (seat) => runoffCast[seat] as string),
     25000,
   );
-  await phone.getByText(runoffLead, { exact: true }).first().waitFor({ timeout: 20000 });
-  await phone.getByText(runoffLead, { exact: true }).first().click();
+  await phone.getByRole("button", { name: runoffLead, exact: true }).waitFor({ timeout: 20000 });
+  await phone.getByRole("button", { name: runoffLead, exact: true }).click();
   await phone.getByRole("button", { name: "Hand in" }).click();
   await until(
     () => readWall(host, three.round),

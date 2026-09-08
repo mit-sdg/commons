@@ -11,17 +11,18 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import {
-  FormBadge,
+  FormTag,
   QUIZ_NOT_READY_MESSAGE,
   RETIRE_NOTE,
 } from "@/components/live/quiz-meta";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
+import { RunsHeading } from "@/components/live/runs-heading";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import {
@@ -32,7 +33,6 @@ import {
   unwrap,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fullTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type Sheet = NonNullable<Output<"/live/quizzes/get">["questionnaire"]>;
@@ -151,8 +151,8 @@ function QuestionnaireOverviewContent() {
         title={
           <span className="flex flex-wrap items-center gap-3">
             {sheet.title}
-            <FormBadge form={sheet.form} />
-            {sheet.retired ? <Badge variant="outline">Retired</Badge> : null}
+            <FormTag form={sheet.form} />
+            {sheet.retired ? <Fact.Status status="RETIRED" /> : null}
           </span>
         }
         actions={
@@ -249,7 +249,7 @@ function QuestionnaireOverviewContent() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-display text-xl font-semibold">Runs</h2>
+          <RunsHeading />
           {sheet.runs.length === 0 ? (
             <p className="text-muted-foreground text-sm">Never launched.</p>
           ) : (
@@ -260,13 +260,14 @@ function QuestionnaireOverviewContent() {
                     href={`/staff/live/run/${run.run}`}
                     className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
                   >
-                    <span className="text-sm">
-                      Opened {fullTime(run.openedAt)}
-                      {run.closedAt !== null
-                        ? ` · closed ${fullTime(run.closedAt)}`
-                        : ""}
-                    </span>
-                    {run.open ? <Badge>Open</Badge> : null}
+                    <Facts className="text-sm">
+                      <Fact.Range
+                        verb={run.closedAt === null ? undefined : "Opened"}
+                        from={run.openedAt}
+                        to={run.closedAt}
+                      />
+                    </Facts>
+                    {run.open ? <Fact.Status status="OPEN" /> : null}
                   </Link>
                 </li>
               ))}
@@ -292,11 +293,13 @@ function QuestionnaireOverviewContent() {
                     className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-2 text-sm"
                   >
                     <span>{line.label}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {fullTime(line.createdAt)}
-                    </span>
+                    <Fact.When
+                      form="absolute"
+                      at={line.createdAt}
+                      className="text-xs"
+                    />
                     {line.status !== null ? (
-                      <Badge variant="outline">{line.status}</Badge>
+                      <Fact.Status status={line.status.toUpperCase()} />
                     ) : null}
                     <Link
                       href={`/staff/live/draft?brief=${line.brief}`}

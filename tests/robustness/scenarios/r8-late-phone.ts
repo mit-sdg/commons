@@ -1,8 +1,8 @@
 /**
  * R8, the late phone. A run whose first round is already open when a phone
  * first loads its page: the phone must show the question, not sit on
- * "Opening…". Then the round closes and the next opens while the phone
- * watches. A screenshot at each state; a phone that has not shown the prompt
+ * "Opening…". A second fresh phone must also see the open round.
+ * A screenshot of the first phone; a phone that has not shown the prompt
  * within ten seconds is a finding.
  *
  *   bun tests/robustness/scenarios/r8-late-phone.ts [arm-name]

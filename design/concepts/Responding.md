@@ -3,7 +3,9 @@
 ## Purpose
 
 Let a participant answer what they were given at their own pace and hand it in
-deliberately, once — nothing counts until they say it does.
+deliberately, once. Nothing counts until they say it does.
+
+Prevents: an answer counted before its participant handed it in; a second hand-in from one participant; a reload losing the answers already given.
 
 ## Principle
 
@@ -49,8 +51,9 @@ Rule: a participant identity is present when it is a nonblank string — an empt
 Rule: at most one response exists per subject and participant, so beginning again rejoins the response in progress.
 Rule: a value is trimmed first, and an answer is present when what remains is nonblank — an empty or whitespace value says nothing.
 Rule: an answer is keyed by its response and item: answering the same item again replaces the value in place.
+Rule: required is a sequence of item sequences; omitting it supplies no requirements. Each inner sequence lists alternative items, at least one of which must have an answer.
 Rule: a response's answers keep the order in which its items were first answered.
-Rule: whether the subject is open to participation, whether an item belongs to the subject, and whether a response may be handed in are questions the surrounding design answers; Responding guards only what its own state answers, imposes no completeness rule, and owns nothing that happens after hand-in.
+Rule: whether the subject is open to participation, whether an item belongs to the subject, and whether a response may be handed in are questions the surrounding design answers; Responding guards what its own state answers. The surrounding design may supply groups of required items at hand-in; each group requires at least one answer. Responding checks those requirements together with submission, and owns nothing that happens after hand-in.
 ```
 
 ## Actions
@@ -87,8 +90,8 @@ answer (response: Response, item: Item, value: String) : return (response: Respo
   then
     refuse BLANK_ANSWER "An answer needs something in it."
 
-submit (response: Response, at: Date) : return (response: Response)
-  where response in inProgress
+submit (response: Response, at: Date, required?: Seq) : return (response: Response)
+  where response in inProgress and every group in required has an answered item
   then
     remove response from inProgress
     add response to submitted
@@ -100,6 +103,10 @@ submit (response: Response, at: Date) : return (response: Response)
   where response in submitted
   then
     refuse ALREADY_SUBMITTED "This was already handed in."
+  where response in inProgress and a group in required has no answered item
+  then
+    refuse INCOMPLETE "An answer is still required."
+
 ```
 
 ## Queries

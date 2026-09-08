@@ -1,3 +1,13 @@
+import {
+  openingAuthorized,
+  openingBrief,
+  openingAdmission,
+  openingGroups,
+  openingAuthor,
+  openingMaterial,
+  openingPresentation,
+} from "./computations/live-round-opening.ts";
+import { draftContext, draftReferences, draftRequest } from "./computations/live-background.ts";
 import { conceptSet } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import { assigning } from "./concepts/assigning/registry.ts";
@@ -5,12 +15,14 @@ import { authenticating } from "./concepts/authenticating/registry.ts";
 import { banking } from "./concepts/banking/registry.ts";
 import { bookmarking } from "./concepts/bookmarking/registry.ts";
 import { categorizing } from "./concepts/categorizing/registry.ts";
+import { commissioning } from "./concepts/commissioning/registry.ts";
 import { conversing } from "./concepts/conversing/registry.ts";
 import { drafting } from "./concepts/drafting/registry.ts";
 import { flagging } from "./concepts/flagging/registry.ts";
 import { formatting } from "./concepts/formatting/registry.ts";
 import { grading } from "./concepts/grading/registry.ts";
 import { grouping } from "./concepts/grouping/registry.ts";
+import { guiding } from "./concepts/guiding/registry.ts";
 import { insisting } from "./concepts/insisting/registry.ts";
 import { inviting } from "./concepts/inviting/registry.ts";
 import { itemizing } from "./concepts/itemizing/registry.ts";
@@ -62,6 +74,7 @@ import {
   revisionPassage,
 } from "./computations/live-drafting.ts";
 import {
+  editApplied,
   editCap,
   editChoices,
   editParts,
@@ -69,14 +82,23 @@ import {
   editPrompt,
   editRoundCap,
   editRoundChoices,
+  editPileName,
+  editPileSentence,
   editRoundJson,
+  editRoundLines,
   editRoundParts,
   editRoundPosition,
   editRoundTakesFrom,
   editRoundTakesUse,
   editTitle,
   editUse,
+  legIdentities,
   legMaterials,
+  linesStanding,
+  guideUse,
+  guideScope,
+  editGuideField,
+  editGuideBody,
   relayDraftPassage,
   relayDraftReading,
   relayDraftReason,
@@ -87,15 +109,24 @@ import { soleTarget } from "./computations/live-links.ts";
 import {
   answerKind,
   briefStanding,
+  cardGiven,
+  relayGiven,
   cardStanding,
   failureStanding,
   carryUses,
   pileCards,
   pickPriority,
   useFit,
-  useStanding,
+  voteStanding,
 } from "./computations/live-carries.ts";
-import { cardId, isSame, noChoices, oneBoxCap, oneBoxParts } from "./computations/live-rounds.ts";
+import {
+  cardId,
+  isSame,
+  kindCap,
+  kindChoices,
+  kindParts,
+  roundMaterialIsValid,
+} from "./computations/live-rounds.ts";
 import { positionAfter, positionBefore, receiptKind } from "./computations/live-quizzes.ts";
 import {
   answerReceipt,
@@ -106,9 +137,24 @@ import {
   snapshotForm,
   snapshotHasQuestion,
   snapshotIsWhole,
+  snapshotRequirements,
   snapshotTitle,
 } from "./computations/live-snapshots.ts";
 import {
+  sampledAnswers,
+  sampledPiles,
+  sampledGroups,
+  samplingPassage,
+  samplingPassageTaking,
+  samplingResolution,
+  samplingResolvedPassage,
+  samplingResolvedStanding,
+  samplingResolvedAccount,
+  samplingResolvedPreview,
+} from "./computations/live-sampling.ts";
+import {
+  sortingPileSubjects,
+  definedSortingPiles,
   lidLines,
   lidPassage,
   participantAnswers,
@@ -118,6 +164,17 @@ import {
   placingReading,
   placingReason,
   placingRepairPassage,
+  sorterNotes,
+  sortingObservationPresent,
+  sortingAdmission,
+  summaryAdmission,
+  clearablePiles,
+  cleanupAdmission,
+  cleanupBrief,
+  cleanupCategories,
+  sortingBrief,
+  commissionOutcome,
+  commissionAccount,
 } from "./computations/live-walls.ts";
 import {
   passwordResetCooldownStart,
@@ -146,6 +203,7 @@ const registrations = {
   Banking: banking,
   Bookmarking: bookmarking,
   Categorizing: categorizing,
+  Commissioning: commissioning,
   Conversing: conversing,
   Drafting: drafting,
   DraftTrashing: trashing,
@@ -153,6 +211,7 @@ const registrations = {
   Formatting: formatting,
   Grading: grading,
   Grouping: grouping,
+  Guiding: guiding,
   Insisting: insisting,
   Inviting: inviting,
   Itemizing: itemizing,
@@ -191,13 +250,24 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  openingAuthorized,
+  openingBrief,
+  openingAdmission,
+  openingGroups,
+  openingAuthor,
+  openingMaterial,
+  openingPresentation,
   answerReceipt,
   boardQuestions,
   capabilitiesAreKnown,
   cardId,
   clarifiedPassage,
   draftTitle,
+  draftContext,
+  draftReferences,
+  draftRequest,
   draftingPassage,
+  editApplied,
   editCap,
   editChoices,
   editParts,
@@ -205,7 +275,10 @@ export const learningConcepts = conceptSet(registrations, {
   editPrompt,
   editRoundCap,
   editRoundChoices,
+  editPileName,
+  editPileSentence,
   editRoundJson,
+  editRoundLines,
   editRoundParts,
   editRoundPosition,
   editRoundTakesFrom,
@@ -213,13 +286,19 @@ export const learningConcepts = conceptSet(registrations, {
   editTitle,
   editUse,
   explanationReceipt,
+  legIdentities,
   legMaterials,
+  linesStanding,
   parseKind,
   parsedForm,
   parsedMaterial,
   parsedQuestion,
   parsedReason,
   participantQuestions,
+  guideUse,
+  guideScope,
+  editGuideField,
+  editGuideBody,
   relayDraftPassage,
   relayDraftReading,
   relayDraftReason,
@@ -235,16 +314,19 @@ export const learningConcepts = conceptSet(registrations, {
   answerKind,
   carryUses,
   pileCards,
-  useStanding,
   useFit,
+  voteStanding,
   pickPriority,
+  cardGiven,
+  relayGiven,
   cardStanding,
   failureStanding,
   briefStanding,
   isSame,
-  noChoices,
-  oneBoxCap,
-  oneBoxParts,
+  kindCap,
+  kindChoices,
+  kindParts,
+  roundMaterialIsValid,
   partLabel,
   invitationMailHtml,
   invitationMailText,
@@ -259,7 +341,10 @@ export const learningConcepts = conceptSet(registrations, {
   snapshotForm,
   snapshotHasQuestion,
   snapshotIsWhole,
+  snapshotRequirements,
   snapshotTitle,
+  sortingPileSubjects,
+  definedSortingPiles,
   lidLines,
   lidPassage,
   participantAnswers,
@@ -269,6 +354,27 @@ export const learningConcepts = conceptSet(registrations, {
   placingReading,
   placingReason,
   placingRepairPassage,
+  sorterNotes,
+  sortingObservationPresent,
+  sortingAdmission,
+  summaryAdmission,
+  clearablePiles,
+  cleanupAdmission,
+  cleanupBrief,
+  cleanupCategories,
+  sortingBrief,
+  commissionOutcome,
+  commissionAccount,
+  sampledAnswers,
+  sampledPiles,
+  sampledGroups,
+  samplingPassage,
+  samplingPassageTaking,
+  samplingResolution,
+  samplingResolvedPassage,
+  samplingResolvedStanding,
+  samplingResolvedAccount,
+  samplingResolvedPreview,
   subjectIsAddress,
   taskListMailHtml,
   taskListMailSubject,

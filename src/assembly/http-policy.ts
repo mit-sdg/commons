@@ -3,6 +3,8 @@ import { httpPolicy, type HttpPublicErrorCategory } from "@mit-sdg/sync-engine-h
 /** Domain refusals intentionally exposed by Commons' HTTP boundary. */
 export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategory>> = Object.freeze(
   {
+    COMMISSION_NOT_FOUND: "NOT_FOUND",
+    COMMISSION_NOT_PREPARED: "CONFLICT",
     INVALID_REQUEST: "INVALID_REQUEST",
     UNAUTHORIZED: "UNAUTHORIZED",
     FORBIDDEN: "FORBIDDEN",
@@ -41,6 +43,8 @@ export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategor
     BOOKMARK_NOT_FOUND: "NOT_FOUND",
     CATEGORY_ALREADY_EXISTS: "CONFLICT",
     CATEGORY_NOT_FOUND: "NOT_FOUND",
+    INVALID_GUIDANCE: "INVALID_REQUEST",
+    GUIDANCE_NOT_FOUND: "NOT_FOUND",
     ITEM_NOT_CATEGORIZED: "CONFLICT",
     ITEM_ALREADY_IN_CONVERSATION: "CONFLICT",
     PARENT_NODE_NOT_FOUND: "NOT_FOUND",
@@ -170,11 +174,15 @@ export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategor
     RELAY_RETIRED: "CONFLICT",
     LEG_NOT_FOUND: "NOT_FOUND",
     LEG_DRAWN_ON: "CONFLICT",
+    SOURCE_UNSAMPLED: "CONFLICT",
+    SOURCE_STALE: "CONFLICT",
     NO_SUCH_POSITION: "INVALID_REQUEST",
     FORWARD_DRAW: "CONFLICT",
     USE_BLANK: "INVALID_REQUEST",
     INVALID_USE: "INVALID_REQUEST",
     NO_DRAW: "CONFLICT",
+    KIND_BLANK: "INVALID_REQUEST",
+    NO_CHOICES: "CONFLICT",
     NOTHING_OFFERED: "INVALID_REQUEST",
     INVALID_SUGGESTION: "INVALID_REQUEST",
     SUGGESTION_NOT_FOUND: "NOT_FOUND",

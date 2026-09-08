@@ -1,4 +1,3 @@
-import { Link } from "@/components/link";
 import { Button } from "@/components/ui/button";
 
 /** The one sentence a screen says when its sign-in has ended. */
@@ -23,8 +22,10 @@ export function SignInEnded({
       className={`flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm ${className ?? ""}`}
     >
       <span>{SIGN_IN_ENDED}</span>
+      {/* A whole load, not a client route: the sign-in this page still holds
+          in memory ended elsewhere, and the form must not wear its name. */}
       <Button size="sm" variant="outline" asChild>
-        <Link href={`/login?next=${encodeURIComponent(next)}`}>Sign in</Link>
+        <a href={`/login?next=${encodeURIComponent(next)}`}>Sign in</a>
       </Button>
     </div>
   );

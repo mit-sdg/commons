@@ -1,8 +1,16 @@
 "use client";
 
-import { ArrowDown, ArrowUp, X } from "lucide-react";
-import { type ComponentProps, useEffect, useState } from "react";
+import {
+  ArrowDown,
+  ArrowUp,
+  CircleHelp,
+  Layers,
+  Sparkles,
+  X,
+} from "lucide-react";
+import { type ComponentProps, useState } from "react";
 import { toast } from "sonner";
+import { RoundGuideEditor } from "@/components/live/host-guide";
 import {
   type RefusalAbout,
   type RefusalWord,
@@ -11,6 +19,7 @@ import {
 import { RoundToken } from "@/components/live/round-token";
 import {
   firstUse,
+  KINDS,
   kindOf,
   type RoundKind,
   sentenceOf,
@@ -20,6 +29,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -31,11 +45,47 @@ import { Textarea } from "@/components/ui/textarea";
 import { api, isApiError, type Output } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+function CarryHelp({
+  text,
+  label = "How this round uses selected piles",
+}: {
+  text: string;
+  label?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+          onMouseEnter={() => setOpen(true)}
+          onFocus={() => setOpen(true)}
+          onClick={(event) => {
+            event.preventDefault();
+            setOpen(true);
+          }}
+        >
+          <CircleHelp className="size-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => event.preventDefault()}
+        className="text-sm"
+      >
+        {text}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export type RelayRound = NonNullable<
   Output<"/live/relays/get">["relay"]
 >["rounds"][number];
 
-const KINDS: RoundKind[] = ["write", "list", "vote"];
+type RelayPile = RelayRound["piles"][number];
 
 /**
  * A title that still reads as the heading it is, with a rule under it saying
@@ -104,6 +154,22 @@ const PARTS_MAX = 12;
 const CAP_MIN = 2;
 const CAP_MAX = 20;
 const CAP_START = 3;
+const PILE_NAME_MAX = 60;
+const PILE_SENTENCE_MAX = 200;
+const NOTES_MAX = 2000;
+
+/** What a pile's boxes hold while they are being typed. */
+interface PileBoxes {
+  name: string;
+  description: string;
+}
+
+/** The piles as they stand, in one string, to tell one read from the next. */
+function pilesKey(piles: RelayPile[]): string {
+  return piles
+    .map((pile) => [pile.pile, pile.name, pile.description].join("\n"))
+    .join("\n\n");
+}
 
 interface Draft {
   title: string;
@@ -126,6 +192,17 @@ function cleaned(draft: Draft): Draft {
       .map((choice) => choice.trim())
       .filter((choice) => choice !== ""),
   };
+}
+
+/**
+ * A question offers choices or takes parts, not both, so a draft that has both
+ * written keeps the pressed kind's side and lets the other go.
+ */
+function kept(draft: Draft, kind: RoundKind): Draft {
+  if (draft.parts.length === 0 || draft.choices.length === 0) return draft;
+  return kind === "vote"
+    ? { ...draft, parts: [], cap: 0 }
+    : { ...draft, choices: [] };
 }
 
 function same(left: Draft, right: Draft): boolean {
@@ -191,43 +268,42 @@ function roundRefusal(
     : { word: "FORWARD_DRAW", about: {} };
 }
 
-function report(result: unknown, said: Said | null): boolean {
+function report(
+  result: unknown,
+  said: Said | null,
+  /** What a request about a pile has lost, where the round is what else can go. */
+  gone: RefusalWord = "ROUND_GONE",
+): boolean {
   if (!isApiError(result)) return true;
   const read =
     result.error === "CONFLICT"
       ? said
       : result.error === "NOT_FOUND"
-        ? { word: "ROUND_GONE" as const, about: {} }
+        ? { word: gone, about: {} }
         : null;
   toast.error(saidRefusal(result.error, read?.word ?? null, read?.about));
   return false;
 }
 
-/**
- * One round, edited in place. The card holds its own draft and writes it back
- * whenever a field is left or a row is added or dropped, so a round never
- * stands half written. A question offers choices or takes parts, never both,
- * and the card shows only the side still open to it.
- */
 export function RoundEditor({
   round,
   rounds,
   locked,
+  retired = false,
   note = null,
   proposal = null,
-  onKind,
   onChanged,
 }: {
   round: RelayRound;
   rounds: RelayRound[];
   /** The round may be read but never rewritten. */
   locked: boolean;
+  /** The relay is retired, so even what the run leaves open is read. */
+  retired?: boolean;
   /** The one sentence saying why it is locked, said once at the card's top. */
   note?: string | null;
   /** What the AI proposes for this round, drawn across the card's top. */
   proposal?: React.ReactNode;
-  /** The kind the card holds, told to the page that shows the phone for it. */
-  onKind?: (leg: string, kind: RoundKind) => void;
   onChanged: () => void;
 }) {
   const saved: Draft = {
@@ -239,8 +315,20 @@ export function RoundEditor({
   };
   const [draft, setDraft] = useState<Draft>(saved);
   const [seen, setSeen] = useState<Draft>(saved);
+  // A pile's boxes as they are being typed, under the pile they are about, and
+  // the pile being named before it stands.
+  const [boxes, setBoxes] = useState<Record<string, PileBoxes>>({});
+  const [seenPiles, setSeenPiles] = useState(pilesKey(round.piles));
+  const [naming, setNaming] = useState<PileBoxes | null>(null);
+  const [notes, setNotes] = useState(round.notes);
+  const [editingSorting, setEditingSorting] = useState(false);
+  const [sortingOpen, setSortingOpen] = useState(false);
+  const [seenNotes, setSeenNotes] = useState(round.notes);
   const [busy, setBusy] = useState(false);
+  // The kind pressed, held for the instant before the round comes back with
+  // the word on it.
   const [chosenKind, setChosenKind] = useState<RoundKind | null>(null);
+  const [seenKind, setSeenKind] = useState(round.kind);
   const uses = useCarryUses();
 
   // The round can change under the card — a drafting line taken, another tab —
@@ -250,37 +338,39 @@ export function RoundEditor({
     setSeen(saved);
     setDraft(saved);
   }
+  if (pilesKey(round.piles) !== seenPiles) {
+    setSeenPiles(pilesKey(round.piles));
+    setBoxes({});
+  }
+  if (round.notes !== seenNotes) {
+    setSeenNotes(round.notes);
+    setNotes(round.notes);
+  }
+  if (round.kind !== seenKind) {
+    setSeenKind(round.kind);
+    setChosenKind(null);
+  }
 
   const takes = round.takes[0] ?? null;
   const earlier = rounds.filter((entry) => entry.number < round.number);
   const first = round.number === 1;
   const last = round.number === rounds.length;
   const written = cleaned(draft);
-  // The kind is what the card holds — the parts or choices being typed, or a
-  // take that fixes it. A round holding none of those is still free to be the
-  // kind that was chosen for it, so the boxes of that kind can be filled.
-  const held = kindOf({
-    choices: written.choices,
-    parts: written.parts,
-    takes: round.takes,
-  });
-  const bare =
-    written.parts.length === 0 &&
-    written.choices.length === 0 &&
-    (takes === null || takes.use === "context");
-  const kind: RoundKind = (bare ? chosenKind : null) ?? held;
+  const kind: RoundKind =
+    chosenKind ??
+    kindOf({
+      kind: round.kind,
+      choices: written.choices,
+      parts: written.parts,
+      takes: round.takes,
+    });
   const open = usesFor(uses, kind);
 
-  // A bare round is the kind that was pressed for it, which no field of it has
-  // written down; the page hears the kind from the card that holds it.
-  useEffect(() => {
-    onKind?.(round.leg, kind);
-  }, [onKind, round.leg, kind]);
-
   async function commit(next: Draft) {
-    const wanted = cleaned(next);
+    const wanted = kept(cleaned(next), kind);
     if (wanted.title === "" || wanted.prompt === "") return;
     if (same(wanted, cleaned(saved))) return;
+    if (!same(wanted, cleaned(next))) setDraft(wanted);
     setBusy(true);
     const result = await api["/live/relays/revise-round"]({
       leg: round.leg,
@@ -367,24 +457,104 @@ export function RoundEditor({
   }
 
   /**
-   * A kind is chosen by clearing what the other kinds hold: a write holds
-   * neither parts nor choices, a list no choices, a vote no parts. A take that
-   * the new kind is not open to moves to the use the kind starts with.
+   * A kind is the leg's own word and a selector: the question keeps its parts,
+   * its cap, and its choices, and the word decides which of them the round
+   * uses. A take that the new kind is not open to moves to the use the kind
+   * starts with.
    */
   async function chooseKind(next: RoundKind) {
     if (next === kind) return;
+    setBusy(true);
+    const named = await api["/live/relays/set-kind"]({
+      leg: round.leg,
+      kind: next,
+    });
+    setBusy(false);
+    if (!report(named, null)) return;
     setChosenKind(next);
-    const merged: Draft =
-      next === "write"
-        ? { ...draft, parts: [], cap: 0, choices: [] }
-        : next === "list"
-          ? { ...draft, choices: [] }
-          : { ...draft, parts: [], cap: 0 };
-    setDraft(merged);
-    await commit(merged);
+    onChanged();
     if (takes === null) return;
     if (usesFor(uses, next).some((entry) => entry.use === takes.use)) return;
     await setTakes(takes.source, firstUse(uses, next));
+  }
+
+  const inTheRun = roundRefusal({ kind: "revise" }, round, rounds, locked);
+  const boxesOf = (pile: RelayPile): PileBoxes => boxes[pile.pile] ?? pile;
+
+  /** A pile is refused for the name it asks for, or because the run has the round. */
+  function pileRefusal(name: string, pile?: string): Said {
+    return round.piles.some(
+      (entry) => entry.pile !== pile && entry.name === name,
+    )
+      ? { word: "NAME_TAKEN", about: { name } }
+      : inTheRun;
+  }
+
+  async function addPile() {
+    if (naming === null) return;
+    const name = naming.name.trim();
+    if (name === "") return;
+    setBusy(true);
+    const result = await api["/live/rounds/add-pile"]({
+      leg: round.leg,
+      name,
+      description: naming.description.trim(),
+    });
+    setBusy(false);
+    if (!report(result, pileRefusal(name))) return;
+    setNaming(null);
+    onChanged();
+  }
+
+  /** A name cleared and left behind is not a name: the standing one comes back. */
+  async function renamePile(pile: RelayPile) {
+    const name = boxesOf(pile).name.trim();
+    if (name === "") {
+      setBoxes({
+        ...boxes,
+        [pile.pile]: { ...boxesOf(pile), name: pile.name },
+      });
+      return;
+    }
+    if (name === pile.name) return;
+    setBusy(true);
+    const result = await api["/live/rounds/rename-pile"]({
+      pile: pile.pile,
+      name,
+    });
+    setBusy(false);
+    if (report(result, pileRefusal(name, pile.pile), "PILE_GONE")) onChanged();
+  }
+
+  async function describePile(pile: RelayPile) {
+    const description = boxesOf(pile).description.trim();
+    if (description === pile.description) return;
+    setBusy(true);
+    const result = await api["/live/rounds/describe-pile"]({
+      pile: pile.pile,
+      description,
+    });
+    setBusy(false);
+    if (report(result, inTheRun, "PILE_GONE")) onChanged();
+  }
+
+  async function removePile(pile: RelayPile) {
+    setBusy(true);
+    const result = await api["/live/rounds/remove-pile"]({ pile: pile.pile });
+    setBusy(false);
+    if (report(result, inTheRun, "PILE_GONE")) onChanged();
+  }
+
+  async function writeNotes() {
+    const body = notes.trim();
+    if (body === round.notes) return;
+    setBusy(true);
+    const result =
+      body === ""
+        ? await api["/live/rounds/clear-notes"]({ leg: round.leg })
+        : await api["/live/rounds/set-notes"]({ leg: round.leg, body });
+    setBusy(false);
+    if (report(result, null)) onChanged();
   }
 
   const repeats = draft.parts.length === 1 && draft.cap > 0;
@@ -394,15 +564,28 @@ export function RoundEditor({
   const choicesOpen = kind === "vote" && takes?.use !== "choices";
 
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4 focus-within:outline focus-within:outline-2 focus-within:outline-primary focus-within:-outline-offset-2">
-      {proposal === null ? null : <div className="col-span-2">{proposal}</div>}
-      <RoundToken number={round.number} size="lg" standing="plain" />
+    <div className="grid grid-cols-1 items-start gap-4 rounded-xl border border-border bg-card px-4 py-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:px-5 focus-within:outline focus-within:outline-2 focus-within:outline-primary focus-within:-outline-offset-2">
+      {proposal === null ? null : (
+        <div className="sm:col-span-2">{proposal}</div>
+      )}
+      <RoundToken
+        number={round.number}
+        size="lg"
+        standing="plain"
+        className="hidden sm:inline-flex"
+      />
 
       <div className="flex min-w-0 flex-col gap-3">
         {note === null ? null : (
           <p className="text-muted-foreground text-sm">{note}</p>
         )}
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:flex">
+          <RoundToken
+            number={round.number}
+            size="md"
+            standing="plain"
+            className="sm:hidden"
+          />
           <Input
             value={draft.title}
             maxLength={200}
@@ -419,7 +602,7 @@ export function RoundEditor({
             onBlur={() => leaveTitle()}
           />
           {locked ? null : (
-            <div className="flex flex-none gap-0.5">
+            <div className="col-start-2 flex flex-none justify-end gap-0.5">
               <ActButton
                 variant="ghost"
                 size="icon-sm"
@@ -503,26 +686,33 @@ export function RoundEditor({
         {partsOpen || choicesOpen ? (
           <div className="flex flex-wrap items-start gap-6">
             {partsOpen ? (
-              <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <Label>Parts</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   {draft.parts.map((part, index) => (
                     <span
                       // biome-ignore lint/suspicious/noArrayIndexKey: a part is its row, and a row carries no id
                       key={index}
-                      className="group/part relative inline-flex items-center"
+                      className="group/part relative inline-flex min-w-0 flex-[1_1_16rem] items-center"
                     >
-                      <Input
+                      <Textarea
+                        rows={1}
                         value={part}
                         maxLength={40}
                         disabled={locked}
                         readOnly={busy}
                         aria-label={`Round ${round.number} part ${index + 1}`}
                         placeholder={PART_WORDS[index] ?? ""}
-                        className={cn("w-36 pr-8", LOCKED_BOX)}
+                        className={cn(
+                          "min-h-9 w-full min-w-0 resize-none py-1.5 pr-9",
+                          LOCKED_BOX,
+                        )}
                         onChange={(event) => {
                           const parts = [...draft.parts];
-                          parts[index] = event.target.value;
+                          parts[index] = event.target.value.replace(
+                            /[\r\n]+/g,
+                            " ",
+                          );
                           change({ parts });
                         }}
                         onBlur={() => void commit(draft)}
@@ -533,7 +723,7 @@ export function RoundEditor({
                           size="icon-xs"
                           aria-label={`Remove round ${round.number} part ${index + 1}`}
                           busy={busy}
-                          className="-translate-y-1/2 absolute top-1/2 right-1 opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100"
+                          className="-translate-y-1/2 absolute top-1/2 right-1 opacity-100 sm:opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100 [@media(hover:none)]:opacity-100"
                           onClick={() =>
                             change(
                               {
@@ -561,44 +751,54 @@ export function RoundEditor({
                     </ActButton>
                   ) : null}
                 </div>
-                {draft.parts.length === 1 ? (
-                  <label className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <input
-                      type="checkbox"
-                      checked={repeats}
-                      disabled={locked}
-                      aria-disabled={busy || undefined}
-                      className="size-4 rounded-sm border-input accent-primary disabled:cursor-default"
-                      onChange={(event) => {
-                        if (busy) return;
-                        change(
-                          { cap: event.target.checked ? CAP_START : 0 },
-                          true,
-                        );
-                      }}
-                    />
-                    Repeat up to
-                    <Input
-                      type="number"
-                      min={CAP_MIN}
-                      max={CAP_MAX}
-                      value={repeats ? draft.cap : CAP_START}
-                      disabled={locked || !repeats}
-                      readOnly={busy}
-                      aria-label={`Round ${round.number} repeat up to`}
-                      className={cn("h-8 w-16", LOCKED_BOX)}
-                      onChange={(event) =>
-                        change({ cap: Number(event.target.value) })
-                      }
-                      onBlur={() => void commit(draft)}
-                    />
-                  </label>
-                ) : null}
+                <div className="flex flex-wrap items-center gap-2">
+                  {draft.parts.length === 1 ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant={repeats ? "secondary" : "ghost"}
+                        disabled={locked || busy}
+                        aria-pressed={repeats}
+                        onClick={() => change({ cap: CAP_START }, true)}
+                      >
+                        Repeat one part
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={!repeats ? "secondary" : "ghost"}
+                        disabled={locked || busy}
+                        aria-pressed={!repeats}
+                        onClick={() => change({ cap: 0 }, true)}
+                      >
+                        Define separate parts
+                      </Button>
+                    </>
+                  ) : null}
+                  {repeats ? (
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                      Up to
+                      <Input
+                        type="number"
+                        min={CAP_MIN}
+                        max={CAP_MAX}
+                        value={draft.cap}
+                        disabled={locked}
+                        readOnly={busy}
+                        aria-label={`Round ${round.number} repeat up to`}
+                        className={cn("h-8 w-16", LOCKED_BOX)}
+                        onChange={(event) =>
+                          change({ cap: Number(event.target.value) })
+                        }
+                        onBlur={() => void commit(draft)}
+                      />
+                    </label>
+                  ) : null}
+                </div>
               </div>
             ) : null}
 
             {choicesOpen ? (
-              <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <Label>Choices</Label>
                 <div className="flex flex-col gap-2">
                   {draft.choices.map((choice, index) => (
@@ -720,7 +920,6 @@ export function RoundEditor({
                         size="sm"
                         aria-label={`Round ${round.number} use`}
                         aria-disabled={busy || undefined}
-                        aria-describedby={`use-${round.leg}`}
                         className={LOCKED_BOX}
                       >
                         <SelectValue />
@@ -737,13 +936,274 @@ export function RoundEditor({
                     <span>{takes.use}</span>
                   )}
                 </span>
-                <span id={`use-${round.leg}`} className="text-muted-foreground">
-                  {sentenceOf(uses, takes.use)}
-                </span>
+                <CarryHelp text={sentenceOf(uses, takes.use)} />
               </>
             )}
           </div>
         ) : null}
+
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1 border-t border-border pt-2">
+          <RoundGuideEditor
+            round={round}
+            retired={retired}
+            onChanged={onChanged}
+          />
+          {kind === "vote" ? null : (
+            <>
+              <div className="flex flex-wrap items-center gap-1">
+                <button
+                  type="button"
+                  aria-expanded={sortingOpen}
+                  aria-controls={`sorting-${round.leg}`}
+                  onClick={() => setSortingOpen(!sortingOpen)}
+                  className="flex w-fit max-w-full cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden"
+                >
+                  <Layers className="size-4" /> Response sorting
+                  <span className="text-xs">
+                    {round.piles.length}{" "}
+                    {round.piles.length === 1 ? "pile" : "piles"}
+                  </span>
+                  <span
+                    className={cn(
+                      "transition-transform",
+                      sortingOpen && "rotate-90",
+                    )}
+                    aria-hidden
+                  >
+                    ›
+                  </span>
+                </button>
+                <CarryHelp
+                  label="How response sorting works"
+                  text="Piles group related responses. Reserved piles remain available even when empty, with or without AI sorting. Their definitions explain what belongs in each pile; participants see the pile name and supporting responses."
+                />
+                {sortingOpen && !retired ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto"
+                    disabled={busy}
+                    onClick={() => setEditingSorting(!editingSorting)}
+                  >
+                    {editingSorting ? "Done" : "Edit"}
+                  </Button>
+                ) : null}
+              </div>
+              <div
+                hidden={!sortingOpen}
+                id={`sorting-${round.leg}`}
+                className="col-span-2 min-w-0 mt-2"
+              >
+                <div className="mt-3 flex flex-col gap-3">
+                  {locked && round.piles.length === 0 ? null : (
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex flex-col gap-2">
+                        {round.piles.map((pile, index) => (
+                          <span
+                            key={pile.pile}
+                            className="relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5 py-1"
+                          >
+                            <Layers
+                              className="absolute -left-6 top-3 size-4 text-muted-foreground"
+                              aria-hidden
+                            />
+                            {!editingSorting ? (
+                              <span
+                                className="inline-flex w-fit items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium [overflow-wrap:anywhere]"
+                                dir="auto"
+                              >
+                                {pile.name}
+                              </span>
+                            ) : (
+                              <Input
+                                value={boxesOf(pile).name}
+                                maxLength={PILE_NAME_MAX}
+                                disabled={locked}
+                                readOnly={busy || !editingSorting}
+                                aria-label={`Round ${round.number} pile ${index + 1} name`}
+                                className={cn(
+                                  "w-full font-medium",
+                                  LOCKED_BOX,
+                                  !editingSorting &&
+                                    "border-transparent bg-transparent shadow-none dark:bg-transparent",
+                                )}
+                                onChange={(event) =>
+                                  setBoxes({
+                                    ...boxes,
+                                    [pile.pile]: {
+                                      ...boxesOf(pile),
+                                      name: event.target.value,
+                                    },
+                                  })
+                                }
+                                onBlur={() => void renamePile(pile)}
+                              />
+                            )}
+                            <label className="col-span-2 text-xs text-muted-foreground">
+                              <span className="mr-1 font-medium">
+                                What belongs:
+                              </span>
+
+                              {!editingSorting ? (
+                                <p
+                                  className="inline text-sm leading-relaxed [overflow-wrap:anywhere]"
+                                  dir="auto"
+                                >
+                                  {pile.description || "No definition added."}
+                                </p>
+                              ) : (
+                                <Textarea
+                                  rows={2}
+                                  value={boxesOf(pile).description}
+                                  maxLength={PILE_SENTENCE_MAX}
+                                  disabled={locked}
+                                  readOnly={busy || !editingSorting}
+                                  aria-label={`Round ${round.number} pile ${index + 1} sentence`}
+                                  placeholder="What goes in it"
+                                  className={cn(
+                                    "min-w-0 text-sm",
+                                    !editingSorting &&
+                                      "border-transparent bg-transparent shadow-none dark:bg-transparent",
+                                    LOCKED_BOX,
+                                  )}
+                                  onChange={(event) =>
+                                    setBoxes({
+                                      ...boxes,
+                                      [pile.pile]: {
+                                        ...boxesOf(pile),
+                                        description: event.target.value,
+                                      },
+                                    })
+                                  }
+                                  onBlur={() => void describePile(pile)}
+                                />
+                              )}
+                            </label>
+                            {locked || !editingSorting ? null : (
+                              <ActButton
+                                variant="ghost"
+                                size="icon-sm"
+                                className="col-start-2 row-start-1"
+                                aria-label={`Remove pile ${pile.name}`}
+                                busy={busy}
+                                onClick={() => void removePile(pile)}
+                              >
+                                <X />
+                              </ActButton>
+                            )}
+                          </span>
+                        ))}
+                        {locked || !editingSorting ? null : naming === null ? (
+                          <ActButton
+                            variant="ghost"
+                            size="sm"
+                            className="self-start"
+                            busy={busy}
+                            onClick={() =>
+                              setNaming({ name: "", description: "" })
+                            }
+                          >
+                            + Pile
+                          </ActButton>
+                        ) : (
+                          <span className="flex min-w-0 flex-wrap items-center gap-2">
+                            <Input
+                              // biome-ignore lint/a11y/noAutofocus: the pile is named the moment the row appears.
+                              autoFocus
+                              value={naming.name}
+                              maxLength={PILE_NAME_MAX}
+                              readOnly={busy || !editingSorting}
+                              aria-label={`Round ${round.number} new pile name`}
+                              placeholder="Name"
+                              className="w-40"
+                              onChange={(event) =>
+                                setNaming({
+                                  ...naming,
+                                  name: event.target.value,
+                                })
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") void addPile();
+                              }}
+                            />
+                            <Input
+                              value={naming.description}
+                              maxLength={PILE_SENTENCE_MAX}
+                              readOnly={busy || !editingSorting}
+                              aria-label={`Round ${round.number} new pile sentence`}
+                              placeholder="What goes in it"
+                              className="min-w-0 flex-1"
+                              onChange={(event) =>
+                                setNaming({
+                                  ...naming,
+                                  description: event.target.value,
+                                })
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") void addPile();
+                              }}
+                            />
+                            <ActButton
+                              size="sm"
+                              out={naming.name.trim() === ""}
+                              busy={busy}
+                              onClick={() => void addPile()}
+                            >
+                              Add
+                            </ActButton>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Close"
+                              onClick={() => setNaming(null)}
+                            >
+                              <X />
+                            </Button>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {retired && notes === "" ? null : (
+                    <div className="flex flex-col gap-1.5 rounded-lg bg-brand-pine/5 px-3 py-2.5">
+                      <Label
+                        className="text-xs text-brand-pine"
+                        htmlFor={`notes-${round.leg}`}
+                      >
+                        <Sparkles className="size-3.5" /> AI sorting
+                        instructions
+                      </Label>
+                      {!editingSorting ? (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
+                          {round.notes || "No additional instructions."}
+                        </p>
+                      ) : (
+                        <Textarea
+                          id={`notes-${round.leg}`}
+                          value={notes}
+                          maxLength={NOTES_MAX}
+                          disabled={retired}
+                          readOnly={busy || !editingSorting}
+                          rows={2}
+                          placeholder="Describe how to group responses."
+                          className={cn(
+                            "min-h-11",
+                            LOCKED_BOX,
+                            !editingSorting &&
+                              "border-transparent bg-transparent shadow-none dark:bg-transparent",
+                          )}
+                          onChange={(event) => setNotes(event.target.value)}
+                          onBlur={() => void writeNotes()}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

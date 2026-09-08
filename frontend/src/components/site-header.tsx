@@ -292,9 +292,15 @@ export function SiteHeader() {
           <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-4 py-2 sm:px-6">
             <span className="mr-2 flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <GraduationCap className="size-4" />
-              {course.code
-                ? `${course.code} · ${course.title} · ${course.term}`
-                : "Course"}
+              {course.code ? (
+                <span className="flex items-baseline gap-x-3">
+                  <span>{course.code}</span>
+                  <span>{course.title}</span>
+                  <span>{course.term}</span>
+                </span>
+              ) : (
+                "Course"
+              )}
             </span>
             {courseNav.map((item) => (
               <Link

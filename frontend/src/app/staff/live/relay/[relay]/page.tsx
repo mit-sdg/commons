@@ -5,18 +5,27 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
-import { FormBadge, RETIRE_NOTE } from "@/components/live/quiz-meta";
+import { GuideText, RelayBasics } from "@/components/live/host-guide";
+import { FormTag, RETIRE_NOTE } from "@/components/live/quiz-meta";
+import { refusalSentence } from "@/components/live/refusals";
+import { bareVote } from "@/components/live/round-preview";
 import {
   RoundToken,
   TakesChip,
   takeWords,
 } from "@/components/live/round-token";
-import { kindOf, NO_ROUNDS, type RelayRound } from "@/components/live/rounds";
+import {
+  kindOf,
+  launchRefusal,
+  NO_ROUNDS,
+  type RelayRound,
+} from "@/components/live/rounds";
+import { RunsHeading } from "@/components/live/runs-heading";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import {
@@ -27,7 +36,6 @@ import {
   unwrap,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fullTime } from "@/lib/format";
 
 type Relay = NonNullable<Output<"/live/relays/get">["relay"]>;
 
@@ -75,13 +83,20 @@ function RelayOverviewContent() {
   }
 
   const openRun = found.runs.find((run) => run.open) ?? null;
+  // Why the relay cannot launch yet, said on the button that would launch it.
+  const notYet =
+    found.rounds.length === 0
+      ? NO_ROUNDS
+      : found.rounds.some(bareVote)
+        ? refusalSentence("NO_CHOICES")
+        : undefined;
 
   async function launch() {
     setBusy(true);
     const result = await api["/live/relays/launch"]({ relay });
     if (isApiError(result)) {
       setBusy(false);
-      toast.error(publicErrorMessage(result.error));
+      toast.error(launchRefusal(result.error));
       return;
     }
     router.push(`/staff/live/run/${result.run}`);
@@ -110,8 +125,8 @@ function RelayOverviewContent() {
         title={
           <span className="flex flex-wrap items-center gap-3">
             {found.title}
-            <FormBadge form="relay" />
-            {found.retired ? <Badge variant="outline">Retired</Badge> : null}
+            <FormTag form="relay" />
+            {found.retired ? <Fact.Status status="RETIRED" /> : null}
           </span>
         }
         actions={
@@ -126,14 +141,11 @@ function RelayOverviewContent() {
                 <Link href={`/staff/live/run/${openRun.run}`}>Run</Link>
               </Button>
             ) : (
-              <span
-                className="inline-flex"
-                title={found.rounds.length === 0 ? NO_ROUNDS : undefined}
-              >
+              <span className="inline-flex" title={notYet}>
                 {/* Busy, the button keeps its focus: it is out by aria, not
                     by a disabled that hands the focus back to the page. */}
                 <Button
-                  disabled={found.retired || found.rounds.length === 0}
+                  disabled={found.retired || notYet !== undefined}
                   aria-disabled={busy || undefined}
                   onClick={busy ? undefined : () => void launch()}
                 >
@@ -156,7 +168,15 @@ function RelayOverviewContent() {
       />
 
       <div className="space-y-8">
-        <BeforeClass />
+        {found.description ? (
+          <p className="max-w-prose whitespace-pre-wrap [overflow-wrap:anywhere]">
+            {found.description}
+          </p>
+        ) : null}
+        <div className="flex flex-wrap items-center gap-1">
+          <GuideText guide={found.hostGuide} />
+          <RelayBasics />
+        </div>
 
         <section className="space-y-3">
           <h2 className="font-display text-xl font-semibold">
@@ -181,7 +201,7 @@ function RelayOverviewContent() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-display text-xl font-semibold">Runs</h2>
+          <RunsHeading />
           {found.runs.length === 0 ? (
             <EmptyState icon={Radio} title="Never launched." />
           ) : (
@@ -192,21 +212,29 @@ function RelayOverviewContent() {
                     href={`/staff/live/run/${run.run}`}
                     className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
                   >
-                    <span className="flex min-w-0 flex-col gap-1">
-                      <span className="text-sm">
-                        Opened {fullTime(run.openedAt)}
-                        {run.closedAt !== null
-                          ? ` · closed ${fullTime(run.closedAt)}`
-                          : ""}
-                      </span>
-                      <span className="font-mono text-muted-foreground text-[13px]">
-                        {ranWords(run.rounds)}
-                      </span>
-                    </span>
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <Facts className="text-sm">
+                        <Fact.Range
+                          verb={run.closedAt === null ? undefined : "Opened"}
+                          from={run.openedAt}
+                          to={run.closedAt}
+                        />
+                      </Facts>
+                      {run.rounds.length === 0 ? (
+                        <span className="font-mono text-muted-foreground text-[13px]">
+                          {NO_ROUND_RAN}
+                        </span>
+                      ) : (
+                        <Facts className="font-mono text-[13px]">
+                          <Fact.Count n={run.rounds.length} noun="round" />
+                          <Fact.Count>
+                            {handedIn(run.rounds)} handed in
+                          </Fact.Count>
+                        </Facts>
+                      )}
+                    </div>
                     <span className="flex items-center gap-2">
-                      {run.open ? (
-                        <Badge variant="secondary">Live</Badge>
-                      ) : null}
+                      {run.open ? <Fact.Status status="OPEN" /> : null}
                       <ChevronRight className="size-4 text-muted-foreground" />
                     </span>
                   </Link>
@@ -220,91 +248,17 @@ function RelayOverviewContent() {
   );
 }
 
+/** A run whose rounds all went away leaves the row nothing to count. */
+const NO_ROUND_RAN = "No round ran.";
+
 /**
- * What a run came to: the rounds that ran and what the room handed in over
- * them. The former numbers no round of a past run, so the row counts them.
+ * What the room handed in over a run's rounds. The former numbers no round of
+ * a past run, so the row counts them.
  */
-function ranWords(rounds: { figure: { handedIn: number | null } }[]): string {
-  if (rounds.length === 0) return "No round ran.";
-  const handedIn = rounds.reduce(
+function handedIn(rounds: { figure: { handedIn: number | null } }[]): number {
+  return rounds.reduce(
     (total, round) => total + (round.figure.handedIn ?? 0),
     0,
-  );
-  const word = rounds.length === 1 ? "round" : "rounds";
-  return `${rounds.length} ${word} · ${handedIn} handed in`;
-}
-
-/** One round as it stands: what it asks, what it offers, and what it takes. */
-/** Whether the lecturer left the fold open, remembered in this browser. */
-const BEFORE_CLASS_KEY = "live.before-class";
-
-/** What to do on the day, one line each, in the room's words. */
-const BEFORE_CLASS = [
-  "Sign in fresh today, here and on the room's screen. A sign-in lasts one day.",
-  "Launch. Open Project on the room's screen.",
-  "Read the code and the address aloud. The room joins there.",
-  "Open round 1 when the phones are out.",
-  "Turn on Model sorts, or drag cards into piles.",
-  "Close the round. Tap the piles to pick, then open the next round.",
-  "Close the run when the room is done. The walls stay.",
-];
-
-function recalledBeforeClass(): boolean {
-  try {
-    return window.localStorage.getItem(BEFORE_CLASS_KEY) === "open";
-  } catch {
-    // A browser that refuses storage starts closed.
-    return false;
-  }
-}
-
-/**
- * One row, closed until tapped, and the choice kept so a lecturer who knows
- * the app never meets it twice.
- */
-function BeforeClass() {
-  const [open, setOpen] = useState(recalledBeforeClass);
-
-  function toggle() {
-    const next = !open;
-    setOpen(next);
-    try {
-      window.localStorage.setItem(BEFORE_CLASS_KEY, next ? "open" : "closed");
-    } catch {
-      // The choice lasts the page.
-    }
-  }
-
-  return (
-    <section className="rounded-xl border border-border bg-card">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls="before-class"
-        onClick={toggle}
-        className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left font-medium outline-none hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50"
-      >
-        Before class
-        <ChevronRight
-          aria-hidden
-          className={`size-4 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
-        />
-      </button>
-      <ol
-        id="before-class"
-        hidden={!open}
-        className="flex flex-col gap-2 border-border border-t px-4 pt-3 pb-4 text-sm"
-      >
-        {BEFORE_CLASS.map((line, index) => (
-          <li key={line} className="flex gap-3">
-            <span className="w-4 flex-none font-mono text-muted-foreground">
-              {index + 1}
-            </span>
-            {line}
-          </li>
-        ))}
-      </ol>
-    </section>
   );
 }
 
@@ -317,26 +271,39 @@ function RoundCard({
   rounds: RelayRound[];
 }) {
   const takes = round.takes[0];
+  const kind = kindOf(round);
   const source =
     takes === undefined
       ? null
       : (rounds.find((entry) => entry.number === takes.sourceNumber) ?? null);
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-4 rounded-xl border border-border bg-card px-5 py-4">
-      <RoundToken number={round.number} size="lg" standing="plain" />
+    <div className="grid grid-cols-1 items-start gap-4 rounded-xl border border-border bg-card px-4 py-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:px-5">
+      <RoundToken
+        number={round.number}
+        size="lg"
+        standing="plain"
+        className="hidden sm:inline-flex"
+      />
       <div className="flex min-w-0 flex-col gap-3">
         <span className="flex flex-wrap items-baseline gap-2.5">
+          <RoundToken
+            number={round.number}
+            size="md"
+            standing="plain"
+            className="sm:hidden"
+          />
           <h3 className="font-display text-xl font-semibold">{round.title}</h3>
           <span className="text-muted-foreground text-sm capitalize">
-            {kindOf(round)}
+            {kind}
           </span>
         </span>
+
         {round.prompt === "" ? null : (
           <p dir="auto" className="min-w-0 text-sm">
             {round.prompt}
           </p>
         )}
-        {round.choices.length > 0 ? (
+        {kind === "vote" && round.choices.length > 0 ? (
           <ul className="flex flex-col gap-1 text-muted-foreground text-sm">
             {round.choices.map((choice) => (
               <li key={choice} dir="auto">
@@ -345,7 +312,7 @@ function RoundCard({
             ))}
           </ul>
         ) : null}
-        {round.parts.length > 0 ? (
+        {kind === "list" && round.parts.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {round.parts.map((part) => (
               <span
@@ -383,6 +350,55 @@ function RoundCard({
             )}
           </span>
         )}
+        <div className="flex flex-wrap items-start gap-2 border-t pt-2">
+          <GuideText
+            guide={round.hostGuide}
+            title={`Round ${round.number}: ${round.title}`}
+          />
+          {round.piles.length || round.notes ? (
+            <details className="min-w-0 flex-1">
+              <summary className="cursor-pointer rounded-md px-3 py-2 text-sm text-muted-foreground">
+                Response sorting ({round.piles.length}{" "}
+                {round.piles.length === 1 ? "pile" : "piles"})
+              </summary>
+              <div className="space-y-3 p-3">
+                {" "}
+                {round.piles.length === 0 ? null : (
+                  <div className="flex flex-col gap-1">
+                    <span className="eyebrow">Reserved piles</span>
+                    <ul className="flex flex-col gap-1 text-sm">
+                      {round.piles.map((pile) => (
+                        <li
+                          key={pile.pile}
+                          dir="auto"
+                          className="flex min-w-0 flex-col gap-1"
+                        >
+                          <span className="font-medium">{pile.name}</span>
+                          {pile.description === "" ? null : (
+                            <span className="min-w-0 text-muted-foreground">
+                              {pile.description}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {round.notes === "" ? null : (
+                  <div className="flex flex-col gap-1">
+                    <span className="eyebrow">Notes for the sorter</span>
+                    <p
+                      dir="auto"
+                      className="min-w-0 whitespace-pre-wrap text-muted-foreground text-sm"
+                    >
+                      {round.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </details>
+          ) : null}
+        </div>
       </div>
     </div>
   );

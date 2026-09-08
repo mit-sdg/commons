@@ -5,15 +5,35 @@ import { cn } from "@/lib/utils";
 /** What a relay is, wherever an author meets one before writing it. */
 export const RELAY_LINES = [
   "A relay is a few rounds in a row. Each round can build on the answers before it. Ask for ideas, vote on them, then dig into the winner.",
-  "The model can sit in as participants and groups the answers as they come in, so two hundred answers read as a few piles.",
+  "AI can generate practice responses and group incoming answers into piles.",
 ] as const;
+
+/**
+ * What each kind is, wherever an author meets one before writing it. A quiz and
+ * a survey ask the same way and differ only in whether an answer can be right,
+ * so each says that in its first breath — it is the one thing an author cannot
+ * tell from the form.
+ */
+export const KIND_LINES = {
+  quiz: ["A quiz is questions with right answers. Every hand-in is scored."],
+  survey: [
+    "A survey is questions with no right answers. Nothing is scored; you read what comes in.",
+  ],
+  relay: RELAY_LINES,
+} as const;
+
+/** The one phrase the menu gives each kind, beside its name. */
+export const KIND_PHRASES = {
+  quiz: "Graded",
+  survey: "Not graded",
+  relay: "Rounds in a row",
+} as const;
 
 /** What the brief box takes, by what is being drafted. */
 export const BRIEF_PLACEHOLDER = {
-  questionnaire:
-    "Describe the quiz or survey you want — what you want to check the class has understood, or what you want to find out from it. Say which. The model writes the questions, and you can change anything after.",
+  questionnaire: "Describe the topic, audience, and questions you want.",
   relay:
-    "Describe the rounds you want, or just the experience you want the class to have. The model drafts the rounds, and you can change anything after.",
+    "Describe what you want the class to explore and how the rounds should build on each other.",
 } as const;
 
 /** Briefs that draft well, offered under the box in the author's own words. */
@@ -25,11 +45,11 @@ export const BRIEF_CHIPS = {
     "A survey to find out what the class already knows about databases before I teach it",
   ],
   relay: [
-    "Help the class find out what they have in common, starting from the app they'd delete first",
-    "List the concepts in the app you opened last, then pick the one it can't live without",
-    "Invent one app together over ten rounds: who it's for, what hurts, one concept at a time, then a name, then the pitch",
-    "I want the class to argue about whether likes should exist, and end with a decision",
-    "One thing to change about this class, then vote on what we fix first",
+    "Ask which app students would delete first, group their reasons, then vote on the most common reason",
+    "List the concepts in an app students use, then vote on the most essential one",
+    "Design an app over ten rounds, starting with its audience and problem and ending with a name and pitch",
+    "Collect arguments for and against social media likes, discuss them, then vote",
+    "Suggest improvements to this class, group similar ideas, then vote on what to change first",
     "Suggest a time for office hours, then vote",
   ],
 } as const;

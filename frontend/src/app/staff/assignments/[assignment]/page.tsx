@@ -4,6 +4,7 @@ import { Archive, ArrowLeft, Eye, Send } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Fact, Facts } from "@/components/facts";
 import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { Link } from "@/components/link";
 import { AssignmentForm } from "@/components/lms/assignment-form";
@@ -14,7 +15,6 @@ import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { TaskMarkdown } from "@/components/tasks/task-markdown";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,13 +23,7 @@ import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useCourse } from "@/lib/course";
-import {
-  count,
-  fromZonedInput,
-  fullTime,
-  relativeTime,
-  toZonedInput,
-} from "@/lib/format";
+import { count, dueTime, fromZonedInput, toZonedInput } from "@/lib/format";
 import {
   loadGradesForItem,
   loadLateDaysForAssignment,
@@ -312,9 +306,10 @@ function StaffAssignmentDetailPageContent({
               </h1>
               <StatusBadge status={detail.status} />
             </div>
-            <p className="text-sm text-muted-foreground">
-              {detail.kind} · Due: {fullTime(detail.dueAt)}
-            </p>
+            <Facts className="text-muted-foreground text-sm">
+              <Fact.Kind>{detail.kind}</Fact.Kind>
+              <Fact.Due verb="Due" at={detail.dueAt} />
+            </Facts>
           </div>
           <div className="flex items-center gap-2">
             {detail.status !== "ARCHIVED" ? (
@@ -333,7 +328,7 @@ function StaffAssignmentDetailPageContent({
             {detail.status === "DRAFT" && (
               <ConfirmAction
                 title="Publish this assignment?"
-                description={`${detail.audience === "EVERYONE" ? "Everyone in the course" : `${detail.targets.length} targeted section${detail.targets.length === 1 ? "" : "s"}`} will receive this assignment. It is available ${fullTime(detail.availableAt)}, due ${fullTime(detail.dueAt)}${detail.closeAt ? `, and closes ${fullTime(detail.closeAt)}` : ""}.`}
+                description={`${detail.audience === "EVERYONE" ? "Everyone in the course" : `${detail.targets.length} targeted section${detail.targets.length === 1 ? "" : "s"}`} will receive this assignment. It is available ${dueTime(detail.availableAt)}, due ${dueTime(detail.dueAt)}${detail.closeAt ? `, and closes ${dueTime(detail.closeAt)}` : ""}.`}
                 confirmLabel="Publish assignment"
                 onConfirm={publish}
                 trigger={
@@ -443,19 +438,22 @@ function StaffAssignmentDetailPageContent({
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="font-medium">{learner.displayName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {latest
-                              ? `${count(attempts.length, "attempt")} · Latest ${relativeTime(latest.submittedAt)}`
-                              : "No submission yet"}
+                          <Facts className="text-muted-foreground text-xs">
+                            {latest ? (
+                              <Fact.Count n={attempts.length} noun="attempt" />
+                            ) : (
+                              <span>No submission yet</span>
+                            )}
                             {lateDays > 0 ? (
-                              <Badge
-                                variant="secondary"
-                                className="ml-2 text-xs"
-                              >
-                                {count(lateDays, "late day")}
-                              </Badge>
+                              <Fact.Count n={lateDays} noun="late day" />
                             ) : null}
-                          </p>
+                            {latest ? (
+                              <Fact.When
+                                verb="Latest"
+                                at={latest.submittedAt}
+                              />
+                            ) : null}
+                          </Facts>
                           {attempts.length > 0 ? (
                             <div className="mt-2 space-y-2">
                               {attempts.map((attempt) => (
@@ -464,9 +462,16 @@ function StaffAssignmentDetailPageContent({
                                   className="rounded-md border border-border px-2 py-1.5 text-xs"
                                 >
                                   <summary className="cursor-pointer font-medium">
-                                    Attempt #{attempt.number} ·{" "}
-                                    {fullTime(attempt.submittedAt)} ·{" "}
-                                    {attempt.status.toLowerCase()}
+                                    <Facts as="span" className="inline-flex">
+                                      <span>Attempt #{attempt.number}</span>
+                                      <Fact.When
+                                        form="absolute"
+                                        at={attempt.submittedAt}
+                                      />
+                                      <Fact.Status
+                                        status={attempt.status.toUpperCase()}
+                                      />
+                                    </Facts>
                                   </summary>
                                   <div className="mt-2 space-y-2 border-t border-border pt-2 text-sm">
                                     {attempt.artifacts.map((artifact) =>
@@ -508,7 +513,7 @@ function StaffAssignmentDetailPageContent({
                             </span>
                           </div>
                         ) : (
-                          <Badge variant="outline">Not graded</Badge>
+                          <Fact.Status status="NOT_GRADED" label="Not graded" />
                         )}
                       </div>
 

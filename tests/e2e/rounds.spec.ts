@@ -147,6 +147,7 @@ test("a relay runs its room: forty phones, a model participant, sorting, picks, 
   expect(handedIn.wall?.handedIn).toBe(PHONES);
 
   // One model participant, invited from the dashboard, hands in on its own clock.
+  await page.getByText("AI participants", { exact: true }).click();
   await page.getByRole("textbox", { name: "Seats" }).fill("1");
   await page.getByRole("button", { name: "Invite" }).click();
   const withModel = await until(
@@ -156,7 +157,7 @@ test("a relay runs its room: forty phones, a model participant, sorting, picks, 
   expect(withModel.wall?.cards.filter((card) => card.model)).toHaveLength(3);
 
   // The model sorts: the first reply is unusable and stood upon; the repair places everything.
-  await page.getByRole("switch", { name: "Model sorts" }).click();
+  await page.getByRole("switch", { name: "Sort automatically" }).click();
   const sorted = await until(
     () => call<WallRead>(page, "/live/walls/read", { round: roundOne }),
     (value) =>

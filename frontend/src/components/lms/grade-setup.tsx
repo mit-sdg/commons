@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Fact, Facts } from "@/components/facts";
 import { LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -235,10 +236,10 @@ function GradeSetupForm({
                   >
                     <div>
                       <p className="text-sm font-medium">{criterion.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {criterion.maxPoints} points · Position{" "}
-                        {criterion.position}
-                      </p>
+                      <Facts className="text-muted-foreground text-xs">
+                        <Fact.Count n={criterion.maxPoints} noun="point" />
+                        <Fact.Count>Position {criterion.position}</Fact.Count>
+                      </Facts>
                     </div>
                     <div className="flex gap-1">
                       <Button

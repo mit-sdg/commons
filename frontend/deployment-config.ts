@@ -1,11 +1,14 @@
 export function allowedDevOriginsFromPublicOrigin(
-  publicOrigin: string | undefined,
+  ...origins: (string | undefined)[]
 ): string[] {
-  if (publicOrigin === undefined) return [];
-
-  const hostname = new URL(publicOrigin).hostname;
-  if (hostname === "" || hostname.includes("*")) {
-    throw new Error("commons: PUBLIC_ORIGIN must contain an exact hostname.");
+  const hostnames: string[] = [];
+  for (const origin of origins) {
+    if (origin === undefined || origin === "") continue;
+    const hostname = new URL(origin).hostname;
+    if (hostname === "" || hostname.includes("*")) {
+      throw new Error("commons: PUBLIC_ORIGIN and PARTICIPANT_ORIGIN must contain an exact hostname.");
+    }
+    if (!hostnames.includes(hostname)) hostnames.push(hostname);
   }
-  return [hostname];
+  return hostnames;
 }

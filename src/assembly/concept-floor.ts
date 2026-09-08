@@ -39,8 +39,6 @@ const noDatabaseSelection = (url: string): boolean => {
 };
 
 async function connectMongo(url: string): Promise<MongoClient> {
-  const v8 = await import("node:v8");
-  v8.startupSnapshot.isBuildingSnapshot = () => false;
   const { MongoClient } = await import("mongodb");
   let client: MongoClient;
   try {

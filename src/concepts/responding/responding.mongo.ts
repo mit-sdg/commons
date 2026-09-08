@@ -1,5 +1,11 @@
 import type { Collection, Db } from "mongodb";
-import { AlreadySubmitted, AnswerBlank, NoParticipant, ResponseNotFound } from "./errors.ts";
+import {
+  AlreadySubmitted,
+  AnswerBlank,
+  NoParticipant,
+  ResponseNotFound,
+  ResponseIncomplete,
+} from "./errors.ts";
 
 interface ResponseDoc {
   _id: string;
@@ -9,24 +15,16 @@ interface ResponseDoc {
   submittedAt: Date | null;
   submitted: boolean;
   seq: number;
-}
-
-interface AnswerDoc {
-  _id: string;
-  response: string;
-  item: string;
-  value: string;
-  seq: number;
+  answers: { item: string; value: string }[];
 }
 
 export class MongoRespondingConcept {
   private readonly responses: Collection<ResponseDoc>;
-  private readonly answers: Collection<AnswerDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private responseIndex: Promise<string> | undefined;
 
   constructor(db: Db) {
     this.responses = db.collection<ResponseDoc>("responding.responses");
-    this.answers = db.collection<AnswerDoc>("responding.answers");
     this.counters = db.collection("responding.counters");
   }
 
@@ -54,25 +52,35 @@ export class MongoRespondingConcept {
     if (participant.trim() === "") {
       throw new NoParticipant("A response needs someone to belong to.");
     }
+    await (this.responseIndex ??= this.responses.createIndex(
+      { subject: 1, participant: 1 },
+      { unique: true },
+    ));
     const existing = await this.responses.findOne({ subject, participant });
     if (existing !== null) {
-      if (existing.submitted) {
-        throw new AlreadySubmitted("This was already handed in.");
-      }
+      if (existing.submitted) throw new AlreadySubmitted("This was already handed in.");
       return { response: existing._id };
     }
-    const response = crypto.randomUUID();
     const seq = await this.#nextSeq("responses");
-    await this.responses.insertOne({
-      _id: response,
-      subject,
-      participant,
-      startedAt: at,
-      submittedAt: null,
-      submitted: false,
-      seq,
-    });
-    return { response };
+    const begun = await this.responses.findOneAndUpdate(
+      { subject, participant },
+      {
+        $setOnInsert: {
+          _id: crypto.randomUUID(),
+          subject,
+          participant,
+          startedAt: at,
+          submittedAt: null,
+          submitted: false,
+          seq,
+          answers: [],
+        },
+      },
+      { upsert: true, returnDocument: "after" },
+    );
+    if (begun === null) throw new Error("Beginning a response returned no response.");
+    if (begun.submitted) throw new AlreadySubmitted("This was already handed in.");
+    return { response: begun._id };
   }
 
   async answer({ response, item, value }: { response: string; item: string; value: string }) {
@@ -80,29 +88,67 @@ export class MongoRespondingConcept {
     if (said === "") {
       throw new AnswerBlank("An answer needs something in it.");
     }
-    await this.#inProgress(response);
-    const existing = await this.answers.findOne({ response, item });
-    if (existing !== null) {
-      await this.answers.updateOne({ _id: existing._id }, { $set: { value: said } });
-      return { response };
-    }
-    const seq = await this.#nextSeq("answers");
-    await this.answers.insertOne({
-      _id: crypto.randomUUID(),
-      response,
-      item,
-      value: said,
-      seq,
-    });
+    // Answers and submission share a document so a save cannot cross a
+    // completed hand-in. The pipeline replaces an existing item in place or
+    // appends it once, preserving first-answer order under concurrent saves.
+    const answered = await this.responses.updateOne({ _id: response, submitted: false }, [
+      {
+        $set: {
+          answers: {
+            $cond: [
+              { $in: [{ $literal: item }, "$answers.item"] },
+              {
+                $map: {
+                  input: "$answers",
+                  as: "answer",
+                  in: {
+                    $cond: [
+                      { $eq: ["$$answer.item", { $literal: item }] },
+                      { $literal: { item, value: said } },
+                      "$$answer",
+                    ],
+                  },
+                },
+              },
+              { $concatArrays: ["$answers", { $literal: [{ item, value: said }] }] },
+            ],
+          },
+        },
+      },
+    ]);
+    if (answered.matchedCount === 0) await this.#inProgress(response);
     return { response };
   }
 
-  async submit({ response, at }: { response: string; at: Date }) {
-    await this.#inProgress(response);
-    await this.responses.updateOne(
-      { _id: response },
+  async submit({
+    response,
+    at,
+    required = [],
+  }: {
+    response: string;
+    at: Date;
+    required?: string[][];
+  }) {
+    const submitted = await this.responses.updateOne(
+      {
+        _id: response,
+        submitted: false,
+        // Each group requires an answer to at least one of its items. The
+        // caller supplies the requirements; the response owns their check.
+        ...(required.length === 0
+          ? {}
+          : {
+              $and: required.map((items) => ({ "answers.item": { $in: items } })),
+            }),
+      },
       { $set: { submitted: true, submittedAt: at } },
     );
+    // Only the transition into Submitted succeeds. Racing hand-ins must not
+    // produce a second successful action (and therefore a second reaction).
+    if (submitted.matchedCount === 0) {
+      await this.#inProgress(response);
+      throw new ResponseIncomplete("An answer is still required.");
+    }
     return { response };
   }
 
@@ -138,8 +184,8 @@ export class MongoRespondingConcept {
   }
 
   async _answers({ response }: { response: string }) {
-    const docs = await this.answers.find({ response }).sort({ seq: 1 }).toArray();
-    return docs.map((doc) => ({ item: doc.item, value: doc.value }));
+    const doc = await this.responses.findOne({ _id: response });
+    return doc?.answers ?? [];
   }
 
   async _valuesFor({ subject, item }: { subject: string; item: string }) {
@@ -147,25 +193,23 @@ export class MongoRespondingConcept {
       .find({ subject, submitted: true })
       .sort({ submittedAt: 1, seq: 1 })
       .toArray();
-    const rows: { response: string; participant: string; value: string }[] = [];
-    for (const response of submitted) {
-      const answer = await this.answers.findOne({ response: response._id, item });
-      if (answer !== null) {
-        rows.push({
-          response: response._id,
-          participant: response.participant,
-          value: answer.value,
-        });
-      }
-    }
-    return rows;
+    return submitted.flatMap((response) => {
+      const answer = response.answers.find((answer) => answer.item === item);
+      return answer === undefined
+        ? []
+        : [
+            {
+              response: response._id,
+              participant: response.participant,
+              value: answer.value,
+            },
+          ];
+    });
   }
 
   async _collectedAnswers({ response }: { response: string }) {
     const doc = await this.responses.findOne({ _id: response });
-    if (doc === null) return [];
-    const docs = await this.answers.find({ response }).sort({ seq: 1 }).toArray();
-    return [{ answers: docs.map((entry) => ({ item: entry.item, value: entry.value })) }];
+    return doc === null ? [] : [{ answers: doc.answers }];
   }
 
   async _submittedAnswers({ subject }: { subject: string }) {
@@ -173,22 +217,14 @@ export class MongoRespondingConcept {
       .find({ subject, submitted: true })
       .sort({ submittedAt: 1, seq: 1 })
       .toArray();
-    const rows: { response: string; participant: string; item: string; value: string }[] = [];
-    for (const response of submitted) {
-      const answers = await this.answers
-        .find({ response: response._id })
-        .sort({ seq: 1 })
-        .toArray();
-      for (const answer of answers) {
-        rows.push({
-          response: response._id,
-          participant: response.participant,
-          item: answer.item,
-          value: answer.value,
-        });
-      }
-    }
-    return rows;
+    return submitted.flatMap((response) =>
+      response.answers.map((answer) => ({
+        response: response._id,
+        participant: response.participant,
+        item: answer.item,
+        value: answer.value,
+      })),
+    );
   }
 
   /** The same answers `_submittedAnswers` gives, handed over as one value. */

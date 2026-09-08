@@ -1,15 +1,11 @@
 "use client";
 
 import { CheckCircle2, Lock, MessageSquare } from "lucide-react";
+import { Fact } from "@/components/facts";
 import { CategoryBadge, TagBadge } from "@/components/forum/badges";
 import { Link } from "@/components/link";
 import { UserAvatar } from "@/components/user-avatar";
-import {
-  bodyExcerpt,
-  count,
-  relativeTime,
-  titleFromContent,
-} from "@/lib/format";
+import { bodyExcerpt, count, titleFromContent } from "@/lib/format";
 import type { ConversationSummary } from "@/lib/models";
 import { useProfile } from "@/lib/profiles";
 import { cn } from "@/lib/utils";
@@ -115,24 +111,12 @@ export function TopicRow({
                 {authorProfile?.displayName ?? "…"}
               </Link>
             </span>
-            <span aria-hidden className="hidden sm:inline">
-              ·
-            </span>
-            <time dateTime={String(summary.post.createdAt)}>
-              {relativeTime(summary.post.createdAt)}
-            </time>
-            {summary.lastActivityAt &&
+            <Fact.When at={summary.post.createdAt} />
+            {summary.replyCount > 0 &&
+            summary.lastActivityAt &&
             String(summary.lastActivityAt) !==
               String(summary.post.createdAt) ? (
-              <>
-                <span aria-hidden className="hidden sm:inline">
-                  ·
-                </span>
-                <span className="inline-flex items-center gap-1 text-xs text-primary/80">
-                  <span className="size-1 rounded-full bg-primary/60" />
-                  {relativeTime(summary.lastActivityAt)}
-                </span>
-              </>
+              <Fact.When verb="last reply" at={summary.lastActivityAt} />
             ) : null}
           </div>
         </div>

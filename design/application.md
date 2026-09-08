@@ -18,7 +18,8 @@ concrete MailKey
 concrete Lockable
   A post or conversation identity that moderation may lock, or a Publishing
   edition that is a relay run, locked while one of its rounds is open, or a
-  round, locked while a placing ask about it is out.
+  round, locked while a placing ask about it is out; or a Reasoning asking,
+  locked while its reply is applied.
 
 concrete TaskSubject
   A task-list group or task identity that a task-domain notification is about and links to.
@@ -36,6 +37,10 @@ concrete LiveRunSnapshot
   The complete structured presentation captured for one published live run, or
   for one round of a relay run.
 
+concrete LiveExecution
+  A Reasoning asking that sorts a round or summarizes a pile, or a Publishing
+  edition created when a relay round opens.
+
 concrete LiveMaterial
   What a live edition releases: a Questioning questionnaire for a quiz, survey,
   or round, or a Relaying relay for a relay run.
@@ -47,9 +52,12 @@ concrete LiveItem
 concrete LiveSubject
   What a live ask, insistence, or offering is about: a Drafting brief (a
   questionnaire being drafted), a Publishing edition (a round being sorted), a
-  Responding response (a model participant answering), or a Relaying relay (a
-  relay being drafted). The reactions that read a reply tell them apart by
-  which concept answers for the subject.
+  Responding response (a model participant answering), a Relaying relay (a
+  relay being drafted), or a Relaying leg (a round just added by a draft,
+  whose piles and note are offered about it and taken at once, and a round
+  being sampled from the editor, whose reply is read back and never taken).
+  The reactions that read a reply tell them apart by which concept answers
+  for the subject.
 
 concrete Subscriber
   Who follows something: a Commons user following a forum conversation, or a
@@ -80,9 +88,17 @@ concrete PinScope
   `sorting`, in which a pinned run is one the model sorts.
 
 concrete CategoryScope
-  Where a category's name is unique: the forum, under the reserved scope `forum`,
-  or a Publishing edition that is a round, whose categories are the piles on its
-  wall.
+  Where a category's name is unique: the forum, under the reserved scope `forum`;
+  a Relaying leg, whose categories are the piles that stand on its round's wall
+  before the room answers; or a Publishing edition that is a round, whose
+  categories are the piles on its wall.
+
+concrete GuidanceSubject
+  A Relaying leg or Publishing round edition with sorting guidance; a Relaying
+  relay or leg with host guidance; a Categorizing category with a definition
+  or summary; or a Relaying relay or Questioning questionnaire with selected
+  reference documents under `drafting`. The reserved subject `commons` holds
+  the reference library; documents enter requests only through selection.
 
 concrete Categorizable
   What is sorted into a category: a forum post, or a card on a round's wall —
@@ -92,12 +108,13 @@ concrete Categorizable
 
 ## Instances
 
-Commons selects a same-name instance of every concept it registers, except
-`Notifying`, which is registered twice: under its own name for the forum, and as
-`TaskNotifying` for the task domain. Each instance supplies its external
-parameters inline.
+Commons registers concepts under their own names and uses additional named instances where separate state is needed. Each instance supplies its external parameters inline.
 
 ```instances
+instantiate Commissioning with
+  Subject is Publishing.Edition
+  Execution is LiveExecution
+
 instantiate Trashing as Archiving with
   User is Authenticating.User
   Item is Authenticating.User
@@ -148,6 +165,9 @@ instantiate Grading with
 
 instantiate Grouping with
   Person is Authenticating.User
+
+instantiate Guiding with
+  Subject is GuidanceSubject
 
 instantiate Insisting with
   Aim is LiveSubject
@@ -425,21 +445,25 @@ draftTitle(form: String) : String
   Renders a privacy-safe default title for an adopted AI draft from its form,
   without exposing the author's request to participants.
 
-draftingPassage(request: String) : String
+draftingPassage(request: String, documents: Json) : String
   Renders the passage that asks the reasoner to draft a questionnaire from a
-  creator's plain-language request.
+  creator's plain-language request, with the selected reference documents
+  fenced between the contract and the request, and absent when none stands.
 
-revisionPassage(request: String, form: String, material: Json) : String
+revisionPassage(request: String, form: String, material: Json, documents: Json) : String
   Renders the passage that asks the reasoner to revise existing material,
-  changing only what the correction asks and otherwise preserving its form.
+  changing only what the correction asks and otherwise preserving its form,
+  with the same background block after the contract.
 
-clarifiedPassage(request: String, question: String, answer: String) : String
+clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String
   Renders the passage that resumes drafting from the original request, the
-  clarifying question, and the creator's answer.
+  clarifying question, and the creator's answer, with the same background block
+  after the contract.
 
-repairPassage(request: String, offering: String, account: String) : String
+repairPassage(request: String, offering: String, account: String, documents: Json) : String
   Renders the passage that stands on a request: the original ask, the exact
-  reply that came back, and the account of what was wrong with it.
+  reply that came back, and the account of what was wrong with it, with the
+  same background block after the contract.
 
 parseKind(reply: String) : String
   Reads a reasoner's reply and answers `draft`, `question`, or `neither` —

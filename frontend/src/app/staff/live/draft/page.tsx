@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Fact } from "@/components/facts";
 import { Link } from "@/components/link";
 import { BRIEF_CHIPS, BRIEF_PLACEHOLDER } from "@/components/live/brief-chips";
 import { titleFromBrief } from "@/components/live/copy-relay";
@@ -12,6 +13,7 @@ import { DraftDescribe } from "@/components/live/draft-describe";
 import type { DraftLineStep } from "@/components/live/draft-step";
 import { DraftStep } from "@/components/live/draft-step";
 import { KIND_SEGMENT } from "@/components/live/quiz-meta";
+import { ReferencePicker } from "@/components/live/reference-documents";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -21,13 +23,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@/hooks/use-query";
 import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { relativeTime } from "@/lib/format";
 
-// One segment for a quiz or a survey: the brief says which, and the model
-// asks when the brief could be either. The kind reaches the describe endpoint
-// nowhere else, so two segments would only pretend to send it.
+// The selected activity type is sent with the drafting request.
 const KINDS = [
-  { kind: "questionnaire", label: "Quiz or survey" },
+  { kind: "quiz", label: "Quiz" },
+  { kind: "survey", label: "Survey" },
   { kind: "relay", label: "Relay" },
 ] as const;
 
@@ -98,15 +98,12 @@ function DraftPageContent() {
   const { me } = useAuth();
   const author = me === null ? null : String(me.user);
   const named = searchParams.get("brief");
-  // A link may still ask for a quiz or a survey by name; both are the one segment.
+  // Creation links preserve the selected activity type.
   const askedKind = searchParams.get("kind");
-  const askedFor =
-    askedKind === "quiz" || askedKind === "survey"
-      ? "questionnaire"
-      : askedKind;
   const [kind, setKind] = useState<Kind>(
-    isKind(askedFor) ? askedFor : "questionnaire",
+    isKind(askedKind ?? "") ? (askedKind as Kind) : "quiz",
   );
+  const [references, setReferences] = useState<string[]>([]);
   const [brief, setBrief] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
   const [resumed, setResumed] = useState(false);
@@ -217,7 +214,11 @@ function DraftPageContent() {
     async (request: string) => {
       if (author === null) return;
       setDescribing(true);
-      const result = await api["/live/drafts/describe"]({ request });
+      const result = await api["/live/drafts/describe"]({
+        request,
+        kind,
+        references,
+      });
       setDescribing(false);
       if (isApiError(result)) {
         toast.error(publicErrorMessage(result.error));
@@ -230,7 +231,7 @@ function DraftPageContent() {
       setResumed(false);
       setBrief(result.brief);
     },
-    [author],
+    [author, kind, references],
   );
 
   // A relay is drafted onto a relay of its own: the brief names it, the model
@@ -246,11 +247,20 @@ function DraftPageContent() {
         toast.error(publicErrorMessage(planned.error));
         return;
       }
+      const selected = await api["/live/references/select"]({
+        subject: planned.relay,
+        references,
+      });
+      if (isApiError(selected)) {
+        setDescribing(false);
+        toast.error(publicErrorMessage(selected.error));
+        return;
+      }
       router.push(
         `/staff/live/relay/${planned.relay}/edit?ask=${encodeURIComponent(request)}`,
       );
     },
-    [router],
+    [router, references],
   );
 
   const clarify = useCallback(
@@ -365,7 +375,7 @@ function DraftPageContent() {
             <ConfirmAction
               trigger={
                 <Button variant="outline" disabled={busy}>
-                  Abandon and start new
+                  Discard draft and start over
                 </Button>
               }
               title="Leave this draft?"
@@ -384,7 +394,7 @@ function DraftPageContent() {
         <>
           <Tabs
             value={kind}
-            className="mb-6"
+            className="mb-4"
             onValueChange={(value) => {
               if (isKind(value)) setKind(value);
             }}
@@ -401,11 +411,24 @@ function DraftPageContent() {
               ))}
             </TabsList>
           </Tabs>
+          <div className="mb-4">
+            <ReferencePicker
+              value={references}
+              onChange={setReferences}
+              disabled={describing}
+            />
+          </div>
           <DraftDescribe
             submitting={describing}
             onSubmit={kind === "relay" ? draftRelay : describe}
-            placeholder={BRIEF_PLACEHOLDER[kind]}
-            chips={BRIEF_CHIPS[kind]}
+            placeholder={
+              BRIEF_PLACEHOLDER[kind === "relay" ? "relay" : "questionnaire"]
+            }
+            chips={BRIEF_CHIPS[
+              kind === "relay" ? "relay" : "questionnaire"
+            ].filter(
+              (chip) => kind === "relay" || chip.toLowerCase().includes(kind),
+            )}
             label="Draft"
           />
           {kind !== "relay" && unfinished.length > 0 ? (
@@ -430,9 +453,11 @@ function DraftPageContent() {
                       {entry.stalled ? (
                         <Badge variant="outline">Stalled</Badge>
                       ) : null}
-                      <span className="whitespace-nowrap text-muted-foreground text-xs">
-                        Started {relativeTime(entry.createdAt)}
-                      </span>
+                      <Fact.When
+                        verb="Started"
+                        at={entry.createdAt}
+                        className="whitespace-nowrap text-xs"
+                      />
                     </span>
                   </Link>
                 ))}

@@ -6,6 +6,8 @@ Sort items into named categories within a scope. Each item belongs to at most
 one category, so its home and each category's contents can be read directly,
 and two scopes may each have a category of the same name without confusion.
 
+Prevents: an item in two categories at once; two categories of one name in one scope; a merge leaving an item behind.
+
 ## Principle
 
 Priya creates a Homework category in the course forum and assigns a quiz to
@@ -46,6 +48,7 @@ a set of Categorized with
 Rule: at most one categorized entry has each item, so an item belongs to at most one category.
 Rule: a category's name is unique within its scope; the same name in another scope names another category.
 Rule: a category's scope is fixed when it is created.
+Rule: deleting an empty category and assigning an item take effect in order; deletion cannot discard a concurrently assigned membership.
 Rule: items and scopes are opaque identities; Categorizing neither creates nor validates them.
 ```
 
@@ -134,6 +137,33 @@ unassign(item: Item) : return (item: Item)
   where item not in categorized
   then
     refuse ITEM_NOT_CATEGORIZED "This item is not in any category."
+deleteEmptyCategory(category: Category) : return (category: Category, deleted: Boolean)
+  where category exists and holds no items
+  then
+    delete category
+    set deleted to true
+    return category, deleted
+  where category does not exist or holds any item
+  then
+    leave categories and memberships unchanged
+    set deleted to false
+    return category, deleted
+
+empty(scope: Scope) : return (emptied: Boolean)
+  where true
+  then
+    remove the memberships of every item in a category of scope
+    leave the categories themselves unchanged
+    set emptied to whether any membership was removed
+    return emptied
+
+deleteEmptyCategories(categories: Seq) : return (deleted: Boolean)
+  where true
+  then
+    for each category in categories, delete it only if it still exists and holds no items
+    set deleted to whether any category was deleted
+    return deleted
+
 deleteCategory(category: Category) : return (category: Category)
   where category in categories
   then
@@ -173,4 +203,11 @@ _categoriesWithItems (scope: String) : one (categories: Seq)
   `{ category, name, description, items }` entries in creation order, each
   items entry the category's items in assignment order
   answers an empty sequence when the scope has no categories
+
+_categoriesInScopes (scopes: Seq) : one (categories: Seq)
+  answers several scopes back as one value: an ordered sequence of
+  `{ scope, category, name, description }` entries, each scope's categories in
+  creation order, the scopes in the order given
+  answers an empty sequence when the given sequence is empty or no scope has
+  a category
 ```

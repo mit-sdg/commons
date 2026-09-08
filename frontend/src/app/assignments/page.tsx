@@ -2,17 +2,17 @@
 
 import { BookOpen, ChevronRight, Search } from "lucide-react";
 import { useState } from "react";
+import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fullTime, relativeTime } from "@/lib/format";
+
 import {
   loadAssignments,
   loadGradesForMe,
@@ -254,44 +254,36 @@ export default function AssignmentsPage() {
                   <div className="flex items-center gap-2">
                     <p className="font-medium truncate">{title}</p>
                     {detail?.kind && (
-                      <Badge variant="secondary" className="text-xs shrink-0">
+                      <Fact.Kind>
                         {KIND_LABELS[detail.kind] ?? detail.kind}
-                      </Badge>
+                      </Fact.Kind>
                     )}
                   </div>
-                  <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                    {due && (
-                      <span title={fullTime(due)}>
-                        Due: {relativeTime(due)}
-                      </span>
-                    )}
+                  <Facts className="mt-1 text-xs text-muted-foreground">
+                    {due && <Fact.Due verb="Due" at={due} />}
                     {sub && (
-                      <span className="text-blue-600">
-                        Submitted #{sub.number}
+                      <span className="text-muted-foreground">
+                        Attempt #{sub.number}
                       </span>
                     )}
                     {grade && grade.status === "RELEASED" && (
-                      <span className="text-emerald-600">
-                        Grade: {grade.score}/{grade.maxPoints}
+                      <span>
+                        <span className="text-muted-foreground">Grade</span>{" "}
+                        <span className="font-medium text-foreground tabular-nums">
+                          {grade.score}/{grade.maxPoints}
+                        </span>
                       </span>
                     )}
-                    {grade && grade.status === "EXCUSED" && (
-                      <span className="text-purple-600">Excused</span>
-                    )}
-                  </div>
+                  </Facts>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {grade && <StatusBadge status={grade.status} />}
                   {!grade && sub && <StatusBadge status="SUBMITTED" />}
                   {!grade && !sub && isOverdue && (
-                    <Badge variant="destructive" className="text-xs">
-                      Overdue
-                    </Badge>
+                    <Fact.Status status="OVERDUE" />
                   )}
                   {!grade && !sub && !isOverdue && (
-                    <Badge variant="outline" className="text-xs">
-                      Pending
-                    </Badge>
+                    <Fact.Status status="PENDING" />
                   )}
                   <ChevronRight className="size-4 text-muted-foreground" />
                 </div>

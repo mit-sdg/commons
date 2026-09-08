@@ -19,6 +19,8 @@ export default defineConfig({
   reporter: [["list"]],
   outputDir: resolve(root, "test-results/tour"),
   use: {
+    actionTimeout: 20_000,
+    navigationTimeout: 30_000,
     baseURL: `http://127.0.0.1:${WEB_PORT}`,
     trace: "retain-on-failure",
   },

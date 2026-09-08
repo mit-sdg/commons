@@ -13,21 +13,39 @@ import {
   whether,
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
+import { COMMONS } from "../access/capabilities.ts";
 import { activeUser } from "../access/session.ts";
 import {
   mayHostLive,
   mayNotHostLive,
   questionnaireHasAnOpenRun,
   questionnaireHasNoOpenRun,
+  relayIsNotRetired,
+  relayIsRetired,
   theItemCount,
   theQuestionCount,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
-const { AdoptLinking, Drafting, DraftTrashing, Insisting, Questioning, Reasoning } = concepts;
+const {
+  AdoptLinking,
+  Drafting,
+  DraftTrashing,
+  Guiding,
+  Insisting,
+  Questioning,
+  Reasoning,
+  Relaying,
+} = concepts;
 
 /** The one reasoner name this composition asks for; the floor decides what answers it. */
 const REASONER = "gemini-flash";
+
+/**
+ * Library documents use this guidance category. Activities and drafting lines
+ * choose references explicitly; library membership never implies inclusion.
+ */
+export const DRAFTING_USE = "drafting";
 
 /** How many times an unusable reply is stood upon before the brief stalls. */
 const PATIENCE = 3;
@@ -47,40 +65,53 @@ const theDraftRoot = view(
     ),
 ).one();
 
-/** A described brief goes straight before the reasoner. */
-export const DescribedBriefAsksReasoner = reaction(({ brief, request, passage, at }) =>
+const draftDocuments = view(
+  "the selected documents for (brief)",
+  ({ brief }, { documents }, { context, references }) =>
+    where(
+      Drafting._context({ brief }).is({ context }),
+      compute(computations.draftReferences, { context }, references),
+      Guiding._documentsById({ guidances: references, use: DRAFTING_USE }).is({ documents }),
+    ),
+).one();
+
+/** A described brief goes straight before the reasoner, with the class's background. */
+export const DescribedBriefAsksReasoner = reaction(({ brief, request, documents, passage, at }) =>
   when(Drafting.describe({ request }).responds({ brief }))
     .where(
       now(at),
       theDraftRoot({ brief }).is({ abandoned: false }),
-      compute(computations.draftingPassage, { request }, passage),
+      draftDocuments({ brief }).is({ documents }),
+      compute(computations.draftingPassage, { request, documents }, passage),
     )
     .then(Reasoning.ask({ reasoner: REASONER, about: brief, passage, at })),
 );
 
 /** A correction carries the prior material and asks again. */
 export const CorrectedBriefAsksReasoner = reaction(
-  ({ brief, candidate, request, form, material, passage, at }) =>
+  ({ brief, candidate, request, form, material, documents, passage, at }) =>
     when(Drafting.correct({ candidate, request }).responds({ brief }))
       .where(
         now(at),
         theDraftRoot({ brief }).is({ abandoned: false }),
         Drafting._material({ candidate }).is({ form, material }),
-        compute(computations.revisionPassage, { request, form, material }, passage),
+        draftDocuments({ brief }).is({ documents }),
+        compute(computations.revisionPassage, { request, form, material, documents }, passage),
       )
       .then(Reasoning.ask({ reasoner: REASONER, about: brief, passage, at })),
 );
 
 /** An answered clarification resumes drafting from the whole exchange. */
 export const ClarifiedBriefAsksReasoner = reaction(
-  ({ clarification, brief, question, answer, request, passage, at }) =>
+  ({ clarification, brief, question, answer, request, documents, passage, at }) =>
     when(Drafting.clarify({ clarification, answer }).responds({ brief }))
       .where(
         now(at),
         theDraftRoot({ brief }).is({ abandoned: false }),
         Drafting._clarifications({ brief }).is({ clarification, question }),
         Drafting._brief({ brief }).is({ request }),
-        compute(computations.clarifiedPassage, { request, question, answer }, passage),
+        draftDocuments({ brief }).is({ documents }),
+        compute(computations.clarifiedPassage, { request, question, answer, documents }, passage),
       )
       .then(Reasoning.ask({ reasoner: REASONER, about: brief, passage, at })),
 );
@@ -175,7 +206,7 @@ export const AskedQuestionSatisfiesInsistence = reaction(({ brief }) =>
 
 /** While patience remains, a complaint carries the exchange back to the reasoner. */
 export const ComplaintRetriesTheAsk = reaction(
-  ({ brief, offering, account, request, passage, at }) =>
+  ({ brief, offering, account, request, documents, passage, at }) =>
     when(Insisting.complain({ aim: brief, offering, account }).responds())
       .where(
         now(at),
@@ -183,7 +214,8 @@ export const ComplaintRetriesTheAsk = reaction(
         theDraftRoot({ brief }).is({ abandoned: false }),
         Insisting._standingFor({ aim: brief }),
         Drafting._brief({ brief }).is({ request }),
-        compute(computations.repairPassage, { request, offering, account }, passage),
+        draftDocuments({ brief }).is({ documents }),
+        compute(computations.repairPassage, { request, offering, account, documents }, passage),
       )
       .then(Reasoning.ask({ reasoner: REASONER, about: brief, passage, at })),
 );
@@ -567,17 +599,27 @@ export const theProvenance = former(
 
 export const Describe = endpoint(
   "/live/drafts/describe",
-  ({ session, request, user, at, brief }) =>
-    receive({ session, request }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
-        .then(Drafting.describe({ author: user, request, at }).responds({ brief }))
+  ({ session, request, kind, references, context, typedRequest, user, at, brief }) =>
+    receive({ session, request, kind, references }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.draftContext, { references, kind }, context),
+        compute(computations.draftRequest, { request, kind }, typedRequest),
+      )
+        .then(
+          Drafting.describe({ author: user, request: typedRequest, at, context }).responds({
+            brief,
+          }),
+        )
         .then(respond({ brief }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
-  { input: { required: ["session", "request"] } },
+  { input: { required: ["session", "request"], defaults: { kind: "", references: [] } } },
 );
 
 export const Line = endpoint(
@@ -696,7 +738,19 @@ export const Correct = endpoint(
 
 export const Refine = endpoint(
   "/live/drafts/refine",
-  ({ session, questionnaire, user, at, title, form, material, brief, candidate }) =>
+  ({
+    session,
+    questionnaire,
+    user,
+    at,
+    title,
+    form,
+    material,
+    brief,
+    candidate,
+    references,
+    context,
+  }) =>
     receive({ session, questionnaire }).then(
       where(
         now(at),
@@ -705,6 +759,10 @@ export const Refine = endpoint(
         Questioning._getQuestionnaire({ questionnaire }).is({ title, retired: false }),
         questionnaireHasNoOpenRun({ questionnaire }),
         Questioning._material({ questionnaire }).is({ form, material }),
+        Guiding._selection({ subject: questionnaire, use: DRAFTING_USE }).is({
+          guidances: references,
+        }),
+        compute(computations.draftContext, { references, kind: form }, context),
       )
         .then(
           Drafting.open({
@@ -713,6 +771,7 @@ export const Refine = endpoint(
             form,
             material,
             origin: questionnaire,
+            context,
             at,
           }).responds({ brief, candidate }),
         )
@@ -896,4 +955,367 @@ export const Adopt = endpoint(
         .named("forbidden"),
     ),
   { input: { required: ["session", "candidate"] } },
+);
+
+/** A relay that stands to carry documents: one that exists and is not retired. */
+const relayStands = view("(relay) stands", ({ relay }, _outputs, _bindings) =>
+  where(Relaying._relay({ relay }), relayIsNotRetired({ relay })),
+).holds();
+
+/**
+ * A background document is one entry of guidance under `drafting`, given after
+ * the last: on the relay when one is named, and otherwise on the class, so the
+ * questionnaire passages, which have no relay, read the class's alone. Guiding's
+ * own refusals — a body over its limit, a title over its own — pass through.
+ */
+export const GiveDocument = endpoint(
+  "/live/drafts/give-document",
+  ({ session, relay, title, body, user, at, named, document }) =>
+    receive({ session, relay, title, body }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.relayGiven, { relay }, named),
+        is.among(named, ["given"]),
+        relayStands({ relay }),
+      )
+        .then(
+          Guiding.give({ subject: relay, use: DRAFTING_USE, title, body }).responds({
+            guidance: document,
+          }),
+        )
+        .then(respond({ document }))
+        .named("relay"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.relayGiven, { relay }, named),
+        is.among(named, ["none"]),
+      )
+        .then(
+          Guiding.give({ subject: COMMONS, use: DRAFTING_USE, title, body }).responds({
+            guidance: document,
+          }),
+        )
+        .then(respond({ document }))
+        .named("class"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.relayGiven, { relay }, named),
+        is.among(named, ["given"]),
+        Relaying._relay({ relay }),
+        relayIsRetired({ relay }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.relayGiven, { relay }, named),
+        is.among(named, ["given"]),
+        no(Relaying._relay({ relay })),
+      )
+        .then(respond({ error: "RELAY_NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "title", "body"], defaults: { relay: "" } } },
+);
+
+/**
+ * What a background document stands beside, read from the document itself:
+ * a relay when it belongs to that series, and the class otherwise. Guidance
+ * under any other use is no document of the drafter's, so it answers nothing
+ * and revising or removing it is refused as a missing one is.
+ */
+const theDocumentSubject = view(
+  "the subject of background document (document)",
+  ({ document }, { subject }, { use }) =>
+    where(
+      Guiding._guidance({ guidance: document }).is({ subject, use }),
+      is.among(use, [DRAFTING_USE]),
+    ),
+).optional();
+
+/**
+ * A document is rewritten where it stands, name and text together, so the
+ * drafter reads the new words in the position the old ones held. What the
+ * document stands beside is what decides whether a retired relay refuses it.
+ */
+export const ReviseDocument = endpoint(
+  "/live/drafts/revise-document",
+  ({ session, document, title, body, user, at, subject, revised }) =>
+    receive({ session, document, title, body }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDocumentSubject({ document }).is({ subject }),
+        relayStands({ relay: subject }),
+      )
+        .then(Guiding.revise({ guidance: document, title, body }).responds({ guidance: revised }))
+        .then(respond({ document: revised }))
+        .named("relay"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDocumentSubject({ document }).is({ subject }),
+        is.among(subject, [COMMONS]),
+      )
+        .then(Guiding.revise({ guidance: document, title, body }).responds({ guidance: revised }))
+        .then(respond({ document: revised }))
+        .named("class"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDocumentSubject({ document }).is({ subject }),
+        Relaying._relay({ relay: subject }),
+        relayIsRetired({ relay: subject }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(theDocumentSubject({ document })),
+      )
+        .then(respond({ error: "GUIDANCE_NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "document", "title", "body"] } },
+);
+
+/**
+ * A document is taken away and the rest keep the order they were given in.
+ * One that must move is removed and given again, which is the only reordering
+ * there is.
+ */
+export const RemoveDocument = endpoint(
+  "/live/drafts/remove-document",
+  ({ session, document, user, at, subject }) =>
+    receive({ session, document }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDocumentSubject({ document }).is({ subject }),
+        relayStands({ relay: subject }),
+      )
+        .then(Guiding.remove({ guidance: document }).responds())
+        .then(respond({ removed: true }))
+        .named("relay"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDocumentSubject({ document }).is({ subject }),
+        is.among(subject, [COMMONS]),
+      )
+        .then(Guiding.remove({ guidance: document }).responds())
+        .then(respond({ removed: true }))
+        .named("class"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theDocumentSubject({ document }).is({ subject }),
+        Relaying._relay({ relay: subject }),
+        relayIsRetired({ relay: subject }),
+      )
+        .then(respond({ error: "RELAY_RETIRED" }))
+        .named("retired"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(theDocumentSubject({ document })),
+      )
+        .then(respond({ error: "GUIDANCE_NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "document"] } },
+);
+
+/**
+ * The documents standing beside one subject: a relay's when a relay is named,
+ * and the class's when none is — the same two subjects the give writes to.
+ */
+const theDocumentRowsOf = view(
+  "the background document rows of (relay)",
+  ({ relay }, { document, title, body }, { named }) => [
+    where(
+      compute(computations.relayGiven, { relay }, named),
+      is.among(named, ["given"]),
+      Guiding._guidanceFor({ subject: relay, use: DRAFTING_USE }).is({
+        guidance: document,
+        title,
+        body,
+      }),
+    ),
+    where(
+      compute(computations.relayGiven, { relay }, named),
+      is.among(named, ["none"]),
+      Guiding._guidanceFor({ subject: COMMONS, use: DRAFTING_USE }).is({
+        guidance: document,
+        title,
+        body,
+      }),
+    ),
+  ],
+);
+
+/** The background documents of a relay, or of the class, each under its name. */
+export const theDocumentsOf = former(
+  "the background documents of (relay)",
+  ({ relay }, { document, title, body }) =>
+    each(theDocumentRowsOf({ relay }).is({ document, title, body })).form({
+      document,
+      title,
+      body,
+    }),
+);
+
+/**
+ * What the drafter reads: the editor's Background card asks for a relay's, the
+ * class's page for the class's, and the draft page for what it says in one
+ * line. A retired relay keeps its documents and still answers them.
+ */
+export const ReadDocuments = endpoint(
+  "/live/drafts/documents",
+  ({ session, relay, user, at, named }) =>
+    receive({ session, relay }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.relayGiven, { relay }, named),
+        is.among(named, ["given"]),
+        Relaying._relay({ relay }),
+      )
+        .then(respond({ documents: theDocumentsOf({ relay }) }))
+        .named("relay"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.relayGiven, { relay }, named),
+        is.among(named, ["none"]),
+      )
+        .then(respond({ documents: theDocumentsOf({ relay }) }))
+        .named("class"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.relayGiven, { relay }, named),
+        is.among(named, ["given"]),
+        no(Relaying._relay({ relay })),
+      )
+        .then(respond({ error: "RELAY_NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session"], defaults: { relay: "" } } },
+);
+
+export const AdoptedReferences = reaction(
+  ({ source, targets, context, references, existing, questionnaire }) =>
+    when(AdoptLinking.setLinks({ source, targets }).responds())
+      .where(
+        Drafting._context({ brief: source }).is({ context }),
+        compute(computations.draftReferences, { context }, references),
+        AdoptLinking._getLinks({ source }).is({ target: questionnaire }),
+        Guiding._documentsById({ guidances: references, use: DRAFTING_USE }).is({
+          guidances: existing,
+        }),
+      )
+      .then(Guiding.select({ subject: questionnaire, use: DRAFTING_USE, guidances: existing })),
+);
+
+const referenceSubject = view(
+  "reference activity (subject)",
+  ({ subject }, _outputs, _bindings) => [
+    where(Relaying._relay({ relay: subject })),
+    where(Questioning._getQuestionnaire({ questionnaire: subject })),
+  ],
+).holds();
+
+const editableReferenceSubject = view(
+  "editable reference activity (subject)",
+  ({ subject }, _outputs, _bindings) => [
+    where(Relaying._relay({ relay: subject }), relayIsNotRetired({ relay: subject })),
+    where(Questioning._getQuestionnaire({ questionnaire: subject }).is({ retired: false })),
+  ],
+).holds();
+
+export const ReadReferences = endpoint(
+  "/live/references/get",
+  ({ session, subject, user, guidances, documents }) =>
+    receive({ session, subject }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        referenceSubject({ subject }),
+        Guiding._selection({ subject, use: DRAFTING_USE }).is({ guidances }),
+        Guiding._selectedDocuments({ subject, use: DRAFTING_USE }).is({ documents }),
+      )
+        .then(respond({ references: guidances, documents }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(referenceSubject({ subject })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "subject"] } },
+);
+
+export const SelectReferences = endpoint(
+  "/live/references/select",
+  ({ session, subject, references, user }) =>
+    receive({ session, subject, references }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        editableReferenceSubject({ subject }),
+      )
+        .then(Guiding.select({ subject, use: DRAFTING_USE, guidances: references }).responds())
+        .then(respond({ selected: true }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        referenceSubject({ subject }),
+        no(editableReferenceSubject({ subject })),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("retired"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(referenceSubject({ subject })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "subject", "references"] } },
 );

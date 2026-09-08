@@ -19,3 +19,8 @@ without duplicating a concept's own suite.
 Assembled read-backs, wire contracts, and transcripts are test evidence.
 Change their authored concept or composition source and regenerate them; do not
 edit a generated fixture to change behavior.
+
+Keep experimental prompt runners, candidate prompts, raw model replies, traces,
+and dated rehearsal reports outside the tracked tree. Local outputs belong in
+`test-results/`. Retain focused regression tests for shipped behavior; fixtures
+used by those tests belong beside the tests, independent of experiment archives.

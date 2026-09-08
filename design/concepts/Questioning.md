@@ -6,6 +6,8 @@ Let an author compose a questionnaire — ordered questions, each with a prompt,
 offered choices, and, when the author proposes one, an expected answer — and
 revise it freely for as long as it stays in the author's hands.
 
+Prevents: a question that both offers choices and takes parts; an expected answer that is none of the choices offered; a retired questionnaire changed after its teaching life.
+
 ## Principle
 
 Professor Lee composes a five-question quiz about photosynthesis. She adds each
@@ -259,6 +261,11 @@ retire (questionnaire: Questionnaire) : return (questionnaire: Questionnaire)
 ## Queries
 
 ```queries
+_content (questionnaire: String) : optional (content: Json)
+  answers the title, form, disclosure, and ordered questions with their identities as one value
+  answers no row when the questionnaire does not exist
+
+
 _getQuestionnaire (questionnaire: String) : optional (author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)
   answers the complete Questionnaire
   answers no row when the Questionnaire does not exist

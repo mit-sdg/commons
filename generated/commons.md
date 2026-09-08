@@ -53,10 +53,10 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Instances
 
-- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 105.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 107.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 106.
-  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 108.
+- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 122.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 124.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 123.
+  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 125.
 
 ### Authenticating
 
@@ -93,7 +93,7 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 110.
+- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 127.
 
 ### Banking
 
@@ -128,9 +128,9 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Instances
 
-- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 112.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 114.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 113.
+- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 129.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 131.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 130.
 
 ### Bookmarking
 
@@ -151,9 +151,9 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Instances
 
-- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 116.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 118.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 117.
+- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 133.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 135.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 134.
 
 ### Categorizing
 
@@ -178,6 +178,9 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
   - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
 - `unassign(item: Item) : return (item: Item)`
   - Refuses `ITEM_NOT_CATEGORIZED`: This item is not in any category.
+- `deleteEmptyCategory(category: Category) : return (category: Category, deleted: Boolean)`
+- `empty(scope: Scope) : return (emptied: Boolean)`
+- `deleteEmptyCategories(categories: Seq) : return (deleted: Boolean)`
 - `deleteCategory(category: Category) : return (category: Category)`
   - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
 
@@ -189,12 +192,43 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 - `_getItems(category: String) : many (item: String)`
 - `_categoriesIn(scope: String) : many (category: String, name: String, description: String)`
 - `_categoriesWithItems(scope: String) : one (categories: Seq)`
+- `_categoriesInScopes(scopes: Seq) : one (categories: Seq)`
 
 #### Instances
 
-- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 120.
-  - `Item` is `Categorizable` — [Commons application](../design/application.md), line 122.
-  - `Scope` is `CategoryScope` — [Commons application](../design/application.md), line 121.
+- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 137.
+  - `Item` is `Categorizable` — [Commons application](../design/application.md), line 139.
+  - `Scope` is `CategoryScope` — [Commons application](../design/application.md), line 138.
+
+### Commissioning
+
+Defined in [Commissioning](../design/concepts/Commissioning.md), line 1.
+
+#### Actions
+
+- `prepare(subject: Subject, brief: String, account: String, at: Date) : return (commission: Commission, subject: Subject, status: String, account: String, brief: String)`
+- `accept(commission: Commission, at: Date) : return (commission: Commission, brief: String)`
+  - Refuses `COMMISSION_NOT_FOUND`: There is no such commission.
+  - Refuses `COMMISSION_NOT_PREPARED`: Only a prepared commission can be accepted.
+- `assign(commission: Commission, execution: Execution, at: Date) : return (commission: Commission, execution: Execution)`
+  - Refuses `COMMISSION_NOT_FOUND`: There is no such commission.
+  - Refuses `COMMISSION_NOT_PREPARED`: Only an accepted undertaking can receive an execution.
+- `report(execution: Execution, successful: Boolean, account: String, at: Date) : return (execution: Execution, successful: Boolean, account: String)`
+- `conclude(commission: Commission, successful: Boolean, account: String, at: Date) : return (commission: Commission, status: String, account: String)`
+  - Refuses `COMMISSION_NOT_FOUND`: There is no such commission.
+
+#### Queries
+
+- `_receipt(execution: String) : optional (successful: Boolean, account: String, at: Date)`
+- `_commission(commission: String) : optional (subject: String, brief: String, status: String, account: String, executions: Seq, createdAt: Date, updatedAt: Date)`
+- `_forExecution(execution: String) : many (commission: String, subject: String, status: String)`
+- `_forSubject(subject: String) : many (commission: String, status: String, account: String, brief: String, executions: Seq)`
+
+#### Instances
+
+- `Commissioning` — instance of `Commissioning` — [Commons application](../design/application.md), line 114.
+  - `Execution` is `LiveExecution` — [Commons application](../design/application.md), line 116.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 115.
 
 ### Conversing
 
@@ -224,8 +258,8 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Instances
 
-- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 124.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 125.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 141.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 142.
 
 ### Drafting
 
@@ -233,8 +267,8 @@ Defined in [Drafting](../design/concepts/Drafting.md), line 1.
 
 #### Actions
 
-- `describe(author: Author, request: String, at: Date) : return (brief: Brief)`
-- `open(author: Author, request: String, form: String, material: Seq, origin: Origin, at: Date) : return (brief: Brief, candidate: Candidate)`
+- `describe(author: Author, request: String, at: Date, context?: String) : return (brief: Brief)`
+- `open(author: Author, request: String, form: String, material: Seq, origin: Origin, at: Date, context?: String) : return (brief: Brief, candidate: Candidate)`
 - `correct(author: Author, candidate: Candidate, request: String, at: Date) : return (brief: Brief)`
   - Refuses `CANDIDATE_NOT_FOUND`: There is no such draft to correct.
   - Refuses `ALREADY_ADOPTED`: This draft was already adopted; edit it directly instead.
@@ -259,6 +293,7 @@ Defined in [Drafting](../design/concepts/Drafting.md), line 1.
 
 #### Queries
 
+- `_context(brief: String) : one (context: String)`
 - `_brief(brief: String) : optional (author: String, request: String, createdAt: Date, basis: String | Null)`
 - `_briefs(author: String) : many (brief: String, request: String, createdAt: Date, basis: String | Null)`
 - `_lines(author: String) : many (brief: String, request: String, createdAt: Date, origin: String | Null, adopted: Boolean, stalled: Boolean, clarifying: Boolean)`
@@ -276,9 +311,9 @@ Defined in [Drafting](../design/concepts/Drafting.md), line 1.
 
 #### Instances
 
-- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 127.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 128.
-  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 129.
+- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 144.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 145.
+  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 146.
 
 ### Flagging
 
@@ -300,9 +335,9 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Instances
 
-- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 135.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 137.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 136.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 152.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 154.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 153.
 
 ### Formatting
 
@@ -319,8 +354,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Instances
 
-- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 139.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 140.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 156.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 157.
 
 ### Grading
 
@@ -357,12 +392,12 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Instances
 
-- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 142.
-  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 146.
-  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 147.
-  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 143.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 145.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 144.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 159.
+  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 163.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 164.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 160.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 162.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 161.
 
 ### Grouping
 
@@ -397,8 +432,50 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Instances
 
-- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 149.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 150.
+- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 166.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 167.
+
+### Guiding
+
+Defined in [Guiding](../design/concepts/Guiding.md), line 1.
+
+#### Actions
+
+- `select(subject: Subject, use: String, guidances: Seq) : return (subject: Subject)`
+  - Refuses `INVALID_USE`: Guidance needs a use.
+  - Refuses `GUIDANCE_NOT_FOUND`: A selected document no longer exists.
+- `give(subject: Subject, use: String, title: String, body: String) : return (guidance: Guidance)`
+  - Refuses `INVALID_USE`: Guidance needs a use.
+  - Refuses `INVALID_TITLE`: The title must be at most 200 characters long.
+  - Refuses `INVALID_GUIDANCE`: Guidance must be 1 to 40000 characters long.
+- `set(subject: Subject, use: String, title: String, body: String) : return (guidance: Guidance)`
+  - Refuses `INVALID_USE`: Guidance needs a use.
+  - Refuses `INVALID_TITLE`: The title must be at most 200 characters long.
+  - Refuses `INVALID_GUIDANCE`: Guidance must be 1 to 40000 characters long.
+- `revise(guidance: Guidance, title: String, body: String) : return (guidance: Guidance)`
+  - Refuses `GUIDANCE_NOT_FOUND`: There is no such guidance.
+  - Refuses `INVALID_TITLE`: The title must be at most 200 characters long.
+  - Refuses `INVALID_GUIDANCE`: Guidance must be 1 to 40000 characters long.
+- `remove(guidance: Guidance) : return (guidance: Guidance)`
+  - Refuses `GUIDANCE_NOT_FOUND`: There is no such guidance.
+- `clear(subject: Subject, use: String) : return (cleared: Boolean)`
+  - Refuses `INVALID_USE`: Guidance needs a use.
+
+#### Queries
+
+- `_selection(subject: String, use: String) : one (guidances: Seq)`
+- `_documentsById(guidances: Seq, use: String) : one (documents: Seq, guidances: Seq)`
+- `_selectedDocuments(subject: String, use: String) : one (documents: Seq)`
+- `_guidanceFor(subject: String, use: String) : many (guidance: String, title: String, body: String)`
+- `_guidance(guidance: String) : optional (subject: String, use: String, title: String, body: String)`
+- `_guidanceText(subject: String, use: String) : one (text: String)`
+- `_guidanceTexts(subjects: Seq, use: String) : one (texts: Seq)`
+- `_documents(subject: String, use: String) : one (documents: Seq)`
+
+#### Instances
+
+- `Guiding` — instance of `Guiding` — [Commons application](../design/application.md), line 169.
+  - `Subject` is `GuidanceSubject` — [Commons application](../design/application.md), line 170.
 
 ### Insisting
 
@@ -424,8 +501,8 @@ Defined in [Insisting](../design/concepts/Insisting.md), line 1.
 
 #### Instances
 
-- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 152.
-  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 153.
+- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 172.
+  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 173.
 
 ### Inviting
 
@@ -451,8 +528,8 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Instances
 
-- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 155.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 156.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 175.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 176.
 
 ### Itemizing
 
@@ -481,8 +558,8 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Instances
 
-- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 158.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 159.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 178.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 179.
 
 ### Linking
 
@@ -502,12 +579,12 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Instances
 
-- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 165.
-  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 166.
-  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 167.
-- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 161.
-  - `Source` is `Linkable` — [Commons application](../design/application.md), line 162.
-  - `Target` is `Linkable` — [Commons application](../design/application.md), line 163.
+- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 185.
+  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 186.
+  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 187.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 181.
+  - `Source` is `Linkable` — [Commons application](../design/application.md), line 182.
+  - `Target` is `Linkable` — [Commons application](../design/application.md), line 183.
 
 ### Locating
 
@@ -526,8 +603,8 @@ Defined in [Locating](../design/concepts/Locating.md), line 1.
 
 #### Instances
 
-- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 172.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 173.
+- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 192.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 193.
 
 ### Locking
 
@@ -547,8 +624,8 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Instances
 
-- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 169.
-  - `Target` is `Lockable` — [Commons application](../design/application.md), line 170.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 189.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 190.
 
 ### Mailing
 
@@ -573,8 +650,8 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Instances
 
-- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 175.
-  - `Key` is `MailKey` — [Commons application](../design/application.md), line 176.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 195.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 196.
 
 ### Notifying
 
@@ -598,14 +675,14 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Instances
 
-- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 178.
-  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 181.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 179.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 180.
-- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 183.
-  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 186.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 184.
-  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 185.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 198.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 201.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 199.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 200.
+- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 203.
+  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 206.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 204.
+  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 205.
 
 ### Noting
 
@@ -643,9 +720,9 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Instances
 
-- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 188.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 189.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 190.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 208.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 209.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 210.
 
 ### Pinning
 
@@ -655,22 +732,22 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 - `pin(item: Item, scope: Scope, priority: Number, at: Date) : return (pin: Pin)`
   - Refuses `ITEM_ALREADY_PINNED`: This item is already pinned in this scope.
-- `unpin(item: Item, scope: Scope) : return (pin: Pin)`
-  - Refuses `ITEM_NOT_PINNED`: There is no such pin to remove.
+- `unpin(item: Item, scope: Scope) : return (item: Item)`
 - `setPriority(item: Item, scope: Scope, priority: Number) : return (pin: Pin)`
   - Refuses `ITEM_NOT_PINNED`: There is no such pin to reprioritize.
 - `clearItem(item: Item) : return (item: Item)`
 
 #### Queries
 
+- `_pinnedItems(scope: String) : one (items: Seq)`
 - `_getPinned(scope: String) : many (item: String, priority: Number)`
 - `_isPinned(item: String, scope: String) : one (pinned: Boolean)`
 
 #### Instances
 
-- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 192.
-  - `Item` is `Pinnable` — [Commons application](../design/application.md), line 193.
-  - `Scope` is `PinScope` — [Commons application](../design/application.md), line 194.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 212.
+  - `Item` is `Pinnable` — [Commons application](../design/application.md), line 213.
+  - `Scope` is `PinScope` — [Commons application](../design/application.md), line 214.
 
 ### Posting
 
@@ -693,8 +770,8 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Instances
 
-- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 196.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 197.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 216.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 217.
 
 ### Profiling
 
@@ -719,8 +796,8 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Instances
 
-- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 199.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 200.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 219.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 220.
 
 ### Publishing
 
@@ -743,9 +820,9 @@ Defined in [Publishing](../design/concepts/Publishing.md), line 1.
 
 #### Instances
 
-- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 202.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 203.
-  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 204.
+- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 222.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 223.
+  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 224.
 
 ### Questioning
 
@@ -805,6 +882,7 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
 
 #### Queries
 
+- `_content(questionnaire: String) : optional (content: Json)`
 - `_getQuestionnaire(questionnaire: String) : optional (author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)`
 - `_getQuestionnaires() : many (questionnaire: String, author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)`
 - `_getQuestions(questionnaire: String) : many (question: String, prompt: String, choices: Seq, expected: String, explanation: String, parts: Seq, cap: Number, position: Number)`
@@ -817,8 +895,8 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
 
 #### Instances
 
-- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 206.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 207.
+- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 226.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 227.
 
 ### Reacting
 
@@ -841,9 +919,9 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Instances
 
-- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 209.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 210.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 211.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 229.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 230.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 231.
 
 ### Reasoning
 
@@ -852,6 +930,8 @@ Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
 #### Actions
 
 - `ask(reasoner: Reasoner, about: Subject, passage: String, at: Date) : return (asking: Asking)`
+- `followUp(previous: Asking, passage: String, at: Date) : return (asking: Asking)`
+  - Refuses `ASKING_NOT_FOUND`: There is no such asking to follow up.
 - `answer(asking: Asking, reply: String, at: Date) : return (asking: Asking, reply: String)`
   - Refuses `ASKING_NOT_FOUND`: There is no such ask.
   - Refuses `ALREADY_SETTLED`: This ask was already settled.
@@ -861,18 +941,21 @@ Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
 
 #### Queries
 
+- `_followups(previous: String) : many (asking: String)`
 - `_pending() : many (asking: String, reasoner: String, about: String, passage: String, askedAt: Date)`
 - `_asking(asking: String) : optional (reasoner: String, about: String, passage: String, askedAt: Date, pending: Boolean)`
 - `_replyOf(asking: String) : optional (reply: String, answeredAt: Date)`
 - `_failureOf(asking: String) : optional (account: String, failedAt: Date)`
 - `_repliesAbout(about: String) : many (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)`
+- `_lastReplyAbout(about: String) : optional (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)`
+- `_lastRepliesAbout(subjects: Seq) : one (replies: Seq)`
 - `_lastFailureAbout(about: String) : optional (asking: String, account: String, failedAt: Date)`
 
 #### Instances
 
-- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 213.
-  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 214.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 215.
+- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 233.
+  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 234.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 235.
 
 ### Relaying
 
@@ -887,6 +970,9 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
   - Refuses `INVALID_TITLE`: The title must be 1 to 200 characters long.
 - `addLeg(relay: Relay, material: Material) : return (leg: Leg, position: Number)`
   - Refuses `RELAY_NOT_FOUND`: There is no such relay.
+- `setKind(leg: Leg, kind: String) : return (leg: Leg)`
+  - Refuses `LEG_NOT_FOUND`: There is no such leg.
+  - Refuses `KIND_BLANK`: A kind needs a word.
 - `removeLeg(leg: Leg) : return (leg: Leg, relay: Relay, material: Material)`
   - Refuses `LEG_NOT_FOUND`: There is no such leg.
   - Refuses `LEG_DRAWN_ON`: Another leg still draws on this one.
@@ -906,8 +992,8 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
 
 - `_relay(relay: String) : optional (author: String, title: String, createdAt: Date)`
 - `_relays() : many (relay: String, author: String, title: String, createdAt: Date)`
-- `_legs(relay: String) : many (leg: String, material: String, position: Number)`
-- `_leg(leg: String) : optional (relay: String, material: String, position: Number)`
+- `_legs(relay: String) : many (leg: String, material: String, position: Number, kind: String)`
+- `_leg(leg: String) : optional (relay: String, material: String, position: Number, kind: String)`
 - `_legFor(material: String) : optional (leg: String, relay: String, position: Number)`
 - `_draws(leg: String) : many (draw: String, source: String, use: String)`
 - `_drawsOn(source: String) : many (draw: String, leg: String, use: String)`
@@ -915,9 +1001,9 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
 
 #### Instances
 
-- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 217.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 218.
-  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 219.
+- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 237.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 238.
+  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 239.
 
 ### Resolving
 
@@ -937,10 +1023,10 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Instances
 
-- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 226.
-  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 229.
-  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 228.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 227.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 246.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 249.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 248.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 247.
 
 ### Responding
 
@@ -955,9 +1041,10 @@ Defined in [Responding](../design/concepts/Responding.md), line 1.
   - Refuses `RESPONSE_NOT_FOUND`: There is no such response.
   - Refuses `ALREADY_SUBMITTED`: This was already handed in.
   - Refuses `BLANK_ANSWER`: An answer needs something in it.
-- `submit(response: Response, at: Date) : return (response: Response)`
+- `submit(response: Response, at: Date, required?: Seq) : return (response: Response)`
   - Refuses `RESPONSE_NOT_FOUND`: There is no such response.
   - Refuses `ALREADY_SUBMITTED`: This was already handed in.
+  - Refuses `INCOMPLETE`: An answer is still required.
 
 #### Queries
 
@@ -972,10 +1059,10 @@ Defined in [Responding](../design/concepts/Responding.md), line 1.
 
 #### Instances
 
-- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 221.
-  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 224.
-  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 223.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 222.
+- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 241.
+  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 244.
+  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 243.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 242.
 
 ### Revising
 
@@ -994,8 +1081,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Instances
 
-- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 231.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 232.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 251.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 252.
 
 ### Roling
 
@@ -1032,9 +1119,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Instances
 
-- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 234.
-  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 236.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 235.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 254.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 256.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 255.
 
 ### Rostering
 
@@ -1089,8 +1176,8 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Instances
 
-- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 238.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 239.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 258.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 259.
 
 ### Scoring
 
@@ -1115,10 +1202,10 @@ Defined in [Scoring](../design/concepts/Scoring.md), line 1.
 
 #### Instances
 
-- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 241.
-  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 243.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 242.
-  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 244.
+- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 261.
+  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 263.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 262.
+  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 264.
 
 ### Sessioning
 
@@ -1138,8 +1225,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 250.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 251.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 270.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 271.
 
 ### Sharing
 
@@ -1158,8 +1245,8 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 
 #### Instances
 
-- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 253.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 254.
+- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 273.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 274.
 
 ### Snapshotting
 
@@ -1176,9 +1263,9 @@ Defined in [Snapshotting](../design/concepts/Snapshotting.md), line 1.
 
 #### Instances
 
-- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 246.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 247.
-  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 248.
+- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 266.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 267.
+  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 268.
 
 ### Submitting
 
@@ -1203,10 +1290,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 259.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 262.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 261.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 260.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 279.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 282.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 281.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 280.
 
 ### Subscribing
 
@@ -1228,9 +1315,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 264.
-  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 265.
-  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 266.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 284.
+  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 285.
+  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 286.
 
 ### Suggesting
 
@@ -1258,8 +1345,8 @@ Defined in [Suggesting](../design/concepts/Suggesting.md), line 1.
 
 #### Instances
 
-- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 256.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 257.
+- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 276.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 277.
 
 ### Tagging
 
@@ -1287,8 +1374,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 268.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 269.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 288.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 289.
 
 ### Tasking
 
@@ -1339,9 +1426,9 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 271.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 273.
-  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 272.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 291.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 293.
+  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 292.
 
 ### Tracking
 
@@ -1365,10 +1452,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 275.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 277.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 278.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 276.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 295.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 297.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 298.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 296.
 
 ### Trashing
 
@@ -1391,15 +1478,15 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Instances
 
-- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 101.
-  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 103.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 102.
-- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 131.
-  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 133.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 132.
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 280.
-  - `Item` is `Trashable` — [Commons application](../design/application.md), line 282.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 281.
+- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 118.
+  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 120.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 119.
+- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 148.
+  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 150.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 149.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 300.
+  - `Item` is `Trashable` — [Commons application](../design/application.md), line 302.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 301.
 
 ### Vouching
 
@@ -1420,118 +1507,167 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Instances
 
-- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 284.
-  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 285.
+- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 304.
+  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 305.
 
 ## Application types
 
 Concrete types:
 
-- `Categorizable` — [Commons application](../design/application.md), line 87.
-- `CategoryScope` — [Commons application](../design/application.md), line 82.
-- `Linkable` — [Commons application](../design/application.md), line 62.
-- `LiveItem` — [Commons application](../design/application.md), line 43.
-- `LiveMaterial` — [Commons application](../design/application.md), line 39.
-- `LiveParticipant` — [Commons application](../design/application.md), line 26.
-- `LiveReasoner` — [Commons application](../design/application.md), line 31.
-- `LiveRunSnapshot` — [Commons application](../design/application.md), line 35.
-- `LiveSubject` — [Commons application](../design/application.md), line 47.
+- `Categorizable` — [Commons application](../design/application.md), line 103.
+- `CategoryScope` — [Commons application](../design/application.md), line 90.
+- `GuidanceSubject` — [Commons application](../design/application.md), line 96.
+- `Linkable` — [Commons application](../design/application.md), line 70.
+- `LiveExecution` — [Commons application](../design/application.md), line 40.
+- `LiveItem` — [Commons application](../design/application.md), line 48.
+- `LiveMaterial` — [Commons application](../design/application.md), line 44.
+- `LiveParticipant` — [Commons application](../design/application.md), line 27.
+- `LiveReasoner` — [Commons application](../design/application.md), line 32.
+- `LiveRunSnapshot` — [Commons application](../design/application.md), line 36.
+- `LiveSubject` — [Commons application](../design/application.md), line 52.
 - `Lockable` — [Commons application](../design/application.md), line 18.
 - `MailKey` — [Commons application](../design/application.md), line 15.
-- `PinScope` — [Commons application](../design/application.md), line 77.
-- `Pinnable` — [Commons application](../design/application.md), line 72.
-- `Subscribable` — [Commons application](../design/application.md), line 58.
-- `Subscriber` — [Commons application](../design/application.md), line 54.
-- `TaskSubject` — [Commons application](../design/application.md), line 23.
-- `Trashable` — [Commons application](../design/application.md), line 66.
+- `PinScope` — [Commons application](../design/application.md), line 85.
+- `Pinnable` — [Commons application](../design/application.md), line 80.
+- `Subscribable` — [Commons application](../design/application.md), line 66.
+- `Subscriber` — [Commons application](../design/application.md), line 62.
+- `TaskSubject` — [Commons application](../design/application.md), line 24.
+- `Trashable` — [Commons application](../design/application.md), line 74.
 
 ## Computations
 
-- `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 93.
-- `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 86.
-- `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 82.
-- `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 23.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 370.
-- `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 43.
-- `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 35.
-- `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 56.
-- `clarifiedPassage(request: String, question: String, answer: String) : String` — [Commons application](../design/application.md), line 436.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 424.
-- `draftingPassage(request: String) : String` — [Commons application](../design/application.md), line 428.
-- `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 86.
-- `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 89.
-- `editParts(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 83.
-- `editPosition(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 92.
-- `editPrompt(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 71.
-- `editRoundCap(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 77.
-- `editRoundChoices(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 80.
-- `editRoundJson(value: String) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
-- `editRoundParts(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 74.
-- `editRoundPosition(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 65.
-- `editRoundTakesFrom(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 57.
-- `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 61.
-- `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 68.
-- `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 95.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 374.
-- `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 89.
-- `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 30.
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 361.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 358.
-- `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 47.
-- `legMaterials(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
-- `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 81.
-- `lidPassage(pile: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 76.
-- `noChoices(question: String) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 53.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 367.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 364.
-- `oneBoxCap(question: String) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 50.
-- `oneBoxParts(question: String) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 46.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 444.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 448.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 451.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 455.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 459.
-- `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 97.
-- `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 89.
-- `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 85.
-- `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 78.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 379.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 384.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 390.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 387.
-- `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 39.
-- `pileCards(pile: String, categories: Json, values: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 70.
-- `placingLines(reply: String, categories: Json, values: Json, removed: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 67.
-- `placingPassage(value: Json, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 61.
-- `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 72.
-- `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 57.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 467.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 472.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 476.
-- `relayDraftPassage(request: String, title: String, legs: Json, materials: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 27.
-- `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 39.
-- `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 44.
-- `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 35.
-- `relayEditLines(reply: String, title: String, legs: Json, materials: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 48.
-- `repairPassage(request: String, offering: String, account: String) : String` — [Commons application](../design/application.md), line 440.
-- `revisionPassage(request: String, form: String, material: Json) : String` — [Commons application](../design/application.md), line 432.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 393.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 396.
-- `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 67.
-- `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 70.
-- `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 74.
-- `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 64.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 463.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 402.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 412.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 406.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 409.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 421.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 415.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 418.
-- `useFit(use: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 64.
-- `useStanding(use: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 60.
+- `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 153.
+- `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 134.
+- `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 130.
+- `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 390.
+- `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 114.
+- `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
+- `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
+- `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 458.
+- `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
+- `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
+- `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
+- `clearablePiles(categories: Json, standing?: Json, picked: Seq, reserved: Seq) : Seq` — [The wall](../design/compositions/live/walls.md), line 53.
+- `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
+- `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
+- `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 212.
+- `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
+- `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
+- `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 444.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 448.
+- `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
+- `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
+- `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
+- `editGuideBody(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 177.
+- `editGuideField(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 175.
+- `editParts(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 118.
+- `editPileName(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 86.
+- `editPileSentence(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 89.
+- `editPosition(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 127.
+- `editPrompt(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 106.
+- `editRoundCap(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 112.
+- `editRoundChoices(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 115.
+- `editRoundJson(value: String) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 75.
+- `editRoundLines(value: String, leg: String) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 79.
+- `editRoundParts(round: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 109.
+- `editRoundPosition(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 100.
+- `editRoundTakesFrom(round: Json) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 92.
+- `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
+- `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
+- `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 394.
+- `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 137.
+- `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
+- `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
+- `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 381.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 378.
+- `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 90.
+- `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 84.
+- `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 76.
+- `kindParts(kind: String, parts: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 80.
+- `legIdentities(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 46.
+- `legMaterials(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 43.
+- `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 138.
+- `lidPassage(pile: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 133.
+- `linesStanding(lines: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 83.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 387.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 384.
+- `openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 57.
+- `openingAuthor(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 66.
+- `openingAuthorized() : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 54.
+- `openingBrief(account: String, author: String, questionnaire: String, kind: String, use: Json, content: Json, groups: Json, sourceNumber?: Json, sourceValue?: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 63.
+- `openingGroups(picked: Seq, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 60.
+- `openingMaterial(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 69.
+- `openingPresentation(brief: String) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 72.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 468.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 472.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 475.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 479.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 483.
+- `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 157.
+- `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 149.
+- `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 142.
+- `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 126.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 399.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 404.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 410.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 407.
+- `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
+- `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 103.
+- `placingLines(reply: String, categories: Json, values: Json, removed: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 124.
+- `placingPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String) : String` — [The wall](../design/compositions/live/walls.md), line 99.
+- `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 118.
+- `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 129.
+- `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 110.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 491.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 496.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 500.
+- `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
+- `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
+- `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
+- `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
+- `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
+- `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 463.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 453.
+- `roundMaterialIsValid(title: String, prompt: String, choices: Strings, parts: Strings, cap: Number) : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 158.
+- `sampledAnswers(reply: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 34.
+- `sampledGroups(reply: String, kind: String, choices: Json, use: String, carried?: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 39.
+- `sampledPiles(reply: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 63.
+- `samplingPassage(prompt: String, choices: Json, parts: Json, cap: Number, piles: Json, notes: String) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 22.
+- `samplingPassageTaking(prompt: String, choices: Json, parts: Json, cap: Number, piles: Json, notes: String, use: String, carried: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 28.
+- `samplingResolution(leg: String, legs: Json, materials: Json, piles: Json, notes: Json, replies: Json, picks: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 45.
+- `samplingResolvedAccount(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 56.
+- `samplingResolvedPassage(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 50.
+- `samplingResolvedPreview(resolution: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 60.
+- `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 413.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 416.
+- `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 112.
+- `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 115.
+- `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 122.
+- `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 119.
+- `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 109.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 487.
+- `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 93.
+- `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
+- `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
+- `sortingObservationPresent() : Boolean` — [The wall](../design/compositions/live/walls.md), line 57.
+- `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 209.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 422.
+- `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 432.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 426.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 429.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 441.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 435.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 438.
+- `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 97.
+- `voteStanding(kind: String, choices: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
 
 ## Views
 
@@ -1642,52 +1778,74 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
     Publishing._edition (edition: round) has (material, open)
 ```
 
-### (leg) already ran in (run)
+### (leg) has opened in an open run
 
 ```view
-(leg) already ran in (run) — inputs (run, leg); outputs (); bindings ()
-  where view "the round of (leg) in (run)" with (leg, run)
-```
-
-### (leg) has not run in (run)
-
-```view
-(leg) has not run in (run) — inputs (run, leg); outputs (); bindings ()
-  where no view "the round of (leg) in (run)" with (leg, run)
-```
-
-### (leg) is a round of (run)
-
-```view
-(leg) is a round of (run) — inputs (run, leg); outputs (); bindings (relay)
+(leg) has opened in an open run — inputs (leg); outputs (); bindings (relay, run)
   where
-    Publishing._edition (edition: run) has (material: relay)
     Relaying._leg (leg) has (relay)
+    Publishing._editionsFor (material: relay) has (edition: run, open: true)
+    view "the round of (leg) in (run)" with (leg, run)
 ```
 
-### (leg) is not a round of (run)
+### (leg) has not opened in an open run
 
 ```view
-(leg) is not a round of (run) — inputs (run, leg); outputs (); bindings (relay)
+(leg) has not opened in an open run — inputs (leg); outputs (); bindings ()
   where
-    Publishing._edition (edition: run) has (material: relay)
-    Relaying._leg (leg) and not (relay)
+    Relaying._leg (leg)
+    no view "(leg) has opened in an open run" with (leg)
 ```
 
-### (leg) takes from a round not yet closed in (run)
+### (relay) is not retired
 
 ```view
-(leg) takes from a round not yet closed in (run) — inputs (run, leg); outputs (); bindings (source)
+(relay) is not retired — inputs (relay); outputs (); bindings ()
+  where Trashing._isTrashed (item: relay) has (trashed: false)
+```
+
+### (leg) is a round of a relay still in use
+
+```view
+(leg) is a round of a relay still in use — inputs (leg); outputs (); bindings (relay)
   where
-    Relaying._draws (leg) has (source)
-    no view "the round of (leg) in (run)" with (leg: source, run) has (open: false)
+    Relaying._leg (leg) has (relay)
+    view "(relay) is not retired" with (relay)
 ```
 
-### (leg) takes nothing
+### (relay) is retired
 
 ```view
-(leg) takes nothing — inputs (leg); outputs (); bindings ()
-  where no Relaying._draws (leg)
+(relay) is retired — inputs (relay); outputs (); bindings ()
+  where Trashing._isTrashed (item: relay) has (trashed: true)
+```
+
+### (leg) is a round of a retired relay
+
+```view
+(leg) is a round of a retired relay — inputs (leg); outputs (); bindings (relay)
+  where
+    Relaying._leg (leg) has (relay)
+    view "(relay) is retired" with (relay)
+```
+
+### (leg) takes its choices
+
+```view
+(leg) takes its choices — inputs (leg); outputs (); bindings ()
+  where Relaying._draws (leg) has (use: "choices")
+```
+
+### (leg) is a vote with nothing to vote on
+
+```view
+(leg) is a vote with nothing to vote on — inputs (leg); outputs (); bindings (material, kind, choices, standing)
+  where
+    Relaying._leg (leg) has (kind, material)
+    Questioning._getQuestions (questionnaire: material) has (choices)
+    standing is voteStanding (choices, kind)
+    standing is among ["bare"]
+    no view "(leg) takes its choices" with (leg)
 ```
 
 ### (member) removed somebody else from (list)
@@ -1719,13 +1877,6 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
 ```view
 (participant)'s seat is not dismissed — inputs (participant); outputs (); bindings ()
   where Trashing._isTrashed (item: participant) has (trashed: false)
-```
-
-### (pile) holds a card
-
-```view
-(pile) holds a card — inputs (pile); outputs (); bindings ()
-  where Categorizing._getItems (category: pile)
 ```
 
 ### (pile) is a pile
@@ -1825,6 +1976,15 @@ Authored path: `Forum.posts.notReadable`.
   where Publishing._hasOpenEditionFor (material: questionnaire) has (open: false)
 ```
 
+### (relay) has a vote with nothing to vote on
+
+```view
+(relay) has a vote with nothing to vote on — inputs (relay); outputs (); bindings (leg)
+  where
+    Relaying._legs (relay) has (leg)
+    view "(leg) is a vote with nothing to vote on" with (leg)
+```
+
 ### (relay) has an open run
 
 ```view
@@ -1839,30 +1999,13 @@ Authored path: `Forum.posts.notReadable`.
   where Publishing._hasOpenEditionFor (material: relay) has (open: false)
 ```
 
-### (relay) is not retired
+### (relay) stands
 
 ```view
-(relay) is not retired — inputs (relay); outputs (); bindings ()
-  where Trashing._isTrashed (item: relay) has (trashed: false)
-```
-
-### (relay) is retired
-
-```view
-(relay) is retired — inputs (relay); outputs (); bindings ()
-  where Trashing._isTrashed (item: relay) has (trashed: true)
-```
-
-### (response) answers every question
-
-```view
-(response) answers every question — inputs (response); outputs (); bindings (run, presentation, answers, whole)
+(relay) stands — inputs (relay); outputs (); bindings ()
   where
-    Responding._response (response) has (subject: run)
-    RunSnapshotting._snapshot (subject: run) has (value: presentation)
-    Responding._collectedAnswers (response) has (answers)
-    whole is snapshotIsWhole (answers, value: presentation)
-    whole is among [true]
+    Relaying._relay (relay)
+    view "(relay) is not retired" with (relay)
 ```
 
 ### (response) belongs to an anonymous participant
@@ -1893,18 +2036,6 @@ the active user of (session) — inputs (session); outputs (user); bindings () �
     Responding._response (response) has (participant)
 ```
 
-### (response) leaves a question unanswered
-
-```view
-(response) leaves a question unanswered — inputs (response); outputs (); bindings (run, presentation, answers, whole)
-  where
-    Responding._response (response) has (subject: run)
-    RunSnapshotting._snapshot (subject: run) has (value: presentation)
-    Responding._collectedAnswers (response) has (answers)
-    whole is snapshotIsWhole (answers, value: presentation)
-    whole is among [false]
-```
-
 ### (round) has a card still in the tray
 
 ```view
@@ -1924,27 +2055,6 @@ the active user of (session) — inputs (session); outputs (user); bindings () �
     Reasoning._lastFailureAbout (about: round) has (failedAt)
     standing is failureStanding (at, failedAt)
     standing is among ["fresh"]
-```
-
-### (round) has every card in a pile
-
-```view
-(round) has every card in a pile — inputs (round); outputs (); bindings ()
-  where no view "(round) has a card still in the tray" with (round)
-```
-
-### (round) has no piles picked
-
-```view
-(round) has no piles picked — inputs (round); outputs (); bindings ()
-  where no Pinning._getPinned (scope: round)
-```
-
-### (round) has piles picked
-
-```view
-(round) has piles picked — inputs (round); outputs (); bindings ()
-  where Pinning._getPinned (scope: round)
 ```
 
 ### (round) is a round with a captured question
@@ -1987,13 +2097,6 @@ the active user of (session) — inputs (session); outputs (user); bindings () �
   where
     view "(run) is open to participation" with (run: round)
     view "(round) is of an open run" with (round)
-```
-
-### (round) is not open on an open run
-
-```view
-(round) is not open on an open run — inputs (round); outputs (); bindings ()
-  where no view "(round) is open on an open run" with (round)
 ```
 
 ### the open round of (run)
@@ -2187,6 +2290,23 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
 ```
 
+### (user) may host live runs
+
+```view
+(user) may host live runs — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "live:host", context: "commons", user) has (allowed: true)
+  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
+```
+
+### (user) may commission a round opening
+
+```view
+(user) may commission a round opening — inputs (user); outputs (authorized); bindings () — answers at most one (authorized)
+  where
+    view "(user) may host live runs" with (user)
+    authorized is openingAuthorized
+```
+
 ### (user) may edit (post)
 
 ```view
@@ -2204,14 +2324,6 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 ```view
 (user) may grade — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "grade", context: "commons", user) has (allowed: true)
-  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
-```
-
-### (user) may host live runs
-
-```view
-(user) may host live runs — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "live:host", context: "commons", user) has (allowed: true)
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
 ```
 
@@ -2355,11 +2467,20 @@ Authored path: `Course.submissions.mayReadSubmissionArtifact`.
   where Roling._hasCapability (capability: "moderate", context: "commons", user) has (allowed: true)
 ```
 
-### an ask about (round) is still out
+### a reply about (round) is applying
 
 ```view
-an ask about (round) is still out — inputs (round); outputs (); bindings ()
-  where Reasoning._pending () has (about: round)
+a reply about (round) is applying — inputs (round); outputs (); bindings (asking)
+  where
+    Locking._getLocked () has (target: asking)
+    Reasoning._asking (asking) has (about: round)
+```
+
+### a sample of (leg) is still being asked
+
+```view
+a sample of (leg) is still being asked — inputs (leg); outputs (); bindings ()
+  where Reasoning._pending () has (about: leg)
 ```
 
 ### an offering about (round) still has lines to take
@@ -2371,11 +2492,20 @@ an offering about (round) still has lines to take — inputs (round); outputs ()
     Suggesting._pendingIn (offering)
 ```
 
-### every round (leg) takes from has closed in (run)
+### nothing is still out about (round)
 
 ```view
-every round (leg) takes from has closed in (run) — inputs (run, leg); outputs (); bindings ()
-  where no view "(leg) takes from a round not yet closed in (run)" with (leg, run)
+nothing is still out about (round) — inputs (round); outputs (); bindings ()
+  where no Reasoning._pending () has (about: round)
+```
+
+### answered sorting observation
+
+```view
+answered sorting observation — inputs (round); outputs (supported); bindings () — answers at most one (supported)
+  where
+    view "nothing is still out about (round)" with (round)
+    supported is sortingObservationPresent
 ```
 
 ### no offering about (round) has lines left to take
@@ -2385,11 +2515,106 @@ no offering about (round) has lines left to take — inputs (round); outputs ();
   where no view "an offering about (round) still has lines to take" with (round)
 ```
 
-### nothing is still out about (round)
+### applied sorting observation
 
 ```view
-nothing is still out about (round) — inputs (round); outputs (); bindings ()
-  where no Reasoning._pending () has (about: round)
+applied sorting observation — inputs (round); outputs (supported); bindings () — answers at most one (supported)
+  where
+    view "no offering about (round) has lines left to take" with (round)
+    supported is sortingObservationPresent
+```
+
+### authorized sorting observation
+
+```view
+authorized sorting observation — inputs (user); outputs (supported); bindings () — answers at most one (supported)
+  where
+    view "(user) may host live runs" with (user)
+    supported is sortingObservationPresent
+```
+
+### sorting piles of (round)
+
+```view
+sorting piles of (round) — inputs (round); outputs (categories); bindings (raw, subjects, texts) — answers exactly one (categories)
+  where
+    Categorizing._categoriesWithItems (scope: round) has (categories: raw)
+    subjects is sortingPileSubjects (categories: raw)
+    Guiding._guidanceTexts (subjects, use: "pile-definition") has (texts)
+    categories is definedSortingPiles (categories: raw, texts)
+```
+
+### conclusion of commissioned execution (asking)
+
+```view
+conclusion of commissioned execution (asking) — inputs (asking); outputs (successful, account); bindings (round, reply, failure, insistence, categories, values, removed, outcome, successors) — answers any number of (successful, account)
+  where
+    Reasoning._asking (asking) has (about: round)
+    view "(round) is a round with a captured question" with (round)
+    Locking._isLocked (target: asking) has (locked: false)
+    whether Reasoning._replyOf (asking) has (reply)
+    whether Reasoning._failureOf (asking) has (account: failure)
+    whether Insisting._unsettledFor (aim: round) has (insistence)
+    successors is the count of Reasoning._followups (previous: asking)
+    view "sorting piles of (round)" with (round) has (categories)
+    Responding._valuesForSubject (subject: round) has (values)
+    Trashing._trashedItems () has (items: removed)
+    outcome is commissionOutcome (categories, failure, insistence, removed, reply, successors, values)
+    outcome is among ["completed", "failed"]
+    successful is isSame (left: outcome, right: "completed")
+    account is commissionAccount (failure, outcome)
+```
+
+### editable reference activity (subject)
+
+```view
+editable reference activity (subject) — inputs (subject); outputs (); bindings ()
+  where
+    Relaying._relay (relay: subject)
+    view "(relay) is not retired" with (relay: subject)
+  where Questioning._getQuestionnaire (questionnaire: subject) has (retired: false)
+```
+
+### live sorting observation
+
+```view
+live sorting observation — inputs (round); outputs (supported); bindings () — answers at most one (supported)
+  where
+    view "(round) is open on an open run" with (round)
+    supported is sortingObservationPresent
+```
+
+### no sample of (leg) is being asked
+
+```view
+no sample of (leg) is being asked — inputs (leg); outputs (); bindings ()
+  where no Reasoning._pending () has (about: leg)
+```
+
+### openRun sorting observation
+
+```view
+openRun sorting observation — inputs (round); outputs (supported); bindings () — answers at most one (supported)
+  where
+    view "(round) is of an open run" with (round)
+    supported is sortingObservationPresent
+```
+
+### ready sorting observation
+
+```view
+ready sorting observation — inputs (round, at); outputs (supported); bindings () — answers at most one (supported)
+  where
+    no view "(round) has an ask that failed moments before (at)" with (at, round)
+    supported is sortingObservationPresent
+```
+
+### reference activity (subject)
+
+```view
+reference activity (subject) — inputs (subject); outputs (); bindings ()
+  where Relaying._relay (relay: subject)
+  where Questioning._getQuestionnaire (questionnaire: subject)
 ```
 
 ### somebody other than (actor) must hear about (task) at (at)
@@ -2443,6 +2668,20 @@ Authored path: `Course.assignments.theAssignment`.
 ```view
 the assignment (assignment) — inputs (assignment); outputs (detail); bindings () — answers at most one (detail)
   where Assigning._getDetail (assignment) has (detail)
+```
+
+### the background document rows of (relay)
+
+```view
+the background document rows of (relay) — inputs (relay); outputs (document, title, body); bindings (named) — answers any number of (document, title, body)
+  where
+    named is relayGiven (relay)
+    named is among ["given"]
+    Guiding._guidanceFor (subject: relay, use: "drafting") has (body, guidance: document, title)
+  where
+    named is relayGiven (relay)
+    named is among ["none"]
+    Guiding._guidanceFor (subject: "commons", use: "drafting") has (body, guidance: document, title)
 ```
 
 ### the class configuration ()
@@ -2525,6 +2764,22 @@ the live account at (email) — inputs (email); outputs (user); bindings () — 
     no view "(user) is archived" with (user)
 ```
 
+### the material for opening (leg)
+
+```view
+the material for opening (leg) — inputs (leg); outputs (content); bindings (questionnaire) — answers at most one (content)
+  where
+    Relaying._leg (leg) has (material: questionnaire)
+    Questioning._content (questionnaire) has (content)
+```
+
+### the number of cards in (pile)
+
+```view
+the number of cards in (pile) — inputs (pile); outputs (items); bindings () — answers exactly one (items)
+  where items is the count of Categorizing._getItems (category: pile)
+```
+
 ### the other users mentioned in (post)
 
 Authored path: `Forum.notifications.otherUsersMentionedIn`.
@@ -2543,6 +2798,22 @@ the other users mentioned in (post) — inputs (post); outputs (user); bindings 
 ```view
 the pick count of (round) — inputs (round); outputs (taken); bindings () — answers exactly one (taken)
   where taken is the count of Pinning._getPinned (scope: round)
+```
+
+### the preview inputs of (leg) with (picks)
+
+```view
+the preview inputs of (leg) with (picks) — inputs (leg, picks); outputs (resolution); bindings (relay, legs, questionnaires, materials, subjects, piles, notes, replies) — answers at most one (resolution)
+  where
+    Relaying._leg (leg) has (relay)
+    Relaying._plan (relay) has (legs)
+    questionnaires is legMaterials (legs)
+    subjects is legIdentities (legs)
+    Questioning._materials (questionnaires) has (materials)
+    Categorizing._categoriesInScopes (scopes: subjects) has (categories: piles)
+    Guiding._guidanceTexts (subjects, use: "sorting") has (texts: notes)
+    Reasoning._lastRepliesAbout (subjects) has (replies)
+    resolution is samplingResolution (leg, legs, materials, notes, picks, piles, replies)
 ```
 
 ### the profile of (user)
@@ -2618,11 +2889,30 @@ the root of drafting line (brief) — inputs (brief); outputs (root, rootAuthor,
     DraftTrashing._isTrashed (item: root) has (trashed: abandoned)
 ```
 
+### the round (pile) stands on
+
+```view
+the round (pile) stands on — inputs (pile); outputs (leg); bindings () — answers at most one (leg)
+  where
+    Categorizing._getCategoryDetail (category: pile) has (scope: leg)
+    Relaying._leg (leg)
+```
+
 ### the run of (round)
 
 ```view
 the run of (round) — inputs (round); outputs (run); bindings () — answers at most one (run)
   where Linking._getLinks (source: round) has (target: run)
+```
+
+### the sampling request for (leg) with (picks)
+
+```view
+the sampling request for (leg) with (picks) — inputs (leg, picks); outputs (passage, account); bindings (resolution) — answers at most one (passage, account)
+  where
+    view "the preview inputs of (leg) with (picks)" with (leg, picks) has (resolution)
+    passage is samplingResolvedPassage (resolution)
+    account is samplingResolvedAccount (resolution)
 ```
 
 ### the seat at (email)
@@ -2653,6 +2943,70 @@ Authored path: `Course.roster.theSeatOf`.
 ```view
 the seat of (user) — inputs (user); outputs (seat); bindings () — answers at most one (seat)
   where Rostering._getSeatByUser (user) has (seat, status: "ACTIVE")
+```
+
+### the selected documents for (brief)
+
+```view
+the selected documents for (brief) — inputs (brief); outputs (documents); bindings (context, references) — answers exactly one (documents)
+  where
+    Drafting._context (brief) has (context)
+    references is draftReferences (context)
+    Guiding._documentsById (guidances: references, use: "drafting") has (documents)
+```
+
+### the sorter's notes for (round)
+
+```view
+the sorter's notes for (round) — inputs (round); outputs (notes); bindings (questionnaire, leg, relay, run) — answers at most one (notes)
+  where
+    Publishing._edition (edition: round) has (material: questionnaire)
+    Relaying._legFor (material: questionnaire) has (leg)
+    Guiding._guidanceText (subject: leg, use: "sorting") has (text: relay)
+    Guiding._guidanceText (subject: round, use: "sorting") has (text: run)
+    notes is sorterNotes (relay, run)
+```
+
+### what (leg) takes
+
+```view
+what (leg) takes — inputs (leg); outputs (source, use); bindings () — answers at most one (source, use)
+  where Relaying._draws (leg) has (source, use)
+```
+
+### the source for opening (leg) in (run)
+
+```view
+the source for opening (leg) in (run) — inputs (run, leg); outputs (source, sourceRound, sourceOpen, groups, sourceValue, sourceNumber); bindings (picked, categories, values) — answers at most one (source, sourceRound, sourceOpen, groups, sourceValue, sourceNumber)
+  where
+    view "what (leg) takes" with (leg) has (source)
+    view "the round of (leg) in (run)" with (leg: source, run) has (open: sourceOpen, round: sourceRound)
+    Pinning._pinnedItems (scope: sourceRound) has (items: picked)
+    Categorizing._categoriesWithItems (scope: sourceRound) has (categories)
+    Responding._valuesForSubject (subject: sourceRound) has (values)
+    RunSnapshotting._snapshot (subject: sourceRound) has (value: sourceValue)
+    Relaying._leg (leg: source) has (position: sourceNumber)
+    groups is openingGroups (categories, picked, value: sourceValue, values)
+```
+
+### the starting piles of (round)
+
+```view
+the starting piles of (round) — inputs (round); outputs (standing); bindings (questionnaire, leg) — answers at most one (standing)
+  where
+    view "(round) is a round with a captured question" with (round)
+    Publishing._edition (edition: round) has (material: questionnaire)
+    Relaying._legFor (material: questionnaire) has (leg)
+    Categorizing._categoriesWithItems (scope: leg) has (categories: standing)
+```
+
+### the subject of background document (document)
+
+```view
+the subject of background document (document) — inputs (document); outputs (subject); bindings (use) — answers at most one (subject)
+  where
+    Guiding._guidance (guidance: document) has (subject, use)
+    use is among ["drafting"]
 ```
 
 ### the task behind (subject) for (reader) at (at)
@@ -2699,17 +3053,58 @@ the user named (username) — inputs (username); outputs (user); bindings () —
   where Authenticating._getByUsername (username) has (user)
 ```
 
-### what (leg) takes
+### unlocked sorting observation
 
 ```view
-what (leg) takes — inputs (leg); outputs (source, use); bindings () — answers at most one (source, use)
-  where Relaying._draws (leg) has (source, use)
+unlocked sorting observation — inputs (round); outputs (supported); bindings () — answers at most one (supported)
+  where
+    Locking._isLocked (target: round) has (locked: false)
+    supported is sortingObservationPresent
+```
+
+### waiting sorting observation
+
+```view
+waiting sorting observation — inputs (round); outputs (supported); bindings () — answers at most one (supported)
+  where
+    view "(round) has a card still in the tray" with (round)
+    supported is sortingObservationPresent
 ```
 
 ## Formers
 
 _Formers name result shapes evaluated when asked. The source former owns_
 _the authored explanation; this section records the generated shape._
+
+### host guidance for relay (relay)
+
+Authored path: `Live.relays.theRelayGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 150.
+
+```former
+Former "host guidance for relay (relay)" — inputs (relay); bindings (opening, closing); promises exactly one record — forms:
+  a record of
+    where Guiding._guidanceText (subject: relay, use: "hosting-opening") has (text: opening)
+    where Guiding._guidanceText (subject: relay, use: "hosting-closing") has (text: closing)
+    closing
+    opening
+```
+
+### host guidance for round (leg)
+
+Authored path: `Live.relays.theRoundGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 151.
+
+```former
+Former "host guidance for round (leg)" — inputs (leg); bindings (purpose, facilitation, selection, consumer); promises exactly one record — forms:
+  a record of
+    where Guiding._guidanceText (subject: leg, use: "hosting-purpose") has (text: purpose)
+    where Guiding._guidanceText (subject: leg, use: "hosting-facilitation") has (text: facilitation)
+    where Guiding._guidanceText (subject: leg, use: "hosting-selection") has (text: selection)
+    facilitation
+    purpose
+    selection: the selection of the first Relaying._drawsOn (source: leg) has (leg: consumer)
+```
 
 ### the answers outcome of (response)
 
@@ -2782,6 +3177,20 @@ Former "the attempts for (assignment) by (submitter)" — inputs (assignment, su
       submittedAt
 ```
 
+### the background documents of (relay)
+
+Authored path: `Live.drafting.theDocumentsOf`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 126.
+
+```former
+Former "the background documents of (relay)" — inputs (relay); bindings (document, title, body); promises exactly one record — forms:
+  each view "the background document rows of (relay)" with (relay) has (body, document, title)
+    form a record of
+      body
+      document
+      title
+```
+
 ### the backlinks of (target)
 
 Authored path: `Forum.links.theBacklinksOf`.
@@ -2801,7 +3210,7 @@ Authored path: `Live.runs.theRunBoard`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 52.
 
 ```former
-Former "the board of (run)" — inputs (run); bindings (questionnaire, title, form, open, openedAt, closedAt, token, code, started, handedIn, presentation, values, questions); promises at most one record — forms:
+Former "the board of (run)" — inputs (run); bindings (questionnaire, title, form, open, openedAt, closedAt, token, code, started, handedIn, presentation, values, questions, seat, modelResponse, participant, submitted, silentResponse, silentSeat); promises at most one record — forms:
   a record of
     where Publishing._edition (edition: run) has (closedAt, material: questionnaire, open, openedAt)
     where RunSnapshotting._snapshot (subject: run) has (value: presentation)
@@ -2814,11 +3223,24 @@ Former "the board of (run)" — inputs (run); bindings (questionnaire, title, fo
     code
     form
     handedIn: the count of Responding._responsesFor (subject: run) has (response: handedIn, submitted: true)
+    modelResponses: each Responding._responsesFor (subject: run) has (participant, response: modelResponse, submitted)
+      where view "(participant) holds a seat on (run)" with (participant, run)
+      form a record of
+        response: modelResponse
+        submitted
     open
     openedAt
     questionnaire
     questions
     run
+    seats: each Subscribing._getSubscribers (target: run) has (user: seat)
+      where view "(participant)'s seat is not dismissed" with (participant: seat)
+      form a record of
+        participant: seat
+    silentSeats: the count of Responding._responsesFor (subject: run) has (participant: silentSeat, response: silentResponse, submitted: false)
+      where view "(participant) holds a seat on (run)" with (participant: silentSeat, run)
+      where Reasoning._lastFailureAbout (about: silentResponse)
+      where no Reasoning._repliesAbout (about: silentResponse)
     started: the count of Responding._responsesFor (subject: run) has (response: started)
     title
     token: the token of the first Sharing._sharesFor (subject: run) has (token)
@@ -3155,7 +3577,7 @@ Former "the face of (run)" — inputs (run); bindings (open, presentation, title
 ### the face of relay run (run)
 
 Authored path: `Live.relays.theRelayFace`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 43.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 51.
 
 ```former
 Former "the face of relay run (run)" — inputs (run); bindings (relay, title, open, openRound, presentation, questions, leg, material, position, roundTitle, round, roundOpen); promises at most one record — forms:
@@ -3184,10 +3606,10 @@ Former "the face of relay run (run)" — inputs (run); bindings (relay, title, o
 ### the figure of (round)
 
 Authored path: `Live.relays.theRoundFigure`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 33.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
 
 ```former
-Former "the figure of (round)" — inputs (round); bindings (open, openedAt, closedAt, begun, handedIn, modelResponse, participant, run); promises at most one record — forms:
+Former "the figure of (round)" — inputs (round); bindings (open, openedAt, closedAt, begun, handedIn, modelResponse, participant, run, silentResponse, silentSeat, silentRun); promises at most one record — forms:
   a record of
     where Publishing._edition (edition: round) has (closedAt, open, openedAt)
     begun: the count of Responding._responsesFor (subject: round) has (response: begun)
@@ -3199,6 +3621,11 @@ Former "the figure of (round)" — inputs (round); bindings (open, openedAt, clo
     open
     openedAt
     round
+    silentByModel: the count of Responding._responsesFor (subject: round) has (participant: silentSeat, response: silentResponse, submitted: false)
+      where view "the run of (round)" with (round) has (run: silentRun)
+      where view "(participant) holds a seat on (run)" with (participant: silentSeat, run: silentRun)
+      where Reasoning._lastFailureAbout (about: silentResponse)
+      where no Reasoning._repliesAbout (about: silentResponse)
 ```
 
 ### the flags on (target)
@@ -3633,7 +4060,7 @@ Former "the notifications of (user)" — inputs (user); bindings (notification, 
 ### the offerings about (relay)
 
 Authored path: `Live.edits.theOfferings`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
 
 ```former
 Former "the offerings about (relay)" — inputs (relay); bindings (offering, offeredAt, suggestion, kind, target, value, position, standing); promises exactly one record — forms:
@@ -3742,120 +4169,6 @@ Former "the post (post)" — inputs (post); bindings (author, content, createdAt
     createdAt
     editedAt
     rendered
-```
-
-### the presentation of (leg)
-
-Authored path: `Live.relays.theRoundPresentation`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-
-```former
-Former "the presentation of (leg)" — inputs (leg); bindings (questionnaire, title, form, disclosure, question, prompt, choices, expected, explanation, parts, cap, position); promises at most one record — forms:
-  a record of
-    where Relaying._leg (leg) has (material: questionnaire)
-    where Questioning._getQuestionnaire (questionnaire) has (disclosure, form, title)
-    disclosure
-    form
-    questions: each Questioning._getQuestions (questionnaire) has (cap, choices, expected, explanation, parts, position, prompt, question)
-      form a record of
-        cap
-        choices
-        expected
-        explanation
-        item: question
-        parts
-        position
-        prompt
-    title
-```
-
-### the presentation of (leg) showing (sourceRound)
-
-Authored path: `Live.relays.theRoundPresentationShowing`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-
-```former
-Former "the presentation of (leg) showing (sourceRound)" — inputs (leg, sourceRound); bindings (questionnaire, title, form, disclosure, question, prompt, choices, expected, explanation, parts, cap, position, pile, name, categories, values, cards); promises at most one record — forms:
-  a record of
-    where Relaying._leg (leg) has (material: questionnaire)
-    where Questioning._getQuestionnaire (questionnaire) has (disclosure, form, title)
-    disclosure
-    form
-    questions: each Questioning._getQuestions (questionnaire) has (cap, choices, expected, explanation, parts, position, prompt, question)
-      form a record of
-        cap
-        choices
-        context: each Pinning._getPinned (scope: sourceRound) has (item: pile)
-          where Categorizing._getCategoryDetail (category: pile) has (name)
-          where Categorizing._categoriesWithItems (scope: sourceRound) has (categories)
-          where Responding._valuesForSubject (subject: sourceRound) has (values)
-          where cards is pileCards (categories, pile, values)
-          form a record of
-            cards
-            name
-        expected
-        explanation
-        item: question
-        parts
-        position
-        prompt
-    title
-```
-
-### the presentation of (leg) taking from (sourceRound)
-
-Authored path: `Live.relays.theRoundPresentationTaking`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-
-```former
-Former "the presentation of (leg) taking from (sourceRound)" — inputs (leg, sourceRound); bindings (questionnaire, title, form, disclosure, question, prompt, expected, explanation, parts, cap, position, pile, name); promises at most one record — forms:
-  a record of
-    where Relaying._leg (leg) has (material: questionnaire)
-    where Questioning._getQuestionnaire (questionnaire) has (disclosure, form, title)
-    disclosure
-    form
-    questions: each Questioning._getQuestions (questionnaire) has (expected, explanation, position, prompt, question)
-      where parts is oneBoxParts (question)
-      where cap is oneBoxCap (question)
-      form a record of
-        cap
-        choices: the distinct name of each Pinning._getPinned (scope: sourceRound) has (item: pile)
-          where Categorizing._getCategoryDetail (category: pile) has (name)
-        expected
-        explanation
-        item: question
-        parts
-        position
-        prompt
-    title
-```
-
-### the presentation of (leg) taking parts from (sourceRound)
-
-Authored path: `Live.relays.theRoundPresentationTakingParts`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-
-```former
-Former "the presentation of (leg) taking parts from (sourceRound)" — inputs (leg, sourceRound); bindings (questionnaire, title, form, disclosure, question, prompt, expected, explanation, cap, choices, position, pile, name); promises at most one record — forms:
-  a record of
-    where Relaying._leg (leg) has (material: questionnaire)
-    where Questioning._getQuestionnaire (questionnaire) has (disclosure, form, title)
-    disclosure
-    form
-    questions: each Questioning._getQuestions (questionnaire) has (expected, explanation, position, prompt, question)
-      where cap is oneBoxCap (question)
-      where choices is noChoices (question)
-      form a record of
-        cap
-        choices
-        expected
-        explanation
-        item: question
-        parts: the distinct name of each Pinning._getPinned (scope: sourceRound) has (item: pile)
-          where Categorizing._getCategoryDetail (category: pile) has (name)
-        position
-        prompt
-    title
 ```
 
 ### the private profile of (user)
@@ -4018,28 +4331,42 @@ Former "the registered users ()" — inputs (); bindings (user, username, email,
 ### the relay (relay)
 
 Authored path: `Live.relays.theRelay`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 23.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
 
 ```former
-Former "the relay (relay)" — inputs (relay); bindings (title, createdAt, leg, material, position, roundTitle, question, prompt, choices, parts, cap, source, sourceNumber, use, run, open, openedAt, closedAt, token, code, retired, ran); promises at most one record — forms:
+Former "the relay (relay)" — inputs (relay); bindings (title, description, storedSelection, createdAt, leg, material, position, roundTitle, question, prompt, choices, parts, cap, source, sourceNumber, use, run, open, openedAt, closedAt, token, code, retired, ran, pile, pileName, sentence, notes, kind); promises at most one record — forms:
   a record of
     where Relaying._relay (relay) has (createdAt, title)
     where Trashing._isTrashed (item: relay) has (trashed: retired)
+    where Guiding._guidanceText (subject: relay, use: "relay-description") has (text: description)
     createdAt
+    description
+    hostGuide: former "host guidance for relay (relay)" with (relay)
     relay
     retired
-    rounds: each Relaying._legs (relay) has (leg, material, position)
+    rounds: each Relaying._legs (relay) has (kind, leg, material, position)
+      where Guiding._guidanceText (subject: leg, use: "hosting-selection") has (text: storedSelection)
       where Questioning._getQuestionnaire (questionnaire: material) has (title: roundTitle)
       where Questioning._getQuestions (questionnaire: material) has (cap, choices, parts, prompt, question)
+      where Guiding._guidanceText (subject: leg, use: "sorting") has (text: notes)
       form a record of
         cap
         choices
+        hostGuide: former "host guidance for round (leg)" with (leg)
+        kind
         leg
+        notes
         number: position
         parts
+        piles: each Categorizing._categoriesIn (scope: leg) has (category: pile, description: sentence, name: pileName)
+          form a record of
+            description: sentence
+            name: pileName
+            pile
         prompt
         question
         questionnaire: material
+        storedSelection
         takes: each Relaying._draws (leg) has (source, use)
           where Relaying._leg (leg: source) has (position: sourceNumber)
           form a record of
@@ -4067,7 +4394,7 @@ Former "the relay (relay)" — inputs (relay); bindings (title, createdAt, leg, 
 ### the relays
 
 Authored path: `Live.relays.theRelays`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 23.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
 
 ```former
 Former "the relays" — inputs (); bindings (relay, title, createdAt, leg, material, position, roundTitle, run, code, openRound, round, open, runs, past, retired); promises exactly one record — forms:
@@ -4182,31 +4509,37 @@ Former "the roster ()" — inputs (); bindings (user, seat, kind, section, email
 ### the run (run)
 
 Authored path: `Live.relays.theRelayRun`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 33.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
 
 ```former
-Former "the run (run)" — inputs (run); bindings (relay, title, open, openedAt, closedAt, token, code, openRound, leg, material, position, roundTitle, round, takenFrom, seat, modelSorts); promises at most one record — forms:
+Former "the run (run)" — inputs (run); bindings (relay, title, description, storedSelection, open, openedAt, closedAt, token, code, openRound, leg, material, position, roundTitle, round, takenFrom, seat, modelSorts); promises at most one record — forms:
   a record of
     where Publishing._edition (edition: run) has (closedAt, material: relay, open, openedAt)
     where Relaying._relay (relay) has (title)
     where whether Locating._for (subject: run) has (code)
     where whether view "the open round of (run)" with (run) has (round: openRound)
     where Pinning._isPinned (item: run, scope: "sorting") has (pinned: modelSorts)
+    where Guiding._guidanceText (subject: relay, use: "relay-description") has (text: description)
     closedAt
     code
+    description
+    hostGuide: former "host guidance for relay (relay)" with (relay)
     modelSorts
     open
     openRound
     openedAt
     relay
     rounds: each Relaying._legs (relay) has (leg, material, position)
+      where Guiding._guidanceText (subject: leg, use: "hosting-selection") has (text: storedSelection)
       where Questioning._getQuestionnaire (questionnaire: material) has (title: roundTitle)
       where whether view "the round of (leg) in (run)" with (leg, run) has (round)
       form a record of
         figure: whether former "the figure of (round)" with (round)
+        hostGuide: former "host guidance for round (leg)" with (leg)
         leg
         number: position
         round
+        storedSelection
         takes: the count of Relaying._draws (leg) has (source: takenFrom)
         title: roundTitle
     run
@@ -4216,6 +4549,24 @@ Former "the run (run)" — inputs (run); bindings (relay, title, open, openedAt,
         participant: seat
     title
     token: the token of the first Sharing._sharesFor (subject: run) has (token)
+```
+
+### the sample of (leg) with (picks)
+
+Authored path: `Live.rounds.theSampleOf`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 19.
+
+```former
+Former "the sample of (leg) with (picks)" — inputs (leg, picks); bindings (asking, reply, answeredAt, standing, answers, resolution); promises at most one record — forms:
+  a record of
+    where Reasoning._lastReplyAbout (about: leg) has (answeredAt, asking, reply)
+    where view "the preview inputs of (leg) with (picks)" with (leg, picks) has (resolution)
+    where standing is samplingResolvedStanding (resolution)
+    where answers is sampledAnswers (reply)
+    answeredAt
+    answers
+    asking
+    standing
 ```
 
 ### the score outcome of (response)
@@ -4238,17 +4589,19 @@ Former "the score outcome of (response)" — inputs (response); bindings (run, k
 ### the scores of (run)
 
 Authored path: `Live.runs.theRunScores`.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 57.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 58.
 
 ```former
-Former "the scores of (run)" — inputs (run); bindings (key, disclosure, submission, participant, name, score, outOf); promises at most one record — forms:
+Former "the scores of (run)" — inputs (run); bindings (key, disclosure, submission, participant, name, score, outOf, model); promises at most one record — forms:
   a record of
     where Scoring._keyFor (subject: run) has (disclosure, key)
     disclosure
     results: each Scoring._results (key) has (outOf, score, submission)
       where Responding._response (response: submission) has (participant)
+      where Subscribing._isSubscribed (target: run, user: participant) has (subscribed: model)
       where whether Profiling._getProfileFields (user: participant) has (displayName: name)
       form a record of
+        model
         name
         outOf
         participant
@@ -4708,7 +5061,7 @@ Authored path: `Live.walls.theWall`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 5.
 
 ```former
-Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bindings (questionnaire, presentation, open, openedAt, closedAt, title, leg, number, questions, begun, handedIn, response, participant, item, value, card, pile, run, model, mine, part, category, name, description, held, failure, failedAt); promises at most one record — forms:
+Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bindings (questionnaire, presentation, open, openedAt, closedAt, title, leg, number, questions, begun, handedIn, modelBegun, modelHandedIn, seat, response, participant, item, value, card, pile, run, model, mine, part, category, name, description, definition, summary, held, failure, failedAt, notes, pendingAsk, sortPending); promises at most one record — forms:
   a record of
     where Publishing._edition (edition: round) has (closedAt, material: questionnaire, open, openedAt)
     where RunSnapshotting._snapshot (subject: round) has (value: presentation)
@@ -4717,7 +5070,13 @@ Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bin
     where whether Relaying._legFor (material: questionnaire) has (leg, position: number)
     where whether Reasoning._lastFailureAbout (about: round) has (account: failure, failedAt)
     where whether view "the run of (round)" with (round) has (run)
+    where Guiding._guidanceText (subject: round, use: "sorting") has (text: notes)
+    where Locking._isLocked (target: round) has (locked: sortPending)
+    asksOut: the count of Reasoning._pending () has (about: round, asking: pendingAsk)
     begun: the count of Responding._responsesFor (subject: round) has (response: begun)
+    begunByModel: the count of Responding._responsesFor (subject: round) has (participant: seat, response: modelBegun)
+      where view "the run of (round)" with (round) has (run)
+      where view "(participant) holds a seat on (run)" with (participant: seat, run)
     cards: each Responding._submittedAnswers (subject: round) has (item, participant, response, value)
       where card is cardId (item, response)
       where view "(card) stands on its wall" with (card)
@@ -4736,19 +5095,28 @@ Former "the wall of (round) as (viewer) sees it" — inputs (round, viewer); bin
     failedAt
     failure
     handedIn: the count of Responding._responsesFor (subject: round) has (response: handedIn, submitted: true)
+    handedInByModel: the count of Responding._responsesFor (subject: round) has (participant: seat, response: modelHandedIn, submitted: true)
+      where view "the run of (round)" with (round) has (run)
+      where view "(participant) holds a seat on (run)" with (participant: seat, run)
+    notes
     number
     open
     openedAt
     piles: each Categorizing._categoriesIn (scope: round) has (category, description, name)
+      where Guiding._guidanceText (subject: category, use: "pile-definition") has (text: definition)
+      where Guiding._guidanceText (subject: category, use: "pile-summary") has (text: summary)
       form a record of
         count: the count of Categorizing._getItems (category) has (item: held)
           where view "(card) stands on its wall" with (card: held)
-        description
+        definition
+        description: summary
+        legacyText: description
         name
         pile: category
         … former "the pick of (pile) on (round)" with (pile: category, round), with blank leaves if absent
     questions
     round
+    sortPending
     title
 ```
 
@@ -11612,11 +11980,11 @@ Authored path: `Forum.pins.UnpinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 26.
 
 ```reaction
-when Pinning.unpin (item, scope, pin), asked by Forum.pins.UnpinItem:success
+when Pinning.unpin (item, scope), asked by Forum.pins.UnpinItem:success
 where
   earlier, RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 then
-  RequestBoundary.respond (pin, requestId)
+  RequestBoundary.respond (item, requestId)
 ```
 
 ### Forum.posts.CreatedPostRefreshesDerivedContent:links
@@ -13589,7 +13957,7 @@ then
 
 Authored path: `Live.drafting.Abandon`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 88.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 116.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 152.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/abandon", requestId, session)
@@ -13605,7 +13973,7 @@ then
 
 Authored path: `Live.drafting.Abandon`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 88.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 116.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 152.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/abandon", requestId, session)
@@ -13622,7 +13990,7 @@ then
 
 Authored path: `Live.drafting.Abandon`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 88.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 116.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 152.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/abandon", requestId, session)
@@ -13637,7 +14005,7 @@ then
 
 Authored path: `Live.drafting.Abandon`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 88.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 116.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 152.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/abandon", requestId, session)
@@ -13653,7 +14021,7 @@ then
 
 Authored path: `Live.drafting.Abandon`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 88.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 116.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 152.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/abandon", requestId, session)
@@ -13669,7 +14037,7 @@ then
 
 Authored path: `Live.drafting.Abandon`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 88.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 116.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 152.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/abandon", requestId, session)
@@ -13687,7 +14055,7 @@ then
 
 Authored path: `Live.drafting.Abandon`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 88.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 116.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 152.
 
 ```reaction
 when DraftTrashing.trash (at, by: user, item: root, result.item: trashed), asked by Live.drafting.Abandon:success
@@ -13715,7 +14083,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13732,7 +14100,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13747,7 +14115,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13766,7 +14134,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13785,7 +14153,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13801,7 +14169,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13818,7 +14186,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13839,7 +14207,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when Drafting.adopt (candidate, result.candidate: adopted), asked by Live.drafting.Adopt:refit
@@ -13853,7 +14221,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13872,7 +14240,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13890,7 +14258,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/adopt", requestId, session)
@@ -13909,7 +14277,7 @@ then
 
 Authored path: `Live.drafting.Adopt`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 55.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 115.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 151.
 
 ```reaction
 when Drafting.adopt (candidate, result.candidate: adopted), asked by Live.drafting.Adopt:success
@@ -13964,6 +14332,22 @@ where
   Drafting._candidate (candidate) has (brief: linked)
 then
   AdoptLinking.setLinks (source: linked, targets)
+```
+
+### Live.drafting.AdoptedReferences
+
+Authored path: `Live.drafting.AdoptedReferences`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 170.
+
+```reaction
+when AdoptLinking.setLinks (source, targets)
+where
+  Drafting._context (brief: source) has (context)
+  references is draftReferences (context)
+  AdoptLinking._getLinks (source) has (target: questionnaire)
+  Guiding._documentsById (guidances: references, use: "drafting") has (guidances: existing)
+then
+  Guiding.select (guidances: existing, subject: questionnaire, use: "drafting")
 ```
 
 ### Live.drafting.AdoptedRevisionRevisesQuestionnaire:grow
@@ -14045,7 +14429,8 @@ where
   view "the root of drafting line (brief)" with (brief) has (abandoned: false)
   Drafting._clarifications (brief) has (clarification, question)
   Drafting._brief (brief) has (request)
-  passage is clarifiedPassage (answer, question, request)
+  view "the selected documents for (brief)" with (brief) has (documents)
+  passage is clarifiedPassage (answer, documents, question, request)
 then
   Reasoning.ask (about: brief, at, passage, reasoner: "gemini-flash")
 ```
@@ -14054,7 +14439,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 117.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 153.
 
 ```reaction
 when RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
@@ -14073,7 +14458,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 117.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 153.
 
 ```reaction
 when RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
@@ -14088,7 +14473,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 117.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 153.
 
 ```reaction
 when RequestBoundary.request (answer, clarification, path: "/live/drafts/clarify", requestId, session)
@@ -14108,7 +14493,7 @@ then
 
 Authored path: `Live.drafting.Clarify`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 18.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 117.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 153.
 
 ```reaction
 when Drafting.clarify (answer, clarification, brief, result.clarification: clarified), asked by Live.drafting.Clarify:success
@@ -14131,7 +14516,8 @@ where
   view "the root of drafting line (brief)" with (brief) has (abandoned: false)
   Insisting._standingFor (aim: brief)
   Drafting._brief (brief) has (request)
-  passage is repairPassage (account, offering, request)
+  view "the selected documents for (brief)" with (brief) has (documents)
+  passage is repairPassage (account, documents, offering, request)
 then
   Reasoning.ask (about: brief, at, passage, reasoner: "gemini-flash")
 ```
@@ -14140,7 +14526,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 118.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 154.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
@@ -14157,7 +14543,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 118.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 154.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
@@ -14172,7 +14558,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 118.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 154.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
@@ -14189,7 +14575,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 118.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 154.
 
 ```reaction
 when RequestBoundary.request (candidate, path: "/live/drafts/correct", request, requestId, session)
@@ -14207,7 +14593,7 @@ then
 
 Authored path: `Live.drafting.Correct`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 48.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 118.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 154.
 
 ```reaction
 when Drafting.correct (at, author: user, candidate, request, brief), asked by Live.drafting.Correct:success
@@ -14228,7 +14614,8 @@ where
   at is the current flow's instant
   view "the root of drafting line (brief)" with (brief) has (abandoned: false)
   Drafting._material (candidate) has (form, material)
-  passage is revisionPassage (form, material, request)
+  view "the selected documents for (brief)" with (brief) has (documents)
+  passage is revisionPassage (documents, form, material, request)
 then
   Reasoning.ask (about: brief, at, passage, reasoner: "gemini-flash")
 ```
@@ -14255,10 +14642,10 @@ then
 
 Authored path: `Live.drafting.Describe`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 119.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 155.
 
 ```reaction
-when RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
+when RequestBoundary.request (kind, path: "/live/drafts/describe", references, request, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not host live runs" with (user)
@@ -14270,28 +14657,30 @@ then
 
 Authored path: `Live.drafting.Describe`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 119.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 155.
 
 ```reaction
-when RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
+when RequestBoundary.request (kind, path: "/live/drafts/describe", references, request, requestId, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
+  context is draftContext (kind, references)
+  typedRequest is draftRequest (kind, request)
 then
-  Drafting.describe (at, author: user, request)
+  Drafting.describe (at, author: user, context, request: typedRequest)
 ```
 
 ### Live.drafting.Describe:success#2
 
 Authored path: `Live.drafting.Describe`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 10.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 119.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 155.
 
 ```reaction
-when Drafting.describe (at, author: user, request, brief), asked by Live.drafting.Describe:success
+when Drafting.describe (at, author: user, context, request: typedRequest, brief), asked by Live.drafting.Describe:success
 where
-  earlier, RequestBoundary.request (path: "/live/drafts/describe", request, requestId, session)
+  earlier, RequestBoundary.request (kind, path: "/live/drafts/describe", references, request, requestId, session)
 then
   RequestBoundary.respond (brief, requestId)
 ```
@@ -14306,7 +14695,8 @@ when Drafting.describe (request, brief)
 where
   at is the current flow's instant
   view "the root of drafting line (brief)" with (brief) has (abandoned: false)
-  passage is draftingPassage (request)
+  view "the selected documents for (brief)" with (brief) has (documents)
+  passage is draftingPassage (documents, request)
 then
   Reasoning.ask (about: brief, at, passage, reasoner: "gemini-flash")
 ```
@@ -14344,11 +14734,128 @@ then
   Drafting.stall (brief, reason: account)
 ```
 
+### Live.drafting.GiveDocument:class
+
+Authored path: `Live.drafting.GiveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 122.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 156.
+
+```reaction
+when RequestBoundary.request (body, path: "/live/drafts/give-document", relay, requestId, session, title)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  named is relayGiven (relay)
+  named is among ["none"]
+then
+  Guiding.give (body, subject: "commons", title, use: "drafting")
+```
+
+### Live.drafting.GiveDocument:class#2
+
+Authored path: `Live.drafting.GiveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 122.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 156.
+
+```reaction
+when Guiding.give (body, subject: "commons", title, use: "drafting", guidance: document), asked by Live.drafting.GiveDocument:class
+where
+  earlier, RequestBoundary.request (body, path: "/live/drafts/give-document", relay, requestId, session, title)
+then
+  RequestBoundary.respond (document, requestId)
+```
+
+### Live.drafting.GiveDocument:forbidden
+
+Authored path: `Live.drafting.GiveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 122.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 156.
+
+```reaction
+when RequestBoundary.request (body, path: "/live/drafts/give-document", relay, requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.GiveDocument:missing
+
+Authored path: `Live.drafting.GiveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 122.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 156.
+
+```reaction
+when RequestBoundary.request (body, path: "/live/drafts/give-document", relay, requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  named is relayGiven (relay)
+  named is among ["given"]
+  no Relaying._relay (relay)
+then
+  RequestBoundary.respond (error: "RELAY_NOT_FOUND", requestId)
+```
+
+### Live.drafting.GiveDocument:relay
+
+Authored path: `Live.drafting.GiveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 122.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 156.
+
+```reaction
+when RequestBoundary.request (body, path: "/live/drafts/give-document", relay, requestId, session, title)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  named is relayGiven (relay)
+  named is among ["given"]
+  view "(relay) stands" with (relay)
+then
+  Guiding.give (body, subject: relay, title, use: "drafting")
+```
+
+### Live.drafting.GiveDocument:relay#2
+
+Authored path: `Live.drafting.GiveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 122.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 156.
+
+```reaction
+when Guiding.give (body, subject: relay, title, use: "drafting", guidance: document), asked by Live.drafting.GiveDocument:relay
+where
+  earlier, RequestBoundary.request (body, path: "/live/drafts/give-document", relay, requestId, session, title)
+then
+  RequestBoundary.respond (document, requestId)
+```
+
+### Live.drafting.GiveDocument:retired
+
+Authored path: `Live.drafting.GiveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 122.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 156.
+
+```reaction
+when RequestBoundary.request (body, path: "/live/drafts/give-document", relay, requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  named is relayGiven (relay)
+  named is among ["given"]
+  Relaying._relay (relay)
+  view "(relay) is retired" with (relay)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
 ### Live.drafting.Line:forbidden
 
 Authored path: `Live.drafting.Line`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 49.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 120.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 157.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/line", requestId, session)
@@ -14363,7 +14870,7 @@ then
 
 Authored path: `Live.drafting.Line`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 49.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 120.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 157.
 
 ```reaction
 when RequestBoundary.request (brief, path: "/live/drafts/line", requestId, session)
@@ -14379,7 +14886,7 @@ then
 
 Authored path: `Live.drafting.Lines`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 99.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 121.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 158.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/lines", requestId, session)
@@ -14394,7 +14901,7 @@ then
 
 Authored path: `Live.drafting.Lines`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 99.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 121.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 158.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/lines", requestId, session)
@@ -14424,7 +14931,7 @@ then
 
 Authored path: `Live.drafting.Provenance`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 106.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 122.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 159.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/provenance", questionnaire, requestId, session)
@@ -14439,7 +14946,7 @@ then
 
 Authored path: `Live.drafting.Provenance`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 106.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 122.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 159.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/provenance", questionnaire, requestId, session)
@@ -14451,11 +14958,130 @@ then
   RequestBoundary.respond (provenance: former "the drafting provenance of (questionnaire)" with (questionnaire), requestId)
 ```
 
+### Live.drafting.ReadDocuments:class
+
+Authored path: `Live.drafting.ReadDocuments`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 125.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 160.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/documents", relay, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  named is relayGiven (relay)
+  named is among ["none"]
+then
+  RequestBoundary.respond (documents: former "the background documents of (relay)" with (relay), requestId)
+```
+
+### Live.drafting.ReadDocuments:forbidden
+
+Authored path: `Live.drafting.ReadDocuments`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 125.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 160.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/documents", relay, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.ReadDocuments:missing
+
+Authored path: `Live.drafting.ReadDocuments`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 125.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 160.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/documents", relay, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  named is relayGiven (relay)
+  named is among ["given"]
+  no Relaying._relay (relay)
+then
+  RequestBoundary.respond (error: "RELAY_NOT_FOUND", requestId)
+```
+
+### Live.drafting.ReadDocuments:relay
+
+Authored path: `Live.drafting.ReadDocuments`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 125.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 160.
+
+```reaction
+when RequestBoundary.request (path: "/live/drafts/documents", relay, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  named is relayGiven (relay)
+  named is among ["given"]
+  Relaying._relay (relay)
+then
+  RequestBoundary.respond (documents: former "the background documents of (relay)" with (relay), requestId)
+```
+
+### Live.drafting.ReadReferences:forbidden
+
+Authored path: `Live.drafting.ReadReferences`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 149.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 170.
+
+```reaction
+when RequestBoundary.request (path: "/live/references/get", requestId, session, subject)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.ReadReferences:missing
+
+Authored path: `Live.drafting.ReadReferences`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 149.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 170.
+
+```reaction
+when RequestBoundary.request (path: "/live/references/get", requestId, session, subject)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "reference activity (subject)" with (subject)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.drafting.ReadReferences:success
+
+Authored path: `Live.drafting.ReadReferences`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 149.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 170.
+
+```reaction
+when RequestBoundary.request (path: "/live/references/get", requestId, session, subject)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "reference activity (subject)" with (subject)
+  Guiding._selection (subject, use: "drafting") has (guidances)
+  Guiding._selectedDocuments (subject, use: "drafting") has (documents)
+then
+  RequestBoundary.respond (documents, references: guidances, requestId)
+```
+
 ### Live.drafting.Refine:forbidden
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 161.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -14470,7 +15096,7 @@ then
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 161.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -14486,7 +15112,7 @@ then
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 161.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -14502,7 +15128,7 @@ then
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 161.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -14519,7 +15145,7 @@ then
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 161.
 
 ```reaction
 when RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
@@ -14530,22 +15156,137 @@ where
   Questioning._getQuestionnaire (questionnaire) has (retired: false, title)
   view "(questionnaire) has no open run" with (questionnaire)
   Questioning._material (questionnaire) has (form, material)
+  Guiding._selection (subject: questionnaire, use: "drafting") has (guidances: references)
+  context is draftContext (kind: form, references)
 then
-  Drafting.open (at, author: user, form, material, origin: questionnaire, request: title)
+  Drafting.open (at, author: user, context, form, material, origin: questionnaire, request: title)
 ```
 
 ### Live.drafting.Refine:success#2
 
 Authored path: `Live.drafting.Refine`.
 - Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 67.
-- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 161.
 
 ```reaction
-when Drafting.open (at, author: user, form, material, origin: questionnaire, request: title, brief, candidate), asked by Live.drafting.Refine:success
+when Drafting.open (at, author: user, context, form, material, origin: questionnaire, request: title, brief, candidate), asked by Live.drafting.Refine:success
 where
   earlier, RequestBoundary.request (path: "/live/drafts/refine", questionnaire, requestId, session)
 then
   RequestBoundary.respond (brief, candidate, requestId)
+```
+
+### Live.drafting.RemoveDocument:class
+
+Authored path: `Live.drafting.RemoveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 124.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 162.
+
+```reaction
+when RequestBoundary.request (document, path: "/live/drafts/remove-document", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the subject of background document (document)" with (document) has (subject)
+  subject is among ["commons"]
+then
+  Guiding.remove (guidance: document)
+```
+
+### Live.drafting.RemoveDocument:class#2
+
+Authored path: `Live.drafting.RemoveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 124.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 162.
+
+```reaction
+when Guiding.remove (guidance: document), asked by Live.drafting.RemoveDocument:class
+where
+  earlier, RequestBoundary.request (document, path: "/live/drafts/remove-document", requestId, session)
+then
+  RequestBoundary.respond (removed: true, requestId)
+```
+
+### Live.drafting.RemoveDocument:forbidden
+
+Authored path: `Live.drafting.RemoveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 124.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 162.
+
+```reaction
+when RequestBoundary.request (document, path: "/live/drafts/remove-document", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.RemoveDocument:missing
+
+Authored path: `Live.drafting.RemoveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 124.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 162.
+
+```reaction
+when RequestBoundary.request (document, path: "/live/drafts/remove-document", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "the subject of background document (document)" with (document)
+then
+  RequestBoundary.respond (error: "GUIDANCE_NOT_FOUND", requestId)
+```
+
+### Live.drafting.RemoveDocument:relay
+
+Authored path: `Live.drafting.RemoveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 124.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 162.
+
+```reaction
+when RequestBoundary.request (document, path: "/live/drafts/remove-document", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the subject of background document (document)" with (document) has (subject)
+  view "(relay) stands" with (relay: subject)
+then
+  Guiding.remove (guidance: document)
+```
+
+### Live.drafting.RemoveDocument:relay#2
+
+Authored path: `Live.drafting.RemoveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 124.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 162.
+
+```reaction
+when Guiding.remove (guidance: document), asked by Live.drafting.RemoveDocument:relay
+where
+  earlier, RequestBoundary.request (document, path: "/live/drafts/remove-document", requestId, session)
+then
+  RequestBoundary.respond (removed: true, requestId)
+```
+
+### Live.drafting.RemoveDocument:retired
+
+Authored path: `Live.drafting.RemoveDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 124.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 162.
+
+```reaction
+when RequestBoundary.request (document, path: "/live/drafts/remove-document", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the subject of background document (document)" with (document) has (subject)
+  Relaying._relay (relay: subject)
+  view "(relay) is retired" with (relay: subject)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
 ```
 
 ### Live.drafting.ReplyDraftProposes
@@ -14604,6 +15345,197 @@ then
   Drafting.ask (brief, question)
 ```
 
+### Live.drafting.ReviseDocument:class
+
+Authored path: `Live.drafting.ReviseDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 163.
+
+```reaction
+when RequestBoundary.request (body, document, path: "/live/drafts/revise-document", requestId, session, title)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the subject of background document (document)" with (document) has (subject)
+  subject is among ["commons"]
+then
+  Guiding.revise (body, guidance: document, title)
+```
+
+### Live.drafting.ReviseDocument:class#2
+
+Authored path: `Live.drafting.ReviseDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 163.
+
+```reaction
+when Guiding.revise (body, guidance: document, title, result.guidance: revised), asked by Live.drafting.ReviseDocument:class
+where
+  earlier, RequestBoundary.request (body, document, path: "/live/drafts/revise-document", requestId, session, title)
+then
+  RequestBoundary.respond (document: revised, requestId)
+```
+
+### Live.drafting.ReviseDocument:forbidden
+
+Authored path: `Live.drafting.ReviseDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 163.
+
+```reaction
+when RequestBoundary.request (body, document, path: "/live/drafts/revise-document", requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.ReviseDocument:missing
+
+Authored path: `Live.drafting.ReviseDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 163.
+
+```reaction
+when RequestBoundary.request (body, document, path: "/live/drafts/revise-document", requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "the subject of background document (document)" with (document)
+then
+  RequestBoundary.respond (error: "GUIDANCE_NOT_FOUND", requestId)
+```
+
+### Live.drafting.ReviseDocument:relay
+
+Authored path: `Live.drafting.ReviseDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 163.
+
+```reaction
+when RequestBoundary.request (body, document, path: "/live/drafts/revise-document", requestId, session, title)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the subject of background document (document)" with (document) has (subject)
+  view "(relay) stands" with (relay: subject)
+then
+  Guiding.revise (body, guidance: document, title)
+```
+
+### Live.drafting.ReviseDocument:relay#2
+
+Authored path: `Live.drafting.ReviseDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 163.
+
+```reaction
+when Guiding.revise (body, guidance: document, title, result.guidance: revised), asked by Live.drafting.ReviseDocument:relay
+where
+  earlier, RequestBoundary.request (body, document, path: "/live/drafts/revise-document", requestId, session, title)
+then
+  RequestBoundary.respond (document: revised, requestId)
+```
+
+### Live.drafting.ReviseDocument:retired
+
+Authored path: `Live.drafting.ReviseDocument`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 123.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 163.
+
+```reaction
+when RequestBoundary.request (body, document, path: "/live/drafts/revise-document", requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the subject of background document (document)" with (document) has (subject)
+  Relaying._relay (relay: subject)
+  view "(relay) is retired" with (relay: subject)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.drafting.SelectReferences:forbidden
+
+Authored path: `Live.drafting.SelectReferences`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 150.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 170.
+
+```reaction
+when RequestBoundary.request (path: "/live/references/select", references, requestId, session, subject)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.drafting.SelectReferences:missing
+
+Authored path: `Live.drafting.SelectReferences`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 150.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 170.
+
+```reaction
+when RequestBoundary.request (path: "/live/references/select", references, requestId, session, subject)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "reference activity (subject)" with (subject)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.drafting.SelectReferences:retired
+
+Authored path: `Live.drafting.SelectReferences`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 150.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 170.
+
+```reaction
+when RequestBoundary.request (path: "/live/references/select", references, requestId, session, subject)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "reference activity (subject)" with (subject)
+  no view "editable reference activity (subject)" with (subject)
+then
+  RequestBoundary.respond (error: "CONFLICT", requestId)
+```
+
+### Live.drafting.SelectReferences:success
+
+Authored path: `Live.drafting.SelectReferences`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 150.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 170.
+
+```reaction
+when RequestBoundary.request (path: "/live/references/select", references, requestId, session, subject)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "editable reference activity (subject)" with (subject)
+then
+  Guiding.select (guidances: references, subject, use: "drafting")
+```
+
+### Live.drafting.SelectReferences:success#2
+
+Authored path: `Live.drafting.SelectReferences`.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 150.
+- Covered by [Drafting with the reasoner](../design/compositions/live/drafting.md), line 170.
+
+```reaction
+when Guiding.select (guidances: references, subject, use: "drafting"), asked by Live.drafting.SelectReferences:success
+where
+  earlier, RequestBoundary.request (path: "/live/references/select", references, requestId, session, subject)
+then
+  RequestBoundary.respond (requestId, selected: true)
+```
+
 ### Live.drafting.SpentPatienceStallsTheBrief
 
 Authored path: `Live.drafting.SpentPatienceStallsTheBrief`.
@@ -14630,6 +15562,36 @@ then
   Insisting.giveUp (aim: brief)
 ```
 
+### Live.edits.AddedRoundCarriesItsPiles
+
+Authored path: `Live.edits.AddedRoundCarriesItsPiles`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 19.
+
+```reaction
+when Relaying.addLeg (material, relay, leg: added)
+where
+  earlier, Suggesting.take (suggestion, kind: "add", value)
+  at is the current flow's instant
+  lines is editRoundLines (leg: added, value)
+  standing is linesStanding (lines)
+  standing is among ["some"]
+then
+  Suggesting.offer (at, lines, subject: added)
+```
+
+### Live.edits.AddedRoundCarriesItsPiles#2
+
+Authored path: `Live.edits.AddedRoundCarriesItsPiles`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 19.
+
+```reaction
+when Suggesting.offer (at, lines, subject: added, offering: follow), asked by Live.edits.AddedRoundCarriesItsPiles
+where
+  Suggesting._pendingIn (offering: follow) has (suggestion: line)
+then
+  Suggesting.take (suggestion: line)
+```
+
 ### Live.edits.ComplaintRetriesTheAsk
 
 Authored path: `Live.edits.ComplaintRetriesTheAsk`.
@@ -14650,8 +15612,8 @@ then
 ### Live.edits.Decline:forbidden
 
 Authored path: `Live.edits.Decline`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 101.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 136.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/decline", requestId, session, suggestion)
@@ -14665,8 +15627,8 @@ then
 ### Live.edits.Decline:success
 
 Authored path: `Live.edits.Decline`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 101.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 136.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/decline", requestId, session, suggestion)
@@ -14681,8 +15643,8 @@ then
 ### Live.edits.Decline:success#2
 
 Authored path: `Live.edits.Decline`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 101.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 136.
 
 ```reaction
 when Suggesting.decline (suggestion, result.suggestion: declined), asked by Live.edits.Decline:success
@@ -14696,7 +15658,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14713,7 +15675,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14728,7 +15690,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14744,7 +15706,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/draft", relay, request, requestId, session)
@@ -14758,7 +15720,17 @@ where
   Relaying._plan (relay) has (legs)
   questionnaires is legMaterials (legs)
   Questioning._materials (questionnaires) has (materials)
-  passage is relayDraftPassage (legs, materials, request, title)
+  rounds is legIdentities (legs)
+  Categorizing._categoriesInScopes (scopes: rounds) has (categories: piles)
+  Guiding._guidanceTexts (subjects: rounds, use: "sorting") has (texts: notes)
+  Guiding._guidanceText (subject: relay, use: "relay-description") has (text: description)
+  Guiding._guidanceText (subject: relay, use: "hosting-opening") has (text: opening)
+  Guiding._guidanceText (subject: relay, use: "hosting-closing") has (text: closing)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-purpose") has (texts: purposes)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-facilitation") has (texts: facilitations)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-selection") has (texts: selections)
+  Guiding._selectedDocuments (subject: relay, use: "drafting") has (documents: relayDocuments)
+  passage is relayDraftPassage (classDocuments: "", closing, description, facilitations, legs, materials, notes, opening, piles, purposes, relayDocuments, request, selections, title)
 then
   Reasoning.ask (about: relay, at, passage, reasoner: "gemini-flash")
 ```
@@ -14767,7 +15739,7 @@ then
 
 Authored path: `Live.edits.Draft`.
 - Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 7.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 102.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 137.
 
 ```reaction
 when Reasoning.ask (about: relay, at, passage, reasoner: "gemini-flash", asking), asked by Live.edits.Draft:success
@@ -14809,8 +15781,8 @@ then
 ### Live.edits.Offerings:forbidden
 
 Authored path: `Live.edits.Offerings`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 103.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 138.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/offerings", relay, requestId, session)
@@ -14824,8 +15796,8 @@ then
 ### Live.edits.Offerings:success
 
 Authored path: `Live.edits.Offerings`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 103.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 138.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/offerings", relay, requestId, session)
@@ -14854,7 +15826,16 @@ where
   Relaying._plan (relay) has (legs)
   questionnaires is legMaterials (legs)
   Questioning._materials (questionnaires) has (materials)
-  lines is relayEditLines (legs, materials, reply, title)
+  rounds is legIdentities (legs)
+  Categorizing._categoriesInScopes (scopes: rounds) has (categories: piles)
+  Guiding._guidanceTexts (subjects: rounds, use: "sorting") has (texts: notes)
+  Guiding._guidanceText (subject: relay, use: "relay-description") has (text: description)
+  Guiding._guidanceText (subject: relay, use: "hosting-opening") has (text: opening)
+  Guiding._guidanceText (subject: relay, use: "hosting-closing") has (text: closing)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-purpose") has (texts: purposes)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-facilitation") has (texts: facilitations)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-selection") has (texts: selections)
+  lines is relayEditLines (closing, description, facilitations, legs, materials, notes, opening, piles, purposes, reply, selections, title)
 then
   Suggesting.offer (at, lines, subject: relay)
 ```
@@ -14909,26 +15890,59 @@ then
   Insisting.giveUp (aim: relay)
 ```
 
-### Live.edits.Take:forbidden
+### Live.edits.Take:guide
 
 Authored path: `Live.edits.Take`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 139.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not host live runs" with (user)
+  view "(user) may host live runs" with (user)
+  Suggesting._suggestion (suggestion) has (kind: "guide", target)
+  Relaying._leg (leg: target)
 then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+  Suggesting.take (suggestion)
+```
+
+### Live.edits.Take:guide#2
+
+Authored path: `Live.edits.Take`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 139.
+
+```reaction
+when Suggesting.take (suggestion, result.suggestion: taken), asked by Live.edits.Take:guide
+at the flow's settlement frontier
+where
+  Suggesting._suggestion (suggestion: taken) has (kind, subject: relay, target, value)
+  whether Relaying._relay (relay) has (title)
+  whether Relaying._plan (relay) has (legs)
+  questionnaires is legMaterials (legs)
+  Questioning._materials (questionnaires) has (materials)
+  rounds is legIdentities (legs)
+  Categorizing._categoriesInScopes (scopes: rounds) has (categories: piles)
+  Guiding._guidanceTexts (subjects: rounds, use: "sorting") has (texts: notes)
+  Guiding._guidanceText (subject: relay, use: "relay-description") has (text: description)
+  Guiding._guidanceText (subject: relay, use: "hosting-opening") has (text: opening)
+  Guiding._guidanceText (subject: relay, use: "hosting-closing") has (text: closing)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-purpose") has (texts: purposes)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-facilitation") has (texts: facilitations)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-selection") has (texts: selections)
+  applied is editApplied (closing, description, facilitations, kind, legs, materials, notes, opening, piles, purposes, selections, target, title, value)
+  earlier, RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
+then
+  RequestBoundary.respond (applied, requestId, suggestion: taken)
 ```
 
 ### Live.edits.Take:relay
 
 Authored path: `Live.edits.Take`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 139.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
@@ -14945,22 +15959,38 @@ then
 ### Live.edits.Take:relay#2
 
 Authored path: `Live.edits.Take`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 139.
 
 ```reaction
 when Suggesting.take (suggestion, result.suggestion: taken), asked by Live.edits.Take:relay
+at the flow's settlement frontier
 where
+  Suggesting._suggestion (suggestion: taken) has (kind, subject: relay, target, value)
+  whether Relaying._relay (relay) has (title)
+  whether Relaying._plan (relay) has (legs)
+  questionnaires is legMaterials (legs)
+  Questioning._materials (questionnaires) has (materials)
+  rounds is legIdentities (legs)
+  Categorizing._categoriesInScopes (scopes: rounds) has (categories: piles)
+  Guiding._guidanceTexts (subjects: rounds, use: "sorting") has (texts: notes)
+  Guiding._guidanceText (subject: relay, use: "relay-description") has (text: description)
+  Guiding._guidanceText (subject: relay, use: "hosting-opening") has (text: opening)
+  Guiding._guidanceText (subject: relay, use: "hosting-closing") has (text: closing)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-purpose") has (texts: purposes)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-facilitation") has (texts: facilitations)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-selection") has (texts: selections)
+  applied is editApplied (closing, description, facilitations, kind, legs, materials, notes, opening, piles, purposes, selections, target, title, value)
   earlier, RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
 then
-  RequestBoundary.respond (requestId, suggestion: taken)
+  RequestBoundary.respond (applied, requestId, suggestion: taken)
 ```
 
 ### Live.edits.Take:round
 
 Authored path: `Live.edits.Take`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 139.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
@@ -14968,7 +15998,8 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  Suggesting._suggestion (suggestion) has (target)
+  Suggesting._suggestion (suggestion) has (kind, target)
+  kind is among ["title", "prompt", "parts", "choices", "takes", "pile", "unpile", "notes", "move", "remove"]
   Relaying._leg (leg: target) has (material: questionnaire)
   view "(questionnaire) has no open run" with (questionnaire)
 then
@@ -14978,29 +16009,77 @@ then
 ### Live.edits.Take:round#2
 
 Authored path: `Live.edits.Take`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 139.
 
 ```reaction
 when Suggesting.take (suggestion, result.suggestion: taken), asked by Live.edits.Take:round
+at the flow's settlement frontier
 where
+  Suggesting._suggestion (suggestion: taken) has (kind, subject: relay, target, value)
+  whether Relaying._relay (relay) has (title)
+  whether Relaying._plan (relay) has (legs)
+  questionnaires is legMaterials (legs)
+  Questioning._materials (questionnaires) has (materials)
+  rounds is legIdentities (legs)
+  Categorizing._categoriesInScopes (scopes: rounds) has (categories: piles)
+  Guiding._guidanceTexts (subjects: rounds, use: "sorting") has (texts: notes)
+  Guiding._guidanceText (subject: relay, use: "relay-description") has (text: description)
+  Guiding._guidanceText (subject: relay, use: "hosting-opening") has (text: opening)
+  Guiding._guidanceText (subject: relay, use: "hosting-closing") has (text: closing)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-purpose") has (texts: purposes)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-facilitation") has (texts: facilitations)
+  Guiding._guidanceTexts (subjects: rounds, use: "hosting-selection") has (texts: selections)
+  applied is editApplied (closing, description, facilitations, kind, legs, materials, notes, opening, piles, purposes, selections, target, title, value)
   earlier, RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
 then
-  RequestBoundary.respond (requestId, suggestion: taken)
+  RequestBoundary.respond (applied, requestId, suggestion: taken)
 ```
 
-### Live.edits.Take:run-open
+### Live.edits.TakeRefused:forbidden
 
-Authored path: `Live.edits.Take`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 11.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 104.
+Authored path: `Live.edits.TakeRefused`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 140.
+
+```reaction
+when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.edits.TakeRefused:missing
+
+Authored path: `Live.edits.TakeRefused`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 140.
 
 ```reaction
 when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  Suggesting._suggestion (suggestion) has (target)
+  no Suggesting._suggestion (suggestion)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.edits.TakeRefused:run-open
+
+Authored path: `Live.edits.TakeRefused`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 140.
+
+```reaction
+when RequestBoundary.request (path: "/live/edits/take", requestId, session, suggestion)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Suggesting._suggestion (suggestion) has (kind, target)
+  kind is among ["title", "prompt", "parts", "choices", "takes", "pile", "unpile", "notes", "move", "remove"]
   Relaying._leg (leg: target) has (material: questionnaire)
   view "(questionnaire) has an open run" with (questionnaire)
 then
@@ -15010,7 +16089,7 @@ then
 ### Live.edits.TakenAddAddsRound
 
 Authored path: `Live.edits.TakenAddAddsRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 13.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 19.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "add", value)
@@ -15027,7 +16106,7 @@ then
 ### Live.edits.TakenAddAddsRound#2
 
 Authored path: `Live.edits.TakenAddAddsRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 13.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 19.
 
 ```reaction
 when Questioning.compose (at, author, disclosure: "score", form: "survey", title, questionnaire), asked by Live.edits.TakenAddAddsRound
@@ -15043,7 +16122,7 @@ then
 ### Live.edits.TakenAddAddsRound#3
 
 Authored path: `Live.edits.TakenAddAddsRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 13.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 19.
 
 ```reaction
 when Questioning.addQuestion (choices, expected: "", explanation: "", position: 1, prompt, questionnaire, question), asked by Live.edits.TakenAddAddsRound#2
@@ -15059,7 +16138,7 @@ then
 ### Live.edits.TakenAddAddsRound#4
 
 Authored path: `Live.edits.TakenAddAddsRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 13.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 19.
 
 ```reaction
 when Questioning.setParts (cap, parts, question), asked by Live.edits.TakenAddAddsRound#3
@@ -15074,7 +16153,7 @@ then
 ### Live.edits.TakenAddAddsRound:drawn#5
 
 Authored path: `Live.edits.TakenAddAddsRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 13.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 19.
 
 ```reaction
 when Relaying.addLeg (material: questionnaire, relay: placed, leg: added), asked by Live.edits.TakenAddAddsRound#4
@@ -15093,7 +16172,7 @@ then
 ### Live.edits.TakenAddAddsRound:placed#5
 
 Authored path: `Live.edits.TakenAddAddsRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 13.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 19.
 
 ```reaction
 when Relaying.addLeg (material: questionnaire, relay: placed, leg: added), asked by Live.edits.TakenAddAddsRound#4
@@ -15109,7 +16188,7 @@ then
 ### Live.edits.TakenChoicesReviseRound
 
 Authored path: `Live.edits.TakenChoicesReviseRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 16.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 23.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "choices", target, value)
@@ -15123,10 +16202,92 @@ then
   Questioning.reviseQuestion (choices, expected, explanation, position, prompt, question)
 ```
 
+### Live.edits.TakenGuideSetsRelay:clear
+
+Authored path: `Live.edits.TakenGuideSetsRelay`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 181.
+
+```reaction
+when Suggesting.take (suggestion, kind: "guide", target: "", value)
+where
+  Suggesting._suggestion (suggestion) has (subject: relay)
+  Relaying._relay (relay)
+  view "(relay) is not retired" with (relay)
+  field is editGuideField (value)
+  field is among ["description", "opening", "closing"]
+  use is guideUse (field)
+  body is editGuideBody (value)
+  said is briefStanding (request: body)
+  said is among ["blank"]
+then
+  Guiding.clear (subject: relay, use)
+```
+
+### Live.edits.TakenGuideSetsRelay:set
+
+Authored path: `Live.edits.TakenGuideSetsRelay`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 181.
+
+```reaction
+when Suggesting.take (suggestion, kind: "guide", target: "", value)
+where
+  Suggesting._suggestion (suggestion) has (subject: relay)
+  Relaying._relay (relay)
+  view "(relay) is not retired" with (relay)
+  field is editGuideField (value)
+  field is among ["description", "opening", "closing"]
+  use is guideUse (field)
+  body is editGuideBody (value)
+  said is briefStanding (request: body)
+  said is among ["given"]
+then
+  Guiding.set (body, subject: relay, title: "", use)
+```
+
+### Live.edits.TakenGuideSetsRound:clear
+
+Authored path: `Live.edits.TakenGuideSetsRound`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 182.
+
+```reaction
+when Suggesting.take (suggestion, kind: "guide", target, value)
+where
+  Relaying._leg (leg: target) has (relay)
+  view "(relay) is not retired" with (relay)
+  field is editGuideField (value)
+  field is among ["purpose", "facilitation", "selection"]
+  use is guideUse (field)
+  body is editGuideBody (value)
+  said is briefStanding (request: body)
+  said is among ["blank"]
+then
+  Guiding.clear (subject: target, use)
+```
+
+### Live.edits.TakenGuideSetsRound:set
+
+Authored path: `Live.edits.TakenGuideSetsRound`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 182.
+
+```reaction
+when Suggesting.take (suggestion, kind: "guide", target, value)
+where
+  Relaying._leg (leg: target) has (relay)
+  view "(relay) is not retired" with (relay)
+  field is editGuideField (value)
+  field is among ["purpose", "facilitation", "selection"]
+  use is guideUse (field)
+  body is editGuideBody (value)
+  said is briefStanding (request: body)
+  said is among ["given"]
+then
+  Guiding.set (body, subject: target, title: "", use)
+```
+
 ### Live.edits.TakenMoveMovesRound
 
 Authored path: `Live.edits.TakenMoveMovesRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 15.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 22.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "move", target, value)
@@ -15139,10 +16300,40 @@ then
   Relaying.moveLeg (leg: target, position)
 ```
 
+### Live.edits.TakenNotesRemoveNote
+
+Authored path: `Live.edits.TakenNotesRemoveNote`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 20.
+
+```reaction
+when Suggesting.take (suggestion, kind: "notes", target, value)
+where
+  Relaying._leg (leg: target)
+  said is briefStanding (request: value)
+  said is among ["blank"]
+then
+  Guiding.clear (subject: target, use: "sorting")
+```
+
+### Live.edits.TakenNotesSetNote
+
+Authored path: `Live.edits.TakenNotesSetNote`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 20.
+
+```reaction
+when Suggesting.take (suggestion, kind: "notes", target, value)
+where
+  Relaying._leg (leg: target)
+  said is briefStanding (request: value)
+  said is among ["given"]
+then
+  Guiding.set (body: value, subject: target, title: "", use: "sorting")
+```
+
 ### Live.edits.TakenPartsSetParts
 
 Authored path: `Live.edits.TakenPartsSetParts`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 16.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 23.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "parts", target, value)
@@ -15157,10 +16348,36 @@ then
   Questioning.setParts (cap, parts, question)
 ```
 
+### Live.edits.TakenPileStandsPile
+
+Authored path: `Live.edits.TakenPileStandsPile`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 20.
+
+```reaction
+when Suggesting.take (suggestion, kind: "pile", target, value)
+where
+  Relaying._leg (leg: target)
+  name is editPileName (value)
+  description is editPileSentence (value)
+then
+  Categorizing.ensureCategory (description, name, scope: target)
+```
+
+### Live.edits.TakenPileStandsPile#2
+
+Authored path: `Live.edits.TakenPileStandsPile`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 20.
+
+```reaction
+when Categorizing.ensureCategory (description, name, scope: target, category), asked by Live.edits.TakenPileStandsPile
+then
+  Categorizing.describeCategory (category, description)
+```
+
 ### Live.edits.TakenPromptRevisesRound
 
 Authored path: `Live.edits.TakenPromptRevisesRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 16.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 23.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "prompt", target, value)
@@ -15176,7 +16393,7 @@ then
 ### Live.edits.TakenRemoveRemovesRound
 
 Authored path: `Live.edits.TakenRemoveRemovesRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 14.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 21.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "remove", target)
@@ -15191,7 +16408,7 @@ then
 ### Live.edits.TakenRemoveRemovesRound#2
 
 Authored path: `Live.edits.TakenRemoveRemovesRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 14.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 21.
 
 ```reaction
 when Relaying.removeLeg (leg: target, material), asked by Live.edits.TakenRemoveRemovesRound
@@ -15202,7 +16419,7 @@ then
 ### Live.edits.TakenTakesDraws
 
 Authored path: `Live.edits.TakenTakesDraws`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 18.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 25.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "takes", target, value)
@@ -15221,7 +16438,7 @@ then
 ### Live.edits.TakenTakesUndraws
 
 Authored path: `Live.edits.TakenTakesUndraws`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 18.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 25.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "takes", target, value)
@@ -15239,14 +16456,14 @@ then
 ### Live.edits.TakenTitleRetitlesRelay
 
 Authored path: `Live.edits.TakenTitleRetitlesRelay`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 17.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 24.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "title", target, value)
 where
   Suggesting._suggestion (suggestion) has (subject: relay)
   Relaying._relay (relay)
-  no Relaying._leg (leg: target)
+  target is among [""]
 then
   Relaying.retitle (relay, title: value)
 ```
@@ -15254,7 +16471,7 @@ then
 ### Live.edits.TakenTitleRetitlesRound
 
 Authored path: `Live.edits.TakenTitleRetitlesRound`.
-- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 16.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 23.
 
 ```reaction
 when Suggesting.take (suggestion, kind: "title", target, value)
@@ -15264,6 +16481,20 @@ where
   Relaying._leg (leg: target) has (material, relay)
 then
   Questioning.retitle (questionnaire: material, title: value)
+```
+
+### Live.edits.TakenUnpileRemovesPile
+
+Authored path: `Live.edits.TakenUnpileRemovesPile`.
+- Covered by [Edits the model proposes](../design/compositions/live/edits.md), line 20.
+
+```reaction
+when Suggesting.take (suggestion, kind: "unpile", target, value)
+where
+  Relaying._leg (leg: target)
+  Categorizing._categoriesIn (scope: target) has (category, name: value)
+then
+  Categorizing.deleteCategory (category)
 ```
 
 ### Live.participation.Answer:closed
@@ -15291,7 +16522,6 @@ Authored path: `Live.participation.Answer`.
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer", question, requestId, response, value)
 where
-  Responding._response (response)
   no view "(response) belongs to an anonymous participant" with (response)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -15370,7 +16600,6 @@ Authored path: `Live.participation.AnswerSigned`.
 ```reaction
 when RequestBoundary.request (path: "/live/p/answer-signed", question, requestId, response, session, value)
 where
-  Responding._response (response)
   no view "(response) belongs to the active (session)" with (response, session)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -15784,7 +17013,6 @@ Authored path: `Live.participation.Outcome`.
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome", requestId, response)
 where
-  Responding._response (response)
   no view "(response) belongs to an anonymous participant" with (response)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -15878,7 +17106,6 @@ Authored path: `Live.participation.OutcomeSigned`.
 ```reaction
 when RequestBoundary.request (path: "/live/p/outcome-signed", requestId, response, session)
 where
-  Responding._response (response)
   no view "(response) belongs to the active (session)" with (response, session)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -15941,30 +17168,9 @@ Authored path: `Live.participation.Submit`.
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit", requestId, response)
 where
-  Responding._response (response)
   no view "(response) belongs to an anonymous participant" with (response)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Live.participation.Submit:quiz-incomplete
-
-Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 58.
-- Covered by [Participation](../design/compositions/live/participation.md), line 126.
-
-```reaction
-when RequestBoundary.request (path: "/live/p/submit", requestId, response)
-where
-  view "(response) belongs to an anonymous participant" with (response)
-  Responding._response (response) has (subject: run)
-  view "(run) is open to participation" with (run)
-  RunSnapshotting._snapshot (subject: run) has (value: presentation)
-  form is snapshotForm (value: presentation)
-  form is among ["quiz"]
-  view "(response) leaves a question unanswered" with (response)
-then
-  RequestBoundary.respond (error: "INCOMPLETE", requestId)
 ```
 
 ### Live.participation.Submit:quiz-whole
@@ -15983,9 +17189,9 @@ where
   RunSnapshotting._snapshot (subject: run) has (value: presentation)
   form is snapshotForm (value: presentation)
   form is among ["quiz"]
-  view "(response) answers every question" with (response)
+  required is snapshotRequirements (value: presentation)
 then
-  Responding.submit (at, response)
+  Responding.submit (at, required, response)
 ```
 
 ### Live.participation.Submit:quiz-whole#2
@@ -15995,29 +17201,11 @@ Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 126.
 
 ```reaction
-when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:quiz-whole
+when Responding.submit (at, required, response, result.response: submitted), asked by Live.participation.Submit:quiz-whole
 where
   earlier, RequestBoundary.request (path: "/live/p/submit", requestId, response)
 then
   RequestBoundary.respond (requestId, response: submitted)
-```
-
-### Live.participation.Submit:round-incomplete
-
-Authored path: `Live.participation.Submit`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 58.
-- Covered by [Participation](../design/compositions/live/participation.md), line 126.
-
-```reaction
-when RequestBoundary.request (path: "/live/p/submit", requestId, response)
-where
-  view "(response) belongs to an anonymous participant" with (response)
-  Responding._response (response) has (subject: run)
-  view "(run) is open to participation" with (run)
-  view "(run) is a round of a relay" with (run)
-  view "(response) leaves a question unanswered" with (response)
-then
-  RequestBoundary.respond (error: "INCOMPLETE", requestId)
 ```
 
 ### Live.participation.Submit:round-whole
@@ -16034,9 +17222,10 @@ where
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   view "(run) is a round of a relay" with (run)
-  view "(response) answers every question" with (response)
+  RunSnapshotting._snapshot (subject: run) has (value: presentation)
+  required is snapshotRequirements (value: presentation)
 then
-  Responding.submit (at, response)
+  Responding.submit (at, required, response)
 ```
 
 ### Live.participation.Submit:round-whole#2
@@ -16046,7 +17235,7 @@ Authored path: `Live.participation.Submit`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 126.
 
 ```reaction
-when Responding.submit (at, response, result.response: submitted), asked by Live.participation.Submit:round-whole
+when Responding.submit (at, required, response, result.response: submitted), asked by Live.participation.Submit:round-whole
 where
   earlier, RequestBoundary.request (path: "/live/p/submit", requestId, response)
 then
@@ -16113,30 +17302,9 @@ Authored path: `Live.participation.SubmitSigned`.
 ```reaction
 when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
 where
-  Responding._response (response)
   no view "(response) belongs to the active (session)" with (response, session)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Live.participation.SubmitSigned:quiz-incomplete
-
-Authored path: `Live.participation.SubmitSigned`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 69.
-- Covered by [Participation](../design/compositions/live/participation.md), line 127.
-
-```reaction
-when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
-where
-  view "(response) belongs to the active (session)" with (response, session)
-  Responding._response (response) has (subject: run)
-  view "(run) is open to participation" with (run)
-  RunSnapshotting._snapshot (subject: run) has (value: presentation)
-  form is snapshotForm (value: presentation)
-  form is among ["quiz"]
-  view "(response) leaves a question unanswered" with (response)
-then
-  RequestBoundary.respond (error: "INCOMPLETE", requestId)
 ```
 
 ### Live.participation.SubmitSigned:quiz-whole
@@ -16155,9 +17323,9 @@ where
   RunSnapshotting._snapshot (subject: run) has (value: presentation)
   form is snapshotForm (value: presentation)
   form is among ["quiz"]
-  view "(response) answers every question" with (response)
+  required is snapshotRequirements (value: presentation)
 then
-  Responding.submit (at, response)
+  Responding.submit (at, required, response)
 ```
 
 ### Live.participation.SubmitSigned:quiz-whole#2
@@ -16167,29 +17335,11 @@ Authored path: `Live.participation.SubmitSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 127.
 
 ```reaction
-when Responding.submit (at, response, result.response: submitted), asked by Live.participation.SubmitSigned:quiz-whole
+when Responding.submit (at, required, response, result.response: submitted), asked by Live.participation.SubmitSigned:quiz-whole
 where
   earlier, RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
 then
   RequestBoundary.respond (requestId, response: submitted)
-```
-
-### Live.participation.SubmitSigned:round-incomplete
-
-Authored path: `Live.participation.SubmitSigned`.
-- Covered by [Participation](../design/compositions/live/participation.md), line 69.
-- Covered by [Participation](../design/compositions/live/participation.md), line 127.
-
-```reaction
-when RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
-where
-  view "(response) belongs to the active (session)" with (response, session)
-  Responding._response (response) has (subject: run)
-  view "(run) is open to participation" with (run)
-  view "(run) is a round of a relay" with (run)
-  view "(response) leaves a question unanswered" with (response)
-then
-  RequestBoundary.respond (error: "INCOMPLETE", requestId)
 ```
 
 ### Live.participation.SubmitSigned:round-whole
@@ -16206,9 +17356,10 @@ where
   Responding._response (response) has (subject: run)
   view "(run) is open to participation" with (run)
   view "(run) is a round of a relay" with (run)
-  view "(response) answers every question" with (response)
+  RunSnapshotting._snapshot (subject: run) has (value: presentation)
+  required is snapshotRequirements (value: presentation)
 then
-  Responding.submit (at, response)
+  Responding.submit (at, required, response)
 ```
 
 ### Live.participation.SubmitSigned:round-whole#2
@@ -16218,7 +17369,7 @@ Authored path: `Live.participation.SubmitSigned`.
 - Covered by [Participation](../design/compositions/live/participation.md), line 127.
 
 ```reaction
-when Responding.submit (at, response, result.response: submitted), asked by Live.participation.SubmitSigned:round-whole
+when Responding.submit (at, required, response, result.response: submitted), asked by Live.participation.SubmitSigned:round-whole
 where
   earlier, RequestBoundary.request (path: "/live/p/submit-signed", requestId, response, session)
 then
@@ -16299,7 +17450,6 @@ Authored path: `Live.participation.Wall`.
 ```reaction
 when RequestBoundary.request (path: "/live/p/wall", requestId, response)
 where
-  Responding._response (response)
   no view "(response) belongs to an anonymous participant" with (response)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -16344,7 +17494,6 @@ Authored path: `Live.participation.WallSigned`.
 ```reaction
 when RequestBoundary.request (path: "/live/p/wall-signed", requestId, response, session)
 where
-  Responding._response (response)
   no view "(response) belongs to the active (session)" with (response, session)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -17271,7 +18420,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 76.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 110.
 
 ```reaction
 when RequestBoundary.request (cap, choices, parts, path: "/live/relays/add-round", prompt, relay, requestId, session, title)
@@ -17282,11 +18431,30 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Live.relays.AddRound:invalid-material
+
+Authored path: `Live.relays.AddRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 110.
+
+```reaction
+when RequestBoundary.request (cap, choices, parts, path: "/live/relays/add-round", prompt, relay, requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._relay (relay)
+  view "(relay) is not retired" with (relay)
+  valid is roundMaterialIsValid (cap, choices, parts, prompt, title)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
 ### Live.relays.AddRound:missing
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 76.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 110.
 
 ```reaction
 when RequestBoundary.request (cap, choices, parts, path: "/live/relays/add-round", prompt, relay, requestId, session, title)
@@ -17302,7 +18470,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 76.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 110.
 
 ```reaction
 when RequestBoundary.request (cap, choices, parts, path: "/live/relays/add-round", prompt, relay, requestId, session, title)
@@ -17319,7 +18487,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 76.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 110.
 
 ```reaction
 when RequestBoundary.request (cap, choices, parts, path: "/live/relays/add-round", prompt, relay, requestId, session, title)
@@ -17329,6 +18497,8 @@ where
   view "(user) may host live runs" with (user)
   Relaying._relay (relay)
   view "(relay) is not retired" with (relay)
+  valid is roundMaterialIsValid (cap, choices, parts, prompt, title)
+  valid is among [true]
 then
   Questioning.compose (at, author: user, disclosure: "score", form: "survey", title)
 ```
@@ -17337,7 +18507,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 76.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 110.
 
 ```reaction
 when Questioning.compose (at, author: user, disclosure: "score", form: "survey", title, questionnaire), asked by Live.relays.AddRound:success
@@ -17351,7 +18521,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 76.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 110.
 
 ```reaction
 when Questioning.addQuestion (choices, expected: "", explanation: "", position: 1, prompt, questionnaire, question), asked by Live.relays.AddRound:success#2
@@ -17365,7 +18535,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 76.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 110.
 
 ```reaction
 when Questioning.setParts (cap, parts, question), asked by Live.relays.AddRound:success#3
@@ -17380,7 +18550,7 @@ then
 
 Authored path: `Live.relays.AddRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 76.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 110.
 
 ```reaction
 when Relaying.addLeg (material: questionnaire, relay, leg, position), asked by Live.relays.AddRound:success#4
@@ -17394,7 +18564,7 @@ then
 ### Live.relays.CapturedRoundSeatsParticipants
 
 Authored path: `Live.relays.CapturedRoundSeatsParticipants`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 45.
 
 ```reaction
 when RunSnapshotting.capture (subject: round)
@@ -17411,7 +18581,7 @@ then
 
 Authored path: `Live.relays.ClearTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 77.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 111.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/clear-takes", requestId, session, source)
@@ -17426,7 +18596,7 @@ then
 
 Authored path: `Live.relays.ClearTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 77.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 111.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/clear-takes", requestId, session, source)
@@ -17442,7 +18612,7 @@ then
 
 Authored path: `Live.relays.ClearTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 77.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 111.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/clear-takes", requestId, session, source)
@@ -17459,7 +18629,7 @@ then
 
 Authored path: `Live.relays.ClearTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 77.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 111.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/clear-takes", requestId, session, source)
@@ -17477,7 +18647,7 @@ then
 
 Authored path: `Live.relays.ClearTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 77.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 111.
 
 ```reaction
 when Relaying.undraw (leg, source, result.leg: cleared), asked by Live.relays.ClearTakes:success
@@ -17490,8 +18660,8 @@ then
 ### Live.relays.Close:bare
 
 Authored path: `Live.relays.Close`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 78.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close", requestId, run, session)
@@ -17508,8 +18678,8 @@ then
 ### Live.relays.Close:bare#2
 
 Authored path: `Live.relays.Close`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 78.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 112.
 
 ```reaction
 when Publishing.close (at, edition: run, result.edition: closed), asked by Live.relays.Close:bare
@@ -17522,8 +18692,8 @@ then
 ### Live.relays.Close:forbidden
 
 Authored path: `Live.relays.Close`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 78.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close", requestId, run, session)
@@ -17537,8 +18707,8 @@ then
 ### Live.relays.Close:with-round
 
 Authored path: `Live.relays.Close`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 78.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close", requestId, run, session)
@@ -17554,8 +18724,8 @@ then
 ### Live.relays.Close:with-round#2
 
 Authored path: `Live.relays.Close`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 78.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 112.
 
 ```reaction
 when Publishing.close (at, edition: round, result.edition: closedRound), asked by Live.relays.Close:with-round
@@ -17568,8 +18738,8 @@ then
 ### Live.relays.Close:with-round#3
 
 Authored path: `Live.relays.Close`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 78.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 112.
 
 ```reaction
 when Publishing.close (at, edition: run, result.edition: closed), asked by Live.relays.Close:with-round#2
@@ -17582,8 +18752,8 @@ then
 ### Live.relays.CloseRound:forbidden
 
 Authored path: `Live.relays.CloseRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 79.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 113.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close-round", requestId, round, session)
@@ -17597,8 +18767,8 @@ then
 ### Live.relays.CloseRound:success
 
 Authored path: `Live.relays.CloseRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 79.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 113.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/close-round", requestId, round, session)
@@ -17613,8 +18783,8 @@ then
 ### Live.relays.CloseRound:success#2
 
 Authored path: `Live.relays.CloseRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 79.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 113.
 
 ```reaction
 when Publishing.close (at, edition: round, result.edition: closed), asked by Live.relays.CloseRound:success
@@ -17627,7 +18797,7 @@ then
 ### Live.relays.ClosedRoundUnlocksRun
 
 Authored path: `Live.relays.ClosedRoundUnlocksRun`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
 
 ```reaction
 when Publishing.close (edition: round)
@@ -17639,91 +18809,27 @@ then
   Locking.unlock (target: run)
 ```
 
-### Live.relays.Dismiss:already-dismissed
+### Live.relays.ClosedRunClosesRounds
 
-Authored path: `Live.relays.Dismiss`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 80.
-
-```reaction
-when RequestBoundary.request (participant, path: "/live/relays/dismiss", requestId, run, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(participant) holds a seat on (run)" with (participant, run)
-  no view "(participant)'s seat is not dismissed" with (participant)
-then
-  RequestBoundary.respond (participant, requestId)
-```
-
-### Live.relays.Dismiss:forbidden
-
-Authored path: `Live.relays.Dismiss`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 80.
+Authored path: `Live.relays.ClosedRunClosesRounds`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
 
 ```reaction
-when RequestBoundary.request (participant, path: "/live/relays/dismiss", requestId, run, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not host live runs" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Live.relays.Dismiss:not-seated
-
-Authored path: `Live.relays.Dismiss`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 80.
-
-```reaction
-when RequestBoundary.request (participant, path: "/live/relays/dismiss", requestId, run, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  no view "(participant) holds a seat on (run)" with (participant, run)
-then
-  RequestBoundary.respond (error: "NOT_SEATED", requestId)
-```
-
-### Live.relays.Dismiss:success
-
-Authored path: `Live.relays.Dismiss`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 80.
-
-```reaction
-when RequestBoundary.request (participant, path: "/live/relays/dismiss", requestId, run, session)
+when Publishing.close (edition: run)
 where
   at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(participant) holds a seat on (run)" with (participant, run)
-  view "(participant)'s seat is not dismissed" with (participant)
+  view "(run) is a relay run" with (run)
+  Linking._getBacklinks (target: run) has (source: round)
+  Publishing._edition (edition: round) has (open: true)
 then
-  Trashing.trash (at, by: user, item: participant)
-```
-
-### Live.relays.Dismiss:success#2
-
-Authored path: `Live.relays.Dismiss`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 80.
-
-```reaction
-when Trashing.trash (at, by: user, item: participant), asked by Live.relays.Dismiss:success
-where
-  earlier, RequestBoundary.request (participant, path: "/live/relays/dismiss", requestId, run, session)
-then
-  RequestBoundary.respond (participant, requestId)
+  Publishing.close (at, edition: round)
 ```
 
 ### Live.relays.Get:forbidden
 
 Authored path: `Live.relays.Get`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 23.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 81.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 114.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/get", relay, requestId, session)
@@ -17737,8 +18843,8 @@ then
 ### Live.relays.Get:success
 
 Authored path: `Live.relays.Get`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 23.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 81.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 114.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/get", relay, requestId, session)
@@ -17750,91 +18856,29 @@ then
   RequestBoundary.respond (relay: former "the relay (relay)" with (relay), requestId)
 ```
 
-### Live.relays.Invite:closed
+### Live.relays.Launch:bare-vote
 
-Authored path: `Live.relays.Invite`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 82.
+Authored path: `Live.relays.Launch`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 115.
 
 ```reaction
-when RequestBoundary.request (device, path: "/live/relays/invite", requestId, run, session)
+when RequestBoundary.request (path: "/live/relays/launch", relay, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  view "(run) is closed" with (run)
+  Relaying._relay (relay)
+  view "(relay) is not retired" with (relay)
+  view "(relay) has a vote with nothing to vote on" with (relay)
 then
-  RequestBoundary.respond (error: "CLOSED", requestId)
-```
-
-### Live.relays.Invite:forbidden
-
-Authored path: `Live.relays.Invite`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 82.
-
-```reaction
-when RequestBoundary.request (device, path: "/live/relays/invite", requestId, run, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not host live runs" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Live.relays.Invite:named-account
-
-Authored path: `Live.relays.Invite`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 82.
-
-```reaction
-when RequestBoundary.request (device, path: "/live/relays/invite", requestId, run, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run)
-  no view "(identifier) names no account" with (identifier: device)
-then
-  RequestBoundary.respond (error: "NOT_A_SEAT", requestId)
-```
-
-### Live.relays.Invite:success
-
-Authored path: `Live.relays.Invite`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 82.
-
-```reaction
-when RequestBoundary.request (device, path: "/live/relays/invite", requestId, run, session)
-where
-  at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(identifier) names no account" with (identifier: device)
-  view "(run) is open to participation" with (run)
-then
-  Subscribing.subscribe (at, target: run, user: device)
-```
-
-### Live.relays.Invite:success#2
-
-Authored path: `Live.relays.Invite`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 82.
-
-```reaction
-when Subscribing.subscribe (at, target: run, user: device), asked by Live.relays.Invite:success
-where
-  earlier, RequestBoundary.request (device, path: "/live/relays/invite", requestId, run, session)
-then
-  RequestBoundary.respond (participant: device, requestId)
+  RequestBoundary.respond (error: "NO_CHOICES", requestId)
 ```
 
 ### Live.relays.Launch:forbidden
 
 Authored path: `Live.relays.Launch`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 27.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 83.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/launch", relay, requestId, session)
@@ -17848,8 +18892,8 @@ then
 ### Live.relays.Launch:missing
 
 Authored path: `Live.relays.Launch`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 27.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 83.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/launch", relay, requestId, session)
@@ -17864,8 +18908,8 @@ then
 ### Live.relays.Launch:retired
 
 Authored path: `Live.relays.Launch`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 27.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 83.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/launch", relay, requestId, session)
@@ -17881,8 +18925,8 @@ then
 ### Live.relays.Launch:success
 
 Authored path: `Live.relays.Launch`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 27.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 83.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/launch", relay, requestId, session)
@@ -17892,6 +18936,7 @@ where
   view "(user) may host live runs" with (user)
   Relaying._relay (relay)
   view "(relay) is not retired" with (relay)
+  no view "(relay) has a vote with nothing to vote on" with (relay)
 then
   Publishing.publish (at, author: user, material: relay)
 ```
@@ -17899,8 +18944,8 @@ then
 ### Live.relays.Launch:success#2
 
 Authored path: `Live.relays.Launch`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 27.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 83.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 115.
 
 ```reaction
 when Publishing.publish (at, author: user, material: relay, edition: run), asked by Live.relays.Launch:success
@@ -17911,8 +18956,8 @@ then
 ### Live.relays.Launch:success#3
 
 Authored path: `Live.relays.Launch`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 27.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 83.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 115.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.relays.Launch:success#2
@@ -17923,8 +18968,8 @@ then
 ### Live.relays.Launch:success#4
 
 Authored path: `Live.relays.Launch`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 27.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 83.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 115.
 
 ```reaction
 when Locating.ensure (subject: run, code), asked by Live.relays.Launch:success#3
@@ -17938,8 +18983,8 @@ then
 ### Live.relays.List:forbidden
 
 Authored path: `Live.relays.List`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 23.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 84.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 116.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/list", requestId, session)
@@ -17953,8 +18998,8 @@ then
 ### Live.relays.List:success
 
 Authored path: `Live.relays.List`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 23.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 84.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 25.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 116.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/list", requestId, session)
@@ -17970,7 +19015,7 @@ then
 
 Authored path: `Live.relays.MoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 85.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 117.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/move-round", position, requestId, session)
@@ -17985,7 +19030,7 @@ then
 
 Authored path: `Live.relays.MoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 85.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 117.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/move-round", position, requestId, session)
@@ -18001,7 +19046,7 @@ then
 
 Authored path: `Live.relays.MoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 85.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 117.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/move-round", position, requestId, session)
@@ -18018,7 +19063,7 @@ then
 
 Authored path: `Live.relays.MoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 85.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 117.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/move-round", position, requestId, session)
@@ -18036,7 +19081,7 @@ then
 
 Authored path: `Live.relays.MoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 85.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 117.
 
 ```reaction
 when Relaying.moveLeg (leg, position, result.leg: moved, result.position: placed), asked by Live.relays.MoveRound:success
@@ -18046,274 +19091,792 @@ then
   RequestBoundary.respond (leg: moved, position: placed, requestId)
 ```
 
-### Live.relays.OpenRound:plain
+### Live.relays.OpenRound
 
 Authored path: `Live.relays.OpenRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 86.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run)
-  view "(leg) is a round of (run)" with (leg, run)
-  view "(run) has no round open" with (run)
-  view "(leg) has not run in (run)" with (leg, run)
-  view "every round (leg) takes from has closed in (run)" with (leg, run)
-  view "(leg) takes nothing" with (leg)
+  whether view "(user) may commission a round opening" with (user) has (authorized)
+  whether Publishing._edition (edition: run) has (material: relay, open)
+  whether Relaying._leg (leg) has (kind, material: questionnaire, relay: legRelay)
+  whether view "the open round of (run)" with (run) has (round: openRound)
+  whether view "the round of (leg) in (run)" with (leg, run) has (round: ran)
+  whether view "what (leg) takes" with (leg) has (source, use)
+  whether view "the source for opening (leg) in (run)" with (leg, run) has (groups, sourceNumber, sourceOpen, sourceRound, sourceValue)
+  whether view "the material for opening (leg)" with (leg) has (content)
+  account is openingAdmission (authorized, content, groups, legRelay, open, openRound, ran, relay, source, sourceOpen, sourceRound)
+  brief is openingBrief (account, author: user, content, groups, kind, questionnaire, sourceNumber, sourceValue, use)
+then
+  Commissioning.prepare (account, at, brief, subject: run)
+```
+
+### Live.relays.OpenRound:accepted#2
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+where
+  status is among ["prepared"]
 then
   Locking.lock (at, target: run)
 ```
 
-### Live.relays.OpenRound:plain#2
+### Live.relays.OpenRound:accepted#3
 
 Authored path: `Live.relays.OpenRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 86.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when Locking.lock (at, target: run), asked by Live.relays.OpenRound:plain
+when Locking.lock (at, target: run), asked by Live.relays.OpenRound:accepted#2
 where
-  earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
-  view "the active user of (session)" with (session) has (user)
-  Relaying._leg (leg) has (material: questionnaire)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
 then
-  Publishing.publish (at, author: user, material: questionnaire)
+  Commissioning.accept (at, commission)
 ```
 
-### Live.relays.OpenRound:plain#3
+### Live.relays.OpenRound:accepted#4
 
 Authored path: `Live.relays.OpenRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 86.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when Publishing.publish (at, author: user, material: questionnaire, edition: round), asked by Live.relays.OpenRound:plain#2
+when Commissioning.accept (at, commission, brief), asked by Live.relays.OpenRound:accepted#3
 where
-  earlier, Locking.lock (at, target: run), asked by Live.relays.OpenRound:plain
+  author is openingAuthor (brief)
+  material is openingMaterial (brief)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  status is among ["prepared"]
+then
+  Publishing.publish (at, author, material)
+```
+
+### Live.relays.OpenRound:accepted#5
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:accepted#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.assign (at, commission, execution: round)
+```
+
+### Live.relays.OpenRound:accepted#6
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.assign (at, commission, execution: round), asked by Live.relays.OpenRound:accepted#5
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
   tie is soleTarget (target: run)
 then
   Linking.setLinks (source: round, targets: tie)
 ```
 
-### Live.relays.OpenRound:plain#4
+### Live.relays.OpenRound:accepted#7
 
 Authored path: `Live.relays.OpenRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 86.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:plain#3
+when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:accepted#6
+at the flow's settlement frontier
 where
+  RunSnapshotting._snapshot (subject: round)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true)
+```
+
+### Live.relays.OpenRound:accepted#8
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true, result.commission: completed), asked by Live.relays.OpenRound:accepted#7
+where
+  earlier, Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:accepted#4
   earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
 then
   RequestBoundary.respond (requestId, round)
 ```
 
-### Live.relays.OpenRound:taking
+### Live.relays.OpenRound:closed#2
 
 Authored path: `Live.relays.OpenRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 86.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
+when Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
 where
-  at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run)
-  view "(leg) is a round of (run)" with (leg, run)
-  view "(run) has no round open" with (run)
-  view "(leg) has not run in (run)" with (leg, run)
-  view "every round (leg) takes from has closed in (run)" with (leg, run)
-  view "what (leg) takes" with (leg) has (source)
-  view "the round of (leg) in (run)" with (leg: source, run) has (round: sourceRound)
-  view "(round) has piles picked" with (round: sourceRound)
-then
-  Locking.lock (at, target: run)
-```
-
-### Live.relays.OpenRound:taking#2
-
-Authored path: `Live.relays.OpenRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 86.
-
-```reaction
-when Locking.lock (at, target: run), asked by Live.relays.OpenRound:taking
-where
+  status is among ["declined"]
+  account is among ["CLOSED"]
   earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
-  view "the active user of (session)" with (session) has (user)
-  Relaying._leg (leg) has (material: questionnaire)
-then
-  Publishing.publish (at, author: user, material: questionnaire)
-```
-
-### Live.relays.OpenRound:taking#3
-
-Authored path: `Live.relays.OpenRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 86.
-
-```reaction
-when Publishing.publish (at, author: user, material: questionnaire, edition: round), asked by Live.relays.OpenRound:taking#2
-where
-  earlier, Locking.lock (at, target: run), asked by Live.relays.OpenRound:taking
-  tie is soleTarget (target: run)
-then
-  Linking.setLinks (source: round, targets: tie)
-```
-
-### Live.relays.OpenRound:taking#4
-
-Authored path: `Live.relays.OpenRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 86.
-
-```reaction
-when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:taking#3
-where
-  earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
-then
-  RequestBoundary.respond (requestId, round)
-```
-
-### Live.relays.OpenRoundRefused:closed
-
-Authored path: `Live.relays.OpenRoundRefused`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 87.
-
-```reaction
-when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(run) is closed" with (run)
 then
   RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
-### Live.relays.OpenRoundRefused:forbidden
+### Live.relays.OpenRound:closed#3
 
-Authored path: `Live.relays.OpenRoundRefused`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 87.
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
+when RequestBoundary.respond (error: "CLOSED", requestId), asked by Live.relays.OpenRound:closed#2
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not host live runs" with (user)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  status is among ["prepared"]
+  author is openingAuthor (brief)
+  material is openingMaterial (brief)
+then
+  Publishing.publish (at, author, material)
+```
+
+### Live.relays.OpenRound:closed#4
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:closed#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.assign (at, commission, execution: round)
+```
+
+### Live.relays.OpenRound:closed#5
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.assign (at, commission, execution: round), asked by Live.relays.OpenRound:closed#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  tie is soleTarget (target: run)
+then
+  Linking.setLinks (source: round, targets: tie)
+```
+
+### Live.relays.OpenRound:closed#6
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:closed#5
+at the flow's settlement frontier
+where
+  RunSnapshotting._snapshot (subject: round)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true)
+```
+
+### Live.relays.OpenRound:closed#7
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true, result.commission: completed), asked by Live.relays.OpenRound:closed#6
+where
+  earlier, RequestBoundary.respond (error: "CLOSED", requestId), asked by Live.relays.OpenRound:closed#2
+  earlier, Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:closed#3
+then
+  RequestBoundary.respond (requestId, round)
+```
+
+### Live.relays.OpenRound:forbidden#2
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+where
+  status is among ["declined"]
+  account is among ["FORBIDDEN"]
+  earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Live.relays.OpenRoundRefused:not-of-run
+### Live.relays.OpenRound:forbidden#3
 
-Authored path: `Live.relays.OpenRoundRefused`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 87.
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
+when RequestBoundary.respond (error: "FORBIDDEN", requestId), asked by Live.relays.OpenRound:forbidden#2
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(leg) is not a round of (run)" with (leg, run)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  status is among ["prepared"]
+  author is openingAuthor (brief)
+  material is openingMaterial (brief)
+then
+  Publishing.publish (at, author, material)
+```
+
+### Live.relays.OpenRound:forbidden#4
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:forbidden#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.assign (at, commission, execution: round)
+```
+
+### Live.relays.OpenRound:forbidden#5
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.assign (at, commission, execution: round), asked by Live.relays.OpenRound:forbidden#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  tie is soleTarget (target: run)
+then
+  Linking.setLinks (source: round, targets: tie)
+```
+
+### Live.relays.OpenRound:forbidden#6
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:forbidden#5
+at the flow's settlement frontier
+where
+  RunSnapshotting._snapshot (subject: round)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true)
+```
+
+### Live.relays.OpenRound:forbidden#7
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true, result.commission: completed), asked by Live.relays.OpenRound:forbidden#6
+where
+  earlier, RequestBoundary.respond (error: "FORBIDDEN", requestId), asked by Live.relays.OpenRound:forbidden#2
+  earlier, Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:forbidden#3
+then
+  RequestBoundary.respond (requestId, round)
+```
+
+### Live.relays.OpenRound:leg-not-found#2
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+where
+  status is among ["declined"]
+  account is among ["LEG_NOT_FOUND"]
+  earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
 then
   RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
 ```
 
-### Live.relays.OpenRoundRefused:nothing-picked
+### Live.relays.OpenRound:leg-not-found#3
 
-Authored path: `Live.relays.OpenRoundRefused`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 87.
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
+when RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId), asked by Live.relays.OpenRound:leg-not-found#2
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run)
-  view "(leg) is a round of (run)" with (leg, run)
-  view "(run) has no round open" with (run)
-  view "(leg) has not run in (run)" with (leg, run)
-  view "every round (leg) takes from has closed in (run)" with (leg, run)
-  view "what (leg) takes" with (leg) has (source)
-  view "the round of (leg) in (run)" with (leg: source, run) has (round: sourceRound)
-  view "(round) has no piles picked" with (round: sourceRound)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  status is among ["prepared"]
+  author is openingAuthor (brief)
+  material is openingMaterial (brief)
+then
+  Publishing.publish (at, author, material)
+```
+
+### Live.relays.OpenRound:leg-not-found#4
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:leg-not-found#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.assign (at, commission, execution: round)
+```
+
+### Live.relays.OpenRound:leg-not-found#5
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.assign (at, commission, execution: round), asked by Live.relays.OpenRound:leg-not-found#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  tie is soleTarget (target: run)
+then
+  Linking.setLinks (source: round, targets: tie)
+```
+
+### Live.relays.OpenRound:leg-not-found#6
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:leg-not-found#5
+at the flow's settlement frontier
+where
+  RunSnapshotting._snapshot (subject: round)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true)
+```
+
+### Live.relays.OpenRound:leg-not-found#7
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true, result.commission: completed), asked by Live.relays.OpenRound:leg-not-found#6
+where
+  earlier, RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId), asked by Live.relays.OpenRound:leg-not-found#2
+  earlier, Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:leg-not-found#3
+then
+  RequestBoundary.respond (requestId, round)
+```
+
+### Live.relays.OpenRound:nothing-picked#2
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+where
+  status is among ["declined"]
+  account is among ["NOTHING_PICKED"]
+  earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
 then
   RequestBoundary.respond (error: "NOTHING_PICKED", requestId)
 ```
 
-### Live.relays.OpenRoundRefused:round-done
+### Live.relays.OpenRound:nothing-picked#3
 
-Authored path: `Live.relays.OpenRoundRefused`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 87.
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
+when RequestBoundary.respond (error: "NOTHING_PICKED", requestId), asked by Live.relays.OpenRound:nothing-picked#2
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run)
-  view "(leg) is a round of (run)" with (leg, run)
-  view "(run) has no round open" with (run)
-  view "(leg) already ran in (run)" with (leg, run)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  status is among ["prepared"]
+  author is openingAuthor (brief)
+  material is openingMaterial (brief)
+then
+  Publishing.publish (at, author, material)
+```
+
+### Live.relays.OpenRound:nothing-picked#4
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:nothing-picked#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.assign (at, commission, execution: round)
+```
+
+### Live.relays.OpenRound:nothing-picked#5
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.assign (at, commission, execution: round), asked by Live.relays.OpenRound:nothing-picked#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  tie is soleTarget (target: run)
+then
+  Linking.setLinks (source: round, targets: tie)
+```
+
+### Live.relays.OpenRound:nothing-picked#6
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:nothing-picked#5
+at the flow's settlement frontier
+where
+  RunSnapshotting._snapshot (subject: round)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true)
+```
+
+### Live.relays.OpenRound:nothing-picked#7
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true, result.commission: completed), asked by Live.relays.OpenRound:nothing-picked#6
+where
+  earlier, RequestBoundary.respond (error: "NOTHING_PICKED", requestId), asked by Live.relays.OpenRound:nothing-picked#2
+  earlier, Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:nothing-picked#3
+then
+  RequestBoundary.respond (requestId, round)
+```
+
+### Live.relays.OpenRound:round-done#2
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+where
+  status is among ["declined"]
+  account is among ["ROUND_DONE"]
+  earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
 then
   RequestBoundary.respond (error: "ROUND_DONE", requestId)
 ```
 
-### Live.relays.OpenRoundRefused:round-open
+### Live.relays.OpenRound:round-done#3
 
-Authored path: `Live.relays.OpenRoundRefused`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 87.
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
+when RequestBoundary.respond (error: "ROUND_DONE", requestId), asked by Live.relays.OpenRound:round-done#2
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run)
-  view "(leg) is a round of (run)" with (leg, run)
-  view "(run) has a round open" with (run)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  status is among ["prepared"]
+  author is openingAuthor (brief)
+  material is openingMaterial (brief)
+then
+  Publishing.publish (at, author, material)
+```
+
+### Live.relays.OpenRound:round-done#4
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:round-done#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.assign (at, commission, execution: round)
+```
+
+### Live.relays.OpenRound:round-done#5
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.assign (at, commission, execution: round), asked by Live.relays.OpenRound:round-done#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  tie is soleTarget (target: run)
+then
+  Linking.setLinks (source: round, targets: tie)
+```
+
+### Live.relays.OpenRound:round-done#6
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:round-done#5
+at the flow's settlement frontier
+where
+  RunSnapshotting._snapshot (subject: round)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true)
+```
+
+### Live.relays.OpenRound:round-done#7
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true, result.commission: completed), asked by Live.relays.OpenRound:round-done#6
+where
+  earlier, RequestBoundary.respond (error: "ROUND_DONE", requestId), asked by Live.relays.OpenRound:round-done#2
+  earlier, Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:round-done#3
+then
+  RequestBoundary.respond (requestId, round)
+```
+
+### Live.relays.OpenRound:round-open#2
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+where
+  status is among ["declined"]
+  account is among ["ROUND_OPEN"]
+  earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
 then
   RequestBoundary.respond (error: "ROUND_OPEN", requestId)
 ```
 
-### Live.relays.OpenRoundRefused:source-open
+### Live.relays.OpenRound:round-open#3
 
-Authored path: `Live.relays.OpenRoundRefused`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 87.
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
+when RequestBoundary.respond (error: "ROUND_OPEN", requestId), asked by Live.relays.OpenRound:round-open#2
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(run) is open to participation" with (run)
-  view "(leg) is a round of (run)" with (leg, run)
-  view "(run) has no round open" with (run)
-  view "(leg) has not run in (run)" with (leg, run)
-  view "(leg) takes from a round not yet closed in (run)" with (leg, run)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  status is among ["prepared"]
+  author is openingAuthor (brief)
+  material is openingMaterial (brief)
+then
+  Publishing.publish (at, author, material)
+```
+
+### Live.relays.OpenRound:round-open#4
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:round-open#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.assign (at, commission, execution: round)
+```
+
+### Live.relays.OpenRound:round-open#5
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.assign (at, commission, execution: round), asked by Live.relays.OpenRound:round-open#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  tie is soleTarget (target: run)
+then
+  Linking.setLinks (source: round, targets: tie)
+```
+
+### Live.relays.OpenRound:round-open#6
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:round-open#5
+at the flow's settlement frontier
+where
+  RunSnapshotting._snapshot (subject: round)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true)
+```
+
+### Live.relays.OpenRound:round-open#7
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true, result.commission: completed), asked by Live.relays.OpenRound:round-open#6
+where
+  earlier, RequestBoundary.respond (error: "ROUND_OPEN", requestId), asked by Live.relays.OpenRound:round-open#2
+  earlier, Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:round-open#3
+then
+  RequestBoundary.respond (requestId, round)
+```
+
+### Live.relays.OpenRound:source-open#2
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+where
+  status is among ["declined"]
+  account is among ["SOURCE_OPEN"]
+  earlier, RequestBoundary.request (leg, path: "/live/relays/open-round", requestId, run, session)
 then
   RequestBoundary.respond (error: "SOURCE_OPEN", requestId)
+```
+
+### Live.relays.OpenRound:source-open#3
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when RequestBoundary.respond (error: "SOURCE_OPEN", requestId), asked by Live.relays.OpenRound:source-open#2
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  status is among ["prepared"]
+  author is openingAuthor (brief)
+  material is openingMaterial (brief)
+then
+  Publishing.publish (at, author, material)
+```
+
+### Live.relays.OpenRound:source-open#4
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:source-open#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.assign (at, commission, execution: round)
+```
+
+### Live.relays.OpenRound:source-open#5
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.assign (at, commission, execution: round), asked by Live.relays.OpenRound:source-open#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+  tie is soleTarget (target: run)
+then
+  Linking.setLinks (source: round, targets: tie)
+```
+
+### Live.relays.OpenRound:source-open#6
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Linking.setLinks (source: round, targets: tie), asked by Live.relays.OpenRound:source-open#5
+at the flow's settlement frontier
+where
+  RunSnapshotting._snapshot (subject: round)
+  earlier, Commissioning.prepare (account, at, brief, subject: run, commission, status), asked by Live.relays.OpenRound
+then
+  Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true)
+```
+
+### Live.relays.OpenRound:source-open#7
+
+Authored path: `Live.relays.OpenRound`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 31.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 118.
+
+```reaction
+when Commissioning.conclude (account: "The round presentation was captured.", at, commission, successful: true, result.commission: completed), asked by Live.relays.OpenRound:source-open#6
+where
+  earlier, RequestBoundary.respond (error: "SOURCE_OPEN", requestId), asked by Live.relays.OpenRound:source-open#2
+  earlier, Publishing.publish (at, author, material, edition: round), asked by Live.relays.OpenRound:source-open#3
+then
+  RequestBoundary.respond (requestId, round)
 ```
 
 ### Live.relays.Plan:forbidden
 
 Authored path: `Live.relays.Plan`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 88.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 119.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/plan", requestId, session, title)
@@ -18328,7 +19891,7 @@ then
 
 Authored path: `Live.relays.Plan`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 88.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 119.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/plan", requestId, session, title)
@@ -18344,7 +19907,7 @@ then
 
 Authored path: `Live.relays.Plan`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 88.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 119.
 
 ```reaction
 when Relaying.plan (at, author: user, title, relay), asked by Live.relays.Plan:success
@@ -18358,7 +19921,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 89.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 120.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/remove-round", requestId, session)
@@ -18373,7 +19936,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 89.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 120.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/remove-round", requestId, session)
@@ -18390,7 +19953,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 89.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 120.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/remove-round", requestId, session)
@@ -18407,7 +19970,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 89.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 120.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/remove-round", requestId, session)
@@ -18426,7 +19989,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 89.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 120.
 
 ```reaction
 when Relaying.removeLeg (leg, result.leg: removed, material), asked by Live.relays.RemoveRound:success
@@ -18438,7 +20001,7 @@ then
 
 Authored path: `Live.relays.RemoveRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 89.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 120.
 
 ```reaction
 when Questioning.retire (questionnaire: material), asked by Live.relays.RemoveRound:success#2
@@ -18453,7 +20016,7 @@ then
 
 Authored path: `Live.relays.Retire`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 90.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 121.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retire", relay, requestId, session)
@@ -18468,7 +20031,7 @@ then
 
 Authored path: `Live.relays.Retire`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 90.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 121.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retire", relay, requestId, session)
@@ -18484,7 +20047,7 @@ then
 
 Authored path: `Live.relays.Retire`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 90.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 121.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retire", relay, requestId, session)
@@ -18501,7 +20064,7 @@ then
 
 Authored path: `Live.relays.Retire`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 90.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 121.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retire", relay, requestId, session)
@@ -18518,7 +20081,7 @@ then
 
 Authored path: `Live.relays.Retire`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 90.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 121.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retire", relay, requestId, session)
@@ -18537,7 +20100,7 @@ then
 
 Authored path: `Live.relays.Retire`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 90.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 121.
 
 ```reaction
 when Trashing.trash (at, by: user, item: relay, result.item: retired), asked by Live.relays.Retire:success
@@ -18551,7 +20114,7 @@ then
 
 Authored path: `Live.relays.Retitle`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 91.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 122.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retitle", relay, requestId, session, title)
@@ -18566,7 +20129,7 @@ then
 
 Authored path: `Live.relays.Retitle`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 91.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 122.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retitle", relay, requestId, session, title)
@@ -18582,7 +20145,7 @@ then
 
 Authored path: `Live.relays.Retitle`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 91.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 122.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retitle", relay, requestId, session, title)
@@ -18599,7 +20162,7 @@ then
 
 Authored path: `Live.relays.Retitle`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 91.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 122.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/retitle", relay, requestId, session, title)
@@ -18617,7 +20180,7 @@ then
 
 Authored path: `Live.relays.Retitle`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 91.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 122.
 
 ```reaction
 when Relaying.retitle (relay, title, result.relay: retitled), asked by Live.relays.Retitle:success
@@ -18631,7 +20194,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 92.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 123.
 
 ```reaction
 when RequestBoundary.request (cap, choices, leg, parts, path: "/live/relays/revise-round", prompt, requestId, session, title)
@@ -18642,6 +20205,8 @@ where
   Relaying._leg (leg) has (material: questionnaire, relay)
   view "(relay) is not retired" with (relay)
   view "(questionnaire) has no open run" with (questionnaire)
+  valid is roundMaterialIsValid (cap, choices, parts, prompt, title)
+  valid is among [true]
 then
   Questioning.retitle (questionnaire, title)
 ```
@@ -18650,7 +20215,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 92.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 123.
 
 ```reaction
 when Questioning.retitle (questionnaire, title), asked by Live.relays.ReviseRound
@@ -18666,7 +20231,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 92.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 123.
 
 ```reaction
 when Questioning.setParts (cap: 0, parts: [], question, result.question: held), asked by Live.relays.ReviseRound#2
@@ -18681,7 +20246,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 92.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 123.
 
 ```reaction
 when Questioning.reviseQuestion (choices, expected: "", explanation: "", position, prompt, question: held, result.question: revised), asked by Live.relays.ReviseRound#3
@@ -18695,7 +20260,7 @@ then
 
 Authored path: `Live.relays.ReviseRound`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 92.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 123.
 
 ```reaction
 when Questioning.setParts (cap, parts, question: revised, result.question: again), asked by Live.relays.ReviseRound#4
@@ -18709,10 +20274,10 @@ then
 
 Authored path: `Live.relays.ReviseRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 124.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/revise-round", requestId, session)
+when RequestBoundary.request (cap, choices, leg, parts, path: "/live/relays/revise-round", prompt, requestId, session, title)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not host live runs" with (user)
@@ -18720,14 +20285,34 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
+### Live.relays.ReviseRoundRefused:invalid-material
+
+Authored path: `Live.relays.ReviseRoundRefused`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 124.
+
+```reaction
+when RequestBoundary.request (cap, choices, leg, parts, path: "/live/relays/revise-round", prompt, requestId, session, title)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._leg (leg) has (material: questionnaire, relay)
+  view "(relay) is not retired" with (relay)
+  view "(questionnaire) has no open run" with (questionnaire)
+  valid is roundMaterialIsValid (cap, choices, parts, prompt, title)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
 ### Live.relays.ReviseRoundRefused:missing
 
 Authored path: `Live.relays.ReviseRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 124.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/revise-round", requestId, session)
+when RequestBoundary.request (cap, choices, leg, parts, path: "/live/relays/revise-round", prompt, requestId, session, title)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
@@ -18740,10 +20325,10 @@ then
 
 Authored path: `Live.relays.ReviseRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 124.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/revise-round", requestId, session)
+when RequestBoundary.request (cap, choices, leg, parts, path: "/live/relays/revise-round", prompt, requestId, session, title)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
@@ -18757,10 +20342,10 @@ then
 
 Authored path: `Live.relays.ReviseRoundRefused`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 93.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 124.
 
 ```reaction
-when RequestBoundary.request (leg, path: "/live/relays/revise-round", requestId, session)
+when RequestBoundary.request (cap, choices, leg, parts, path: "/live/relays/revise-round", prompt, requestId, session, title)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
@@ -18770,11 +20355,28 @@ then
   RequestBoundary.respond (error: "RUN_OPEN", requestId)
 ```
 
+### Live.relays.RoundTiedToClosedRunCloses
+
+Authored path: `Live.relays.RoundTiedToClosedRunCloses`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
+
+```reaction
+when Linking.setLinks (source: round)
+where
+  at is the current flow's instant
+  Linking._getLinks (source: round) has (target: run)
+  view "(run) is a relay run" with (run)
+  view "(run) is closed" with (run)
+  Publishing._edition (edition: round) has (open: true)
+then
+  Publishing.close (at, edition: round)
+```
+
 ### Live.relays.Run:forbidden
 
 Authored path: `Live.relays.Run`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 33.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 94.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 125.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/run", requestId, run, session)
@@ -18788,8 +20390,8 @@ then
 ### Live.relays.Run:success
 
 Authored path: `Live.relays.Run`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 33.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 94.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 41.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 125.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/run", requestId, run, session)
@@ -18804,7 +20406,7 @@ then
 ### Live.relays.SeatedParticipantAnswersOpenRound
 
 Authored path: `Live.relays.SeatedParticipantAnswersOpenRound`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 45.
 
 ```reaction
 when Subscribing.subscribe (target: run, user: participant)
@@ -18816,11 +20418,223 @@ then
   Responding.begin (at, participant, subject: round)
 ```
 
+### Live.relays.SetGuide:clear
+
+Authored path: `Live.relays.SetGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 144.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 147.
+
+```reaction
+when RequestBoundary.request (body, field, path: "/live/relays/set-guide", relay, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(relay) is not retired" with (relay)
+  field is among ["description", "opening", "closing"]
+  use is guideUse (field)
+  said is briefStanding (request: body)
+  said is among ["blank"]
+then
+  Guiding.clear (subject: relay, use)
+```
+
+### Live.relays.SetGuide:clear#2
+
+Authored path: `Live.relays.SetGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 144.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 147.
+
+```reaction
+when Guiding.clear (subject: relay, use, cleared), asked by Live.relays.SetGuide:clear
+where
+  earlier, RequestBoundary.request (body, field, path: "/live/relays/set-guide", relay, requestId, session)
+then
+  RequestBoundary.respond (cleared, requestId)
+```
+
+### Live.relays.SetGuide:field
+
+Authored path: `Live.relays.SetGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 144.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 147.
+
+```reaction
+when RequestBoundary.request (body, field, path: "/live/relays/set-guide", relay, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(relay) is not retired" with (relay)
+  scope is guideScope (field)
+  scope is among ["round", ""]
+then
+  RequestBoundary.respond (error: "INVALID_FIELD", requestId)
+```
+
+### Live.relays.SetGuide:forbidden
+
+Authored path: `Live.relays.SetGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 144.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 147.
+
+```reaction
+when RequestBoundary.request (body, field, path: "/live/relays/set-guide", relay, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.relays.SetGuide:missing
+
+Authored path: `Live.relays.SetGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 144.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 147.
+
+```reaction
+when RequestBoundary.request (body, field, path: "/live/relays/set-guide", relay, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._relay (relay)
+then
+  RequestBoundary.respond (error: "RELAY_NOT_FOUND", requestId)
+```
+
+### Live.relays.SetGuide:retired
+
+Authored path: `Live.relays.SetGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 144.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 147.
+
+```reaction
+when RequestBoundary.request (body, field, path: "/live/relays/set-guide", relay, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(relay) is retired" with (relay)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.relays.SetGuide:set
+
+Authored path: `Live.relays.SetGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 144.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 147.
+
+```reaction
+when RequestBoundary.request (body, field, path: "/live/relays/set-guide", relay, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(relay) is not retired" with (relay)
+  field is among ["description", "opening", "closing"]
+  use is guideUse (field)
+  said is briefStanding (request: body)
+  said is among ["given"]
+then
+  Guiding.set (body, subject: relay, title: "", use)
+```
+
+### Live.relays.SetGuide:set#2
+
+Authored path: `Live.relays.SetGuide`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 144.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 147.
+
+```reaction
+when Guiding.set (body, subject: relay, title: "", use, guidance), asked by Live.relays.SetGuide:set
+where
+  earlier, RequestBoundary.request (body, field, path: "/live/relays/set-guide", relay, requestId, session)
+then
+  RequestBoundary.respond (guidance, requestId)
+```
+
+### Live.relays.SetKind:forbidden
+
+Authored path: `Live.relays.SetKind`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 13.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 126.
+
+```reaction
+when RequestBoundary.request (kind, leg, path: "/live/relays/set-kind", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.relays.SetKind:missing
+
+Authored path: `Live.relays.SetKind`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 13.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 126.
+
+```reaction
+when RequestBoundary.request (kind, leg, path: "/live/relays/set-kind", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._leg (leg)
+then
+  RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.relays.SetKind:retired
+
+Authored path: `Live.relays.SetKind`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 13.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 126.
+
+```reaction
+when RequestBoundary.request (kind, leg, path: "/live/relays/set-kind", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._leg (leg) has (relay)
+  view "(relay) is retired" with (relay)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.relays.SetKind:success
+
+Authored path: `Live.relays.SetKind`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 13.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 126.
+
+```reaction
+when RequestBoundary.request (kind, leg, path: "/live/relays/set-kind", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._leg (leg) has (relay)
+  view "(relay) is not retired" with (relay)
+then
+  Relaying.setKind (kind, leg)
+```
+
+### Live.relays.SetKind:success#2
+
+Authored path: `Live.relays.SetKind`.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 13.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 126.
+
+```reaction
+when Relaying.setKind (kind, leg), asked by Live.relays.SetKind:success
+where
+  earlier, RequestBoundary.request (kind, leg, path: "/live/relays/set-kind", requestId, session)
+then
+  RequestBoundary.respond (kind, leg, requestId)
+```
+
 ### Live.relays.SetTakes:forbidden
 
 Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 95.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 127.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
@@ -18835,7 +20649,7 @@ then
 
 Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 95.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 127.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
@@ -18851,7 +20665,7 @@ then
 
 Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 95.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 127.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
@@ -18868,7 +20682,7 @@ then
 
 Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 95.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 127.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
@@ -18876,10 +20690,10 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  Relaying._leg (leg) has (material: questionnaire, relay)
+  Relaying._leg (leg) has (kind, material: questionnaire, relay)
   view "(relay) is not retired" with (relay)
   Questioning._getQuestions (questionnaire) has (choices, parts)
-  fit is useFit (choices, parts, use)
+  fit is useFit (choices, kind, parts, use)
   fit is among ["open"]
 then
   Relaying.draw (leg, source, use)
@@ -18889,7 +20703,7 @@ then
 
 Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 95.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 127.
 
 ```reaction
 when Relaying.draw (leg, source, use, draw), asked by Live.relays.SetTakes:success
@@ -18903,17 +20717,17 @@ then
 
 Authored path: `Live.relays.SetTakes`.
 - Covered by [Relays and their runs](../design/compositions/live/relays.md), line 7.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 95.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 127.
 
 ```reaction
 when RequestBoundary.request (leg, path: "/live/relays/set-takes", requestId, session, source, use)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  Relaying._leg (leg) has (material: questionnaire, relay)
+  Relaying._leg (leg) has (kind, material: questionnaire, relay)
   view "(relay) is not retired" with (relay)
   Questioning._getQuestions (questionnaire) has (choices, parts)
-  fit is useFit (choices, parts, use)
+  fit is useFit (choices, kind, parts, use)
   fit is among ["closed", "unknown"]
 then
   RequestBoundary.respond (error: "INVALID_USE", requestId)
@@ -18922,8 +20736,8 @@ then
 ### Live.relays.SortByHand:already
 
 Authored path: `Live.relays.SortByHand`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 96.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 128.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/sort-by-hand", requestId, run, session)
@@ -18939,8 +20753,8 @@ then
 ### Live.relays.SortByHand:closed
 
 Authored path: `Live.relays.SortByHand`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 96.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 128.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/sort-by-hand", requestId, run, session)
@@ -18955,8 +20769,8 @@ then
 ### Live.relays.SortByHand:forbidden
 
 Authored path: `Live.relays.SortByHand`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 96.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 128.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/sort-by-hand", requestId, run, session)
@@ -18970,8 +20784,8 @@ then
 ### Live.relays.SortByHand:success
 
 Authored path: `Live.relays.SortByHand`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 96.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 128.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/sort-by-hand", requestId, run, session)
@@ -18987,8 +20801,8 @@ then
 ### Live.relays.SortByHand:success#2
 
 Authored path: `Live.relays.SortByHand`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 96.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 128.
 
 ```reaction
 when Pinning.unpin (item: run, scope: "sorting"), asked by Live.relays.SortByHand:success
@@ -19001,8 +20815,8 @@ then
 ### Live.relays.SortByModel:already
 
 Authored path: `Live.relays.SortByModel`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 97.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 129.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/sort-by-model", requestId, run, session)
@@ -19018,8 +20832,8 @@ then
 ### Live.relays.SortByModel:closed
 
 Authored path: `Live.relays.SortByModel`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 97.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 129.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/sort-by-model", requestId, run, session)
@@ -19034,8 +20848,8 @@ then
 ### Live.relays.SortByModel:forbidden
 
 Authored path: `Live.relays.SortByModel`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 97.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 129.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/sort-by-model", requestId, run, session)
@@ -19049,8 +20863,8 @@ then
 ### Live.relays.SortByModel:success
 
 Authored path: `Live.relays.SortByModel`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 97.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 129.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/sort-by-model", requestId, run, session)
@@ -19067,8 +20881,8 @@ then
 ### Live.relays.SortByModel:success#2
 
 Authored path: `Live.relays.SortByModel`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 39.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 97.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 47.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 129.
 
 ```reaction
 when Pinning.pin (at, item: run, priority: 0, scope: "sorting"), asked by Live.relays.SortByModel:success
@@ -19078,77 +20892,26 @@ then
   RequestBoundary.respond (modelSorts: true, requestId, run)
 ```
 
-### Live.relays.TiedRoundCapturesPresentation:choices
+### Live.relays.TiedRoundCapturesPresentation
 
 Authored path: `Live.relays.TiedRoundCapturesPresentation`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 35.
 
 ```reaction
 when Linking.setLinks (source: round)
 where
-  Publishing._edition (edition: round) has (material: questionnaire)
-  Relaying._legFor (material: questionnaire) has (leg)
-  Linking._getLinks (source: round) has (target: run)
-  view "what (leg) takes" with (leg) has (source, use: "choices")
-  view "the round of (leg) in (run)" with (leg: source, run) has (round: carried)
+  Commissioning._forExecution (execution: round) has (commission)
+  Commissioning._commission (commission) has (brief)
+  value is openingPresentation (brief)
 then
-  RunSnapshotting.capture (subject: round, value: former "the presentation of (leg) taking from (sourceRound)" with (leg, sourceRound: carried))
-```
-
-### Live.relays.TiedRoundCapturesPresentation:context
-
-Authored path: `Live.relays.TiedRoundCapturesPresentation`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-
-```reaction
-when Linking.setLinks (source: round)
-where
-  Publishing._edition (edition: round) has (material: questionnaire)
-  Relaying._legFor (material: questionnaire) has (leg)
-  Linking._getLinks (source: round) has (target: run)
-  view "what (leg) takes" with (leg) has (source, use: "context")
-  view "the round of (leg) in (run)" with (leg: source, run) has (round: carried)
-then
-  RunSnapshotting.capture (subject: round, value: former "the presentation of (leg) showing (sourceRound)" with (leg, sourceRound: carried))
-```
-
-### Live.relays.TiedRoundCapturesPresentation:parts
-
-Authored path: `Live.relays.TiedRoundCapturesPresentation`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-
-```reaction
-when Linking.setLinks (source: round)
-where
-  Publishing._edition (edition: round) has (material: questionnaire)
-  Relaying._legFor (material: questionnaire) has (leg)
-  Linking._getLinks (source: round) has (target: run)
-  view "what (leg) takes" with (leg) has (source, use: "parts")
-  view "the round of (leg) in (run)" with (leg: source, run) has (round: carried)
-then
-  RunSnapshotting.capture (subject: round, value: former "the presentation of (leg) taking parts from (sourceRound)" with (leg, sourceRound: carried))
-```
-
-### Live.relays.TiedRoundCapturesPresentation:plain
-
-Authored path: `Live.relays.TiedRoundCapturesPresentation`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-
-```reaction
-when Linking.setLinks (source: round)
-where
-  Publishing._edition (edition: round) has (material: questionnaire)
-  Relaying._legFor (material: questionnaire) has (leg)
-  view "(leg) takes nothing" with (leg)
-then
-  RunSnapshotting.capture (subject: round, value: former "the presentation of (leg)" with (leg))
+  RunSnapshotting.capture (subject: round, value)
 ```
 
 ### Live.relays.Unlock:forbidden
 
 Authored path: `Live.relays.Unlock`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 98.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 130.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/unlock", requestId, run, session)
@@ -19162,8 +20925,8 @@ then
 ### Live.relays.Unlock:not-locked
 
 Authored path: `Live.relays.Unlock`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 98.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 130.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/unlock", requestId, run, session)
@@ -19179,8 +20942,8 @@ then
 ### Live.relays.Unlock:round-open
 
 Authored path: `Live.relays.Unlock`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 98.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 130.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/unlock", requestId, run, session)
@@ -19195,8 +20958,8 @@ then
 ### Live.relays.Unlock:success
 
 Authored path: `Live.relays.Unlock`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 98.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 130.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/unlock", requestId, run, session)
@@ -19212,8 +20975,8 @@ then
 ### Live.relays.Unlock:success#2
 
 Authored path: `Live.relays.Unlock`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 29.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 98.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 37.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 130.
 
 ```reaction
 when Locking.unlock (target: run), asked by Live.relays.Unlock:success
@@ -19226,8 +20989,8 @@ then
 ### Live.relays.Uses:forbidden
 
 Authored path: `Live.relays.Uses`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 99.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 21.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 131.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/uses", requestId, session)
@@ -19241,8 +21004,8 @@ then
 ### Live.relays.Uses:success
 
 Authored path: `Live.relays.Uses`.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 19.
-- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 99.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 21.
+- Covered by [Relays and their runs](../design/compositions/live/relays.md), line 131.
 
 ```reaction
 when RequestBoundary.request (path: "/live/relays/uses", requestId, session)
@@ -19254,11 +21017,979 @@ then
   RequestBoundary.respond (requestId, uses)
 ```
 
+### Live.rounds.AddPile:forbidden
+
+Authored path: `Live.rounds.AddPile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 69.
+
+```reaction
+when RequestBoundary.request (description, leg, name, path: "/live/rounds/add-pile", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.rounds.AddPile:missing
+
+Authored path: `Live.rounds.AddPile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 69.
+
+```reaction
+when RequestBoundary.request (description, leg, name, path: "/live/rounds/add-pile", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._leg (leg)
+then
+  RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.rounds.AddPile:retired
+
+Authored path: `Live.rounds.AddPile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 69.
+
+```reaction
+when RequestBoundary.request (description, leg, name, path: "/live/rounds/add-pile", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a retired relay" with (leg)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.rounds.AddPile:run-open
+
+Authored path: `Live.rounds.AddPile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 69.
+
+```reaction
+when RequestBoundary.request (description, leg, name, path: "/live/rounds/add-pile", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "(leg) has opened in an open run" with (leg)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
+```
+
+### Live.rounds.AddPile:success
+
+Authored path: `Live.rounds.AddPile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 69.
+
+```reaction
+when RequestBoundary.request (description, leg, name, path: "/live/rounds/add-pile", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "(leg) has not opened in an open run" with (leg)
+then
+  Categorizing.createCategory (description, name, scope: leg)
+```
+
+### Live.rounds.AddPile:success#2
+
+Authored path: `Live.rounds.AddPile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 69.
+
+```reaction
+when Categorizing.createCategory (description, name, scope: leg, category), asked by Live.rounds.AddPile:success
+where
+  earlier, RequestBoundary.request (description, leg, name, path: "/live/rounds/add-pile", requestId, session)
+then
+  RequestBoundary.respond (pile: category, requestId)
+```
+
+### Live.rounds.CapturedRoundSeedsStandingPiles
+
+Authored path: `Live.rounds.CapturedRoundSeedsStandingPiles`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 9.
+
+```reaction
+when RunSnapshotting.capture (subject: round)
+where
+  Publishing._edition (edition: round) has (material: questionnaire)
+  Relaying._legFor (material: questionnaire) has (leg)
+  Relaying._leg (leg) and not (kind: "vote")
+  at is the current flow's instant
+  Categorizing._categoriesIn (scope: leg) has (name)
+then
+  Categorizing.ensureCategory (description: "", name, scope: round)
+```
+
+### Live.rounds.CapturedRoundSeedsStandingPiles#2
+
+Authored path: `Live.rounds.CapturedRoundSeedsStandingPiles`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 9.
+
+```reaction
+when Categorizing.ensureCategory (description: "", name, scope: round, category), asked by Live.rounds.CapturedRoundSeedsStandingPiles
+where
+  at is the current flow's instant
+then
+  Pinning.pin (at, item: category, priority: 0, scope: "live-reserved-piles")
+```
+
+### Live.rounds.ClearNotes:cleared
+
+Authored path: `Live.rounds.ClearNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 70.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/clear-notes", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+then
+  Guiding.clear (subject: leg, use: "sorting")
+```
+
+### Live.rounds.ClearNotes:cleared#2
+
+Authored path: `Live.rounds.ClearNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 70.
+
+```reaction
+when Guiding.clear (subject: leg, use: "sorting", cleared), asked by Live.rounds.ClearNotes:cleared
+where
+  earlier, RequestBoundary.request (leg, path: "/live/rounds/clear-notes", requestId, session)
+then
+  RequestBoundary.respond (cleared, requestId)
+```
+
+### Live.rounds.ClearNotes:forbidden
+
+Authored path: `Live.rounds.ClearNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 70.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/clear-notes", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.rounds.ClearNotes:missing
+
+Authored path: `Live.rounds.ClearNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 70.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/clear-notes", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._leg (leg)
+then
+  RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.rounds.ClearNotes:retired
+
+Authored path: `Live.rounds.ClearNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 70.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/clear-notes", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a retired relay" with (leg)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.rounds.DescribePile:forbidden
+
+Authored path: `Live.rounds.DescribePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 71.
+
+```reaction
+when RequestBoundary.request (description, path: "/live/rounds/describe-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.rounds.DescribePile:missing
+
+Authored path: `Live.rounds.DescribePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 71.
+
+```reaction
+when RequestBoundary.request (description, path: "/live/rounds/describe-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "the round (pile) stands on" with (pile)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.rounds.DescribePile:retired
+
+Authored path: `Live.rounds.DescribePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 71.
+
+```reaction
+when RequestBoundary.request (description, path: "/live/rounds/describe-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the round (pile) stands on" with (pile) has (leg)
+  view "(leg) is a round of a retired relay" with (leg)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.rounds.DescribePile:run-open
+
+Authored path: `Live.rounds.DescribePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 71.
+
+```reaction
+when RequestBoundary.request (description, path: "/live/rounds/describe-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the round (pile) stands on" with (pile) has (leg)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "(leg) has opened in an open run" with (leg)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
+```
+
+### Live.rounds.DescribePile:success
+
+Authored path: `Live.rounds.DescribePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 71.
+
+```reaction
+when RequestBoundary.request (description, path: "/live/rounds/describe-pile", pile, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the round (pile) stands on" with (pile) has (leg)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "(leg) has not opened in an open run" with (leg)
+then
+  Categorizing.describeCategory (category: pile, description)
+```
+
+### Live.rounds.DescribePile:success#2
+
+Authored path: `Live.rounds.DescribePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 71.
+
+```reaction
+when Categorizing.describeCategory (category: pile, description, result.category: described), asked by Live.rounds.DescribePile:success
+where
+  earlier, RequestBoundary.request (description, path: "/live/rounds/describe-pile", pile, requestId, session)
+then
+  RequestBoundary.respond (pile: described, requestId)
+```
+
+### Live.rounds.ReadSample:forbidden
+
+Authored path: `Live.rounds.ReadSample`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 19.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 72.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample", picks, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.rounds.ReadSample:missing
+
+Authored path: `Live.rounds.ReadSample`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 19.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 72.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample", picks, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._leg (leg)
+then
+  RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.rounds.ReadSample:pending
+
+Authored path: `Live.rounds.ReadSample`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 19.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 72.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample", picks, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._leg (leg)
+  view "a sample of (leg) is still being asked" with (leg)
+  whether Reasoning._lastFailureAbout (about: leg) has (account: failure, failedAt)
+  view "the preview inputs of (leg) with (picks)" with (leg, picks) has (resolution)
+  preview is samplingResolvedPreview (resolution)
+then
+  RequestBoundary.respond (failedAt, failure, pending: true, preview, requestId, sample: former "the sample of (leg) with (picks)" with (leg, picks))
+```
+
+### Live.rounds.ReadSample:settled
+
+Authored path: `Live.rounds.ReadSample`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 19.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 72.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample", picks, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  Relaying._leg (leg)
+  view "no sample of (leg) is being asked" with (leg)
+  whether Reasoning._lastFailureAbout (about: leg) has (account: failure, failedAt)
+  view "the preview inputs of (leg) with (picks)" with (leg, picks) has (resolution)
+  preview is samplingResolvedPreview (resolution)
+then
+  RequestBoundary.respond (failedAt, failure, pending: false, preview, requestId, sample: former "the sample of (leg) with (picks)" with (leg, picks))
+```
+
+### Live.rounds.RemovePile:forbidden
+
+Authored path: `Live.rounds.RemovePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 73.
+
+```reaction
+when RequestBoundary.request (path: "/live/rounds/remove-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.rounds.RemovePile:missing
+
+Authored path: `Live.rounds.RemovePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 73.
+
+```reaction
+when RequestBoundary.request (path: "/live/rounds/remove-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "the round (pile) stands on" with (pile)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.rounds.RemovePile:retired
+
+Authored path: `Live.rounds.RemovePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 73.
+
+```reaction
+when RequestBoundary.request (path: "/live/rounds/remove-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the round (pile) stands on" with (pile) has (leg)
+  view "(leg) is a round of a retired relay" with (leg)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.rounds.RemovePile:run-open
+
+Authored path: `Live.rounds.RemovePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 73.
+
+```reaction
+when RequestBoundary.request (path: "/live/rounds/remove-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the round (pile) stands on" with (pile) has (leg)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "(leg) has opened in an open run" with (leg)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
+```
+
+### Live.rounds.RemovePile:success
+
+Authored path: `Live.rounds.RemovePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 73.
+
+```reaction
+when RequestBoundary.request (path: "/live/rounds/remove-pile", pile, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the round (pile) stands on" with (pile) has (leg)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "(leg) has not opened in an open run" with (leg)
+then
+  Categorizing.deleteCategory (category: pile)
+```
+
+### Live.rounds.RemovePile:success#2
+
+Authored path: `Live.rounds.RemovePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 73.
+
+```reaction
+when Categorizing.deleteCategory (category: pile, result.category: removed), asked by Live.rounds.RemovePile:success
+where
+  earlier, RequestBoundary.request (path: "/live/rounds/remove-pile", pile, requestId, session)
+then
+  RequestBoundary.respond (pile: removed, requestId)
+```
+
+### Live.rounds.RenamePile:forbidden
+
+Authored path: `Live.rounds.RenamePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 74.
+
+```reaction
+when RequestBoundary.request (name, path: "/live/rounds/rename-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.rounds.RenamePile:missing
+
+Authored path: `Live.rounds.RenamePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 74.
+
+```reaction
+when RequestBoundary.request (name, path: "/live/rounds/rename-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "the round (pile) stands on" with (pile)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.rounds.RenamePile:retired
+
+Authored path: `Live.rounds.RenamePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 74.
+
+```reaction
+when RequestBoundary.request (name, path: "/live/rounds/rename-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the round (pile) stands on" with (pile) has (leg)
+  view "(leg) is a round of a retired relay" with (leg)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.rounds.RenamePile:run-open
+
+Authored path: `Live.rounds.RenamePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 74.
+
+```reaction
+when RequestBoundary.request (name, path: "/live/rounds/rename-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the round (pile) stands on" with (pile) has (leg)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "(leg) has opened in an open run" with (leg)
+then
+  RequestBoundary.respond (error: "RUN_OPEN", requestId)
+```
+
+### Live.rounds.RenamePile:success
+
+Authored path: `Live.rounds.RenamePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 74.
+
+```reaction
+when RequestBoundary.request (name, path: "/live/rounds/rename-pile", pile, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "the round (pile) stands on" with (pile) has (leg)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "(leg) has not opened in an open run" with (leg)
+then
+  Categorizing.renameCategory (category: pile, name)
+```
+
+### Live.rounds.RenamePile:success#2
+
+Authored path: `Live.rounds.RenamePile`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 7.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 74.
+
+```reaction
+when Categorizing.renameCategory (category: pile, name, result.category: renamed), asked by Live.rounds.RenamePile:success
+where
+  earlier, RequestBoundary.request (name, path: "/live/rounds/rename-pile", pile, requestId, session)
+then
+  RequestBoundary.respond (pile: renamed, requestId)
+```
+
+### Live.rounds.SampleAnswers:asking
+
+Authored path: `Live.rounds.SampleAnswers`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 17.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample-answers", picks, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "a sample of (leg) is still being asked" with (leg)
+then
+  RequestBoundary.respond (asked: false, requestId)
+```
+
+### Live.rounds.SampleAnswers:forbidden
+
+Authored path: `Live.rounds.SampleAnswers`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 17.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample-answers", picks, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.rounds.SampleAnswers:missing
+
+Authored path: `Live.rounds.SampleAnswers`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 17.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample-answers", picks, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._leg (leg)
+then
+  RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.rounds.SampleAnswers:nothing-picked
+
+Authored path: `Live.rounds.SampleAnswers`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 17.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample-answers", picks, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "no sample of (leg) is being asked" with (leg)
+  view "the sampling request for (leg) with (picks)" with (leg, picks) has (account: "NOTHING_PICKED")
+then
+  RequestBoundary.respond (error: "NOTHING_PICKED", requestId)
+```
+
+### Live.rounds.SampleAnswers:ready
+
+Authored path: `Live.rounds.SampleAnswers`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 17.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample-answers", picks, requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "no sample of (leg) is being asked" with (leg)
+  view "the sampling request for (leg) with (picks)" with (leg, picks) has (account: "", passage)
+then
+  Reasoning.ask (about: leg, at, passage, reasoner: "gemini-flash")
+```
+
+### Live.rounds.SampleAnswers:ready#2
+
+Authored path: `Live.rounds.SampleAnswers`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 17.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 75.
+
+```reaction
+when Reasoning.ask (about: leg, at, passage, reasoner: "gemini-flash", asking), asked by Live.rounds.SampleAnswers:ready
+where
+  earlier, RequestBoundary.request (leg, path: "/live/rounds/sample-answers", picks, requestId, session)
+then
+  RequestBoundary.respond (asked: true, asking, requestId)
+```
+
+### Live.rounds.SampleAnswers:retired
+
+Authored path: `Live.rounds.SampleAnswers`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 17.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample-answers", picks, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a retired relay" with (leg)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.rounds.SampleAnswers:source-stale
+
+Authored path: `Live.rounds.SampleAnswers`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 17.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample-answers", picks, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "no sample of (leg) is being asked" with (leg)
+  view "the sampling request for (leg) with (picks)" with (leg, picks) has (account: "SOURCE_STALE")
+then
+  RequestBoundary.respond (error: "SOURCE_STALE", requestId)
+```
+
+### Live.rounds.SampleAnswers:source-unsampled
+
+Authored path: `Live.rounds.SampleAnswers`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 17.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 75.
+
+```reaction
+when RequestBoundary.request (leg, path: "/live/rounds/sample-answers", picks, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  view "no sample of (leg) is being asked" with (leg)
+  view "the sampling request for (leg) with (picks)" with (leg, picks) has (account: "SOURCE_UNSAMPLED")
+then
+  RequestBoundary.respond (error: "SOURCE_UNSAMPLED", requestId)
+```
+
+### Live.rounds.SeededPileKeepsDefinition
+
+Authored path: `Live.rounds.SeededPileKeepsDefinition`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 9.
+
+```reaction
+when Categorizing.ensureCategory (name, scope: round, category)
+where
+  Publishing._edition (edition: round) has (material: questionnaire)
+  Relaying._legFor (material: questionnaire) has (leg)
+  Categorizing._categoriesIn (scope: leg) has (description, name)
+  said is briefStanding (request: description)
+  said is among ["given"]
+then
+  Guiding.set (body: description, subject: category, title: "", use: "pile-definition")
+```
+
+### Live.rounds.SetGuide:clear
+
+Authored path: `Live.rounds.SetGuide`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 92.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 95.
+
+```reaction
+when RequestBoundary.request (body, field, leg, path: "/live/rounds/set-guide", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  field is among ["purpose", "facilitation", "selection"]
+  use is guideUse (field)
+  said is briefStanding (request: body)
+  said is among ["blank"]
+then
+  Guiding.clear (subject: leg, use)
+```
+
+### Live.rounds.SetGuide:clear#2
+
+Authored path: `Live.rounds.SetGuide`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 92.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 95.
+
+```reaction
+when Guiding.clear (subject: leg, use, cleared), asked by Live.rounds.SetGuide:clear
+where
+  earlier, RequestBoundary.request (body, field, leg, path: "/live/rounds/set-guide", requestId, session)
+then
+  RequestBoundary.respond (cleared, requestId)
+```
+
+### Live.rounds.SetGuide:field
+
+Authored path: `Live.rounds.SetGuide`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 92.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 95.
+
+```reaction
+when RequestBoundary.request (body, field, leg, path: "/live/rounds/set-guide", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  scope is guideScope (field)
+  scope is among ["relay", ""]
+then
+  RequestBoundary.respond (error: "INVALID_FIELD", requestId)
+```
+
+### Live.rounds.SetGuide:forbidden
+
+Authored path: `Live.rounds.SetGuide`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 92.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 95.
+
+```reaction
+when RequestBoundary.request (body, field, leg, path: "/live/rounds/set-guide", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.rounds.SetGuide:missing
+
+Authored path: `Live.rounds.SetGuide`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 92.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 95.
+
+```reaction
+when RequestBoundary.request (body, field, leg, path: "/live/rounds/set-guide", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._leg (leg)
+then
+  RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.rounds.SetGuide:retired
+
+Authored path: `Live.rounds.SetGuide`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 92.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 95.
+
+```reaction
+when RequestBoundary.request (body, field, leg, path: "/live/rounds/set-guide", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a retired relay" with (leg)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.rounds.SetGuide:set
+
+Authored path: `Live.rounds.SetGuide`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 92.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 95.
+
+```reaction
+when RequestBoundary.request (body, field, leg, path: "/live/rounds/set-guide", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+  field is among ["purpose", "facilitation", "selection"]
+  use is guideUse (field)
+  said is briefStanding (request: body)
+  said is among ["given"]
+then
+  Guiding.set (body, subject: leg, title: "", use)
+```
+
+### Live.rounds.SetGuide:set#2
+
+Authored path: `Live.rounds.SetGuide`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 92.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 95.
+
+```reaction
+when Guiding.set (body, subject: leg, title: "", use, guidance), asked by Live.rounds.SetGuide:set
+where
+  earlier, RequestBoundary.request (body, field, leg, path: "/live/rounds/set-guide", requestId, session)
+then
+  RequestBoundary.respond (guidance, requestId)
+```
+
+### Live.rounds.SetNotes:forbidden
+
+Authored path: `Live.rounds.SetNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 76.
+
+```reaction
+when RequestBoundary.request (body, leg, path: "/live/rounds/set-notes", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.rounds.SetNotes:missing
+
+Authored path: `Live.rounds.SetNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 76.
+
+```reaction
+when RequestBoundary.request (body, leg, path: "/live/rounds/set-notes", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no Relaying._leg (leg)
+then
+  RequestBoundary.respond (error: "LEG_NOT_FOUND", requestId)
+```
+
+### Live.rounds.SetNotes:retired
+
+Authored path: `Live.rounds.SetNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 76.
+
+```reaction
+when RequestBoundary.request (body, leg, path: "/live/rounds/set-notes", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a retired relay" with (leg)
+then
+  RequestBoundary.respond (error: "RELAY_RETIRED", requestId)
+```
+
+### Live.rounds.SetNotes:set
+
+Authored path: `Live.rounds.SetNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 76.
+
+```reaction
+when RequestBoundary.request (body, leg, path: "/live/rounds/set-notes", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(leg) is a round of a relay still in use" with (leg)
+then
+  Guiding.set (body, subject: leg, title: "", use: "sorting")
+```
+
+### Live.rounds.SetNotes:set#2
+
+Authored path: `Live.rounds.SetNotes`.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 13.
+- Covered by [What a round carries besides its question](../design/compositions/live/rounds.md), line 76.
+
+```reaction
+when Guiding.set (body, subject: leg, title: "", use: "sorting", guidance), asked by Live.rounds.SetNotes:set
+where
+  earlier, RequestBoundary.request (body, leg, path: "/live/rounds/set-notes", requestId, session)
+then
+  RequestBoundary.respond (guidance, requestId)
+```
+
+### Live.runs.BegunModelRunResponseAsksMind
+
+Authored path: `Live.runs.BegunModelRunResponseAsksMind`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 73.
+
+```reaction
+when Responding.begin (participant, subject: run, response)
+where
+  at is the current flow's instant
+  view "(participant) holds a seat on (run)" with (participant, run)
+  RunSnapshotting._snapshot (subject: run) has (value)
+  passage is participantPassage (participant, value)
+then
+  Reasoning.ask (about: response, at, passage, reasoner: "gemini-flash")
+```
+
 ### Live.runs.Close:forbidden
 
 Authored path: `Live.runs.Close`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 42.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
@@ -19273,7 +22004,7 @@ then
 
 Authored path: `Live.runs.Close`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 42.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/close", requestId, run, session)
@@ -19289,7 +22020,7 @@ then
 
 Authored path: `Live.runs.Close`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 42.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 94.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 142.
 
 ```reaction
 when Publishing.close (at, edition: run, result.edition: closed), asked by Live.runs.Close:success
@@ -19299,11 +22030,171 @@ then
   RequestBoundary.respond (requestId, run: closed)
 ```
 
+### Live.runs.Dismiss:already-dismissed
+
+Authored path: `Live.runs.Dismiss`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 89.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 143.
+
+```reaction
+when RequestBoundary.request (participant, path: "/live/runs/dismiss", requestId, run, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(participant) holds a seat on (run)" with (participant, run)
+  no view "(participant)'s seat is not dismissed" with (participant)
+then
+  RequestBoundary.respond (participant, requestId)
+```
+
+### Live.runs.Dismiss:forbidden
+
+Authored path: `Live.runs.Dismiss`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 89.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 143.
+
+```reaction
+when RequestBoundary.request (participant, path: "/live/runs/dismiss", requestId, run, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.runs.Dismiss:not-seated
+
+Authored path: `Live.runs.Dismiss`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 89.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 143.
+
+```reaction
+when RequestBoundary.request (participant, path: "/live/runs/dismiss", requestId, run, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "(participant) holds a seat on (run)" with (participant, run)
+then
+  RequestBoundary.respond (error: "NOT_SEATED", requestId)
+```
+
+### Live.runs.Dismiss:success
+
+Authored path: `Live.runs.Dismiss`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 89.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 143.
+
+```reaction
+when RequestBoundary.request (participant, path: "/live/runs/dismiss", requestId, run, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(participant) holds a seat on (run)" with (participant, run)
+  view "(participant)'s seat is not dismissed" with (participant)
+then
+  Trashing.trash (at, by: user, item: participant)
+```
+
+### Live.runs.Dismiss:success#2
+
+Authored path: `Live.runs.Dismiss`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 89.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 143.
+
+```reaction
+when Trashing.trash (at, by: user, item: participant), asked by Live.runs.Dismiss:success
+where
+  earlier, RequestBoundary.request (participant, path: "/live/runs/dismiss", requestId, run, session)
+then
+  RequestBoundary.respond (participant, requestId)
+```
+
+### Live.runs.Invite:closed
+
+Authored path: `Live.runs.Invite`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 83.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 144.
+
+```reaction
+when RequestBoundary.request (device, path: "/live/runs/invite", requestId, run, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(run) is closed" with (run)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.runs.Invite:forbidden
+
+Authored path: `Live.runs.Invite`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 83.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 144.
+
+```reaction
+when RequestBoundary.request (device, path: "/live/runs/invite", requestId, run, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.runs.Invite:named-account
+
+Authored path: `Live.runs.Invite`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 83.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 144.
+
+```reaction
+when RequestBoundary.request (device, path: "/live/runs/invite", requestId, run, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(run) is open to participation" with (run)
+  no view "(identifier) names no account" with (identifier: device)
+then
+  RequestBoundary.respond (error: "NOT_A_SEAT", requestId)
+```
+
+### Live.runs.Invite:success
+
+Authored path: `Live.runs.Invite`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 83.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 144.
+
+```reaction
+when RequestBoundary.request (device, path: "/live/runs/invite", requestId, run, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(identifier) names no account" with (identifier: device)
+  view "(run) is open to participation" with (run)
+then
+  Subscribing.subscribe (at, target: run, user: device)
+```
+
+### Live.runs.Invite:success#2
+
+Authored path: `Live.runs.Invite`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 83.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 144.
+
+```reaction
+when Subscribing.subscribe (at, target: run, user: device), asked by Live.runs.Invite:success
+where
+  earlier, RequestBoundary.request (device, path: "/live/runs/invite", requestId, run, session)
+then
+  RequestBoundary.respond (participant: device, requestId)
+```
+
 ### Live.runs.Launch
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -19319,7 +22210,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Questioning.present (questionnaire, disclosure, expectations, form, presentation, proposes), asked by Live.runs.Launch
@@ -19339,7 +22230,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:quiz#2
@@ -19353,7 +22244,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when RunSnapshotting.capture (subject: run, value: presentation, snapshot), asked by Live.runs.Launch:quiz#3
@@ -19367,7 +22258,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Scoring.establish (disclosure, expectations, subject: run, key), asked by Live.runs.Launch:quiz#4
@@ -19379,7 +22270,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.runs.Launch:quiz#5
@@ -19391,7 +22282,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Locating.ensure (subject: run, code), asked by Live.runs.Launch:quiz#6
@@ -19406,7 +22297,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Questioning.present (questionnaire, disclosure, expectations, form, presentation, proposes), asked by Live.runs.Launch
@@ -19421,7 +22312,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Questioning.present (questionnaire, disclosure, expectations, form, presentation, proposes), asked by Live.runs.Launch
@@ -19440,7 +22331,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Publishing.publish (at, author: user, material: questionnaire, edition: run), asked by Live.runs.Launch:survey#2
@@ -19454,7 +22345,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when RunSnapshotting.capture (subject: run, value: presentation, snapshot), asked by Live.runs.Launch:survey#3
@@ -19466,7 +22357,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Sharing.issue (subject: run, token), asked by Live.runs.Launch:survey#4
@@ -19478,7 +22369,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Locating.ensure (subject: run, code), asked by Live.runs.Launch:survey#5
@@ -19493,7 +22384,7 @@ then
 
 Authored path: `Live.runs.Launch`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 7.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 95.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 145.
 
 ```reaction
 when Questioning.present (questionnaire, disclosure, expectations, form, presentation, proposes), asked by Live.runs.Launch
@@ -19510,7 +22401,7 @@ then
 
 Authored path: `Live.runs.LaunchForbidden`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 16.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 96.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 146.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/launch", questionnaire, requestId, session)
@@ -19525,7 +22416,7 @@ then
 
 Authored path: `Live.runs.OpenRuns`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 46.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 97.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 147.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/open", requestId, session)
@@ -19540,7 +22431,7 @@ then
 
 Authored path: `Live.runs.OpenRuns`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 46.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 97.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 147.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/open", requestId, session)
@@ -19556,7 +22447,7 @@ then
 
 Authored path: `Live.runs.Results`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 51.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 98.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 148.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -19571,7 +22462,7 @@ then
 
 Authored path: `Live.runs.Results`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 51.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 98.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 148.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -19588,7 +22479,7 @@ then
 
 Authored path: `Live.runs.Results`.
 - Covered by [Live runs](../design/compositions/live/runs.md), line 51.
-- Covered by [Live runs](../design/compositions/live/runs.md), line 98.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 148.
 
 ```reaction
 when RequestBoundary.request (path: "/live/runs/results", requestId, run, session)
@@ -19601,6 +22492,21 @@ then
   RequestBoundary.respond (board: former "the board of (run)" with (run), requestId)
 ```
 
+### Live.runs.SeatedParticipantAnswersOpenRun
+
+Authored path: `Live.runs.SeatedParticipantAnswersOpenRun`.
+- Covered by [Live runs](../design/compositions/live/runs.md), line 69.
+
+```reaction
+when Subscribing.subscribe (target: run, user: participant)
+where
+  at is the current flow's instant
+  view "(run) is open to participation" with (run)
+  view "(run) is a questionnaire run" with (run)
+then
+  Responding.begin (at, participant, subject: run)
+```
+
 ### Live.walls.AnsweredAskUnlocksRound
 
 Authored path: `Live.walls.AnsweredAskUnlocksRound`.
@@ -19608,18 +22514,81 @@ Authored path: `Live.walls.AnsweredAskUnlocksRound`.
 
 ```reaction
 when Reasoning.answer (asking)
+at the flow's settlement frontier
 where
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
+  no view "a reply about (round) is applying" with (round)
+  view "no offering about (round) has lines left to take" with (round)
   Locking._isLocked (target: round) has (locked: true)
 then
   Locking.unlock (target: round)
 ```
 
+### Live.walls.AnsweringHoldsRound
+
+Authored path: `Live.walls.AnsweringHoldsRound`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+
+```reaction
+when requested Reasoning.answer (asking)
+where
+  at is the current flow's instant
+  Reasoning._asking (asking) has (about: round, pending: true)
+  view "(round) is a round with a captured question" with (round)
+  Locking._isLocked (target: asking) has (locked: false)
+then
+  Locking.lock (at, target: asking)
+```
+
+### Live.walls.AnsweringHoldsRound#2
+
+Authored path: `Live.walls.AnsweringHoldsRound`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+
+```reaction
+when Locking.lock (at, target: asking), asked by Live.walls.AnsweringHoldsRound
+where
+  Reasoning._asking (asking) has (about: round)
+  Locking._isLocked (target: round) has (locked: false)
+then
+  Locking.lock (at, target: round)
+```
+
+### Live.walls.AppliedReplyReleasesHold
+
+Authored path: `Live.walls.AppliedReplyReleasesHold`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+
+```reaction
+when Reasoning.answer (asking)
+at the flow's settlement frontier
+where
+  Reasoning._asking (asking) has (about: round)
+  view "(round) is a round with a captured question" with (round)
+  Locking._isLocked (target: asking) has (locked: true)
+then
+  Locking.unlock (target: asking)
+```
+
+### Live.walls.AssignedCommissionIncludesRepairs
+
+Authored path: `Live.walls.AssignedCommissionIncludesRepairs`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 196.
+
+```reaction
+when Commissioning.assign (commission, execution: previous)
+where
+  at is the current flow's instant
+  Reasoning._followups (previous) has (asking)
+then
+  Commissioning.assign (at, commission, execution: asking)
+```
+
 ### Live.walls.BegunModelResponseAsksMind
 
 Authored path: `Live.walls.BegunModelResponseAsksMind`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 27.
+- Covered by [The wall](../design/compositions/live/walls.md), line 37.
 
 ```reaction
 when Responding.begin (participant, subject: round, response)
@@ -19633,31 +22602,501 @@ then
   Reasoning.ask (about: response, at, passage, reasoner: "gemini-flash")
 ```
 
+### Live.walls.ClearEmptyPiles
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/clear-empty-piles", requestId, round, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  whether view "authorized sorting observation" with (user) has (supported: authorized)
+  whether view "openRun sorting observation" with (round) has (supported: openRun)
+  whether view "unlocked sorting observation" with (round) has (supported: unlocked)
+  whether view "applied sorting observation" with (round) has (supported: applied)
+  whether view "the starting piles of (round)" with (round) has (standing)
+  view "sorting piles of (round)" with (round) has (categories)
+  Pinning._pinnedItems (scope: round) has (items: picked)
+  Pinning._pinnedItems (scope: "live-reserved-piles") has (items: reserved)
+  candidates is clearablePiles (categories, picked, reserved, standing)
+  account is cleanupAdmission (applied, authorized, openRun, standing, unlocked)
+  brief is cleanupBrief (account, candidates)
+then
+  Commissioning.prepare (account, at, brief, subject: round)
+```
+
+### Live.walls.ClearEmptyPiles:accepted#2
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+where
+  status is among ["prepared"]
+then
+  Commissioning.accept (at, commission)
+```
+
+### Live.walls.ClearEmptyPiles:accepted#3
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Commissioning.accept (at, commission, brief), asked by Live.walls.ClearEmptyPiles:accepted#2
+where
+  candidates is cleanupCategories (brief)
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+  status is among ["prepared"]
+then
+  Categorizing.deleteEmptyCategories (categories: candidates)
+```
+
+### Live.walls.ClearEmptyPiles:accepted#4
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Categorizing.deleteEmptyCategories (categories: candidates, deleted), asked by Live.walls.ClearEmptyPiles:accepted#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+then
+  Commissioning.conclude (account: "Empty-only cleanup finished.", at, commission, successful: true)
+```
+
+### Live.walls.ClearEmptyPiles:accepted#5
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Commissioning.conclude (account: "Empty-only cleanup finished.", at, commission, successful: true), asked by Live.walls.ClearEmptyPiles:accepted#4
+where
+  earlier, Categorizing.deleteEmptyCategories (categories: candidates, deleted), asked by Live.walls.ClearEmptyPiles:accepted#3
+  earlier, RequestBoundary.request (path: "/live/walls/clear-empty-piles", requestId, round, session)
+then
+  RequestBoundary.respond (cleared: deleted, requestId)
+```
+
+### Live.walls.ClearEmptyPiles:busy-or-closed#2
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+where
+  status is among ["declined"]
+  account is among ["CONFLICT"]
+  earlier, RequestBoundary.request (path: "/live/walls/clear-empty-piles", requestId, round, session)
+then
+  RequestBoundary.respond (error: "CONFLICT", requestId)
+```
+
+### Live.walls.ClearEmptyPiles:busy-or-closed#3
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when RequestBoundary.respond (error: "CONFLICT", requestId), asked by Live.walls.ClearEmptyPiles:busy-or-closed#2
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+  status is among ["prepared"]
+  candidates is cleanupCategories (brief)
+then
+  Categorizing.deleteEmptyCategories (categories: candidates)
+```
+
+### Live.walls.ClearEmptyPiles:busy-or-closed#4
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Categorizing.deleteEmptyCategories (categories: candidates, deleted), asked by Live.walls.ClearEmptyPiles:busy-or-closed#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+then
+  Commissioning.conclude (account: "Empty-only cleanup finished.", at, commission, successful: true)
+```
+
+### Live.walls.ClearEmptyPiles:busy-or-closed#5
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Commissioning.conclude (account: "Empty-only cleanup finished.", at, commission, successful: true), asked by Live.walls.ClearEmptyPiles:busy-or-closed#4
+where
+  earlier, RequestBoundary.respond (error: "CONFLICT", requestId), asked by Live.walls.ClearEmptyPiles:busy-or-closed#2
+  earlier, Categorizing.deleteEmptyCategories (categories: candidates, deleted), asked by Live.walls.ClearEmptyPiles:busy-or-closed#3
+then
+  RequestBoundary.respond (cleared: deleted, requestId)
+```
+
+### Live.walls.ClearEmptyPiles:forbidden#2
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+where
+  status is among ["declined"]
+  account is among ["FORBIDDEN"]
+  earlier, RequestBoundary.request (path: "/live/walls/clear-empty-piles", requestId, round, session)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.walls.ClearEmptyPiles:forbidden#3
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when RequestBoundary.respond (error: "FORBIDDEN", requestId), asked by Live.walls.ClearEmptyPiles:forbidden#2
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+  status is among ["prepared"]
+  candidates is cleanupCategories (brief)
+then
+  Categorizing.deleteEmptyCategories (categories: candidates)
+```
+
+### Live.walls.ClearEmptyPiles:forbidden#4
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Categorizing.deleteEmptyCategories (categories: candidates, deleted), asked by Live.walls.ClearEmptyPiles:forbidden#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+then
+  Commissioning.conclude (account: "Empty-only cleanup finished.", at, commission, successful: true)
+```
+
+### Live.walls.ClearEmptyPiles:forbidden#5
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Commissioning.conclude (account: "Empty-only cleanup finished.", at, commission, successful: true), asked by Live.walls.ClearEmptyPiles:forbidden#4
+where
+  earlier, RequestBoundary.respond (error: "FORBIDDEN", requestId), asked by Live.walls.ClearEmptyPiles:forbidden#2
+  earlier, Categorizing.deleteEmptyCategories (categories: candidates, deleted), asked by Live.walls.ClearEmptyPiles:forbidden#3
+then
+  RequestBoundary.respond (cleared: deleted, requestId)
+```
+
+### Live.walls.ClearEmptyPiles:missing#2
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+where
+  status is among ["declined"]
+  account is among ["NOT_FOUND"]
+  earlier, RequestBoundary.request (path: "/live/walls/clear-empty-piles", requestId, round, session)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.walls.ClearEmptyPiles:missing#3
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when RequestBoundary.respond (error: "NOT_FOUND", requestId), asked by Live.walls.ClearEmptyPiles:missing#2
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+  status is among ["prepared"]
+  candidates is cleanupCategories (brief)
+then
+  Categorizing.deleteEmptyCategories (categories: candidates)
+```
+
+### Live.walls.ClearEmptyPiles:missing#4
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Categorizing.deleteEmptyCategories (categories: candidates, deleted), asked by Live.walls.ClearEmptyPiles:missing#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.ClearEmptyPiles
+then
+  Commissioning.conclude (account: "Empty-only cleanup finished.", at, commission, successful: true)
+```
+
+### Live.walls.ClearEmptyPiles:missing#5
+
+Authored path: `Live.walls.ClearEmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 163.
+- Covered by [The wall](../design/compositions/live/walls.md), line 184.
+
+```reaction
+when Commissioning.conclude (account: "Empty-only cleanup finished.", at, commission, successful: true), asked by Live.walls.ClearEmptyPiles:missing#4
+where
+  earlier, RequestBoundary.respond (error: "NOT_FOUND", requestId), asked by Live.walls.ClearEmptyPiles:missing#2
+  earlier, Categorizing.deleteEmptyCategories (categories: candidates, deleted), asked by Live.walls.ClearEmptyPiles:missing#3
+then
+  RequestBoundary.respond (cleared: deleted, requestId)
+```
+
+### Live.walls.ClearNotes:cleared
+
+Authored path: `Live.walls.ClearNotes`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 164.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/clear-notes", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is a round with a captured question" with (round)
+  view "(round) is not of a closed run" with (round)
+then
+  Guiding.clear (subject: round, use: "sorting")
+```
+
+### Live.walls.ClearNotes:cleared#2
+
+Authored path: `Live.walls.ClearNotes`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 164.
+
+```reaction
+when Guiding.clear (subject: round, use: "sorting", cleared), asked by Live.walls.ClearNotes:cleared
+where
+  earlier, RequestBoundary.request (path: "/live/walls/clear-notes", requestId, round, session)
+then
+  RequestBoundary.respond (cleared, requestId)
+```
+
+### Live.walls.ClearNotes:closed
+
+Authored path: `Live.walls.ClearNotes`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 164.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/clear-notes", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is a round with a captured question" with (round)
+  view "(round) is of a closed run" with (round)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.walls.ClearNotes:forbidden
+
+Authored path: `Live.walls.ClearNotes`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 164.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/clear-notes", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.walls.ClearNotes:missing
+
+Authored path: `Live.walls.ClearNotes`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 164.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/clear-notes", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "(round) is a round with a captured question" with (round)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.walls.ClosedRoundSettlesWall
+
+Authored path: `Live.walls.ClosedRoundSettlesWall`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 17.
+
+```reaction
+when Publishing.close (at, edition: round)
+where
+  view "(round) is a round with a captured question" with (round)
+  view "the run of (round)" with (round) has (run)
+  Pinning._isPinned (item: run, scope: "sorting") has (pinned: true)
+  view "(round) has a card still in the tray" with (round)
+  view "nothing is still out about (round)" with (round)
+  Locking._isLocked (target: round) has (locked: false)
+  view "no offering about (round) has lines left to take" with (round)
+  RunSnapshotting._snapshot (subject: round) has (value)
+  view "sorting piles of (round)" with (round) has (categories)
+  Responding._valuesForSubject (subject: round) has (values)
+  Trashing._trashedItems () has (items: removed)
+  view "the sorter's notes for (round)" with (round) has (notes)
+  passage is placingPassage (categories, notes, removed, value, values)
+then
+  Commissioning.prepare (account: "", at, brief: passage, subject: round)
+```
+
+### Live.walls.ClosedRoundSettlesWall#2
+
+Authored path: `Live.walls.ClosedRoundSettlesWall`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 17.
+
+```reaction
+when Commissioning.prepare (account: "", at, brief: passage, subject: round, commission), asked by Live.walls.ClosedRoundSettlesWall
+then
+  Locking.lock (at, target: round)
+```
+
+### Live.walls.ClosedRoundSettlesWall#3
+
+Authored path: `Live.walls.ClosedRoundSettlesWall`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 17.
+
+```reaction
+when Locking.lock (at, target: round), asked by Live.walls.ClosedRoundSettlesWall#2
+where
+  earlier, Commissioning.prepare (account: "", at, brief: passage, subject: round, commission), asked by Live.walls.ClosedRoundSettlesWall
+then
+  Commissioning.accept (at, commission)
+```
+
+### Live.walls.ClosedRoundSettlesWall#4
+
+Authored path: `Live.walls.ClosedRoundSettlesWall`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 17.
+
+```reaction
+when Commissioning.accept (at, commission, brief), asked by Live.walls.ClosedRoundSettlesWall#3
+where
+  earlier, Commissioning.prepare (account: "", at, brief: passage, subject: round, commission), asked by Live.walls.ClosedRoundSettlesWall
+then
+  Reasoning.ask (about: round, at, passage: brief, reasoner: "gemini-flash")
+```
+
+### Live.walls.ClosedRoundSettlesWall#5
+
+Authored path: `Live.walls.ClosedRoundSettlesWall`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 17.
+
+```reaction
+when Reasoning.ask (about: round, at, passage: brief, reasoner: "gemini-flash", asking), asked by Live.walls.ClosedRoundSettlesWall#4
+where
+  earlier, Commissioning.prepare (account: "", at, brief: passage, subject: round, commission), asked by Live.walls.ClosedRoundSettlesWall
+then
+  Commissioning.assign (at, commission, execution: asking)
+```
+
 ### Live.walls.ComplaintRetriesTheAsk
 
 Authored path: `Live.walls.ComplaintRetriesTheAsk`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 23.
 
 ```reaction
 when Insisting.complain (account, aim: round, offering)
 where
   at is the current flow's instant
+  earlier, Reasoning.answer (asking: previous)
   view "(round) is a round with a captured question" with (round)
   Insisting._standingFor (aim: round)
   RunSnapshotting._snapshot (subject: round) has (value)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
-  passage is placingRepairPassage (account, categories, offering, removed, value, values)
+  view "the sorter's notes for (round)" with (round) has (notes)
+  passage is placingRepairPassage (account, categories, notes, offering, removed, value, values)
 then
-  Reasoning.ask (about: round, at, passage, reasoner: "gemini-flash")
+  Reasoning.followUp (at, passage, previous)
+```
+
+### Live.walls.ContendedCommissionFails
+
+Authored path: `Live.walls.ContendedCommissionFails`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 194.
+
+```reaction
+when refused Locking.lock (error: "TARGET_ALREADY_LOCKED")
+where
+  at is the current flow's instant
+  earlier, Commissioning.prepare (commission)
+then
+  Commissioning.conclude (account: "Another operation holds the round.", at, commission, successful: false)
+```
+
+### Live.walls.DescribePile:clear
+
+Authored path: `Live.walls.DescribePile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 165.
+
+```reaction
+when RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(pile) is not on the wall of a closed run" with (pile)
+  said is briefStanding (request: description)
+  said is among ["blank"]
+then
+  Guiding.clear (subject: pile, use: "pile-summary")
+```
+
+### Live.walls.DescribePile:clear#2
+
+Authored path: `Live.walls.DescribePile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 165.
+
+```reaction
+when Guiding.clear (subject: pile, use: "pile-summary", cleared), asked by Live.walls.DescribePile:clear
+where
+  earlier, RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
+then
+  RequestBoundary.respond (pile, requestId)
 ```
 
 ### Live.walls.DescribePile:closed
 
 Authored path: `Live.walls.DescribePile`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 103.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 165.
 
 ```reaction
 when RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
@@ -19672,8 +23111,8 @@ then
 ### Live.walls.DescribePile:forbidden
 
 Authored path: `Live.walls.DescribePile`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 103.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 165.
 
 ```reaction
 when RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
@@ -19687,8 +23126,8 @@ then
 ### Live.walls.DescribePile:success
 
 Authored path: `Live.walls.DescribePile`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 103.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 165.
 
 ```reaction
 when RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
@@ -19697,28 +23136,91 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   view "(pile) is not on the wall of a closed run" with (pile)
+  said is briefStanding (request: description)
+  said is among ["given"]
 then
-  Categorizing.describeCategory (category: pile, description)
+  Guiding.set (body: description, subject: pile, title: "", use: "pile-summary")
 ```
 
 ### Live.walls.DescribePile:success#2
 
 Authored path: `Live.walls.DescribePile`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 103.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 165.
 
 ```reaction
-when Categorizing.describeCategory (category: pile, description, result.category: described), asked by Live.walls.DescribePile:success
+when Guiding.set (body: description, subject: pile, title: "", use: "pile-summary", guidance: described), asked by Live.walls.DescribePile:success
 where
   earlier, RequestBoundary.request (description, path: "/live/walls/describe-pile", pile, requestId, session)
 then
-  RequestBoundary.respond (pile: described, requestId)
+  RequestBoundary.respond (pile, requestId)
+```
+
+### Live.walls.EmptyPiles:closed
+
+Authored path: `Live.walls.EmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 166.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/empty-piles", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is of a closed run" with (round)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.walls.EmptyPiles:emptied
+
+Authored path: `Live.walls.EmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 166.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/empty-piles", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is not of a closed run" with (round)
+then
+  Categorizing.empty (scope: round)
+```
+
+### Live.walls.EmptyPiles:emptied#2
+
+Authored path: `Live.walls.EmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 166.
+
+```reaction
+when Categorizing.empty (scope: round, emptied), asked by Live.walls.EmptyPiles:emptied
+where
+  earlier, RequestBoundary.request (path: "/live/walls/empty-piles", requestId, round, session)
+then
+  RequestBoundary.respond (emptied, requestId)
+```
+
+### Live.walls.EmptyPiles:forbidden
+
+Authored path: `Live.walls.EmptyPiles`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 166.
+
+```reaction
+when RequestBoundary.request (path: "/live/walls/empty-piles", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not host live runs" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### Live.walls.FailedAskGivesUp
 
 Authored path: `Live.walls.FailedAskGivesUp`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 23.
 
 ```reaction
 when Reasoning.fail (asking)
@@ -19737,12 +23239,30 @@ Authored path: `Live.walls.FailedAskUnlocksRound`.
 
 ```reaction
 when Reasoning.fail (asking)
+at the flow's settlement frontier
 where
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
+  no view "a reply about (round) is applying" with (round)
+  view "no offering about (round) has lines left to take" with (round)
   Locking._isLocked (target: round) has (locked: true)
 then
   Locking.unlock (target: round)
+```
+
+### Live.walls.FailedExecutionReportsCompletion
+
+Authored path: `Live.walls.FailedExecutionReportsCompletion`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 198.
+
+```reaction
+when Reasoning.fail (asking)
+at the flow's settlement frontier
+where
+  at is the current flow's instant
+  view "conclusion of commissioned execution (asking)" with (asking) has (account, successful)
+then
+  Commissioning.report (account, at, execution: asking, successful)
 ```
 
 ### Live.walls.HandedInBallotsJoinTheirPiles
@@ -19768,7 +23288,7 @@ then
 
 Authored path: `Live.walls.MergePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 104.
+- Covered by [The wall](../design/compositions/live/walls.md), line 167.
 
 ```reaction
 when RequestBoundary.request (into, path: "/live/walls/merge-pile", pile, requestId, session)
@@ -19784,7 +23304,7 @@ then
 
 Authored path: `Live.walls.MergePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 104.
+- Covered by [The wall](../design/compositions/live/walls.md), line 167.
 
 ```reaction
 when RequestBoundary.request (into, path: "/live/walls/merge-pile", pile, requestId, session)
@@ -19799,7 +23319,7 @@ then
 
 Authored path: `Live.walls.MergePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 104.
+- Covered by [The wall](../design/compositions/live/walls.md), line 167.
 
 ```reaction
 when RequestBoundary.request (into, path: "/live/walls/merge-pile", pile, requestId, session)
@@ -19816,7 +23336,7 @@ then
 
 Authored path: `Live.walls.MergePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 104.
+- Covered by [The wall](../design/compositions/live/walls.md), line 167.
 
 ```reaction
 when Categorizing.mergeCategory (category: pile, into, result.into: merged), asked by Live.walls.MergePile:success
@@ -19833,15 +23353,75 @@ Authored path: `Live.walls.MergedPileIsUnpicked`.
 
 ```reaction
 when Categorizing.mergeCategory (category)
+where
+  Pinning._isPinned (item: category, scope: "live-reserved-piles") has (pinned: false)
 then
   Pinning.clearItem (item: category)
+```
+
+### Live.walls.MergedReservedPileKeepsReservation
+
+Authored path: `Live.walls.MergedReservedPileKeepsReservation`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 186.
+
+```reaction
+when Categorizing.mergeCategory (category, into)
+where
+  at is the current flow's instant
+  Pinning._isPinned (item: category, scope: "live-reserved-piles") has (pinned: true)
+  Pinning._isPinned (item: into, scope: "live-reserved-piles") has (pinned: false)
+then
+  Pinning.pin (at, item: into, priority: 0, scope: "live-reserved-piles")
+```
+
+### Live.walls.MergedReservedPileKeepsReservation#2
+
+Authored path: `Live.walls.MergedReservedPileKeepsReservation`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 186.
+
+```reaction
+when Pinning.pin (at, item: into, priority: 0, scope: "live-reserved-piles"), asked by Live.walls.MergedReservedPileKeepsReservation
+where
+  earlier, Categorizing.mergeCategory (category, into)
+then
+  Pinning.clearItem (item: category)
+```
+
+### Live.walls.MergedReservedPileWasAlreadyKept
+
+Authored path: `Live.walls.MergedReservedPileWasAlreadyKept`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 186.
+
+```reaction
+when Categorizing.mergeCategory (category, into)
+where
+  Pinning._isPinned (item: category, scope: "live-reserved-piles") has (pinned: true)
+  Pinning._isPinned (item: into, scope: "live-reserved-piles") has (pinned: true)
+then
+  Pinning.clearItem (item: category)
+```
+
+### Live.walls.MissingSummaryPileReportsFailure
+
+Authored path: `Live.walls.MissingSummaryPileReportsFailure`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 216.
+
+```reaction
+when Suggesting.take (suggestion, kind, target)
+where
+  kind is among ["lid"]
+  no Categorizing._getCategoryDetail (category: target)
+  at is the current flow's instant
+  earlier, Reasoning.answer (asking)
+then
+  Commissioning.report (account: "The summarized pile no longer exists.", at, execution: asking, successful: false)
 ```
 
 ### Live.walls.MoveCard:closed
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 105.
+- Covered by [The wall](../design/compositions/live/walls.md), line 168.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -19857,7 +23437,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 105.
+- Covered by [The wall](../design/compositions/live/walls.md), line 168.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -19872,7 +23452,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 105.
+- Covered by [The wall](../design/compositions/live/walls.md), line 168.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -19888,7 +23468,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 105.
+- Covered by [The wall](../design/compositions/live/walls.md), line 168.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -19907,7 +23487,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 105.
+- Covered by [The wall](../design/compositions/live/walls.md), line 168.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/move-card", pile, requestId, session)
@@ -19927,7 +23507,7 @@ then
 
 Authored path: `Live.walls.MoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 105.
+- Covered by [The wall](../design/compositions/live/walls.md), line 168.
 
 ```reaction
 when Categorizing.assign (category: pile, item: card, result.item: assigned), asked by Live.walls.MoveCard:success
@@ -19941,7 +23521,7 @@ then
 
 Authored path: `Live.walls.OpenChoice`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 106.
+- Covered by [The wall](../design/compositions/live/walls.md), line 169.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/open-choice", requestId, round, session)
@@ -19957,7 +23537,7 @@ then
 
 Authored path: `Live.walls.OpenChoice`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 106.
+- Covered by [The wall](../design/compositions/live/walls.md), line 169.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/open-choice", requestId, round, session)
@@ -19972,7 +23552,7 @@ then
 
 Authored path: `Live.walls.OpenChoice`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 106.
+- Covered by [The wall](../design/compositions/live/walls.md), line 169.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/open-choice", requestId, round, session)
@@ -19989,7 +23569,7 @@ then
 
 Authored path: `Live.walls.OpenChoice`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 106.
+- Covered by [The wall](../design/compositions/live/walls.md), line 169.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/open-choice", requestId, round, session)
@@ -20006,7 +23586,7 @@ then
 
 Authored path: `Live.walls.OpenChoice`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 106.
+- Covered by [The wall](../design/compositions/live/walls.md), line 169.
 
 ```reaction
 when Categorizing.ensureCategory (description: "", name, scope: round, category), asked by Live.walls.OpenChoice:success
@@ -20020,7 +23600,7 @@ then
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 107.
+- Covered by [The wall](../design/compositions/live/walls.md), line 170.
 
 ```reaction
 when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
@@ -20032,11 +23612,44 @@ then
   RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
+### Live.walls.OpenPile:empty
+
+Authored path: `Live.walls.OpenPile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 9.
+- Covered by [The wall](../design/compositions/live/walls.md), line 170.
+
+```reaction
+when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is not of a closed run" with (round)
+  given is cardGiven (card)
+  given is among ["none"]
+then
+  Categorizing.ensureCategory (description: "", name, scope: round)
+```
+
+### Live.walls.OpenPile:empty#2
+
+Authored path: `Live.walls.OpenPile`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 9.
+- Covered by [The wall](../design/compositions/live/walls.md), line 170.
+
+```reaction
+when Categorizing.ensureCategory (description: "", name, scope: round, category: opened), asked by Live.walls.OpenPile:empty
+where
+  earlier, RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
+then
+  RequestBoundary.respond (pile: opened, requestId)
+```
+
 ### Live.walls.OpenPile:forbidden
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 107.
+- Covered by [The wall](../design/compositions/live/walls.md), line 170.
 
 ```reaction
 when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
@@ -20051,7 +23664,7 @@ then
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 107.
+- Covered by [The wall](../design/compositions/live/walls.md), line 170.
 
 ```reaction
 when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
@@ -20059,16 +23672,18 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   view "(round) is not of a closed run" with (round)
+  given is cardGiven (card)
+  given is among ["given"]
   no view "(card) is a card of (round)" with (card, round)
 then
   RequestBoundary.respond (error: "CARD_NOT_FOUND", requestId)
 ```
 
-### Live.walls.OpenPile:success
+### Live.walls.OpenPile:with-card
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 107.
+- Covered by [The wall](../design/compositions/live/walls.md), line 170.
 
 ```reaction
 when RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
@@ -20082,28 +23697,28 @@ then
   Categorizing.ensureCategory (description: "", name, scope: round)
 ```
 
-### Live.walls.OpenPile:success#2
+### Live.walls.OpenPile:with-card#2
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 107.
+- Covered by [The wall](../design/compositions/live/walls.md), line 170.
 
 ```reaction
-when Categorizing.ensureCategory (description: "", name, scope: round, category), asked by Live.walls.OpenPile:success
+when Categorizing.ensureCategory (description: "", name, scope: round, category), asked by Live.walls.OpenPile:with-card
 where
   earlier, RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
 then
   Categorizing.assign (category, item: card)
 ```
 
-### Live.walls.OpenPile:success#3
+### Live.walls.OpenPile:with-card#3
 
 Authored path: `Live.walls.OpenPile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 107.
+- Covered by [The wall](../design/compositions/live/walls.md), line 170.
 
 ```reaction
-when Categorizing.assign (category, item: card, result.item: assigned), asked by Live.walls.OpenPile:success#2
+when Categorizing.assign (category, item: card, result.item: assigned), asked by Live.walls.OpenPile:with-card#2
 where
   earlier, RequestBoundary.request (card, name, path: "/live/walls/open-pile", requestId, round, session)
 then
@@ -20114,7 +23729,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 108.
+- Covered by [The wall](../design/compositions/live/walls.md), line 171.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -20132,7 +23747,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 108.
+- Covered by [The wall](../design/compositions/live/walls.md), line 171.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -20148,7 +23763,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 108.
+- Covered by [The wall](../design/compositions/live/walls.md), line 171.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -20163,7 +23778,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 108.
+- Covered by [The wall](../design/compositions/live/walls.md), line 171.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -20180,7 +23795,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 108.
+- Covered by [The wall](../design/compositions/live/walls.md), line 171.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/pick", pile, requestId, round, session)
@@ -20201,7 +23816,7 @@ then
 
 Authored path: `Live.walls.Pick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 108.
+- Covered by [The wall](../design/compositions/live/walls.md), line 171.
 
 ```reaction
 when Pinning.pin (at, item: pile, priority, scope: round), asked by Live.walls.Pick:success
@@ -20214,14 +23829,14 @@ then
 ### Live.walls.PlacedReplySatisfiesInsistence
 
 Authored path: `Live.walls.PlacedReplySatisfiesInsistence`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 23.
 
 ```reaction
 when Reasoning.answer (asking, reply)
 where
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   reading is placingReading (categories, removed, reply, values)
@@ -20234,7 +23849,7 @@ then
 ### Live.walls.PlacingOfferingIsTaken
 
 Authored path: `Live.walls.PlacingOfferingIsTaken`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 17.
+- Covered by [The wall](../design/compositions/live/walls.md), line 21.
 
 ```reaction
 when Suggesting.offer (subject: round, offering)
@@ -20249,7 +23864,7 @@ then
 
 Authored path: `Live.walls.Read`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 5.
-- Covered by [The wall](../design/compositions/live/walls.md), line 110.
+- Covered by [The wall](../design/compositions/live/walls.md), line 173.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/read", requestId, round, session)
@@ -20264,7 +23879,7 @@ then
 
 Authored path: `Live.walls.Read`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 5.
-- Covered by [The wall](../design/compositions/live/walls.md), line 110.
+- Covered by [The wall](../design/compositions/live/walls.md), line 173.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/read", requestId, round, session)
@@ -20276,11 +23891,54 @@ then
   RequestBoundary.respond (requestId, wall: former "the wall of (round) as (viewer) sees it" with (round, viewer: ""))
 ```
 
+### Live.walls.RefusedLidReportsFailure
+
+Authored path: `Live.walls.RefusedLidReportsFailure`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 202.
+
+```reaction
+when refused Categorizing.describeCategory (error: "CATEGORY_NOT_FOUND")
+where
+  at is the current flow's instant
+  earlier, Reasoning.answer (asking)
+then
+  Commissioning.report (account: "A pile description could not be applied.", at, execution: asking, successful: false)
+```
+
+### Live.walls.RefusedPlacementReportsFailure
+
+Authored path: `Live.walls.RefusedPlacementReportsFailure`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 202.
+
+```reaction
+when refused Categorizing.assign (error: "CATEGORY_NOT_FOUND")
+where
+  at is the current flow's instant
+  earlier, Reasoning.answer (asking)
+then
+  Commissioning.report (account: "A placement could not be applied.", at, execution: asking, successful: false)
+```
+
+### Live.walls.ReleasedReplyReportsCompletion
+
+Authored path: `Live.walls.ReleasedReplyReportsCompletion`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 198.
+
+```reaction
+when Locking.unlock (target: asking)
+at the flow's settlement frontier
+where
+  at is the current flow's instant
+  view "conclusion of commissioned execution (asking)" with (asking) has (account, successful)
+then
+  Commissioning.report (account, at, execution: asking, successful)
+```
+
 ### Live.walls.RemoveCard:closed
 
 Authored path: `Live.walls.RemoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 11.
-- Covered by [The wall](../design/compositions/live/walls.md), line 111.
+- Covered by [The wall](../design/compositions/live/walls.md), line 174.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/remove-card", requestId, round, session)
@@ -20296,7 +23954,7 @@ then
 
 Authored path: `Live.walls.RemoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 11.
-- Covered by [The wall](../design/compositions/live/walls.md), line 111.
+- Covered by [The wall](../design/compositions/live/walls.md), line 174.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/remove-card", requestId, round, session)
@@ -20311,7 +23969,7 @@ then
 
 Authored path: `Live.walls.RemoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 11.
-- Covered by [The wall](../design/compositions/live/walls.md), line 111.
+- Covered by [The wall](../design/compositions/live/walls.md), line 174.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/remove-card", requestId, round, session)
@@ -20328,7 +23986,7 @@ then
 
 Authored path: `Live.walls.RemoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 11.
-- Covered by [The wall](../design/compositions/live/walls.md), line 111.
+- Covered by [The wall](../design/compositions/live/walls.md), line 174.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/remove-card", requestId, round, session)
@@ -20346,7 +24004,7 @@ then
 
 Authored path: `Live.walls.RemoveCard`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 11.
-- Covered by [The wall](../design/compositions/live/walls.md), line 111.
+- Covered by [The wall](../design/compositions/live/walls.md), line 174.
 
 ```reaction
 when Trashing.trash (at, by: user, item: card, result.item: removed), asked by Live.walls.RemoveCard:success
@@ -20375,7 +24033,7 @@ then
 
 Authored path: `Live.walls.RenamePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 112.
+- Covered by [The wall](../design/compositions/live/walls.md), line 175.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/rename-pile", pile, requestId, session)
@@ -20391,7 +24049,7 @@ then
 
 Authored path: `Live.walls.RenamePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 112.
+- Covered by [The wall](../design/compositions/live/walls.md), line 175.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/rename-pile", pile, requestId, session)
@@ -20406,7 +24064,7 @@ then
 
 Authored path: `Live.walls.RenamePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 112.
+- Covered by [The wall](../design/compositions/live/walls.md), line 175.
 
 ```reaction
 when RequestBoundary.request (name, path: "/live/walls/rename-pile", pile, requestId, session)
@@ -20423,7 +24081,7 @@ then
 
 Authored path: `Live.walls.RenamePile`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 112.
+- Covered by [The wall](../design/compositions/live/walls.md), line 175.
 
 ```reaction
 when Categorizing.renameCategory (category: pile, name, result.category: renamed), asked by Live.walls.RenamePile:success
@@ -20433,10 +24091,24 @@ then
   RequestBoundary.respond (pile: renamed, requestId)
 ```
 
+### Live.walls.RepairAskJoinsCommission
+
+Authored path: `Live.walls.RepairAskJoinsCommission`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 196.
+
+```reaction
+when Reasoning.followUp (previous, asking)
+where
+  at is the current flow's instant
+  Commissioning._forExecution (execution: previous) has (commission)
+then
+  Commissioning.assign (at, commission, execution: asking)
+```
+
 ### Live.walls.ReplyOffersLid
 
 Authored path: `Live.walls.ReplyOffersLid`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
 
 ```reaction
 when Reasoning.answer (asking, reply)
@@ -20444,7 +24116,7 @@ where
   at is the current flow's instant
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   reading is placingReading (categories, removed, reply, values)
@@ -20457,7 +24129,7 @@ then
 ### Live.walls.ReplyPlacesCards
 
 Authored path: `Live.walls.ReplyPlacesCards`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 17.
+- Covered by [The wall](../design/compositions/live/walls.md), line 21.
 
 ```reaction
 when Reasoning.answer (asking, reply)
@@ -20465,7 +24137,7 @@ where
   at is the current flow's instant
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   reading is placingReading (categories, removed, reply, values)
@@ -20478,14 +24150,14 @@ then
 ### Live.walls.ReplyUnusableComplains
 
 Authored path: `Live.walls.ReplyUnusableComplains`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 23.
 
 ```reaction
 when Reasoning.answer (asking, reply)
 where
   Reasoning._asking (asking) has (about: round)
   view "(round) is a round with a captured question" with (round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   reading is placingReading (categories, removed, reply, values)
@@ -20495,105 +24167,31 @@ then
   Insisting.complain (account, aim: round, offering: reply, patience: 2)
 ```
 
-### Live.walls.Sort
+### Live.walls.SetNotes:closed
 
-Authored path: `Live.walls.Sort`.
+Authored path: `Live.walls.SetNotes`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 113.
+- Covered by [The wall](../design/compositions/live/walls.md), line 176.
 
 ```reaction
-when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
-where
-  at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(round) is open on an open run" with (round)
-  view "(round) has a card still in the tray" with (round)
-  view "nothing is still out about (round)" with (round)
-  Locking._isLocked (target: round) has (locked: false)
-  view "no offering about (round) has lines left to take" with (round)
-  no view "(round) has an ask that failed moments before (at)" with (at, round)
-then
-  Locking.lock (at, target: round)
-```
-
-### Live.walls.Sort#2
-
-Authored path: `Live.walls.Sort`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 113.
-
-```reaction
-when Locking.lock (at, target: round), asked by Live.walls.Sort
-where
-  RunSnapshotting._snapshot (subject: round) has (value)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
-  Responding._valuesForSubject (subject: round) has (values)
-  Trashing._trashedItems () has (items: removed)
-  passage is placingPassage (categories, removed, value, values)
-then
-  Reasoning.ask (about: round, at, passage, reasoner: "gemini-flash")
-```
-
-### Live.walls.Sort#3
-
-Authored path: `Live.walls.Sort`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 113.
-
-```reaction
-when Reasoning.ask (about: round, at, passage, reasoner: "gemini-flash", asking), asked by Live.walls.Sort#2
-where
-  earlier, RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
-then
-  RequestBoundary.respond (asked: true, asking, requestId)
-```
-
-### Live.walls.SortNotAsked:closed
-
-Authored path: `Live.walls.SortNotAsked`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 114.
-
-```reaction
-when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+when RequestBoundary.request (body, path: "/live/walls/set-notes", requestId, round, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
-  view "(round) is not open on an open run" with (round)
+  view "(round) is a round with a captured question" with (round)
+  view "(round) is of a closed run" with (round)
 then
-  RequestBoundary.respond (asked: false, requestId)
+  RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
-### Live.walls.SortNotAsked:failing
+### Live.walls.SetNotes:forbidden
 
-Authored path: `Live.walls.SortNotAsked`.
+Authored path: `Live.walls.SetNotes`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 114.
+- Covered by [The wall](../design/compositions/live/walls.md), line 176.
 
 ```reaction
-when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
-where
-  at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(round) is open on an open run" with (round)
-  view "(round) has a card still in the tray" with (round)
-  view "nothing is still out about (round)" with (round)
-  view "no offering about (round) has lines left to take" with (round)
-  view "(round) has an ask that failed moments before (at)" with (at, round)
-then
-  RequestBoundary.respond (asked: false, requestId)
-```
-
-### Live.walls.SortNotAsked:forbidden
-
-Authored path: `Live.walls.SortNotAsked`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 114.
-
-```reaction
-when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+when RequestBoundary.request (body, path: "/live/walls/set-notes", requestId, round, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not host live runs" with (user)
@@ -20601,78 +24199,346 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Live.walls.SortNotAsked:locked
+### Live.walls.SetNotes:missing
 
-Authored path: `Live.walls.SortNotAsked`.
+Authored path: `Live.walls.SetNotes`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 114.
+- Covered by [The wall](../design/compositions/live/walls.md), line 176.
+
+```reaction
+when RequestBoundary.request (body, path: "/live/walls/set-notes", requestId, round, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  no view "(round) is a round with a captured question" with (round)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Live.walls.SetNotes:set
+
+Authored path: `Live.walls.SetNotes`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 176.
+
+```reaction
+when RequestBoundary.request (body, path: "/live/walls/set-notes", requestId, round, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may host live runs" with (user)
+  view "(round) is a round with a captured question" with (round)
+  view "(round) is not of a closed run" with (round)
+then
+  Guiding.set (body, subject: round, title: "", use: "sorting")
+```
+
+### Live.walls.SetNotes:set#2
+
+Authored path: `Live.walls.SetNotes`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 176.
+
+```reaction
+when Guiding.set (body, subject: round, title: "", use: "sorting", guidance), asked by Live.walls.SetNotes:set
+where
+  earlier, RequestBoundary.request (body, path: "/live/walls/set-notes", requestId, round, session)
+then
+  RequestBoundary.respond (guidance, requestId)
+```
+
+### Live.walls.Sort
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 177.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(round) is open on an open run" with (round)
-  view "(round) has a card still in the tray" with (round)
-  view "nothing is still out about (round)" with (round)
-  Locking._isLocked (target: round) has (locked: true)
-  view "no offering about (round) has lines left to take" with (round)
-  no view "(round) has an ask that failed moments before (at)" with (at, round)
+  whether view "authorized sorting observation" with (user) has (supported: authorized)
+  whether view "live sorting observation" with (round) has (supported: live)
+  whether view "openRun sorting observation" with (round) has (supported: openRun)
+  whether view "waiting sorting observation" with (round) has (supported: waiting)
+  whether view "unlocked sorting observation" with (round) has (supported: unlocked)
+  whether view "answered sorting observation" with (round) has (supported: answered)
+  whether view "applied sorting observation" with (round) has (supported: applied)
+  whether view "ready sorting observation" with (at, round) has (supported: ready)
+  whether RunSnapshotting._snapshot (subject: round) has (value)
+  view "sorting piles of (round)" with (round) has (categories)
+  Responding._valuesForSubject (subject: round) has (values)
+  Trashing._trashedItems () has (items: removed)
+  whether view "the sorter's notes for (round)" with (round) has (notes)
+  account is sortingAdmission (answered, applied, authorized, live, mode: "automatic", openRun, ready, unlocked, value, waiting)
+  brief is sortingBrief (account, categories, notes, removed, value, values)
+then
+  Commissioning.prepare (account, at, brief, subject: round)
+```
+
+### Live.walls.Sort:asked#2
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 177.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.Sort
+where
+  status is among ["prepared"]
+then
+  Locking.lock (at, target: round)
+```
+
+### Live.walls.Sort:asked#3
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 177.
+
+```reaction
+when Locking.lock (at, target: round), asked by Live.walls.Sort:asked#2
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.Sort
+then
+  Commissioning.accept (at, commission)
+```
+
+### Live.walls.Sort:asked#4
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 177.
+
+```reaction
+when Commissioning.accept (at, commission, brief), asked by Live.walls.Sort:asked#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.Sort
+then
+  Reasoning.ask (about: round, at, passage: brief, reasoner: "gemini-flash")
+```
+
+### Live.walls.Sort:asked#5
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 177.
+
+```reaction
+when Reasoning.ask (about: round, at, passage: brief, reasoner: "gemini-flash", asking), asked by Live.walls.Sort:asked#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.Sort
+then
+  Commissioning.assign (at, commission, execution: asking)
+```
+
+### Live.walls.Sort:asked#6
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 177.
+
+```reaction
+when Commissioning.assign (at, commission, execution: asking), asked by Live.walls.Sort:asked#5
+where
+  earlier, RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+then
+  RequestBoundary.respond (asked: true, asking, requestId)
+```
+
+### Live.walls.Sort:closed#2
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 177.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.Sort
+where
+  status is among ["declined"]
+  account is among ["CLOSED"]
+  earlier, RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.walls.Sort:forbidden#2
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 177.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.Sort
+where
+  status is among ["declined"]
+  account is among ["FORBIDDEN"]
+  earlier, RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.walls.Sort:idle#2
+
+Authored path: `Live.walls.Sort`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 15.
+- Covered by [The wall](../design/compositions/live/walls.md), line 177.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.Sort
+where
+  status is among ["declined"]
+  account is among ["idle"]
+  earlier, RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
 then
   RequestBoundary.respond (asked: false, requestId)
 ```
 
-### Live.walls.SortNotAsked:nothing-to-sort
+### Live.walls.SortNow
 
-Authored path: `Live.walls.SortNotAsked`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 114.
+Authored path: `Live.walls.SortNow`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 178.
 
 ```reaction
-when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+when RequestBoundary.request (path: "/live/walls/sort-now", requestId, round, session)
 where
+  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(round) is open on an open run" with (round)
-  view "(round) has every card in a pile" with (round)
+  whether view "authorized sorting observation" with (user) has (supported: authorized)
+  whether view "live sorting observation" with (round) has (supported: live)
+  whether view "openRun sorting observation" with (round) has (supported: openRun)
+  whether view "waiting sorting observation" with (round) has (supported: waiting)
+  whether view "unlocked sorting observation" with (round) has (supported: unlocked)
+  whether view "answered sorting observation" with (round) has (supported: answered)
+  whether view "applied sorting observation" with (round) has (supported: applied)
+  whether view "ready sorting observation" with (at, round) has (supported: ready)
+  whether RunSnapshotting._snapshot (subject: round) has (value)
+  view "sorting piles of (round)" with (round) has (categories)
+  Responding._valuesForSubject (subject: round) has (values)
+  Trashing._trashedItems () has (items: removed)
+  whether view "the sorter's notes for (round)" with (round) has (notes)
+  account is sortingAdmission (answered, applied, authorized, live, mode: "manual", openRun, ready, unlocked, value, waiting)
+  brief is sortingBrief (account, categories, notes, removed, value, values)
 then
-  RequestBoundary.respond (asked: false, requestId)
+  Commissioning.prepare (account, at, brief, subject: round)
 ```
 
-### Live.walls.SortNotAsked:still-out
+### Live.walls.SortNow:asked#2
 
-Authored path: `Live.walls.SortNotAsked`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 114.
+Authored path: `Live.walls.SortNow`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 178.
 
 ```reaction
-when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.SortNow
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(round) is open on an open run" with (round)
-  view "(round) has a card still in the tray" with (round)
-  view "an ask about (round) is still out" with (round)
+  status is among ["prepared"]
 then
-  RequestBoundary.respond (asked: false, requestId)
+  Locking.lock (at, target: round)
 ```
 
-### Live.walls.SortNotAsked:taking
+### Live.walls.SortNow:asked#3
 
-Authored path: `Live.walls.SortNotAsked`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 15.
-- Covered by [The wall](../design/compositions/live/walls.md), line 114.
+Authored path: `Live.walls.SortNow`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 178.
 
 ```reaction
-when RequestBoundary.request (path: "/live/walls/sort", requestId, round, session)
+when Locking.lock (at, target: round), asked by Live.walls.SortNow:asked#2
 where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(round) is open on an open run" with (round)
-  view "(round) has a card still in the tray" with (round)
-  view "nothing is still out about (round)" with (round)
-  view "an offering about (round) still has lines to take" with (round)
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.SortNow
+then
+  Commissioning.accept (at, commission)
+```
+
+### Live.walls.SortNow:asked#4
+
+Authored path: `Live.walls.SortNow`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 178.
+
+```reaction
+when Commissioning.accept (at, commission, brief), asked by Live.walls.SortNow:asked#3
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.SortNow
+then
+  Reasoning.ask (about: round, at, passage: brief, reasoner: "gemini-flash")
+```
+
+### Live.walls.SortNow:asked#5
+
+Authored path: `Live.walls.SortNow`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 178.
+
+```reaction
+when Reasoning.ask (about: round, at, passage: brief, reasoner: "gemini-flash", asking), asked by Live.walls.SortNow:asked#4
+where
+  earlier, Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.SortNow
+then
+  Commissioning.assign (at, commission, execution: asking)
+```
+
+### Live.walls.SortNow:asked#6
+
+Authored path: `Live.walls.SortNow`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 178.
+
+```reaction
+when Commissioning.assign (at, commission, execution: asking), asked by Live.walls.SortNow:asked#5
+where
+  earlier, RequestBoundary.request (path: "/live/walls/sort-now", requestId, round, session)
+then
+  RequestBoundary.respond (asked: true, asking, requestId)
+```
+
+### Live.walls.SortNow:closed#2
+
+Authored path: `Live.walls.SortNow`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 178.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.SortNow
+where
+  status is among ["declined"]
+  account is among ["CLOSED"]
+  earlier, RequestBoundary.request (path: "/live/walls/sort-now", requestId, round, session)
+then
+  RequestBoundary.respond (error: "CLOSED", requestId)
+```
+
+### Live.walls.SortNow:forbidden#2
+
+Authored path: `Live.walls.SortNow`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 178.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.SortNow
+where
+  status is among ["declined"]
+  account is among ["FORBIDDEN"]
+  earlier, RequestBoundary.request (path: "/live/walls/sort-now", requestId, round, session)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Live.walls.SortNow:idle#2
+
+Authored path: `Live.walls.SortNow`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 178.
+
+```reaction
+when Commissioning.prepare (account, at, brief, subject: round, commission, status), asked by Live.walls.SortNow
+where
+  status is among ["declined"]
+  account is among ["idle"]
+  earlier, RequestBoundary.request (path: "/live/walls/sort-now", requestId, round, session)
 then
   RequestBoundary.respond (asked: false, requestId)
 ```
@@ -20680,7 +24546,7 @@ then
 ### Live.walls.SpentPatienceGivesUp
 
 Authored path: `Live.walls.SpentPatienceGivesUp`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 19.
+- Covered by [The wall](../design/compositions/live/walls.md), line 23.
 
 ```reaction
 when Insisting.complain (aim: round)
@@ -20691,11 +24557,11 @@ then
   Insisting.giveUp (aim: round)
 ```
 
-### Live.walls.Summarize:asked
+### Live.walls.Summarize
 
 Authored path: `Live.walls.Summarize`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 115.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 179.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
@@ -20704,35 +24570,93 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may host live runs" with (user)
   view "(pile) is not on the wall of a closed run" with (pile)
-  view "(pile) holds a card" with (pile)
+  view "the number of cards in (pile)" with (pile) has (items)
   Categorizing._getCategoryDetail (category: pile) has (scope: round)
-  Categorizing._categoriesWithItems (scope: round) has (categories)
+  view "sorting piles of (round)" with (round) has (categories)
   Responding._valuesForSubject (subject: round) has (values)
   Trashing._trashedItems () has (items: removed)
   passage is lidPassage (categories, pile, removed, values)
+  account is summaryAdmission (items)
 then
-  Reasoning.ask (about: round, at, passage, reasoner: "gemini-flash")
+  Commissioning.prepare (account, at, brief: passage, subject: round)
 ```
 
 ### Live.walls.Summarize:asked#2
 
 Authored path: `Live.walls.Summarize`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 115.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 179.
 
 ```reaction
-when Reasoning.ask (about: round, at, passage, reasoner: "gemini-flash", asking), asked by Live.walls.Summarize:asked
+when Commissioning.prepare (account, at, brief: passage, subject: round, commission, status), asked by Live.walls.Summarize
+where
+  status is among ["prepared"]
+then
+  Commissioning.accept (at, commission)
+```
+
+### Live.walls.Summarize:asked#3
+
+Authored path: `Live.walls.Summarize`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 179.
+
+```reaction
+when Commissioning.accept (at, commission, brief), asked by Live.walls.Summarize:asked#2
+where
+  earlier, Commissioning.prepare (account, at, brief: passage, subject: round, commission, status), asked by Live.walls.Summarize
+then
+  Reasoning.ask (about: round, at, passage: brief, reasoner: "gemini-flash")
+```
+
+### Live.walls.Summarize:asked#4
+
+Authored path: `Live.walls.Summarize`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 179.
+
+```reaction
+when Reasoning.ask (about: round, at, passage: brief, reasoner: "gemini-flash", asking), asked by Live.walls.Summarize:asked#3
+where
+  earlier, Commissioning.prepare (account, at, brief: passage, subject: round, commission, status), asked by Live.walls.Summarize
+then
+  Commissioning.assign (at, commission, execution: asking)
+```
+
+### Live.walls.Summarize:asked#5
+
+Authored path: `Live.walls.Summarize`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 179.
+
+```reaction
+when Commissioning.assign (at, commission, execution: asking), asked by Live.walls.Summarize:asked#4
 where
   earlier, RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
 then
   RequestBoundary.respond (asked: true, asking, requestId)
 ```
 
-### Live.walls.Summarize:closed
+### Live.walls.Summarize:empty#2
 
 Authored path: `Live.walls.Summarize`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 115.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
+- Covered by [The wall](../design/compositions/live/walls.md), line 179.
+
+```reaction
+when Commissioning.prepare (account, at, brief: passage, subject: round, commission, status), asked by Live.walls.Summarize
+where
+  status is among ["declined"]
+  earlier, RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
+then
+  RequestBoundary.respond (asked: false, requestId)
+```
+
+### Live.walls.SummarizeRefused:closed
+
+Authored path: `Live.walls.SummarizeRefused`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 29.
+- Covered by [The wall](../design/compositions/live/walls.md), line 180.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
@@ -20744,29 +24668,11 @@ then
   RequestBoundary.respond (error: "CLOSED", requestId)
 ```
 
-### Live.walls.Summarize:empty
+### Live.walls.SummarizeRefused:forbidden
 
-Authored path: `Live.walls.Summarize`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 115.
-
-```reaction
-when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(pile) is not on the wall of a closed run" with (pile)
-  view "(pile) is a pile" with (pile)
-  no view "(pile) holds a card" with (pile)
-then
-  RequestBoundary.respond (asked: false, requestId)
-```
-
-### Live.walls.Summarize:forbidden
-
-Authored path: `Live.walls.Summarize`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 115.
+Authored path: `Live.walls.SummarizeRefused`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 29.
+- Covered by [The wall](../design/compositions/live/walls.md), line 180.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
@@ -20777,11 +24683,11 @@ then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Live.walls.Summarize:missing
+### Live.walls.SummarizeRefused:missing
 
-Authored path: `Live.walls.Summarize`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
-- Covered by [The wall](../design/compositions/live/walls.md), line 115.
+Authored path: `Live.walls.SummarizeRefused`.
+- Covered by [The wall](../design/compositions/live/walls.md), line 29.
+- Covered by [The wall](../design/compositions/live/walls.md), line 180.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/summarize", pile, requestId, session)
@@ -20796,7 +24702,7 @@ then
 ### Live.walls.TakenLidDescribesPile
 
 Authored path: `Live.walls.TakenLidDescribesPile`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 23.
+- Covered by [The wall](../design/compositions/live/walls.md), line 31.
 
 ```reaction
 when Suggesting.take (suggestion, kind, target, value)
@@ -20804,14 +24710,15 @@ where
   Suggesting._suggestion (suggestion) has (subject: round)
   view "(round) is a round with a captured question" with (round)
   kind is among ["lid"]
+  Categorizing._getCategoryDetail (category: target) has (scope: round)
 then
-  Categorizing.describeCategory (category: target, description: value)
+  Guiding.set (body: value, subject: target, title: "", use: "pile-summary")
 ```
 
 ### Live.walls.TakenOpenMakesPile
 
 Authored path: `Live.walls.TakenOpenMakesPile`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 17.
+- Covered by [The wall](../design/compositions/live/walls.md), line 21.
 
 ```reaction
 when Suggesting.take (suggestion, kind, target, value)
@@ -20827,7 +24734,7 @@ then
 ### Live.walls.TakenPlaceAssignsCard
 
 Authored path: `Live.walls.TakenPlaceAssignsCard`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 17.
+- Covered by [The wall](../design/compositions/live/walls.md), line 21.
 
 ```reaction
 when Suggesting.take (suggestion, kind, target, value)
@@ -20844,7 +24751,7 @@ then
 
 Authored path: `Live.walls.ToTray`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 116.
+- Covered by [The wall](../design/compositions/live/walls.md), line 181.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/to-tray", requestId, session)
@@ -20860,7 +24767,7 @@ then
 
 Authored path: `Live.walls.ToTray`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 116.
+- Covered by [The wall](../design/compositions/live/walls.md), line 181.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/to-tray", requestId, session)
@@ -20875,7 +24782,7 @@ then
 
 Authored path: `Live.walls.ToTray`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 116.
+- Covered by [The wall](../design/compositions/live/walls.md), line 181.
 
 ```reaction
 when RequestBoundary.request (card, path: "/live/walls/to-tray", requestId, session)
@@ -20892,7 +24799,7 @@ then
 
 Authored path: `Live.walls.ToTray`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 116.
+- Covered by [The wall](../design/compositions/live/walls.md), line 181.
 
 ```reaction
 when Categorizing.unassign (item: card, result.item: unassigned), asked by Live.walls.ToTray:success
@@ -20906,7 +24813,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 109.
+- Covered by [The wall](../design/compositions/live/walls.md), line 172.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
@@ -20922,7 +24829,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 109.
+- Covered by [The wall](../design/compositions/live/walls.md), line 172.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
@@ -20937,7 +24844,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 109.
+- Covered by [The wall](../design/compositions/live/walls.md), line 172.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
@@ -20950,29 +24857,11 @@ then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### Live.walls.Unpick:not-picked
-
-Authored path: `Live.walls.Unpick`.
-- Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 109.
-
-```reaction
-when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may host live runs" with (user)
-  view "(round) is not of a closed run" with (round)
-  view "(pile) is on the wall of (round)" with (pile, round)
-  Pinning._isPinned (item: pile, scope: round) has (pinned: false)
-then
-  RequestBoundary.respond (pile, requestId)
-```
-
 ### Live.walls.Unpick:success
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 109.
+- Covered by [The wall](../design/compositions/live/walls.md), line 172.
 
 ```reaction
 when RequestBoundary.request (path: "/live/walls/unpick", pile, requestId, round, session)
@@ -20981,7 +24870,6 @@ where
   view "(user) may host live runs" with (user)
   view "(round) is not of a closed run" with (round)
   view "(pile) is on the wall of (round)" with (pile, round)
-  Pinning._isPinned (item: pile, scope: round) has (pinned: true)
 then
   Pinning.unpin (item: pile, scope: round)
 ```
@@ -20990,7 +24878,7 @@ then
 
 Authored path: `Live.walls.Unpick`.
 - Covered by [The wall](../design/compositions/live/walls.md), line 9.
-- Covered by [The wall](../design/compositions/live/walls.md), line 109.
+- Covered by [The wall](../design/compositions/live/walls.md), line 172.
 
 ```reaction
 when Pinning.unpin (item: pile, scope: round), asked by Live.walls.Unpick:success
@@ -22235,11 +26123,15 @@ not listed here have no explicit input contract.
 - `/live/drafts/adopt` — requires `session`, `candidate`
 - `/live/drafts/clarify` — requires `session`, `clarification`, `answer`
 - `/live/drafts/correct` — requires `session`, `candidate`, `request`
-- `/live/drafts/describe` — requires `session`, `request`
+- `/live/drafts/describe` — requires `session`, `request`; fills `kind` with "" when absent; fills `references` with [] when absent
+- `/live/drafts/documents` — requires `session`; fills `relay` with "" when absent
+- `/live/drafts/give-document` — requires `session`, `title`, `body`; fills `relay` with "" when absent
 - `/live/drafts/line` — requires `session`, `brief`
 - `/live/drafts/lines` — requires `session`
 - `/live/drafts/provenance` — requires `session`, `questionnaire`
 - `/live/drafts/refine` — requires `session`, `questionnaire`
+- `/live/drafts/remove-document` — requires `session`, `document`
+- `/live/drafts/revise-document` — requires `session`, `document`, `title`, `body`
 - `/live/edits/decline` — requires `session`, `suggestion`
 - `/live/edits/draft` — requires `session`, `relay`, `request`
 - `/live/edits/offerings` — requires `session`, `relay`
@@ -22267,13 +26159,13 @@ not listed here have no explicit input contract.
 - `/live/quizzes/retitle` — requires `session`, `questionnaire`, `title`
 - `/live/quizzes/revise-question` — requires `session`, `question`, `prompt`; fills `choices` with [] when absent; fills `expected` with "" when absent; fills `explanation` with "" when absent
 - `/live/quizzes/set-disclosure` — requires `session`, `questionnaire`, `disclosure`
+- `/live/references/get` — requires `session`, `subject`
+- `/live/references/select` — requires `session`, `subject`, `references`
 - `/live/relays/add-round` — requires `session`, `relay`, `title`, `prompt`, `parts`, `cap`, `choices`
 - `/live/relays/clear-takes` — requires `session`, `leg`, `source`
 - `/live/relays/close` — requires `session`, `run`
 - `/live/relays/close-round` — requires `session`, `round`
-- `/live/relays/dismiss` — requires `session`, `run`, `participant`
 - `/live/relays/get` — requires `session`, `relay`
-- `/live/relays/invite` — requires `session`, `run`, `device`
 - `/live/relays/launch` — requires `session`, `relay`
 - `/live/relays/list` — requires `session`
 - `/live/relays/move-round` — requires `session`, `leg`, `position`
@@ -22284,25 +26176,43 @@ not listed here have no explicit input contract.
 - `/live/relays/retitle` — requires `session`, `relay`, `title`
 - `/live/relays/revise-round` — requires `session`, `leg`, `title`, `prompt`, `parts`, `cap`, `choices`
 - `/live/relays/run` — requires `session`, `run`
+- `/live/relays/set-guide` — requires `session`, `relay`, `field`, `body`
+- `/live/relays/set-kind` — requires `session`, `leg`, `kind`
 - `/live/relays/set-takes` — requires `session`, `leg`, `source`, `use`
 - `/live/relays/sort-by-hand` — requires `session`, `run`
 - `/live/relays/sort-by-model` — requires `session`, `run`
 - `/live/relays/unlock` — requires `session`, `run`
 - `/live/relays/uses` — requires `session`
+- `/live/rounds/add-pile` — requires `session`, `leg`, `name`, `description`
+- `/live/rounds/clear-notes` — requires `session`, `leg`
+- `/live/rounds/describe-pile` — requires `session`, `pile`, `description`
+- `/live/rounds/remove-pile` — requires `session`, `pile`
+- `/live/rounds/rename-pile` — requires `session`, `pile`, `name`
+- `/live/rounds/sample` — requires `session`, `leg`; fills `picks` with {} when absent
+- `/live/rounds/sample-answers` — requires `session`, `leg`; fills `picks` with {} when absent
+- `/live/rounds/set-guide` — requires `session`, `leg`, `field`, `body`
+- `/live/rounds/set-notes` — requires `session`, `leg`, `body`
 - `/live/runs/close` — requires `session`, `run`
+- `/live/runs/dismiss` — requires `session`, `run`, `participant`
+- `/live/runs/invite` — requires `session`, `run`, `device`
 - `/live/runs/launch` — requires `session`, `questionnaire`
 - `/live/runs/open` — requires `session`
 - `/live/runs/results` — requires `session`, `run`
+- `/live/walls/clear-empty-piles` — requires `session`, `round`
+- `/live/walls/clear-notes` — requires `session`, `round`
 - `/live/walls/describe-pile` — requires `session`, `pile`, `description`
+- `/live/walls/empty-piles` — requires `session`, `round`
 - `/live/walls/merge-pile` — requires `session`, `pile`, `into`
 - `/live/walls/move-card` — requires `session`, `card`, `pile`
 - `/live/walls/open-choice` — requires `session`, `round`, `name`
-- `/live/walls/open-pile` — requires `session`, `round`, `name`, `card`
+- `/live/walls/open-pile` — requires `session`, `round`, `name`; fills `card` with "" when absent
 - `/live/walls/pick` — requires `session`, `round`, `pile`
 - `/live/walls/read` — requires `session`, `round`
 - `/live/walls/remove-card` — requires `session`, `round`, `card`
 - `/live/walls/rename-pile` — requires `session`, `pile`, `name`
+- `/live/walls/set-notes` — requires `session`, `round`, `body`
 - `/live/walls/sort` — requires `session`, `round`
+- `/live/walls/sort-now` — requires `session`, `round`
 - `/live/walls/summarize` — requires `session`, `pile`
 - `/live/walls/to-tray` — requires `session`, `card`
 - `/live/walls/unpick` — requires `session`, `round`, `pile`

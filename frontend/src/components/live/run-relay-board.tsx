@@ -1,10 +1,12 @@
 "use client";
 
-import { ArrowLeft, Presentation, Sparkles } from "lucide-react";
+import { ArrowLeft, Presentation } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Fact } from "@/components/facts";
 import { Link } from "@/components/link";
+import { GuideText, RelayBasics } from "@/components/live/host-guide";
 import { ModelRow } from "@/components/live/model-row";
 import { PickControl, usePick } from "@/components/live/pick-control";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
@@ -27,8 +29,10 @@ import {
   trayOf,
   type Wall as WallShape,
 } from "@/components/live/rounds";
+import { SortingPanel } from "@/components/live/sorting-panel";
 import { Wall, type WallEdits } from "@/components/live/wall";
 import { PageContainer } from "@/components/page";
+import { SIGN_IN_ENDED } from "@/components/sign-in-ended";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
@@ -64,6 +68,9 @@ const AS_ASKED = "as-asked";
 /** How long a failed ask stands as the word for why nothing is sorting. */
 const FAILURE_MS = 60_000;
 
+/** What the panel says when an ask about the shown round made no ask at all. */
+const NOTHING_TO_SORT = "Nothing to sort.";
+
 /** How a round stands, in the word its token says out loud. */
 const STANDING_WORD: Record<RoundStanding, string> = {
   open: "open",
@@ -91,12 +98,17 @@ export function RelayRunBoard({
   run,
   error,
   refetch,
+  ended = false,
 }: {
   run: RelayRun;
   error: string | null;
   refetch: () => void;
+  /** The page's sign-in ended: it says so once; the board asks the model nothing. */
+  ended?: boolean;
 }) {
   const { session } = useAuth();
+  /** The one time the board says a send was refused for its sign-in. */
+  const saidEnded = useRef(false);
   /** The round the strip was tapped for, under the round that was open then. */
   const [shownLeg, setShownLeg] = useState<{
     leg: string;
@@ -107,8 +119,12 @@ export function RelayRunBoard({
   /** The clock a fresh failure is read against, which the poll moves on. */
   const [now, setNow] = useState(() => Date.now());
   const [askedFor, setAskedFor] = useState<string | null>(null);
+  /** The round Resort was pressed for and nothing was asked about. */
+  const [notAsked, setNotAsked] = useState<string | null>(null);
   /** A move in flight, which takes the buttons out until it lands. */
   const sending = useRef(false);
+  const pendingNotes = useRef(new Map<string, Promise<boolean>>());
+  const [savingNotes, setSavingNotes] = useState(0);
   const [busy, setBusy] = useState(false);
   /** The button the focus goes to once the move it was on has landed. */
   const focusOn = useRef<"open" | "close" | null>(null);
@@ -225,25 +241,31 @@ export function RelayRunBoard({
 
   // A failure is only worth saying while the room would still be waiting on
   // it, so the clock it is read against moves with the poll.
+  // The close sends one last placing ask, so the wall is read until that
+  // ask has landed and nothing is out, closed or not.
+  const settling = wall?.sortPending === true || (wall?.asksOut ?? 0) > 0;
   useEffect(() => {
-    if (!run.open) return;
+    if (!run.open && !settling) return;
     const timer = setInterval(() => setNow(Date.now()), POLL_MS);
     return () => clearInterval(timer);
-  }, [run.open]);
+  }, [run.open, settling]);
 
   useEffect(() => {
-    if (!run.open) return;
+    if (!run.open && !settling) return;
     const timer = setInterval(refetchWall, POLL_MS);
     return () => clearInterval(timer);
-  }, [run.open, refetchWall]);
+  }, [run.open, settling, refetchWall]);
 
   useEffect(() => {
-    if (!run.modelSorts || openRound === null || voting) return;
+    if (!run.modelSorts || openRound === null || voting || ended) return;
     let live = true;
     const sort = async () => {
       const answer = await api["/live/walls/sort"]({ round: openRound });
       if (!live || isApiError(answer)) return;
-      if (answer.asked) setAskedFor(openRound);
+      if (answer.asked) {
+        setAskedFor(openRound);
+        setNotAsked(null);
+      }
     };
     void sort();
     const timer = setInterval(() => void sort(), POLL_MS);
@@ -251,7 +273,7 @@ export function RelayRunBoard({
       live = false;
       clearInterval(timer);
     };
-  }, [run.modelSorts, openRound, voting]);
+  }, [run.modelSorts, openRound, voting, ended]);
 
   const openEntry =
     run.rounds.find(
@@ -367,9 +389,14 @@ export function RelayRunBoard({
   async function send(request: Promise<unknown>, read: Reader) {
     const result = await request;
     if (!isApiError(result)) return true;
-    // A sign-in that ended is said once by the page, with the way back in;
-    // the poll learns it on the next read, so it is asked for now.
+    // A sign-in that ended is said once by the page, with the way back in,
+    // and once here for the move that did not land; the poll learns it on
+    // the next read, so it is asked for now.
     if (result.error === "UNAUTHORIZED") {
+      if (!saidEnded.current) {
+        saidEnded.current = true;
+        toast.error(SIGN_IN_ENDED);
+      }
       refetch();
       return false;
     }
@@ -420,8 +447,8 @@ export function RelayRunBoard({
     };
   }
 
-  /** A refused seat: the run has closed under the row. */
-  const seatRefused: Reader = async () => {
+  /** A refused move on the run: the run has closed under the button. */
+  const closedRun: Reader = async () => {
     const fresh = await freshRun();
     return fresh !== null && !fresh.open ? { word: "CLOSED", about: {} } : null;
   };
@@ -444,7 +471,11 @@ export function RelayRunBoard({
           },
           openPile: (card, name) => {
             void send(
-              api["/live/walls/open-pile"]({ round: shown, name, card }),
+              api["/live/walls/open-pile"](
+                card === null
+                  ? { round: shown, name }
+                  : { round: shown, name, card },
+              ),
               goneOrClosed("CARD_GONE"),
             ).then(refetchWall);
           },
@@ -473,6 +504,12 @@ export function RelayRunBoard({
             ).then((sent) => {
               if (sent) toast.success("Summarizing…");
             });
+          },
+          describePile: (pile, description) => {
+            void send(
+              api["/live/walls/describe-pile"]({ pile, description }),
+              goneOrClosed("PILE_GONE"),
+            ).then(refetchWall);
           },
           togglePick:
             takesShown && run.open && inHand !== null ? pick.tap : undefined,
@@ -573,23 +610,75 @@ export function RelayRunBoard({
   }
 
   async function sortsChange(on: boolean) {
+    if (
+      on &&
+      sortingRound !== null &&
+      (await pendingNotes.current.get(sortingRound.round)) === false
+    )
+      return;
+    if (!on) setAskedFor(null);
     await send(
       on
         ? api["/live/relays/sort-by-model"]({ run: run.run })
         : api["/live/relays/sort-by-hand"]({ run: run.run }),
-      seatRefused,
+      closedRun,
     );
     refetch();
   }
 
+  /**
+   * One deliberate ask about the shown round, which Resort makes once the
+   * piles are empty. An ask that finds cards in the tray and nothing to ask
+   * has found an ask already out, and reads as that ask's.
+   */
+  async function sortNow(round: string, held: number) {
+    const asking = api["/live/walls/sort-now"]({ round });
+    if (!(await send(asking, closedRun))) return;
+    const answer = await asking;
+    if (isApiError(answer)) return;
+    const out = answer.asked || held > 0;
+    if (out) setAskedFor(round);
+    setNotAsked(out ? null : round);
+  }
+
+  /** Every card of the shown round back to the tray, the piles standing. */
+  async function emptyPiles(round: string) {
+    const emptied = await send(
+      api["/live/walls/empty-piles"]({ round }),
+      closedRun,
+    );
+    if (emptied) {
+      setNotAsked(null);
+      refetchWall();
+    }
+    return emptied;
+  }
+
+  async function resort(round: string, held: number) {
+    if (await emptyPiles(round)) await sortNow(round, held);
+  }
+
+  /** The run's note to whoever sorts the shown round: written when it has a body, gone when it does not. */
+  async function writeNotes(round: string, body: string) {
+    const written = await send(
+      body === ""
+        ? api["/live/walls/clear-notes"]({ round })
+        : api["/live/walls/set-notes"]({ round, body }),
+      closedRun,
+    );
+    if (written) refetchWall();
+    return written;
+  }
+
   async function invite(seats: number) {
+    const standing = run.seats.length;
     for (let seat = 0; seat < seats; seat += 1) {
       const taken = await send(
-        api["/live/relays/invite"]({
+        api["/live/runs/invite"]({
           run: run.run,
-          device: crypto.randomUUID(),
+          device: seatIdentity(standing + seat + 1),
         }),
-        seatRefused,
+        closedRun,
       );
       if (!taken) break;
     }
@@ -601,11 +690,11 @@ export function RelayRunBoard({
     const seat = run.seats.at(-1);
     if (seat === undefined) return;
     await send(
-      api["/live/relays/dismiss"]({
+      api["/live/runs/dismiss"]({
         run: run.run,
         participant: seat.participant,
       }),
-      seatRefused,
+      closedRun,
     );
     refetch();
   }
@@ -615,11 +704,11 @@ export function RelayRunBoard({
     let gone = 0;
     for (const seat of run.seats) {
       const dismissed = await send(
-        api["/live/relays/dismiss"]({
+        api["/live/runs/dismiss"]({
           run: run.run,
           participant: seat.participant,
         }),
-        seatRefused,
+        closedRun,
       );
       if (!dismissed) break;
       gone += 1;
@@ -629,24 +718,49 @@ export function RelayRunBoard({
     refetch();
   }
 
+  /** Seats whose ask failed with no reply after: not writing, and said so. */
+  const silentSeats =
+    openEntry === null ? 0 : (openEntry.figure.silentByModel ?? 0);
   const writing =
     openEntry === null
       ? 0
-      : Math.max(0, run.seats.length - (openEntry.figure.handedInByModel ?? 0));
-  const sorting =
-    run.modelSorts &&
-    openRound !== null &&
-    askedFor === openRound &&
-    wall !== null &&
-    trayOf(wall.cards).length > 0;
+      : Math.max(
+          0,
+          run.seats.length -
+            (openEntry.figure.handedInByModel ?? 0) -
+            silentSeats,
+        );
+  /** What the shown wall holds, which is what there is to ask about. */
+  const tray = inHand === null ? [] : trayOf(inHand.cards);
+  const piled = inHand === null ? 0 : inHand.cards.length - tray.length;
+  const sorting = shown !== null && askedFor === shown && tray.length > 0;
   /** The model's last try at this round failed, so nothing is coming. */
-  const silent = shown === openRound && modelSilent(inHand, now);
-  const modelWord = silent
-    ? "The model is not answering."
-    : sorting
-      ? "sorting…"
-      : null;
-  /** Nothing is left to open, so the switch and the seats have nothing to act on. */
+  const silent = modelSilent(inHand, now);
+  const modelWord =
+    inHand === null
+      ? null
+      : sortingWord({
+          open: inHand.open,
+          asksOut: inHand.asksOut,
+          sortPending: inHand.sortPending,
+          modelSorts: run.modelSorts,
+          sorting,
+          silent,
+          notAsked: notAsked === shown,
+        });
+  /** The shown round with the relay's note, which the editor writes, and the run's, which the panel writes. */
+  const sortingRound =
+    shownEntry === null || shown === null
+      ? null
+      : {
+          round: shown,
+          relay: run.relay,
+          relayNotes:
+            relay?.rounds.find((one) => one.leg === shownEntry.leg)?.notes ??
+            "",
+          notes: inHand?.notes ?? "",
+        };
+  /** Nothing is left to open, so the seats have nothing to act on; a shown wall can still be sorted. */
   const everyRoundRan = run.open && openRound === null && next === null;
 
   /** The pick counts for the round about to open only once its wall is read. */
@@ -673,6 +787,60 @@ export function RelayRunBoard({
       ? null
       : refusalSentence(refusal.word, refusal.about);
 
+  /** The shown wall is a vote round's, which has nothing to sort. */
+  const shownVotes = inHand !== null && choicesOf(inHand).length > 0;
+  const panel = (
+    <SortingPanel
+      modelSorts={run.modelSorts}
+      word={savingNotes > 0 ? "Saving instructions…" : modelWord}
+      round={sortingRound}
+      canSweep={piled > 0}
+      busy={busy}
+      closed={!run.open}
+      onSorts={(on) => void sortsChange(on)}
+      onSweep={() => {
+        if (shown === null) return;
+        void move(async () => {
+          if ((await pendingNotes.current.get(shown)) === false) return;
+          if (run.modelSorts) await resort(shown, inHand?.cards.length ?? 0);
+          else await emptyPiles(shown);
+        });
+      }}
+      canClearEmpty={
+        inHand !== null &&
+        inHand.asksOut === 0 &&
+        inHand.piles.some((pile) => pile.count === 0 && pile.picked === null)
+      }
+      onClearEmpty={() => {
+        if (shown === null) return;
+        void move(async () => {
+          if (
+            await send(
+              api["/live/walls/clear-empty-piles"]({ round: shown }),
+              closedRun,
+            )
+          )
+            refetchWall();
+        });
+      }}
+      onNotes={(body) => {
+        if (sortingRound === null) return;
+        const round = sortingRound.round;
+        const prior = pendingNotes.current.get(round);
+        setSavingNotes((count) => count + 1);
+        const save = (async () => {
+          try {
+            await prior;
+            return await writeNotes(round, body);
+          } finally {
+            setSavingNotes((count) => count - 1);
+          }
+        })();
+        pendingNotes.current.set(round, save);
+      }}
+    />
+  );
+
   return (
     <PageContainer width="wide" className="max-w-[1520px]">
       <header className="mb-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -689,6 +857,15 @@ export function RelayRunBoard({
           >
             {run.title}
           </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <Fact.Status status={run.open ? "OPEN" : "CLOSED"} />
+            <Fact.Range
+              verb={run.closedAt === null ? undefined : "Opened"}
+              from={run.openedAt}
+              to={run.closedAt}
+              className="text-muted-foreground text-sm"
+            />
+          </div>
           <div className="-mx-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
             {run.rounds.map((round) => {
               // A closed run has no next round, so one that never ran is only
@@ -772,6 +949,25 @@ export function RelayRunBoard({
           ) : null}
         </div>
       </header>
+      <div className="mb-4 flex flex-wrap items-center gap-1">
+        <GuideText guide={run.hostGuide} detail="Relay" />
+        <RelayBasics />
+        {shownEntry === null ? (
+          next === null ? null : (
+            <GuideText
+              detail="Round"
+              guide={next.hostGuide}
+              title={`Running round ${next.number}`}
+            />
+          )
+        ) : (
+          <GuideText
+            detail="Round"
+            guide={shownEntry.hostGuide}
+            title={`Running round ${shownEntry.number}`}
+          />
+        )}
+      </div>
 
       {/* Adrift, the figure's own line says it; the banner is for a refusal. */}
       {error !== null && !adrift ? (
@@ -818,15 +1014,27 @@ export function RelayRunBoard({
             column is no box at all, so its panels sort against the wall. */}
         <aside className="contents lg:sticky lg:top-6 lg:order-2 lg:flex lg:flex-col lg:gap-4">
           {!run.open ? (
-            <div className="order-1 flex flex-col items-start gap-3.5 rounded-xl border border-border bg-card p-5">
+            <div className="order-1 flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
               <p className="text-muted-foreground text-sm">
                 {refusalSentence("CLOSED")}
               </p>
-              <Button variant="outline" size="sm" asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                asChild
+              >
                 <Link href={`/staff/live/relay/${run.relay}`}>
                   <ArrowLeft /> Back to the relay
                 </Link>
               </Button>
+              <PileGuidance piles={inHand?.piles ?? []} />
+              {sortingRound === null || shownVotes ? null : (
+                <>
+                  <div className="h-px bg-border" />
+                  {panel}
+                </>
+              )}
             </div>
           ) : (
             <>
@@ -852,12 +1060,23 @@ export function RelayRunBoard({
                     />
                   </Button>
                 )}
-                {next === null ? null : (
+                {next === null || openEntry !== null ? null : (
                   <>
+                    {takesShown && source?.hostGuide.selection ? (
+                      <details className="text-sm">
+                        <summary className="cursor-pointer text-muted-foreground">
+                          Host selection advice
+                        </summary>
+                        <p className="mt-2 whitespace-pre-wrap [overflow-wrap:anywhere]">
+                          {source.hostGuide.selection}
+                        </p>
+                      </details>
+                    ) : null}
                     {takesShown ? (
                       <PickControl
                         mode={pick.mode}
                         top={pick.top}
+                        piles={inHand?.piles ?? []}
                         onMode={pick.setMode}
                         onTop={pick.setTop}
                       />
@@ -937,53 +1156,36 @@ export function RelayRunBoard({
                     {refusalSentence("ROUNDS_RUN")}
                   </p>
                 ) : null}
-
-                {next !== null || openEntry !== null ? (
-                  <div className="h-px bg-border" />
-                ) : null}
-
-                {everyRoundRan ? null : (
+              </div>
+              <div className="order-3 flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
+                <PileGuidance piles={inHand?.piles ?? []} />
+                {voting || (everyRoundRan && inHand === null) ? null : (
                   <>
-                    {voting ? null : (
-                      <div className="flex items-center gap-2.5">
-                        <Switch
-                          on={run.modelSorts}
-                          label="Model sorts"
-                          onChange={(on) => void sortsChange(on)}
-                        />
-                        {modelWord === null ? null : (
-                          <span className="text-muted-foreground text-xs">
-                            {modelWord}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <ModelRow
-                      count={run.seats.length}
-                      writing={writing}
-                      onInvite={invite}
-                      onDismiss={dismiss}
-                      onDismissAll={dismissAll}
-                    />
-
+                    {panel}
                     <div className="h-px bg-border" />
                   </>
                 )}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="self-start"
-                  asChild
-                >
-                  <Link href={`/staff/live/relay/${run.relay}/edit?draft=1`}>
-                    <Sparkles /> Draft a round
-                  </Link>
-                </Button>
+                {everyRoundRan ? null : (
+                  <details className="min-w-0">
+                    <summary className="cursor-pointer py-2 text-sm text-muted-foreground">
+                      AI participants
+                    </summary>
+                    <div className="pt-3">
+                      <ModelRow
+                        count={run.seats.length}
+                        writing={writing}
+                        silent={silentSeats}
+                        onInvite={invite}
+                        onDismiss={dismiss}
+                        onDismissAll={dismissAll}
+                      />
+                    </div>
+                  </details>
+                )}
               </div>
 
               {run.token === null || run.code === null ? null : (
-                <div className="order-3 rounded-xl border border-border bg-card p-4">
+                <div className="order-4 rounded-xl border border-border bg-card p-4">
                   <JoinCode url={joinUrl(run.token)} code={run.code} />
                 </div>
               )}
@@ -992,42 +1194,6 @@ export function RelayRunBoard({
         </aside>
       </div>
     </PageContainer>
-  );
-}
-
-/** The switch that says the model sorts, which is standing consent while it is on. */
-function Switch({
-  on,
-  label,
-  onChange,
-}: {
-  on: boolean;
-  label: string;
-  onChange: (on: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      onClick={() => onChange(!on)}
-      className="flex items-center gap-2 text-sm"
-    >
-      <span
-        className={cn(
-          "relative inline-block h-[18px] w-8 flex-none rounded-full transition-colors",
-          on ? "bg-primary" : "bg-input",
-        )}
-      >
-        <i
-          className={cn(
-            "absolute top-0.5 block size-3.5 rounded-full bg-card transition-[left]",
-            on ? "left-4" : "left-0.5",
-          )}
-        />
-      </span>
-      {label}
-    </button>
   );
 }
 
@@ -1040,6 +1206,47 @@ function withPicks(wall: WallShape, piles: string[]): WallShape {
       picked: piles.includes(pile.pile) ? (pile.picked ?? pile.pile) : null,
     })),
   };
+}
+
+/**
+ * What the panel says the model is doing about the shown round, read from the
+ * wall rather than from a clock of the screen's own.
+ */
+export function sortingWord({
+  open,
+  asksOut,
+  sortPending,
+  modelSorts,
+  sorting,
+  silent,
+  notAsked,
+}: {
+  /** The shown round is open, so the tick is still asking about it. */
+  open: boolean;
+  /** Asks about the shown round the server has not answered yet. */
+  asksOut: number;
+  /** The server holds the sort through its consequential placements. */
+  sortPending: boolean;
+  modelSorts: boolean;
+  /** The screen made an ask about the shown round and cards are still in the tray. */
+  sorting: boolean;
+  /** The model's last try at this round failed moments ago. */
+  silent: boolean;
+  /** Resort asked about this round and there was nothing to ask. */
+  notAsked: boolean;
+}): string | null {
+  const pending = asksOut > 0 || sortPending || sorting;
+  if (pending && !modelSorts)
+    return "Finishing current sort; automatic sorting is off.";
+  if (silent) return "The model is not answering.";
+  if (pending) return open ? "sorting…" : "settling…";
+  if (!open) return "Settled";
+  return notAsked ? NOTHING_TO_SORT : null;
+}
+
+/** The seat's own name, which carries its place in the order the seats were taken. */
+export function seatIdentity(ordinal: number): string {
+  return `seat-${ordinal}-${crypto.randomUUID()}`;
 }
 
 /**
@@ -1149,4 +1356,40 @@ export function refusalFor({
   if (take !== null && picks === 0)
     return { word: "NOTHING_PICKED", about: {} };
   return null;
+}
+
+function PileGuidance({ piles }: { piles: WallShape["piles"] }) {
+  return piles.some((pile) => pile.definition || pile.legacyText) ? (
+    <details className="min-w-0">
+      <summary className="cursor-pointer py-2 text-sm text-muted-foreground">
+        Pile guidance
+      </summary>
+      <div className="space-y-3 pt-2">
+        {piles
+          .filter((pile) => pile.definition || pile.legacyText)
+          .map((pile) => (
+            <div key={pile.pile}>
+              <p className="text-sm font-medium">{pile.name}</p>
+              {pile.definition ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {pile.definition}
+                </p>
+              ) : null}
+              {pile.legacyText ? (
+                <details className="mt-2 text-xs text-muted-foreground">
+                  <summary className="cursor-pointer">
+                    Existing pile text (review)
+                  </summary>
+                  <p className="mt-1 whitespace-pre-wrap">{pile.legacyText}</p>
+                  <p className="mt-1">
+                    Preserved from an older run. Its original role is uncertain;
+                    it is not shown as a result summary.
+                  </p>
+                </details>
+              ) : null}
+            </div>
+          ))}
+      </div>
+    </details>
+  ) : null;
 }

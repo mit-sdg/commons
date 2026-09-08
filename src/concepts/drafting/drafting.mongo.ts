@@ -15,6 +15,7 @@ interface BriefDoc {
   _id: string;
   author: string;
   request: string;
+  context?: string;
   createdAt: Date;
   basis: string | null;
   origin: string | null;
@@ -79,7 +80,17 @@ export class MongoDraftingConcept {
     return counter?.value ?? 0;
   }
 
-  async describe({ author, request, at }: { author: string; request: string; at: Date }) {
+  async describe({
+    author,
+    request,
+    at,
+    context = "",
+  }: {
+    author: string;
+    request: string;
+    at: Date;
+    context?: string;
+  }) {
     const brief = crypto.randomUUID();
     const seq = await this.#nextSeq("briefs");
     await this.briefs.insertOne({
@@ -87,6 +98,7 @@ export class MongoDraftingConcept {
       author,
       request,
       createdAt: at,
+      context,
       basis: null,
       origin: null,
       clarifying: false,
@@ -103,6 +115,7 @@ export class MongoDraftingConcept {
     material,
     origin,
     at,
+    context = "",
   }: {
     author: string;
     request: string;
@@ -110,6 +123,7 @@ export class MongoDraftingConcept {
     material: MaterialEntry[];
     origin: string;
     at: Date;
+    context?: string;
   }) {
     const brief = crypto.randomUUID();
     const seq = await this.#nextSeq("briefs");
@@ -118,6 +132,7 @@ export class MongoDraftingConcept {
       author,
       request,
       createdAt: at,
+      context,
       basis: null,
       origin,
       clarifying: false,
@@ -165,6 +180,7 @@ export class MongoDraftingConcept {
       author,
       request,
       createdAt: at,
+      context: continued?.context ?? "",
       basis: candidate,
       origin: continued?.origin ?? null,
       clarifying: false,
@@ -273,6 +289,11 @@ export class MongoDraftingConcept {
     }
     await this.candidates.updateOne({ _id: candidate }, { $set: { adopted: true } });
     return { candidate };
+  }
+
+  async _context({ brief }: { brief: string }) {
+    const doc = await this.briefs.findOne({ _id: brief });
+    return { context: doc?.context ?? "" };
   }
 
   async _brief({ brief }: { brief: string }) {

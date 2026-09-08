@@ -59,6 +59,7 @@ export default {
       new URL("./design/compositions/live/participation.md", import.meta.url),
       new URL("./design/compositions/live/quizzes.md", import.meta.url),
       new URL("./design/compositions/live/relays.md", import.meta.url),
+      new URL("./design/compositions/live/rounds.md", import.meta.url),
       new URL("./design/compositions/live/runs.md", import.meta.url),
       new URL("./design/compositions/live/walls.md", import.meta.url),
       new URL("./design/compositions/tasks/lists.md", import.meta.url),

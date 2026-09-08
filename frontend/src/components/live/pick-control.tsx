@@ -18,7 +18,7 @@ const TOP_MOST = 9;
 const PICK_LABEL = "pick-mode";
 
 /** A pile as the pick reads it: which one it is, and how full. */
-interface PickPile {
+export interface PickPile {
   pile: string;
   count: number;
 }
@@ -105,11 +105,19 @@ export function usePick({
     if (round !== null) rememberPick(run, round, next);
   }
 
+  // A mode this hand chooses is this hand's pick again: what the page sent
+  // before another hand moved the set says nothing about what it wants now,
+  // so the set is sent afresh rather than read as someone else's.
+  function pickAgain(next: PickChoice) {
+    sent.current = null;
+    choose(next);
+  }
+
   return {
     mode: held.mode,
     top: held.top,
-    setMode: (mode) => choose({ ...held, mode }),
-    setTop: (top) => choose({ ...held, top }),
+    setMode: (mode) => pickAgain({ ...held, mode }),
+    setTop: (top) => pickAgain({ ...held, top }),
     tap: (pile) => {
       if (held.mode !== "hand") choose({ ...held, mode: "hand" });
       const next = picked.includes(pile)
@@ -125,11 +133,14 @@ export function usePick({
 export function PickControl({
   mode,
   top,
+  piles,
   onMode,
   onTop,
 }: {
   mode: PickMode;
   top: number;
+  /** The shown wall's piles, which All counts on every render. */
+  piles: PickPile[];
   onMode: (mode: PickMode) => void;
   onTop: (top: number) => void;
 }) {
@@ -147,7 +158,11 @@ export function PickControl({
           <Segment on={mode === "top"} onClick={() => onMode("top")}>
             Top
           </Segment>
-          <Segment on={mode === "all"} onClick={() => onMode("all")}>
+          <Segment
+            on={mode === "all"}
+            count={holding(piles).length}
+            onClick={() => onMode("all")}
+          >
             All
           </Segment>
           <Segment on={mode === "hand"} onClick={() => onMode("hand")}>
@@ -183,10 +198,13 @@ export function PickControl({
 
 function Segment({
   on,
+  count,
   onClick,
   children,
 }: {
   on: boolean;
+  /** How many piles the segment takes, shown beside the word it is called. */
+  count?: number;
   onClick: () => void;
   children: string;
 }) {
@@ -203,15 +221,34 @@ function Segment({
       )}
     >
       {children}
+      {count === undefined ? null : (
+        <span aria-hidden="true" className="ml-1 font-mono opacity-70">
+          {count}
+        </span>
+      )}
     </button>
   );
 }
 
-/** The set a maintained mode stands for: the fullest piles, or every one. */
+/**
+ * The set a maintained mode stands for: the fullest piles, or every one. A
+ * pile holding nothing is neither — a standing pile the room never used
+ * carries nothing into the next round unless a hand picks it.
+ */
 function setOf(choice: PickChoice, piles: PickPile[]): string[] {
   const carried =
-    choice.mode === "all" ? piles : pilesByCount(piles).slice(0, choice.top);
+    choice.mode === "all"
+      ? holding(piles)
+      : pilesByCount(holding(piles)).slice(0, choice.top);
   return carried.map((pile) => pile.pile);
+}
+
+/**
+ * The piles a maintained mode carries: a pile holding nothing is not one of
+ * them, so All says how many hold cards rather than how many stand.
+ */
+export function holding<Pile extends { count: number }>(piles: Pile[]): Pile[] {
+  return piles.filter((pile) => pile.count > 0);
 }
 
 /** Two picks are the same pick whatever order they are read in. */

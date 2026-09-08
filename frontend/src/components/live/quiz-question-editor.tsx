@@ -316,11 +316,16 @@ export function QuizQuestionEditor({
         </div>
 
         <div className="space-y-1.5">
-          <Label>Choices</Label>
+          <Label>Answer</Label>
           {written ? (
-            <p className="text-muted-foreground text-sm">
-              No choices. The answer is written.
-            </p>
+            <Input
+              className="h-11"
+              aria-label="Written answer"
+              placeholder="Written answer"
+              disabled
+              aria-disabled
+              tabIndex={-1}
+            />
           ) : (
             <div className="space-y-2">
               {choices.map((choice, row) => (

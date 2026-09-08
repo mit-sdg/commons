@@ -89,9 +89,27 @@ export class Log {
   }
 
   write() {
+    const failures = this.findings.filter(
+      (finding) => finding.kind === "broken" || finding.kind === "refused-wrongly",
+    ).length;
+    const observations = this.findings.length - failures;
+    const verdict = failures > 0 ? "failed" : observations > 0 ? "review" : "passed";
+    if (failures > 0) process.exitCode = 1;
+    this.note(`verdict: ${verdict}; ${failures} failures, ${observations} observations`);
     writeFileSync(
       resolve(this.dir, "findings.json"),
-      JSON.stringify({ arm: this.arm, findings: this.findings, events: this.events }, null, 2),
+      JSON.stringify(
+        {
+          arm: this.arm,
+          verdict,
+          failures,
+          observations,
+          findings: this.findings,
+          events: this.events,
+        },
+        null,
+        2,
+      ),
     );
     this.note(`wrote ${this.findings.length} findings to ${this.dir}/findings.json`);
   }
@@ -310,6 +328,8 @@ export interface Face {
 }
 
 export interface Wall {
+  asksOut: number;
+  sortPending: boolean;
   round: string;
   number: number;
   title: string;
@@ -480,7 +500,7 @@ export async function invite(host: Client, run: string, count: number) {
   const replies = [];
   for (let seat = 0; seat < count; seat += 1) {
     replies.push(
-      await host.call<{ participant: string }>("/live/relays/invite", {
+      await host.call<{ participant: string }>("/live/runs/invite", {
         run,
         device: `model-${crypto.randomUUID()}`,
       }),
@@ -489,33 +509,35 @@ export async function invite(host: Client, run: string, count: number) {
   return replies;
 }
 
-/**
- * Plays the dashboard's "Model sorts" switch: asks the wall to sort every
- * three seconds until nothing sits in the tray (or the tries run out), and
- * answers how many ticks and asks it took.
- */
-export async function sortUntilPlaced(
-  host: Client,
-  round: string,
-  expectedCards: number | null = null,
-  tries = 60,
-) {
+/** All expected cards are placed and admitted sorting work has finished. */
+export function wallSettled(wall: Wall | null | undefined, expectedCards = 1): wall is Wall {
+  return (
+    wall != null &&
+    wall.cards.length >= expectedCards &&
+    wall.cards.every((card) => card.pile !== null) &&
+    wall.asksOut === 0 &&
+    wall.sortPending === false
+  );
+}
+
+/** Observe the dashboard's sorting; do not introduce a second request producer. */
+export async function waitUntilPlaced(host: Client, round: string, expectedCards = 1, tries = 60) {
   let ticks = 0;
-  let asks = 0;
-  let wall = (await readWall(host, round)).wall;
-  const settled = (value: Wall | null) =>
-    value !== null &&
-    value.cards.length > 0 &&
-    (expectedCards === null || value.cards.length >= expectedCards) &&
-    value.cards.every((card) => card.pile !== null);
-  while (!settled(wall) && ticks < tries) {
-    const asked = await host.call<{ asked: boolean }>("/live/walls/sort", { round });
-    if (asked.asked) asks += 1;
-    ticks += 1;
-    await sleep(3000);
-    wall = (await readWall(host, round)).wall;
+  const result = await until(
+    async () => {
+      ticks += 1;
+      const read = await readWall(host, round);
+      if (read.error) throw new Error(`read wall: ${read.error}`);
+      return read.wall;
+    },
+    (wall) => wallSettled(wall, expectedCards),
+    tries,
+    3000,
+  );
+  if (!wallSettled(result, expectedCards)) {
+    throw new Error(`round ${round} did not finish sorting after ${ticks} reads`);
   }
-  return { wall, ticks, asks, settled: settled(wall) };
+  return { wall: result, ticks, settled: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -670,4 +692,60 @@ export async function snap(
 /** The output directory for one arm. */
 export function outDir(arm: string): string {
   return resolve(import.meta.dirname, "../../test-results/robustness", arm);
+}
+
+// ---------------------------------------------------------------------------
+// The floor: what Reasoning recorded about a round, when `MONGO_URL` names the
+// stack's database (the stack prints it as it starts).
+// ---------------------------------------------------------------------------
+
+export const MONGO_URL = process.env.MONGO_URL ?? "";
+
+export interface AskCounts {
+  asks: number;
+  replies: number;
+  failures: number;
+  /** The passages asked, oldest first. */
+  passages: string[];
+}
+
+/** The asks, replies, and failures the floor holds about a round; null without `MONGO_URL`. */
+export async function askCounts(round: string): Promise<AskCounts | null> {
+  if (MONGO_URL === "") return null;
+  const { MongoClient } = await import("mongodb");
+  const client = new MongoClient(MONGO_URL);
+  try {
+    await client.connect();
+    const database = client.db();
+    const askings = await database
+      .collection<{ _id: string; about: string; passage: string; seq: number }>("reasoning.askings")
+      .find({ about: round })
+      .sort({ seq: 1 })
+      .toArray();
+    const ids = askings.map((asking) => asking._id);
+    const replies = await database
+      .collection<{ asking: string }>("reasoning.replies")
+      .countDocuments({ asking: { $in: ids } });
+    const failures = await database
+      .collection<{ asking: string }>("reasoning.failures")
+      .countDocuments({ asking: { $in: ids } });
+    return { asks: askings.length, replies, failures, passages: askings.map((one) => one.passage) };
+  } finally {
+    await client.close();
+  }
+}
+
+/** What a dashboard's Sorting panel says beside its eyebrow, or null when it says nothing. */
+export async function sortingWord(page: Page): Promise<string | null> {
+  return (await page
+    .evaluate(
+      `(() => {
+       const eyebrow = Array.from(document.querySelectorAll("span.eyebrow")).find(
+         (one) => one.textContent?.trim() === "Sorting",
+       );
+       const word = eyebrow?.nextElementSibling?.textContent?.trim() ?? "";
+       return word === "" ? null : word;
+     })()`,
+    )
+    .catch(() => null)) as string | null;
 }

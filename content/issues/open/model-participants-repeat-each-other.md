@@ -18,6 +18,14 @@ sets, the restated prompt from 7 to none, and ten seats on "Name the
 activity" hand in seven distinct words on Gemini 3.7 Flash and ten on 3.8.
 The rest is what the passage alone cannot reach on the one-word round.
 
+Seats are now dealt in seat order: the dashboard mints each seat's identity
+with its place in the order taken, and the passage deals the stance and the
+angle from that place, so the first twelve seats hold twelve stances and no
+pair repeats before the eighty-fifth seat; an identity without a place is
+dealt by its hash as before. On a choice question the contract now says a
+seat answers with the choice its stance would pick, never the best or the
+safest one, so ten seats no longer collapse on one choice with no key.
+
 ## Unresolved decision
 
 Whether the passage alone can make forty seats read like forty phones, or

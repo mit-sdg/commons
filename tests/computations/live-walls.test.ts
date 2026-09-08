@@ -2,6 +2,8 @@ import { describe, expect, test } from "vite-plus/test";
 import { cardId } from "../../src/computations/live-rounds.ts";
 import type { RunSnapshot } from "../../src/computations/live-snapshots.ts";
 import {
+  definedSortingPiles,
+  sortingPileSubjects,
   lidLines,
   lidPassage,
   participantAnswers,
@@ -11,6 +13,7 @@ import {
   placingReading,
   placingReason,
   placingRepairPassage,
+  sorterNotes,
 } from "../../src/computations/live-walls.ts";
 import { scriptedWallReply } from "../../src/reasoning/scripted-walls.ts";
 
@@ -57,23 +60,24 @@ const mind = (passage: string) => scriptedWallReply(passage) ?? "";
 
 describe("the placing passage", () => {
   test("carries the piles as they stand and only the cards still in the tray", () => {
-    const passage = placingPassage({ value: presentation, categories, values, removed });
+    const passage = placingPassage({ value: presentation, categories, values, removed, notes: "" });
     expect(passage).toContain("- Examples (1 cards)");
     expect(passage).toContain("c2. slower on proofs");
     expect(passage).toContain("c3. an unsortable scribble");
     expect(passage).not.toContain("c1. more worked examples");
   });
 
-  test("a removed card is on no list, and the labels count the standing cards", () => {
+  test("a removed card is on no list, and the other labels hold still", () => {
     const passage = placingPassage({
       value: presentation,
       categories,
       values,
       removed: [card(1)],
+      notes: "",
     });
     expect(passage).not.toContain("slower on proofs");
-    expect(passage).toContain("c2. an unsortable scribble");
-    expect(passage).not.toContain("c3.");
+    expect(passage).toContain("c3. an unsortable scribble");
+    expect(passage).not.toContain("c2.");
     const lid = lidPassage({ pile: "pile-1", categories, values, removed: [card(0)] });
     expect(lid).not.toContain("more worked examples");
     expect(lid).toContain("No cards.");
@@ -85,11 +89,48 @@ describe("the placing passage", () => {
       categories,
       values,
       removed,
+      notes: "Group by what went wrong.",
       offering: "{}",
       account: "The reply named no recognizable kind.",
     });
     expect(passage).toContain("came back unusable");
     expect(passage).toContain("The reply named no recognizable kind.");
+    expect(passage).toContain("The author's notes:\nGroup by what went wrong.");
+  });
+
+  test("the author's note stands after the question, and a blank note leaves no section", () => {
+    const noted = placingPassage({
+      value: presentation,
+      categories,
+      values,
+      removed,
+      notes: "  Group by what went wrong, not by which app.  ",
+    });
+    expect(noted).toContain(
+      "The question:\nWhat would help you most right now?\n\nThe author's notes:\nGroup by what went wrong, not by which app.\n\nThe piles as they stand:",
+    );
+    const bare = placingPassage({ value: presentation, categories, values, removed, notes: " " });
+    expect(bare).not.toContain("The author's notes:\n");
+  });
+
+  test("the relay's note and the run's note read as one text, the relay's first, and the contract lets the later win", () => {
+    expect(sorterNotes({ relay: " Group by the verb. ", run: "Tense is a verb too.\n" })).toBe(
+      "Group by the verb.\n\nTense is a verb too.",
+    );
+    expect(sorterNotes({ relay: "Group by the verb.", run: "" })).toBe("Group by the verb.");
+    expect(sorterNotes({ relay: "  ", run: "Tense is a verb too." })).toBe("Tense is a verb too.");
+    expect(sorterNotes({ relay: "", run: " " })).toBe("");
+    const passage = placingPassage({
+      value: presentation,
+      categories,
+      values,
+      removed,
+      notes: sorterNotes({ relay: "Group by the verb.", run: "Tense is a verb too." }),
+    });
+    expect(passage).toContain(
+      "The author's notes:\nGroup by the verb.\n\nTense is a verb too.\n\n",
+    );
+    expect(passage).toContain("the later note wins");
   });
 });
 
@@ -186,6 +227,31 @@ describe("reading a placing reply", () => {
   });
 });
 
+describe("a placing reply over a wall that moved", () => {
+  test("a line naming a card removed while the ask was out is dropped, and the rest are taken", () => {
+    const reply = JSON.stringify({
+      kind: "placed",
+      placements: [
+        { card: "c2", pile: "Examples" },
+        { card: "c3", pile: "Pace" },
+      ],
+    });
+    const gone = [card(1)];
+    expect(placingReading({ reply, categories, values, removed: gone })).toBe("placed");
+    expect(placingLines({ reply, categories, values, removed: gone })).toEqual([
+      { kind: "open", target: card(2), value: "Pace" },
+    ]);
+  });
+
+  test("a label that never named a card is still a reply to stand upon", () => {
+    const reply = JSON.stringify({ kind: "placed", placements: [{ card: "c9", pile: "Pace" }] });
+    expect(placingReading({ reply, categories, values, removed })).toBe("neither");
+    expect(placingReason({ reply, categories, values, removed })).toBe(
+      '"c9" names no card waiting in the tray.',
+    );
+  });
+});
+
 describe("the lid", () => {
   test("the passage names the pile and its cards", () => {
     const passage = lidPassage({ pile: "pile-1", categories, values, removed });
@@ -213,12 +279,75 @@ describe("the lid", () => {
   });
 });
 
+/** A questionnaire run's presentation: a choice question and a written one. */
+const quiz: RunSnapshot = {
+  title: "Photosynthesis check",
+  form: "quiz",
+  disclosure: "score",
+  questions: [
+    {
+      item: "q1",
+      prompt: "Which gas do plants take in?",
+      choices: ["Oxygen", "Carbon dioxide", "Nitrogen"],
+      expected: "Carbon dioxide",
+      explanation: "",
+      parts: [],
+      cap: 0,
+      position: 1,
+    },
+    {
+      item: "q2",
+      prompt: "Name the pigment that captures light.",
+      choices: [],
+      expected: "Chlorophyll",
+      explanation: "",
+      parts: [],
+      cap: 0,
+      position: 2,
+    },
+  ],
+};
+
 describe("the model participant", () => {
+  test("a round that takes context puts the carried groups before the seat", () => {
+    const carried: RunSnapshot = {
+      ...presentation,
+      questions: [
+        {
+          ...presentation.questions[0]!,
+          prompt: "Only these verbs. What is it?",
+          context: [
+            { name: "one pile", cards: ["hoard", "purge"] },
+            { name: "another pile", cards: ["revisit", "save"] },
+          ],
+        },
+      ],
+    };
+    const passage = participantPassage({ value: carried, participant: "model:d2" });
+    expect(passage).toContain("Supporting material from an earlier round:");
+    expect(passage).toContain("- one pile: hoard, purge");
+    expect(passage.indexOf("Only these verbs")).toBeLessThan(passage.indexOf("- one pile"));
+    expect(participantPassage({ value: presentation, participant: "model:d2" })).not.toContain(
+      "Supporting material from an earlier round",
+    );
+  });
+
   test("the passage names one box per part and seeds by the participant", () => {
     const passage = participantPassage({ value: presentation, participant: "model:d2" });
-    expect(passage).toContain("You are participant model:d2, the student");
-    expect(passage).toContain("q1#1 — First");
-    expect(passage).toContain("q1#2 — Second");
+    expect(passage).toContain("You are participant model:d2, the participant");
+    expect(
+      passage.split("The questions, each followed by its boxes to answer, one line each:")[1],
+    ).toBe("\n\n1. What would help you most right now?\nq1#1 — First\nq1#2 — Second");
+  });
+
+  test("the passage prints every question of a run, each with its choices and its boxes", () => {
+    const passage = participantPassage({ value: quiz, participant: "model:d2" });
+    expect(
+      passage.split("The questions, each followed by its boxes to answer, one line each:")[1],
+    ).toBe(
+      "\n\n1. Which gas do plants take in?\nChoose from: Oxygen | Carbon dioxide | Nitrogen\nq1 — your answer\n\n2. Name the pigment that captures light.\nq2 — your answer",
+    );
+    expect(passage).not.toContain("Chlorophyll");
   });
 
   test("a reply reads into one answer per box, and an unreadable one into none", () => {
@@ -261,7 +390,7 @@ describe("the scripted mind", () => {
   });
 
   test("an unsortable card is placed badly once and well on the retry", () => {
-    const passage = placingPassage({ value: presentation, categories, values, removed });
+    const passage = placingPassage({ value: presentation, categories, values, removed, notes: "" });
     const bad = mind(passage);
     expect(placingReading({ reply: bad, categories, values, removed })).toBe("neither");
 
@@ -270,6 +399,7 @@ describe("the scripted mind", () => {
       categories,
       values,
       removed,
+      notes: "",
       offering: bad,
       account: placingReason({ reply: bad, categories, values, removed }),
     });
@@ -280,7 +410,13 @@ describe("the scripted mind", () => {
 
   test("a wall with nothing unsortable is placed well the first time", () => {
     const plain = values.slice(0, 2);
-    const passage = placingPassage({ value: presentation, categories, values: plain, removed });
+    const passage = placingPassage({
+      value: presentation,
+      categories,
+      values: plain,
+      removed,
+      notes: "",
+    });
     const reply = mind(passage);
     expect(placingReading({ reply, categories, values: plain, removed })).toBe("placed");
   });
@@ -299,4 +435,37 @@ describe("the scripted mind", () => {
     expect(participantAnswers({ reply: second, value: presentation }).length).toBe(2);
     expect(first).not.toBe(second);
   });
+
+  test("it answers every question of a run, a choice where one is offered", () => {
+    const answers = participantAnswers({
+      reply: mind(participantPassage({ value: quiz, participant: "model:one" })),
+      value: quiz,
+    });
+    expect(answers.map((answer) => answer.item)).toEqual(["q1", "q2"]);
+    expect(quiz.questions[0]!.choices).toContain(answers[0]!.value);
+    expect(answers[1]!.value).not.toBe("");
+  });
+});
+
+test("sorting uses explicit definitions without recycling summaries or legacy text", () => {
+  const categories = [
+    { category: "standing", name: "Pace", description: "Old ambiguous text", items: ["card-1"] },
+    {
+      category: "generated",
+      name: "Crashes",
+      description: "An on-demand summary",
+      items: ["card-2"],
+    },
+  ];
+  expect(sortingPileSubjects({ categories })).toEqual(["standing", "generated"]);
+  expect(
+    definedSortingPiles({
+      categories,
+      texts: [{ subject: "standing", text: "Slow interactions" }],
+    }),
+  ).toEqual([
+    { ...categories[0], description: "Slow interactions" },
+    { ...categories[1], description: "" },
+  ]);
+  expect(categories[0].description).toBe("Old ambiguous text");
 });

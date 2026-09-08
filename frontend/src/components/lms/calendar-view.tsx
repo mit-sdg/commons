@@ -1,16 +1,19 @@
 "use client";
 
 import { CalendarDays } from "lucide-react";
+import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import { courseTimezone } from "@/lib/course";
-import { fullTime, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface CalendarEvent {
   date: string;
   label: string;
   kind?: string;
+  /** The kind of the assignment: essay, quiz. */
   detail?: string;
+  /** A note on this date alone: "individual due date". */
+  note?: string;
   href: string;
 }
 
@@ -60,15 +63,18 @@ export function CalendarView({ events, className }: CalendarViewProps) {
               })}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate">{event.label}</p>
-              {event.detail && (
-                <p className="text-xs text-muted-foreground truncate">
-                  {event.detail}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {fullTime(event.date)} · {relativeTime(event.date)}
-              </p>
+              <Facts className="gap-x-2">
+                <span className="text-sm font-medium truncate">
+                  {event.label}
+                </span>
+                {event.detail ? <Fact.Kind>{event.detail}</Fact.Kind> : null}
+              </Facts>
+              <Facts className="mt-0.5 text-xs">
+                <Fact.Due at={event.date} />
+                {event.note ? (
+                  <span className="text-muted-foreground">{event.note}</span>
+                ) : null}
+              </Facts>
             </div>
           </Link>
         );

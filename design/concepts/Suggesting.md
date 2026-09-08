@@ -8,7 +8,7 @@ Prevents: a change landing that nobody chose; a good suggestion thrown out with 
 
 ## Principle
 
-A reader of Noor's draft _offers_ four suggestions about it at once: two rewordings, a cut, and a new heading. Noor _takes_ the first rewording and the heading, each on its own; the draft changes only where she said so. She _declines_ the cut, and it stays on record as declined rather than disappearing. Later she comes back to take the cut after all and is refused, because she already settled it — a suggestion is answered once. A second reader offers three more; Noor takes them all, one at a time, and every one is applied.
+A reader of Noor's draft _offers_ four suggestions about it at once: two rewordings, a cut, and a new heading, and Noor reads them in the order the reader wrote them, since the second rewording assumes the first. Noor _takes_ the first rewording and the heading, each on its own; the draft changes only where she said so. She _declines_ the cut, and it stays on record as declined rather than disappearing. Later she comes back to take the cut after all and is refused, because she already settled it — a suggestion is answered once. A second reader offers three more; Noor takes them all, one at a time, and every one is applied. Coming back a week later she reads the offerings newest first, so the second reader's is the one she meets.
 
 ## Types
 

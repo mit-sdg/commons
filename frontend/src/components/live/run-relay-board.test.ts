@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import type { Relay, RelayRun } from "@/components/live/rounds";
-import { modelSilent, refusalFor, tokenName } from "./run-relay-board";
+import {
+  modelSilent,
+  refusalFor,
+  seatIdentity,
+  sortingWord,
+  tokenName,
+} from "./run-relay-board";
 
 const at = (failedAt: string | null, failure: string | null = "gemini") => ({
   failure,
@@ -21,6 +27,77 @@ describe("the word beside the model sorts switch", () => {
 
   test("goes once the failure is a minute old", () => {
     expect(modelSilent(at("2026-09-03T11:58:59.000Z"), now)).toBe(false);
+  });
+});
+
+const say = (
+  over: Partial<Parameters<typeof sortingWord>[0]> = {},
+): string | null =>
+  sortingWord({
+    open: true,
+    asksOut: 0,
+    sortPending: false,
+    modelSorts: true,
+    sorting: false,
+    silent: false,
+    notAsked: false,
+    ...over,
+  });
+
+describe("what the model is doing about the shown round", () => {
+  test("sorts while the round is open and an ask is out", () => {
+    expect(say({ asksOut: 1 })).toBe("sorting…");
+    expect(say({ sorting: true })).toBe("sorting…");
+  });
+
+  test("settles while the round is closed and an ask is out", () => {
+    expect(say({ open: false, asksOut: 1 })).toBe("settling…");
+  });
+
+  test("keeps settling after the provider answers while placements finish", () => {
+    expect(say({ open: false, sortPending: true })).toBe("settling…");
+  });
+
+  test("explains an in-flight sort with automatic sorting off", () => {
+    for (const open of [true, false]) {
+      expect(say({ open, modelSorts: false, sortPending: true })).toBe(
+        "Finishing current sort; automatic sorting is off.",
+      );
+      expect(say({ open, modelSorts: false, asksOut: 1 })).toBe(
+        "Finishing current sort; automatic sorting is off.",
+      );
+    }
+    expect(say({ modelSorts: false, asksOut: 1, silent: true })).toBe(
+      "Finishing current sort; automatic sorting is off.",
+    );
+    expect(say({ modelSorts: false })).toBeNull();
+    expect(say({ open: false, modelSorts: false })).toBe("Settled");
+  });
+
+  test("is settled once the closed round has no ask out", () => {
+    expect(say({ open: false })).toBe("Settled");
+  });
+
+  test("says the model is not answering over anything else", () => {
+    expect(say({ silent: true, asksOut: 2 })).toBe(
+      "The model is not answering.",
+    );
+  });
+
+  test("says nothing on an open round with nothing out", () => {
+    expect(say()).toBeNull();
+    expect(say({ notAsked: true })).toBe("Nothing to sort.");
+  });
+});
+
+describe("the name a minted seat takes", () => {
+  test("carries its place in the order the seats were taken", () => {
+    expect(seatIdentity(3)).toMatch(/^seat-3-/);
+    expect(seatIdentity(12)).toMatch(/^seat-\d+-/);
+  });
+
+  test("names no two seats alike", () => {
+    expect(seatIdentity(1)).not.toBe(seatIdentity(1));
   });
 });
 

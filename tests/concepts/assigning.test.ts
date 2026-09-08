@@ -184,21 +184,32 @@ for (const [floor, make] of floors) {
       ).toBeInstanceOf(refusalErrors.ReleaseNotFound);
     });
 
-    test("_getPublishedInWindow: availability-or-due moments, PUBLISHED only, creation order", async () => {
+    test("_getPublishedInWindow: availability, due, or close moments, PUBLISHED only, creation order", async () => {
       const c = await make();
-      const mk = async (availableAt: string, dueAt: string) =>
-        (await c.createDraft({ ...draftInput(), availableAt, dueAt, closeAt: dueAt })).assignment;
+      const mk = async (availableAt: string, dueAt: string, closeAt = dueAt) =>
+        (await c.createDraft({ ...draftInput(), availableAt, dueAt, closeAt })).assignment;
       const W = { start: "2026-07-06T00:00:00.000Z", end: "2026-07-13T23:59:59.999Z" };
       const hw1 = await mk("2026-07-01T00:00:00.000Z", "2026-07-10T00:00:00.000Z");
       const hw2 = await mk("2026-08-01T00:00:00.000Z", "2026-08-20T00:00:00.000Z");
       const _hw3 = await mk("2026-07-02T00:00:00.000Z", "2026-07-08T00:00:00.000Z");
       const hw4 = await mk("2026-07-07T00:00:00.000Z", "2026-08-01T00:00:00.000Z");
+      // Only its close date falls in the window: the week that holds the close lists it.
+      const hw5 = await mk(
+        "2026-06-20T00:00:00.000Z",
+        "2026-07-01T00:00:00.000Z",
+        "2026-07-12T00:00:00.000Z",
+      );
 
       await c.publish({ assignment: hw1, at: T1 });
       await c.publish({ assignment: hw2, at: T1 });
       await c.publish({ assignment: hw4, at: T1 });
+      await c.publish({ assignment: hw5, at: T1 });
 
-      expect(await c._getPublishedInWindow(W)).toEqual([{ assignment: hw1 }, { assignment: hw4 }]);
+      expect(await c._getPublishedInWindow(W)).toEqual([
+        { assignment: hw1 },
+        { assignment: hw4 },
+        { assignment: hw5 },
+      ]);
 
       expect(
         await c._getPublishedInWindow({

@@ -124,5 +124,85 @@ for (const [floor, make] of floors) {
         },
       ]);
     });
+
+    test("the newest reply about a subject is the one read back, and an ask still out is none", async () => {
+      const reasoning = await make();
+      // An ask that is still out is no reply, and neither is nothing at all.
+      await reasoning.ask({ reasoner: "flash", about: "brief-10", passage: "waiting", at });
+      expect(await reasoning._lastReplyAbout({ about: "brief-10" })).toEqual([]);
+      expect(await reasoning._lastReplyAbout({ about: "brief-nowhere" })).toEqual([]);
+
+      const one = await reasoning.ask({ reasoner: "flash", about: "brief-10", passage: "p1", at });
+      await reasoning.answer({ asking: one.asking, reply: "first reply", at });
+      const two = await reasoning.ask({ reasoner: "flash", about: "brief-10", passage: "p2", at });
+      await reasoning.answer({ asking: two.asking, reply: "second reply", at: later });
+      const other = await reasoning.ask({
+        reasoner: "pro",
+        about: "brief-11",
+        passage: "elsewhere",
+        at,
+      });
+      await reasoning.answer({ asking: other.asking, reply: "off-topic", at: later });
+
+      expect(await reasoning._lastReplyAbout({ about: "brief-10" })).toEqual([
+        {
+          asking: two.asking,
+          reasoner: "flash",
+          passage: "p2",
+          reply: "second reply",
+          answeredAt: later,
+        },
+      ]);
+      // The other subject's reply is its own, newer though it is.
+      expect(await reasoning._lastReplyAbout({ about: "brief-11" })).toEqual([
+        {
+          asking: other.asking,
+          reasoner: "pro",
+          passage: "elsewhere",
+          reply: "off-topic",
+          answeredAt: later,
+        },
+      ]);
+    });
   });
 }
+
+test("a follow-up remembers its predecessor without reopening it", async () => {
+  const c = new MongoReasoningConcept(await testDb());
+  const at = new Date();
+  const first = await c.ask({ reasoner: "reader", about: "desk", passage: "Initial brief", at });
+  await c.answer({ asking: first.asking, reply: "Needs correction", at });
+  const second = await c.followUp({ previous: first.asking, passage: "Corrected brief", at });
+  expect(await c._followups({ previous: first.asking })).toEqual([{ asking: second.asking }]);
+  expect(await c._asking({ asking: first.asking })).toMatchObject([
+    { pending: false, passage: "Initial brief" },
+  ]);
+  expect(await c._asking({ asking: second.asking })).toMatchObject([
+    { pending: true, reasoner: "reader", about: "desk", passage: "Corrected brief" },
+  ]);
+  await expect(c.followUp({ previous: "absent", passage: "", at })).rejects.toBeInstanceOf(
+    refusalErrors.AskingNotFound,
+  );
+});
+
+test("a bounded subject read returns one newest reply per requested subject", async () => {
+  const c = new MongoReasoningConcept(await testDb());
+  const at = new Date();
+  const first = await c.ask({ reasoner: "reader", about: "batch-a", passage: "old", at });
+  await c.answer({ asking: first.asking, reply: "old reply", at });
+  const second = await c.ask({ reasoner: "reader", about: "batch-a", passage: "new", at });
+  await c.answer({ asking: second.asking, reply: "new reply", at });
+  const other = await c.ask({ reasoner: "reader", about: "batch-b", passage: "other", at });
+  await c.answer({ asking: other.asking, reply: "other reply", at });
+  await c.ask({ reasoner: "reader", about: "batch-pending", passage: "waiting", at });
+  const { replies } = await c._lastRepliesAbout({
+    subjects: ["batch-b", "batch-a", "batch-b", "batch-pending", "batch-absent"],
+  });
+  expect(
+    replies.map(({ about, asking, passage, reply }) => ({ about, asking, passage, reply })),
+  ).toEqual([
+    { about: "batch-b", asking: other.asking, passage: "other", reply: "other reply" },
+    { about: "batch-a", asking: second.asking, passage: "new", reply: "new reply" },
+  ]);
+  expect(await c._lastRepliesAbout({ subjects: [] })).toEqual({ replies: [] });
+});

@@ -76,10 +76,8 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
 
   const mailWorker =
     mail === undefined ? undefined : startMailWorker(edge.application.concepts.Mailing, mail);
-  const reasonerWorker =
-    reasoner === undefined
-      ? undefined
-      : startReasonerWorker(edge.application.concepts.Reasoning, reasoner);
+  // Without a reasoner the worker still runs, failing every ask at once.
+  const reasonerWorker = startReasonerWorker(edge.application.concepts.Reasoning, reasoner);
   const participantWorker =
     reasoner === undefined ? undefined : startParticipantWorker(edge.application.concepts);
   const resource = floor.resources.length === 0 ? floor.name : floor.resources.join(", ");
@@ -90,9 +88,9 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
       : "commons: SMTP email worker started.",
   );
   console.log(
-    reasonerWorker === undefined
-      ? "commons: the reasoner is disabled."
-      : `commons: ${reasoner?.mode === "scripted" ? "scripted" : reasoner?.model} reasoner worker started.`,
+    reasoner === undefined
+      ? "commons: the reasoner is disabled; every ask fails at once."
+      : `commons: ${reasoner.mode === "scripted" ? "scripted" : reasoner.model} reasoner worker started.`,
   );
   console.log(`commons: serving ${edge.servedPaths.size} endpoints on http://${host}:${port}`);
 
@@ -107,7 +105,7 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
       try {
         await server.stop();
         await mailWorker?.stop();
-        await reasonerWorker?.stop();
+        await reasonerWorker.stop();
         await participantWorker?.stop();
       } finally {
         await floor.close();

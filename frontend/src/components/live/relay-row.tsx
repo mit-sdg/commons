@@ -1,19 +1,16 @@
+import { Fact } from "@/components/facts";
 import { cn } from "@/lib/utils";
 
 /**
- * The one word a row ever carries. A row says nothing about itself unless a
- * run is open on it; while one row on the shelf is live every row holds the
- * column, so the titles line up under it.
+ * The one word a row ever carries is the state badge every screen says a state
+ * with. A row says nothing about itself unless a run is open on it; while one
+ * row on the shelf is live every row holds the column, wide enough for `Open`,
+ * so the titles line up under it.
  */
 export function StateWord({ live }: { live: boolean }) {
   return (
-    <span className="inline-flex w-[54px] flex-none items-center gap-1.5 font-mono text-muted-foreground text-xs">
-      {live ? (
-        <>
-          <span className="inline-block size-2 flex-none rounded-full bg-primary" />
-          live
-        </>
-      ) : null}
+    <span className="inline-flex w-[54px] flex-none items-center">
+      {live ? <Fact.Status status="OPEN" /> : null}
     </span>
   );
 }
@@ -60,7 +57,7 @@ export function LiveRow({
   return (
     <li
       className={cn(
-        "flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3",
+        "flex flex-wrap lg:flex-nowrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3",
         live && "border-primary/40",
         className,
       )}
@@ -68,7 +65,7 @@ export function LiveRow({
       {stateColumn ? <StateWord live={live} /> : null}
       {/* Half the row is the title's own: the strip and the actions wrap under
           it rather than squeezing it to one letter per line. */}
-      <span className="flex min-w-0 shrink grow basis-1/2 flex-wrap items-center gap-2 font-medium">
+      <span className="flex min-w-0 shrink grow basis-1/2 lg:basis-0 flex-wrap items-center gap-2 font-medium">
         {title}
       </span>
       {middle}

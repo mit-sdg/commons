@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Fact } from "@/components/facts";
 import { RemoveSeatDialog } from "@/components/lms/remove-seat";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { Button } from "@/components/ui/button";
@@ -150,7 +151,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                         {m.email}
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={m.kind} />
+                        <Fact.Kind>{m.kind.toLowerCase()}</Fact.Kind>
                       </TableCell>
                       <TableCell className="text-xs">
                         {sec?.name ?? "—"}

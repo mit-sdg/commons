@@ -4,26 +4,60 @@
  */
 
 import { createHash } from "node:crypto";
+import {
+  normalizeTitle,
+  normalizeQuestionMaterial,
+  normalizeParts,
+} from "../concepts/questioning/constraints.ts";
 
 /** A card names neither its response nor its item; the wall keeps the join. */
 export function cardId({ response, item }: { response: string; item: string }): string {
   return createHash("sha256").update(`${response}/${item}`).digest("hex").slice(0, 32);
 }
 
-/** A round that offers carried choices is one box: no parts. */
-export function oneBoxParts({ question: _question }: { question: string }): string[] {
-  return [];
+/**
+ * The choices a round puts before the room: its own when the leg's word is
+ * `vote` or the leg has no word, and none under `write` or `list`. The kind
+ * is a selector: what was written for the other kinds stays on the question
+ * and is only left out of the presentation.
+ */
+export function kindChoices({ kind, choices }: { kind: string; choices: string[] }): string[] {
+  return kind === "write" || kind === "list" ? [] : choices;
 }
 
-export function oneBoxCap({ question: _question }: { question: string }): number {
-  return 0;
+/** The parts a round puts before the room: its own under `list` or no word, none under `write` or `vote`. */
+export function kindParts({ kind, parts }: { kind: string; parts: string[] }): string[] {
+  return kind === "write" || kind === "vote" ? [] : parts;
 }
 
-/** A round that takes its parts offers no choices. */
-export function noChoices({ question: _question }: { question: string }): string[] {
-  return [];
+/** The cap that goes with the parts: the round's own under `list` or no word, none otherwise. */
+export function kindCap({ kind, cap }: { kind: string; cap: number }): number {
+  return kind === "write" || kind === "vote" ? 0 : cap;
 }
 
 export function isSame({ left, right }: { left: string; right: string }): boolean {
   return left === right;
+}
+
+export function roundMaterialIsValid({
+  title,
+  prompt,
+  choices,
+  parts,
+  cap,
+}: {
+  title: string;
+  prompt: string;
+  choices: string[];
+  parts: string[];
+  cap: number;
+}): boolean {
+  const material = normalizeQuestionMaterial({ prompt, choices, expected: "", explanation: "" });
+  const shape = normalizeParts({ parts, cap });
+  return (
+    normalizeTitle(title).ok &&
+    material.ok &&
+    shape.ok &&
+    (material.value.choices.length === 0 || shape.value.parts.length === 0)
+  );
 }

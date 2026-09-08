@@ -1,6 +1,8 @@
 "use client";
 
 import { Check, ChevronRight } from "lucide-react";
+import { Facts } from "@/components/facts";
+import { ModelTag } from "@/components/live/pile";
 import type { Output } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +18,75 @@ export type RunScoresView = NonNullable<
 
 export function scoresOf(result: Results): RunScoresView | null {
   return "scores" in result ? result.scores : null;
+}
+
+/** Every response begun under a seat, whether or not it was handed in. */
+type ModelResponses = { response: string }[];
+
+/**
+ * Which values the room handed in and which the model's seats did. A value
+ * belongs to a seat when its response was begun under one, so a dismissed
+ * seat's answers stay the model's.
+ */
+export function splitValues<Value extends { response: string }>(
+  values: Value[],
+  modelResponses: ModelResponses,
+): { room: Value[]; model: Value[] } {
+  const seated = new Set(modelResponses.map((entry) => entry.response));
+  const room: Value[] = [];
+  const model: Value[] = [];
+  for (const value of values) {
+    if (seated.has(value.response)) model.push(value);
+    else room.push(value);
+  }
+  return { room, model };
+}
+
+/** What a figure of the room leaves out, said in one line beneath it. */
+export function modelNote(count: number): string | null {
+  return count === 0 ? null : `+${count} by the model`;
+}
+
+/** A figure of the room alone: the whole, less what the model's seats did. */
+export function roomFigure(all: number, model: number): number {
+  return Math.max(0, all - model);
+}
+
+/** How many questions a keyed run grades: the choice questions with a marked answer. */
+export function choiceQuestions(
+  questions: { choices: string[]; expected: string }[],
+): number {
+  return questions.filter(
+    (question) => question.choices.length > 0 && question.expected !== "",
+  ).length;
+}
+
+/** What a score is out of, named, since a written answer is never graded. */
+export function scoredOn(choices: number): string | null {
+  return choices === 0
+    ? null
+    : `Scored on the ${choices} choice question${choices === 1 ? "" : "s"}.`;
+}
+
+/** How far the model's seats got: begun, and of those handed in. */
+export function modelCounts(modelResponses: { submitted: boolean }[]): {
+  begun: number;
+  handedIn: number;
+} {
+  return {
+    begun: modelResponses.length,
+    handedIn: modelResponses.filter((entry) => entry.submitted).length,
+  };
+}
+
+/** The graded results of the room and of the model's seats, in the order read. */
+export function splitScores<Result extends { model: boolean }>(
+  results: Result[],
+): { room: Result[]; model: Result[] } {
+  return {
+    room: results.filter((result) => !result.model),
+    model: results.filter((result) => result.model),
+  };
 }
 
 interface ChoiceTally {
@@ -128,10 +199,12 @@ function scoreDistribution(
 export function RunCount({
   label,
   value,
+  note,
   className,
 }: {
   label: string;
   value: number;
+  note?: string;
   className?: string;
 }) {
   return (
@@ -147,6 +220,9 @@ export function RunCount({
       <p className="font-display text-4xl font-semibold tabular-nums sm:text-5xl">
         {value}
       </p>
+      {note === undefined ? null : (
+        <p className="text-muted-foreground text-xs">{note}</p>
+      )}
     </div>
   );
 }
@@ -215,26 +291,23 @@ function Bar({
 
 /**
  * One question's standing: bars where choices were offered, words where not.
- * The expected choice is marked only once the run has closed — this board is
- * projected to the room, and the standard is revealed when the moment has
- * passed, not while the room is still answering.
+ * The expected choice is marked whether the run is open or closed — this board
+ * is the staff screen, and the standard is what its reader is holding the
+ * room against. The projector and the phone keep the reveal to themselves.
  */
 export function RunQuestionBoard({
   index,
   question,
-  revealExpected,
+  modelResponses,
 }: {
   index: number;
   question: RunBoardQuestion;
-  revealExpected: boolean;
+  modelResponses: ModelResponses;
 }) {
-  const values = question.values.map((entry) => entry.value);
+  const { room, model } = splitValues(question.values, modelResponses);
+  const values = room.map((entry) => entry.value);
   const choices = question.choices;
-  const tally = tallyChoices(
-    choices,
-    values,
-    revealExpected ? question.expected : "",
-  );
+  const tally = tallyChoices(choices, values, question.expected);
   const written = tallyWritten(values);
 
   return (
@@ -260,34 +333,75 @@ export function RunQuestionBoard({
               expected={row.expected}
             />
           ))}
-          <p className="font-medium text-base text-muted-foreground">
-            {values.length} answer{values.length === 1 ? "" : "s"} handed in
-          </p>
-        </div>
-      ) : values.length === 0 ? (
-        <p className="text-muted-foreground">No written answers yet.</p>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {written.map((row) => (
-            <span
-              key={row.key}
-              className="flex items-baseline gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-base sm:text-lg"
-            >
-              <span dir="auto" className="min-w-0">
-                {row.label}
-              </span>
-              {row.count > 1 ? (
-                <span className="shrink-0 font-semibold text-muted-foreground tabular-nums">
-                  ×{row.count}
-                </span>
-              ) : null}
+          <Facts className="font-medium text-base text-muted-foreground">
+            <span>
+              {values.length} answer{values.length === 1 ? "" : "s"} handed in
             </span>
-          ))}
+            {model.length > 0 ? (
+              <span>+{model.length} by the model</span>
+            ) : null}
+          </Facts>
+          {model.length > 0 ? (
+            <div className="space-y-1">
+              {model.map((entry, entryIndex) => (
+                <p
+                  key={`model-${entry.response}-${entryIndex}`}
+                  className="flex items-baseline gap-2 text-base text-muted-foreground"
+                >
+                  <span dir="auto" className="min-w-0">
+                    {entry.value}
+                  </span>
+                  <ModelTag />
+                </p>
+              ))}
+            </div>
+          ) : null}
         </div>
+      ) : (
+        <>
+          {values.length === 0 ? (
+            <p className="text-muted-foreground">No written answers yet.</p>
+          ) : null}
+          {values.length > 0 || model.length > 0 ? (
+            <div
+              className={cn(
+                "flex flex-wrap gap-2",
+                values.length === 0 && "mt-3",
+              )}
+            >
+              {written.map((row) => (
+                <span
+                  key={row.key}
+                  className="flex items-baseline gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-base sm:text-lg"
+                >
+                  <span dir="auto" className="min-w-0">
+                    {row.label}
+                  </span>
+                  {row.count > 1 ? (
+                    <span className="shrink-0 font-semibold text-muted-foreground tabular-nums">
+                      ×{row.count}
+                    </span>
+                  ) : null}
+                </span>
+              ))}
+              {model.map((entry, entryIndex) => (
+                <span
+                  key={`model-${entry.response}-${entryIndex}`}
+                  className="flex items-baseline gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-base sm:text-lg"
+                >
+                  <span dir="auto" className="min-w-0">
+                    {entry.value}
+                  </span>
+                  <ModelTag />
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </>
       )}
       {/* A written answer is measured against nothing, so what the author kept
           beside the question is offered as a reference, not a verdict. */}
-      {choices.length === 0 && revealExpected && question.expected !== "" ? (
+      {choices.length === 0 && question.expected !== "" ? (
         <p className="mt-4 text-base text-muted-foreground sm:text-lg">
           Reference:{" "}
           <span dir="auto" className="font-medium text-foreground">
@@ -300,14 +414,25 @@ export function RunQuestionBoard({
 }
 
 /** How the room scored, once a keyed run has anything to score. */
-export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
-  const results = scores.results;
-  if (results.length === 0) {
+export function RunScoreBoard({
+  scores,
+  choices,
+}: {
+  scores: RunScoresView;
+  /** How many of the run's questions are graded, which the heading names. */
+  choices: number;
+}) {
+  const { room, model } = splitScores(scores.results);
+  const counted = scoredOn(choices);
+  if (room.length === 0 && model.length === 0) {
     return (
       <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
         <h2 className="font-display text-xl font-semibold sm:text-2xl">
           Scores
         </h2>
+        {counted === null ? null : (
+          <p className="mt-1 text-muted-foreground text-sm">{counted}</p>
+        )}
         <p className="mt-2 text-muted-foreground">
           Nothing has been graded yet.
         </p>
@@ -315,24 +440,35 @@ export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
     );
   }
 
-  const outOf = results.reduce((high, row) => Math.max(high, row.outOf), 0);
-  const bands = scoreDistribution(results);
-  const total = results.reduce((sum, row) => sum + row.score, 0);
-  const mean = total / results.length;
+  const outOf = room.reduce((high, row) => Math.max(high, row.outOf), 0);
+  const bands = scoreDistribution(room);
+  const total = room.reduce((sum, row) => sum + row.score, 0);
+  const mean = room.length === 0 ? 0 : total / room.length;
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="font-display text-xl font-semibold sm:text-2xl">
-          Scores
-        </h2>
-        <p className="text-muted-foreground">
-          Average{" "}
-          <span className="font-semibold text-foreground tabular-nums">
-            {mean.toFixed(1)} / {outOf}
-          </span>{" "}
-          across {results.length} response{results.length === 1 ? "" : "s"}
-        </p>
+        <div>
+          <h2 className="font-display text-xl font-semibold sm:text-2xl">
+            Scores
+          </h2>
+          {counted === null ? null : (
+            <p className="mt-1 text-muted-foreground text-sm">{counted}</p>
+          )}
+        </div>
+        {room.length === 0 ? (
+          <p className="text-muted-foreground">
+            Nothing from the room has been graded yet.
+          </p>
+        ) : (
+          <p className="text-muted-foreground">
+            Average{" "}
+            <span className="font-semibold text-foreground tabular-nums">
+              {mean.toFixed(1)} / {outOf}
+            </span>{" "}
+            across {room.length} response{room.length === 1 ? "" : "s"}
+          </p>
+        )}
       </div>
       <div className="space-y-4">
         {bands.map((band) => (
@@ -340,13 +476,14 @@ export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
             key={band.score}
             label={`${band.score} / ${outOf}`}
             count={band.count}
-            total={results.length}
+            total={room.length}
           />
         ))}
       </div>
 
-      {/* Individual results stay behind a deliberate click: this board is
-          projected, and nobody's score belongs on the wall by accident. */}
+      {/* Individual results stay behind a deliberate click: a dashboard is
+          open on a screen the room can see, and nobody's score belongs on it
+          by accident. */}
       <details className="group mt-4">
         {/* A thumb-sized row on the phone, with the marker drawn by the same
             icon set as the rest of the feature. */}
@@ -355,13 +492,27 @@ export function RunScoreBoard({ scores }: { scores: RunScoresView }) {
           Results by participant
         </summary>
         <ul className="mt-3 space-y-1">
-          {results.map((row) => (
+          {room.map((row) => (
             <li
               key={row.submission}
               className="flex items-baseline justify-between gap-3 rounded-lg bg-muted/40 px-3 py-1.5 text-sm"
             >
               <span dir="auto" className="min-w-0 flex-1 truncate">
                 {row.name ?? "Anonymous device"}
+              </span>
+              <span className="font-medium tabular-nums">
+                {row.score} / {row.outOf}
+              </span>
+            </li>
+          ))}
+          {model.map((row) => (
+            <li
+              key={row.submission}
+              className="flex items-baseline justify-between gap-3 rounded-lg bg-muted/40 px-3 py-1.5 text-sm"
+            >
+              <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                <span className="min-w-0 truncate">Model participant</span>
+                <ModelTag />
               </span>
               <span className="font-medium tabular-nums">
                 {row.score} / {row.outOf}

@@ -61,7 +61,9 @@ const webPort = portFrom("WEB_PORT", "3000");
 const edgeOrigin = `http://127.0.0.1:${edgePort}`;
 const webOrigin = `http://127.0.0.1:${webPort}`;
 const publicOrigin = process.env.PUBLIC_ORIGIN ?? webOrigin;
-const webHost = process.env.WEB_HOST ?? (process.env.PUBLIC_ORIGIN ? "0.0.0.0" : "127.0.0.1");
+const webHost =
+  process.env.WEB_HOST ??
+  (process.env.PUBLIC_ORIGIN || process.env.PARTICIPANT_ORIGIN ? "0.0.0.0" : "127.0.0.1");
 const defaultBootstrap = JSON.stringify({
   username: "mara",
   password: "password123",

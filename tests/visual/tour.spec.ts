@@ -53,6 +53,7 @@ async function call<Value>(page: Page, path: string, data: unknown): Promise<Val
     data,
     headers: cookie === "" ? {} : { Cookie: cookie },
   });
+  expect(response.ok(), `${path}: HTTP ${response.status()}`).toBe(true);
   return (await response.json()) as Value;
 }
 
@@ -67,6 +68,7 @@ async function until<Value>(
     await new Promise((resolve) => setTimeout(resolve, 1000));
     value = await read();
   }
+  expect(done(value), "The requested tour state was not reached before timeout").toBe(true);
   return value;
 }
 
@@ -110,6 +112,8 @@ interface Face {
 
 interface WallRead {
   wall: {
+    asksOut: number;
+    sortPending: boolean;
     cards: { value: string; pile: string | null; model: boolean }[];
     piles: { pile: string; name: string; count: number; picked: string | null }[];
   } | null;
@@ -162,6 +166,15 @@ for (const theme of THEMES) {
       source: first.leg,
       use: "choices",
     });
+    // Library documents; the editor selects the relay reference below.
+    await call(page, "/live/drafts/give-document", {
+      title: "Course outline",
+      body: "Week 1 to 4: what a bookmark is for. Week 5 to 8: what a stranger sees. Short answers, plain words, no jargon.",
+    });
+    await call(page, "/live/drafts/give-document", {
+      title: `Verbs handout (${theme})`,
+      body: "The three verbs are chosen for what they do, not for how they sound. Keep them concrete.",
+    });
 
     // The shelf, and what New offers.
     await page.goto("/staff/live");
@@ -187,6 +200,22 @@ for (const theme of THEMES) {
     await page.getByRole("textbox", { name: "Title" }).nth(2).click();
     await expect(page.getByText("Three verbs a bookmark needs.").first()).toBeVisible();
     await snap(page, "RelayEditor", STAFF);
+    await desk(page);
+    await expect(page.getByRole("heading", { name: /^Reference documents/ })).toBeVisible();
+    await page.getByRole("button", { name: "Add reference" }).click();
+    await page.getByRole("checkbox", { name: `Verbs handout (${theme})`, exact: true }).check();
+    await expect(
+      page.getByRole("button", { name: `Remove reference Verbs handout (${theme})` }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Upload or paste a document" }).click();
+    await expect(page.getByRole("textbox", { name: "Document title" })).toBeVisible();
+    await snap(page, "RelayEditorBackground", [1440, 390]);
+    await desk(page);
+
+    // The class's own background, under Live.
+    await page.goto("/staff/live/background");
+    await expect(page.getByText("Course outline").first()).toBeVisible();
+    await snap(page, "ClassBackground", STAFF);
 
     // Drafting a relay with the model: the brief, and the lines it offers back.
     await desk(page);
@@ -223,6 +252,15 @@ for (const theme of THEMES) {
 
     // The run before any round opens, on all three screens.
     await snap(page, "RunBefore", STAFF);
+
+    // The shelf while the relay is live: the one row state the tour never saw,
+    // and the one a teacher is looking at in class. Its buttons differ from
+    // every other state's, so they are photographed here or nowhere.
+    await page.goto("/staff/live");
+    await expect(page.getByRole("link", { name: `Dashboard ${TITLE}` })).toBeVisible();
+    await snap(page, "ShelfLive", STAFF);
+    await desk(page);
+    await page.goto(`/staff/live/run/${run}`);
 
     const projector = await browser.newPage();
     await projector.emulateMedia({ reducedMotion: "reduce" });
@@ -300,12 +338,14 @@ for (const theme of THEMES) {
       () => call<WallRead>(page, "/live/walls/read", { round: roundOne }),
       (value) => (value.wall?.cards.filter((card) => card.model).length ?? 0) === 3,
     );
-    await page.getByRole("switch", { name: "Model sorts" }).click();
+    await page.getByRole("switch", { name: "Sort automatically" }).click();
     await until(
       () => call<WallRead>(page, "/live/walls/read", { round: roundOne }),
       (value) =>
         (value.wall?.cards.length ?? 0) > 0 &&
-        (value.wall?.cards.every((card) => card.pile !== null) ?? false),
+        (value.wall?.cards.every((card) => card.pile !== null) ?? false) &&
+        value.wall?.asksOut === 0 &&
+        value.wall?.sortPending === false,
       120,
     );
     await page.waitForTimeout(3500);
@@ -314,7 +354,16 @@ for (const theme of THEMES) {
     await snap(projector, "ProjectorSorted", WALL, false);
 
     // Round one closes and the pick control carries its fullest piles onward.
-    for (const response of writing) await call(page, "/live/p/submit", { response });
+    for (const response of writing) {
+      for (let part = 1; part <= 3; part += 1) {
+        await call(page, "/live/p/answer", {
+          response,
+          question: `${question}#${part}`,
+          value: WORDS[part],
+        });
+      }
+      await call(page, "/live/p/submit", { response });
+    }
     await desk(page);
     await page.getByRole("button", { name: /^Close.*Three verbs/ }).click();
     await expect(page.getByRole("button", { name: /^Open.*The stranger.*3 piles/ })).toBeVisible({
@@ -354,7 +403,7 @@ for (const theme of THEMES) {
     await page.waitForTimeout(1500);
     await snap(page, "RunEarlierWall", STAFF);
     await desk(page);
-    await page.getByRole("button", { name: "Spread Pace", exact: true }).click();
+    await page.getByRole("button", { name: "View responses in Pace", exact: true }).click();
     await expect(page.getByRole("region", { name: "Pace, every card" })).toBeVisible();
     await page.waitForTimeout(800);
     await snap(page, "Spread", STAFF, false);
@@ -442,7 +491,7 @@ for (const theme of THEMES) {
     await page.goto(`/staff/live/relay/${planned.relay}`);
     await page.getByRole("button", { name: "Retire" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Retire", exact: true }).click();
-    await expect(page.getByText("Retired", { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("retired", { exact: true })).toBeVisible({ timeout: 20_000 });
     await page.goto("/staff/live");
     await page.getByRole("button", { name: /^Show retired/ }).click();
     await expect(page.getByRole("link", { name: TITLE }).first()).toBeVisible();

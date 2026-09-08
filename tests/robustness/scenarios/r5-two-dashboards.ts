@@ -27,6 +27,7 @@ import {
   sleep,
   snap,
   until,
+  wallSettled,
 } from "../drive.ts";
 
 const ARM = process.argv[2] ?? "r5-two-dashboards";
@@ -89,6 +90,17 @@ async function pickMode(page: Page): Promise<string> {
   return "none";
 }
 
+/** Waits for a dashboard's pick control to show a mode; answers what it shows. */
+async function untilMode(page: Page, want: string, ms: number): Promise<string> {
+  const by = Date.now() + ms;
+  let said = await pickMode(page);
+  while (said !== want && Date.now() < by) {
+    await sleep(500);
+    said = await pickMode(page);
+  }
+  return said;
+}
+
 /** The seat count the model row prints on a dashboard. */
 async function seatsShown(page: Page): Promise<number | null> {
   const said = (await page
@@ -130,26 +142,16 @@ const log = new Log(ARM, outDir(ARM));
 const host = await signIn();
 const web = await pages(host, log);
 
-/**
- * Watches the wall until the model has every card in a pile. One round holds
- * one sort lock, so only one ticker asks for a sort: laptop A's own "Model
- * sorts" switch. A second asker meets a 409 CONFLICT that the board swallows
- * by design, which would read on the page as a broken finding.
- */
+/** Observe the dashboard; extra sort callers belong in contention scenarios. */
 async function everyCardPlaced(round: string, expected: number, tries = 45) {
   const read = await until(
     () => readWall(host, round),
-    (value) =>
-      (value.wall?.cards.length ?? 0) >= expected &&
-      (value.wall?.cards ?? []).every((card) => card.pile !== null),
+    (value) => wallSettled(value.wall, expected),
     tries,
     2000,
   );
   const wall = read.wall;
-  const settled =
-    wall !== null &&
-    wall.cards.length >= expected &&
-    wall.cards.every((card) => card.pile !== null);
+  const settled = wallSettled(wall, expected);
   return { wall, settled };
 }
 
@@ -201,7 +203,7 @@ try {
     20000,
   );
   await laptopA.setViewportSize({ width: 1440, height: 900 });
-  await laptopA.getByRole("switch", { name: "Model sorts" }).click();
+  await laptopA.getByRole("switch", { name: "Sort automatically" }).click();
   const sorted = await log.timed(
     "the model places every card",
     () => everyCardPlaced(one.round, SCRIPTED * PARTS),
@@ -216,7 +218,7 @@ try {
     log.finding({
       kind: "broken",
       title: "the model never placed every card",
-      steps: `${SCRIPTED} phones hand in three verbs each; Model sorts on from laptop A; wait two minutes`,
+      steps: `${SCRIPTED} phones hand in three verbs each; Sort automatically on from laptop A; wait two minutes`,
       evidence: JSON.stringify(sorted.wall?.cards.filter((card) => card.pile === null)),
     });
   }
@@ -378,7 +380,9 @@ try {
     },
     12000,
   );
-  const modeReloaded = await pickMode(laptopA);
+  // The control reads its mode back from the tab's storage once it mounts,
+  // so the read waits for what the page held, up to a few polls.
+  const modeReloaded = await untilMode(laptopA, modeBefore, 6000);
   const wantedPiles = modeBefore === "All" ? pileCount : (pilesBefore ?? 0);
   const pilesReloaded = await untilPiles(laptopA, wantedPiles, 12000);
   log.note(

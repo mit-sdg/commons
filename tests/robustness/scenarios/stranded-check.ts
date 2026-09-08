@@ -13,8 +13,6 @@ const MONGO_URL = process.env.MONGO_URL ?? "";
 const log = new Log(ARM, outDir(ARM));
 
 async function lockOnTheFloor(run: string) {
-  const v8 = await import("node:v8");
-  v8.startupSnapshot.isBuildingSnapshot = () => false;
   const { MongoClient } = await import("mongodb");
   const client = new MongoClient(MONGO_URL);
   try {
@@ -56,6 +54,9 @@ try {
 
   const page = await web.staff(`/staff/live/run/${launched.run}`);
   await sleep(2500);
+  // The Open the scene asks for is refused by the stranded lock: that 409 is
+  // the scene, so the watcher's finding for it is read back out.
+  const before = log.findings.length;
   await page.getByRole("button", { name: /^Open.*One word/ }).click();
   await sleep(8000);
   const said = await page
@@ -63,6 +64,15 @@ try {
     .first()
     .isVisible()
     .catch(() => false);
+  const refused = log.findings
+    .slice(before)
+    .filter((finding) => /409 from \/api\/live\/relays\/open-round/.test(finding.title));
+  log.findings.splice(
+    before,
+    log.findings.length - before,
+    ...log.findings.slice(before).filter((finding) => !refused.includes(finding)),
+  );
+  log.note(`the stranded Open was refused ${refused.length} time(s), as the scene asks`);
   log.note(`the stranded line reads ${said}`);
   await snap(page, log, "Stranded", [1440]);
 

@@ -403,6 +403,23 @@ export class MongoQuestioningConcept {
         ];
   }
 
+  /** The questionnaire and its ordered, identified questions as one value. */
+  async _content({ questionnaire }: { questionnaire: string }) {
+    const [head] = await this._getQuestionnaire({ questionnaire });
+    if (head === undefined) return [];
+    const questions = await this._getQuestions({ questionnaire });
+    return [
+      {
+        content: {
+          title: head.title,
+          form: head.form,
+          disclosure: head.disclosure,
+          questions: questions.map(({ question, ...fields }) => ({ item: question, ...fields })),
+        },
+      },
+    ];
+  }
+
   async _material({ questionnaire }: { questionnaire: string }) {
     const doc = await this.questionnaires.findOne({ _id: questionnaire });
     if (doc === null) return [];

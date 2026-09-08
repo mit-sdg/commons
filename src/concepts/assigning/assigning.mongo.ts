@@ -369,7 +369,12 @@ export class MongoAssigningConcept {
     };
     const docs = await this.assignments.find({ status: "PUBLISHED" }).sort({ seq: 1 }).toArray();
     return docs
-      .filter((doc) => within(doc.dueAt) || within(doc.availableAt))
+      .filter(
+        (doc) =>
+          within(doc.dueAt) ||
+          within(doc.availableAt) ||
+          (doc.closeAt !== null && doc.closeAt !== undefined && within(doc.closeAt)),
+      )
       .map((doc) => ({ assignment: doc._id }));
   }
 }

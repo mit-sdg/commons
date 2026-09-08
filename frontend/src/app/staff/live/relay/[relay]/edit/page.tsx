@@ -2,18 +2,12 @@
 
 import { ArrowLeft, Layers } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import {
-  Fragment,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
 import { useDrafting } from "@/components/live/ai-panel";
 import { RELAY_LINES } from "@/components/live/brief-chips";
+import { RelayGuideEditor } from "@/components/live/host-guide";
 import { refusalSentence } from "@/components/live/refusals";
 import {
   ActButton,
@@ -21,13 +15,9 @@ import {
   RoundEditor,
   TITLE_FIELD,
 } from "@/components/live/round-editor";
-import {
-  bareVote,
-  NO_CHOICES,
-  PhoneColumn,
-} from "@/components/live/round-preview";
+import { bareVote, PhoneColumn } from "@/components/live/round-preview";
 import { GOING } from "@/components/live/round-proposal";
-import { NO_ROUNDS, type RoundKind } from "@/components/live/rounds";
+import { launchRefusal, NO_ROUNDS } from "@/components/live/rounds";
 import { PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -43,6 +33,7 @@ import {
   unwrap,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { ranSentence } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type Relay = NonNullable<Output<"/live/relays/get">["relay"]>;
@@ -50,8 +41,28 @@ type Relay = NonNullable<Output<"/live/relays/get">["relay"]>;
 /** A brief on its way here names the ask it was sent as; every other link only opens the box. */
 const ASK = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+/**
+ * The card the phone is showing. Focus already outlines a card it is inside;
+ * a card reached by scrolling or by a click on its chrome holds no focus, so
+ * it is marked the same way rather than in a second language.
+ */
+const SHOWN =
+  "[&>div]:outline [&>div]:outline-2 [&>div]:outline-primary [&>div]:-outline-offset-2";
+
 /** Where a reader reads: a line a third of the way down the screen. */
 const READING = 1 / 3;
+
+/** The header gap the phone keeps below the top of the screen. */
+const HEADROOM = 130;
+
+/** The gap it keeps above the bottom of the screen. */
+const FOOTROOM = 16;
+
+/** How the phone travels to a round the reader has just picked. */
+const SLIDE = "transform 300ms ease-out";
+
+/** How long after the page last moved a selection still counts as scrolled to. */
+const SCROLLED = 200;
 
 /** The round card that line falls in, or the one nearest it. */
 function nearestCard(cards: Map<string, HTMLElement>): string | null {
@@ -148,16 +159,12 @@ function RelaySetup({
   // The round the phone shows: the card being edited, or the one the reader has
   // scrolled to.
   const [selected, setSelected] = useState<string | null>(null);
-  // The kind each card holds. A round pressed to a kind it has written nothing
-  // for yet says so nowhere else, so the card tells the page and the page tells
-  // the phone and the Launch.
-  const [kinds, setKinds] = useState<Record<string, RoundKind>>({});
-  const noteKind = useCallback((leg: string, kind: RoundKind) => {
-    setKinds((held) => (held[leg] === kind ? held : { ...held, [leg]: kind }));
-  }, []);
   const [busy, setBusy] = useState(false);
   const cards = useRef(new Map<string, HTMLElement>());
   const column = useRef<HTMLDivElement>(null);
+  const phone = useRef<HTMLDivElement>(null);
+  // When the page last moved under the phone.
+  const moved = useRef(0);
 
   // Scrolling is the reader's own way of saying which round they are on, and
   // only the column shows a phone for it: below lg the column is not laid out,
@@ -171,7 +178,8 @@ function RelaySetup({
       const held = document.activeElement;
       if (
         held !== null &&
-        [...cards.current.values()].some((node) => node.contains(held))
+        (phone.current?.contains(held) ||
+          [...cards.current.values()].some((node) => node.contains(held)))
       )
         return;
       const leg = nearestCard(cards.current);
@@ -185,6 +193,63 @@ function RelaySetup({
       window.removeEventListener("resize", follow);
     };
   }, []);
+
+  // The phone rides level with the card the column is on: the same card offsets
+  // the follow reads, held inside the screen and inside the column's own run.
+  useEffect(() => {
+    const rail = column.current;
+    const box = phone.current;
+    if (rail === null || box === null) return;
+    const place = (sliding: boolean) => {
+      // Below lg the column is not laid out and the drawer shows the round.
+      if (rail.offsetParent === null) return;
+      const card = selected === null ? undefined : cards.current.get(selected);
+      const available =
+        window.innerHeight -
+        Math.max(HEADROOM, rail.getBoundingClientRect().top) -
+        FOOTROOM;
+      box.style.setProperty(
+        "--preview-height",
+        `${Math.max(100, available)}px`,
+      );
+      const tall = box.offsetHeight;
+      // A row shorter than the phone is stretched to it, so the phone never
+      // spills past the rounds into whatever follows them.
+      rail.style.minHeight = `${tall}px`;
+      const run = rail.getBoundingClientRect();
+      // A phone too tall for the screen is held to the header gap and no lower.
+      const lowest = Math.max(HEADROOM, window.innerHeight - tall - FOOTROOM);
+      const top =
+        card === undefined ? run.top : card.getBoundingClientRect().top;
+      const wanted = Math.min(Math.max(top, HEADROOM), lowest);
+      const offset = Math.min(
+        Math.max(wanted - run.top, 0),
+        Math.max(run.height - tall, 0),
+      );
+      const shift = `translateY(${Math.round(offset)}px)`;
+      // A scroll that leaves the phone where it stands must not cut a slide off.
+      if (box.style.transform === shift) return;
+      box.style.transition = sliding ? SLIDE : "none";
+      box.style.transform = shift;
+    };
+    // A round reached by scrolling is already moving; only one the reader picked
+    // is worth a slide, and a slide struck mid-scroll would only stutter.
+    place(Date.now() - moved.current > SCROLLED);
+    const settle = () => {
+      moved.current = Date.now();
+      place(false);
+    };
+    window.addEventListener("scroll", settle, { passive: true });
+    window.addEventListener("resize", settle);
+    // A sample landing makes the phone taller, and the clamp reads its height.
+    const grown = new ResizeObserver(() => place(false));
+    grown.observe(box);
+    return () => {
+      window.removeEventListener("scroll", settle);
+      window.removeEventListener("resize", settle);
+      grown.disconnect();
+    };
+  }, [selected, relay.rounds]);
 
   useEffect(() => {
     if (brief === null || brief.trim() === "" || going.current) return;
@@ -203,6 +268,7 @@ function RelaySetup({
   }, [brief, relay.relay, router]);
 
   const drafting = useDrafting({
+    guidance: relay,
     relay: relay.relay,
     rounds: relay.rounds,
     title: relay.title,
@@ -214,15 +280,15 @@ function RelaySetup({
   });
 
   // Why the relay cannot launch yet, said on the button that would launch it.
-  const bare = relay.rounds.find((round) => bareVote(round, kinds[round.leg]));
   const notYet =
     relay.rounds.length === 0
       ? NO_ROUNDS
-      : bare === undefined
-        ? undefined
-        : NO_CHOICES;
+      : relay.rounds.some(bareVote)
+        ? refusalSentence("NO_CHOICES")
+        : undefined;
 
   const openRun = relay.runs.find((run) => run.open) ?? null;
+  const ran = ranSentence(relay.runs);
   const { data: running } = useQuery(
     openRun === null
       ? null
@@ -266,7 +332,7 @@ function RelaySetup({
     const result = await api["/live/relays/launch"]({ relay: relay.relay });
     if (isApiError(result)) {
       setBusy(false);
-      toast.error(publicErrorMessage(result.error));
+      toast.error(launchRefusal(result.error));
       return;
     }
     router.push(`/staff/live/run/${result.run}`);
@@ -290,6 +356,10 @@ function RelaySetup({
       toast.error(publicErrorMessage(result.error));
       return false;
     }
+    // The round just written is the one its author is on, so the phone shows
+    // it. Nothing else moves the selection here: the card is not focused and
+    // no scroll follows, so without this the column keeps its old round.
+    setSelected(result.leg);
     onChanged();
     return true;
   }
@@ -318,6 +388,14 @@ function RelaySetup({
             />
             {relay.retired ? <Badge variant="outline">Retired</Badge> : null}
           </span>
+          {ran === "" ? null : (
+            <Link
+              href={`/staff/live/relay/${relay.relay}#runs`}
+              className="self-start text-muted-foreground text-sm hover:text-foreground"
+            >
+              {ran}
+            </Link>
+          )}
         </div>
         {relay.retired ? null : (
           <div className="flex flex-wrap items-center gap-2">
@@ -343,6 +421,7 @@ function RelaySetup({
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-3">
           {relay.retired ? null : drafting.line}
+          <RelayGuideEditor relay={relay} onChanged={onChanged} />
           {relay.rounds.map((round) => (
             <Fragment key={round.leg}>
               {drafting.adds(round.number)}
@@ -351,20 +430,27 @@ function RelaySetup({
                   if (node === null) cards.current.delete(round.leg);
                   else cards.current.set(round.leg, node);
                 }}
-                className={cn(drafting.going(round.leg) && GOING)}
+                className={cn(
+                  drafting.going(round.leg) && GOING,
+                  selected === round.leg && SHOWN,
+                )}
                 onFocusCapture={() => setSelected(round.leg)}
+                // A click anywhere on the card says which round the reader is
+                // on, not only a click that lands in a field. The keyboard
+                // reaches the same selection by focus, above.
+                onClick={() => setSelected(round.leg)}
               >
                 <RoundEditor
                   round={round}
                   rounds={relay.rounds}
                   locked={relay.retired || reached.has(round.leg)}
+                  retired={relay.retired}
                   note={
                     reached.has(round.leg)
                       ? refusalSentence("RUN_OPEN", { round: round.number })
                       : null
                   }
                   proposal={drafting.proposal(round.leg)}
-                  onKind={noteKind}
                   onChanged={onChanged}
                 />
               </div>
@@ -373,8 +459,8 @@ function RelaySetup({
                   <PhoneColumn
                     rounds={relay.rounds}
                     selected={selected}
-                    kinds={kinds}
                     variant="drawer"
+                    retired={relay.retired}
                   />
                 </div>
               ) : null}
@@ -392,13 +478,15 @@ function RelaySetup({
           {relay.retired ? null : drafting.bar}
         </div>
 
-        <div ref={column} className="hidden lg:block lg:sticky lg:top-[130px]">
-          <PhoneColumn
-            rounds={relay.rounds}
-            selected={selected}
-            kinds={kinds}
-            variant="column"
-          />
+        <div ref={column} className="relative hidden self-stretch lg:block">
+          <div ref={phone} className="absolute inset-x-0 top-0">
+            <PhoneColumn
+              rounds={relay.rounds}
+              selected={selected}
+              variant="column"
+              retired={relay.retired}
+            />
+          </div>
         </div>
       </div>
     </PageContainer>

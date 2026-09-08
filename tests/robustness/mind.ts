@@ -2,9 +2,9 @@
  * What the reasoner was asked and what it answered, read straight from the
  * stack's Mongo: every ask about one subject (a relay or a round) with its
  * reply, failure, and latency, and every insistence stood on it. Run under
- * node (the Mongo driver does not start under bun):
+ * Node 24 or Bun:
  *
- *   node --experimental-strip-types tests/robustness/mind.ts <mongo-uri> <about>
+ *   node tests/robustness/mind.ts <mongo-uri> <about>
  */
 
 import { MongoClient } from "mongodb";
@@ -50,17 +50,17 @@ export class Mind {
   async asks(about: string): Promise<Ask[]> {
     const db = this.client.db();
     const askings = await db
-      .collection("roundReasoning.askings")
+      .collection("reasoning.askings")
       .find({ about })
       .sort({ seq: 1 })
       .toArray();
     const ids = askings.map((doc) => doc._id as unknown as string);
     const replies = await db
-      .collection("roundReasoning.replies")
+      .collection("reasoning.replies")
       .find({ asking: { $in: ids } })
       .toArray();
     const failures = await db
-      .collection("roundReasoning.failures")
+      .collection("reasoning.failures")
       .find({ asking: { $in: ids } })
       .toArray();
     const replyOf = new Map(replies.map((doc) => [doc.asking as string, doc]));
@@ -91,12 +91,12 @@ export class Mind {
   async insistences(aim: string): Promise<Insistence[]> {
     const db = this.client.db();
     const docs = await db
-      .collection("roundInsisting.insistences")
+      .collection("insisting.insistences")
       .find({ aim })
       .sort({ seq: 1 })
       .toArray();
     const complaints = await db
-      .collection("roundInsisting.complaints")
+      .collection("insisting.complaints")
       .find({ insistence: { $in: docs.map((doc) => doc._id as unknown as string) } })
       .sort({ seq: 1 })
       .toArray();

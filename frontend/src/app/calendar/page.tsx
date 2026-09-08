@@ -58,42 +58,46 @@ export default function CalendarPage() {
     end,
   ]);
 
-  const events = (calendarData?.events ?? []).flatMap((event) => {
-    const dueAt = event.dueOverride ?? event.dueAt;
-    return [
-      {
-        date: event.availableAt,
-        label: `Available: ${event.title}`,
-        kind: "available",
-        detail: event.kind,
-        href: `/assignments/${event.assignment}`,
-      },
-      {
-        date: dueAt,
-        label: `Due: ${event.title}`,
-        kind: "due",
-        detail: event.dueOverride
-          ? `${event.kind} · individual due date`
-          : event.kind,
-        href: `/assignments/${event.assignment}`,
-      },
-      event.closeAt
-        ? {
-            date: event.closeAt,
-            label: `Closes: ${event.title}`,
-            kind: "close",
-            detail: event.kind,
-            href: `/assignments/${event.assignment}`,
-          }
-        : null,
-    ].filter(Boolean) as {
-      date: string;
-      label: string;
-      kind?: string;
-      detail?: string;
-      href: string;
-    }[];
-  });
+  const events = (calendarData?.events ?? [])
+    .flatMap((event) => {
+      const dueAt = event.dueOverride ?? event.dueAt;
+      return [
+        {
+          date: event.availableAt,
+          label: `Available: ${event.title}`,
+          kind: "available",
+          detail: event.kind,
+          href: `/assignments/${event.assignment}`,
+        },
+        {
+          date: dueAt,
+          label: `Due: ${event.title}`,
+          kind: "due",
+          detail: event.kind,
+          note: event.dueOverride ? "individual due date" : undefined,
+          href: `/assignments/${event.assignment}`,
+        },
+        event.closeAt
+          ? {
+              date: event.closeAt,
+              label: `Closes: ${event.title}`,
+              kind: "close",
+              detail: event.kind,
+              href: `/assignments/${event.assignment}`,
+            }
+          : null,
+      ].filter(Boolean) as {
+        date: string;
+        label: string;
+        kind?: string;
+        detail?: string;
+        note?: string;
+        href: string;
+      }[];
+      // The view answers the assignments with a date in the week; the week
+      // lists only those dates, one row each.
+    })
+    .filter((event) => event.date >= start && event.date <= end);
 
   return (
     <PageContainer>

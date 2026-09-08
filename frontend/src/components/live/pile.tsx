@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import {
   AnimatePresence,
   motion,
@@ -8,11 +8,20 @@ import {
   useReducedMotion,
   type Variants,
 } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { WallCard } from "@/components/live/rounds";
 import { SpreadButton } from "@/components/live/spread";
 import { CARD_MOVE, PILE_MOVE } from "@/components/live/wall-motion";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 /** The drag payload that carries a pile, so dropping one on another folds it in. */
@@ -108,10 +117,143 @@ export function YouTag() {
 }
 
 /**
+ * Where a card goes by hand: the piles the wall stands, the tray, and a pile
+ * opened for it. The menu makes the requests a drag makes, so a wall is
+ * sorted from the keyboard alone.
+ */
+export interface CardMoves {
+  piles: { pile: string; name: string }[];
+  moveCard: (card: string, pile: string) => void;
+  toTray: (card: string) => void;
+  /** Asks for the name at the new-pile cell, and opens the pile with this card. */
+  newPile: (card: string) => void;
+  /**
+   * Where the focus lands once a move has taken the focused control off the
+   * wall: called after the menu has let go, and when a focused card leaves.
+   */
+  settle?: () => void;
+}
+
+/** The piles a card or a pile is sent to: the wall's, less the one it is in. */
+export function elsewhere<Pile extends { pile: string }>(
+  piles: Pile[],
+  own: string | null | undefined,
+): Pile[] {
+  return piles.filter((pile) => pile.pile !== own);
+}
+
+/** The menu a card carries: every pile but its own, the tray, and a new pile. */
+export function MoveMenu({
+  card,
+  moves,
+  className,
+}: {
+  card: WallCard;
+  moves: CardMoves;
+  className?: string;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Move “${card.value}”`}
+          onClick={(event) => event.stopPropagation()}
+          className={cn(
+            "flex size-5 flex-none items-center justify-center rounded-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50",
+            className,
+          )}
+        >
+          <Ellipsis className="size-3" />
+        </button>
+      </DropdownMenuTrigger>
+      <MoveTo card={card} moves={moves} />
+    </DropdownMenu>
+  );
+}
+
+/** Where a card can be sent: every pile but its own, the tray, and a new pile. */
+function MoveTo({ card, moves }: { card: WallCard; moves: CardMoves }) {
+  // A move takes the card, and the control with it, off the place it stood:
+  // the wall says where the focus goes, so the menu does not put it back.
+  const chose = useRef(false);
+  const take = (move: () => void) => {
+    chose.current = true;
+    move();
+  };
+  return (
+    <DropdownMenuContent
+      align="start"
+      aria-label="Move to"
+      className="w-56"
+      onCloseAutoFocus={(event) => {
+        if (!chose.current) return;
+        chose.current = false;
+        event.preventDefault();
+        // Only now: while the menu was open its focus trap pulled every focus
+        // back inside, so the wall takes the focus once the trap has gone.
+        moves.settle?.();
+      }}
+    >
+      <DropdownMenuLabel>Move to</DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      {elsewhere(moves.piles, card.pile).map((pile) => (
+        <DropdownMenuItem
+          key={pile.pile}
+          onSelect={() => take(() => moves.moveCard(card.card, pile.pile))}
+        >
+          <span dir="auto" className="truncate">
+            {pile.name}
+          </span>
+        </DropdownMenuItem>
+      ))}
+      {card.pile === null ? null : (
+        <DropdownMenuItem onSelect={() => take(() => moves.toTray(card.card))}>
+          Tray
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuItem onSelect={() => take(() => moves.newPile(card.card))}>
+        New pile
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  );
+}
+
+/** Where a chip stands, and how much room the screen has to the right of it. */
+export interface Chip {
+  left: number;
+  top: number;
+  width: number;
+  room: number;
+}
+
+/** The widest a floating copy runs, and the gap it keeps from the screen's edge. */
+const COPY = { width: 352, edge: 12 };
+
+/**
+ * Where a card stands its whole answer over itself: the chip's own top-left
+ * corner, no wider than the screen has room for. Nothing while the chip is
+ * neither under the pointer nor holding the focus, and nothing while it is in
+ * the air.
+ */
+export function cardCopy(chip: Chip | null, still: boolean) {
+  if (chip === null || still) return null;
+  return {
+    left: chip.left,
+    top: chip.top,
+    minWidth: chip.width,
+    maxWidth: Math.max(chip.width, Math.min(COPY.width, chip.room - COPY.edge)),
+  };
+}
+
+/**
  * One answer as a card: in the tray, on a pile's face, or being dragged. A
  * card that leaves the tray for a pile is drawn crossing the wall by the
  * flight layer; here it only lays out, so the row closes over its place as
  * its neighbours slide. A card under the hand holds still until the hand lets go.
+ *
+ * The chip is plain and one line; the pointer or the focus stands its whole
+ * answer over it, and nothing in the row moves.
  */
 export function Card({
   card,
@@ -122,7 +264,7 @@ export function Card({
   lines = oneLine ? 1 : 3,
   onDragStart,
   onDragEnd,
-  onRemove,
+  moves,
   className,
 }: {
   card: WallCard;
@@ -136,12 +278,56 @@ export function Card({
   lines?: 1 | 2 | 3;
   onDragStart?: (card: WallCard) => void;
   onDragEnd?: () => void;
-  /** Takes the card off the wall; only a dashboard offers it. */
-  onRemove?: () => void;
+  /** Where a hand sends the card without dragging it; only a dashboard offers it. */
+  moves?: CardMoves;
   className?: string;
 }) {
+  const chip = useRef<HTMLSpanElement | null>(null);
+  const [under, setUnder] = useState<Chip | null>(null);
+  const [moving, setMoving] = useState(false);
+  // A card the belt or a drop takes while a hand has it focused would leave
+  // the focus on the page body; the wall says where it lands instead. Read
+  // before the node goes, which is what a layout cleanup is.
+  const settle = useRef(moves?.settle);
+  useEffect(() => {
+    settle.current = moves?.settle;
+  });
+  useLayoutEffect(
+    () => () => {
+      const node = chip.current;
+      if (node?.contains(document.activeElement)) settle.current?.();
+    },
+    [],
+  );
+  const copy = cardCopy(under, still);
+  const reading = under !== null;
+
+  useEffect(() => {
+    if (!reading) return;
+    const leave = () => setUnder(null);
+    window.addEventListener("scroll", leave, true);
+    return () => window.removeEventListener("scroll", leave, true);
+  }, [reading]);
+
+  const read = () => {
+    const box = chip.current?.getBoundingClientRect();
+    setUnder(
+      box === undefined
+        ? null
+        : {
+            left: box.left,
+            top: box.top,
+            width: box.width,
+            room: window.innerWidth - box.left,
+          },
+    );
+  };
+  const body = (
+    <CardBody card={card} big={big} lines={lines} className={className} />
+  );
   return (
     <span
+      ref={chip}
       data-card={card.card}
       draggable={draggable}
       onDragStart={
@@ -154,6 +340,10 @@ export function Card({
           : undefined
       }
       onDragEnd={draggable ? onDragEnd : undefined}
+      onPointerEnter={read}
+      onPointerLeave={() => setUnder(null)}
+      onFocus={read}
+      onBlur={() => setUnder(null)}
       className={cn(
         "inline-flex min-w-0 max-w-full",
         draggable && "cursor-grab active:cursor-grabbing",
@@ -168,25 +358,51 @@ export function Card({
         exit={{ opacity: 0, transition: { duration: 0.18 } }}
         className="inline-flex min-w-0 max-w-full"
       >
-        {/* The control stands before the answer, so a card the row cuts under
-            its fade loses the control before it loses its words. */}
-        {onRemove === undefined ? null : (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            aria-label={`Remove “${card.value}”`}
-            className="mr-0.5 flex-none self-center text-muted-foreground"
-            onClick={(event) => {
-              event.stopPropagation();
-              onRemove();
-            }}
-          >
-            <X />
-          </Button>
+        {moves === undefined ? (
+          body
+        ) : (
+          <DropdownMenu open={moving} onOpenChange={setMoving}>
+            <DropdownMenuTrigger asChild>
+              {/* The chip holds the focus and the menu's keys, and lets the
+                  pointer past to the span that drags. */}
+              <span
+                tabIndex={0}
+                aria-label={`Move “${card.value}”`}
+                onKeyDown={(event) => {
+                  const asked =
+                    event.key === "ContextMenu" ||
+                    (event.shiftKey && event.key === "F10");
+                  if (!asked) return;
+                  event.preventDefault();
+                  setMoving(true);
+                }}
+                className="pointer-events-none inline-flex min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                {body}
+              </span>
+            </DropdownMenuTrigger>
+            <MoveTo card={card} moves={moves} />
+          </DropdownMenu>
         )}
-        <CardBody card={card} big={big} lines={lines} className={className} />
       </motion.span>
+      {copy === null
+        ? null
+        : createPortal(
+            <span
+              data-card-copy={card.card}
+              aria-hidden
+              style={copy}
+              className="pointer-events-none fixed z-50 flex"
+            >
+              <CardBody
+                card={card}
+                big={big}
+                lines={3}
+                className={cn("max-w-full shadow-lg", className)}
+              />
+            </span>,
+            document.body,
+          )}
     </span>
   );
 }
@@ -255,7 +471,7 @@ export function Answer({
 /** The whole answer, with the part it answers, for a card that had to be cut. */
 function titleOf(card: WallCard): string | undefined {
   if (card.value.trim() === "") return undefined;
-  return card.part === "" ? card.value : `${card.part} · ${card.value}`;
+  return card.part === "" ? card.value : `${card.part}, ${card.value}`;
 }
 
 /** A count that pulses as it ticks, and stands still the first time it is read. */
@@ -340,7 +556,11 @@ export function Pile({
   spread = false,
   onRename,
   onMergeIn,
+  onMergeInto,
+  onDescribe,
   onSummarize,
+  piles = [],
+  moves,
   className,
 }: {
   /** The pile's own identity, carried when its name is dragged onto another pile. */
@@ -374,10 +594,19 @@ export function Pile({
   onRename?: (name: string) => void;
   /** A pile dropped on this one folds into it, every card moving with it. */
   onMergeIn?: (pile: string) => void;
+  /** This pile folds into the one chosen, every card moving with it. */
+  onMergeInto?: (into: string) => void;
+  /** Writes the pile's sentence by hand, where the model writes its lid. */
+  onDescribe?: (description: string) => void;
   onSummarize?: () => void;
+  /** The wall's piles, which are the piles this one folds into. */
+  piles?: { pile: string; name: string }[];
+  /** Where a hand sends a card on the face without dragging it. */
+  moves?: CardMoves;
   className?: string;
 }) {
   const [naming, setNaming] = useState<string | null>(null);
+  const [describing, setDescribing] = useState<string | null>(null);
   // A pile crossing the wall is drawn over the piles that have settled, so a
   // move never reads as one card torn in half by another.
   const [flying, setFlying] = useState(false);
@@ -452,12 +681,19 @@ export function Pile({
   // card in the tray carries. Once picking is on, the whole face is the pick
   // button.
   const canDragCards = onDrop !== undefined && onTap === undefined;
+  // A card on the face is sent by hand from exactly where it is dragged from.
+  const cardMoves = canDragCards ? moves : undefined;
+  const foldInto = elsewhere(piles, id);
+  // What the pile's own menu holds, and so whether it stands at all.
+  const edited =
+    onDescribe !== undefined ||
+    (onMergeInto !== undefined && foldInto.length > 0);
   const takeCard = (event: React.DragEvent, card: string) => {
     event.stopPropagation();
     event.dataTransfer.setData("text/plain", card);
     event.dataTransfer.effectAllowed = "move";
   };
-  const picking = onTap !== undefined && naming === null;
+  const picking = onTap !== undefined && naming === null && describing === null;
   const spreadable = onSpread !== undefined && cards.length > 0;
   // What a tap on the face does: picks, once picking is on; on a projector,
   // where nothing else is tapped, it unfolds the pile.
@@ -497,6 +733,13 @@ export function Pile({
     if (trimmed !== "" && trimmed !== name) onRename?.(trimmed);
   }
 
+  function commitDescription() {
+    if (describing === null) return;
+    const trimmed = describing.trim();
+    setDescribing(null);
+    if (trimmed !== description) onDescribe?.(trimmed);
+  }
+
   return (
     <motion.div
       ref={box}
@@ -532,12 +775,15 @@ export function Pile({
       className={cn(
         "relative rounded-lg border border-border bg-card text-left",
         face.box,
+        spread && "h-auto self-start xl:h-auto 2xl:h-auto",
         // A projector is read from the back of the room, where the hairline
         // that holds a card together on a laptop has gone.
         big && "border-foreground/50",
-        depth === "deep" &&
+        !spread &&
+          depth === "deep" &&
           "shadow-[0_5px_0_-2px_var(--card),0_6px_0_-2px_var(--border),0_11px_0_-5px_var(--card),0_12px_0_-5px_var(--border)]",
-        depth === "thin" &&
+        !spread &&
+          depth === "thin" &&
           "shadow-[0_5px_0_-2px_var(--card),0_6px_0_-2px_var(--border)]",
         (picked || selected) &&
           "outline outline-2 outline-primary -outline-offset-2",
@@ -570,7 +816,21 @@ export function Pile({
           cell, so a name of any length and a lid of any length leave the
           piles beside this one exactly where they stand. */}
       <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
-        {description !== "" ? (
+        {describing !== null ? (
+          <input
+            // biome-ignore lint/a11y/noAutofocus: the sentence is being typed the moment it appears.
+            autoFocus
+            value={describing}
+            aria-label="Edit pile summary"
+            onChange={(event) => setDescribing(event.target.value)}
+            onBlur={commitDescription}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") commitDescription();
+              if (event.key === "Escape") setDescribing(null);
+            }}
+            className="relative z-10 h-7 min-w-0 flex-none rounded-md border border-primary bg-card px-2 font-display text-base outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          />
+        ) : description !== "" ? (
           <p
             className={cn(
               "line-clamp-1 flex-none font-display text-foreground leading-[1.3]",
@@ -652,6 +912,7 @@ export function Pile({
             // The mask paints the list over the face's button; while the face is one, it wins.
             faceTap !== undefined && "pointer-events-none",
             face.peek,
+            spread && "hidden",
           )}
         >
           <AnimatePresence initial={false}>
@@ -665,6 +926,7 @@ export function Pile({
                   <Card
                     card={card}
                     draggable={canDragCards}
+                    moves={cardMoves}
                     oneLine
                     className={cn(
                       "max-w-full self-start px-2 py-[3px] text-sm",
@@ -699,6 +961,9 @@ export function Pile({
                       "relative z-10 cursor-grab active:cursor-grabbing",
                   )}
                 >
+                  {cardMoves === undefined ? null : (
+                    <MoveMenu card={card} moves={cardMoves} />
+                  )}
                   <Answer value={card.value} className="line-clamp-1" />
                   {card.model ? <ModelTag big={big} /> : null}
                 </motion.span>
@@ -706,25 +971,35 @@ export function Pile({
             )}
           </AnimatePresence>
         </div>
-        {onSummarize === undefined && (big || !spreadable) ? null : (
-          <div
-            className={cn(
-              "relative z-10 mt-auto flex flex-none items-center gap-2 pt-1",
-              onSummarize === undefined ? "justify-end" : "justify-between",
-            )}
-          >
-            {onSummarize === undefined ? null : (
-              <Button
-                type="button"
-                variant="outline"
-                size={phone ? "sm" : "xs"}
-                className="max-sm:h-9 max-sm:px-3"
-                aria-label={`Summarize ${name}`}
-                onClick={onSummarize}
-              >
-                Summarize
-              </Button>
-            )}
+        {onSummarize === undefined && !edited && (big || !spreadable) ? null : (
+          <div className="relative z-10 mt-auto flex flex-none items-center justify-between gap-2 pt-1">
+            <span className="flex min-w-0 items-center gap-1">
+              {onSummarize === undefined ? null : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size={phone ? "sm" : "xs"}
+                  className="max-sm:h-9 max-sm:px-3"
+                  aria-label={`Summarize ${name}`}
+                  onClick={onSummarize}
+                >
+                  Summarize
+                </Button>
+              )}
+              {!edited ? null : (
+                <PileMenu
+                  name={name}
+                  piles={foldInto}
+                  onDescribe={
+                    onDescribe === undefined
+                      ? undefined
+                      : () => setDescribing(description)
+                  }
+                  onMergeInto={onMergeInto}
+                  onSettle={moves?.settle}
+                />
+              )}
+            </span>
             {big || !spreadable ? null : (
               <SpreadButton
                 name={name}
@@ -737,6 +1012,83 @@ export function Pile({
         )}
       </div>
     </motion.div>
+  );
+}
+
+/**
+ * The pile's own menu, beside the name a hand renames and the word that sums
+ * it up: the sentence written by hand, and the pile this one folds into.
+ */
+function PileMenu({
+  name,
+  piles,
+  onDescribe,
+  onMergeInto,
+  onSettle,
+}: {
+  name: string;
+  /** The piles this one folds into, which are the wall's others. */
+  piles: { pile: string; name: string }[];
+  onDescribe?: () => void;
+  onMergeInto?: (into: string) => void;
+  /** Where the focus lands once the menu has let go after a choice. */
+  onSettle?: () => void;
+}) {
+  // The field the menu opens, and the pile a merge takes away, both leave the
+  // trigger behind: the focus goes where the wall puts it.
+  const chose = useRef(false);
+  const take = (move: () => void) => {
+    chose.current = true;
+    move();
+  };
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label={`Edit ${name}`}
+          className="text-muted-foreground"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Ellipsis />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        aria-label={name}
+        className="w-56"
+        onCloseAutoFocus={(event) => {
+          if (!chose.current) return;
+          chose.current = false;
+          event.preventDefault();
+          onSettle?.();
+        }}
+      >
+        {onDescribe === undefined ? null : (
+          <DropdownMenuItem onSelect={() => take(onDescribe)}>
+            Edit summary
+          </DropdownMenuItem>
+        )}
+        {onMergeInto === undefined || piles.length === 0 ? null : (
+          <>
+            {onDescribe === undefined ? null : <DropdownMenuSeparator />}
+            <DropdownMenuLabel>Merge into</DropdownMenuLabel>
+            {piles.map((pile) => (
+              <DropdownMenuItem
+                key={pile.pile}
+                onSelect={() => take(() => onMergeInto(pile.pile))}
+              >
+                <span dir="auto" className="truncate">
+                  {pile.name}
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -765,13 +1117,16 @@ export function CarriesTo({
 }
 
 /**
- * The dashed place a card is dropped to open a new pile. While the name is
- * being typed the cell holds the card it was dropped with, so the pile being
- * named is the one on the screen; Escape gives the card back to the shelf.
+ * The dashed place a new pile opens: a card dropped on it opens the pile with
+ * that card, and a click opens one with none. While the name is being typed
+ * the cell holds the card it was dropped with, so the pile being named is the
+ * one on the screen; Escape gives the card back to the shelf.
  */
 export function NewPile({
   onDrop,
-  naming = null,
+  onOpen,
+  naming = false,
+  card = null,
   name = "",
   onName,
   onCommit,
@@ -781,8 +1136,12 @@ export function NewPile({
   className,
 }: {
   onDrop: (card: string) => void;
-  /** The card dropped here, while its pile is being named. */
-  naming?: WallCard | null;
+  /** Opens the name field with no card, so the pile opens empty. */
+  onOpen?: () => void;
+  /** The pile is being named, in the cell it will stand in. */
+  naming?: boolean;
+  /** The card the pile is opening with, while its name is being typed. */
+  card?: WallCard | null;
   name?: string;
   onName?: (name: string) => void;
   onCommit?: () => void;
@@ -791,8 +1150,20 @@ export function NewPile({
   phone?: boolean;
   className?: string;
 }) {
+  const cell = useRef<HTMLDivElement | null>(null);
+  // A name taken or given up at the keyboard leaves the field where it stood,
+  // so the cell that opened it takes the focus back.
+  const returning = useRef(false);
+
+  useEffect(() => {
+    if (naming || !returning.current) return;
+    returning.current = false;
+    cell.current?.querySelector("button")?.focus({ preventScroll: true });
+  }, [naming]);
+
   return (
     <div
+      ref={cell}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault();
@@ -801,7 +1172,7 @@ export function NewPile({
       }}
       className={cn(
         "flex flex-col items-center justify-center gap-3 rounded-lg border border-input border-dashed text-muted-foreground",
-        naming === null ? "px-3" : "px-3.5",
+        naming ? "px-3.5" : "px-3",
         big
           ? "h-[196px] rounded-xl text-xl xl:h-[216px] 2xl:h-[256px] 2xl:text-2xl"
           : phone
@@ -810,14 +1181,15 @@ export function NewPile({
         className,
       )}
     >
-      {naming === null ? (
-        "new pile"
-      ) : (
+      {naming ? (
         <>
-          <CardBody card={naming} lines={2} className="max-w-full" />
+          {card === null ? null : (
+            <CardBody card={card} lines={2} className="max-w-full" />
+          )}
           <form
             onSubmit={(event) => {
               event.preventDefault();
+              returning.current = true;
               onCommit?.();
             }}
             className="w-full"
@@ -829,7 +1201,9 @@ export function NewPile({
               onChange={(event) => onName?.(event.target.value)}
               onBlur={() => onCommit?.()}
               onKeyDown={(event) => {
-                if (event.key === "Escape") onCancel?.();
+                if (event.key !== "Escape") return;
+                returning.current = true;
+                onCancel?.();
               }}
               placeholder="Name the pile"
               aria-label="Name the pile"
@@ -837,6 +1211,16 @@ export function NewPile({
             />
           </form>
         </>
+      ) : onOpen === undefined ? (
+        "new pile"
+      ) : (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="flex w-full flex-1 items-center justify-center rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
+          new pile
+        </button>
       )}
     </div>
   );

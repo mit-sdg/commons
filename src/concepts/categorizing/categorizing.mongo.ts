@@ -35,6 +35,20 @@ export class MongoCategorizingConcept {
     this.counters = db.collection(`${prefix}.counters`);
   }
 
+  // This floor serves one application process per database. Serialize writes
+  // so an empty-only deletion and an assignment cannot interleave across the
+  // category and membership collections. Failed actions release the queue.
+  private writing: Promise<void> = Promise.resolve();
+
+  #write<Result>(action: () => Promise<Result>): Promise<Result> {
+    const result = this.writing.then(action);
+    this.writing = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }
+
   async #nextSeq(name: string): Promise<number> {
     const counter = await this.counters.findOneAndUpdate(
       { _id: name },
@@ -53,14 +67,28 @@ export class MongoCategorizingConcept {
     name: string;
     description: string;
   }) {
-    const clash = await this.categories.findOne({ scope, name });
-    if (clash !== null) {
-      throw new CategoryAlreadyExists(name);
-    }
-    return { category: await this.#add({ scope, name, description }) };
+    return this.#write(async () => {
+      const clash = await this.categories.findOne({ scope, name });
+      if (clash !== null) {
+        throw new CategoryAlreadyExists(name);
+      }
+      return { category: await this.#add({ scope, name, description }) };
+    });
   }
 
   async ensureCategory({
+    scope,
+    name,
+    description,
+  }: {
+    scope: string;
+    name: string;
+    description: string;
+  }) {
+    return this.#write(() => this.#ensureCategory({ scope, name, description }));
+  }
+
+  async #ensureCategory({
     scope,
     name,
     description,
@@ -90,55 +118,71 @@ export class MongoCategorizingConcept {
   }
 
   async renameCategory({ category, name }: { category: string; name: string }) {
-    const doc = await this.categories.findOne({ _id: category });
-    if (doc === null) {
-      throw new CategoryNotFound(category);
-    }
-    // A name is unique within its own scope; the same name in another scope
-    // names another category and is no clash at all.
-    const clash = await this.categories.findOne({ scope: doc.scope, name, _id: { $ne: category } });
-    if (clash !== null) {
-      throw new CategoryAlreadyExists(name);
-    }
-    await this.categories.updateOne({ _id: category }, { $set: { name } });
-    return { category };
+    return this.#write(async () => {
+      const doc = await this.categories.findOne({ _id: category });
+      if (doc === null) {
+        throw new CategoryNotFound(category);
+      }
+      // A name is unique within its own scope; the same name in another scope
+      // names another category and is no clash at all.
+      const clash = await this.categories.findOne({
+        scope: doc.scope,
+        name,
+        _id: { $ne: category },
+      });
+      if (clash !== null) {
+        throw new CategoryAlreadyExists(name);
+      }
+      await this.categories.updateOne({ _id: category }, { $set: { name } });
+      return { category };
+    });
   }
 
   async describeCategory({ category, description }: { category: string; description: string }) {
-    const doc = await this.categories.findOne({ _id: category });
-    if (doc === null) {
-      throw new CategoryNotFound(category);
-    }
-    await this.categories.updateOne({ _id: category }, { $set: { description } });
-    return { category };
+    return this.#write(async () => {
+      const doc = await this.categories.findOne({ _id: category });
+      if (doc === null) {
+        throw new CategoryNotFound(category);
+      }
+      await this.categories.updateOne({ _id: category }, { $set: { description } });
+      return { category };
+    });
   }
 
   async mergeCategory({ category, into }: { category: string; into: string }) {
-    const source = await this.categories.findOne({ _id: category });
-    const target = await this.categories.findOne({ _id: into });
-    if (source === null || target === null) {
-      throw new CategoryNotFound(source === null ? category : into);
-    }
-    if (source._id === target._id) {
-      throw new SameCategory("A category cannot be merged into itself.");
-    }
-    if (source.scope !== target.scope) {
-      throw new DifferentScopes("These categories are not in the same scope.");
-    }
-    // Every item keeps its assignment order, so the merged items take their
-    // place among the target's by when each was assigned.
-    await this.memberships.updateMany({ category }, { $set: { category: into } });
-    await this.categories.deleteOne({ _id: category });
-    return { into };
+    return this.#write(async () => {
+      const source = await this.categories.findOne({ _id: category });
+      const target = await this.categories.findOne({ _id: into });
+      if (source === null || target === null) {
+        throw new CategoryNotFound(source === null ? category : into);
+      }
+      if (source._id === target._id) {
+        throw new SameCategory("A category cannot be merged into itself.");
+      }
+      if (source.scope !== target.scope) {
+        throw new DifferentScopes("These categories are not in the same scope.");
+      }
+      // Every item keeps its assignment order, so the merged items take their
+      // place among the target's by when each was assigned.
+      await this.memberships.updateMany({ category }, { $set: { category: into } });
+      await this.categories.deleteOne({ _id: category });
+      return { into };
+    });
   }
 
   async file({ scope, name, item }: { scope: string; name: string; item: string }) {
-    const { category } = await this.ensureCategory({ scope, name, description: "" });
-    await this.assign({ item, category });
-    return { category };
+    return this.#write(async () => {
+      const { category } = await this.#ensureCategory({ scope, name, description: "" });
+      await this.#assign({ item, category });
+      return { category };
+    });
   }
 
   async assign({ item, category }: { item: string; category: string }) {
+    return this.#write(() => this.#assign({ item, category }));
+  }
+
+  async #assign({ item, category }: { item: string; category: string }) {
     const home = await this.categories.findOne({ _id: category });
     if (home === null) {
       throw new CategoryNotFound(category);
@@ -153,20 +197,57 @@ export class MongoCategorizingConcept {
   }
 
   async unassign({ item }: { item: string }) {
-    const removed = await this.memberships.deleteOne({ _id: item });
-    if (removed.deletedCount === 0) {
-      throw new ItemNotCategorized(item);
-    }
-    return { item };
+    return this.#write(async () => {
+      const removed = await this.memberships.deleteOne({ _id: item });
+      if (removed.deletedCount === 0) {
+        throw new ItemNotCategorized(item);
+      }
+      return { item };
+    });
+  }
+
+  /** Empty a scope as one action, including the already-empty case. */
+  async empty({ scope }: { scope: string }) {
+    return this.#write(async () => {
+      const categories = await this.categories.find({ scope }).toArray();
+      const removed = await this.memberships.deleteMany({
+        category: { $in: categories.map((category) => category._id) },
+      });
+      return { emptied: removed.deletedCount > 0 };
+    });
+  }
+
+  /** Recheck every proposed deletion; an intervening assignment keeps its pile. */
+  async deleteEmptyCategories({ categories }: { categories: string[] }) {
+    return this.#write(async () => {
+      let deleted = false;
+      for (const category of categories) {
+        if (await this.memberships.findOne({ category })) continue;
+        const removed = await this.categories.deleteOne({ _id: category });
+        deleted ||= removed.deletedCount > 0;
+      }
+      return { deleted };
+    });
   }
 
   async deleteCategory({ category }: { category: string }) {
-    const removed = await this.categories.deleteOne({ _id: category });
-    if (removed.deletedCount === 0) {
-      throw new CategoryNotFound(category);
-    }
-    await this.memberships.deleteMany({ category });
-    return { category };
+    return this.#write(async () => {
+      const removed = await this.categories.deleteOne({ _id: category });
+      if (removed.deletedCount === 0) {
+        throw new CategoryNotFound(category);
+      }
+      await this.memberships.deleteMany({ category });
+      return { category };
+    });
+  }
+
+  /** Delete only if still empty when this action owns the write queue. */
+  async deleteEmptyCategory({ category }: { category: string }) {
+    return this.#write(async () => {
+      if (await this.memberships.findOne({ category })) return { category, deleted: false };
+      const removed = await this.categories.deleteOne({ _id: category });
+      return { category, deleted: removed.deletedCount > 0 };
+    });
   }
 
   async _getCategory({ item }: { item: string }) {
@@ -195,6 +276,25 @@ export class MongoCategorizingConcept {
   async _categoriesIn({ scope }: { scope: string }) {
     const docs = await this.categories.find({ scope }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ category: doc._id, name: doc.name, description: doc.description }));
+  }
+
+  async _categoriesInScopes({ scopes }: { scopes: string[] }) {
+    const docs = await this.categories
+      .find({ scope: { $in: scopes } })
+      .sort({ seq: 1, _id: 1 })
+      .toArray();
+    return {
+      categories: scopes.flatMap((scope) =>
+        docs
+          .filter((doc) => doc.scope === scope)
+          .map((doc) => ({
+            scope,
+            category: doc._id,
+            name: doc.name,
+            description: doc.description,
+          })),
+      ),
+    };
   }
 
   async _categoriesWithItems({ scope }: { scope: string }) {

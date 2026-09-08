@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Fact } from "@/components/facts";
 
 /** A questionnaire is one of two things, and only a quiz is ever graded. */
 export const QUIZ_FORMS = ["quiz", "survey"] as const;
@@ -54,7 +54,12 @@ const FORM_LABELS: Record<string, string> = {
 export const RETIRE_NOTE =
   "It can no longer be edited or launched. Past runs and their answers are retained.";
 
-export function FormBadge({
+/**
+ * What a thing on the shelf is — relay, quiz, survey — as the kind of fact it
+ * is: a quiet tag beside the title, never a filled badge, so a filled element
+ * on the line is always a state.
+ */
+export function FormTag({
   form,
   className,
 }: {
@@ -62,13 +67,6 @@ export function FormBadge({
   className?: string;
 }) {
   return (
-    <Badge
-      variant={
-        form === "quiz" ? "default" : form === "relay" ? "outline" : "secondary"
-      }
-      className={className}
-    >
-      {FORM_LABELS[form] ?? "Survey"}
-    </Badge>
+    <Fact.Kind className={className}>{FORM_LABELS[form] ?? "Survey"}</Fact.Kind>
   );
 }

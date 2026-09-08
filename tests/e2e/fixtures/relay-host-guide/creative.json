@@ -1,0 +1,84 @@
+{
+  "kind": "relay",
+  "title": "Neighborhood night stories",
+  "description": "Participants invent evocative local motifs, combine each other's ideas into surprising premises, and develop selected scenes into rich story openings. The host selects compelling combinations to fuel collaborative neighborhood audio fiction.",
+  "hostGuide": {
+    "opening": "Introduce this as a relaxed creative sprint to build audio story hooks from everyday sensory details in the neighborhood.",
+    "closing": "Read a few story openings aloud or invite authors to share, celebrating how distinct neighborhood details came together."
+  },
+  "rounds": [
+    {
+      "number": 0,
+      "title": "Vivid motifs",
+      "hostGuide": {
+        "purpose": "Collect specific local sensory details and objects to serve as raw story material.",
+        "facilitation": "Encourage people to focus on texture, sound, or curious visual specifics rather than full plots.",
+        "selection": "Choose a diverse spread of 4 to 6 distinct, imaginative motifs with rich sensory description."
+      },
+      "kind": "write",
+      "prompt": "Describe an unusual object, recurring sound, or curious physical detail you might encounter in this neighborhood at night. Give enough sensory detail that someone else can immediately picture or hear it.",
+      "parts": [],
+      "cap": 0,
+      "choices": [],
+      "takes": {
+        "from": 0,
+        "use": ""
+      },
+      "piles": [
+        {
+          "name": "Sounds and voices",
+          "sentence": "Nighttime audio, overheard phrases, machinery, or ambient neighborhood noise."
+        },
+        {
+          "name": "Objects and relics",
+          "sentence": "Curious items left behind, unusual personal belongings, or physical artifacts."
+        },
+        {
+          "name": "Places and structures",
+          "sentence": "Specific corners, architectural oddities, windows, or illuminated pockets of the neighborhood."
+        }
+      ],
+      "notes": "Group similar sensory details together while keeping evocative, distinct objects and sounds separate so they can be mixed and matched."
+    },
+    {
+      "number": 0,
+      "title": "Scene premises",
+      "hostGuide": {
+        "purpose": "Combine pairs of peer motifs into unexpected dramatic collisions.",
+        "facilitation": "Remind writers that the friction between two unrelated details often makes the best starting spark.",
+        "selection": "Select 3 to 5 premises that suggest high narrative tension, curiosity, or vivid atmosphere."
+      },
+      "kind": "write",
+      "prompt": "Look at the selected motifs. Pick two distinct motifs from the list, name them, and pitch a one- or two-sentence premise for a scene where they collide.",
+      "parts": [],
+      "cap": 0,
+      "choices": [],
+      "takes": {
+        "from": 1,
+        "use": "context"
+      },
+      "piles": [],
+      "notes": "Group premises by tone or central conflict, keeping distinct character situations separated."
+    },
+    {
+      "number": 0,
+      "title": "Story openings",
+      "hostGuide": {
+        "purpose": "Draft a compelling audio scene opening based on a peer's premise and motifs.",
+        "facilitation": "Suggest writing in the present tense with an ear for sound cues and atmosphere.",
+        "selection": null
+      },
+      "kind": "write",
+      "prompt": "Choose one of the selected premises. Name the premise and its two motifs, then write the opening 3–4 sentences of the audio story, establishing the immediate atmosphere, character, and action.",
+      "parts": [],
+      "cap": 0,
+      "choices": [],
+      "takes": {
+        "from": 2,
+        "use": "context"
+      },
+      "piles": [],
+      "notes": "Group drafts based on the selected premise they develop so the group can compare different angles on the same hook."
+    }
+  ]
+}

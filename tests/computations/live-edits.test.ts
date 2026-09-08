@@ -1,17 +1,27 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
+  BACKGROUND_CLOSES,
+  BACKGROUND_OPENS,
+  backgroundBlock,
+} from "../../src/computations/live-background.ts";
+import {
+  editApplied,
   editCap,
   editChoices,
   editParts,
   editPosition,
   editRoundCap,
   editRoundChoices,
+  editPileName,
+  editPileSentence,
   editRoundJson,
+  editRoundLines,
   editRoundParts,
   editPrompt,
   editTitle,
   editUse,
   legMaterials,
+  linesStanding,
   relayDraftPassage,
   relayDraftReading,
   relayDraftReason,
@@ -77,9 +87,35 @@ const materials = [
 
 /** The passage a reply is read against: a relay standing under a name of its own. */
 const asked = (request: string, title = stands) =>
-  relayDraftPassage({ request, title, legs, materials });
+  relayDraftPassage({
+    request,
+    title,
+    legs,
+    materials,
+    piles: [],
+    notes: [],
+    classDocuments: [],
+    relayDocuments: [],
+  });
 
 const passage = asked("Add a warm-up round.");
+
+/** The piles that stand on the first round, as Categorizing answers the relay's legs. */
+const standingPiles = [
+  { scope: "leg-1", category: "pile-1", name: "Pace", description: "The room found it too fast." },
+  { scope: "leg-1", category: "pile-2", name: "Crashes", description: "It stopped working." },
+];
+
+/** The note the first round's sorter reads, as Guiding answers the same legs. */
+const standingNotes = [{ subject: "leg-1", text: "Group by what went wrong." }];
+
+/** The second round as it stands, which every reply below delivers unchanged. */
+const stranger = {
+  title: "The stranger",
+  prompt: "Which verb best fits the stranger?",
+  parts: ["answer"],
+  takes: { from: 1, use: "context" },
+};
 
 describe("the relay-drafting reply boundary", () => {
   test("reads a whole relay and rejects what a round may not be", () => {
@@ -114,27 +150,50 @@ describe("the relay-drafting reply boundary", () => {
   test("a round's kind is read off its boxes and its take when it claims none", () => {
     const usable = [
       relay([round({ kind: "list" })]),
-      relay([round({ parts: [], takes: { from: 1, use: "context" } })]),
-      relay([round({ kind: "vote", parts: [], choices: [], takes: { from: 1, use: "choices" } })]),
-      relay([round({ kind: "list", parts: [], takes: { from: 1, use: "parts" } })]),
+      relay([round(), round({ parts: [], takes: { from: 1, use: "context" } })]),
+      relay([
+        round(),
+        round({ kind: "vote", parts: [], choices: [], takes: { from: 1, use: "choices" } }),
+      ]),
+      relay([round(), round({ kind: "list", parts: [], takes: { from: 1, use: "parts" } })]),
     ];
     for (const reply of usable) expect(relayDraftReading({ reply, passage })).toBe("relay");
   });
 
-  test("a round takes nothing when its number or its use is empty", () => {
+  test("partial, self, and forward takes are rejected for repair rather than silently removed", () => {
+    for (const takes of [
+      { from: 0, use: "context" },
+      { from: 1, use: "" },
+      { from: 1, use: "context" },
+      { from: 2, use: "context" },
+    ]) {
+      const reply = relay([round({ takes })]);
+      expect(relayDraftReading({ reply, passage })).toBe("neither");
+      expect(relayDraftReason({ reply })).not.toBe("");
+      expect(
+        relayEditLines({ reply, title: stands, legs: [], materials: [], piles: [], notes: [] }),
+      ).toEqual([]);
+    }
+  });
+
+  test("a nonadjacent source uses delivered position and leaves the intervening round independent", () => {
+    const reply = relay([
+      round(),
+      round({ title: "Energy", parts: [] }),
+      round({ title: "Develop ideas", parts: [], takes: { from: 1, use: "parts" } }),
+    ]);
+    expect(relayDraftReading({ reply, passage })).toBe("relay");
     const lines = relayEditLines({
-      reply: relay([
-        round({ takes: { from: 0, use: "context" } }),
-        round({ title: "The stranger", parts: ["answer"], takes: { from: 1, use: "" } }),
-      ]),
+      reply,
       title: stands,
       legs: [],
       materials: [],
+      piles: [],
+      notes: [],
     });
-    for (const line of lines) {
-      expect(line.kind).toBe("add");
-      expect(JSON.parse(line.value)).toHaveProperty("takes", { from: 0, use: "" });
-    }
+    const added = lines.filter((line) => line.kind === "add").map((line) => JSON.parse(line.value));
+    expect(added[1].takes).toEqual({ from: 0, use: "" });
+    expect(added[2].takes).toEqual({ from: 1, use: "parts" });
   });
 
   test("the passages carry the relay as it stands and the brief the author wrote", () => {
@@ -197,9 +256,9 @@ describe("the lines that turn the standing relay into the drafted one", () => {
         takes: { from: 1, use: "context" },
       }),
     ]);
-    expect(relayEditLines({ reply, title: stands, legs, materials })).toEqual([
-      { kind: "keep", target: "", value: "" },
-    ]);
+    expect(relayEditLines({ reply, title: stands, legs, materials, piles: [], notes: [] })).toEqual(
+      [{ kind: "keep", target: "", value: "" }],
+    );
   });
 
   test("rounds delivered with their numbers keep their identity: a swap is one move", () => {
@@ -212,10 +271,12 @@ describe("the lines that turn the standing relay into the drafted one", () => {
       }),
       round({ number: 1 }),
     ]);
-    expect(relayEditLines({ reply, title: stands, legs, materials })).toEqual([
-      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, use: "" }) },
-      { kind: "move", target: "leg-2", value: "1" },
-    ]);
+    expect(relayEditLines({ reply, title: stands, legs, materials, piles: [], notes: [] })).toEqual(
+      [
+        { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, use: "" }) },
+        { kind: "move", target: "leg-2", value: "1" },
+      ],
+    );
   });
 
   test("a numbered reply removes the standing round it no longer names and adds where a new one lands", () => {
@@ -229,25 +290,29 @@ describe("the lines that turn the standing relay into the drafted one", () => {
         takes: { from: 1, use: "context" },
       }),
     ]);
-    expect(relayEditLines({ reply, title: stands, legs, materials })).toEqual([
-      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, use: "" }) },
-      { kind: "remove", target: "leg-1", value: "" },
-      {
-        kind: "add",
-        target: "",
-        value: JSON.stringify({
-          kind: "write",
-          title: "Warm-up",
-          prompt: "How is the pace?",
-          parts: [],
-          cap: 0,
-          choices: [],
-          takes: { from: 0, use: "" },
-          position: 1,
-        }),
-      },
-      { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 1, use: "context" }) },
-    ]);
+    expect(relayEditLines({ reply, title: stands, legs, materials, piles: [], notes: [] })).toEqual(
+      [
+        { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 0, use: "" }) },
+        { kind: "remove", target: "leg-1", value: "" },
+        {
+          kind: "add",
+          target: "",
+          value: JSON.stringify({
+            kind: "write",
+            title: "Warm-up",
+            prompt: "How is the pace?",
+            parts: [],
+            cap: 0,
+            choices: [],
+            piles: [],
+            notes: "",
+            takes: { from: 0, use: "" },
+            position: 1,
+          }),
+        },
+        { kind: "takes", target: "leg-2", value: JSON.stringify({ from: 1, use: "context" }) },
+      ],
+    );
   });
 
   test("a round within both reaches gives one line per changed field", () => {
@@ -261,12 +326,18 @@ describe("the lines that turn the standing relay into the drafted one", () => {
         takes: { from: 1, use: "context" },
       }),
     ]);
-    expect(relayEditLines({ reply, title: stands, legs, materials })).toEqual([
-      { kind: "title", target: "leg-1", value: "Three doing words" },
-      { kind: "parts", target: "leg-1", value: JSON.stringify({ parts: ["one", "two"], cap: 0 }) },
-      { kind: "parts", target: "leg-2", value: JSON.stringify({ parts: [], cap: 0 }) },
-      { kind: "choices", target: "leg-2", value: JSON.stringify(["ran", "waited"]) },
-    ]);
+    expect(relayEditLines({ reply, title: stands, legs, materials, piles: [], notes: [] })).toEqual(
+      [
+        { kind: "title", target: "leg-1", value: "Three doing words" },
+        {
+          kind: "parts",
+          target: "leg-1",
+          value: JSON.stringify({ parts: ["one", "two"], cap: 0 }),
+        },
+        { kind: "parts", target: "leg-2", value: JSON.stringify({ parts: [], cap: 0 }) },
+        { kind: "choices", target: "leg-2", value: JSON.stringify(["ran", "waited"]) },
+      ],
+    );
   });
 
   test("a drafted round past the relay's reach is added, carrying its takes and where it lands", () => {
@@ -285,29 +356,33 @@ describe("the lines that turn the standing relay into the drafted one", () => {
         takes: { from: 2, use: "context" },
       }),
     ]);
-    expect(relayEditLines({ reply, title: stands, legs, materials })).toEqual([
-      {
-        kind: "add",
-        target: "",
-        value: JSON.stringify({
-          kind: "write",
-          title: "Why",
-          prompt: "Why that one?",
-          parts: [],
-          cap: 0,
-          choices: [],
-          takes: { from: 2, use: "context" },
-          position: 3,
-        }),
-      },
-    ]);
+    expect(relayEditLines({ reply, title: stands, legs, materials, piles: [], notes: [] })).toEqual(
+      [
+        {
+          kind: "add",
+          target: "",
+          value: JSON.stringify({
+            kind: "write",
+            title: "Why",
+            prompt: "Why that one?",
+            parts: [],
+            cap: 0,
+            choices: [],
+            piles: [],
+            notes: "",
+            takes: { from: 2, use: "context" },
+            position: 3,
+          }),
+        },
+      ],
+    );
   });
 
   test("a standing round past the draft's reach is removed", () => {
     const reply = relay([round()]);
-    expect(relayEditLines({ reply, title: stands, legs, materials })).toEqual([
-      { kind: "remove", target: "leg-2", value: "" },
-    ]);
+    expect(relayEditLines({ reply, title: stands, legs, materials, piles: [], notes: [] })).toEqual(
+      [{ kind: "remove", target: "leg-2", value: "" }],
+    );
   });
 
   test("a name the reply gives comes first, and a name it repeats gives no line", () => {
@@ -323,18 +398,170 @@ describe("the lines that turn the standing relay into the drafted one", () => {
       ],
       "Reading the stranger",
     );
-    expect(relayEditLines({ reply, title: stands, legs, materials })).toEqual([
-      { kind: "title", target: "", value: "Reading the stranger" },
-    ]);
-    expect(relayEditLines({ reply, title: "Reading the stranger", legs, materials })).toEqual([
-      { kind: "keep", target: "", value: "" },
-    ]);
+    expect(relayEditLines({ reply, title: stands, legs, materials, piles: [], notes: [] })).toEqual(
+      [{ kind: "title", target: "", value: "Reading the stranger" }],
+    );
+    expect(
+      relayEditLines({
+        reply,
+        title: "Reading the stranger",
+        legs,
+        materials,
+        piles: [],
+        notes: [],
+      }),
+    ).toEqual([{ kind: "keep", target: "", value: "" }]);
   });
 
   test("an unusable reply proposes nothing", () => {
-    expect(relayEditLines({ reply: "not JSON at all", title: stands, legs, materials })).toEqual(
-      [],
-    );
+    expect(
+      relayEditLines({
+        reply: "not JSON at all",
+        title: stands,
+        legs,
+        materials,
+        piles: [],
+        notes: [],
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe("the standing piles and the note a round carries", () => {
+  test("the passage shows each round's piles with their sentences and its note", () => {
+    const shown = relayDraftPassage({
+      request: "Tighten the piles.",
+      title: stands,
+      legs,
+      materials,
+      piles: standingPiles,
+      notes: standingNotes,
+      classDocuments: [],
+      relayDocuments: [],
+    });
+    expect(shown).toContain('"piles":[{"name":"Pace","sentence":"The room found it too fast."}');
+    expect(shown).toContain('"notes":"Group by what went wrong."');
+    expect(shown).toContain('"piles":[],"notes":""');
+  });
+
+  test("a reply carrying piles and a note is read, and gives one line per pile it changes", () => {
+    const reply = relay([
+      round({
+        piles: [
+          { name: "Pace", sentence: "It dragged." },
+          { name: "Clarity", sentence: "Nobody could tell what to do." },
+        ],
+        notes: "Group by what went wrong, not by which app.",
+      }),
+      round(stranger),
+    ]);
+    expect(relayDraftReading({ reply, passage })).toBe("relay");
+    expect(
+      relayEditLines({
+        reply,
+        title: stands,
+        legs,
+        materials,
+        piles: standingPiles,
+        notes: standingNotes,
+      }),
+    ).toEqual([
+      {
+        kind: "pile",
+        target: "leg-1",
+        value: JSON.stringify({ name: "Pace", sentence: "It dragged." }),
+      },
+      {
+        kind: "pile",
+        target: "leg-1",
+        value: JSON.stringify({ name: "Clarity", sentence: "Nobody could tell what to do." }),
+      },
+      { kind: "unpile", target: "leg-1", value: "Crashes" },
+      { kind: "notes", target: "leg-1", value: "Group by what went wrong, not by which app." },
+    ]);
+  });
+
+  test("piles and a note the reply delivers as they stand give no line", () => {
+    const reply = relay([
+      round({
+        piles: [
+          { name: "Pace", sentence: "The room found it too fast." },
+          { name: "Crashes", sentence: "It stopped working." },
+        ],
+        notes: "Group by what went wrong.",
+      }),
+      round(stranger),
+    ]);
+    expect(
+      relayEditLines({
+        reply,
+        title: stands,
+        legs,
+        materials,
+        piles: standingPiles,
+        notes: standingNotes,
+      }),
+    ).toEqual([{ kind: "keep", target: "", value: "" }]);
+  });
+
+  test("a vote round's piles and note are dropped, since its ballots file themselves", () => {
+    const reply = relay([
+      round({
+        kind: "vote",
+        parts: [],
+        choices: ["Yes", "No"],
+        piles: [{ name: "Pace", sentence: "It dragged." }],
+        notes: "Group by what went wrong.",
+      }),
+    ]);
+    expect(relayDraftReading({ reply, passage })).toBe("relay");
+    const lines = relayEditLines({
+      reply,
+      title: stands,
+      legs: [],
+      materials: [],
+      piles: [],
+      notes: [],
+    });
+    expect(lines.map((line) => line.kind)).toEqual(["add"]);
+    expect(JSON.parse(lines[0]!.value)).toMatchObject({ kind: "vote", piles: [], notes: "" });
+  });
+
+  test("piles and notes a round may not carry are refused with the account of why", () => {
+    const unusable: [string, string][] = [
+      [
+        relay([
+          round({
+            piles: Array.from({ length: 9 }, (_, index) => ({
+              name: `Pile ${index}`,
+              sentence: "",
+            })),
+          }),
+        ]),
+        "A round carries at most 8 standing piles.",
+      ],
+      [
+        relay([
+          round({
+            piles: [
+              { name: "Pace", sentence: "It dragged." },
+              { name: "Pace", sentence: "It dragged again." },
+            ],
+          }),
+        ]),
+        "A round's piles have distinct names.",
+      ],
+      [
+        relay([round({ piles: [{ name: "  ", sentence: "It dragged." }] })]),
+        "A pile's name is 1 to 60 characters.",
+      ],
+      [relay([round({ piles: "Pace" })]), "A round's piles must be a list."],
+      [relay([round({ notes: 7 })]), "A round's notes must be text."],
+    ];
+    for (const [reply, reason] of unusable) {
+      expect(relayDraftReading({ reply, passage })).toBe("neither");
+      expect(relayDraftReason({ reply })).toBe(reason);
+    }
   });
 });
 
@@ -388,5 +615,240 @@ describe("reading one line back into what a concept takes", () => {
     expect(editUse({ value: nothing })).toBe("");
     expect(editUse({ value: JSON.stringify({ from: 1, use: "guessed" }) })).toBe("");
     expect(editUse({ value: "nonsense" })).toBe("");
+  });
+
+  test("an add line's piles and note become the lines the added round takes", () => {
+    const value = JSON.stringify({
+      title: "Why",
+      prompt: "Why that one?",
+      parts: [],
+      cap: 0,
+      choices: [],
+      piles: [
+        { name: " Pace ", sentence: " It dragged. " },
+        { name: "Clarity", sentence: "" },
+      ],
+      notes: "  Group by what went wrong.  ",
+    });
+    const parsed = editRoundJson({ value });
+    expect(parsed.piles).toEqual([
+      { name: "Pace", sentence: "It dragged." },
+      { name: "Clarity", sentence: "" },
+    ]);
+    expect(parsed.notes).toBe("Group by what went wrong.");
+
+    const lines = editRoundLines({ value, leg: "leg-9" });
+    expect(lines).toEqual([
+      {
+        kind: "pile",
+        target: "leg-9",
+        value: JSON.stringify({ name: "Pace", sentence: "It dragged." }),
+      },
+      {
+        kind: "pile",
+        target: "leg-9",
+        value: JSON.stringify({ name: "Clarity", sentence: "" }),
+      },
+      { kind: "notes", target: "leg-9", value: "Group by what went wrong." },
+    ]);
+    expect(linesStanding({ lines })).toBe("some");
+
+    // A round with no piles and nothing to say carries no line at all.
+    const bare = JSON.stringify({ title: "Why", prompt: "Why that one?", piles: [], notes: "  " });
+    expect(editRoundLines({ value: bare, leg: "leg-9" })).toEqual([]);
+    expect(linesStanding({ lines: editRoundLines({ value: bare, leg: "leg-9" }) })).toBe("none");
+    expect(linesStanding({ lines: undefined })).toBe("none");
+  });
+
+  test("a pile line reads back into the name and the sentence the pile takes", () => {
+    const value = JSON.stringify({ name: "Pace", sentence: "It dragged." });
+    expect(editPileName({ value })).toBe("Pace");
+    expect(editPileSentence({ value })).toBe("It dragged.");
+    expect(editPileName({ value: "nonsense" })).toBe("");
+    expect(editPileSentence({ value: JSON.stringify({ name: "Pace" }) })).toBe("");
+  });
+});
+
+describe("the background a relay's drafter reads", () => {
+  const classDocuments = [{ guidance: "g-1", title: "Syllabus", body: "Weeks one to three." }];
+  const relayDocuments = [{ guidance: "g-2", title: "Reading", body: "Tides move twice a day." }];
+
+  const shown = relayDraftPassage({
+    request: "Two rounds about the estuary.",
+    title: stands,
+    legs,
+    materials,
+    piles: [],
+    notes: [],
+    classDocuments,
+    relayDocuments,
+  });
+
+  test("the class's document stands before the relay's, each under its own name", () => {
+    expect(shown).toContain(
+      `\n\n${BACKGROUND_OPENS}\n=== Syllabus ===\nWeeks one to three.\n=== Reading ===\nTides move twice a day.\n${BACKGROUND_CLOSES}\n\n`,
+    );
+  });
+
+  test("the block stands once, after the contract and before the relay as it stands", () => {
+    expect(shown.split(BACKGROUND_OPENS)).toHaveLength(2);
+    expect(shown.indexOf(BACKGROUND_OPENS)).toBeGreaterThan(
+      shown.indexOf("Before returning the JSON"),
+    );
+    expect(shown.indexOf(BACKGROUND_CLOSES)).toBeLessThan(shown.indexOf("The relay as it stands:"));
+  });
+
+  test("with no document the passage is the one it was, and the repair carries what it carried", () => {
+    const bare = asked("Two rounds about the estuary.");
+    expect(bare).not.toContain(BACKGROUND_OPENS);
+    const block = backgroundBlock(classDocuments, relayDocuments);
+    expect(shown).toBe(
+      bare.replace("\n\nThe relay as it stands:", `${block}\n\nThe relay as it stands:`),
+    );
+    expect(
+      relayDraftRepairPassage({ passage: shown, offering: "nonsense", account: "unreadable" }),
+    ).toContain(BACKGROUND_OPENS);
+  });
+});
+
+describe("evidence of an applied suggestion", () => {
+  const evidence = (kind: string, target: string, value: string) =>
+    editApplied({ kind, target, value, title: stands, legs, materials, piles: [], notes: [] });
+
+  test("checks the addressed field instead of unrelated changes", () => {
+    expect(evidence("title", "", stands)).toBe(true);
+    expect(evidence("title", "leg-1", "Three verbs")).toBe(true);
+    expect(evidence("title", "leg-1", "Unapplied title")).toBe(false);
+    expect(evidence("prompt", "leg-1", "Name three verbs from the passage.")).toBe(true);
+    expect(
+      evidence("parts", "leg-1", JSON.stringify({ parts: ["one", "two", "three"], cap: 0 })),
+    ).toBe(true);
+    expect(evidence("choices", "leg-1", "[]")).toBe(true);
+    expect(evidence("move", "leg-2", "1")).toBe(false);
+    expect(evidence("takes", "leg-2", JSON.stringify({ from: 1, use: "context" }))).toBe(true);
+    expect(evidence("takes", "leg-2", JSON.stringify({ from: 0, use: "" }))).toBe(false);
+    expect(evidence("remove", "leg-1", "")).toBe(false);
+    expect(evidence("remove", "gone", "")).toBe(true);
+    expect(evidence("notes", "gone", "")).toBe(false);
+    expect(evidence("title", "gone", stands)).toBe(false);
+    expect(evidence("unknown", "leg-1", "")).toBe(false);
+  });
+
+  test("an added round is incomplete until its piles, notes, and draw stand", () => {
+    const value = JSON.stringify({
+      ...round(),
+      position: 1,
+      piles: [{ name: "Verbs", sentence: "Actions" }],
+      notes: "Read closely.",
+    });
+    expect(evidence("add", "", value)).toBe(false);
+    expect(
+      editApplied({
+        kind: "add",
+        target: "",
+        value,
+        title: stands,
+        legs,
+        materials,
+        piles: [{ scope: "leg-1", name: "Verbs", description: "Actions" }],
+        notes: [{ subject: "leg-1", text: "Read closely." }],
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("structured host guidance", () => {
+  const guidance = {
+    description: "Develop observations together.",
+    opening: "Invite a concrete incident.",
+    closing: "Choose a next step.",
+    purposes: [{ subject: "leg-1", text: "Gather incidents." }],
+    facilitations: [{ subject: "leg-1", text: "Allow a quiet minute." }],
+    selections: [{ subject: "leg-1", text: "Choose distinct incidents." }],
+  };
+  test("standing and repair passages retain host guidance outside participant questions", () => {
+    const passage = relayDraftPassage({
+      request: "Rename the relay",
+      title: stands,
+      legs,
+      materials,
+      piles: [],
+      notes: [],
+      classDocuments: [],
+      relayDocuments: [],
+      ...guidance,
+    });
+    expect(passage).toContain('"description":"Develop observations together."');
+    expect(passage).toContain('"purpose":"Gather incidents."');
+    expect(relayDraftRepairPassage({ passage, offering: "bad", account: "invalid" })).toContain(
+      '"opening":"Invite a concrete incident."',
+    );
+  });
+  test("historical omitted guides preserve authored guidance", () => {
+    const reply = relay(
+      [
+        round({ number: 1 }),
+        {
+          number: 2,
+          title: materials[1]?.title,
+          ...materials[1]?.questions[0],
+          takes: { from: 1, use: "context" },
+        },
+      ],
+      stands,
+    );
+    const lines = relayEditLines({
+      reply,
+      title: stands,
+      legs,
+      materials,
+      piles: [],
+      notes: [],
+      ...guidance,
+    });
+    expect(lines.filter((line) => line.kind === "guide")).toEqual([]);
+  });
+  test("rejects selection guidance without a later consumer and malformed fields", () => {
+    expect(
+      relayDraftReason({ reply: relay([round({ hostGuide: { selection: "Pick two." } })]) }),
+    ).toContain("selection guidance must be null");
+    expect(relayDraftReason({ reply: relay([round({ hostGuide: { purpose: 4 } })]) })).toContain(
+      "must be text",
+    );
+  });
+  test("round additions carry their own guides and null selection produces no line", () => {
+    const value = JSON.stringify({
+      ...round(),
+      hostGuide: { purpose: "Gather incidents.", facilitation: "Pause.", selection: null },
+    });
+    expect(editRoundLines({ value, leg: "added" }).filter((line) => line.kind === "guide")).toEqual(
+      [
+        {
+          kind: "guide",
+          target: "added",
+          value: JSON.stringify({ field: "purpose", body: "Gather incidents." }),
+        },
+        {
+          kind: "guide",
+          target: "added",
+          value: JSON.stringify({ field: "facilitation", body: "Pause." }),
+        },
+      ],
+    );
+  });
+  test("relay guide edits report retained text as their application evidence", () => {
+    const input = {
+      kind: "guide",
+      target: "",
+      value: JSON.stringify({ field: "opening", body: guidance.opening }),
+      title: stands,
+      legs,
+      materials,
+      piles: [],
+      notes: [],
+      ...guidance,
+    };
+    expect(editApplied(input)).toBe(true);
+    expect(editApplied({ ...input, opening: "Something else" })).toBe(false);
   });
 });

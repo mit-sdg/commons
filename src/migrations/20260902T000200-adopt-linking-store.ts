@@ -21,7 +21,6 @@ export const adoptLinkingStore: Migration = {
       (await briefs.find({}, { projection: { _id: 1 } }).toArray()).map((row) => row._id),
     );
     const moving = (await links.find({}).toArray()).filter((row) => briefIds.has(row._id));
-    if (moving.length === 0) return { summary: "no drafting-brief links in the shared store" };
     // A row already at the destination is the newer one; it stays as it is.
     const settled = new Set(
       (
@@ -34,13 +33,16 @@ export const adoptLinkingStore: Migration = {
     for (const row of moved) {
       await adoptLinks.insertOne(row);
     }
-    // New links sequence after every row that moved, so back-links keep their order.
-    const highest = Math.max(0, ...moved.map((row) => row.seq));
+    // Include rows copied before an interrupted attempt, and any newer row
+    // retained at the destination. A retry may have no new rows to insert.
+    const latest = await adoptLinks.find().sort({ seq: -1 }).limit(1).next();
+    const highest = latest?.seq ?? 0;
     if (highest > 0) {
       await database
         .collection<{ _id: string; value: number }>("adoptLinking.counters")
         .updateOne({ _id: "links" }, { $max: { value: highest } }, { upsert: true });
     }
+    if (moving.length === 0) return { summary: "no drafting-brief links in the shared store" };
     await links.deleteMany({ _id: { $in: moving.map((row) => row._id) } });
     const kept = moving.length - moved.length;
     return {

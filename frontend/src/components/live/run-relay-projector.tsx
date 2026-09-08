@@ -13,6 +13,13 @@ import {
 import { modelSilent } from "@/components/live/run-relay-board";
 import { Wall } from "@/components/live/wall";
 import { LoadingState } from "@/components/states";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -42,6 +49,7 @@ export function RelayProjector({
   ended?: boolean;
 }) {
   const { session } = useAuth();
+  const [joinExpanded, setJoinExpanded] = useState(false);
 
   const { data: relayData } = useQuery(
     session
@@ -105,20 +113,23 @@ export function RelayProjector({
     return () => clearInterval(timer);
   }, [run.open, refetch]);
 
+  // The close sends one last placing ask, so the wall is read until that
+  // ask has landed and nothing is out, closed or not.
+  const settling = wall?.sortPending === true || (wall?.asksOut ?? 0) > 0;
   useEffect(() => {
-    if (!run.open) return;
+    if (!run.open && !settling) return;
     const timer = setInterval(refetchWall, POLL_MS);
     return () => clearInterval(timer);
-  }, [run.open, refetchWall]);
+  }, [run.open, settling, refetchWall]);
 
   // A failure is only worth saying while the room would still be waiting on
   // it, so the clock it is read against moves with the poll.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (!run.open) return;
+    if (!run.open && !settling) return;
     const timer = setInterval(() => setNow(Date.now()), POLL_MS);
     return () => clearInterval(timer);
-  }, [run.open]);
+  }, [run.open, settling]);
 
   // One poll that does not come back is a hiccup; two in a row is the room
   // being shown a wall that has stopped moving. The clock above is what
@@ -140,7 +151,7 @@ export function RelayProjector({
         {!run.open ? (
           <Standing>{refusalSentence("CLOSED")}</Standing>
         ) : url === null || code === null ? null : (
-          <JoinCode url={url} code={code} wall />
+          <JoinCode audience="room" url={url} code={code} wall />
         )}
       </div>
     );
@@ -164,7 +175,13 @@ export function RelayProjector({
     !wall.open || wall.piles.length > 0 || choicesOf(wall).length > 0;
   const room = joining ? (
     filling ? (
-      <JoinCode url={url} code={code} size="corner" />
+      <JoinCode
+        audience="room"
+        url={url}
+        code={code}
+        size="corner"
+        onExpand={() => setJoinExpanded(true)}
+      />
     ) : null
   ) : (
     <Standing>{refusalSentence("CLOSED")}</Standing>
@@ -180,38 +197,74 @@ export function RelayProjector({
         : null;
 
   return (
-    <div
-      className={`${PROJECTOR} flex h-dvh flex-col gap-[clamp(0.75rem,2.5dvh,32px)] overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] pt-[clamp(1rem,4.5dvh,60px)] pb-[clamp(0.75rem,3.5dvh,48px)]`}
-    >
-      <ProjectorFit />
-      {/* The wall names itself the way the dashboard and the phone do; on the
+    <Dialog open={joinExpanded && joining} onOpenChange={setJoinExpanded}>
+      <div
+        className={`${PROJECTOR} flex h-dvh flex-col gap-[clamp(0.75rem,2.5dvh,32px)] overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] pt-[clamp(1rem,4.5dvh,60px)] pb-[clamp(0.75rem,3.5dvh,48px)]`}
+      >
+        <ProjectorFit />
+        {/* The wall names itself the way the dashboard and the phone do; on the
           projector the run's own eyebrow is where the room reads it. */}
-      <h1 className="sr-only">{run.title}</h1>
-      <Wall
-        wall={wall}
-        big
-        eyebrow={run.title}
-        carriesTo={carriesTo}
-        sourceWall={sourceWall}
-        scroll
-        shelfAt="bottom"
-        foot={room ?? undefined}
-        empty={
-          joining && !filling ? (
-            <JoinCode url={url} code={code} size="room" />
-          ) : undefined
-        }
-        className="min-h-0 flex-1 overflow-hidden"
-      />
-      {word === null ? null : (
-        <span
-          role="status"
-          className="flex-none text-muted-foreground text-xl leading-none"
+        <h1 className="sr-only">{run.title}</h1>
+        <Wall
+          wall={wall}
+          big
+          eyebrow={run.title}
+          carriesTo={carriesTo}
+          sourceWall={sourceWall}
+          scroll
+          shelfAt="bottom"
+          foot={room ?? undefined}
+          empty={
+            joining && !filling ? (
+              <JoinCode
+                audience="room"
+                url={url}
+                code={code}
+                size="room"
+                onExpand={() => setJoinExpanded(true)}
+              />
+            ) : undefined
+          }
+          className="min-h-0 flex-1 overflow-hidden"
+        />
+        {word === null ? null : (
+          <span
+            role="status"
+            className="flex-none text-muted-foreground text-xl leading-none"
+          >
+            {word}
+          </span>
+        )}
+      </div>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby="projector-join-description"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          document
+            .querySelector<HTMLButtonElement>("[data-join-expand]")
+            ?.focus();
+        }}
+        className="h-dvh max-w-none sm:max-w-none rounded-none border-0 flex flex-col items-center justify-center gap-5 overflow-y-auto p-8 data-[state=open]:animate-none data-[state=closed]:animate-none"
+      >
+        <DialogTitle className="text-center font-display text-3xl sm:text-5xl">
+          {run.title}
+        </DialogTitle>
+        <DialogDescription id="projector-join-description" className="text-xl">
+          Scan to join, or enter the code on your device.
+        </DialogDescription>
+        {url !== null && code !== null ? (
+          <JoinCode audience="room" url={url} code={code} wall />
+        ) : null}
+        <Button
+          size="lg"
+          variant="outline"
+          onClick={() => setJoinExpanded(false)}
         >
-          {word}
-        </span>
-      )}
-    </div>
+          Back to round
+        </Button>
+      </DialogContent>
+    </Dialog>
   );
 }
 

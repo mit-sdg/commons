@@ -37,6 +37,7 @@ external Origin
 ```state
 a set of Briefs with
   an author  Author
+  a context  String
   a request  String
   a createdAt Date
   an optional basis Candidate
@@ -66,22 +67,23 @@ a set of Items with
 Rule: each entry of propose's material is `{ prompt, choices, expected, explanation }`; choices may be empty, an empty expected or explanation carries none, and a candidate's items keep the entries' order under per-item identities the concept mints.
 Rule: a brief holds at most one candidate, and a correction is a new brief whose basis is the candidate it corrects — the line of revisions is read through those bases.
 Rule: a line opened on material in hand records what it was opened from as its origin, and a correction inherits the origin of the brief it continues, so every step of a line knows the same origin; a described line has none.
+Rule: describe and open retain their opaque context (empty by default); correct inherits the prior brief's context. Drafting does not interpret context.
 Rule: Drafting does not generate drafts, decide who is asked for one, or interpret what a draft means to the surrounding design; who reads a brief and answers it, and what adopting a candidate turns it into, are arranged outside the concept.
 ```
 
 ## Actions
 
 ```actions
-describe (author: Author, request: String, at: Date) : return (brief: Brief)
+describe (author: Author, request: String, at: Date, context?: String) : return (brief: Brief)
   where true
   then
-    add a new brief with author, request, and createdAt at
+    add a new brief with author, request, context (empty if omitted), and createdAt at
     return brief
 
-open (author: Author, request: String, form: String, material: Seq, origin: Origin, at: Date) : return (brief: Brief, candidate: Candidate)
+open (author: Author, request: String, form: String, material: Seq, origin: Origin, at: Date, context?: String) : return (brief: Brief, candidate: Candidate)
   where true
   then
-    add a new brief with author, request, createdAt at, and origin
+    add a new brief with author, request, context (empty if omitted), createdAt at, and origin
     add a new candidate with brief and form
     add a new item for each entry of material with its prompt, choices, expected,
       and explanation, appending it to candidate's items
@@ -177,6 +179,9 @@ adopt (candidate: Candidate) : return (candidate: Candidate)
 ## Queries
 
 ```queries
+_context (brief: String) : one (context: String)
+  answers the opaque context saved on the brief, inherited on correction, or an empty string if absent
+
 _brief (brief: String) : optional (author: String, request: String, createdAt: Date, basis: String|Null)
   answers the complete Brief
   answers no row when the Brief does not exist

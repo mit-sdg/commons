@@ -3,6 +3,7 @@
 import { Archive, CheckCircle, Pencil, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Fact, Facts } from "@/components/facts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { relativeTime } from "@/lib/format";
+import { fromZonedInput, toZonedInput } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface Note {
@@ -40,10 +41,6 @@ interface StudentNotesProps {
   onUpdate: () => void;
   editable?: boolean;
   className?: string;
-}
-
-function localDateTime(value: string | null) {
-  return value ? new Date(value).toISOString().slice(0, 16) : "";
 }
 
 function parseTags(value: string) {
@@ -96,7 +93,7 @@ function NoteCard({
     "STAFF_ONLY" | "LEARNER_VISIBLE"
   >(note.visibility === "LEARNER_VISIBLE" ? "LEARNER_VISIBLE" : "STAFF_ONLY");
   const [tags, setTags] = useState(note.tags.join(", "));
-  const [followUpAt, setFollowUpAt] = useState(localDateTime(note.followUpAt));
+  const [followUpAt, setFollowUpAt] = useState(toZonedInput(note.followUpAt));
 
   if (!session) return null;
 
@@ -122,7 +119,7 @@ function NoteCard({
           body: body.trim(),
           visibility,
           tags: parseTags(tags),
-          followUpAt: followUpAt ? new Date(followUpAt).toISOString() : null,
+          followUpAt: followUpAt ? fromZonedInput(followUpAt) : null,
         }),
       "Note updated",
     );
@@ -133,36 +130,18 @@ function NoteCard({
   return (
     <article className="space-y-3 rounded-lg border border-border bg-card p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant="outline"
-            className={
-              note.status === "OPEN"
-                ? "bg-orange-100 text-orange-800 text-xs dark:bg-orange-950 dark:text-orange-200"
-                : note.status === "RESOLVED"
-                  ? "bg-green-100 text-green-800 text-xs dark:bg-green-950 dark:text-green-200"
-                  : "bg-gray-100 text-gray-600 text-xs dark:bg-gray-900 dark:text-gray-300"
-            }
-          >
-            {note.status.toLowerCase()}
-          </Badge>
-          <Badge variant="secondary" className="text-xs">
+        <Facts className="text-xs">
+          <Fact.Kind>
             {note.visibility === "STAFF_ONLY"
               ? "Staff only"
               : "Learner visible"}
-          </Badge>
+          </Fact.Kind>
+          <Fact.Status status={note.status} />
           {note.acknowledgedAt ? (
-            <Badge variant="outline" className="text-xs text-green-700">
-              Acknowledged
-            </Badge>
+            <Fact.When verb="Acknowledged" at={note.acknowledgedAt} />
           ) : null}
-        </div>
-        <time
-          dateTime={note.createdAt}
-          className="text-xs text-muted-foreground"
-        >
-          {relativeTime(note.createdAt)}
-        </time>
+        </Facts>
+        <Fact.When at={note.createdAt} form="absolute" className="text-xs" />
       </div>
 
       {editing ? (
@@ -256,8 +235,8 @@ function NoteCard({
             </div>
           ) : null}
           {note.followUpAt ? (
-            <p className="text-xs text-muted-foreground">
-              Follow up {new Date(note.followUpAt).toLocaleString()}
+            <p className="text-xs">
+              <Fact.Due at={note.followUpAt} verb="Follow up" />
             </p>
           ) : null}
         </>
@@ -355,7 +334,7 @@ function WriteNoteForm({
       body: body.trim(),
       visibility,
       tags: parseTags(tags),
-      followUpAt: followUpAt ? new Date(followUpAt).toISOString() : null,
+      followUpAt: followUpAt ? fromZonedInput(followUpAt) : null,
     });
     setLoading(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));

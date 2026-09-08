@@ -1,3 +1,5 @@
+import { responseIdentity } from "./20260906T000200-response-identity.ts";
+import { referenceSelections } from "./20260906T000100-reference-selections.ts";
 import type { Migration } from "./migration.ts";
 import { roleContextForumToCommons } from "./20260824T000100-role-context-forum-to-commons.ts";
 import { normalizeAccountEmails } from "./20260824T000200-normalize-account-emails.ts";
@@ -19,4 +21,6 @@ export const commonsMigrations: readonly Migration[] = [
   dropProfileEmail,
   categorizingScope,
   adoptLinkingStore,
+  referenceSelections,
+  responseIdentity,
 ];

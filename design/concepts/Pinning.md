@@ -8,10 +8,11 @@ Let a scope keep selected items above its ordinary listing, ordered by priority.
 
 An administrator pins an announcement in a discussion. A second item with a
 higher priority appears first, and changing a priority changes the order.
-Pinning the same item twice in one scope is refused. Unpinning it succeeds once;
-unpinning it again or changing the priority of an unpinned item is refused. The
-same item may be pinned independently in another scope. Clearing an item
-removes all of its pins and succeeds when none exist.
+Pinning the same item twice in one scope is refused. Unpinning it removes the
+pin; unpinning it again changes nothing and is not refused, so two hands that
+unpin one item at once both succeed. Changing the priority of an unpinned item
+is refused. The same item may be pinned independently in another scope.
+Clearing an item removes all of its pins and succeeds when none exist.
 
 ## Types
 
@@ -33,7 +34,8 @@ a set of Pins with
   a pinnedAt  Date
 
 Rule: a scope has at most one pin for a given item.
-Rule: clearItem removes every pin of the item and is idempotent: clearing an item with no pins changes nothing and is not refused.
+Rule: concurrent pinning cannot create duplicate membership.
+Rule: unpin and clearItem are idempotent: unpinning an item with no pin in the scope, or clearing an item with no pins, changes nothing and is not refused.
 Rule: items and scopes are opaque identities; Pinning neither creates nor validates them.
 ```
 
@@ -49,14 +51,11 @@ pin(item: Item, scope: Scope, priority: Number, at: Date) : return (pin: Pin)
   then
     refuse ITEM_ALREADY_PINNED "This item is already pinned in this scope."
 
-unpin(item: Item, scope: Scope) : return (pin: Pin)
-  where some pin has this item and scope
+unpin(item: Item, scope: Scope) : return (item: Item)
+  where true
   then
-    delete that pin
-    return pin
-  where no pin has this item and scope
-  then
-    refuse ITEM_NOT_PINNED "There is no such pin to remove."
+    delete the pin with this item and scope when one stands
+    return item
 
 setPriority(item: Item, scope: Scope, priority: Number) : return (pin: Pin)
   where some pin has this item and scope
@@ -77,6 +76,10 @@ clearItem(item: Item) : return (item: Item)
 ## Queries
 
 ```queries
+_pinnedItems (scope: String) : one (items: Seq)
+  answers the pinned item identities as one ordered sequence, empty when none are pinned
+
+
 _getPinned (scope: String) : many (item: String, priority: Number)
   answers the scope's pinned items with highest priority first, with later pins breaking ties
   answers no rows when none match

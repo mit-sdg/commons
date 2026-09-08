@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Bring a mind to bear where only judgment will do: put a passage before a
-reasoner and keep what it replies — with every ask standing visibly from the
-moment it is made until it is answered or has honestly failed.
+Put a passage before a reasoner and keep what it replies, with every ask standing visibly from the moment it is made until it is answered or has failed.
+
+Prevents: a reply taken without a record of what was asked; an ask that waits forever on an answer that is not coming; an answered ask answered again.
 
 ## Principle
 
@@ -15,6 +15,8 @@ same passage tomorrow, the reasoner may yield something different, and both
 completions stand. When the reasoner cannot be reached at all, the ask is
 marked failed with an account of why, so nothing waits forever on an answer
 that is not coming — and answering an ask that was already answered is refused.
+
+When Noor reviews several named subjects together, she can read the newest reply for each with its original passage; subjects still awaiting their first answer contribute no reply.
 
 ## Types
 
@@ -34,6 +36,7 @@ a set of Askings with
   an about   Subject
   a passage  String
   an askedAt Date
+  an optional previous Asking
 
 a Pending set of Askings
 
@@ -50,6 +53,7 @@ a set of Failures with
 Rule: an asking leaves pending exactly once, into a reply or a failure, and neither is ever forgotten.
 Rule: every reply obtained is recorded, including one its reader will find unreadable — the record of what a mind was asked and what it gave back is the concept's whole point.
 Rule: the reply is world-supplied — a worker on the floor reads the pending askings, puts each passage before the reasoner it names, and answers or fails the ask with what happened, the same shape as a mail outbox and its transport.
+Rule: a follow-up inherits its predecessor's reasoner and subject, keeps its own passage and lifetime, and never reopens its predecessor.
 Rule: Reasoning does not own the mind it reaches, does not form passages, and does not interpret a reply; what the replied text means to the surrounding design is arranged outside the concept.
 ```
 
@@ -62,6 +66,17 @@ ask (reasoner: Reasoner, about: Subject, passage: String, at: Date) : return (as
     add a new asking with reasoner, about, passage, and askedAt at
     add asking to pending
     return asking
+
+followUp(previous: Asking, passage: String, at: Date) : return (asking: Asking)
+  where previous exists
+  then
+    add an asking with previous's reasoner and about, the supplied passage, and askedAt at
+    record previous as its predecessor and put the new asking in pending
+    return asking
+  where previous does not exist
+  then
+    refuse ASKING_NOT_FOUND "There is no such asking to follow up."
+
 
 answer (asking: Asking, reply: String, at: Date) : return (asking: Asking, reply: String)
   where asking in pending
@@ -93,6 +108,10 @@ fail (asking: Asking, account: String, at: Date) : return (asking: Asking)
 ## Queries
 
 ```queries
+_followups (previous: String) : many (asking: String)
+  answers direct follow-up asks in creation order, even when the predecessor is settled
+
+
 _pending () : many (asking: String, reasoner: String, about: String, passage: String, askedAt: Date)
   answers every pending asking, oldest first
 
@@ -111,6 +130,16 @@ _failureOf (asking: String) : optional (account: String, failedAt: Date)
 _repliesAbout (about: String) : many (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)
   answers every answered asking about the subject, newest first
   answers no rows when none match
+
+_lastReplyAbout (about: String) : optional (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)
+  answers the newest reply among the askings about the subject, with the passage it answered
+  answers no row when none of them was answered
+
+_lastRepliesAbout (subjects: Seq) : one (replies: Seq)
+  answers the newest reply for each requested subject that has an answer, in
+  first-requested subject order, as records containing about, asking, reasoner,
+  passage, reply, and answeredAt; repeated subjects appear once and subjects
+  with no answer contribute no record
 
 _lastFailureAbout (about: String) : optional (asking: String, account: String, failedAt: Date)
   answers the newest failure among the askings about the subject

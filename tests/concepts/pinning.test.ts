@@ -15,6 +15,37 @@ const at1 = new Date("2026-07-13T00:00:00Z");
 const at2 = new Date("2026-07-13T00:01:00Z");
 const at3 = new Date("2026-07-13T00:02:00Z");
 
+test("concurrent pinning creates one membership and unpin removes it completely", async () => {
+  const pinning = new MongoPinningConcept(await testDb());
+  const results = await Promise.allSettled(
+    Array.from({ length: 12 }, () =>
+      pinning.pin({ item: "pile", scope: "round", priority: 0, at: at1 }),
+    ),
+  );
+  expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+  for (const result of results) {
+    if (result.status === "rejected")
+      expect(result.reason).toBeInstanceOf(refusalErrors.ItemAlreadyPinned);
+  }
+  expect(await pinning._getPinned({ scope: "round" })).toHaveLength(1);
+  await pinning.unpin({ item: "pile", scope: "round" });
+  expect(await pinning._isPinned({ item: "pile", scope: "round" })).toEqual({ pinned: false });
+});
+
+test("unpin also removes duplicates stored by older racing writers", async () => {
+  const db = await testDb();
+  await db
+    .collection("pinning.pins")
+    .insertMany(
+      [1, 2].map((seq) => ({ item: "pile", scope: "round", priority: 0, pinnedAt: at1, seq })),
+    );
+  const pinning = new MongoPinningConcept(db);
+  await pinning.pin({ item: "pile", scope: "other", priority: 0, at: at1 });
+  await pinning.unpin({ item: "pile", scope: "round" });
+  expect(await pinning._getPinned({ scope: "round" })).toEqual([]);
+  expect(await pinning._isPinned({ item: "pile", scope: "other" })).toEqual({ pinned: true });
+});
+
 for (const [floor, make] of floors) {
   describe(`Pinning ${floor}`, () => {
     test("pin records the pin; a scope's listing reads priority-descending", async () => {
@@ -50,15 +81,14 @@ for (const [floor, make] of floors) {
         { item: "p1", priority: 10 },
         { item: "r1", priority: 5 },
       ]);
-      expect(await pinning.unpin({ item: "r1", scope: "c1" })).toHaveProperty("pin");
+      expect(await pinning.unpin({ item: "r1", scope: "c1" })).toEqual({ item: "r1" });
       expect(await pinning._getPinned({ scope: "c1" })).toEqual([{ item: "p1", priority: 10 }]);
     });
 
-    test("unpin and setPriority refuse when there is no such pin", async () => {
+    test("unpin changes nothing when there is no such pin; setPriority refuses", async () => {
       const pinning = await make();
-      expect(await refusalOf(() => pinning.unpin({ item: "p1", scope: "c1" }))).toBeInstanceOf(
-        refusalErrors.ItemNotPinned,
-      );
+      expect(await pinning.unpin({ item: "p1", scope: "c1" })).toEqual({ item: "p1" });
+      expect(await pinning._getPinned({ scope: "c1" })).toEqual([]);
       expect(
         await refusalOf(() => pinning.setPriority({ item: "p1", scope: "c1", priority: 3 })),
       ).toBeInstanceOf(refusalErrors.ItemNotPinned);

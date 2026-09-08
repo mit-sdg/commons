@@ -19,6 +19,7 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Fact, Facts } from "@/components/facts";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,7 @@ import type { QueryState } from "@/hooks/use-query";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { COMMONS_CONTEXT, useAuth } from "@/lib/auth";
-import { fullTime, relativeTime } from "@/lib/format";
+import { count } from "@/lib/format";
 import type {
   Invitation,
   MailMessage,
@@ -72,24 +73,6 @@ const CAPABILITY_INFO: Record<string, string> = {
   "student-records":
     "Manage late days and staff notes about individual students.",
 };
-
-function UserRoleBadge({ role }: { role?: { name: string | null } | null }) {
-  if (!role?.name) {
-    return (
-      <Badge
-        variant="outline"
-        className="text-xs text-muted-foreground font-normal"
-      >
-        No role
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="secondary" className="text-xs font-medium capitalize">
-      {role.name}
-    </Badge>
-  );
-}
 
 function InviteMembersSection({ onInvited }: { onInvited: () => void }) {
   const [emails, setEmails] = useState("");
@@ -297,14 +280,7 @@ function RegisteredUsersView({
                       <span className="text-xs text-muted-foreground font-mono">
                         @{u.username}
                       </span>
-                      {u.archived ? (
-                        <Badge
-                          variant="outline"
-                          className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium"
-                        >
-                          Archived
-                        </Badge>
-                      ) : null}
+                      {u.archived ? <Fact.Status status="ARCHIVED" /> : null}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
                       {u.email}
@@ -313,7 +289,7 @@ function RegisteredUsersView({
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end">
-                  <UserRoleBadge role={u.role} />
+                  <Fact.Kind>{u.role?.name ?? "No role"}</Fact.Kind>
                   <Button
                     variant="outline"
                     size="sm"
@@ -456,27 +432,16 @@ function PendingInvitationsView({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="font-medium text-foreground">{address}</p>
-                <Badge
-                  variant="outline"
-                  className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium"
-                >
-                  Pending
-                </Badge>
+                <Fact.Status status="PENDING" />
               </div>
-              <p
-                className="text-xs text-muted-foreground mt-0.5"
-                title={
-                  invitation.createdAt
-                    ? fullTime(invitation.createdAt)
-                    : undefined
-                }
-              >
-                Invited {invitation.inviteCount} time
-                {invitation.inviteCount === 1 ? "" : "s"}
-                {invitation.createdAt
-                  ? ` · Created ${relativeTime(invitation.createdAt)}`
-                  : ""}
-              </p>
+              <Facts className="mt-0.5 text-muted-foreground text-xs">
+                {invitation.inviteCount > 1 ? (
+                  <Fact.Count>
+                    resent {count(invitation.inviteCount - 1, "time")}
+                  </Fact.Count>
+                ) : null}
+                <Fact.When verb="Sent" at={invitation.createdAt} />
+              </Facts>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -853,10 +818,18 @@ function RoleAdmin({
                           @{account.username}
                         </span>
                       </span>
-                      <span className="text-xs text-muted-foreground break-all">
-                        {account.email} · {account.roleName ?? "no role"}
-                        {account.archived ? " · archived" : ""}
-                      </span>
+                      <Facts
+                        as="span"
+                        className="break-all text-muted-foreground text-xs"
+                      >
+                        <span>{account.email}</span>
+                        {account.roleName ? (
+                          <Fact.Kind>{account.roleName}</Fact.Kind>
+                        ) : null}
+                        {account.archived ? (
+                          <Fact.Status status="ARCHIVED" />
+                        ) : null}
+                      </Facts>
                     </button>
                   ))}
                 </div>
@@ -1204,30 +1177,16 @@ function MailAdmin({
                   </span>
                 ) : null}
               </div>
-              <p className="text-xs text-muted-foreground">
-                To {m.recipient} · Queued{" "}
-                <span title={fullTime(m.createdAt)}>
-                  {relativeTime(m.createdAt)}
-                </span>
+              <Facts className="text-muted-foreground text-xs">
+                <span>To {m.recipient}</span>
+                <Fact.When verb="Queued" at={m.createdAt} />
                 {m.sentAt !== null ? (
-                  <>
-                    {" "}
-                    · Sent{" "}
-                    <span title={fullTime(m.sentAt)}>
-                      {relativeTime(m.sentAt)}
-                    </span>
-                  </>
+                  <Fact.When verb="Sent" at={m.sentAt} />
                 ) : null}
                 {m.sentAt === null && m.lastAttemptAt !== null ? (
-                  <>
-                    {" "}
-                    · Last tried{" "}
-                    <span title={fullTime(m.lastAttemptAt)}>
-                      {relativeTime(m.lastAttemptAt)}
-                    </span>
-                  </>
+                  <Fact.When verb="Last tried" at={m.lastAttemptAt} />
                 ) : null}
-              </p>
+              </Facts>
               {m.lastError !== null && m.sentAt === null ? (
                 <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 font-mono text-xs text-destructive break-words">
                   {m.lastError}

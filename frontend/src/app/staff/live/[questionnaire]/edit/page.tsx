@@ -4,11 +4,12 @@ import { ArrowLeft, ClipboardList, Lock, Plus, Sparkles } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Fact } from "@/components/facts";
 import { Link } from "@/components/link";
 import {
   DISCLOSURE_OPTIONS,
   type Disclosure,
-  FormBadge,
+  FormTag,
   isDisclosure,
   QUIZ_NOT_READY_MESSAGE,
   RUN_OPEN_MESSAGE,
@@ -18,11 +19,11 @@ import {
   type QuestionDraft,
   QuizQuestionEditor,
 } from "@/components/live/quiz-question-editor";
+import { ReferenceDocuments } from "@/components/live/reference-documents";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +43,7 @@ import {
   unwrap,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { ranSentence } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type Sheet = NonNullable<Output<"/live/quizzes/get">["questionnaire"]>;
@@ -132,6 +134,7 @@ function QuestionnaireDesk({
 
   const isQuiz = sheet.form === "quiz";
   const openRun = sheet.runs.find((run) => run.open) ?? null;
+  const ran = ranSentence(sheet.runs);
   const locked = openRun !== null || sheet.retired;
   const questions = sheet.questions;
   const runOpen = openRun !== null;
@@ -298,9 +301,19 @@ function QuestionnaireDesk({
         title={
           <span className="flex flex-wrap items-center gap-3">
             {sheet.title}
-            <FormBadge form={sheet.form} />
-            {sheet.retired ? <Badge variant="outline">Retired</Badge> : null}
+            <FormTag form={sheet.form} />
+            {sheet.retired ? <Fact.Status status="RETIRED" /> : null}
           </span>
+        }
+        description={
+          ran === "" ? undefined : (
+            <Link
+              href={`/staff/live/${sheet.questionnaire}#runs`}
+              className="text-sm hover:text-foreground"
+            >
+              {ran}
+            </Link>
+          )
         }
         actions={
           openRun !== null ? (
@@ -420,6 +433,11 @@ function QuestionnaireDesk({
               </Button>
             </div>
           </div>
+
+          <ReferenceDocuments
+            subject={sheet.questionnaire}
+            retired={sheet.retired}
+          />
 
           {questions.length === 0 && !adding ? (
             <EmptyState icon={ClipboardList} title="No questions yet" />

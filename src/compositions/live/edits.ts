@@ -1,6 +1,7 @@
 import {
   compute,
   each,
+  earlier,
   former,
   is,
   no,
@@ -14,14 +15,17 @@ import { USE_WORDS } from "../../computations/live-carries.ts";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
 import {
+  relayIsNotRetired,
   mayHostLive,
   mayNotHostLive,
   questionnaireHasAnOpenRun,
   questionnaireHasNoOpenRun,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
+import { DRAFTING_USE } from "./drafting.ts";
+import { SORTING_USE } from "./rounds.ts";
 
-const { Questioning, Relaying, Insisting, Reasoning, Suggesting } = concepts;
+const { Categorizing, Guiding, Questioning, Relaying, Insisting, Reasoning, Suggesting } = concepts;
 
 /** The one reasoner name this composition asks for; the floor decides what answers it. */
 const REASONER = "gemini-flash";
@@ -47,6 +51,16 @@ export const Draft = endpoint(
     legs,
     questionnaires,
     materials,
+    rounds,
+    piles,
+    notes,
+    description,
+    opening,
+    closing,
+    purposes,
+    facilitations,
+    selections,
+    relayDocuments,
     passage,
     asking,
   }) =>
@@ -61,7 +75,46 @@ export const Draft = endpoint(
         Relaying._plan({ relay }).is({ legs }),
         compute(computations.legMaterials, { legs }, questionnaires),
         Questioning._materials({ questionnaires }).is({ materials }),
-        compute(computations.relayDraftPassage, { request, title, legs, materials }, passage),
+        compute(computations.legIdentities, { legs }, rounds),
+        Categorizing._categoriesInScopes({ scopes: rounds }).is({ categories: piles }),
+        Guiding._guidanceTexts({ subjects: rounds, use: SORTING_USE }).is({ texts: notes }),
+        Guiding._guidanceText({ subject: relay, use: "relay-description" }).is({
+          text: description,
+        }),
+        Guiding._guidanceText({ subject: relay, use: "hosting-opening" }).is({ text: opening }),
+        Guiding._guidanceText({ subject: relay, use: "hosting-closing" }).is({ text: closing }),
+        Guiding._guidanceTexts({ subjects: rounds, use: "hosting-purpose" }).is({
+          texts: purposes,
+        }),
+        Guiding._guidanceTexts({ subjects: rounds, use: "hosting-facilitation" }).is({
+          texts: facilitations,
+        }),
+        Guiding._guidanceTexts({ subjects: rounds, use: "hosting-selection" }).is({
+          texts: selections,
+        }),
+        Guiding._selectedDocuments({ subject: relay, use: DRAFTING_USE }).is({
+          documents: relayDocuments,
+        }),
+        compute(
+          computations.relayDraftPassage,
+          {
+            request,
+            title,
+            legs,
+            materials,
+            piles,
+            notes,
+            description,
+            opening,
+            closing,
+            purposes,
+            facilitations,
+            selections,
+            classDocuments: "",
+            relayDocuments,
+          },
+          passage,
+        ),
       )
         .then(
           Reasoning.ask({ reasoner: REASONER, about: relay, passage, at }).responds({
@@ -112,6 +165,15 @@ export const ReplyOffersRelayEdits = reaction(
     legs,
     questionnaires,
     materials,
+    rounds,
+    piles,
+    notes,
+    description,
+    opening,
+    closing,
+    purposes,
+    facilitations,
+    selections,
     lines,
     at,
     offering,
@@ -131,7 +193,41 @@ export const ReplyOffersRelayEdits = reaction(
         Relaying._plan({ relay }).is({ legs }),
         compute(computations.legMaterials, { legs }, questionnaires),
         Questioning._materials({ questionnaires }).is({ materials }),
-        compute(computations.relayEditLines, { reply, title, legs, materials }, lines),
+        compute(computations.legIdentities, { legs }, rounds),
+        Categorizing._categoriesInScopes({ scopes: rounds }).is({ categories: piles }),
+        Guiding._guidanceTexts({ subjects: rounds, use: SORTING_USE }).is({ texts: notes }),
+        Guiding._guidanceText({ subject: relay, use: "relay-description" }).is({
+          text: description,
+        }),
+        Guiding._guidanceText({ subject: relay, use: "hosting-opening" }).is({ text: opening }),
+        Guiding._guidanceText({ subject: relay, use: "hosting-closing" }).is({ text: closing }),
+        Guiding._guidanceTexts({ subjects: rounds, use: "hosting-purpose" }).is({
+          texts: purposes,
+        }),
+        Guiding._guidanceTexts({ subjects: rounds, use: "hosting-facilitation" }).is({
+          texts: facilitations,
+        }),
+        Guiding._guidanceTexts({ subjects: rounds, use: "hosting-selection" }).is({
+          texts: selections,
+        }),
+        compute(
+          computations.relayEditLines,
+          {
+            reply,
+            title,
+            legs,
+            materials,
+            piles,
+            notes,
+            description,
+            opening,
+            closing,
+            purposes,
+            facilitations,
+            selections,
+          },
+          lines,
+        ),
       )
       .then(Suggesting.offer({ subject: relay, lines, at }).responds({ offering }))
       .then(
@@ -247,43 +343,159 @@ export const Offerings = endpoint(
  */
 export const Take = endpoint(
   "/live/edits/take",
-  ({ session, suggestion, user, at, taken, target, questionnaire }) =>
+  ({
+    session,
+    suggestion,
+    user,
+    at,
+    taken,
+    target,
+    questionnaire,
+    relay,
+    kind,
+    value,
+    title,
+    legs,
+    questionnaires,
+    materials,
+    rounds,
+    piles,
+    notes,
+    description,
+    opening,
+    closing,
+    purposes,
+    facilitations,
+    selections,
+    applied,
+  }) =>
+    receive({ session, suggestion })
+      .then(
+        where(
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
+          Suggesting._suggestion({ suggestion }).is({ target, kind }),
+          is.among(kind, [
+            "title",
+            "prompt",
+            "parts",
+            "choices",
+            "takes",
+            "pile",
+            "unpile",
+            "notes",
+            "move",
+            "remove",
+          ]),
+          Relaying._leg({ leg: target }).is({ material: questionnaire }),
+          questionnaireHasNoOpenRun({ questionnaire }),
+        )
+          .then(Suggesting.take({ suggestion }).responds({ suggestion: taken }))
+          .named("round"),
+        where(
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
+          Suggesting._suggestion({ suggestion }).is({ target, kind: "guide" }),
+          Relaying._leg({ leg: target }),
+        )
+          .then(Suggesting.take({ suggestion }).responds({ suggestion: taken }))
+          .named("guide"),
+        where(
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
+          Suggesting._suggestion({ suggestion }).is({ target }),
+          no(Relaying._leg({ leg: target })),
+        )
+          .then(Suggesting.take({ suggestion }).responds({ suggestion: taken }))
+          .named("relay"),
+      )
+      .afterFlowSettles()
+      .where(
+        Suggesting._suggestion({ suggestion: taken }).is({ subject: relay, kind, target, value }),
+        whether(Relaying._relay({ relay }).is({ title })),
+        whether(Relaying._plan({ relay }).is({ legs })),
+        compute(computations.legMaterials, { legs }, questionnaires),
+        Questioning._materials({ questionnaires }).is({ materials }),
+        compute(computations.legIdentities, { legs }, rounds),
+        Categorizing._categoriesInScopes({ scopes: rounds }).is({ categories: piles }),
+        Guiding._guidanceTexts({ subjects: rounds, use: SORTING_USE }).is({ texts: notes }),
+        Guiding._guidanceText({ subject: relay, use: "relay-description" }).is({
+          text: description,
+        }),
+        Guiding._guidanceText({ subject: relay, use: "hosting-opening" }).is({ text: opening }),
+        Guiding._guidanceText({ subject: relay, use: "hosting-closing" }).is({ text: closing }),
+        Guiding._guidanceTexts({ subjects: rounds, use: "hosting-purpose" }).is({
+          texts: purposes,
+        }),
+        Guiding._guidanceTexts({ subjects: rounds, use: "hosting-facilitation" }).is({
+          texts: facilitations,
+        }),
+        Guiding._guidanceTexts({ subjects: rounds, use: "hosting-selection" }).is({
+          texts: selections,
+        }),
+        compute(
+          computations.editApplied,
+          {
+            kind,
+            target,
+            value,
+            title,
+            legs,
+            materials,
+            piles,
+            notes,
+            description,
+            opening,
+            closing,
+            purposes,
+            facilitations,
+            selections,
+          },
+          applied,
+        ),
+      )
+      .then(respond({ suggestion: taken, applied })),
+  { input: { required: ["session", "suggestion"] } },
+);
+export const TakeRefused = endpoint(
+  "/live/edits/take",
+  ({ session, suggestion, user, target, questionnaire, kind }) =>
     receive({ session, suggestion }).then(
       where(
-        now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        Suggesting._suggestion({ suggestion }).is({ target }),
-        Relaying._leg({ leg: target }).is({ material: questionnaire }),
-        questionnaireHasNoOpenRun({ questionnaire }),
-      )
-        .then(Suggesting.take({ suggestion }).responds({ suggestion: taken }))
-        .then(respond({ suggestion: taken }))
-        .named("round"),
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        Suggesting._suggestion({ suggestion }).is({ target }),
-        no(Relaying._leg({ leg: target })),
-      )
-        .then(Suggesting.take({ suggestion }).responds({ suggestion: taken }))
-        .then(respond({ suggestion: taken }))
-        .named("relay"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        Suggesting._suggestion({ suggestion }).is({ target }),
+        Suggesting._suggestion({ suggestion }).is({ target, kind }),
+        is.among(kind, [
+          "title",
+          "prompt",
+          "parts",
+          "choices",
+          "takes",
+          "pile",
+          "unpile",
+          "notes",
+          "move",
+          "remove",
+        ]),
         Relaying._leg({ leg: target }).is({ material: questionnaire }),
         questionnaireHasAnOpenRun({ questionnaire }),
       )
         .then(respond({ error: "RUN_OPEN" }))
         .named("run-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(Suggesting._suggestion({ suggestion })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
-  { input: { required: ["session", "suggestion"] } },
 );
 
 export const Decline = endpoint(
@@ -303,8 +515,9 @@ export const Decline = endpoint(
 
 /**
  * Taking a line is what applies it. Each kind has its own reaction, and each
- * asks the concept that owns what changes, so a line the concept refuses stays
- * taken with its refusal in the log and the relay reads as it did.
+ * asks the concept that owns what changes. The endpoint waits for these
+ * consequences and reads the requested result; taking alone is not success.
+ * A refused line remains taken (acceptance is answered once), without a retry.
  */
 export const TakenAddAddsRound = reaction(
   ({
@@ -402,6 +615,79 @@ export const TakenAddAddsRound = reaction(
       ),
 );
 
+/**
+ * An added round's piles and notes need the round as their target, so once the
+ * leg the taken add line composed exists they are offered about that round and
+ * taken where they are offered: the person accepted them with the round.
+ */
+export const AddedRoundCarriesItsPiles = reaction(
+  ({ relay, material, added, suggestion, value, at, lines, standing, follow, line }) =>
+    when(Relaying.addLeg({ relay, material }).responds({ leg: added }))
+      .where(
+        earlier(Suggesting.take, { suggestion }, { kind: "add", value }),
+        now(at),
+        compute(computations.editRoundLines, { value, leg: added }, lines),
+        compute(computations.linesStanding, { lines }, standing),
+        is.among(standing, ["some"]),
+      )
+      .then(Suggesting.offer({ subject: added, lines, at }).responds({ offering: follow }))
+      .then(
+        where(Suggesting._pendingIn({ offering: follow }).is({ suggestion: line })).then(
+          Suggesting.take({ suggestion: line }),
+        ),
+      ),
+);
+
+/**
+ * A pile line names a round's standing pile with its sentence: the pile is
+ * reached or made on the round, and its sentence written, whether the line was
+ * offered about the relay and confirmed, or about a round just added.
+ */
+export const TakenPileStandsPile = reaction(
+  ({ suggestion, target, value, name, description, category }) =>
+    when(Suggesting.take({ suggestion }).responds({ kind: "pile", target, value }))
+      .where(
+        Relaying._leg({ leg: target }),
+        compute(computations.editPileName, { value }, name),
+        compute(computations.editPileSentence, { value }, description),
+      )
+      .then(
+        Categorizing.ensureCategory({ scope: target, name, description }).responds({ category }),
+      )
+      .then(Categorizing.describeCategory({ category, description })),
+);
+
+/** An unpile line takes a standing pile off the round by its name. */
+export const TakenUnpileRemovesPile = reaction(({ suggestion, target, value, category }) =>
+  when(Suggesting.take({ suggestion }).responds({ kind: "unpile", target, value }))
+    .where(
+      Relaying._leg({ leg: target }),
+      Categorizing._categoriesIn({ scope: target }).is({ category, name: value }),
+    )
+    .then(Categorizing.deleteCategory({ category })),
+);
+
+/** A notes line replaces the standing note, or clears it when blank. */
+export const TakenNotesSetNote = reaction(({ suggestion, target, value, said }) =>
+  when(Suggesting.take({ suggestion }).responds({ kind: "notes", target, value }))
+    .where(
+      Relaying._leg({ leg: target }),
+      compute(computations.briefStanding, { request: value }, said),
+      is.among(said, ["given"]),
+    )
+    .then(Guiding.set({ subject: target, use: SORTING_USE, title: "", body: value })),
+);
+
+export const TakenNotesRemoveNote = reaction(({ suggestion, target, value, said }) =>
+  when(Suggesting.take({ suggestion }).responds({ kind: "notes", target, value }))
+    .where(
+      Relaying._leg({ leg: target }),
+      compute(computations.briefStanding, { request: value }, said),
+      is.among(said, ["blank"]),
+    )
+    .then(Guiding.clear({ subject: target, use: SORTING_USE })),
+);
+
 export const TakenRemoveRemovesRound = reaction(({ suggestion, target, relay, material }) =>
   when(Suggesting.take({ suggestion }).responds({ kind: "remove", target }))
     .where(
@@ -434,13 +720,13 @@ export const TakenTitleRetitlesRound = reaction(({ suggestion, target, value, re
     .then(Questioning.retitle({ questionnaire: material, title: value })),
 );
 
-/** A title line naming no round names the relay itself. */
+/** Only the empty target names the relay; a deleted round must not rename it. */
 export const TakenTitleRetitlesRelay = reaction(({ suggestion, target, value, relay }) =>
   when(Suggesting.take({ suggestion }).responds({ kind: "title", target, value }))
     .where(
       Suggesting._suggestion({ suggestion }).is({ subject: relay }),
       Relaying._relay({ relay }),
-      no(Relaying._leg({ leg: target })),
+      is.among(target, [""]),
     )
     .then(Relaying.retitle({ relay, title: value })),
 );
@@ -568,4 +854,48 @@ export const TakenTakesUndraws = reaction(({ suggestion, target, value, relay, u
       Relaying._draws({ leg: target }).is({ source }),
     )
     .then(Relaying.undraw({ leg: target, source })),
+);
+
+export const TakenGuideSetsRelay = reaction(
+  ({ suggestion, value, relay, field, use, body, said }) =>
+    when(Suggesting.take({ suggestion }).responds({ kind: "guide", target: "", value }))
+      .where(
+        Suggesting._suggestion({ suggestion }).is({ subject: relay }),
+        Relaying._relay({ relay }),
+        relayIsNotRetired({ relay }),
+        compute(computations.editGuideField, { value }, field),
+        is.among(field, ["description", "opening", "closing"]),
+        compute(computations.guideUse, { field }, use),
+        compute(computations.editGuideBody, { value }, body),
+        compute(computations.briefStanding, { request: body }, said),
+      )
+      .then(
+        where(is.among(said, ["given"]))
+          .then(Guiding.set({ subject: relay, use, title: "", body }))
+          .named("set"),
+        where(is.among(said, ["blank"]))
+          .then(Guiding.clear({ subject: relay, use }))
+          .named("clear"),
+      ),
+);
+export const TakenGuideSetsRound = reaction(
+  ({ suggestion, target, value, field, use, body, said, relay }) =>
+    when(Suggesting.take({ suggestion }).responds({ kind: "guide", target, value }))
+      .where(
+        Relaying._leg({ leg: target }).is({ relay }),
+        relayIsNotRetired({ relay }),
+        compute(computations.editGuideField, { value }, field),
+        is.among(field, ["purpose", "facilitation", "selection"]),
+        compute(computations.guideUse, { field }, use),
+        compute(computations.editGuideBody, { value }, body),
+        compute(computations.briefStanding, { request: body }, said),
+      )
+      .then(
+        where(is.among(said, ["given"]))
+          .then(Guiding.set({ subject: target, use, title: "", body }))
+          .named("set"),
+        where(is.among(said, ["blank"]))
+          .then(Guiding.clear({ subject: target, use }))
+          .named("clear"),
+      ),
 );

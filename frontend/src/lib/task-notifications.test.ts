@@ -362,10 +362,9 @@ describe("the badge over two instances", () => {
 describe("the one dim line under a row", () => {
   test("a task row names the task, its list, and its deadline", () => {
     const detail = taskRowDetail(enrichedTaskRow());
-    expect(detail).toContain("Wash the pans");
-    expect(detail).toContain("Kitchen crew");
-    expect(detail).toContain("due");
-    expect(detail?.split(" \u00b7 ")).toHaveLength(3);
+    expect(detail?.title).toBe("Wash the pans");
+    expect(detail?.list).toBe("Kitchen crew");
+    expect(detail?.due).not.toBeNull();
   });
 
   test("a membership row names only its list", () => {
@@ -384,7 +383,7 @@ describe("the one dim line under a row", () => {
         },
       }),
     );
-    expect(detail).toBe("Kitchen crew");
+    expect(detail).toEqual({ title: null, list: "Kitchen crew", due: null });
   });
 
   test("a withheld row has no line, so the row can say so itself", () => {
@@ -392,7 +391,9 @@ describe("the one dim line under a row", () => {
   });
 
   test("the lifecycle state is not part of the line", () => {
-    const detail = taskRowDetail(enrichedTaskRow({ kind: "task-canceled" }));
+    const detail = JSON.stringify(
+      taskRowDetail(enrichedTaskRow({ kind: "task-canceled" })),
+    );
     expect(detail).not.toContain("Open");
     expect(detail).not.toContain("OPEN");
   });

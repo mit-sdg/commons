@@ -78,36 +78,38 @@ function StaffCalendarPageContent() {
     }
   >;
 
-  const events = (calendarData?.events ?? []).flatMap((e) => {
-    const d = details[e.assignment];
-    const name = d?.title ?? e.assignment.slice(0, 8);
-    return [
-      d?.dueAt
-        ? {
-            date: d.dueAt,
-            label: `Due: ${name}`,
-            kind: "due",
-            detail: d.kind,
-            href: `/staff/assignments/${e.assignment}`,
-          }
-        : null,
-      d?.closeAt
-        ? {
-            date: d.closeAt,
-            label: `Closes: ${name}`,
-            kind: "close",
-            detail: d.kind,
-            href: `/staff/assignments/${e.assignment}`,
-          }
-        : null,
-    ].filter(Boolean) as {
-      date: string;
-      label: string;
-      kind?: string;
-      detail?: string;
-      href: string;
-    }[];
-  });
+  const events = (calendarData?.events ?? [])
+    .flatMap((e) => {
+      const d = details[e.assignment];
+      const name = d?.title ?? e.assignment.slice(0, 8);
+      return [
+        d?.dueAt
+          ? {
+              date: d.dueAt,
+              label: `Due: ${name}`,
+              kind: "due",
+              detail: d.kind,
+              href: `/staff/assignments/${e.assignment}`,
+            }
+          : null,
+        d?.closeAt
+          ? {
+              date: d.closeAt,
+              label: `Closes: ${name}`,
+              kind: "close",
+              detail: d.kind,
+              href: `/staff/assignments/${e.assignment}`,
+            }
+          : null,
+      ].filter(Boolean) as {
+        date: string;
+        label: string;
+        kind?: string;
+        detail?: string;
+        href: string;
+      }[];
+    })
+    .filter((event) => event.date >= start && event.date <= end);
 
   return (
     <PageContainer>

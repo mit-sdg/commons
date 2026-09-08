@@ -51,14 +51,59 @@ concurrent later edit cannot make the shelf disagree with the room.
 [Live.runs.Results](reaction:Live.runs.Results) forms
 [the board of one run](former:Live.runs.theRunBoard): its participation
 addresses, counts of responses
-begun and handed in, and each question — expected answer included, since the
-board is the author's own desk — with every handed-in value; nothing counts
-until a participant deliberately submits. For a keyed run it also forms
+begun and handed in, each question — expected answer included, since the
+board is the author's own desk — with every handed-in value, the seats standing
+on the run, and every response a seat begun with whether it was handed in;
+nothing counts until a participant deliberately submits. For a keyed run it also forms
 [the scores](former:Live.runs.theRunScores) in grading order, each naming its
 participant when a signed-in account stands behind it — an anonymous device
 stays opaque. The staff
 surface polls this endpoint while the run is open; that cadence is the
 frontend's business.
+
+## The model participant
+
+A seat is a Subscribing subscription of a participant identity the dashboard
+minted to the run, and a questionnaire run is answered whole, so a seat answers
+the run itself the way a seat on a relay run answers a round.
+[Live.runs.SeatedParticipantAnswersOpenRun](reaction:Live.runs.SeatedParticipantAnswersOpenRun)
+begins the new seat's response to an open questionnaire run at once, the run
+being the response's subject exactly as it is a phone's; a seat taken on a
+relay run is begun by the relays page instead, round by round.
+[Live.runs.BegunModelRunResponseAsksMind](reaction:Live.runs.BegunModelRunResponseAsksMind)
+puts the run's captured presentation before Reasoning when a response to the
+run begins under a participant that holds a seat on it — the same
+[participantPassage](computation:participantPassage) a round is answered by,
+which prints every question with its choices and its boxes, seeded by the
+identity so the seats do not all say the same thing — and a phone's begin, which
+holds no seat, asks nothing. The participant worker on the floor then plays the
+phone for the run as it does for a round, finding the seat on the run itself
+since a questionnaire run is linked to nothing.
+
+[Live.runs.Invite](reaction:Live.runs.Invite) takes one seat per request, on a
+questionnaire run and on a relay run alike; the dashboard sends as many requests
+as seats were asked for. Inviting into a closed run is refused `CLOSED`, and a
+seat identifier that names an account is refused `NOT_A_SEAT`: a seat is minted,
+never borrowed from a person, so no host can seat a student and have that
+student's answers read as the model's.
+[Live.runs.Dismiss](reaction:Live.runs.Dismiss) dismisses one seat, and the
+dashboard dismisses every seat the way it invited them, one request per seat.
+Dismissing trashes the participant rather than dropping its seat, so no later
+round reaches it and the run's read no longer lists it, while what it already
+handed in stays marked as the model's — the mark is read from the seat, which
+outlives the dismissal. Dismissing a participant that holds no seat on the run
+is refused `NOT_SEATED`; dismissing one already dismissed changes nothing.
+
+The board carries `seats`, the seats standing in the order they were taken, and
+`modelResponses`, every response begun to the run under a participant that holds
+a seat — dismissed or not — with whether it was handed in; the begun and
+handed-in counts of the model, and which values on the board are the model's,
+are read off that one list. A keyed run's scores mark each result `model`, the
+way the wall marks a card, and a model's hand-in to a keyed quiz is graded like
+any other, since the grading reaction fires on every submit to a keyed run.
+Seats are for trying a run out, never for its scores, so a figure of the room
+leaves the model's out; where each surface draws that line is the frontend's
+business.
 
 ```computations
 snapshotTitle(value: LiveRunSnapshot) : String
@@ -70,6 +115,9 @@ snapshotForm(value: LiveRunSnapshot) : String
 snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean
   Says whether the captured presentation contains the item identity — a
   question, or one part of a question with parts.
+
+snapshotRequirements(value: Json) : Seq
+  Names the answer groups required by the captured questionnaire: one per ordinary part, or alternatives for a repeated box. Responding.submit checks each group and fixes the answers together; optional surveys supply no requirements.
 
 snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean
   Says whether the answers include every captured item: each question without
@@ -92,6 +140,8 @@ explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq
 
 ```endpoints
 Live.runs.Close at /live/runs/close
+Live.runs.Dismiss at /live/runs/dismiss
+Live.runs.Invite at /live/runs/invite
 Live.runs.Launch at /live/runs/launch
 Live.runs.LaunchForbidden at /live/runs/launch
 Live.runs.OpenRuns at /live/runs/open

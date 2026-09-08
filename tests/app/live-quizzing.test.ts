@@ -386,6 +386,7 @@ describe("the live quiz loop", () => {
           cap,
           choices,
           context: [],
+          contextUse: "context",
           position,
         })),
       );

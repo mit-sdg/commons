@@ -1,7 +1,27 @@
-import { compute, each, former, is, no, now, where, whether } from "@mit-sdg/sync-engine/language";
+import {
+  compute,
+  each,
+  former,
+  is,
+  no,
+  now,
+  reaction,
+  when,
+  where,
+  whether,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
-import { mayHostLive, mayNotHostLive } from "./policy.ts";
+import {
+  mayHostLive,
+  mayNotHostLive,
+  namesNoAccount,
+  participantIsSeated,
+  runIsAQuestionnaireRun,
+  runIsClosed,
+  runIsOpen,
+  seatIsNotDismissed,
+} from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 
 const {
@@ -9,12 +29,17 @@ const {
   Profiling,
   Publishing,
   Questioning,
+  Reasoning,
   Relaying,
   Responding,
   RunSnapshotting,
   Scoring,
   Sharing,
+  Subscribing,
+  Trashing,
 } = concepts;
+
+const REASONER = "gemini-flash";
 
 /** Every open run, newest first, with its questionnaire and its share token. */
 export const theOpenRuns = former(
@@ -50,6 +75,12 @@ export const theRunBoard = former(
       presentation,
       values,
       questions,
+      seat,
+      modelResponse,
+      participant,
+      submitted,
+      silentResponse,
+      silentSeat,
     },
   ) =>
     where(
@@ -80,22 +111,50 @@ export const theRunBoard = former(
         Responding._responsesFor({ subject: run }).is({ response: handedIn, submitted: true }),
       ).count(),
       questions,
+      seats: each(Subscribing._getSubscribers({ target: run }).is({ user: seat }))
+        .where(seatIsNotDismissed({ participant: seat }))
+        .form({ participant: seat }),
+      modelResponses: each(
+        Responding._responsesFor({ subject: run }).is({
+          response: modelResponse,
+          participant,
+          submitted,
+        }),
+      )
+        .where(participantIsSeated({ participant, run }))
+        .form({ response: modelResponse, submitted }),
+      // A seat whose ask failed and has no reply is not writing: nothing is
+      // coming for it, and the Model row says so.
+      silentSeats: each(
+        Responding._responsesFor({ subject: run }).is({
+          response: silentResponse,
+          participant: silentSeat,
+          submitted: false,
+        }),
+      )
+        .where(
+          participantIsSeated({ participant: silentSeat, run }),
+          Reasoning._lastFailureAbout({ about: silentResponse }),
+          no(Reasoning._repliesAbout({ about: silentResponse })),
+        )
+        .count(),
     }),
 ).optional();
 
 /** The scores of a keyed run, in grading order, named where the participant is a signed-in account. */
 export const theRunScores = former(
   "the scores of (run)",
-  ({ run }, { key, disclosure, submission, participant, name, score, outOf }) =>
+  ({ run }, { key, disclosure, submission, participant, name, score, outOf, model }) =>
     where(Scoring._keyFor({ subject: run }).is({ key, disclosure })).form({
       run,
       disclosure,
       results: each(Scoring._results({ key }).is({ submission, score, outOf }))
         .where(
           Responding._response({ response: submission }).is({ participant }),
+          Subscribing._isSubscribed({ user: participant, target: run }).is({ subscribed: model }),
           whether(Profiling._getProfileFields({ user: participant }).is({ displayName: name })),
         )
-        .form({ submission, participant, name, score, outOf }),
+        .form({ submission, participant, name, score, outOf, model }),
     }),
 ).optional();
 
@@ -245,4 +304,112 @@ export const Results = endpoint(
         .named("forbidden"),
     ),
   { input: { required: ["session", "run"] } },
+);
+
+/**
+ * One seat per request, under a participant identity the dashboard minted for
+ * it. A seat is a subscription to the run, which is what makes the participant
+ * the model's: the run open now reaches it, and on a relay run so does every
+ * round that opens later, until it is dismissed.
+ */
+export const Invite = endpoint(
+  "/live/runs/invite",
+  ({ session, run, device, user, at }) =>
+    receive({ session, run, device }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        namesNoAccount({ identifier: device }),
+        runIsOpen({ run }),
+      )
+        .then(Subscribing.subscribe({ user: device, target: run, at }).responds())
+        .then(respond({ participant: device }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        runIsOpen({ run }),
+        no(namesNoAccount({ identifier: device })),
+      )
+        .then(respond({ error: "NOT_A_SEAT" }))
+        .named("named-account"),
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), runIsClosed({ run }))
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "run", "device"] } },
+);
+
+/**
+ * A dismissed seat leaves the run: no later round reaches it. What it handed
+ * in stays, and stays marked, because dismissing trashes the participant
+ * rather than dropping its seat.
+ */
+export const Dismiss = endpoint(
+  "/live/runs/dismiss",
+  ({ session, run, participant, user, at }) =>
+    receive({ session, run, participant }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        participantIsSeated({ participant, run }),
+        seatIsNotDismissed({ participant }),
+      )
+        .then(Trashing.trash({ item: participant, by: user, at }).responds())
+        .then(respond({ participant }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(participantIsSeated({ participant, run })),
+      )
+        .then(respond({ error: "NOT_SEATED" }))
+        .named("not-seated"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        participantIsSeated({ participant, run }),
+        no(seatIsNotDismissed({ participant })),
+      )
+        .then(respond({ participant }))
+        .named("already-dismissed"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+  { input: { required: ["session", "run", "participant"] } },
+);
+
+/**
+ * A questionnaire run is answered whole, so a seat taken while one is open
+ * answers the run itself at once: its presentation was captured at launch, and
+ * the run is the response's subject exactly as it is a phone's.
+ */
+export const SeatedParticipantAnswersOpenRun = reaction(({ participant, run, at }) =>
+  when(Subscribing.subscribe({ user: participant, target: run }).responds())
+    .where(now(at), runIsOpen({ run }), runIsAQuestionnaireRun({ run }))
+    .then(Responding.begin({ participant, subject: run, at })),
+);
+
+/**
+ * A response begun to a run under a participant that holds a seat on that run
+ * puts the run's captured presentation before the reasoner under the same
+ * participant contract a round uses, seeded by the identity so the seats do
+ * not all say the same thing. A phone's begin holds no seat and asks nothing.
+ */
+export const BegunModelRunResponseAsksMind = reaction(
+  ({ participant, run, response, value, passage, at }) =>
+    when(Responding.begin({ participant, subject: run }).responds({ response }))
+      .where(
+        now(at),
+        participantIsSeated({ participant, run }),
+        RunSnapshotting._snapshot({ subject: run }).is({ value }),
+        compute(computations.participantPassage, { value, participant }, passage),
+      )
+      .then(Reasoning.ask({ reasoner: REASONER, about: response, passage, at })),
 );

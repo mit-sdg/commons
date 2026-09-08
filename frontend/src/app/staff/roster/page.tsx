@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Fact, Facts } from "@/components/facts";
 import { AddPersonForm } from "@/components/lms/add-person";
 import { CsvImport } from "@/components/lms/csv-import";
 import { RemoveSeatDialog } from "@/components/lms/remove-seat";
@@ -323,9 +324,10 @@ function PendingSeats({
               ) : (
                 <p className="font-medium break-all">{member.email}</p>
               )}
-              <p className="mt-1 text-xs text-muted-foreground">
-                {member.kind.toLowerCase()} · invitation pending
-              </p>
+              <Facts className="mt-1 text-muted-foreground text-xs">
+                <Fact.Kind>{member.kind.toLowerCase()}</Fact.Kind>
+                <Fact.Status status="PENDING" label="Invitation pending" />
+              </Facts>
             </div>
             <div className="flex items-center gap-2">
               <Button

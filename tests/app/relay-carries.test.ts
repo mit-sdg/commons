@@ -274,7 +274,10 @@ describe("what a round carries from an earlier one", () => {
     expect(eachWall?.questions[0]).toMatchObject({
       parts: ["keeping", "sending"],
       choices: [],
-      context: [],
+      context: [
+        { name: "keeping", cards: ["save", "keep"] },
+        { name: "sending", cards: ["share", "send"] },
+      ],
     });
     await post(edge, "/live/relays/close-round", { round: boxed.round }, cookie);
 
@@ -308,7 +311,7 @@ describe("what a round carries from an earlier one", () => {
     ]);
     await post(edge, "/live/relays/close-round", { round: voting.round }, cookie);
 
-    // A vote's groups carry like piles: the winner shown as context, without its ballots.
+    // A vote's winner carries the original examples, without repeating its ballots.
     const won = voteWall.piles.find((pile) => pile.name === "keeping")?.pile;
     await post(edge, "/live/walls/pick", { round: voting.round, pile: won }, cookie);
     const after = await json(
@@ -320,7 +323,157 @@ describe("what a round carries from an earlier one", () => {
           .wall as Wall | null,
       (value) => value !== null && value.questions.length > 0,
     );
-    expect(runoffWall?.questions[0].context).toEqual([{ name: "keeping", cards: [] }]);
+    expect(runoffWall?.questions[0].context).toEqual([
+      { name: "keeping", cards: ["save", "keep"] },
+    ]);
+  });
+
+  test("voted examples survive selected order, source edits, and vote-pile renaming and merging", async () => {
+    const planned = await json(
+      await post(edge, "/live/relays/plan", { title: "Concrete stories" }, cookie),
+    );
+    const relay = planned.relay as string;
+    const add = async (title: string, parts: string[]) =>
+      (
+        await json(
+          await post(
+            edge,
+            "/live/relays/add-round",
+            {
+              relay,
+              title,
+              prompt: `${title}?`,
+              parts,
+              cap: 0,
+              choices: [],
+            },
+            cookie,
+          ),
+        )
+      ).leg as string;
+    const first = await add("Situations", ["answer"]);
+    const vote = await add("Choose", []);
+    const list = await add("Refine", []);
+    const context = await add("Prevent", []);
+    const refined = await add("Use refinements", []);
+    for (const [leg, source, use] of [
+      [vote, first, "choices"],
+      [list, vote, "parts"],
+      [context, vote, "context"],
+      [refined, list, "context"],
+    ])
+      await post(edge, "/live/relays/set-takes", { leg, source, use }, cookie);
+    const launched = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
+    const run = launched.run as string;
+    const token = launched.token as string;
+    const open = async (leg: string) => {
+      const result = await json(await post(edge, "/live/relays/open-round", { run, leg }, cookie));
+      expect(result.error).toBeUndefined();
+      const round = result.round as string;
+      await until(
+        async () =>
+          (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall | null,
+        (wall) => wall !== null && wall.questions.length > 0,
+      );
+      return round;
+    };
+    const read = async (round: string) =>
+      (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall;
+    const sourceRound = await open(first);
+    const stories = [
+      "My meeting appeared in the old time zone; teammates waited twenty minutes.",
+      "My laptop stopped before syncing; I lost two hours of edits.",
+      "An unselected private example must not enter the next question.",
+    ];
+    for (const story of stories) await handIn(edge, token, [story]);
+    const sourceWall = await read(sourceRound);
+    const piles: string[] = [];
+    for (const [index, name] of ["Wrong time zone", "Lost edits", "Unselected"].entries()) {
+      const card = sourceWall.cards.find((card) => card.value === stories[index])?.card;
+      const result = await json(
+        await post(edge, "/live/walls/open-pile", { round: sourceRound, name, card }, cookie),
+      );
+      piles.push(result.pile as string);
+    }
+    await post(edge, "/live/relays/close-round", { round: sourceRound }, cookie);
+    for (const pile of [piles[1], piles[0]])
+      await post(edge, "/live/walls/pick", { round: sourceRound, pile }, cookie);
+    const voteRound = await open(vote);
+    const support = [
+      { name: "Lost edits", cards: [stories[1]] },
+      { name: "Wrong time zone", cards: [stories[0]] },
+    ];
+    expect((await read(voteRound)).questions[0]).toMatchObject({
+      choices: support.map((group) => group.name),
+      context: support,
+    });
+
+    // Later edits to the older wall cannot rewrite this vote's captured examples.
+    await post(
+      edge,
+      "/live/walls/move-card",
+      { card: sourceWall.cards.find((card) => card.value === stories[0])?.card, pile: piles[2] },
+      cookie,
+    );
+    await post(
+      edge,
+      "/live/walls/rename-pile",
+      { pile: piles[0], name: "Changed after capture" },
+      cookie,
+    );
+    await handIn(edge, token, ["Wrong time zone"]);
+    await handIn(edge, token, ["Wrong time zone"]);
+    await handIn(edge, token, ["Lost edits"]);
+    const ballots = await until(
+      () => read(voteRound),
+      (wall) => wall.cards.length === 3 && wall.cards.every((card) => card.pile !== null),
+    );
+    const time = ballots.piles.find((pile) => pile.name === "Wrong time zone")?.pile;
+    const edits = ballots.piles.find((pile) => pile.name === "Lost edits")?.pile;
+    await post(edge, "/live/walls/rename-pile", { pile: time, name: "Missed meeting" }, cookie);
+    await post(edge, "/live/relays/close-round", { round: voteRound }, cookie);
+    await post(edge, "/live/walls/pick", { round: voteRound, pile: time }, cookie);
+    const listRound = await open(list);
+    expect((await read(listRound)).questions[0]).toMatchObject({
+      parts: ["Missed meeting"],
+      context: [{ name: "Missed meeting", cards: [stories[0]] }],
+    });
+    await handIn(edge, token, ["A refined account with a clearer triggering event and cost."]);
+    const listWall = await read(listRound);
+    const refinement = await json(
+      await post(
+        edge,
+        "/live/walls/open-pile",
+        {
+          round: listRound,
+          name: "Refined story",
+          card: listWall.cards[0].card,
+        },
+        cookie,
+      ),
+    );
+    await post(edge, "/live/relays/close-round", { round: listRound }, cookie);
+    await post(edge, "/live/walls/pick", { round: listRound, pile: refinement.pile }, cookie);
+
+    // The merged vote pile combines the distinct source examples, not repeated ballots.
+    await post(edge, "/live/walls/merge-pile", { pile: edits, into: time }, cookie);
+    const contextRound = await open(context);
+    expect((await read(contextRound)).questions[0].context).toEqual([
+      { name: "Missed meeting", cards: [stories[0], stories[1]] },
+    ]);
+    // The list's snapshot was captured before the merge and remains unchanged.
+    expect((await read(listRound)).questions[0].context).toEqual([
+      { name: "Missed meeting", cards: [stories[0]] },
+    ]);
+    await post(edge, "/live/relays/close-round", { round: contextRound }, cookie);
+    const refinedRound = await open(refined);
+    expect((await read(refinedRound)).questions[0].context).toEqual([
+      {
+        name: "Refined story",
+        cards: ["A refined account with a clearer triggering event and cost."],
+      },
+    ]);
+    await post(edge, "/live/relays/close", { run }, cookie);
   });
 
   test("a choice nobody chose is opened as an empty pile and carries as an empty group", async () => {

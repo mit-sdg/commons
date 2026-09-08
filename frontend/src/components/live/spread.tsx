@@ -3,7 +3,12 @@
 import { X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect } from "react";
-import { Answer, ModelTag } from "@/components/live/pile";
+import {
+  Answer,
+  type CardMoves,
+  ModelTag,
+  MoveMenu,
+} from "@/components/live/pile";
 import type { WallCard } from "@/components/live/rounds";
 import { PILE_MOVE } from "@/components/live/wall-motion";
 import { Button } from "@/components/ui/button";
@@ -31,14 +36,14 @@ export function SpreadButton({
       variant="ghost"
       size={phone ? "sm" : "xs"}
       aria-expanded={open}
-      aria-label={`${open ? "Fold" : "Spread"} ${name}`}
+      aria-label={`${open ? "Hide responses in" : "View responses in"} ${name}`}
       className="text-muted-foreground max-sm:h-9 max-sm:px-3"
       onClick={(event) => {
         event.stopPropagation();
         onClick();
       }}
     >
-      {open ? "fold" : "spread"}
+      {open ? "Hide responses" : "View responses"}
     </Button>
   );
 }
@@ -56,6 +61,7 @@ export function Spread({
   phone = false,
   onClose,
   onRemove,
+  moves,
   className,
 }: {
   name: string;
@@ -67,6 +73,8 @@ export function Spread({
   onClose: () => void;
   /** Takes a card off the wall; only a dashboard offers it. */
   onRemove?: (card: WallCard) => void;
+  /** Where a hand sends a card without dragging it; only a dashboard offers it. */
+  moves?: CardMoves;
   className?: string;
 }) {
   const reduced = useReducedMotion() ?? false;
@@ -96,7 +104,17 @@ export function Spread({
         className,
       )}
     >
-      {description === "" ? null : (
+      {description === "" ? null : phone ? (
+        <details
+          className="mb-3 text-sm"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <summary className="cursor-pointer text-muted-foreground">
+            Summary
+          </summary>
+          <p className="mt-2">{description}</p>
+        </details>
+      ) : (
         <p
           className={cn(
             "font-display text-foreground",
@@ -106,6 +124,7 @@ export function Spread({
           {description}
         </p>
       )}
+
       <ul
         className={cn(
           "min-w-0 gap-x-8",
@@ -125,12 +144,16 @@ export function Spread({
             )}
           >
             <Answer value={card.value} className="flex-1" />
-            {card.part === "" ? null : (
+            {card.part === "" ||
+            new Set(cards.map((one) => one.part)).size === 1 ? null : (
               <span className="flex-none font-mono text-muted-foreground text-xs">
                 {card.part}
               </span>
             )}
             {card.model ? <ModelTag big={big} /> : null}
+            {moves === undefined ? null : (
+              <MoveMenu card={card} moves={moves} className="self-center" />
+            )}
             {onRemove === undefined ? null : (
               <Button
                 type="button"
@@ -250,7 +273,8 @@ export function SpreadPanel({
             )}
           >
             <Answer value={card.value} className="flex-1" />
-            {card.part === "" ? null : (
+            {card.part === "" ||
+            new Set(cards.map((one) => one.part)).size === 1 ? null : (
               <span className="flex-none font-mono text-muted-foreground text-xs">
                 {card.part}
               </span>

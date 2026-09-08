@@ -3,6 +3,7 @@
 import { Flag, Lock, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Fact, Facts } from "@/components/facts";
 import { PostPreview } from "@/components/forum/post-preview";
 import { RevisionsDialog } from "@/components/forum/revisions-dialog";
 import { Link } from "@/components/link";
@@ -14,7 +15,7 @@ import { UserName } from "@/components/user-name";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { relativeTime, shortId } from "@/lib/format";
+import { shortId } from "@/lib/format";
 import { loadPostConversationIndex } from "@/lib/loaders";
 import type {
   Flag as FlagModel,
@@ -34,11 +35,13 @@ function FlagDetails({ target }: { target: string }) {
   return (
     <ul className="mt-3 space-y-1.5 border-t border-border pt-3 text-sm">
       {open.map((f) => (
-        <li key={String(f.flag)} className="text-muted-foreground">
-          <UserName user={String(f.reporter)} className="text-foreground" />{" "}
-          flagged this — <span className="italic">“{f.reason}”</span>{" "}
-          <span className="text-xs">· {relativeTime(f.createdAt)}</span>
-        </li>
+        <Facts as="li" key={String(f.flag)} className="text-muted-foreground">
+          <span>
+            <UserName user={String(f.reporter)} className="text-foreground" />{" "}
+            flagged this — <span className="italic">“{f.reason}”</span>
+          </span>
+          <Fact.When at={f.createdAt} />
+        </Facts>
       ))}
     </ul>
   );
@@ -183,9 +186,11 @@ function LockedTopics() {
               >
                 Conversation {shortId(target)}
               </Link>
-              <p className="text-xs text-muted-foreground">
-                Locked {relativeTime(lock.lockedAt)}
-              </p>
+              <Fact.When
+                at={lock.lockedAt}
+                verb="Locked"
+                className="block text-xs"
+              />
             </div>
             <Button size="sm" variant="outline" onClick={() => unlock(target)}>
               Unlock
@@ -250,7 +255,7 @@ function TrashBin() {
                   user={String(entry.trashedBy)}
                   className="text-foreground"
                 />{" "}
-                {relativeTime(entry.trashedAt)}
+                <Fact.When at={entry.trashedAt} />
               </span>
             }
             action={

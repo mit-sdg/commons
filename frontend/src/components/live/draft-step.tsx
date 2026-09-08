@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "@/components/link";
-import { FormBadge } from "@/components/live/quiz-meta";
+import { FormTag } from "@/components/live/quiz-meta";
 import { Spinner } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -320,7 +320,7 @@ export function DraftStep({
             <CardTitle className="text-base">Drafted questions</CardTitle>
             <CardAction>
               {step.form !== null ? (
-                <FormBadge form={step.form} />
+                <FormTag form={step.form} />
               ) : (
                 <Badge variant="outline">Draft</Badge>
               )}

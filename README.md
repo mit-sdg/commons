@@ -7,7 +7,9 @@ sync-engine assembly.
 
 ## Run Commons locally
 
-Commons requires Bun 1.3. Install dependencies and start the full local stack with a single command:
+Commons uses Bun 1.3.14 and Node.js 24. Volta users automatically use the
+Node version pinned in the root package, including from `frontend/`.
+Install dependencies and start the full local stack with a single command:
 
 ```sh
 bun install && bun install --cwd frontend
@@ -18,7 +20,7 @@ bun dev
 
 Local development is served over plain `http://`, and the session cookie is a `__Host-` cookie marked `Secure`. Chromium-family browsers (Chrome, Edge, Arc, Brave) treat `127.0.0.1` as a secure origin and hold the session; Safari follows the cookie specification and drops it, so signing in against `bun dev` from Safari, or from a phone on the same network, does not hold a session. Use a Chromium browser for local development; a deployment, which is served over `https://`, holds a session in every browser.
 
-If `MONGODB_URL` is set in your environment or `.env`, `bun dev` connects to your external database instead of creating a temporary one. For production, deploy using [`platform.yaml`](platform.yaml) or refer to the [deployment guide](DEPLOYMENT.md).
+If `MONGODB_URL` is set in your environment or `.env`, `bun dev` connects to your external database instead of creating a temporary one. To run a class from this laptop with phones on the room's network, follow the [class-day page](CLASS-DAY.md). For production, deploy using [`platform.yaml`](platform.yaml) or refer to the [deployment guide](DEPLOYMENT.md).
 
 ## Read and change the design
 
@@ -45,6 +47,16 @@ registered declarations. The [generated artifact guide](generated/README.md) exp
 derived read-back and wire contract.
 
 ## Verify changes
+
+Use Node.js 24 for the backend test runner (the same major version as CI)
+and Bun 1.3.14 for the application and frontend tests. Older Node releases
+can fail while loading the locked HTML parser, before tests execute.
+
+The BSON override in `package.json` keeps version 7.2.0, within the MongoDB
+driver's supported range. BSON 7.3 calls a V8 snapshot API that Bun 1.3.14
+does not implement ([upstream issue](https://github.com/oven-sh/bun/issues/32501)).
+Remove the override only after the Bun runtime import check passes with
+the replacement version.
 
 ```sh
 bun run check

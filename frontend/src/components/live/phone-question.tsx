@@ -1,8 +1,15 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { useState } from "react";
+import { RoundToken } from "@/components/live/round-token";
 import { distinctValues } from "@/components/live/rounds";
-import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 /** A round's question as a phone meets it: the prompt, and how it is answered. */
@@ -14,11 +21,10 @@ export interface RoundQuestion {
   cap: number;
   /** The groups a round carried from the one it takes from, shown above the prompt. */
   context?: { name: string; cards: string[] }[];
+  contextUse?: string;
+  contextSource?: { number: number; title: string };
   position: number;
 }
-
-/** How many of a group's words a phone shows before the rest are counted. */
-const WORDS_SHOWN = 4;
 
 const COUNTING_WORDS = [
   "one",
@@ -103,7 +109,9 @@ export function QuestionCard({
   answers,
   onAnswer,
   onDraft,
+  readOnly = false,
 }: {
+  readOnly?: boolean;
   question: RoundQuestion;
   answers: Record<string, string>;
   onAnswer: (item: string, value: string) => void;
@@ -119,44 +127,26 @@ export function QuestionCard({
   const promptId = `prompt-${question.question}`;
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
-      {context.length === 0 ? null : (
+    <section className="flex min-w-0 flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+      {context.length > 0 &&
+      (question.contextUse ?? "context") === "context" ? (
         <div className="flex flex-col gap-1.5">
           <span className="text-muted-foreground text-xs">
-            From an earlier round
-          </span>
-          <div
-            className={cn(
-              "grid gap-2",
-              context.length === 1 ? "grid-cols-1" : "grid-cols-2",
+            {question.contextSource ? (
+              <>
+                From <RoundToken {...question.contextSource} size="sm" />
+              </>
+            ) : (
+              "From an earlier round"
             )}
-          >
-            {context.map((group, index) => {
-              const values = distinctValues(group.cards);
-              const held = Math.max(0, values.length - WORDS_SHOWN);
-              return (
-                <div
-                  key={`${group.name}-${index}`}
-                  className="min-w-0 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5"
-                >
-                  <p className="truncate font-medium text-xs" dir="auto">
-                    {group.name}
-                  </p>
-                  {values.length === 0 ? null : (
-                    <p
-                      dir="auto"
-                      className="text-muted-foreground text-xs leading-[1.45]"
-                    >
-                      {values.slice(0, WORDS_SHOWN).join(" · ")}
-                      {held === 0 ? "" : ` and ${held} more`}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {context.map((group, index) => (
+              <SourceEvidence key={`${group.name}-${index}`} group={group} />
+            ))}
           </div>
         </div>
-      )}
+      ) : null}
 
       <h2
         className="font-sans text-[15px] font-medium leading-[1.45]"
@@ -169,22 +159,41 @@ export function QuestionCard({
       {question.choices.length > 0 ? (
         <div className="flex flex-col gap-2">
           {question.choices.map((choice, index) => (
-            <Choice
+            <div
               key={`${choice}-${index}`}
-              choice={choice}
-              picked={answers[chosen] === choice}
-              onPick={() => onAnswer(chosen, choice)}
-            />
+              className="flex min-w-0 items-center gap-1 [&>button:first-child]:flex-1"
+            >
+              <Choice
+                disabled={readOnly}
+                choice={choice}
+                picked={answers[chosen] === choice}
+                onPick={() => onAnswer(chosen, choice)}
+              />
+              {question.contextUse === "choices"
+                ? context
+                    .filter(
+                      (group) =>
+                        group.name === choice && group.cards.length > 0,
+                    )
+                    .map((group) => (
+                      <SourceEvidence
+                        key={group.name}
+                        group={group}
+                        supporting
+                      />
+                    ))
+                : null}
+            </div>
           ))}
         </div>
       ) : question.parts.length === 0 ? (
         <WrittenBox
-          item={question.question}
+          readOnly={readOnly}
           value={answers[question.question] ?? ""}
           labelledBy={promptId}
           placeholder="Your answer"
-          onAnswer={onAnswer}
-          onDraft={onDraft}
+          onAnswer={(written) => onAnswer(question.question, written)}
+          onDraft={(written) => onDraft(question.question, written)}
         />
       ) : repeated ? (
         <>
@@ -192,12 +201,12 @@ export function QuestionCard({
             <PartLabel>{question.parts[0] ?? ""}</PartLabel>
             {items.slice(0, shown).map((item, index) => (
               <WrittenBox
+                readOnly={readOnly}
                 key={item}
-                item={item}
                 value={answers[item] ?? ""}
                 label={boxName(question.parts[0] ?? "", index, shown)}
-                onAnswer={onAnswer}
-                onDraft={onDraft}
+                onAnswer={(written) => onAnswer(item, written)}
+                onDraft={(written) => onDraft(item, written)}
               />
             ))}
           </div>
@@ -222,19 +231,98 @@ export function QuestionCard({
         question.parts.map((label, index) => {
           const item = items[index] ?? "";
           return (
-            <label key={item} className="flex flex-col gap-1">
-              <PartLabel>{label}</PartLabel>
+            <div key={item} className="flex min-w-0 flex-col gap-1">
+              <div className="flex items-center justify-between gap-2">
+                <PartLabel>{label}</PartLabel>
+                {question.contextUse === "parts"
+                  ? context
+                      .filter(
+                        (group) =>
+                          group.name === label && group.cards.length > 0,
+                      )
+                      .map((group) => (
+                        <SourceEvidence
+                          key={group.name}
+                          group={group}
+                          supporting
+                        />
+                      ))
+                  : null}
+              </div>
               <WrittenBox
-                item={item}
+                readOnly={readOnly}
                 value={answers[item] ?? ""}
-                onAnswer={onAnswer}
-                onDraft={onDraft}
+                label={label}
+                onAnswer={(written) => onAnswer(item, written)}
+                onDraft={(written) => onDraft(item, written)}
               />
-            </label>
+            </div>
           );
         })
       )}
     </section>
+  );
+}
+
+export function SourceEvidence({
+  group,
+  supporting = false,
+}: {
+  group: { name: string; cards: string[] };
+  supporting?: boolean;
+}) {
+  const values = distinctValues(group.cards);
+  if (values.length === 0)
+    return <span className="text-sm font-medium">{group.name}</span>;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Inspect ${values.length} ${values.length === 1 ? "response" : "responses"} for ${group.name}`}
+          className={cn(
+            "inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
+            !supporting && "border border-border",
+          )}
+        >
+          {supporting ? (
+            <Search className="size-4" />
+          ) : (
+            <>
+              <span className="min-w-0 text-left [overflow-wrap:anywhere]">
+                {group.name}
+              </span>
+            </>
+          )}
+          {!supporting ? <Search className="size-3.5" /> : null}
+          <span className="tabular-nums">{values.length}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="bottom"
+        align="end"
+        collisionPadding={12}
+        aria-label={`Responses for ${group.name}`}
+        className="max-h-[min(70dvh,var(--radix-popover-content-available-height))] w-80 max-w-[calc(100vw-24px)] overflow-y-auto rounded-xl"
+      >
+        <h3 className="text-sm font-medium">{group.name}</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {values.length}{" "}
+          {values.length === 1 ? "supporting response" : "supporting responses"}
+        </p>
+        <ul className="mt-3 divide-y divide-border">
+          {values.map((value, index) => (
+            <li
+              key={index}
+              className="whitespace-pre-wrap py-3 text-sm leading-relaxed [overflow-wrap:anywhere]"
+              dir="auto"
+            >
+              {value}
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -247,7 +335,9 @@ export function Choice({
   choice,
   picked,
   onPick,
+  disabled = false,
 }: {
+  disabled?: boolean;
   choice: string;
   picked: boolean;
   onPick: () => void;
@@ -256,6 +346,7 @@ export function Choice({
     <button
       type="button"
       dir="auto"
+      disabled={disabled}
       aria-pressed={picked}
       onClick={onPick}
       className={cn(
@@ -274,7 +365,7 @@ export function Choice({
       >
         {picked ? <span className="size-2 rounded-full bg-primary" /> : null}
       </span>
-      <span className="min-w-0 flex-1">{choice}</span>
+      <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{choice}</span>
     </button>
   );
 }
@@ -287,43 +378,73 @@ function PartLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** How many lines a written answer grows to before the box scrolls inside. */
+const BOX_LINES = 3;
+
+/** How tall a box stands: what is written in it, up to the cap. */
+function fitBox(box: HTMLTextAreaElement) {
+  const style = window.getComputedStyle(box);
+  const line =
+    Number.parseFloat(style.lineHeight) ||
+    Number.parseFloat(style.fontSize) * 1.5;
+  const inside =
+    Number.parseFloat(style.paddingTop) +
+    Number.parseFloat(style.paddingBottom);
+  const frame =
+    Number.parseFloat(style.borderTopWidth) +
+    Number.parseFloat(style.borderBottomWidth);
+  box.style.height = "auto";
+  const grown = Math.min(box.scrollHeight, line * BOX_LINES + inside);
+  box.style.height = `${grown + frame}px`;
+}
+
 /**
  * The field stays uncontrolled — typing drafts, blur commits. Every blur
  * commits: the draft it would compare against is the same state typing just
- * wrote, and the sender is what knows a value it has already sent.
+ * wrote, and the sender is what knows a value it has already sent. A line
+ * break is part of a written answer, so Enter writes one.
  */
-function WrittenBox({
-  item,
+export function WrittenBox({
   value,
+  readOnly = false,
   label,
   labelledBy,
   placeholder,
   onAnswer,
   onDraft,
 }: {
-  item: string;
   value: string;
   label?: string;
+  readOnly?: boolean;
   /** The prompt that names the box, when the box stands under it alone. */
   labelledBy?: string;
   placeholder?: string;
-  onAnswer: (item: string, value: string) => void;
-  onDraft: (item: string, value: string) => void;
+  onAnswer: (value: string) => void;
+  onDraft: (value: string) => void;
 }) {
   return (
-    <Input
-      className="h-11"
+    <Textarea
+      readOnly={readOnly}
+      rows={1}
+      className="field-sizing-fixed min-h-11 resize-none"
       dir="auto"
       aria-label={label === "" ? undefined : label}
       aria-labelledby={labelledBy}
       defaultValue={value}
       placeholder={placeholder}
-      onChange={(event) => onDraft(item, event.currentTarget.value)}
+      ref={(box) => {
+        if (box !== null) fitBox(box);
+      }}
+      onChange={(event) => {
+        fitBox(event.currentTarget);
+        onDraft(event.currentTarget.value);
+      }}
       onBlur={(event) => {
         const next = event.currentTarget.value.trim();
         if (next === "") return;
         event.currentTarget.value = next;
-        onAnswer(item, next);
+        fitBox(event.currentTarget);
+        onAnswer(next);
       }}
     />
   );
