@@ -16,19 +16,28 @@ import { useQuery } from "@/hooks/use-query";
 import { api, CommonsError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-function NewDiscussionForm({ initialAudience }: { initialAudience: string }) {
+function NewDiscussionForm({
+  initialAudience,
+  fromGroup,
+}: {
+  initialAudience: string;
+  fromGroup?: string;
+}) {
   const router = useRouter();
   const [posting, setPosting] = useState(false);
   const { session } = useAuth();
   const [title, setTitle] = useState("");
-  const [selected, setSelected] = useState<string[]>([initialAudience]);
+  const [chosen, setSelected] = useState<string[]>([initialAudience]);
+  const selected = fromGroup ? [`group:${fromGroup}`] : chosen;
   const options = useQuery(
     async () => unwrap(await api.audiences.options({})),
     [],
   );
   const preview = useQuery(
-    async () => unwrap(await api.audiences.preview({ holders: selected })),
-    [selected],
+    selected.length
+      ? async () => unwrap(await api.audiences.preview({ holders: selected }))
+      : null,
+    [selected.join("\u0000")],
   );
 
   const refreshOptions = options.refetch;
@@ -43,7 +52,8 @@ function NewDiscussionForm({ initialAudience }: { initialAudience: string }) {
   }, [refreshOptions, refreshPreview]);
 
   async function create(body: string) {
-    if (!session || !preview.data) throw new Error("Choose a valid audience.");
+    if (!session || !preview.data || !selected.length)
+      throw new Error("Choose who can see this.");
     if (!title.trim()) {
       toast.error("Add a title before posting.");
       throw new Error("A title is required.");
@@ -52,10 +62,16 @@ function NewDiscussionForm({ initialAudience }: { initialAudience: string }) {
     setPosting(true);
     try {
       const { conversation } = unwrap(
-        await api.threads.create({ content, holders: preview.data.holders }),
+        await api.threads.create({
+          content,
+          holders: unwrap(await api.audiences.preview({ holders: selected }))
+            .holders,
+        }),
       );
       toast.success("Discussion posted.");
-      router.push(`/t/${conversation}`);
+      router.push(
+        `/t/${conversation}${fromGroup ? `?fromGroup=${encodeURIComponent(fromGroup)}` : ""}`,
+      );
     } catch (err) {
       toast.error(
         err instanceof CommonsError
@@ -71,36 +87,63 @@ function NewDiscussionForm({ initialAudience }: { initialAudience: string }) {
   return (
     <PageContainer width="narrow">
       <PageHeader
-        eyebrow="Discussions"
-        title="Start a discussion"
-        description="Give your discussion a clear title, then write an opening post in Markdown."
+        title={
+          fromGroup
+            ? `New discussion in ${options.data?.holders.find((holder) => holder.holder === `group:${fromGroup}`)?.label ?? "this group"}`
+            : "New discussion"
+        }
       />
       <div className="space-y-5">
-        <AudiencePicker
-          selected={selected}
-          options={options.data?.holders ?? []}
-          disabled={options.loading || posting}
-          onChange={setSelected}
-          onRefresh={() => {
-            refreshOptions();
-            refreshPreview();
-          }}
-        />
-        {preview.data ? (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Final audience</p>
-            <p className="text-xs text-muted-foreground">
-              These people and audiences stay fixed after posting. Group and
-              section access follows current membership.
+        <div className="space-y-2">
+          {!fromGroup ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                Who can see this?
+              </span>
+              <AudiencePicker
+                selected={selected}
+                options={options.data?.holders ?? []}
+                disabled={posting}
+                loading={options.loading}
+                error={options.error}
+                onChange={setSelected}
+                onRefresh={() => {
+                  refreshOptions();
+                  refreshPreview();
+                }}
+              />
+            </div>
+          ) : null}
+          {!selected.length ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              Choose who can see this.
             </p>
+          ) : preview.error ? (
+            <p role="alert" className="text-sm text-destructive">
+              {preview.refused === "FORBIDDEN"
+                ? fromGroup
+                  ? "This group is unavailable or you no longer have access to it."
+                  : "A selected recipient is no longer available. Update your selection."
+                : "Couldn’t check recipients."}{" "}
+              <button
+                type="button"
+                className="underline"
+                onClick={refreshPreview}
+              >
+                Retry
+              </button>
+            </p>
+          ) : preview.data ? (
             <AudienceChips
               holders={preview.data.holders}
               options={options.data?.holders ?? []}
             />
-          </div>
-        ) : (
-          <p role="status">{preview.error ?? "Checking audience…"}</p>
-        )}
+          ) : (
+            <p role="status" className="text-xs text-muted-foreground">
+              Checking recipients…
+            </p>
+          )}
+        </div>
 
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
@@ -122,8 +165,8 @@ function NewDiscussionForm({ initialAudience }: { initialAudience: string }) {
             }
             session={session ?? undefined}
             submitLabel="Post discussion"
-            minRows={10}
-            placeholder="Lay out your question or idea. You can mention a post with [[post-id]]."
+            minRows={6}
+            placeholder="Write your question or idea…"
             onSubmit={create}
           />
         </div>
@@ -134,14 +177,17 @@ function NewDiscussionForm({ initialAudience }: { initialAudience: string }) {
 
 export function NewDiscussion({
   initialAudience,
+  fromGroup,
 }: {
   initialAudience: string;
+  fromGroup?: string;
 }) {
   return (
     <RequireAuth>
       <NewDiscussionForm
         key={initialAudience}
         initialAudience={initialAudience}
+        fromGroup={fromGroup}
       />
     </RequireAuth>
   );

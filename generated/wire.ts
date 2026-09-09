@@ -85,7 +85,7 @@ export type CommonsWire = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["publish"]>>, ["assignment"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_DRAFT" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_SCHEDULE_INVALID" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_DRAFT" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_SCHEDULE_INVALID" | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" };
   };
   "/assignments/revise": {
     input: {
@@ -104,7 +104,7 @@ export type CommonsWire = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["revise"]>>, ["assignment"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_NOT_REVISABLE" | "ASSIGNMENT_SCHEDULE_INVALID" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" };
+    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_NOT_REVISABLE" | "ASSIGNMENT_SCHEDULE_INVALID" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" };
   };
   "/assignments/set-due-override": {
     input: {
@@ -213,7 +213,7 @@ export type CommonsWire = {
     output: {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["claim"]>[0], ["user"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "EMAIL_TAKEN" | "INVALID_BODY" | "INVALID_INPUT" | "INVITATION_INVALID" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "RELEASE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "EMAIL_TAKEN" | "INVALID_BODY" | "INVALID_INPUT" | "INVITATION_INVALID" | "MAIL_RECIPIENT_INVALID" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "RELEASE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
   };
   "/auth/changePassword": {
     input: {
@@ -2779,6 +2779,7 @@ export type CommonsWire = {
           "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>]>> | null;
           "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
         };
+        "assignmentTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
@@ -2802,10 +2803,10 @@ export type CommonsWire = {
       "notifications": {
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
-        "link": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>]>>;
+        "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
         "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["notification"]>>;
         "read": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["read"]>>;
-        "subject": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["subject"]>]>>;
+        "subject": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["subject"]>>;
       }[];
     };
     error: { error: AppWideError | "INVALID_INPUT" };
@@ -3392,7 +3393,7 @@ export type CommonsWire = {
     output: {
       "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["reinstateSeat"]>>, ["seat"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_DROPPED" | "SEAT_NOT_FOUND" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_DROPPED" | "SEAT_NOT_FOUND" };
   };
   "/roster/remove": {
     input: {
@@ -3983,7 +3984,7 @@ export type CommonsWire = {
   };
   "/tasks/assign": {
     input: {
-      "assignee": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>]>>;
+      "assignee": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["task"]>]>>;
     };
@@ -4022,7 +4023,7 @@ export type CommonsWire = {
     input: {
       "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["details"]>>;
       "endsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["endsAt"]>>;
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "startsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["startsAt"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["title"]>>;
@@ -4071,6 +4072,26 @@ export type CommonsWire = {
         "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["task"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["title"]>>;
         "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["updatedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/tasks/personal": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "tasks": {
+        "assignee": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["assignee"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["createdAt"]>>;
+        "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["details"]>>;
+        "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["endsAt"]>>;
+        "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["overdue"]>>;
+        "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["startsAt"]>>;
+        "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["state"]>>;
+        "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["task"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["title"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["updatedAt"]>>;
       }[];
     };
     error: { error: AppWideError | "INVALID_INPUT" };
@@ -7107,6 +7128,7 @@ export type CommonsWireHttp = {
           "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>]>> | null;
           "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
         };
+        "assignmentTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
@@ -7128,10 +7150,10 @@ export type CommonsWireHttp = {
       "notifications": {
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
-        "link": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>]>>;
+        "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
         "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["notification"]>>;
         "read": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["read"]>>;
-        "subject": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["subject"]>]>>;
+        "subject": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["subject"]>>;
       }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
@@ -8210,7 +8232,7 @@ export type CommonsWireHttp = {
   };
   "/tasks/assign": {
     input: {
-      "assignee": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>]>>;
+      "assignee": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>>;
       "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["task"]>]>>;
     };
     output: {
@@ -8246,7 +8268,7 @@ export type CommonsWireHttp = {
     input: {
       "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["details"]>>;
       "endsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["endsAt"]>>;
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>>;
       "startsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["startsAt"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["title"]>>;
     };
@@ -8290,6 +8312,24 @@ export type CommonsWireHttp = {
         "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["task"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["title"]>>;
         "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["updatedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/tasks/personal": {
+    input: Record<string, never>;
+    output: {
+      "tasks": {
+        "assignee": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["assignee"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["createdAt"]>>;
+        "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["details"]>>;
+        "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["endsAt"]>>;
+        "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["overdue"]>>;
+        "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["startsAt"]>>;
+        "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["state"]>>;
+        "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["task"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["title"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["updatedAt"]>>;
       }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };

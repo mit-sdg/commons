@@ -1,3 +1,4 @@
+import { ownsTaskScope } from "./computations/task-scopes.ts";
 import { validPostControlSelection } from "./computations/post-controls.ts";
 import {
   validFeedOrder,
@@ -301,6 +302,7 @@ export const learningConcepts = conceptSet(registrations, {
   forumMailKey,
   visibleAnswer,
   selectedSection,
+  ownsTaskScope,
   currentAudienceMembership,
   staffCapabilities,
   holderCode,

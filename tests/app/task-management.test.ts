@@ -708,3 +708,95 @@ describe("collaborative task lists management", () => {
     });
   });
 });
+
+describe("personal task scopes", () => {
+  test("personal work needs no group and stays private through its lifecycle", async () => {
+    const app = await newApp();
+    const owner = await actor(app, "personal-owner");
+    const outsider = await actor(app, "personal-outsider");
+    const group = await call(app, "/tasklists/create", {
+      session: owner.session,
+      title: "Scope distinction",
+    });
+    const shared = await call(app, "/tasks/create", {
+      session: owner.session,
+      list: group.list,
+      title: "Shared work",
+      ...WINDOW,
+    });
+    expect(
+      await call(app, "/tasks/assign", {
+        session: owner.session,
+        task: shared.task,
+        assignee: group.list,
+      }),
+    ).toEqual({ error: "FORBIDDEN" });
+    const before = await call(app, "/tasklists/mine", { session: owner.session });
+    const created = await call(app, "/tasks/create", {
+      session: owner.session,
+      list: owner.user,
+      title: "Private work",
+      details: "Private notes",
+      ...WINDOW,
+    });
+    expect(created).toMatchObject({ task: expect.any(String) });
+    const task = String(created.task);
+    expect(await call(app, "/tasklists/mine", { session: owner.session })).toEqual(before);
+    expect(await call(app, "/tasks/personal", { session: owner.session })).toMatchObject({
+      tasks: [expect.objectContaining({ task, title: "Private work", assignee: null })],
+    });
+    expect(await call(app, "/tasks/personal", { session: outsider.session })).toEqual({
+      tasks: [],
+    });
+    expect(
+      await call(app, "/tasks/create", {
+        session: outsider.session,
+        list: owner.user,
+        title: "Intrusion",
+        ...WINDOW,
+      }),
+    ).toEqual({ error: "FORBIDDEN" });
+    expect(
+      await call(app, "/tasklists/get", { session: outsider.session, list: owner.user }),
+    ).toEqual({ error: "FORBIDDEN" });
+    for (const [path, extra] of [
+      ["describe", { title: "Changed", details: "Changed" }],
+      ["retime", WINDOW],
+      ["assign", { assignee: outsider.user }],
+      ["release", {}],
+      ["complete", {}],
+      ["reopen", {}],
+      ["cancel", {}],
+      ["uncancel", {}],
+      ["delete", {}],
+    ] as const) {
+      expect(
+        await call(app, `/tasks/${path}`, { session: outsider.session, task, ...extra }),
+      ).toEqual({ error: "FORBIDDEN" });
+    }
+    expect(
+      await call(app, "/tasks/assign", { session: owner.session, task, assignee: outsider.user }),
+    ).toEqual({ error: "FORBIDDEN" });
+    expect(
+      await call(app, "/tasks/assign", { session: owner.session, task, assignee: owner.user }),
+    ).toMatchObject({ task });
+    expect(await call(app, "/tasks/release", { session: owner.session, task })).toMatchObject({
+      task,
+    });
+    expect(await call(app, "/tasks/complete", { session: owner.session, task })).toMatchObject({
+      task,
+    });
+    expect(await call(app, "/tasks/personal", { session: owner.session })).toMatchObject({
+      tasks: [expect.objectContaining({ task, state: "DONE" })],
+    });
+    expect(await call(app, "/tasks/reopen", { session: owner.session, task })).toMatchObject({
+      task,
+    });
+    expect(await call(app, "/tasks/cancel", { session: owner.session, task })).toMatchObject({
+      task,
+    });
+    expect(await call(app, "/tasks/uncancel", { session: owner.session, task })).toMatchObject({
+      task,
+    });
+  });
+});

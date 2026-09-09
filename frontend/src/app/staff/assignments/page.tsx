@@ -149,7 +149,7 @@ function StaffAssignmentsPageContent() {
       )}
 
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] sm:max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create Assignment</DialogTitle>
           </DialogHeader>

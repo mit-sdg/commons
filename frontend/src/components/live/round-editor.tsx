@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  ArrowDown,
-  ArrowUp,
-  CircleHelp,
-  Layers,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Layers, Sparkles, X } from "lucide-react";
 import { type ComponentProps, useState } from "react";
 import { toast } from "sonner";
 import { RoundGuideEditor } from "@/components/live/host-guide";
@@ -27,13 +20,10 @@ import {
   usesFor,
 } from "@/components/live/rounds";
 import { Button } from "@/components/ui/button";
+import { InlineHelp } from "@/components/ui/inline-help";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+
 import {
   Select,
   SelectContent,
@@ -52,33 +42,7 @@ function CarryHelp({
   text: string;
   label?: string;
 }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={label}
-          className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-          onMouseEnter={() => setOpen(true)}
-          onFocus={() => setOpen(true)}
-          onClick={(event) => {
-            event.preventDefault();
-            setOpen(true);
-          }}
-        >
-          <CircleHelp className="size-4" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        onOpenAutoFocus={(event) => event.preventDefault()}
-        onCloseAutoFocus={(event) => event.preventDefault()}
-        className="text-sm"
-      >
-        {text}
-      </PopoverContent>
-    </Popover>
-  );
+  return <InlineHelp label={label}>{text}</InlineHelp>;
 }
 
 export type RelayRound = NonNullable<

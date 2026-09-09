@@ -45,8 +45,8 @@ export function isMembershipKind(kind: string): boolean {
 
 /** What each task-domain kind says, in its own words. */
 export const TASK_ACTION_TEXT: Record<TaskNotificationKind, string> = {
-  "task-list-added": "You were added to a task list",
-  "task-list-removed": "You were removed from a task list",
+  "task-list-added": "You were added to a group",
+  "task-list-removed": "You were removed from a group",
   "task-assigned": "A task was assigned to you",
   "task-retimed": "A task assigned to you was rescheduled",
   "task-canceled": "A task assigned to you was canceled",
@@ -102,7 +102,9 @@ export function taskRowListId(row: TaskInboxNotification): string | null {
 /** Where a task-domain row navigates, or null when it names no list. */
 export function taskRowHref(row: TaskInboxNotification): string | null {
   const list = taskRowListId(row);
-  return list === null ? null : `/tasks/${list}`;
+  return list === null
+    ? null
+    : `/groups/${list}?view=${isMembershipKind(String(row.kind)) ? "members" : "tasks"}`;
 }
 
 /** A deadline said briefly, for the one dim line under a row's sentence. */
@@ -222,12 +224,13 @@ export function unreadBySource(merged: readonly MergedNotification[]): {
 }
 
 /** Which slice of the merged inbox a reader is looking at. */
-export type NotificationFilter = "all" | "unread" | "forum" | "task";
+export type NotificationFilter = "all" | "unread" | "forum" | "course" | "task";
 
 export const NOTIFICATION_FILTERS: readonly NotificationFilter[] = [
   "all",
   "unread",
   "forum",
+  "course",
   "task",
 ];
 
@@ -240,7 +243,15 @@ export function filterNotifications(
     case "unread":
       return entries.filter((entry) => !entry.read);
     case "forum":
-      return entries.filter((entry) => entry.source === "forum");
+      return entries.filter(
+        (entry) =>
+          entry.source === "forum" && entry.row.kind !== "assignment_released",
+      );
+    case "course":
+      return entries.filter(
+        (entry) =>
+          entry.source === "forum" && entry.row.kind === "assignment_released",
+      );
     case "task":
       return entries.filter((entry) => entry.source === "task");
     default:

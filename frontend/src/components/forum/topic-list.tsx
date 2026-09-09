@@ -12,11 +12,13 @@ function TopicPage({
   offset,
   more,
   onLoadMore,
+  fromGroup,
 }: {
   conversations: string[];
   offset: number;
   more: boolean;
   onLoadMore: () => void;
+  fromGroup?: string;
 }) {
   const { data, loading, error, refetch } = useQuery(
     () => loadThreadSummaries(conversations),
@@ -30,6 +32,7 @@ function TopicPage({
         <TopicRow
           key={String(summary.conversation)}
           summary={summary}
+          fromGroup={fromGroup}
           index={offset + index}
         />
       ))}
@@ -49,7 +52,13 @@ function TopicPage({
   );
 }
 
-export function TopicList({ conversations }: { conversations: string[] }) {
+export function TopicList({
+  conversations,
+  fromGroup,
+}: {
+  conversations: string[];
+  fromGroup?: string;
+}) {
   const [pages, setPages] = useState(1);
   const shownPages = Math.min(pages, Math.ceil(conversations.length / 25));
   return (
@@ -57,6 +66,7 @@ export function TopicList({ conversations }: { conversations: string[] }) {
       {Array.from({ length: shownPages }, (_, page) => (
         <TopicPage
           key={page}
+          fromGroup={fromGroup}
           conversations={conversations.slice(page * 25, (page + 1) * 25)}
           offset={page * 25}
           more={

@@ -111,6 +111,7 @@ export function TaskCard({
   viewer,
   onChanged,
   context,
+  personal = false,
   expanded,
   onToggleExpanded,
 }: {
@@ -120,6 +121,7 @@ export function TaskCard({
   viewer: string;
   onChanged: () => void;
   context?: React.ReactNode;
+  personal?: boolean;
   /** Whether the details are open. Omit both to let the card govern itself. */
   expanded?: boolean;
   onToggleExpanded?: () => void;
@@ -291,42 +293,46 @@ export function TaskCard({
       </div>
 
       <div className="mt-3 flex flex-col gap-3 border-t border-border/70 pt-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
-          {/* The picker doubles as the value display, so the name is only
+        {personal ? (
+          <span className="text-muted-foreground">Only you</span>
+        ) : (
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
+            {/* The picker doubles as the value display, so the name is only
               spelled out when there is no picker to read it from. */}
-          <span className="text-muted-foreground">
-            {assignee ? "Assigned to" : "Unassigned"}
-          </span>
-          {assignee && !assignable ? <UserName user={assignee} /> : null}
+            <span className="text-muted-foreground">
+              {assignee ? "Assigned to" : "Unassigned"}
+            </span>
+            {assignee && !assignable ? <UserName user={assignee} /> : null}
 
-          {assignable ? (
-            <Select
-              value={assignee ?? ""}
-              disabled={busy}
-              onValueChange={(value) =>
-                run("assign", "Assignee changed", () =>
-                  api.tasks.assign({ task: id, assignee: value }),
-                )
-              }
-            >
-              <SelectTrigger
-                aria-label="Assign this task"
-                className="h-8 w-auto min-w-36 max-w-full"
+            {assignable ? (
+              <Select
+                value={assignee ?? ""}
+                disabled={busy}
+                onValueChange={(value) =>
+                  run("assign", "Assignee changed", () =>
+                    api.tasks.assign({ task: id, assignee: value }),
+                  )
+                }
               >
-                <SelectValue placeholder="Assign to…" />
-              </SelectTrigger>
-              <SelectContent>
-                {members.map((member) => (
-                  <SelectItem key={member.user} value={member.user}>
-                    {member.user === viewer
-                      ? "Me"
-                      : (member.displayName ?? member.user)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-        </div>
+                <SelectTrigger
+                  aria-label="Assign this task"
+                  className="h-8 w-auto min-w-36 max-w-full"
+                >
+                  <SelectValue placeholder="Assign to…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((member) => (
+                    <SelectItem key={member.user} value={member.user}>
+                      {member.user === viewer
+                        ? "Me"
+                        : (member.displayName ?? member.user)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+          </div>
+        )}
 
         {/* One row at every width: the primary action, then everything else
             behind a single overflow menu. */}
@@ -405,7 +411,7 @@ export function TaskCard({
                   <CalendarClock /> Change the window
                 </DropdownMenuItem>
               ) : null}
-              {allowed.revise && assignee ? (
+              {!personal && allowed.revise && assignee ? (
                 <DropdownMenuItem
                   onSelect={() =>
                     void run("assign", "Assignee released", () =>
@@ -416,7 +422,10 @@ export function TaskCard({
                   <UserMinus /> Release
                 </DropdownMenuItem>
               ) : null}
-              {allowed.revise && !assignee && members !== undefined ? (
+              {!personal &&
+              allowed.revise &&
+              !assignee &&
+              members !== undefined ? (
                 <DropdownMenuItem
                   onSelect={() =>
                     void run("assign", "Task taken", () =>
@@ -471,8 +480,7 @@ export function TaskCard({
               <strong className="font-medium text-foreground">
                 {task.title}
               </strong>{" "}
-              will be removed permanently, for everyone in the list. This cannot
-              be undone.
+              will be removed permanently. This cannot be undone.
             </>
           }
           confirmLabel="Delete permanently"
@@ -531,7 +539,7 @@ export function TaskCard({
       ) : null}
 
       {retiming ? (
-        <div className="mt-3 grid gap-3 rounded-lg bg-muted/40 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+        <div className="mt-3 grid min-w-0 gap-3 rounded-lg bg-muted/40 p-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))] [&>div]:min-w-0">
           <div className="space-y-1.5">
             <Label htmlFor={`start-${id}`}>Starts</Label>
             <Input
@@ -552,7 +560,7 @@ export function TaskCard({
               onChange={(event) => setEndsAt(event.target.value)}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="col-span-full flex flex-wrap justify-end gap-2">
             <Button
               variant="ghost"
               size="sm"

@@ -1,5 +1,13 @@
 # Tasks
 
+Tasks use an opaque scope: either a group identity or a person’s account identity.
+Group scopes require current membership for reads, mutations, and assignment.
+Personal scopes require the authenticated actor to be that person; assignment can
+only name that same person. Creating personal work never creates a group.
+[Tasks.tasks.PersonalTasks](reaction:Tasks.tasks.PersonalTasks) returns all tasks
+scoped to the current account, including unassigned, completed, and canceled work.
+The global Tasks view combines these with assigned work from current groups.
+
 A task carries one window from a start moment to an end moment, where the end is
 both the deadline and the end of the period the task occupies. A task records
 the list that keeps it as its scope and is assigned to at most one person, who
@@ -11,8 +19,7 @@ revival paragraph below says.
 the named list, records the task in that list scope, and sets its window. Tasking
 refuses a window whose end precedes its start.
 
-Every task operation requires the acting user to belong to the list holding that
-task. Every member holds the same powers, regardless of who created the task.
+Every task operation requires scope access as defined above. Every member holds the same powers, regardless of who created the task.
 
 [Tasks.tasks.DescribeTask](reaction:Tasks.tasks.DescribeTask) edits the title and
 details of a non-canceled task.
@@ -98,8 +105,14 @@ Tasks.tasks.CreateTask at /tasks/create
 Tasks.tasks.DeleteTask at /tasks/delete
 Tasks.tasks.DescribeTask at /tasks/describe
 Tasks.tasks.MyTasks at /tasks/mine
+Tasks.tasks.PersonalTasks at /tasks/personal
 Tasks.tasks.ReleaseTask at /tasks/release
 Tasks.tasks.ReopenTask at /tasks/reopen
 Tasks.tasks.RetimeTask at /tasks/retime
 Tasks.tasks.UncancelTask at /tasks/uncancel
+```
+
+```computations
+ownsTaskScope(user: String, scope: String) : Boolean
+  Returns whether the task scope identity equals the account identity.
 ```

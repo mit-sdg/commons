@@ -38,6 +38,12 @@ import { cn } from "@/lib/utils";
 /** The forum instance's four kinds, said exactly as they have always been. */
 export function actionText(kind: string): string {
   switch (kind) {
+    case "staff_message":
+      return "sent a private message to staff";
+    case "addressed":
+      return "started a discussion with you";
+    case "assignment_released":
+      return "A new assignment is available";
     case "reply":
       return "replied to your post";
     case "followed_reply":
@@ -151,6 +157,20 @@ function ForumNotificationBody({
   const actor = n.actor;
   const said = actionText(n.kind);
   const capitalized = said.charAt(0).toUpperCase() + said.slice(1);
+
+  if (n.kind === "assignment_released") {
+    return (
+      <>
+        <ClipboardList className="mt-0.5 size-7 shrink-0 text-primary" />
+        <div className="min-w-0 flex-1">
+          <p className={headlineClass(unread)}>{said}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground/80">
+            {n.assignmentTitle}
+          </p>
+        </div>
+      </>
+    );
+  }
 
   if (post && actor && n.kind !== "accepted") {
     return (

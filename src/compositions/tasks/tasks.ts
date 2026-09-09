@@ -2,8 +2,8 @@ import { activeUser } from "../access/session.ts";
 import { each, former, no, now, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
-  belongsToList,
-  doesNotBelongToList,
+  mayUseTaskScope,
+  mayNotUseTaskScope,
   mayActOnTask,
   mayNotActOnTask,
   theListHolding,
@@ -106,7 +106,7 @@ export const CreateTask = endpoint(
   "/tasks/create",
   ({ session, list, title, details, startsAt, endsAt, user, at, task }) =>
     receive({ session, list, title, details, startsAt, endsAt }).then(
-      where(now(at), activeUser({ session }).is({ user }), belongsToList({ user, list }))
+      where(now(at), activeUser({ session }).is({ user }), mayUseTaskScope({ user, list }))
         .then(
           Tasking.create({
             scope: list,
@@ -122,7 +122,7 @@ export const CreateTask = endpoint(
         )
         .then(respond({ task }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), doesNotBelongToList({ user, list }))
+      where(activeUser({ session }).is({ user }), mayNotUseTaskScope({ user, list }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -205,7 +205,7 @@ export const AssignTask = endpoint(
         activeUser({ session }).is({ user }),
         mayActOnTask({ user, task, at }),
         theListHolding({ task, at }).is({ list }),
-        belongsToList({ user: assignee, list }),
+        mayUseTaskScope({ user: assignee, list }),
         activeUser({ session }).is.not({ user: assignee }),
       )
         .then(Tasking.assign({ task, assignee, at }).responds({ task: assigned }))
@@ -225,7 +225,7 @@ export const AssignTask = endpoint(
         activeUser({ session }).is({ user }),
         mayActOnTask({ user, task, at }),
         theListHolding({ task, at }).is({ list }),
-        belongsToList({ user: assignee, list }),
+        mayUseTaskScope({ user: assignee, list }),
         activeUser({ session }).is({ user: assignee }),
       )
         .then(Tasking.assign({ task, assignee, at }).responds({ task: assigned }))
@@ -236,7 +236,7 @@ export const AssignTask = endpoint(
         activeUser({ session }).is({ user }),
         mayActOnTask({ user, task, at }),
         theListHolding({ task, at }).is({ list }),
-        doesNotBelongToList({ user: assignee, list }),
+        mayNotUseTaskScope({ user: assignee, list }),
       )
         .then(respond({ error: "FORBIDDEN" }))
         .named("assignee-outside-list"),
@@ -422,4 +422,11 @@ export const MyTasks = endpoint("/tasks/mine", ({ session, user, at }) =>
   receive({ session })
     .where(now(at), activeUser({ session }).is({ user }))
     .then(respond({ tasks: theTasksAssignedTo({ user, at }) })),
+);
+
+/** Personal work is scoped directly to the authenticated account, including unassigned tasks. */
+export const PersonalTasks = endpoint("/tasks/personal", ({ session, user, at }) =>
+  receive({ session })
+    .where(now(at), activeUser({ session }).is({ user }))
+    .then(respond({ tasks: theTasksIn({ list: user, at }) })),
 );

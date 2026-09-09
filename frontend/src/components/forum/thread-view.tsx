@@ -24,6 +24,7 @@ import { useAuth } from "@/lib/auth";
 import { count, titleFromContent } from "@/lib/format";
 import { loadThreadPage, type ThreadPage } from "@/lib/loaders";
 import type { ThreadNode } from "@/lib/models";
+import { loadMyLists } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
 
 interface ThreadBranch {
@@ -62,15 +63,19 @@ function buildThreadTree(
 export function ThreadView({
   conversation,
   batchedControls = false,
+  fromGroup,
 }: {
   conversation: string;
   batchedControls?: boolean;
+  fromGroup?: string;
 }) {
   const { session, permissions } = useAuth();
   const { data, error, loading, refetch } = useQuery<ThreadPage>(
     () => loadThreadPage(conversation),
     [conversation],
   );
+  const groups = useQuery(session ? loadMyLists : null, [session]);
+  const origin = groups.data?.find((group) => group.list === fromGroup);
   const subscribers = useQuery<{ subscribers: { user: string }[] }>(
     () => api.subscriptions.subscribers({ target: conversation }),
     [conversation],
@@ -149,10 +154,14 @@ export function ThreadView({
     <PageContainer>
       <div className="mb-4">
         <Link
-          href="/"
+          href={
+            origin
+              ? `/groups/${encodeURIComponent(origin.list)}?view=discussions`
+              : "/"
+          }
           className="text-sm text-muted-foreground hover:text-foreground"
         >
-          ← All topics
+          ← {origin ? origin.title || "Group discussions" : "All discussions"}
         </Link>
       </div>
 
@@ -231,18 +240,8 @@ export function ThreadView({
       <AudienceChips
         holders={data.audience.map((holder) => holder.holder)}
         options={data.audience}
+        groupLinks={groups.data?.map((group) => group.list)}
       />
-      {data.audience.some(
-        (holder) => holder.kind === "group" || holder.kind === "section",
-      ) ? (
-        <p className="text-xs text-muted-foreground">
-          Group and section access follows current membership. New members can
-          read earlier posts in this discussion.
-        </p>
-      ) : null}
-      <Button asChild size="sm" variant="outline">
-        <Link href="/new">Start a discussion with other people</Link>
-      </Button>
       <UnreadBanner newCount={unread.newCount} onMarkAll={unread.markAll} />
 
       {pinnedItems.length > 0 ? (

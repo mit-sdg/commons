@@ -95,6 +95,7 @@ describe("forum identity and lookup presentation", () => {
       {
         notification: expect.any(String),
         kind: "reply",
+        assignmentTitle: null,
         link: post,
         createdAt: at,
         read: false,

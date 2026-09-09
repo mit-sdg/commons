@@ -31,7 +31,7 @@ export function RevisionsDialog({
         <History className="size-3.5" />
         Edited
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-display">Edit history</DialogTitle>
           <DialogDescription>
@@ -78,7 +78,7 @@ function RevisionsBody({
   const active = selected ?? latestNumber;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
+    <div className="grid min-w-0 gap-4 sm:grid-cols-[200px_minmax(0,1fr)] [&>*]:min-w-0">
       <ScrollArea className="max-h-[55vh] sm:pr-2">
         <ol className="space-y-1">
           {[...revisions].reverse().map((rev) => {

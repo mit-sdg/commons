@@ -1,11 +1,19 @@
 "use client";
 
+import { Check, ChevronDown, Globe, Lock, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "@/components/link";
 import { Button } from "@/components/ui/button";
+import { InlineHelp } from "@/components/ui/inline-help";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { Output } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { useProfile } from "@/lib/profiles";
 
 export type AudienceOption = Output<"/audiences/options">["holders"][number];
 
@@ -42,39 +50,198 @@ export function audiencePresentation(
   return { label: `${label}${suffix}`, kind };
 }
 
+function RecipientName({ option }: { option: AudienceOption }) {
+  const { me } = useAuth();
+  const profile = useProfile(
+    option.kind === "account" ? option.identity : null,
+  );
+  return (
+    <>
+      {option.kind === "account" && option.identity === me?.user
+        ? "You"
+        : profile?.displayName || option.label}
+    </>
+  );
+}
+
 export function AudienceChips({
   holders,
   options,
+  groupLinks,
 }: {
   holders: string[];
   options: AudienceOption[];
+  groupLinks?: string[];
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const everyone = holders.includes("standing:everyone");
+  const shown = everyone
+    ? ["standing:everyone"]
+    : expanded
+      ? holders
+      : holders.slice(0, 2);
+  const Icon = everyone ? Globe : Lock;
   return (
-    <ul aria-label="Audience" className="flex flex-wrap gap-2">
-      {holders.map((holder) => {
+    <span
+      className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground"
+      aria-label="Audience"
+    >
+      <Icon className="size-3.5" aria-hidden="true" />
+      <span>Visible to</span>
+      {shown.map((holder, index) => {
         const option = options.find((option) => option.holder === holder);
-        const displayed = option
-          ? audiencePresentation(option, options)
-          : {
-              label: "Selected audience",
-              kind: holder.startsWith("account:")
-                ? "Person"
-                : holder.startsWith("group:")
-                  ? "Group"
-                  : "Audience",
-            };
         return (
-          <li key={holder} className="rounded-md border px-2 py-1 text-sm">
-            <span>{displayed.label}</span>
-            {option && option.kind !== "standing" ? (
-              <span className="ml-2 text-xs text-muted-foreground">
-                {displayed.kind}
-              </span>
-            ) : null}
-          </li>
+          <span key={holder}>
+            {index > 0 ? "and " : ""}
+            {everyone ? (
+              "everyone in the course"
+            ) : option ? (
+              option.kind === "group" &&
+              groupLinks?.includes(option.identity) ? (
+                <Link
+                  href={`/groups/${encodeURIComponent(option.identity)}?view=discussions`}
+                  className="underline underline-offset-4"
+                >
+                  <RecipientName option={option} />
+                </Link>
+              ) : (
+                <RecipientName option={option} />
+              )
+            ) : (
+              "selected recipients"
+            )}
+          </span>
         );
       })}
-    </ul>
+      {!everyone && holders.length > 2 ? (
+        <button
+          type="button"
+          className="underline underline-offset-4"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? "Show less" : `+${holders.length - 2}`}
+        </button>
+      ) : null}
+      {!everyone &&
+      holders.some(
+        (holder) =>
+          holder.startsWith("group:") || holder.startsWith("section:"),
+      ) ? (
+        <InlineHelp label="Who can see this discussion?">
+          Current group and section members can read this discussion. People who
+          join later can read earlier posts too.
+        </InlineHelp>
+      ) : null}
+    </span>
+  );
+}
+
+function RecipientResult({
+  option,
+  options,
+  query,
+  checked,
+  onSelect,
+}: {
+  option: AudienceOption;
+  options: AudienceOption[];
+  query: string;
+  checked: boolean;
+  onSelect: () => void;
+}) {
+  const profile = useProfile(
+    option.kind === "account" ? option.identity : null,
+  );
+  if (
+    !`${option.label} ${profile?.displayName ?? ""} ${option.kind}`
+      .toLowerCase()
+      .includes(query.toLowerCase())
+  )
+    return null;
+  return (
+    <button
+      type="button"
+      role="option"
+      aria-selected={checked}
+      onClick={onSelect}
+      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted focus:bg-muted focus:outline-none"
+    >
+      <span className="min-w-0 flex-1">
+        <RecipientName option={option} />{" "}
+        <span className="ml-2 text-xs text-muted-foreground">
+          {option.kind === "account"
+            ? `@${option.label}`
+            : audiencePresentation(option, options).kind}
+        </span>
+      </span>
+      {checked ? <Check className="size-4 shrink-0" /> : null}
+    </button>
+  );
+}
+
+function RecipientSearch({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: AudienceOption[];
+  selected: string[];
+  onSelect: (holder: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  return (
+    <>
+      <Input
+        autoFocus
+        aria-label="Find people, groups, or sections"
+        placeholder="Find people, groups, or sections…"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+            event.currentTarget.parentElement
+              ?.querySelector<HTMLElement>('[role="option"]')
+              ?.focus();
+          }
+        }}
+      />
+      <div
+        role="listbox"
+        aria-label="Recipients"
+        aria-multiselectable="true"
+        className="mt-2 max-h-60 overflow-y-auto"
+        onKeyDown={(event) => {
+          if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+          event.preventDefault();
+          const items = Array.from(
+            event.currentTarget.querySelectorAll<HTMLElement>(
+              '[role="option"]',
+            ),
+          );
+          const index = items.indexOf(document.activeElement as HTMLElement);
+          items[
+            (index + (event.key === "ArrowDown" ? 1 : -1) + items.length) %
+              items.length
+          ]?.focus();
+        }}
+      >
+        {options.map((option) => (
+          <RecipientResult
+            key={option.holder}
+            option={option}
+            options={options}
+            query={query}
+            checked={selected.includes(option.holder)}
+            onSelect={() => onSelect(option.holder)}
+          />
+        ))}
+        <p className="hidden p-2 text-sm text-muted-foreground only:block">
+          No matching recipients.
+        </p>
+      </div>
+    </>
   );
 }
 
@@ -84,86 +251,206 @@ export function AudiencePicker({
   disabled,
   onChange,
   onRefresh,
+  error,
+  loading,
 }: {
   selected: string[];
   options: AudienceOption[];
   disabled: boolean;
   onChange: (holders: string[]) => void;
   onRefresh: () => void;
+  error: string | null;
+  loading: boolean;
 }) {
-  const [query, setQuery] = useState("");
-  const matches = options.filter((option) =>
-    `${option.label} ${option.kind}`
-      .toLowerCase()
-      .includes(query.toLowerCase()),
+  const { me } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState(false);
+  const selectable = options.filter(
+    (option) =>
+      option.holder !== `account:${me?.user}` &&
+      option.holder !== "standing:everyone",
   );
-  function toggle(holder: string) {
-    if (selected.includes(holder))
-      onChange(selected.filter((value) => value !== holder));
-    else if (holder === "standing:everyone") onChange([holder]);
-    else
-      onChange(
-        [
-          ...selected.filter((value) => value !== "standing:everyone"),
-          holder,
-        ].sort(),
-      );
-  }
+  const label = selected.includes("standing:everyone")
+    ? "Everyone in the course"
+    : selected.length === 1 && selected[0] === "standing:staff"
+      ? "Staff privately"
+      : selected.length
+        ? `${selected.length} selected`
+        : "Choose people or groups";
   return (
-    <fieldset disabled={disabled} className="space-y-3">
-      <legend className="mb-2 text-sm font-medium">Addressed to</legend>
-      <p className="text-xs text-muted-foreground">
-        Groups share their membership with task lists. Current members can read
-        all discussions addressed to their group, including earlier ones.{" "}
-        <Link
-          href="/tasks"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline underline-offset-4"
+    <Popover
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (value) onRefresh();
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          disabled={disabled}
+          className="gap-2"
+          aria-label={`Who can see this? ${label}`}
         >
-          Create or manage groups in Tasks (new tab)
-        </Link>
-      </p>
-      <Button type="button" variant="outline" size="sm" onClick={onRefresh}>
-        Refresh audiences
-      </Button>
-      <Label htmlFor="audience-search" className="sr-only">
-        Find people or audiences
-      </Label>
-      <Input
-        id="audience-search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Find people, groups, or sections"
-      />
-      <div className="max-h-56 overflow-y-auto rounded-md border p-2">
-        {matches.map((option) => (
-          <label
-            key={option.holder}
-            className="flex cursor-pointer items-start gap-3 rounded p-2 hover:bg-muted"
-          >
-            <input
-              type="checkbox"
-              checked={selected.includes(option.holder)}
-              onChange={() => toggle(option.holder)}
-              className="mt-1"
-            />
-            <span>
-              <span className="block text-sm">
-                {audiencePresentation(option, options).label}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {audiencePresentation(option, options).kind}
-              </span>
+          {label.endsWith(" selected") ? (
+            <span className="max-w-52 truncate">
+              {selected.slice(0, 2).map((holder, index) => {
+                const option = options.find((entry) => entry.holder === holder);
+                return (
+                  <span key={holder}>
+                    {index ? ", " : ""}
+                    {option ? (
+                      <RecipientName option={option} />
+                    ) : (
+                      "Unavailable recipient"
+                    )}
+                  </span>
+                );
+              })}
+              {selected.length > 2 ? ` +${selected.length - 2}` : ""}
             </span>
-          </label>
-        ))}
-        {!matches.length ? (
-          <p className="p-2 text-sm text-muted-foreground">
-            No matching audiences.
-          </p>
+          ) : (
+            label
+          )}
+          <ChevronDown className="size-3.5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-80 max-w-[calc(100vw-2rem)] p-2"
+      >
+        <div className="space-y-1">
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => {
+              onChange(["standing:everyone"]);
+              setOpen(false);
+            }}
+          >
+            <Globe className="size-4" />
+            Everyone in the course
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => {
+              onChange(["standing:staff"]);
+              setOpen(false);
+            }}
+          >
+            <Lock className="size-4" />
+            Staff privately
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => setCustom(true)}
+          >
+            Choose people or groups…
+          </Button>
+        </div>
+        {custom ? (
+          <div className="mt-2 border-t pt-2">
+            {error ? (
+              <p role="alert" className="p-2 text-sm">
+                Couldn’t load recipients.{" "}
+                <button type="button" className="underline" onClick={onRefresh}>
+                  Retry
+                </button>
+              </p>
+            ) : loading && !options.length ? (
+              <p role="status" className="p-2 text-sm">
+                Loading recipients…
+              </p>
+            ) : (
+              <RecipientSearch
+                options={selectable}
+                selected={selected}
+                onSelect={(holder) =>
+                  onChange(
+                    selected.includes(holder)
+                      ? selected.filter((value) => value !== holder)
+                      : [
+                          ...selected.filter(
+                            (value) => value !== "standing:everyone",
+                          ),
+                          holder,
+                        ],
+                  )
+                }
+              />
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="mt-2 w-full"
+              onClick={() => setOpen(false)}
+            >
+              Done
+            </Button>
+          </div>
         ) : null}
-      </div>
-    </fieldset>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export function AudienceFilter({
+  options,
+  value,
+  onChange,
+}: {
+  options: AudienceOption[];
+  value: string;
+  onChange: (holder: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const option = options.find((option) => option.holder === value);
+  return (
+    <span className="inline-flex items-center">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            {value ? (
+              <>
+                To:{" "}
+                {option ? (
+                  <RecipientName option={option} />
+                ) : (
+                  "Unavailable recipient"
+                )}
+              </>
+            ) : (
+              "To…"
+            )}
+            <ChevronDown className="size-3.5" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-80 max-w-[calc(100vw-2rem)] p-2"
+        >
+          <RecipientSearch
+            options={options}
+            selected={value ? [value] : []}
+            onSelect={(holder) => {
+              onChange(holder);
+              setOpen(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+      {value ? (
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Clear recipient filter"
+          onClick={() => onChange("")}
+        >
+          <X className="size-3.5" />
+        </Button>
+      ) : null}
+    </span>
   );
 }

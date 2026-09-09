@@ -58,4 +58,15 @@ forumMailKey(notification: String, recipient: String, post: String) : String
   Identifies a forum notification delivery with its recipient and source post for current audience checks.
 ```
 
-[Starting a discussion notifies explicit account recipients](reaction:Forum.notifications.RootNotifiesAddressedAccounts), excluding the author and people already selected by the mention path. Collective holders do not broadcast notifications to their members.
+[Starting a discussion notifies explicit account recipients](reaction:Forum.notifications.RootNotifiesAddressedAccounts), excluding the author and people already selected by the mention path. Group and section holders do not broadcast notifications to their members.
+
+Private openings that explicitly include Staff trigger [RootNotifiesStaff](reaction:Forum.notifications.RootNotifiesStaff).
+The [staff recipient rule](view:Forum.notifications.staffNotificationRecipient) uses the existing Staff audience membership and excludes [course-wide audiences](view:Forum.notifications.courseWideNotificationAudience).
+The author is excluded; mentioned staff receive the mention notification instead, and explicitly addressed staff receive only the staff notification.
+Current post access still gates notification creation, inbox visibility, and mail dispatch. This does not change who belongs to Staff or notify all staff for subsequent replies.
+
+The existing Notifying instance also retains assignment release notifications.
+[Subject admission](view:Forum.notifications.notificationSubjectReader) admits forum posts through postReader, or published assignments for their active student assignees whose accounts remain available.
+Inbox reads, unread counts, mark-read, dismissal, and queued mail eligibility use that same admission.
+[Assignment title lookup](view:Forum.notifications.assignmentNotificationTitle) provides the [assignment presentation](former:Forum.notifications.theAssignmentNotificationPresentation), with an assignment link rather than a forum-post link.
+Existing content-free mail is queued and rechecked at dispatch; an archived assignment or dropped student no longer admits its notification.

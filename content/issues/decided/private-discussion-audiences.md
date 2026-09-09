@@ -26,8 +26,7 @@ establishment succeeds, the conversation is unavailable. Initial notifications
 and creation success follow that event.
 
 A published conversation's explicit holders are fixed. To address different
-people, a participant starts a new conversation. Start a discussion with other people
-opens an empty composer; it copies no prior content or revealing link.
+people, a participant starts a new conversation. The ordinary New discussion action opens an empty composer; it copies no prior content or revealing link.
 
 Person holders name fixed accounts. Group, section, and staff holders refer to
 current membership: joining admits a person to history, and leaving removes
@@ -36,7 +35,7 @@ retains access while any of them admits the reader. Grouping keeps its existing
 equal-power membership; staff address groups they belong to, not groups whose
 creator would need to be recovered.
 
-Discussion groups and shared task lists use the same membership. The picker links to Tasks for group management, and membership controls state that adding someone admits them to earlier group discussions. Removal and departure end the grant through that group; another holder may still admit the person. Group management opens separately from the composer, whose audience choices refresh on return while its draft remains intact. Refresh audiences also reloads choices without clearing the draft. Switching between the Staff-question and general-discussion routes initializes the corresponding audience.
+Discussion groups and shared task lists use the same membership. Group management lives in Groups, where membership controls state that adding someone admits them to earlier group discussions. Removal and departure end the grant through that group; another holder may still admit the person. The composer refreshes audience choices on return and when opening the picker, while its draft remains intact. Switching between the Staff-question and general-discussion routes initializes the corresponding audience.
 
 Everyone means active course members plus staff. Students means active student
 seats. A section admits its active members. All ordinary readers need an
@@ -55,11 +54,7 @@ trash or purge when replies survive. An absent conversation remains inaccessible
 
 A participant may report a readable post. Flagging keeps the concern and review outcome. Reviewing reports requires ordinary audience access. Exact-version evidence and review without conversation access are separate reporting work.
 
-The shared feed supports All, Everyone, and Private. Staff questions addressed
-privately to Staff appear in a shared Staff questions view. Starting a question
-does not notify every staff member; staff who participate or follow receive
-ordinary participant notifications. Directly addressed people receive an initial
-notification. Audience membership alone does not mean following or receiving
+The shared feed supports All, Course-wide, and Private. Course-wide explicitly includes Everyone; Private is its complement within readable discussions. The To Staff view includes private discussions explicitly addressed to Staff, regardless of the author’s role. An inline searchable To filter matches explicit recipients. Ask staff privately is available to both students and staff. Starting a private discussion explicitly addressed to Staff notifies current staff recipients, excluding the author; mentions and explicit account addressing do not create duplicate opening notifications. Subsequent replies use ordinary participant and follower notifications. Directly addressed people also receive an initial notification. Audience membership alone does not mean following or receiving
 email about every event.
 
 Inbox content and metadata, unread counts, links, and mutations follow current

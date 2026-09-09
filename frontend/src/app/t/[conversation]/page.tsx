@@ -8,13 +8,17 @@ export default function ThreadPage({
   searchParams,
 }: {
   params: Promise<{ conversation: string }>;
-  searchParams: Promise<{ postControls?: string | string[] }>;
+  searchParams: Promise<{
+    postControls?: string | string[];
+    fromGroup?: string | string[];
+  }>;
 }) {
   const { conversation } = use(params);
-  const { postControls } = use(searchParams);
+  const { postControls, fromGroup } = use(searchParams);
   return (
     <ThreadView
       conversation={conversation}
+      fromGroup={typeof fromGroup === "string" ? fromGroup : undefined}
       batchedControls={postControls === "batched"}
     />
   );

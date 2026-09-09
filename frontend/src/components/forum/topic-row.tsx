@@ -31,9 +31,11 @@ function Participants({ users }: { users: string[] }) {
 export function TopicRow({
   summary,
   index = 0,
+  fromGroup,
 }: {
   summary: ConversationPreview;
   index?: number;
+  fromGroup?: string;
 }) {
   const conversation = String(summary.conversation);
   const author = summary.post?.author ?? "";
@@ -60,7 +62,7 @@ export function TopicRow({
           <div className="flex items-start gap-2">
             <h3 className="min-w-0 flex-1 font-display text-lg font-semibold leading-snug tracking-tight">
               <Link
-                href={`/t/${conversation}`}
+                href={`/t/${conversation}${fromGroup ? `?fromGroup=${encodeURIComponent(fromGroup)}` : ""}`}
                 className="text-foreground decoration-primary/40 underline-offset-4 hover:text-primary hover:underline"
               >
                 {title}

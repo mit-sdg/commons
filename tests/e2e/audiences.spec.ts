@@ -1,6 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
 
 async function signIn(page: Page, username: string) {
+  // Compile routes before interaction so Next dev does not reload away a click.
+  for (const route of ["/login", "/", "/new", "/t/warmup", "/groups", "/groups/warmup"])
+    await page.request.get(route);
   await page.goto("/login");
   await page.getByRole("textbox", { name: "Username" }).fill(username);
   await page.getByRole("textbox", { name: "Password" }).fill("password123");
@@ -35,29 +38,31 @@ test("private Staff preview, explicit recipient filter, and account switching", 
   expect(imported.ok()).toBe(true);
 
   await signIn(page, "noah");
-  await page.getByRole("link", { name: "Ask Staff privately" }).click();
-  const audience = page.getByRole("list", { name: "Audience", exact: true });
+  await page.getByRole("link", { name: "Ask staff privately" }).click();
+  await page.waitForURL("**/new?audience=staff");
+  const audience = page.getByLabel("Audience", { exact: true });
   await expect(audience).toContainText("Staff");
-  await expect(audience).toContainText("noah");
-  await expect(audience).not.toContainText("Everyone");
+  await expect(audience).toContainText("You");
+  await expect(audience).not.toContainText("everyone in the course");
   await page.getByRole("textbox", { name: "Title", exact: true }).fill("A private Staff question");
   await page.locator("textarea").fill("Only my final audience should see this opening.");
   await page.getByRole("button", { name: "Post discussion" }).click();
   await page.waitForURL(/\/t\//);
   const privateUrl = page.url();
   await expect(page.getByRole("heading", { name: "A private Staff question" })).toBeVisible();
-  await page.getByRole("link", { name: "Start a discussion with other people" }).click();
+  await page.getByRole("link", { name: "New discussion", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue("");
   await expect(page.locator("textarea")).toHaveValue("");
-  await expect(audience).toContainText("Everyone");
+  await expect(audience).toContainText("everyone in the course");
 
   await signOut(page);
   await signIn(page, "mara");
-  await page.getByRole("button", { name: "Staff questions", exact: true }).click();
+  await page.getByRole("button", { name: "To Staff", exact: true }).click();
   await expect(
     page.getByRole("link", { name: "A private Staff question", exact: true }),
   ).toBeVisible();
-  await page.getByLabel("Addressed to", { exact: true }).selectOption("standing:staff");
+  await page.getByRole("button", { name: "To…", exact: true }).click();
+  await page.getByRole("option", { name: "Staff Course audience", exact: true }).click();
   await expect(
     page.getByRole("link", { name: "A private Staff question", exact: true }),
   ).toBeVisible();
@@ -69,7 +74,7 @@ test("private Staff preview, explicit recipient filter, and account switching", 
     page.getByText("Only my final audience should see this opening.", { exact: true }),
   ).toHaveCount(0);
   await signIn(page, "priya");
-  await expect(page.getByLabel("Addressed to", { exact: true })).toHaveValue("");
+  await expect(page.getByRole("button", { name: "To…", exact: true })).toBeVisible();
   await expect(
     page.getByRole("link", { name: "A private Staff question", exact: true }),
   ).toHaveCount(0);
@@ -232,7 +237,7 @@ test("shared group management explains and changes access to earlier discussions
     await signIn(recipient, "priya");
     // Compile these routes before drafting: Next dev may reload other open tabs
     // when it first builds a route. Production has no such compilation reload.
-    for (const route of ["/new", "/tasks", "/tasks/warmup"]) {
+    for (const route of ["/new", "/tasks", "/groups", "/groups/warmup"]) {
       await authorContext.request.get(route);
     }
     await author.goto("/new");
@@ -240,34 +245,28 @@ test("shared group management explains and changes access to earlier discussions
       .getByRole("textbox", { name: "Title", exact: true })
       .fill("Earlier group discussion");
     await author.locator("textarea").fill("This draft survives a visit to group management.");
-    const popup = author.waitForEvent("popup");
-    await author.getByRole("link", { name: "Create or manage groups in Tasks (new tab)" }).click();
-    const management = await popup;
-    await management.getByRole("button", { name: "New list", exact: true }).click();
+    const management = await authorContext.newPage();
+    await management.goto("/groups");
+    await management.getByRole("button", { name: "Create group", exact: true }).click();
     const create = management.getByRole("dialog");
-    await expect(create).toContainText("Its members share this task list");
-    await create.getByLabel("Title (optional)", { exact: true }).fill("UI shared group");
-    await create.getByRole("button", { name: "Create list", exact: true }).click();
-    await management.waitForURL(/\/tasks\//);
-    await expect(
-      management.getByText("This task list and its discussion group share the members below.", {
-        exact: false,
-      }),
-    ).toBeVisible();
+    await expect(create).toContainText("Create a group");
+    await create.getByLabel("Name", { exact: true }).fill("UI shared group");
+    await create.getByRole("button", { name: "Create group", exact: true }).click();
+    await management.waitForURL(/\/groups\//);
     await author.bringToFront();
-    await author.getByRole("button", { name: "Refresh audiences", exact: true }).click();
+    await author.getByRole("button", { name: /Who can see this/ }).click();
+    await author.getByRole("button", { name: "Choose people or groups…", exact: true }).click();
     await expect(author.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(
       "Earlier group discussion",
     );
-    await author.getByRole("checkbox", { name: "UI shared group Group", exact: true }).check();
+    await author.getByRole("option", { name: "UI shared group Group", exact: true }).click();
+    await author.getByRole("button", { name: "Done", exact: true }).click();
     await expect(author.locator("textarea")).toHaveValue(
       "This draft survives a visit to group management.",
     );
-    await expect(author.getByRole("list", { name: "Audience", exact: true })).toContainText(
-      "UI shared group",
-    );
-    await expect(author.getByRole("list", { name: "Audience", exact: true })).not.toContainText(
-      "Everyone",
+    await expect(author.getByLabel("Audience", { exact: true })).toContainText("UI shared group");
+    await expect(author.getByLabel("Audience", { exact: true })).not.toContainText(
+      "everyone in the course",
     );
     await author.setViewportSize({ width: 390, height: 844 });
     await author.screenshot({
@@ -277,23 +276,27 @@ test("shared group management explains and changes access to earlier discussions
     await author.getByRole("button", { name: "Post discussion", exact: true }).click();
     await author.waitForURL(/\/t\//);
     const discussionUrl = author.url();
+    await author.getByRole("button", { name: "Who can see this discussion?", exact: true }).click();
     await expect(
-      author.getByText("New members can read earlier posts in this discussion.", { exact: false }),
+      author.getByText("People who join later can read earlier posts too.", { exact: false }),
     ).toBeVisible();
+    await author.keyboard.press("Escape");
     await recipient.goto(discussionUrl);
     await expect(recipient.getByText("That item is not available.", { exact: true })).toBeVisible();
     await management.bringToFront();
+    await management.getByRole("link", { name: "Members", exact: true }).click();
     await management.getByRole("button", { name: "Add member", exact: true }).click();
     const add = management.getByRole("dialog");
     await expect(add).toContainText("New members can read earlier and future discussions");
-    await add.getByPlaceholder("Search by name or username").fill("priya");
-    await add.getByRole("button", { name: "Find", exact: true }).click();
-    await add.getByRole("button", { name: /Priya/ }).click();
+    await add.getByRole("button", { name: "Add people…" }).click();
+    await management.getByRole("combobox", { name: "Search people" }).fill("priya");
+    await management.getByRole("option", { name: /Priya/ }).click();
+    await management.keyboard.press("Escape");
     await management.screenshot({
       path: testInfo.outputPath("shared-group-add-member.png"),
       fullPage: true,
     });
-    await add.getByRole("button", { name: "Add to list", exact: true }).click();
+    await add.getByRole("button", { name: "Add to group", exact: true }).click();
     await expect(add).toHaveCount(0);
     await recipient.reload();
     await expect(

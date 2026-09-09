@@ -77,7 +77,9 @@ export function useInbox(): Inbox {
     // list it belongs to travels with the row, so it needs no resolution.
     const postRows = entries.filter(
       (entry): entry is MergedForumNotification =>
-        entry.source === "forum" && Boolean(entry.row.link),
+        entry.source === "forum" &&
+        entry.row.kind !== "assignment_released" &&
+        Boolean(entry.row.link),
     );
     const resolveLinks = async () => {
       const resolved: Record<string, string | null> = {};
@@ -102,7 +104,9 @@ export function useInbox(): Inbox {
   const hrefOf = useCallback(
     (entry: MergedNotification): string | null =>
       entry.source === "forum"
-        ? (links[entry.id] ?? null)
+        ? entry.row.kind === "assignment_released"
+          ? `/assignments/${entry.row.link}`
+          : (links[entry.id] ?? null)
         : taskRowHref(entry.row),
     [links],
   );

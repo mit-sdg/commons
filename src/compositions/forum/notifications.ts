@@ -1,7 +1,8 @@
-import { postReader } from "./audience-policy.ts";
+import { postReader, staff, usableUser } from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import {
   compute,
+  is,
   no,
   now,
   each,
@@ -18,6 +19,8 @@ import { computations, concepts } from "../../concepts.ts";
 
 const {
   Accessing,
+  Assigning,
+  Rostering,
   Authenticating,
   Conversing,
   Mailing,
@@ -29,6 +32,37 @@ const {
   Trashing,
 } = concepts;
 
+/** Content admission is shared by inbox reads, actions, counts, and mail dispatch. */
+export const notificationSubjectReader = view(
+  "(user) may read notification subject (subject)",
+  ({ user, subject }, _out, _vars) => [
+    where(postReader({ user, post: subject })),
+    where(
+      usableUser({ user }),
+      Rostering._isActiveStudent({ user }).is({ active: true }),
+      Assigning._isAssigned({ assignment: subject, assignee: user }).is({ assigned: true }),
+      Assigning._getAssignments({}).is({ assignment: subject, status: "PUBLISHED" }),
+    ),
+  ],
+).holds();
+
+export const assignmentNotificationTitle = view(
+  "the notification title of (assignment)",
+  ({ assignment }, { assignmentTitle }, _vars) =>
+    where(
+      Assigning._getAssignments({}).is({ assignment, title: assignmentTitle, status: "PUBLISHED" }),
+    ),
+).optional();
+
+export const theAssignmentNotificationPresentation = former(
+  "the assignment notification presentation of (assignment) for (user)",
+  ({ assignment, user }, { assignmentTitle }) =>
+    where(
+      notificationSubjectReader({ user, subject: assignment }),
+      assignmentNotificationTitle({ assignment }).is({ assignmentTitle }),
+    ).form({ assignmentTitle }),
+).optional();
+
 export const PurgeClearsNotifications = reaction(({ item }) =>
   when(Trashing.purge({}).responds({ item })).then(Notifying.clearSubject({ subject: item })),
 );
@@ -37,7 +71,7 @@ export const NotificationQueuesEmail = reaction(
   ({ notification, recipient, kind, subject, email, at, text, html, message, key }) =>
     when(Notifying.notify({ recipient, kind, subject, at }).responds({ notification }))
       .where(
-        postReader({ user: recipient, post: subject }),
+        notificationSubjectReader({ user: recipient, subject }),
         Authenticating._getById({ user: recipient }).is({ email }),
         compute(computations.forumMailKey, { notification, recipient, post: subject }, key),
         compute(computations.notificationMailText, { notification }, text),
@@ -199,8 +233,8 @@ export const readableNotification = view(
   ({ notification, user }, _out, { subject, link }) =>
     where(
       Notifying._getInbox({ recipient: user }).is({ notification, subject, link }),
-      postReader({ user, post: subject }),
-      postReader({ user, post: link }),
+      notificationSubjectReader({ user, subject }),
+      notificationSubjectReader({ user, subject: link }),
     ),
 ).holds();
 /** Which notifications belong to this recipient? */
@@ -217,7 +251,7 @@ export const theNotificationsOf = former(
         read,
       }),
     )
-      .where(postReader({ user, post: subject }), postReader({ user, post: link }))
+      .where(readableNotification({ notification, user }))
       .form({ notification, kind, subject, link, createdAt, read }),
 );
 
@@ -234,7 +268,7 @@ export const theNotificationPresentationOf = former(
       post: form({ author, content, createdAt, editedAt }),
       actor: form({ user: author, username, displayName, avatar }),
     }),
-);
+).optional();
 
 /** What is this recipient's notification inbox? */
 export const theInboxOf = former(
@@ -251,7 +285,8 @@ export const theInboxOf = former(
     )
       .where(readableNotification({ notification, user }))
       .form({ notification, kind, link, createdAt, read })
-      .splicing(whether(theNotificationPresentationOf({ item: link, reader: user }))),
+      .splicing(whether(theNotificationPresentationOf({ item: link, reader: user })))
+      .splicing(whether(theAssignmentNotificationPresentation({ assignment: link, user }))),
 );
 
 export const ListNotifications = endpoint("/notifications/list", ({ session, user }) =>
@@ -335,10 +370,24 @@ export const theMailEligibility = former(
   "the current mail eligibility of (recipient) for (post) at (queued)",
   ({ recipient, post, queued }, _vars) =>
     where(
-      postReader({ user: recipient, post }),
+      notificationSubjectReader({ user: recipient, subject: post }),
       Authenticating._getById({ user: recipient }).is({ email: queued }),
     ).form({ recipient }),
 ).optional();
+
+export const courseWideNotificationAudience = view(
+  "(holders) include the whole course",
+  ({ holders }, _out, _vars) => where(is.among("standing:everyone", holders)),
+).holds();
+export const staffNotificationRecipient = view(
+  "(user) receives a staff notification for (holders)",
+  ({ user, holders }, _out, _vars) =>
+    where(
+      is.among("standing:staff", holders),
+      no(courseWideNotificationAudience({ holders })),
+      staff({ user }),
+    ),
+).holds();
 
 export const RootNotifiesAddressedAccounts = reaction(
   ({ conversation, holders, users, recipient, node, item, at }) =>
@@ -351,7 +400,23 @@ export const RootNotifiesAddressedAccounts = reaction(
         Posting._getPost({ post: item }).is.not({ author: recipient }),
         postReader({ user: recipient, post: item }),
         isNotMentionedIn({ user: recipient, post: item }),
+        no(staffNotificationRecipient({ user: recipient, holders })),
         now(at),
       )
       .then(Notifying.notify({ recipient, kind: "addressed", subject: item, link: item, at })),
+);
+
+export const RootNotifiesStaff = reaction(({ conversation, holders, recipient, node, item, at }) =>
+  when(Accessing.establish({ resource: conversation, holders }).responds())
+    .where(
+      Authenticating._getUsers({}).is({ user: recipient }),
+      staffNotificationRecipient({ user: recipient, holders }),
+      Conversing._getThread({ conversation }).is({ node, item }),
+      no(Conversing._parentOf({ node })),
+      Posting._getPost({ post: item }).is.not({ author: recipient }),
+      postReader({ user: recipient, post: item }),
+      isNotMentionedIn({ user: recipient, post: item }),
+      now(at),
+    )
+    .then(Notifying.notify({ recipient, kind: "staff_message", subject: item, link: item, at })),
 );

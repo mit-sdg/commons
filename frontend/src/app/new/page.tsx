@@ -3,13 +3,18 @@ import { NewDiscussion } from "./new-discussion";
 export default async function NewDiscussionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ audience?: string | string[] }>;
+  searchParams: Promise<{ audience?: string | string[]; group?: string }>;
 }) {
-  const { audience } = await searchParams;
+  const { audience, group } = await searchParams;
   return (
     <NewDiscussion
+      fromGroup={group}
       initialAudience={
-        audience === "staff" ? "standing:staff" : "standing:everyone"
+        group
+          ? `group:${group}`
+          : audience === "staff"
+            ? "standing:staff"
+            : "standing:everyone"
       }
     />
   );

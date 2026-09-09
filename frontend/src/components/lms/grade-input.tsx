@@ -340,7 +340,7 @@ function CriterionScoreField({
   }
 
   return (
-    <div className="grid gap-2 sm:grid-cols-[1fr_6rem_auto] sm:items-end">
+    <div className="grid min-w-0 gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))] items-end [&>*]:min-w-0">
       <div className="space-y-1">
         <Label htmlFor={`criterion-feedback-${learner}-${criterion}`}>
           {name} feedback

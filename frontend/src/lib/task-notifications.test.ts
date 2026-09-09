@@ -142,7 +142,7 @@ describe("task notification presentation", () => {
 
   test("a task row links to the list identity it carries", () => {
     expect(taskRowListId(enrichedTaskRow())).toBe("list-xyz");
-    expect(taskRowHref(enrichedTaskRow())).toBe("/tasks/list-xyz");
+    expect(taskRowHref(enrichedTaskRow())).toBe("/groups/list-xyz?view=tasks");
   });
 
   test("a membership row links to the list it is about", () => {
@@ -153,7 +153,7 @@ describe("task notification presentation", () => {
       list: null,
       listTitle: "Old crew",
     });
-    expect(taskRowHref(row)).toBe("/tasks/list-gone");
+    expect(taskRowHref(row)).toBe("/groups/list-gone?view=members");
   });
 
   test("a withheld task row links nowhere rather than to its task id", () => {
@@ -164,7 +164,7 @@ describe("task notification presentation", () => {
 
   test("a membership row about a list the reader left keeps its link", () => {
     const row = withheldTaskRow({ kind: "task-list-added", link: "list-xyz" });
-    expect(taskRowHref(row)).toBe("/tasks/list-xyz");
+    expect(taskRowHref(row)).toBe("/groups/list-xyz?view=members");
   });
 });
 
@@ -418,7 +418,13 @@ describe("filtering the merged list", () => {
   );
 
   test("every filter is offered and each narrows what it says it does", () => {
-    expect(NOTIFICATION_FILTERS).toEqual(["all", "unread", "forum", "task"]);
+    expect(NOTIFICATION_FILTERS).toEqual([
+      "all",
+      "unread",
+      "forum",
+      "course",
+      "task",
+    ]);
     expect(filterNotifications(merged, "all")).toHaveLength(4);
     expect(
       filterNotifications(merged, "unread").every((entry) => !entry.read),
@@ -434,6 +440,26 @@ describe("filtering the merged list", () => {
         (entry) => entry.source === "task",
       ),
     ).toBe(true);
+  });
+
+  test("assignment releases appear under Course rather than Discussions", () => {
+    const rows = mergeInboxes(
+      [
+        forumRow({
+          notification: "assignment",
+          kind: "assignment_released",
+          link: "assignment-1",
+        }),
+        forumRow({ notification: "staff", kind: "staff_message" }),
+      ],
+      [],
+    );
+    expect(filterNotifications(rows, "course").map((row) => row.id)).toEqual([
+      "assignment",
+    ]);
+    expect(filterNotifications(rows, "forum").map((row) => row.id)).toEqual([
+      "staff",
+    ]);
   });
 
   test("filtering does not disturb the list it was given", () => {
