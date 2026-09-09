@@ -148,7 +148,6 @@ export function AssignmentForm({
         await api.grades["configure-item"]({
           item: existing.assignment,
           label: rawPayload.title,
-          maxPoints: existingGradeItem.maxPoints,
         });
       }
       toast.success(existing ? "Assignment updated" : "Assignment created");

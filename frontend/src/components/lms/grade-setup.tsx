@@ -1,322 +1,320 @@
 "use client";
-
-import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ConfirmAction } from "@/components/confirm-action";
-import { Fact, Facts } from "@/components/facts";
-import { LoadingState } from "@/components/states";
+import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
-import type { Output } from "@/lib/api";
-import { api, publicErrorMessage } from "@/lib/api";
+import { api, type Output, publicErrorMessage, unwrap } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { RubricDescription } from "./assessment-history";
 
-export function GradeSetup({ item }: { item: string }) {
-  const query = useQuery(() => api.grades.item({ item }), [item]);
-
-  if (query.loading && !query.data) {
-    return (
-      <Card>
-        <CardContent>
-          <LoadingState label="Loading grade settings…" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!query.data || "error" in query.data) return null;
-
+type Standard = Extract<
+  Output<"/grades/standards">,
+  { standards: unknown }
+>["standards"][number];
+const empty = {
+  name: "",
+  description: "",
+  deficient: "",
+  emergent: "",
+  competent: "",
+  expert: "",
+  referenceUrl: "",
+};
+const fields = [
+  ["name", "Skill name"],
+  ["description", "What this skill concerns"],
+  ["deficient", "Deficient"],
+  ["emergent", "Emergent"],
+  ["competent", "Competent"],
+  ["expert", "Expert"],
+  ["referenceUrl", "Reference link (optional)"],
+] as const;
+export function StandardManager({ onChanged }: { onChanged?: () => void }) {
+  const { session } = useAuth();
+  const query = useQuery(
+    session ? async () => unwrap(await api.grades.standards({})) : null,
+    [session],
+  );
+  const [editing, setEditing] = useState<Standard | null | undefined>(
+    undefined,
+  );
+  if (query.error)
+    return <ErrorState message={query.error} onRetry={query.refetch} />;
   return (
-    <GradeSetupForm
-      key={`${query.data.label}-${query.data.maxPoints}-${query.data.criteria.length}`}
-      item={item}
-      detail={query.data}
-      onUpdate={query.refetch}
-    />
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Rubrics</h2>
+          <p className="text-sm text-muted-foreground">
+            Shared expectations for the skills assessed in your course.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => setEditing(null)}>
+          Define rubric
+        </Button>
+      </div>
+      {editing !== undefined && (
+        <StandardForm
+          key={editing?.edition ?? "new"}
+          existing={editing}
+          onCancel={() => setEditing(undefined)}
+          onSaved={() => {
+            setEditing(undefined);
+            query.refetch();
+            onChanged?.();
+          }}
+        />
+      )}
+      {query.loading && !query.data ? (
+        <LoadingState label="Loading rubrics..." />
+      ) : query.data?.standards.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Define a rubric with descriptions for all four levels, then select it
+          on an assignment.
+        </p>
+      ) : (
+        query.data?.standards.map((r) => (
+          <div
+            key={r.standard}
+            className="space-y-2 rounded-lg border border-border p-4"
+          >
+            <div className="flex flex-wrap justify-between gap-3">
+              <h3 className="font-medium">{r.name}</h3>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(r)}>
+                Issue revised edition
+              </Button>
+            </div>
+            <RubricDescription rubric={r} />
+          </div>
+        ))
+      )}
+    </section>
   );
 }
-
-function GradeSetupForm({
-  item,
-  detail,
-  onUpdate,
+function StandardForm({
+  existing,
+  onSaved,
+  onCancel,
 }: {
-  item: string;
-  detail: Output<"/grades/item">;
-  onUpdate: () => void;
+  existing: Standard | null;
+  onSaved: () => void;
+  onCancel: () => void;
 }) {
-  const [label, setLabel] = useState(detail.label);
-  const [maxPoints, setMaxPoints] = useState(detail.maxPoints);
-  const [criterionName, setCriterionName] = useState("");
-  const [criterionPoints, setCriterionPoints] = useState(0);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editPoints, setEditPoints] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const criteriaMaximum = detail.criteria.reduce(
-    (total, criterion) => total + criterion.maxPoints,
-    0,
+  const [values, setValues] = useState(
+    existing
+      ? (Object.fromEntries(
+          fields.map(([k]) => [k, existing[k]]),
+        ) as typeof empty)
+      : empty,
   );
-
-  async function configure() {
+  const [busy, setBusy] = useState(false);
+  async function save() {
     setBusy(true);
-    const result = await api.grades["configure-item"]({
-      item,
-      label: label.trim(),
-      maxPoints,
-    });
-    setBusy(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Grade settings saved");
-      onUpdate();
+    try {
+      const result = existing
+        ? await api.grades["revise-standard"]({
+            ...values,
+            standard: existing.standard,
+            expectedEdition: existing.edition,
+          })
+        : await api.grades["define-standard"](values);
+      if ("error" in result)
+        toast.error(
+          result.error === "CONFLICT"
+            ? "This rubric changed. Reload before issuing another edition."
+            : result.error === "INVALID_REQUEST"
+              ? "Supply all rubric descriptions and a safe HTTP or HTTPS reference link."
+              : publicErrorMessage(result.error),
+        );
+      else {
+        toast.success("Rubric edition saved");
+        onSaved();
+      }
+    } catch {
+      toast.error("Could not save the rubric.");
+    } finally {
+      setBusy(false);
     }
   }
-
-  async function addCriterion() {
-    if (!criterionName.trim()) return;
-    setBusy(true);
-    const result = await api.grades["add-criterion"]({
-      item,
-      name: criterionName.trim(),
-      maxPoints: criterionPoints,
-      position: detail.criteria.length + 1,
-    });
-    setBusy(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Criterion added");
-      setCriterionName("");
-      setCriterionPoints(0);
-      onUpdate();
-    }
-  }
-
-  async function reviseCriterion(criterion: string, position: number) {
-    if (!editName.trim()) return;
-    setBusy(true);
-    const result = await api.grades["revise-criterion"]({
-      criterion,
-      name: editName.trim(),
-      maxPoints: editPoints,
-      position,
-    });
-    setBusy(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Criterion updated");
-      setEditing(null);
-      onUpdate();
-    }
-  }
-
-  async function removeCriterion(criterion: string) {
-    const result = await api.grades["remove-criterion"]({ criterion });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Criterion removed");
-      onUpdate();
-    }
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Grade settings</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="grid gap-3 sm:grid-cols-[1fr_9rem_auto] sm:items-end">
-          <div className="space-y-1.5">
-            <Label htmlFor={`grade-label-${item}`}>Gradebook label</Label>
+    <form
+      className="space-y-4 rounded-lg border border-border bg-muted/20 p-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save();
+      }}
+    >
+      <h3 className="font-medium">
+        {existing ? `Revise ${existing.name}` : "Define rubric"}
+      </h3>
+      <p className="text-sm text-muted-foreground">
+        {existing
+          ? "This creates a new edition. Existing assignments and assessments keep the edition they selected."
+          : "Describe observable performance at each level. These descriptions will appear beside student assessments."}
+      </p>
+      {fields.map(([key, label]) => (
+        <div className="space-y-2" key={key}>
+          <Label htmlFor={`standard-${key}`}>{label}</Label>
+          {key === "name" || key === "referenceUrl" ? (
             <Input
-              id={`grade-label-${item}`}
-              value={label}
-              onChange={(event) => setLabel(event.target.value)}
+              id={`standard-${key}`}
+              type={key === "referenceUrl" ? "url" : "text"}
+              maxLength={key === "referenceUrl" ? 2048 : 10000}
+              required={key !== "referenceUrl"}
+              value={values[key]}
+              disabled={busy}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, [key]: e.target.value }))
+              }
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor={`grade-max-${item}`}>Maximum points</Label>
-            <Input
-              id={`grade-max-${item}`}
-              type="number"
-              min={0}
-              value={maxPoints}
-              onChange={(event) => setMaxPoints(Number(event.target.value))}
-            />
-          </div>
-          <Button
-            onClick={configure}
-            disabled={
-              busy ||
-              !label.trim() ||
-              (label === detail.label && maxPoints === detail.maxPoints)
-            }
-          >
-            Save settings
-          </Button>
-        </div>
-
-        {detail.criteria.length > 0 && criteriaMaximum !== maxPoints ? (
-          <p className="rounded-md border border-amber-400/40 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-            Rubric criteria total {criteriaMaximum} points, which differs from
-            the {maxPoints}-point overall grade.
-          </p>
-        ) : null}
-
-        <div className="border-t border-border pt-5">
-          <div className="mb-3">
-            <h3 className="font-display font-semibold">Rubric criteria</h3>
-            <p className="text-sm text-muted-foreground">
-              Optional criteria describe how the assignment is assessed.
-            </p>
-          </div>
-          {detail.criteria.length > 0 ? (
-            <div className="mb-4 space-y-2">
-              {detail.criteria.map((criterion) =>
-                editing === String(criterion.criterion) ? (
-                  <div
-                    key={String(criterion.criterion)}
-                    className="grid gap-2 rounded-lg border border-primary/30 bg-muted/25 p-3 sm:grid-cols-[1fr_8rem_auto] sm:items-end"
-                  >
-                    <div className="space-y-1.5">
-                      <Label htmlFor={`criterion-name-${criterion.criterion}`}>
-                        Name
-                      </Label>
-                      <Input
-                        id={`criterion-name-${criterion.criterion}`}
-                        value={editName}
-                        onChange={(event) => setEditName(event.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor={`criterion-points-${criterion.criterion}`}
-                      >
-                        Points
-                      </Label>
-                      <Input
-                        id={`criterion-points-${criterion.criterion}`}
-                        type="number"
-                        min={0}
-                        value={editPoints}
-                        onChange={(event) =>
-                          setEditPoints(Number(event.target.value))
-                        }
-                      />
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          reviseCriterion(
-                            String(criterion.criterion),
-                            criterion.position,
-                          )
-                        }
-                        disabled={busy || !editName.trim()}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditing(null)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    key={String(criterion.criterion)}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{criterion.name}</p>
-                      <Facts className="text-muted-foreground text-xs">
-                        <Fact.Count n={criterion.maxPoints} noun="point" />
-                        <Fact.Count>Position {criterion.position}</Fact.Count>
-                      </Facts>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditing(String(criterion.criterion));
-                          setEditName(criterion.name);
-                          setEditPoints(criterion.maxPoints);
-                        }}
-                      >
-                        <Pencil className="size-3.5" /> Edit
-                      </Button>
-                      <ConfirmAction
-                        title={`Remove ${criterion.name}?`}
-                        description="Existing criterion scores for this criterion will also be cleared."
-                        confirmLabel="Remove criterion"
-                        destructive
-                        onConfirm={() =>
-                          removeCriterion(String(criterion.criterion))
-                        }
-                        trigger={
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="size-8 text-destructive"
-                            aria-label={`Remove ${criterion.name}`}
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        }
-                      />
-                    </div>
-                  </div>
-                ),
-              )}
-            </div>
           ) : (
-            <p className="mb-4 text-sm text-muted-foreground">
-              No rubric criteria yet.
-            </p>
+            <Textarea
+              id={`standard-${key}`}
+              required
+              maxLength={10000}
+              value={values[key]}
+              disabled={busy}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, [key]: e.target.value }))
+              }
+            />
           )}
-
-          <div className="grid gap-2 rounded-lg border border-dashed border-border p-3 sm:grid-cols-[1fr_8rem_auto] sm:items-end">
-            <div className="space-y-1.5">
-              <Label htmlFor={`new-criterion-name-${item}`}>
-                New criterion
-              </Label>
-              <Input
-                id={`new-criterion-name-${item}`}
-                value={criterionName}
-                onChange={(event) => setCriterionName(event.target.value)}
-                placeholder="e.g. Analysis"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`new-criterion-points-${item}`}>Points</Label>
-              <Input
-                id={`new-criterion-points-${item}`}
-                type="number"
-                min={0}
-                value={criterionPoints}
-                onChange={(event) =>
-                  setCriterionPoints(Number(event.target.value))
-                }
-              />
-            </div>
+        </div>
+      ))}
+      <div className="flex gap-2">
+        <Button disabled={busy} type="submit">
+          Save edition
+        </Button>
+        <Button
+          disabled={busy}
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+        >
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}
+export function GradeSetup({ item }: { item: string }) {
+  const { session } = useAuth();
+  const query = useQuery(
+    session ? async () => unwrap(await api.grades.item({ item })) : null,
+    [session, item],
+  );
+  const standards = useQuery(
+    session ? async () => unwrap(await api.grades.standards({})) : null,
+    [session, item],
+  );
+  const [basis, setBasis] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function add() {
+    if (!basis) return;
+    setBusy(true);
+    try {
+      const r = await api.grades["add-criterion"]({
+        item,
+        basis,
+        position: query.data?.criteria.length ?? 0,
+      });
+      if ("error" in r) toast.error(publicErrorMessage(r.error));
+      else {
+        query.refetch();
+        setBasis("");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function remove(criterion: string) {
+    setBusy(true);
+    try {
+      const r = await api.grades["remove-criterion"]({ criterion });
+      if ("error" in r) toast.error(publicErrorMessage(r.error));
+      else query.refetch();
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (query.loading && !query.data)
+    return <LoadingState label="Loading assessment setup..." />;
+  if (query.error)
+    return (
+      <p className="text-sm text-muted-foreground">
+        Publish an assignment that accepts submissions to configure its
+        assessment criteria.
+      </p>
+    );
+  const selected = query.data?.criteria ?? [];
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-muted-foreground">
+        Select the skills assessed by this assignment. Each new assessment keeps
+        the rubric editions selected when it starts.
+      </p>
+      {selected.map((c) => (
+        <div
+          key={c.criterion}
+          className="space-y-2 rounded-md border border-border p-4"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="font-medium">{c.name}</h3>
             <Button
-              variant="outline"
-              onClick={addCriterion}
-              disabled={busy || !criterionName.trim()}
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => remove(c.criterion)}
             >
-              <Plus className="size-4" /> Add criterion
+              Remove from future assessments
             </Button>
           </div>
+          <RubricDescription rubric={c} />
         </div>
-      </CardContent>
-    </Card>
+      ))}
+      {selected.length === 0 && (
+        <p className="text-sm">No skills selected yet.</p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <Label htmlFor={`rubric-select-${item}`} className="sr-only">
+          Select a rubric
+        </Label>
+        <select
+          id={`rubric-select-${item}`}
+          className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+          value={basis}
+          disabled={busy}
+          onChange={(e) => setBasis(e.target.value)}
+        >
+          <option value="">Select a rubric…</option>
+          {standards.data?.standards
+            .filter((r) => !selected.some((c) => c.standard === r.standard))
+            .map((r) => (
+              <option key={r.edition} value={r.edition}>
+                {r.name} · edition {r.number}
+              </option>
+            ))}
+        </select>
+        <Button disabled={!basis || busy} onClick={add}>
+          Add skill
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        To adopt a revised edition, remove the old selection and add the new
+        one. Existing assessments retain their original criteria.
+      </p>
+      <details className="border-t border-border pt-4">
+        <summary className="cursor-pointer text-sm font-medium">
+          Manage course rubrics
+        </summary>
+        <div className="mt-4">
+          <StandardManager onChanged={standards.refetch} />
+        </div>
+      </details>
+    </div>
   );
 }

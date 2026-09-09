@@ -35,17 +35,14 @@ An active student reads
 [Course.assignments.ForMe](reaction:Course.assignments.ForMe). The
 [theAssignment view](view:Course.assignments.theAssignment) relates one release to its current
 published assignment, so [Course.assignments.GetAssignment](reaction:Course.assignments.GetAssignment) returns detail
-only when that student has a release and the assignment is still published;
-unassigned and unpublished work appears as `null`. [Course.assignments.StaffSummary](reaction:Course.assignments.StaffSummary) gives callers holding `course:manage` the detail for
-one assignment. [Course.assignments.StaffList](reaction:Course.assignments.StaffList) gives the same callers
+when [learner access](view:Course.assignments.mayReadLearnerAssignment) holds: a published assignment assigned to the active learner, or an archived assignment with their own released or excused assessment. Other work appears as `null`. The response also reports current `canSubmit` eligibility; historical access cannot permit new submissions. [Course.assignments.StaffSummary](reaction:Course.assignments.StaffSummary) gives callers with [staff detail access](view:Course.assignments.mayReadStaffAssignment) (`course:manage` or `grade`) the detail for one assignment. Assignment mutations remain restricted to course management. [Course.assignments.StaffList](reaction:Course.assignments.StaffList) gives the same callers
 [all assignments](former:Course.assignments.theStaffAssignments), including drafts and archived work.
 
 [Course.assignments.Submit](reaction:Course.assignments.Submit) creates a Posting post as the artifact and then
 records a numbered Submitting attempt. If recording the attempt faults after
 post creation, the post remains because the two owners are not transactional.
-Submission checks only that the caller has an active student seat. The supplied
-assignment need not exist, be published, be released to that student, be open by
-date, or accept submissions.
+Submission eligibility is checked before artifact creation using the current
+assignment policy described below.
 
 ```endpoints
 Course.assignments.Archive at /assignments/archive
@@ -63,3 +60,5 @@ Course.assignments.Submit at /assignments/submit
 
 Each successful release triggers [AssignmentReleaseNotifiesStudent](reaction:Course.assignments.AssignmentReleaseNotifiesStudent).
 It creates an assignment_released notification for the actual active student assignee, linked to the assignment. This covers targeted publication and later enrolment; drafts and revisions that do not create a new release do not notify. Assigning rejects duplicate releases for the same assignment and person.
+
+[Submission eligibility](view:Course.assignments.maySubmitAssignment) requires an active learner, an assignment release, current audience membership, published accepting work, and the availability/close window. The close time is a hard boundary; due overrides and late-day use do not extend it. Invalid submission requests are refused before creating an artifact.

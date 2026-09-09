@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, Clock, GraduationCap, User } from "lucide-react";
 import { use } from "react";
 import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
+import { AssessmentHistory } from "@/components/lms/assessment-history";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { StudentNotes } from "@/components/lms/student-notes";
 import { PageContainer } from "@/components/page";
@@ -208,31 +209,17 @@ function StudentDetailPageContent({
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <GraduationCap className="size-4" /> Grades ({grades.length})
+                <GraduationCap className="size-4" /> Assessments (
+                {grades.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               {grades.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No grades yet.</p>
+                <p className="text-sm text-muted-foreground">
+                  No assessments yet.
+                </p>
               ) : (
-                <div className="space-y-2">
-                  {grades.map((g) => (
-                    <div
-                      key={g.grade}
-                      className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          {g.label || g.item.slice(0, 8)}
-                        </span>
-                        <StatusBadge status={g.status} />
-                      </div>
-                      <span className="tabular-nums">
-                        {g.score}/{g.maxPoints}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <AssessmentHistory assessments={grades} staff />
               )}
             </CardContent>
           </Card>

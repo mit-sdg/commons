@@ -2,27 +2,15 @@ import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Grading.md" with { type: "text" };
 import { MongoGradingConcept } from "./grading.mongo.ts";
-import {
-  GradeAlreadyReleased,
-  GradeDraftNotFound,
-  GradeExcusedNotFound,
-  GradeNotFound,
-  GradeReleasedNotFound,
-  LearnerExcused,
-  ScoreOutOfRange,
-} from "./errors.ts";
-
+import { GradeNotFound, GradeConflict, InvalidJudgments, GradeIncomplete } from "./errors.ts";
 export const grading = registerConcept({
   class: MongoGradingConcept,
   spec,
   refusals: {
-    SCORE_OUT_OF_RANGE: ScoreOutOfRange,
-    GRADE_ALREADY_RELEASED: GradeAlreadyReleased,
-    LEARNER_EXCUSED: LearnerExcused,
     GRADE_NOT_FOUND: GradeNotFound,
-    GRADE_DRAFT_NOT_FOUND: GradeDraftNotFound,
-    GRADE_EXCUSED_NOT_FOUND: GradeExcusedNotFound,
-    GRADE_RELEASED_NOT_FOUND: GradeReleasedNotFound,
+    GRADE_CONFLICT: GradeConflict,
+    INVALID_JUDGMENTS: InvalidJudgments,
+    GRADE_INCOMPLETE: GradeIncomplete,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoGradingConcept(database) },
 });

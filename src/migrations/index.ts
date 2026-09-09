@@ -1,3 +1,4 @@
+import { competencyAssessments } from "./20260909T000100-competency-assessments.ts";
 import { responseIdentity } from "./20260906T000200-response-identity.ts";
 import { referenceSelections } from "./20260906T000100-reference-selections.ts";
 import type { Migration } from "./migration.ts";
@@ -23,4 +24,5 @@ export const commonsMigrations: readonly Migration[] = [
   adoptLinkingStore,
   referenceSelections,
   responseIdentity,
+  competencyAssessments,
 ];

@@ -1,160 +1,113 @@
 import type { Collection, Db } from "mongodb";
-import { CriterionNotFound, GradeItemNotFound, ScoreOutOfRange } from "./errors.ts";
-
+import { CriterionNotFound, GradeItemNotFound, InvalidCriterion } from "./errors.ts";
+interface Criterion {
+  criterion: string;
+  basis: string;
+  position: number;
+  active: boolean;
+}
 interface ItemDoc {
   _id: string;
-  item: string;
   label: string;
-  maxPoints: number;
   status: "ACTIVE" | "ARCHIVED";
-  seq: number;
+  criteria: Criterion[];
 }
-
-interface CriterionDoc {
-  _id: string;
-  item: string;
-  name: string;
-  maxPoints: number;
-  position: number;
-  seq: number;
-}
-
 export class MongoItemizingConcept {
   private readonly items: Collection<ItemDoc>;
-  private readonly criteria: Collection<CriterionDoc>;
-  private readonly counters: Collection<{ _id: string; value: number }>;
-
   constructor(db: Db) {
-    this.items = db.collection<ItemDoc>("itemizing.items");
-    this.criteria = db.collection<CriterionDoc>("itemizing.criteria");
-    this.counters = db.collection("itemizing.counters");
+    this.items = db.collection("itemizing.assessmentItems");
   }
-
-  async #nextSeq(name: string): Promise<number> {
-    const counter = await this.counters.findOneAndUpdate(
-      { _id: name },
-      { $inc: { value: 1 } },
-      { upsert: true, returnDocument: "after" },
+  async configureItem({ item, label }: { item: string; label: string }) {
+    await this.items.updateOne(
+      { _id: item },
+      { $set: { label, status: "ACTIVE" }, $setOnInsert: { criteria: [] } },
+      { upsert: true },
     );
-    return counter?.value ?? 0;
+    return { gradeItem: item };
   }
-
-  #activeItem(item: string): Promise<ItemDoc | null> {
-    return this.items.findOne({ item, status: "ACTIVE" });
+  async ensureItem({ item, label }: { item: string; label: string }) {
+    await this.items.updateOne(
+      { _id: item },
+      { $setOnInsert: { label, status: "ACTIVE", criteria: [] } },
+      { upsert: true },
+    );
+    return { gradeItem: item };
   }
-
-  async configureItem({
-    item,
-    label,
-    maxPoints,
-  }: {
-    item: string;
-    label: string;
-    maxPoints: number;
-  }) {
-    if (maxPoints < 0) {
-      throw new ScoreOutOfRange(`maxPoints ${maxPoints}`);
-    }
-    const active = await this.#activeItem(item);
-    if (active !== null) {
-      await this.items.updateOne({ _id: active._id }, { $set: { label, maxPoints } });
-      return { gradeItem: active._id };
-    }
-    const gradeItem = crypto.randomUUID();
-    const seq = await this.#nextSeq("items");
-    await this.items.insertOne({ _id: gradeItem, item, label, maxPoints, status: "ACTIVE", seq });
-    return { gradeItem };
-  }
-
-  async ensureItem({ item, label, maxPoints }: { item: string; label: string; maxPoints: number }) {
-    const active = await this.#activeItem(item);
-    if (active !== null) return { gradeItem: active._id };
-    const gradeItem = crypto.randomUUID();
-    const seq = await this.#nextSeq("items");
-    await this.items.insertOne({ _id: gradeItem, item, label, maxPoints, status: "ACTIVE", seq });
-    return { gradeItem };
-  }
-
   async archiveItem({ item }: { item: string }) {
-    const active = await this.#activeItem(item);
-    if (active === null) {
-      throw new GradeItemNotFound(item);
-    }
-    await this.items.updateOne({ _id: active._id }, { $set: { status: "ARCHIVED" } });
-    return { gradeItem: active._id };
+    const result = await this.items.updateOne(
+      { _id: item, status: "ACTIVE" },
+      { $set: { status: "ARCHIVED" } },
+    );
+    if (!result.modifiedCount) throw new GradeItemNotFound("There is no active item.");
+    return { gradeItem: item };
   }
-
-  async addCriterion({
-    item,
-    name,
-    maxPoints,
-    position,
-  }: {
-    item: string;
-    name: string;
-    maxPoints: number;
-    position: number;
-  }) {
-    if ((await this.#activeItem(item)) === null) {
-      throw new GradeItemNotFound(item);
-    }
+  async addCriterion({ item, basis, position }: { item: string; basis: string; position: number }) {
+    if (!basis || !Number.isSafeInteger(position) || position < 0)
+      throw new InvalidCriterion("Select a basis and a nonnegative integer position.");
     const criterion = crypto.randomUUID();
-    const seq = await this.#nextSeq("criteria");
-    await this.criteria.insertOne({ _id: criterion, item, name, maxPoints, position, seq });
-    return { criterion };
-  }
-
-  async reviseCriterion({
-    criterion,
-    name,
-    maxPoints,
-    position,
-  }: {
-    criterion: string;
-    name: string;
-    maxPoints: number;
-    position: number;
-  }) {
-    const doc = await this.criteria.findOne({ _id: criterion });
-    if (doc === null) {
-      throw new CriterionNotFound(criterion);
+    const result = await this.items.updateOne(
+      { _id: item, status: "ACTIVE", criteria: { $not: { $elemMatch: { basis, active: true } } } },
+      { $push: { criteria: { criterion, basis, position, active: true } } },
+    );
+    if (!result.modifiedCount) {
+      if (!(await this.items.findOne({ _id: item, status: "ACTIVE" })))
+        throw new GradeItemNotFound("There is no active item.");
+      throw new InvalidCriterion("That basis is already selected.");
     }
-    await this.criteria.updateOne({ _id: criterion }, { $set: { name, maxPoints, position } });
     return { criterion };
   }
-
+  async reviseCriterion({ criterion, position }: { criterion: string; position: number }) {
+    if (!Number.isSafeInteger(position) || position < 0)
+      throw new InvalidCriterion("Use a nonnegative integer position.");
+    const result = await this.items.updateOne(
+      { status: "ACTIVE", criteria: { $elemMatch: { criterion, active: true } } },
+      { $set: { "criteria.$.position": position } },
+    );
+    if (!result.matchedCount) throw new CriterionNotFound("There is no active criterion.");
+    return { criterion };
+  }
   async removeCriterion({ criterion }: { criterion: string }) {
-    const deleted = await this.criteria.deleteOne({ _id: criterion });
-    if (deleted.deletedCount === 0) {
-      throw new CriterionNotFound(criterion);
-    }
+    const result = await this.items.updateOne(
+      { status: "ACTIVE", criteria: { $elemMatch: { criterion, active: true } } },
+      { $set: { "criteria.$.active": false } },
+    );
+    if (!result.modifiedCount) throw new CriterionNotFound("There is no active criterion.");
     return { criterion };
   }
-
   async _getItem({ item }: { item: string }) {
-    const active = await this.#activeItem(item);
-    if (active === null) return [];
-    return [{ item, label: active.label, maxPoints: active.maxPoints, status: "ACTIVE" }];
+    const doc = await this.items.findOne({ _id: item });
+    return doc ? [{ item, label: doc.label, status: doc.status }] : [];
   }
-
-  async _getItems(_: Record<string, never>) {
-    const docs = await this.items.find({ status: "ACTIVE" }).sort({ seq: 1 }).toArray();
-    return docs.map((doc) => ({ item: doc.item, label: doc.label, maxPoints: doc.maxPoints }));
+  async _getItems() {
+    return (await this.items.find({ status: "ACTIVE" }).sort({ label: 1 }).toArray()).map(
+      (doc) => ({ item: doc._id, label: doc.label }),
+    );
   }
-
+  async _getSelection({ item }: { item: string }) {
+    const doc = await this.items.findOne({ _id: item, status: "ACTIVE" });
+    return doc
+      ? [
+          {
+            criteria: doc.criteria
+              .filter((c) => c.active)
+              .sort((a, b) => a.position - b.position)
+              .map((c) => ({ criterion: c.criterion })),
+          },
+        ]
+      : [];
+  }
   async _getCriteria({ item }: { item: string }) {
-    const docs = await this.criteria.find({ item }).sort({ position: 1, seq: 1 }).toArray();
-    return docs.map((doc) => ({
-      criterion: doc._id,
-      name: doc.name,
-      maxPoints: doc.maxPoints,
-      position: doc.position,
-    }));
+    const doc = await this.items.findOne({ _id: item });
+    return (doc?.criteria ?? [])
+      .filter((c) => c.active)
+      .sort((a, b) => a.position - b.position)
+      .map(({ criterion, basis, position }) => ({ criterion, basis, position }));
   }
-
   async _getCriterion({ criterion }: { criterion: string }) {
-    const doc = await this.criteria.findOne({ _id: criterion });
-    if (doc === null) return [];
-    return [{ item: doc.item, name: doc.name, maxPoints: doc.maxPoints }];
+    const doc = await this.items.findOne({ "criteria.criterion": criterion });
+    const entry = doc?.criteria.find((c) => c.criterion === criterion);
+    return doc && entry
+      ? [{ item: doc._id, basis: entry.basis, position: entry.position, active: entry.active }]
+      : [];
   }
 }

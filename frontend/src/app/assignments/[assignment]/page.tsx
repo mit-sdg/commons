@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import { Fact, Facts } from "@/components/facts";
 import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { Link } from "@/components/link";
+import {
+  AssessmentHistory,
+  RubricDescription,
+} from "@/components/lms/assessment-history";
 import { LateDayControls } from "@/components/lms/late-day-controls";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
@@ -50,7 +54,10 @@ export default function AssignmentDetailPage({
     loading,
     error,
     refetch,
-  } = useQuery(() => loadAssignmentDetail(assignment), [assignment]);
+  } = useQuery(session ? () => loadAssignmentDetail(assignment) : null, [
+    session,
+    assignment,
+  ]);
 
   const { data: assignmentsData } = useQuery(
     session ? () => loadAssignments() : null,
@@ -127,24 +134,10 @@ export default function AssignmentDetailPage({
     [me, session],
   );
 
-  const releasedGrade = gradesData?.grades?.find(
-    (grade) => grade.item === assignment && grade.status === "RELEASED",
-  );
   const { data: gradeItemData } = useQuery(
-    releasedGrade ? () => api.grades.item({ item: assignment }) : null,
-    [releasedGrade, assignment],
+    me && session ? () => api.grades.item({ item: assignment }) : null,
+    [session, me, assignment],
   );
-  const { data: criterionScoreData } = useQuery(
-    releasedGrade && me
-      ? () =>
-          api.grades["criterion-scores"]({
-            learner: String(me.user),
-            item: assignment,
-          })
-      : null,
-    [releasedGrade, me, assignment],
-  );
-
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -152,7 +145,7 @@ export default function AssignmentDetailPage({
     asgnData?.assignment && !("error" in asgnData) ? asgnData.assignment : null;
   const latest = subData?.submission;
   const balance = lateBalance?.balance ?? null;
-  const myGrade = gradesData?.grades?.find((g) => g.item === assignment);
+
   const appliedLateUse = lateUseData?.uses.find(
     (use) => use.item === assignment && use.status === "APPLIED",
   );
@@ -208,14 +201,14 @@ export default function AssignmentDetailPage({
   const unitHours = lateUseData?.unitHours ?? 24;
   const extensionMs = (appliedLateUse?.days ?? 0) * unitHours * 3600000;
   const due = new Date(new Date(baseDue).getTime() + extensionMs).toISOString();
-  const effectiveClose = detail.closeAt
-    ? new Date(new Date(detail.closeAt).getTime() + extensionMs).toISOString()
-    : null;
+  const effectiveClose = detail.closeAt;
   const now = new Date();
   const isOverdue = new Date(due) < now;
   const isPastClose = effectiveClose ? new Date(effectiveClose) < now : false;
   const canSubmit =
-    detail.acceptsSubmissions && !isPastClose && detail.status === "PUBLISHED";
+    Boolean(asgnData && "canSubmit" in asgnData && asgnData.canSubmit) &&
+    !isPastClose &&
+    new Date(detail.availableAt) <= now;
 
   return (
     <PageContainer>
@@ -240,7 +233,7 @@ export default function AssignmentDetailPage({
         </div>
         <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href="/grades">
-            <GraduationCap className="size-4 mr-1" /> View grades
+            <GraduationCap className="size-4 mr-1" /> View assessments
           </Link>
         </Button>
       </div>
@@ -306,6 +299,7 @@ export default function AssignmentDetailPage({
                   {[...attempts].reverse().map((attempt) => (
                     <details
                       key={attempt.submission}
+                      id={`attempt-${attempt.submission}`}
                       className={cn(
                         "rounded-lg border border-border px-3 py-2 text-sm",
                         attempt.status === "WITHDRAWN" && "opacity-60",
@@ -345,54 +339,30 @@ export default function AssignmentDetailPage({
             </Card>
           )}
 
-          {myGrade &&
-            (myGrade.status === "RELEASED" || myGrade.status === "EXCUSED") && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Grade</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={myGrade.status} />
-                    {myGrade.status !== "EXCUSED" && (
-                      <span className="text-2xl font-semibold">
-                        {myGrade.score} / {myGrade.maxPoints}
-                      </span>
-                    )}
+          <section className="space-y-4">
+            <h2 className="text-lg font-semibold">Assessments</h2>
+            <AssessmentHistory
+              assessments={(gradesData?.grades ?? []).filter(
+                (g) => g.item === assignment,
+              )}
+              toggle={false}
+            />
+          </section>
+          {gradeItemData &&
+            !("error" in gradeItemData) &&
+            gradeItemData.criteria.length > 0 && (
+              <section className="space-y-4">
+                <h2 className="text-lg font-semibold">Assignment rubrics</h2>
+                {gradeItemData.criteria.map((c) => (
+                  <div
+                    key={c.criterion}
+                    className="rounded-md border border-border p-4"
+                  >
+                    <h3 className="mb-2 font-medium">{c.name}</h3>
+                    <RubricDescription rubric={c} />
                   </div>
-                  {myGrade.feedback && (
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {myGrade.feedback}
-                    </p>
-                  )}
-                  {gradeItemData &&
-                  !("error" in gradeItemData) &&
-                  criterionScoreData &&
-                  !("error" in criterionScoreData) &&
-                  criterionScoreData.scores.length > 0 ? (
-                    <div className="space-y-2 border-t border-border pt-3">
-                      <p className="text-sm font-medium">Rubric results</p>
-                      {criterionScoreData.scores.map((criterionScore) => {
-                        const criterion = gradeItemData.criteria.find(
-                          (item) => item.criterion === criterionScore.criterion,
-                        );
-                        return (
-                          <div
-                            key={criterionScore.criterion}
-                            className="flex justify-between gap-3 text-sm"
-                          >
-                            <span>{criterion?.name ?? "Criterion"}</span>
-                            <span>
-                              {criterionScore.points} /{" "}
-                              {criterionScore.maxPoints}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </CardContent>
-              </Card>
+                ))}
+              </section>
             )}
         </div>
 
@@ -424,15 +394,17 @@ export default function AssignmentDetailPage({
             </CardContent>
           </Card>
 
-          <LateDayControls
-            assignment={assignment}
-            balance={balance}
-            appliedDays={appliedLateUse?.days ?? 0}
-            dueAt={baseDue}
-            closeAt={detail.closeAt}
-            unitHours={unitHours}
-            onUpdate={handleUpdate}
-          />
+          {detail.status === "PUBLISHED" && (
+            <LateDayControls
+              assignment={assignment}
+              balance={balance}
+              appliedDays={appliedLateUse?.days ?? 0}
+              dueAt={baseDue}
+              closeAt={detail.closeAt}
+              unitHours={unitHours}
+              onUpdate={handleUpdate}
+            />
+          )}
 
           {latest && (
             <Card>

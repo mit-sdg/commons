@@ -270,7 +270,7 @@ export default function AssignmentsPage() {
                       <span>
                         <span className="text-muted-foreground">Grade</span>{" "}
                         <span className="font-medium text-foreground tabular-nums">
-                          {grade.score}/{grade.maxPoints}
+                          Assessment available
                         </span>
                       </span>
                     )}

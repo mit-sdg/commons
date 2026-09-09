@@ -1,380 +1,317 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { ConfirmAction } from "@/components/confirm-action";
+import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
-import { api, publicErrorMessage } from "@/lib/api";
+import { api, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { cn } from "@/lib/utils";
+import {
+  type Assessment,
+  AssessmentCard,
+  LEVELS,
+  levelDescription,
+  levelLabel,
+  RubricDescription,
+} from "./assessment-history";
 
-interface GradeInputProps {
+interface Props {
   learner: string;
-  learnerLabel?: string;
   item: string;
-  itemLabel?: string;
-  currentScore?: number;
-  currentFeedback?: string;
-  currentStatus?: string;
   evidence?: string;
+  learnerLabel?: string;
+  itemLabel?: string;
   onSaved: () => void;
-  onDirtyChange?: (dirty: boolean) => void;
   className?: string;
 }
-
 export function GradeInput({
   learner,
-  learnerLabel,
   item,
+  evidence = "",
+  learnerLabel,
   itemLabel,
-  currentScore,
-  currentFeedback,
-  currentStatus,
-  evidence,
   onSaved,
-  onDirtyChange,
   className,
-}: GradeInputProps) {
+}: Props) {
   const { session } = useAuth();
-  const [score, setScore] = useState(currentScore ?? 0);
-  const [feedback, setFeedback] = useState(currentFeedback ?? "");
-  const [loading, setLoading] = useState(false);
-  const dirty =
-    score !== (currentScore ?? 0) || feedback !== (currentFeedback ?? "");
-
-  useEffect(() => {
-    onDirtyChange?.(dirty);
-  }, [dirty, onDirtyChange]);
-
-  const itemQuery = useQuery(
-    !currentStatus || currentStatus === "DRAFT"
-      ? () => api.grades.item({ item })
-      : null,
-    [item, currentStatus],
+  const query = useQuery(
+    session ? async () => unwrap(await api.grades["for-item"]({ item })) : null,
+    [session, learner, item, evidence],
   );
-  const scoresQuery = useQuery(
-    currentStatus === "DRAFT"
-      ? () => api.grades["criterion-scores"]({ learner, item })
-      : null,
-    [learner, item, currentStatus],
+  const [busy, setBusy] = useState(false);
+  const assessment = query.data?.grades.find(
+    (a) => a.learner === learner && a.evidence === evidence,
   );
-
-  async function save() {
-    if (!session) return;
-    setLoading(true);
-    const result = await api.grades.record({
-      learner,
-      item,
-      score,
-      feedback,
-      evidence: evidence ?? "",
-    });
-    setLoading(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Grade saved");
-      onSaved();
+  async function start() {
+    setBusy(true);
+    try {
+      const result = await api.grades.record({ learner, item, evidence });
+      if ("error" in result)
+        toast.error(
+          result.error === "INVALID_REQUEST"
+            ? "Select rubrics first and use a valid level or Not assessed for each skill."
+            : publicErrorMessage(result.error),
+        );
+      else query.refetch();
+    } finally {
+      setBusy(false);
     }
   }
-
-  async function release() {
-    if (!session) return;
-    setLoading(true);
-    const result = await api.grades.release({ learner, item });
-    setLoading(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Grade released");
-      onSaved();
-    }
-  }
-
-  async function retract() {
-    if (!session) return;
-    setLoading(true);
-    const result = await api.grades.retract({ learner, item });
-    setLoading(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Grade retracted to draft");
-      onSaved();
-    }
-  }
-
-  async function restoreExcused() {
-    if (!session) return;
-    setLoading(true);
-    const result = await api.grades["restore-excused"]({ learner, item });
-    setLoading(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Excused grade restored to draft");
-      onSaved();
-    }
-  }
-
-  async function excuse() {
-    if (!session) return;
-    const excuseFeedback = feedback || "Excused";
-    setLoading(true);
-    const result = await api.grades.excuse({
-      learner,
-      item,
-      feedback: excuseFeedback,
-    });
-    setLoading(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success("Learner excused");
-      onSaved();
-    }
-  }
-
-  const locked = currentStatus === "RELEASED" || currentStatus === "EXCUSED";
-  const rubricTotal =
-    scoresQuery.data && !("error" in scoresQuery.data)
-      ? scoresQuery.data.scores.reduce(
-          (total, criterion) => total + criterion.points,
-          0,
-        )
-      : 0;
-  const rubricMaximum =
-    itemQuery.data && !("error" in itemQuery.data)
-      ? itemQuery.data.criteria.reduce(
-          (total, criterion) => total + criterion.maxPoints,
-          0,
-        )
-      : 0;
-
+  if (query.loading && !query.data)
+    return <LoadingState label="Loading assessment..." />;
+  if (query.error)
+    return <ErrorState message={query.error} onRetry={query.refetch} />;
   return (
-    <div className={cn("space-y-3", className)}>
-      <div className="space-y-2">
-        <Label htmlFor={`grade-score-${learner}-${item}`}>
-          Score
-          {itemQuery.data && !("error" in itemQuery.data)
-            ? ` / ${itemQuery.data.maxPoints}`
-            : ""}
-        </Label>
-        <Input
-          id={`grade-score-${learner}-${item}`}
-          type="number"
-          min={0}
-          value={score}
-          onChange={(e) => setScore(Number(e.target.value))}
-          disabled={loading || locked}
-          className="w-32"
+    <div className={className}>
+      <p className="mb-3 text-sm font-medium">
+        {learnerLabel ?? "Learner"} · {itemLabel ?? "Assignment"}
+      </p>
+      {assessment ? (
+        <AssessmentEditor
+          key={`${assessment.grade}-${assessment.version}`}
+          assessment={assessment}
+          onSaved={() => {
+            query.refetch();
+            onSaved();
+          }}
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`grade-feedback-${learner}-${item}`}>Feedback</Label>
-        <Textarea
-          id={`grade-feedback-${learner}-${item}`}
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          disabled={loading || locked}
-          rows={3}
-          placeholder="Optional feedback for the learner..."
-        />
-      </div>
-      {(!currentStatus || currentStatus === "DRAFT") &&
-      itemQuery.data &&
-      !("error" in itemQuery.data) &&
-      itemQuery.data.criteria.length > 0 ? (
-        <fieldset className="space-y-3 rounded-lg border border-border bg-muted/25 p-3">
-          <legend className="px-1 text-sm font-medium">Rubric scores</legend>
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span>
-              Rubric total: {rubricTotal} / {rubricMaximum}
-            </span>
-            {rubricTotal !== score ? (
-              <span className="text-amber-700 dark:text-amber-300">
-                Overall score differs from the rubric total.
-              </span>
-            ) : null}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setScore(rubricTotal)}
-            >
-              Set total from rubric
-            </Button>
-          </div>
-          {itemQuery.data.criteria.map((criterion) => {
-            const existing =
-              scoresQuery.data && !("error" in scoresQuery.data)
-                ? scoresQuery.data.scores.find(
-                    (score) =>
-                      String(score.criterion) === String(criterion.criterion),
-                  )
-                : undefined;
-            return (
-              <CriterionScoreField
-                key={String(criterion.criterion)}
-                learner={learner}
-                item={item}
-                criterion={String(criterion.criterion)}
-                name={criterion.name}
-                maxPoints={criterion.maxPoints}
-                initialPoints={existing?.points}
-                initialFeedback={existing?.feedback}
-                onSaved={scoresQuery.refetch}
-              />
-            );
-          })}
-        </fieldset>
-      ) : null}
-
-      {currentStatus === "RELEASED" ? (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            Retract this released grade before changing its score or feedback.
-          </p>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={retract}
-            disabled={loading}
-          >
-            Retract to edit
-          </Button>
-        </div>
-      ) : currentStatus === "EXCUSED" ? (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            This learner is excused. Restore the grade to draft before editing
-            it.
-          </p>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={restoreExcused}
-            disabled={loading}
-          >
-            Restore to draft
-          </Button>
-        </div>
       ) : (
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={save} disabled={loading || !dirty}>
-            Save draft
+        <div className="space-y-3 rounded-md border border-border p-4">
+          <p className="text-sm text-muted-foreground">
+            {evidence
+              ? "Start an assessment of the selected attempt. Its rubric editions are fixed when you start."
+              : "No attempt selected. You can record an assignment excusal; assessing work requires selecting a submitted attempt."}
+          </p>
+          <Button disabled={busy} onClick={start}>
+            {evidence ? "Start assessment" : "Record assignment excusal"}
           </Button>
-          <ConfirmAction
-            title={`Release grade for ${learnerLabel ?? learner}?`}
-            description={`${score} points for ${itemLabel ?? item} will become visible to the learner. Confirm that the feedback and rubric are complete.`}
-            confirmLabel="Release grade"
-            onConfirm={release}
-            trigger={
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={loading || !currentStatus}
-              >
-                Release
-              </Button>
-            }
-          />
-          <ConfirmAction
-            title={`Excuse ${learnerLabel ?? learner}?`}
-            description={`${itemLabel ?? item} will be marked excused with the feedback currently shown: ${feedback || "Excused"}`}
-            confirmLabel="Excuse learner"
-            onConfirm={excuse}
-            trigger={
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-destructive"
-                disabled={loading || !currentStatus}
-              >
-                Excuse
-              </Button>
-            }
-          />
         </div>
       )}
     </div>
   );
 }
-
-function CriterionScoreField({
-  learner,
-  item,
-  criterion,
-  name,
-  maxPoints,
-  initialPoints,
-  initialFeedback,
+function AssessmentEditor({
+  assessment: a,
   onSaved,
 }: {
-  learner: string;
-  item: string;
-  criterion: string;
-  name: string;
-  maxPoints: number;
-  initialPoints?: number;
-  initialFeedback?: string;
+  assessment: Assessment;
   onSaved: () => void;
 }) {
-  const [points, setPoints] = useState(initialPoints ?? 0);
-  const [feedback, setFeedback] = useState(initialFeedback ?? "");
+  const [feedback, setFeedback] = useState(a.feedback);
+  const [judgments, setJudgments] = useState(a.judgments);
   const [busy, setBusy] = useState(false);
-
-  async function save() {
-    setBusy(true);
-    const result = await api.grades["score-criterion"]({
-      learner,
-      item,
-      criterion,
-      points,
-      feedback,
+  const [preview, setPreview] = useState<"release" | "excuse" | null>(null);
+  const dirty =
+    feedback !== a.feedback ||
+    JSON.stringify(judgments) !== JSON.stringify(a.judgments);
+  const complete =
+    Boolean(a.evidence) &&
+    a.criteria.length > 0 &&
+    a.criteria.every((c) => judgments.some((j) => j.criterion === c.criterion));
+  function update(
+    criterion: string,
+    field: "rating" | "feedback",
+    value: string,
+  ) {
+    setJudgments((old) => {
+      const entry = old.find((j) => j.criterion === criterion) ?? {
+        criterion,
+        rating: "",
+        feedback: "",
+      };
+      return [
+        ...old.filter((j) => j.criterion !== criterion),
+        { ...entry, [field]: value },
+      ];
     });
-    setBusy(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success(`${name} score saved`);
-      onSaved();
+  }
+  async function action(
+    kind: "save" | "release" | "retract" | "restore-excused" | "excuse",
+  ) {
+    setBusy(true);
+    try {
+      const result =
+        kind === "save"
+          ? await api.grades.save({
+              grade: a.grade,
+              version: a.version,
+              feedback,
+              judgments: judgments.filter((j) => j.rating !== ""),
+            })
+          : kind === "excuse"
+            ? await api.grades.excuse({
+                grade: a.grade,
+                version: a.version,
+                feedback,
+              })
+            : await api.grades[kind]({ grade: a.grade, version: a.version });
+      if ("error" in result) {
+        toast.error(
+          result.error === "CONFLICT"
+            ? "This assessment changed, is locked, or is incomplete. Reload and check every skill before releasing."
+            : result.error === "INVALID_REQUEST"
+              ? "Select rubrics first and use a valid level or Not assessed for each skill."
+              : publicErrorMessage(result.error),
+        );
+      } else {
+        toast.success(
+          kind === "release"
+            ? "Assessment released"
+            : kind === "save"
+              ? "Draft saved"
+              : "Assessment updated",
+        );
+        onSaved();
+      }
+    } catch {
+      toast.error("Could not save. Reload before retrying.");
+    } finally {
+      setBusy(false);
     }
   }
-
+  if (a.status !== "DRAFT")
+    return (
+      <div className="space-y-3">
+        <AssessmentCard assessment={a} staff />
+        <Button
+          disabled={busy}
+          variant="outline"
+          onClick={() =>
+            action(a.status === "EXCUSED" ? "restore-excused" : "retract")
+          }
+        >
+          {a.status === "EXCUSED" ? "Revoke excusal" : "Retract to correct"}
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          Retraction hides this assessment from the learner until it is released
+          again. Earlier releases remain in correction history.
+        </p>
+      </div>
+    );
   return (
-    <div className="grid min-w-0 gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))] items-end [&>*]:min-w-0">
-      <div className="space-y-1">
-        <Label htmlFor={`criterion-feedback-${learner}-${criterion}`}>
-          {name} feedback
-        </Label>
-        <Input
-          id={`criterion-feedback-${learner}-${criterion}`}
-          value={feedback}
-          onChange={(event) => setFeedback(event.target.value)}
-          placeholder="Optional feedback"
+    <div className="space-y-4 rounded-lg border border-border p-4">
+      <p className="text-sm text-muted-foreground">
+        Draft · visible only to staff
+        {a.attempt ? ` · Attempt ${a.attempt}` : " · Assignment excusal"}
+      </p>
+      {a.evidence && a.criteria.length === 0 && (
+        <p role="alert" className="text-sm">
+          No criteria were selected when this assessment started. Configure
+          rubrics before starting an assessment of another attempt.
+        </p>
+      )}
+      {a.evidence &&
+        a.criteria.map((c) => {
+          const j = judgments.find((j) => j.criterion === c.criterion);
+          return (
+            <fieldset
+              key={c.criterion}
+              className="space-y-3 border-t border-border pt-3"
+            >
+              <legend className="font-medium">{c.name}</legend>
+              <RubricDescription rubric={c} />
+              <Label htmlFor={`${a.grade}-${c.criterion}-rating`}>
+                Assessment
+              </Label>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                id={`${a.grade}-${c.criterion}-rating`}
+                value={j?.rating ?? ""}
+                disabled={busy}
+                onChange={(e) => update(c.criterion, "rating", e.target.value)}
+              >
+                <option value="">Choose a level…</option>
+                {LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    {levelLabel(l)}
+                  </option>
+                ))}
+              </select>
+              {j?.rating && (
+                <p className="text-sm text-muted-foreground">
+                  {levelDescription(c, j.rating)}
+                </p>
+              )}
+              <Label htmlFor={`${a.grade}-${c.criterion}-feedback`}>
+                Feedback on {c.name}
+              </Label>
+              <Textarea
+                id={`${a.grade}-${c.criterion}-feedback`}
+                maxLength={20000}
+                disabled={busy}
+                value={j?.feedback ?? ""}
+                onChange={(e) =>
+                  update(c.criterion, "feedback", e.target.value)
+                }
+              />
+            </fieldset>
+          );
+        })}
+      <Label htmlFor={`feedback-${a.grade}`}>
+        {a.evidence ? "Overall feedback" : "Excusal explanation"}
+      </Label>
+      <Textarea
+        id={`feedback-${a.grade}`}
+        maxLength={20000}
+        disabled={busy}
+        value={feedback}
+        onChange={(e) => setFeedback(e.target.value)}
+      />
+      <div className="flex flex-wrap gap-2">
+        {a.evidence && (
+          <>
+            <Button disabled={busy || !dirty} onClick={() => action("save")}>
+              Save draft
+            </Button>
+            <Button
+              variant="outline"
+              disabled={busy || dirty || !complete}
+              onClick={() =>
+                setPreview(preview === "release" ? null : "release")
+              }
+            >
+              Review release
+            </Button>
+          </>
+        )}
+        <Button
+          variant="outline"
           disabled={busy}
-        />
+          onClick={() => setPreview(preview === "excuse" ? null : "excuse")}
+        >
+          Excuse {a.evidence ? "this assessment" : "assignment"}
+        </Button>
       </div>
-      <div className="space-y-1">
-        <Label htmlFor={`criterion-points-${learner}-${criterion}`}>
-          Points / {maxPoints}
-        </Label>
-        <Input
-          id={`criterion-points-${learner}-${criterion}`}
-          type="number"
-          min={0}
-          max={maxPoints}
-          value={points}
-          onChange={(event) => setPoints(Number(event.target.value))}
-          disabled={busy}
-        />
-      </div>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={save}
-        disabled={busy || points < 0 || points > maxPoints}
-      >
-        Save
-      </Button>
+      {dirty && a.evidence && (
+        <p className="text-xs text-muted-foreground">
+          Save your changes before reviewing the release.
+        </p>
+      )}
+      {preview && (preview === "excuse" || !dirty) && (
+        <div className="space-y-3 border-t border-border pt-4">
+          <p className="font-medium">
+            {preview === "excuse"
+              ? "The learner will see this excusal and explanation."
+              : "The learner will see this assessment and feedback."}
+          </p>
+          <AssessmentCard
+            assessment={{
+              ...a,
+              status: preview === "excuse" ? "EXCUSED" : "RELEASED",
+              feedback: preview === "excuse" ? feedback : a.feedback,
+            }}
+            staff
+            preview
+          />
+          <Button disabled={busy} onClick={() => action(preview)}>
+            {preview === "excuse"
+              ? "Confirm excusal to learner"
+              : "Confirm release to learner"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

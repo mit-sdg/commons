@@ -110,7 +110,6 @@ describe("course staff composition", () => {
     await app.concepts.Itemizing.configureItem({
       item: assignment,
       label: "Design exercise",
-      maxPoints: 100,
     });
     const { created } = await app.concepts.Rostering.importSeats({
       rows: [{ email: "student@example.edu", kind: "STUDENT" }],

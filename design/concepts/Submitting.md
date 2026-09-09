@@ -37,6 +37,7 @@ a set of Submissions with
 a Submitted set of Submissions
 a Withdrawn set of Submissions
 
+Rule: number reservation survives a failed insert; gaps can occur after failure, but an allocated number is never reused.
 Rule: a submitter's attempts on an assignment are numbered from one, and a number, once used, is never reused; withdrawing an attempt does not free its slot.
 ```
 
@@ -47,7 +48,7 @@ submit(assignment: Assignment, submitter: Submitter, artifact: Artifact, at: Dat
   where true
   then
     add a new submission with assignment and submitter, its artifacts holding artifact
-    set submission's number to one more than the highest number among this submitter's submissions for this assignment, or 1 when there are none
+    reserve the next attempt number atomically for this submitter and assignment, above all previously reserved or stored numbers, starting at 1
     set submission's submittedAt to at
     add submission to submitted
     return submission

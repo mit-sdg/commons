@@ -16,6 +16,8 @@ export class MongoSubmittingConcept {
   private readonly submissions: Collection<SubmissionDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 
+  private index: Promise<string> | undefined;
+
   constructor(db: Db) {
     this.submissions = db.collection<SubmissionDoc>("submitting.submissions");
     this.counters = db.collection("submitting.counters");
@@ -41,11 +43,27 @@ export class MongoSubmittingConcept {
     artifact: string;
     at: Date;
   }) {
-    let number = 1;
-    const existing = await this.submissions.find({ assignment, submitter }).toArray();
-    for (const doc of existing) {
-      if (doc.number >= number) number = doc.number + 1;
-    }
+    await (this.index ??= this.submissions.createIndex(
+      { assignment: 1, submitter: 1, number: 1 },
+      { unique: true },
+    ));
+    const latest = await this.submissions
+      .find({ assignment, submitter })
+      .sort({ number: -1 })
+      .limit(1)
+      .next();
+    const key = JSON.stringify([assignment, submitter]);
+    await this.counters.updateOne(
+      { _id: key },
+      { $max: { value: latest?.number ?? 0 } },
+      { upsert: true },
+    );
+    const counter = await this.counters.findOneAndUpdate(
+      { _id: key },
+      { $inc: { value: 1 } },
+      { returnDocument: "after" },
+    );
+    const number = counter!.value;
     const submission = crypto.randomUUID();
     const seq = await this.#nextSeq();
     await this.submissions.insertOne({
@@ -69,7 +87,11 @@ export class MongoSubmittingConcept {
     if (doc.status !== "SUBMITTED") {
       throw new SubmissionNotSubmitted(submission);
     }
-    await this.submissions.updateOne({ _id: submission }, { $set: { status: "WITHDRAWN" } });
+    const changed = await this.submissions.updateOne(
+      { _id: submission, status: "SUBMITTED" },
+      { $set: { status: "WITHDRAWN" } },
+    );
+    if (!changed.modifiedCount) throw new SubmissionNotSubmitted(submission);
     return { submission };
   }
 
@@ -81,7 +103,11 @@ export class MongoSubmittingConcept {
     if (doc.status !== "WITHDRAWN") {
       throw new SubmissionNotWithdrawn(submission);
     }
-    await this.submissions.updateOne({ _id: submission }, { $set: { status: "SUBMITTED" } });
+    const changed = await this.submissions.updateOne(
+      { _id: submission, status: "WITHDRAWN" },
+      { $set: { status: "SUBMITTED" } },
+    );
+    if (!changed.modifiedCount) throw new SubmissionNotWithdrawn(submission);
     return { submission };
   }
 

@@ -6,212 +6,569 @@ import {
   is,
   no,
   now,
-  reaction,
-  whether,
-  when,
+  view,
   where,
+  whether,
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { isActiveStudent, isNotActiveStudent, mayGrade, mayNotGrade } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
+const { Assigning, Grading, Itemizing, Profiling, Rostering, StandardSetting, Submitting } =
+  concepts;
 
-const { Assigning, Grading, Itemizing, Profiling, Rostering } = concepts;
+export const mayReadItem = view(
+  "(user) may read assessment item (item)",
+  ({ user, item }, _outputs, _bindings) => [
+    where(mayGrade({ user })),
+    where(
+      isActiveStudent({ user }),
+      Assigning._isAssigned({ assignment: item, assignee: user }).is({ assigned: true }),
+      Assigning._getAssignments({}).is({ assignment: item, status: "PUBLISHED" }),
+    ),
+  ],
+).holds();
+export const mayReadAssessment = view(
+  "(user) may read assessment (grade)",
+  ({ user, grade }, _outputs, { status }) => [
+    where(mayGrade({ user })),
+    where(
+      isActiveStudent({ user }),
+      Grading._getGrade({ grade }).is({ learner: user, status }),
+      is.among(status, ["RELEASED", "EXCUSED"]),
+    ),
+  ],
+).holds();
+export const theCriteriaOf = former(
+  "the criteria of (item)",
+  (
+    { item },
+    {
+      criterion,
+      basis,
+      position,
+      standard,
+      number,
+      name,
+      description,
+      deficient,
+      emergent,
+      competent,
+      expert,
+      referenceUrl,
+    },
+  ) =>
+    each(Itemizing._getCriteria({ item }).is({ criterion, basis, position }))
+      .where(
+        StandardSetting._getEdition({ edition: basis }).is({
+          standard,
+          number,
+          name,
+          description,
+          deficient,
+          emergent,
+          competent,
+          expert,
+          referenceUrl,
+        }),
+      )
+      .form({
+        criterion,
+        basis,
+        position,
+        standard,
+        number,
+        name,
+        description,
+        deficient,
+        emergent,
+        competent,
+        expert,
+        referenceUrl,
+      }),
+);
+export const theAssessmentCriteria = former(
+  "the fixed criteria of assessment (grade)",
+  (
+    { grade },
+    {
+      criterion,
+      basis,
+      position,
+      standard,
+      number,
+      name,
+      description,
+      deficient,
+      emergent,
+      competent,
+      expert,
+      referenceUrl,
+    },
+  ) =>
+    each(Grading._getCriteria({ grade }).is({ criterion }))
+      .where(
+        Itemizing._getCriterion({ criterion }).is({ basis, position }),
+        StandardSetting._getEdition({ edition: basis }).is({
+          standard,
+          number,
+          name,
+          description,
+          deficient,
+          emergent,
+          competent,
+          expert,
+          referenceUrl,
+        }),
+      )
+      .form({
+        criterion,
+        basis,
+        position,
+        standard,
+        number,
+        name,
+        description,
+        deficient,
+        emergent,
+        competent,
+        expert,
+        referenceUrl,
+      }),
+);
+export const selectedCriteria = former(
+  "the selected criterion identities of (item)",
+  ({ item }, { criterion }) =>
+    each(Itemizing._getCriteria({ item }).is({ criterion })).form({ criterion }),
+);
 
-/** Which released grades belong to this learner? */
 export const theReleasedGradesOf = former(
-  "the released grades of (learner)",
-  ({ learner }, { item, grade, score, outOf, status, feedback, label }) =>
+  "the released assessments of (learner)",
+  (
+    { learner },
+    {
+      grade,
+      item,
+      evidence,
+      grader,
+      judgments,
+      feedback,
+      status,
+      version,
+      createdAt,
+      updatedAt,
+      releasedAt,
+      history,
+      label,
+      submittedAt,
+      number,
+    },
+  ) =>
     each(
-      Grading._getGradesForLearner({ learner }).is({ item, grade, score, outOf, status, feedback }),
+      Grading._getGradesForLearner({ learner }).is({
+        grade,
+        learner,
+        item,
+        evidence,
+        grader,
+        judgments,
+        feedback,
+        status,
+        version,
+        createdAt,
+        updatedAt,
+        releasedAt,
+        history,
+      }),
+    )
+      .where(
+        is.among(status, ["RELEASED", "EXCUSED"]),
+        whether(Itemizing._getItem({ item }).is({ label })),
+        whether(
+          Submitting._getAttempts({ assignment: item, submitter: learner }).is({
+            submission: evidence,
+            submittedAt,
+            number,
+          }),
+        ),
+      )
+      .form({
+        grade,
+        learner,
+        item,
+        evidence,
+        grader,
+        judgments,
+        feedback,
+        status,
+        version,
+        createdAt,
+        updatedAt,
+        releasedAt,
+        history,
+        label,
+        submittedAt,
+        attempt: number,
+        criteria: theAssessmentCriteria({ grade }),
+      }),
+);
+
+export const theGradesOf = former(
+  "the assessments of (learner)",
+  (
+    { learner },
+    {
+      grade,
+      item,
+      evidence,
+      grader,
+      judgments,
+      feedback,
+      status,
+      version,
+      createdAt,
+      updatedAt,
+      releasedAt,
+      history,
+      label,
+      submittedAt,
+      number,
+    },
+  ) =>
+    each(
+      Grading._getGradesForLearner({ learner }).is({
+        grade,
+        learner,
+        item,
+        evidence,
+        grader,
+        judgments,
+        feedback,
+        status,
+        version,
+        createdAt,
+        updatedAt,
+        releasedAt,
+        history,
+      }),
     )
       .where(
         whether(Itemizing._getItem({ item }).is({ label })),
-        is.among(status, ["RELEASED", "EXCUSED"]),
+        whether(
+          Submitting._getAttempts({ assignment: item, submitter: learner }).is({
+            submission: evidence,
+            submittedAt,
+            number,
+          }),
+        ),
       )
-      .form({ item, grade, score, maxPoints: outOf, status, feedback, label }),
-);
-/** Which grades belong to this learner? */
-export const theGradesOf = former(
-  "the grades of (learner)",
-  ({ learner }, { item, grade, score, outOf, status, feedback, label }) =>
-    each(
-      Grading._getGradesForLearner({ learner }).is({ item, grade, score, outOf, status, feedback }),
-    )
-      .where(whether(Itemizing._getItem({ item }).is({ label })))
-      .form({ item, grade, score, maxPoints: outOf, status, feedback, label }),
+      .form({
+        grade,
+        learner,
+        item,
+        evidence,
+        grader,
+        judgments,
+        feedback,
+        status,
+        version,
+        createdAt,
+        updatedAt,
+        releasedAt,
+        history,
+        label,
+        submittedAt,
+        attempt: number,
+        criteria: theAssessmentCriteria({ grade }),
+      }),
 );
 
-/** Which criteria assess this item? */
-export const theCriteriaOf = former(
-  "the criteria of (item)",
-  ({ item }, { criterion, name, maxPoints, position }) =>
-    each(Itemizing._getCriteria({ item }).is({ criterion, name, maxPoints, position })).form({
-      criterion,
-      name,
-      maxPoints,
-      position,
-    }),
-);
-/** Which criterion scores belong to this learner's grade? */
-export const theCriterionScoresOf = former(
-  "the criterion scores of (learner) on (item)",
-  ({ learner, item }, { criterion, points, maxPoints, feedback }) =>
-    each(
-      Grading._getCriterionScores({ learner, item }).is({
-        criterion,
-        points,
-        feedback,
-      }),
-    )
-      .where(Itemizing._getCriterion({ criterion }).is({ maxPoints }))
-      .form({ criterion, points, maxPoints, feedback }),
-);
-/** Which grades are on this item? */
 export const theGradesOn = former(
-  "the grades on (item)",
-  ({ item }, { learner, grade, score, feedback, status }) =>
-    each(Grading._getGradesForItem({ item }).is({ learner, grade, score, feedback, status })).form({
-      learner,
+  "the assessments on (item)",
+  (
+    { item },
+    {
       grade,
-      score,
+      learner,
+      evidence,
+      grader,
+      judgments,
       feedback,
       status,
-    }),
+      version,
+      createdAt,
+      updatedAt,
+      releasedAt,
+      history,
+      label,
+      submittedAt,
+      number,
+    },
+  ) =>
+    each(
+      Grading._getGradesForItem({ item }).is({
+        grade,
+        learner,
+        item,
+        evidence,
+        grader,
+        judgments,
+        feedback,
+        status,
+        version,
+        createdAt,
+        updatedAt,
+        releasedAt,
+        history,
+      }),
+    )
+      .where(
+        whether(Itemizing._getItem({ item }).is({ label })),
+        whether(
+          Submitting._getAttempts({ assignment: item, submitter: learner }).is({
+            submission: evidence,
+            submittedAt,
+            number,
+          }),
+        ),
+      )
+      .form({
+        grade,
+        learner,
+        item,
+        evidence,
+        grader,
+        judgments,
+        feedback,
+        status,
+        version,
+        createdAt,
+        updatedAt,
+        releasedAt,
+        history,
+        label,
+        submittedAt,
+        attempt: number,
+        criteria: theAssessmentCriteria({ grade }),
+      }),
 );
-/** Which learners belong in the gradebook? */
+
+export const theAssessment = former(
+  "the assessment (grade)",
+  (
+    { grade },
+    {
+      learner,
+      item,
+      evidence,
+      grader,
+      judgments,
+      feedback,
+      status,
+      version,
+      createdAt,
+      updatedAt,
+      releasedAt,
+      history,
+      label,
+      submittedAt,
+      number,
+    },
+  ) =>
+    each(
+      Grading._getGrade({ grade }).is({
+        grade,
+        learner,
+        item,
+        evidence,
+        grader,
+        judgments,
+        feedback,
+        status,
+        version,
+        createdAt,
+        updatedAt,
+        releasedAt,
+        history,
+      }),
+    )
+      .where(
+        whether(Itemizing._getItem({ item }).is({ label })),
+        whether(
+          Submitting._getAttempts({ assignment: item, submitter: learner }).is({
+            submission: evidence,
+            submittedAt,
+            number,
+          }),
+        ),
+      )
+      .form({
+        grade,
+        learner,
+        item,
+        evidence,
+        grader,
+        judgments,
+        feedback,
+        status,
+        version,
+        createdAt,
+        updatedAt,
+        releasedAt,
+        history,
+        label,
+        submittedAt,
+        attempt: number,
+        criteria: theAssessmentCriteria({ grade }),
+      }),
+);
+
 export const theGradebookLearners = former(
   "the gradebook learners ()",
   (_inputs, { user, seat, section, email, displayName }) =>
     each(Rostering._getActiveStudents({}).is({ user, seat, section, email }))
       .where(whether(Profiling._getProfileFields({ user }).is({ displayName })))
-      .form({
-        user,
-        seat,
-        section,
-        displayName,
-        email,
-      }),
+      .form({ user, seat, section, email, displayName, grades: theGradesOf({ learner: user }) }),
 );
-/** What is the course gradebook? */
-export const theGradebook = former(
-  "the gradebook ()",
+export const theGradebook = former("the gradebook ()", (_inputs, { item, label }) =>
+  form({
+    items: each(Itemizing._getItems({}).is({ item, label })).form({ item, label }),
+    learners: theGradebookLearners({}),
+  }),
+);
+export const theStandards = former(
+  "the current standards ()",
   (
     _inputs,
     {
-      item,
-      label,
-      maxPoints,
-      user,
-      section,
-      displayName,
-      email,
-      cellItem,
-      grade,
-      score,
-      feedback,
-      status,
-      assigned,
+      standard,
+      edition,
+      number,
+      name,
+      description,
+      deficient,
+      emergent,
+      competent,
+      expert,
+      referenceUrl,
     },
   ) =>
-    form({
-      items: each(Itemizing._getItems({}).is({ item, label, maxPoints })).form({
-        item,
-        label,
-        maxPoints,
+    each(
+      StandardSetting._getStandards({}).is({
+        standard,
+        edition,
+        number,
+        name,
+        description,
+        deficient,
+        emergent,
+        competent,
+        expert,
+        referenceUrl,
       }),
-      learners: each(Rostering._getActiveStudents({}).is({ user, section, email }))
-        .where(whether(Profiling._getProfileFields({ user }).is({ displayName })))
-        .arranged(displayName, "ascending")
-        .form({
-          learner: user,
-          displayName,
-          email,
-          section,
-          cells: each(Itemizing._getItems({}).is({ item: cellItem }))
-            .where(
-              Assigning._isAssigned({ assignment: cellItem, assignee: user }).is({
-                assigned,
-              }),
-              whether(
-                Grading._getGrade({ learner: user, item: cellItem }).is({
-                  grade,
-                  score,
-                  feedback,
-                  status,
-                }),
-              ),
-            )
-            .form({ item: cellItem, assigned, grade, score, feedback, status }),
-        }),
+    ).form({
+      standard,
+      edition,
+      number,
+      name,
+      description,
+      deficient,
+      emergent,
+      competent,
+      expert,
+      referenceUrl,
     }),
 );
-export const RemovedCriterionClearsScores = reaction(({ criterion }) =>
-  when(Itemizing.removeCriterion({}).responds({ criterion })).then(
-    Grading.clearCriterionScores({ criterion }),
-  ),
-);
 
-export const GradesConfigureItem = endpoint(
-  "/grades/configure-item",
-  ({ session, item, label, maxPoints, user, gradeItem }) =>
-    receive({ session, item, label, maxPoints }).then(
-      where(activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Itemizing.configureItem({ item, label, maxPoints }).responds({ gradeItem }))
-        .then(respond({ gradeItem }))
-        .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
-);
-
-export const GradesItem = endpoint(
-  "/grades/item",
-  ({ session, item, user, label, maxPoints, status }) =>
-    receive({ session, item }).then(
-      where(
-        activeUser({ session }).is({ user }),
-        mayGrade({ user }),
-        Itemizing._getItem({ item }).is({ label, maxPoints, status }),
-      )
+export const GradesDefineStandard = endpoint(
+  "/grades/define-standard",
+  ({
+    session,
+    name,
+    description,
+    deficient,
+    emergent,
+    competent,
+    expert,
+    referenceUrl,
+    user,
+    at,
+    standard,
+    edition,
+  }) =>
+    receive({
+      session,
+      name,
+      description,
+      deficient,
+      emergent,
+      competent,
+      expert,
+      referenceUrl,
+    }).then(
+      where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
         .then(
-          respond({
-            item,
-            label,
-            maxPoints,
-            status,
-            criteria: theCriteriaOf({ item }),
-          }),
+          StandardSetting.define({
+            name,
+            description,
+            deficient,
+            emergent,
+            competent,
+            expert,
+            referenceUrl,
+          }).responds({ standard, edition }),
         )
+        .then(respond({ standard, edition }))
         .named("success"),
-      where(
-        activeUser({ session }).is({ user }),
-        isActiveStudent({ user }),
-        Assigning._isAssigned({ assignment: item, assignee: user }).is({ assigned: true }),
-        Itemizing._getItem({ item }).is({ label, maxPoints, status }),
-      )
-        .then(respond({ item, label, maxPoints, status, criteria: theCriteriaOf({ item }) }))
-        .named("learner"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayGrade({ user }),
-        no(Itemizing._getItem({ item })),
-      )
-        .then(respond({ error: "GRADE_ITEM_NOT_FOUND" }))
-        .named("missing"),
     ),
 );
 
-export const GradesAddCriterion = endpoint(
-  "/grades/add-criterion",
-  ({ session, item, name, maxPoints, position, user, criterion }) =>
-    receive({ session, item, name, maxPoints, position }).then(
-      where(activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Itemizing.addCriterion({ item, name, maxPoints, position }).responds({ criterion }))
-        .then(respond({ criterion }))
+export const GradesReviseStandard = endpoint(
+  "/grades/revise-standard",
+  ({
+    session,
+    standard,
+    expectedEdition,
+    name,
+    description,
+    deficient,
+    emergent,
+    competent,
+    expert,
+    referenceUrl,
+    user,
+    at,
+    edition,
+  }) =>
+    receive({
+      session,
+      standard,
+      expectedEdition,
+      name,
+      description,
+      deficient,
+      emergent,
+      competent,
+      expert,
+      referenceUrl,
+    }).then(
+      where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
+        .then(
+          StandardSetting.revise({
+            standard,
+            expectedEdition,
+            name,
+            description,
+            deficient,
+            emergent,
+            competent,
+            expert,
+            referenceUrl,
+          }).responds({ standard, edition }),
+        )
+        .then(respond({ standard, edition }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
@@ -221,15 +578,11 @@ export const GradesAddCriterion = endpoint(
 
 export const GradesReviseCriterion = endpoint(
   "/grades/revise-criterion",
-  ({ session, criterion, name, maxPoints, position, user, revised }) =>
-    receive({ session, criterion, name, maxPoints, position }).then(
-      where(activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(
-          Itemizing.reviseCriterion({ criterion, name, maxPoints, position }).responds({
-            criterion: revised,
-          }),
-        )
-        .then(respond({ criterion: revised }))
+  ({ session, criterion, position, user, at }) =>
+    receive({ session, criterion, position }).then(
+      where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
+        .then(Itemizing.reviseCriterion({ criterion, position }).responds({ criterion }))
+        .then(respond({ criterion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
@@ -239,11 +592,11 @@ export const GradesReviseCriterion = endpoint(
 
 export const GradesRemoveCriterion = endpoint(
   "/grades/remove-criterion",
-  ({ session, criterion, user, removed }) =>
+  ({ session, criterion, user, at }) =>
     receive({ session, criterion }).then(
-      where(activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Itemizing.removeCriterion({ criterion }).responds({ criterion: removed }))
-        .then(respond({ criterion: removed }))
+      where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
+        .then(Itemizing.removeCriterion({ criterion }).responds({ criterion }))
+        .then(respond({ criterion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
@@ -251,135 +604,37 @@ export const GradesRemoveCriterion = endpoint(
     ),
 );
 
-export const GradesCriterionScores = endpoint(
-  "/grades/criterion-scores",
-  ({ session, learner, item, user }) =>
-    receive({ session, learner, item }).then(
-      where(
-        activeUser({ session }).is({ user: learner }),
-        isActiveStudent({ user: learner }),
-        Grading._getGrade({ learner, item }).is({ status: "RELEASED" }),
-      )
-        .then(respond({ scores: theCriterionScoresOf({ learner, item }) }))
-        .named("learner"),
-      where(activeUser({ session }).is({ user }), mayGrade({ user }))
+export const GradesSave = endpoint(
+  "/grades/save",
+  ({ session, grade, version, judgments, feedback, user, at, saved, savedVersion }) =>
+    receive({ session, grade, version, judgments, feedback }).then(
+      where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
         .then(
-          respond({
-            scores: theCriterionScoresOf({ learner, item }),
+          Grading.save({ grade, version, judgments, feedback, grader: user, at }).responds({
+            grade: saved,
+            version: savedVersion,
           }),
         )
+        .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
-    ),
-);
-
-export const GradesRecord = endpoint(
-  "/grades/record",
-  ({ session, learner, item, evidence, score, feedback, user, maxPoints, at, grade }) =>
-    receive({ session, learner, item, evidence, score, feedback }).then(
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayGrade({ user }),
-        Itemizing._getItem({ item }).is({ maxPoints }),
-      )
-        .then(
-          Grading.record({
-            learner,
-            item,
-            evidence,
-            grader: user,
-            score,
-            outOf: maxPoints,
-            feedback,
-            at,
-          }).responds({ grade }),
-        )
-        .then(respond({ grade }))
-        .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayGrade({ user }),
-        no(Itemizing._getItem({ item })),
-      )
-        .then(respond({ error: "GRADE_ITEM_NOT_FOUND" }))
-        .named("missing-item"),
-    ),
-  {
-    input: {
-      required: ["session", "learner", "item", "score", "feedback"],
-      defaults: { evidence: null },
-    },
-  },
-);
-
-export const GradesScoreCriterion = endpoint(
-  "/grades/score-criterion",
-  ({ session, learner, item, criterion, points, feedback, user, critMax, criterionScore }) =>
-    receive({ session, learner, item, criterion, points, feedback }).then(
-      where(
-        activeUser({ session }).is({ user }),
-        mayGrade({ user }),
-        Itemizing._getCriterion({ criterion }).is({ item, maxPoints: critMax }),
-      )
-        .then(
-          Grading.scoreCriterion({
-            learner,
-            item,
-            criterion,
-            points,
-            outOf: critMax,
-            feedback,
-          }).responds({ criterionScore }),
-        )
-        .then(respond({ criterionScore }))
-        .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayGrade({ user }),
-        no(Itemizing._getCriterion({ criterion })),
-      )
-        .then(respond({ error: "CRITERION_NOT_FOUND" }))
-        .named("missing"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayGrade({ user }),
-        Itemizing._getCriterion({ criterion }).is.not({ item }),
-      )
-        .then(respond({ error: "CRITERION_NOT_FOUND" }))
-        .named("cross-item"),
     ),
 );
 
 export const GradesRelease = endpoint(
   "/grades/release",
-  ({ session, learner, item, user, at, grade }) =>
-    receive({ session, learner, item }).then(
+  ({ session, grade, version, user, at, saved, savedVersion }) =>
+    receive({ session, grade, version }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.release({ learner, item, at }).responds({ grade }))
-        .then(respond({ grade }))
-        .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
-);
-
-export const GradesReleaseItem = endpoint(
-  "/grades/release-item",
-  ({ session, item, user, at, released }) =>
-    receive({ session, item }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.releaseItem({ item, at }).responds({ released }))
-        .then(respond({ released }))
+        .then(
+          Grading.release({ grade, version, grader: user, at }).responds({
+            grade: saved,
+            version: savedVersion,
+          }),
+        )
+        .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
@@ -389,11 +644,16 @@ export const GradesReleaseItem = endpoint(
 
 export const GradesRetract = endpoint(
   "/grades/retract",
-  ({ session, learner, item, user, at, grade }) =>
-    receive({ session, learner, item }).then(
+  ({ session, grade, version, user, at, saved, savedVersion }) =>
+    receive({ session, grade, version }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.retract({ learner, item, at }).responds({ grade }))
-        .then(respond({ grade }))
+        .then(
+          Grading.retract({ grade, version, grader: user, at }).responds({
+            grade: saved,
+            version: savedVersion,
+          }),
+        )
+        .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
@@ -403,11 +663,16 @@ export const GradesRetract = endpoint(
 
 export const GradesRestoreExcused = endpoint(
   "/grades/restore-excused",
-  ({ session, learner, item, user, at, grade }) =>
-    receive({ session, learner, item }).then(
+  ({ session, grade, version, user, at, saved, savedVersion }) =>
+    receive({ session, grade, version }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.restoreExcused({ learner, item, at }).responds({ grade }))
-        .then(respond({ grade }))
+        .then(
+          Grading.restoreExcused({ grade, version, grader: user, at }).responds({
+            grade: saved,
+            version: savedVersion,
+          }),
+        )
+        .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
@@ -417,11 +682,16 @@ export const GradesRestoreExcused = endpoint(
 
 export const GradesExcuse = endpoint(
   "/grades/excuse",
-  ({ session, learner, item, feedback, user, at, grade }) =>
-    receive({ session, learner, item, feedback }).then(
+  ({ session, grade, version, feedback, user, at, saved, savedVersion }) =>
+    receive({ session, grade, version, feedback }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.excuse({ learner, item, grader: user, feedback, at }).responds({ grade }))
-        .then(respond({ grade }))
+        .then(
+          Grading.excuse({ grade, version, grader: user, feedback, at }).responds({
+            grade: saved,
+            version: savedVersion,
+          }),
+        )
+        .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
         .then(respond({ error: "FORBIDDEN" }))
@@ -429,6 +699,177 @@ export const GradesExcuse = endpoint(
     ),
 );
 
+export const GradesReleaseItem = endpoint(
+  "/grades/release-item",
+  ({ session, item, user, at, released, skipped, unconfirmed }) =>
+    receive({ session, item }).then(
+      where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
+        .then(
+          Grading.releaseItem({ item, grader: user, at }).responds({
+            released,
+            skipped,
+            unconfirmed,
+          }),
+        )
+        .then(respond({ released, skipped, unconfirmed }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+
+export const GradesConfigureItem = endpoint(
+  "/grades/configure-item",
+  ({ session, item, label, user, gradeItem }) =>
+    receive({ session, item, label }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayGrade({ user }),
+        Assigning._getAssignments({}).is({ assignment: item }),
+      )
+        .then(Itemizing.configureItem({ item, label }).responds({ gradeItem }))
+        .then(respond({ gradeItem }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayGrade({ user }),
+        no(Assigning._getAssignments({}).is({ assignment: item })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+export const GradesAddCriterion = endpoint(
+  "/grades/add-criterion",
+  ({ session, item, basis, position, user, criterion }) =>
+    receive({ session, item, basis, position }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayGrade({ user }),
+        StandardSetting._getEdition({ edition: basis }),
+      )
+        .then(Itemizing.addCriterion({ item, basis, position }).responds({ criterion }))
+        .then(respond({ criterion }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayGrade({ user }),
+        no(StandardSetting._getEdition({ edition: basis })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("missing"),
+      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+export const GradesItem = endpoint("/grades/item", ({ session, item, user, label, status }) =>
+  receive({ session, item }).then(
+    where(
+      activeUser({ session }).is({ user }),
+      mayReadItem({ user, item }),
+      Itemizing._getItem({ item }).is({ label, status }),
+    )
+      .then(respond({ item, label, status, criteria: theCriteriaOf({ item }) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), no(mayReadItem({ user, item })))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayReadItem({ user, item }),
+      no(Itemizing._getItem({ item })),
+    )
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("missing"),
+  ),
+);
+export const GradesDetail = endpoint("/grades/detail", ({ session, grade, user }) =>
+  receive({ session, grade }).then(
+    where(
+      activeUser({ session }).is({ user }),
+      mayReadAssessment({ user, grade }),
+      Grading._getGrade({ grade }),
+    )
+      .then(respond({ assessments: theAssessment({ grade }) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), no(mayReadAssessment({ user, grade })))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayReadAssessment({ user, grade }),
+      no(Grading._getGrade({ grade })),
+    )
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("missing"),
+  ),
+);
+export const mayStartAssessment = view(
+  "(learner) may be assessed on (item) using (evidence)",
+  ({ learner, item, evidence }, _outputs, _bindings) => [
+    where(
+      isActiveStudent({ user: learner }),
+      Itemizing._getItem({ item }).is({ status: "ACTIVE" }),
+      Assigning._getAssignments({}).is({
+        assignment: item,
+        status: "PUBLISHED",
+        acceptsSubmissions: true,
+      }),
+      Assigning._isAssigned({ assignment: item, assignee: learner }).is({ assigned: true }),
+      Submitting._getAttempts({ assignment: item, submitter: learner }).is({
+        submission: evidence,
+        status: "SUBMITTED",
+      }),
+    ),
+    where(
+      isActiveStudent({ user: learner }),
+      Itemizing._getItem({ item }).is({ status: "ACTIVE" }),
+      Assigning._getAssignments({}).is({
+        assignment: item,
+        status: "PUBLISHED",
+        acceptsSubmissions: true,
+      }),
+      Assigning._isAssigned({ assignment: item, assignee: learner }).is({ assigned: true }),
+      is.among(evidence, [""]),
+    ),
+  ],
+).holds();
+export const GradesRecord = endpoint(
+  "/grades/record",
+  ({ session, learner, item, evidence, user, at, grade, version, criteria }) =>
+    receive({ session, learner, item, evidence }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayGrade({ user }),
+        mayStartAssessment({ learner, item, evidence }),
+        Itemizing._getSelection({ item }).is({ criteria }),
+      )
+        .then(
+          Grading.record({ learner, item, evidence, grader: user, criteria, at }).responds({
+            grade,
+            version,
+          }),
+        )
+        .then(respond({ grade, version }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayGrade({ user }),
+        no(mayStartAssessment({ learner, item, evidence })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("invalid-evidence"),
+      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
 export const GradesForMe = endpoint("/grades/for-me", ({ session, user }) =>
   receive({ session }).then(
     where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
@@ -440,7 +881,18 @@ export const GradesForMe = endpoint("/grades/for-me", ({ session, user }) =>
   ),
 );
 
-export const GradesForStudent = endpoint("/grades/for-student", ({ session, learner, user }) =>
+export const GradesStandards = endpoint("/grades/standards", ({ session, user }) =>
+  receive({ session }).then(
+    where(activeUser({ session }).is({ user }), mayGrade({ user }))
+      .then(respond({ standards: theStandards({}) }))
+      .named("success"),
+    where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+  ),
+);
+
+export const GradesForStudent = endpoint("/grades/for-student", ({ session, user, learner }) =>
   receive({ session, learner }).then(
     where(activeUser({ session }).is({ user }), mayGrade({ user }))
       .then(respond({ grades: theGradesOf({ learner }) }))
@@ -451,7 +903,7 @@ export const GradesForStudent = endpoint("/grades/for-student", ({ session, lear
   ),
 );
 
-export const GradesForItem = endpoint("/grades/for-item", ({ session, item, user }) =>
+export const GradesForItem = endpoint("/grades/for-item", ({ session, user, item }) =>
   receive({ session, item }).then(
     where(activeUser({ session }).is({ user }), mayGrade({ user }))
       .then(respond({ grades: theGradesOn({ item }) }))

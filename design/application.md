@@ -182,8 +182,11 @@ instantiate Insisting with
 instantiate Inviting with
   User is Authenticating.User
 
+instantiate StandardSetting
+
 instantiate Itemizing with
   Item is Assigning.Assignment
+  Basis is StandardSetting.Edition
 
 instantiate Linking with
   Source is Linkable
@@ -382,6 +385,9 @@ identity at runtime, or make one concept depend on another.
 ## Computations
 
 ```computations
+submissionAllowed(detail: Json, section: String, at: Date) : Bool
+  Answers whether the published accepting assignment currently targets the learner section and is within its availability and hard close boundaries. Due overrides and late-day use do not extend the hard close.
+
 validProfileSelection(users: Strings) : Bool
   Accepts at most 64 nonempty account identifiers, each at most 256 characters.
 

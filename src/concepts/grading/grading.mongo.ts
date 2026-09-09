@@ -1,291 +1,329 @@
 import type { Collection, Db } from "mongodb";
-import {
-  GradeAlreadyReleased,
-  GradeDraftNotFound,
-  GradeExcusedNotFound,
-  GradeNotFound,
-  GradeReleasedNotFound,
-  LearnerExcused,
-  ScoreOutOfRange,
-} from "./errors.ts";
+import { GradeNotFound, GradeConflict, InvalidJudgments, GradeIncomplete } from "./errors.ts";
 
+export const RATINGS = ["DEFICIENT", "EMERGENT", "COMPETENT", "EXPERT", "NOT_ASSESSED"] as const;
+export interface Judgment {
+  criterion: string;
+  rating: string;
+  feedback: string;
+}
+interface Release {
+  revision: number;
+  grader: string;
+  feedback: string;
+  judgments: Judgment[];
+  releasedAt: Date;
+  status: "RELEASED" | "EXCUSED";
+}
 interface RecordDoc {
   _id: string;
   learner: string;
   item: string;
   evidence: string;
   grader: string;
-  score: number;
-  outOf: number;
+  criteria: { criterion: string }[];
+  judgments: Judgment[];
   feedback: string;
   status: "DRAFT" | "RELEASED" | "EXCUSED";
+  version: number;
+  createdAt: Date;
   updatedAt: Date;
   releasedAt: Date | null;
-  seq: number;
+  history: Release[];
 }
-
-interface CriterionScoreDoc {
-  _id: string;
-  record: string;
-  criterion: string;
-  points: number;
-  outOf: number;
-  feedback: string;
-  seq: number;
-}
-
 export class MongoGradingConcept {
   private readonly records: Collection<RecordDoc>;
-  private readonly criterionScores: Collection<CriterionScoreDoc>;
-  private readonly counters: Collection<{ _id: string; value: number }>;
-
+  private index: Promise<string> | undefined;
   constructor(db: Db) {
-    this.records = db.collection<RecordDoc>("grading.records");
-    this.criterionScores = db.collection<CriterionScoreDoc>("grading.criterionScores");
-    this.counters = db.collection("grading.counters");
+    this.records = db.collection("grading.assessments");
   }
-
-  async #nextSeq(name: string): Promise<number> {
-    const counter = await this.counters.findOneAndUpdate(
-      { _id: name },
-      { $inc: { value: 1 } },
-      { upsert: true, returnDocument: "after" },
+  async #ready() {
+    await (this.index ??= this.records.createIndex(
+      { learner: 1, item: 1, evidence: 1 },
+      { unique: true },
+    ));
+  }
+  async #get(grade: string) {
+    await this.#ready();
+    const doc = await this.records.findOne({ _id: grade });
+    if (!doc) throw new GradeNotFound("There is no assessment.");
+    return doc;
+  }
+  #version(doc: RecordDoc, version: number, status: string) {
+    if (doc.version !== version || doc.status !== status)
+      throw new GradeConflict("This assessment changed or is locked. Reload before editing.");
+  }
+  #complete(doc: RecordDoc) {
+    return (
+      doc.evidence !== "" &&
+      doc.criteria.length > 0 &&
+      doc.criteria.every((c) => doc.judgments.some((j) => j.criterion === c.criterion))
     );
-    return counter?.value ?? 0;
   }
-
-  #recordOf(learner: string, item: string): Promise<RecordDoc | null> {
-    return this.records.findOne({ learner, item });
-  }
-
   async record({
     learner,
     item,
     evidence,
     grader,
-    score,
-    outOf,
-    feedback,
+    criteria,
     at,
   }: {
     learner: string;
     item: string;
     evidence: string;
     grader: string;
-    score: number;
-    outOf: number;
+    criteria: { criterion: string }[];
+    at: Date;
+  }) {
+    await this.#ready();
+    if (
+      !Array.isArray(criteria) ||
+      (evidence !== "" && criteria.length === 0) ||
+      criteria.length > 100 ||
+      criteria.some((c) => !c || typeof c.criterion !== "string" || !c.criterion) ||
+      new Set(criteria.map((c) => c.criterion)).size !== criteria.length
+    )
+      throw new InvalidJudgments("Select distinct criteria.");
+    const existing = await this.records.findOne({ learner, item, evidence });
+    if (existing) return { grade: existing._id, version: existing.version };
+    const grade = crypto.randomUUID();
+    try {
+      await this.records.insertOne({
+        _id: grade,
+        learner,
+        item,
+        evidence,
+        grader,
+        criteria,
+        judgments: [],
+        feedback: "",
+        status: "DRAFT",
+        version: 1,
+        createdAt: at,
+        updatedAt: at,
+        releasedAt: null,
+        history: [],
+      });
+    } catch (error) {
+      if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) {
+        const other = await this.records.findOne({ learner, item, evidence });
+        if (other) return { grade: other._id, version: other.version };
+      }
+      throw error;
+    }
+    return { grade, version: 1 };
+  }
+  async save({
+    grade,
+    version,
+    grader,
+    judgments,
+    feedback,
+    at,
+  }: {
+    grade: string;
+    version: number;
+    grader: string;
+    judgments: Judgment[];
     feedback: string;
     at: Date;
   }) {
-    if (score < 0 || score > outOf) {
-      throw new ScoreOutOfRange(`Score must be between 0 and ${outOf}.`);
-    }
-    const existing = await this.#recordOf(learner, item);
-    if (existing !== null) {
-      if (existing.status === "RELEASED") {
-        throw new GradeAlreadyReleased(existing._id);
-      }
-      if (existing.status === "EXCUSED") {
-        throw new LearnerExcused(existing._id);
-      }
-      await this.records.updateOne(
-        { _id: existing._id },
-        { $set: { evidence, grader, score, outOf, feedback, updatedAt: at } },
+    const doc = await this.#get(grade);
+    this.#version(doc, version, "DRAFT");
+    if (
+      typeof feedback !== "string" ||
+      feedback.length > 20000 ||
+      !Array.isArray(judgments) ||
+      judgments.length > doc.criteria.length ||
+      new Set(judgments.map((j) => j?.criterion)).size !== judgments.length ||
+      judgments.some(
+        (j) =>
+          !j ||
+          !doc.criteria.some((c) => c.criterion === j.criterion) ||
+          !RATINGS.some((r) => r === j.rating) ||
+          typeof j.feedback !== "string" ||
+          j.feedback.length > 20000,
+      )
+    )
+      throw new InvalidJudgments(
+        "Use one valid level or Not assessed per criterion, with feedback of at most 20,000 characters.",
       );
-      return { grade: existing._id };
-    }
-    const grade = crypto.randomUUID();
-    const seq = await this.#nextSeq("records");
-    await this.records.insertOne({
-      _id: grade,
-      learner,
-      item,
-      evidence,
+    return this.#change(doc, {
       grader,
-      score,
-      outOf,
+      judgments: judgments.map(({ criterion, rating, feedback }) => ({
+        criterion,
+        rating,
+        feedback,
+      })),
       feedback,
-      status: "DRAFT",
       updatedAt: at,
-      releasedAt: null,
-      seq,
     });
-    return { grade };
   }
-
-  async scoreCriterion({
-    learner,
-    item,
-    criterion,
-    points,
-    outOf,
-    feedback,
+  async #change(doc: RecordDoc, fields: Partial<RecordDoc>) {
+    const result = await this.records.updateOne(
+      { _id: doc._id, version: doc.version, status: doc.status },
+      { $set: fields, $inc: { version: 1 } },
+    );
+    if (!result.modifiedCount)
+      throw new GradeConflict("This assessment changed. Reload before editing.");
+    return { grade: doc._id, version: doc.version + 1 };
+  }
+  async release({
+    grade,
+    version,
+    grader,
+    at,
   }: {
-    learner: string;
-    item: string;
-    criterion: string;
-    points: number;
-    outOf: number;
-    feedback: string;
+    grade: string;
+    version: number;
+    grader: string;
+    at: Date;
   }) {
-    const existing = await this.#recordOf(learner, item);
-    if (existing === null) {
-      throw new GradeNotFound(`${learner}/${item}`);
-    }
-    if (existing.status === "RELEASED") {
-      throw new GradeAlreadyReleased(existing._id);
-    }
-    if (existing.status === "EXCUSED") {
-      throw new LearnerExcused(existing._id);
-    }
-    if (points < 0 || points > outOf) {
-      throw new ScoreOutOfRange(`Points must be between 0 and ${outOf}.`);
-    }
-    const cs = await this.criterionScores.findOne({ record: existing._id, criterion });
-    if (cs !== null) {
-      await this.criterionScores.updateOne({ _id: cs._id }, { $set: { points, outOf, feedback } });
-      return { criterionScore: cs._id };
-    }
-    const criterionScore = crypto.randomUUID();
-    const seq = await this.#nextSeq("criterionScores");
-    await this.criterionScores.insertOne({
-      _id: criterionScore,
-      record: existing._id,
-      criterion,
-      points,
-      outOf,
-      feedback,
-      seq,
-    });
-    return { criterionScore };
-  }
-
-  async release({ learner, item, at }: { learner: string; item: string; at: Date }) {
-    const existing = await this.#recordOf(learner, item);
-    if (existing === null || existing.status !== "DRAFT") {
-      throw new GradeDraftNotFound(`${learner}/${item}`);
-    }
-    await this.records.updateOne(
-      { _id: existing._id },
-      { $set: { status: "RELEASED", releasedAt: at, updatedAt: at } },
-    );
-    return { grade: existing._id };
-  }
-
-  async releaseItem({ item, at }: { item: string; at: Date }) {
-    const drafts = await this.records.find({ item, status: "DRAFT" }).sort({ seq: 1 }).toArray();
-    const released: { learner: string; grade: string }[] = [];
-    for (const doc of drafts) {
-      await this.records.updateOne(
-        { _id: doc._id },
-        { $set: { status: "RELEASED", releasedAt: at, updatedAt: at } },
+    const doc = await this.#get(grade);
+    this.#version(doc, version, "DRAFT");
+    if (!this.#complete(doc))
+      throw new GradeIncomplete(
+        "Select evidence and assess every criterion, or explicitly mark it Not assessed, before release.",
       );
-      released.push({ learner: doc.learner, grade: doc._id });
-    }
-    return { released };
+    const entry: Release = {
+      revision: doc.history.length + 1,
+      grader,
+      feedback: doc.feedback,
+      judgments: doc.judgments,
+      releasedAt: at,
+      status: "RELEASED",
+    };
+    return this.#change(doc, {
+      status: "RELEASED",
+      grader,
+      releasedAt: at,
+      updatedAt: at,
+      history: [...doc.history, entry],
+    });
   }
-
-  async retract({ learner, item, at }: { learner: string; item: string; at: Date }) {
-    const existing = await this.#recordOf(learner, item);
-    if (existing === null || existing.status !== "RELEASED") {
-      throw new GradeReleasedNotFound(`${learner}/${item}`);
+  async releaseItem({ item, grader, at }: { item: string; grader: string; at: Date }) {
+    await this.#ready();
+    const docs = await this.records.find({ item, status: "DRAFT" }).toArray();
+    const released: { grade: string; learner: string }[] = [];
+    const skipped: { grade: string; reason: string }[] = [];
+    const unconfirmed: { grade: string; reason: string }[] = [];
+    for (const doc of docs) {
+      try {
+        await this.release({ grade: doc._id, version: doc.version, grader, at });
+        released.push({ grade: doc._id, learner: doc.learner });
+      } catch (error) {
+        if (error instanceof GradeIncomplete || error instanceof GradeConflict)
+          skipped.push({
+            grade: doc._id,
+            reason: error instanceof GradeIncomplete ? "INCOMPLETE" : "CONFLICT",
+          });
+        else unconfirmed.push({ grade: doc._id, reason: "OUTCOME_UNKNOWN" });
+      }
     }
-    await this.records.updateOne(
-      { _id: existing._id },
-      { $set: { status: "DRAFT", releasedAt: null, updatedAt: at } },
-    );
-    return { grade: existing._id };
+    return { released, skipped, unconfirmed };
   }
-
-  async restoreExcused({ learner, item, at }: { learner: string; item: string; at: Date }) {
-    const existing = await this.#recordOf(learner, item);
-    if (existing === null || existing.status !== "EXCUSED") {
-      throw new GradeExcusedNotFound(`${learner}/${item}`);
-    }
-    await this.records.updateOne(
-      { _id: existing._id },
-      { $set: { status: "DRAFT", releasedAt: null, updatedAt: at } },
-    );
-    return { grade: existing._id };
+  async retract({
+    grade,
+    version,
+    grader,
+    at,
+  }: {
+    grade: string;
+    version: number;
+    grader: string;
+    at: Date;
+  }) {
+    const doc = await this.#get(grade);
+    this.#version(doc, version, "RELEASED");
+    return this.#change(doc, { status: "DRAFT", grader, releasedAt: null, updatedAt: at });
   }
-
+  async restoreExcused({
+    grade,
+    version,
+    grader,
+    at,
+  }: {
+    grade: string;
+    version: number;
+    grader: string;
+    at: Date;
+  }) {
+    const doc = await this.#get(grade);
+    this.#version(doc, version, "EXCUSED");
+    return this.#change(doc, { status: "DRAFT", grader, releasedAt: null, updatedAt: at });
+  }
   async excuse({
-    learner,
-    item,
+    grade,
+    version,
     grader,
     feedback,
     at,
   }: {
-    learner: string;
-    item: string;
+    grade: string;
+    version: number;
     grader: string;
     feedback: string;
     at: Date;
   }) {
-    const existing = await this.#recordOf(learner, item);
-    if (existing === null) {
-      throw new GradeNotFound(`${learner}/${item}`);
-    }
-    await this.records.updateOne(
-      { _id: existing._id },
-      { $set: { status: "EXCUSED", grader, feedback, releasedAt: null, updatedAt: at } },
-    );
-    return { grade: existing._id };
+    const doc = await this.#get(grade);
+    this.#version(doc, version, "DRAFT");
+    if (typeof feedback !== "string" || feedback.length > 20000)
+      throw new InvalidJudgments("Feedback must be at most 20,000 characters.");
+    const entry: Release = {
+      revision: doc.history.length + 1,
+      grader,
+      feedback,
+      judgments: [],
+      releasedAt: at,
+      status: "EXCUSED",
+    };
+    return this.#change(doc, {
+      status: "EXCUSED",
+      grader,
+      feedback,
+      updatedAt: at,
+      releasedAt: at,
+      history: [...doc.history, entry],
+    });
   }
-
-  async clearCriterionScores({ criterion }: { criterion: string }) {
-    await this.criterionScores.deleteMany({ criterion });
-    return { criterion };
-  }
-
-  async _getGrade({ learner, item }: { learner: string; item: string }) {
-    const existing = await this.#recordOf(learner, item);
-    if (existing === null) return [];
-    return [
-      {
-        grade: existing._id,
-        score: existing.score,
-        outOf: existing.outOf,
-        status: existing.status,
-        feedback: existing.feedback,
-      },
-    ];
-  }
-
-  async _getGradesForLearner({ learner }: { learner: string }) {
-    const docs = await this.records.find({ learner }).sort({ seq: 1 }).toArray();
-    return docs.map((doc) => ({
-      item: doc.item,
+  #row(doc: RecordDoc) {
+    return {
       grade: doc._id,
-      score: doc.score,
-      outOf: doc.outOf,
-      status: doc.status,
-      feedback: doc.feedback,
-    }));
-  }
-
-  async _getGradesForItem({ item }: { item: string }) {
-    const docs = await this.records.find({ item }).sort({ seq: 1 }).toArray();
-    return docs.map((doc) => ({
       learner: doc.learner,
-      grade: doc._id,
-      score: doc.score,
+      item: doc.item,
+      evidence: doc.evidence,
+      grader: doc.grader,
+      criteria: doc.criteria,
+      judgments: doc.status === "EXCUSED" ? [] : doc.judgments,
       feedback: doc.feedback,
       status: doc.status,
-    }));
+      version: doc.version,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+      releasedAt: doc.releasedAt,
+      history: doc.history,
+    };
   }
-
-  async _getCriterionScores({ learner, item }: { learner: string; item: string }) {
-    const existing = await this.#recordOf(learner, item);
-    if (existing === null) return [];
-    const docs = await this.criterionScores
-      .find({ record: existing._id })
-      .sort({ seq: 1 })
-      .toArray();
-    return docs.map((cs) => ({
-      criterion: cs.criterion,
-      points: cs.points,
-      feedback: cs.feedback,
-    }));
+  async _getCriteria({ grade }: { grade: string }) {
+    await this.#ready();
+    const doc = await this.records.findOne({ _id: grade });
+    return doc?.criteria ?? [];
+  }
+  async _getGrade({ grade }: { grade: string }) {
+    await this.#ready();
+    const doc = await this.records.findOne({ _id: grade });
+    return doc ? [this.#row(doc)] : [];
+  }
+  async _getGradesForLearner({ learner }: { learner: string }) {
+    await this.#ready();
+    return (await this.records.find({ learner }).sort({ createdAt: 1, _id: 1 }).toArray()).map(
+      (doc) => this.#row(doc),
+    );
+  }
+  async _getGradesForItem({ item }: { item: string }) {
+    await this.#ready();
+    return (await this.records.find({ item }).sort({ createdAt: 1, _id: 1 }).toArray()).map((doc) =>
+      this.#row(doc),
+    );
   }
 }
